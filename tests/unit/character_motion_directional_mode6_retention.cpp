@@ -1,0 +1,17 @@
+#include <cstdio>
+#include <cstdlib>
+#include "tests/unit/character_motion_directional_fixture.hpp"
+namespace {using namespace gf;unsigned checks=0;void check(bool value,const char* why){++checks;if(!value){std::fprintf(stderr,"mode6 retention: %s\n",why);std::abort();}}}
+int main(){using namespace gf;using namespace character_motion_directional_fixture;Fixture f;std::string error;CharacterMotionDriver driver;check(f.load(&error)&&driver.load_directional_transitions({f.model.data(),f.model.size()},f.rig,f.profile,f.clips,f.initial,{0,-1},&error),"fixture");CharacterProgramMotion prior;
+    check(driver.select_transition(0,f.profile.descriptors[0],false,{},0,1,2,5,&prior),"old primary mid-mode2");std::shared_ptr<const CharacterDirectionalMotionSnapshot> state;
+    check(driver.request_directional_transition(0,controls,8192,5,0,1,1,prior,{4,5},{4,5},&state)&&driver.snapshot(state->side())->blending()&&driver.snapshot(state->side())->blend_time()==1&&driver.snapshot(state->side())->blend_duration()==6,"4B94C copy retains prior primary transition fields on scratch side");
+    check(driver.advance_directional_transition(state,controls,8192,5,1,state->models(),&state)&&!state->blending()&&driver.snapshot(state->side())->blending()&&driver.snapshot(state->side())->blend_duration()==6,"completion clears primary mode only, not alternate copied mode");
+    check(driver.advance_directional_transition(state,controls,-8192,5,.5f,state->models(),&state)&&state->side_rebound()&&driver.snapshot(state->side())->blending()&&driver.snapshot(state->side())->blend_time()==1&&driver.snapshot(state->side())->blend_duration()==6&&state->side().elapsed==1.5f,"49CC4 rebind preserves alternate transition fields but replaces primary clock copy");
+    check(driver.interrupt_directional_transition(state,controls,8192,5,0,1,0,state->models(),&state)&&!state->blending()&&driver.snapshot(state->side())->blending()&&driver.snapshot(state->side())->blend_duration()==6&&state->side().elapsed==0,"duration0 also preserves preexisting alternate mode/time fields");
+    check(driver.advance_directional_transition(state,controls,-32768,5,1,state->models(),&state)&&state->side_rebound()&&driver.snapshot(state->side())->blending()&&state->primary().elapsed==1&&state->side().elapsed==1,"post-zero-duration side rebind retains source mode suppression");
+    f.profile.descriptors[0].bytes[6]=2;f.profile.descriptors[1].bytes[6]=f.profile.descriptors[2].bytes[6]=3;
+    check(driver.load_directional_transitions({f.model.data(),f.model.size()},f.rig,f.profile,f.clips,f.initial,{0,-1},&error)&&driver.select(0,f.profile.descriptors[0],true,{},0,1,&prior)&&driver.request_directional_transition(0,controls,16384,5,0,1,3,prior,{4,5},{4,5},&state),"mode6 mirror-copy fixture");
+    check(driver.snapshot(state->primary())->mirrored()&&!driver.snapshot(state->side())->mirrored(),"side toggle inherits copied PRIMARY mirror, not an invented blank side");
+    const auto old=state;check(driver.interrupt_directional_transition(state,controls,-8192,5,0,.5f,3,state->models(),&state)&&state->frozen_pose().bones[0].translation[0]==old->local_pose().bones[0].translation[0],"mode6 interrupt freezes actual displayed quaternion/translation owner");
+    check(!driver.select_transition(0,f.profile.descriptors[0],true,state->primary(),0,1,2,3,&prior),"generic single-target blend cannot freeze a raw directional primary");
+    std::printf("mode6 alternate-state retention: %u checks PASS\n",checks);return 0;}

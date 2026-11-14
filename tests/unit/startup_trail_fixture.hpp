@@ -1,0 +1,6 @@
+#pragma once
+#include "engine/gameplay/startup_trail_scene.hpp"
+namespace startup_trail_fixture {
+inline std::vector<gf::u8> atlas(){std::vector<gf::u8> b(96);gf::store_be32(b.data(),0x20af30);gf::store_be32(b.data()+4,1);gf::store_be32(b.data()+8,12);gf::store_be32(b.data()+12,20);gf::store_be16(b.data()+20,4);gf::store_be16(b.data()+22,4);gf::store_be32(b.data()+24,4);gf::store_be32(b.data()+28,64);std::fill(b.begin()+64,b.end(),255);return b;}
+inline std::vector<gf::u8> profile(const std::vector<gf::u8>& atlas){using namespace gf;std::vector<u8> b(360);store_be32(b.data(),0x4746544c);store_be16(b.data()+4,1);store_be16(b.data()+6,360);store_be32(b.data()+8,startup_trail_hash({atlas.data(),atlas.size()}));store_be16(b.data()+20,4);store_be16(b.data()+22,4);b[24]=1;b[25]=15;b[26]=33;b[27]=2;store_be_f32(b.data()+28,50);store_be_f32(b.data()+40,-50);store_be32(b.data()+52,0xffffffff);store_be_f32(b.data()+56,.5f);store_be_f32(b.data()+64,1);store_be_f32(b.data()+68,2);store_be_f32(b.data()+72,3);for(unsigned i=0;i<33;++i){store_be16(b.data()+76+i*8,0);store_be16(b.data()+78+i*8,0);store_be16(b.data()+80+i*8,3);store_be16(b.data()+82+i*8,3);}store_be32(b.data()+340,1);store_be32(b.data()+344,4);store_be32(b.data()+348,1);b[358]=b[359]=2;return b;}
+} // namespace startup_trail_fixture

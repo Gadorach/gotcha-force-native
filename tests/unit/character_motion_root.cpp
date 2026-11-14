@@ -1,0 +1,39 @@
+#include <cstdio>
+#include <cstdlib>
+#include <limits>
+#include "engine/gameplay/character_motion_root.hpp"
+#include "tests/unit/character_motion_directional_fixture.hpp"
+namespace {
+using namespace gf;unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"character root: %s\n",why);std::abort();}}
+bool near(f32 a,f32 b){return std::abs(a-b)<.00005f;}
+CharacterMotionRootFields fields(){CharacterMotionRootFields f;f.delta5f4=.5f;f.scale_b4=2;f.yaw5ae=16384;f.apply_position1d9b=1;return f;}
+bool load(character_motion_directional_fixture::Fixture& f,CharacterMotionDriver& d,std::string& error){return d.load_directional_transitions({f.model.data(),f.model.size()},f.rig,f.profile,f.clips,f.initial,{0,-1},&error);}
+}
+int main(){using namespace gf;character_motion_directional_fixture::Fixture f;std::string error;check(f.load(&error),"owned fixture");
+    for(unsigned index=0;index<f.clips.size();++index){auto& clip=f.clips[index].clip;for(unsigned k=0;k<3;++k){auto t=character_motion_driver_fixture::linear(f32(index*100),f32(index*100)+f32(clip.end_frame)*f32(k+1),unsigned(clip.end_frame));t.channel=u8(5+k);if(!k)clip.bones[0].tracks={t};else clip.bones[0].tracks.push_back(t);}}
+    CharacterMotionDriver driver;check(load(f,driver,error),"native driver root channels");const auto& d=f.profile.descriptors[0];CharacterProgramMotion a,b;check(driver.select(0,d,false,{},0,1,&a)&&driver.advance(0,a,1,&b),"native request and advance");
+    CharacterMotionRootObservation observed;check(driver.root_observation(b,&observed)&&observed.translation==std::array<f32,3>{1,2,3}&&observed.frame==1,"unblended mirrored-converted native root observation");
+    CharacterMotionRootOwner owner;CharacterMotionRootState out;check(owner.bind(driver,a,{10,20,30},&error)&&owner.accept(b,fields(),&out,&error),"same-library successor integration");
+    check(near(out.position[0],16)&&near(out.position[1],24)&&near(out.position[2],28)&&near(out.speed1dac,f32(std::sqrt(14.f))/.5f)&&out.heading1db0>0,"scale+source yaw+position; speed/heading computed before world scaling");
+    check(!owner.accept(b,fields(),&out,&error)&&!owner.ready()&&out.updates==0,"duplicate native successor refuses/latches/clears output");
+    auto numeric=fields();numeric.apply_position1d9b=0;numeric.scale_b4=std::numeric_limits<float>::quiet_NaN();check(owner.bind(driver,a,{10,20,30},&error)&&owner.accept(b,numeric,&out,&error)&&out.position==std::array<f32,3>{10,20,30}&&out.delta1da0==std::array<f32,3>{1,2,3},"unapplied position keeps LOCAL delta and does not read actorB4");
+    numeric=fields();numeric.vertical_only598=1;check(owner.bind(driver,a,{10,20,30},&error)&&owner.accept(b,numeric,&out,&error)&&out.position==std::array<f32,3>{10,24,30}&&near(out.speed1dac,f32(std::sqrt(14.f))/.5f),"vertical-only mask after rotation leaves speed/heading intact");
+    CharacterPoseFrame frame;CharacterLocalPose local;check(character_pose_initial_frame(f.rig,mat4_translation(out.position.data()),&frame,&error)&&driver.compose_local_pose({b,{}},&local,&error)==false,"other unbound lane not fabricated for world composition");
+    CharacterProgramMotion lane1;check(driver.select(1,d,false,{},0,1,&lane1)&&driver.compose_local_pose({b,lane1},&local,&error),"both native lane poses");CharacterWorldPose world;check(character_pose_direct_world(f.rig,local,frame,&world,&error)&&world.matrices[0].at(1,3)==24&&world.matrices[0].at(0,3)==10,"integrated actor position feeds OLD direct-world kernel; no clip-root double translation");
+    for(u8 mode:{u8(1),u8(2)}){CharacterProgramMotion m;check(driver.select_transition(0,d,false,{},0,1,mode,2,&m)&&owner.bind(driver,m,{10,20,30},&error),"transition root setup");
+        for(unsigned i=0;i<3;++i){CharacterProgramMotion next;check(driver.advance(0,m,1,&next)&&owner.accept(next,fields(),&out,&error),"actual transition evaluation provenance");const auto* snap=driver.snapshot(next);if(i<2)check(out.position==std::array<f32,3>{10,20,30}&&out.delta1da0==std::array<f32,3>{}&&snap->evaluation()==(i?CharacterMotionEvaluation::ReRequest:CharacterMotionEvaluation::FrozenBlend),"blend and completion re-request suppress root after final mode cleared");else check(out.position[1]==24,"ordinary callback AFTER completion moves root");m=next;}
+    }
+    CharacterProgramMotion requested;check(driver.select(0,f.profile.descriptors[1],false,b,0,1,&requested)&&owner.bind(driver,b,{10,20,30},&error)&&owner.accept(requested,{},&out,&error)&&out.position==std::array<f32,3>{10,20,30}&&out.delta1da0==std::array<f32,3>{},"interrupting request does not integrate discontinuous root or read unused scalars");
+    auto selected=f;selected.profile.descriptors[0].bytes[0]=1;CharacterMotionDriver selected_driver;check(load(selected,selected_driver,error)&&selected_driver.select(0,selected.profile.descriptors[0],false,{},0,1,&a)&&selected_driver.advance(0,a,1,&b)&&owner.bind(selected_driver,a,{0,0,0},&error),"selector-specific source metadata");
+    const f32 multipliers[]={7,.5f};numeric=fields();numeric.apply_position1d9b=0;numeric.bias1d9c=.5f;numeric.multipliers1dd4=multipliers;check(owner.accept(b,numeric,&out,&error)&&out.delta1da0==std::array<f32,3>{.75f,1.5f,2.25f},"(1+bias)*selected multiplier before delta scaling");
+    check(owner.bind(selected_driver,a,{0,0,0},&error),"missing multiplier setup");numeric.multipliers1dd4={};check(!owner.accept(b,numeric,&out,&error)&&!owner.ready()&&out.position==std::array<f32,3>{},"missing selected multiplier refuses atomically");
+    numeric.suppress_selector1db2=1;check(owner.bind(selected_driver,a,{0,0,0},&error)&&owner.accept(b,numeric,&out,&error)&&out.delta1da0==std::array<f32,3>{1.5f,3,4.5f},"selector suppression avoids unused table read");
+    check(owner.bind(selected_driver,a,{0,0,0},&error),"zero divisor setup");numeric.delta5f4=0;check(!owner.accept(b,numeric,&out,&error)&&!owner.ready(),"no invented source delta or zero-speed acknowledgement");
+    CharacterMotionDriver neighbor;check(load(selected,neighbor,error)&&neighbor.select(0,selected.profile.descriptors[0],false,{},0,1,&requested)&&owner.bind(selected_driver,a,{0,0,0},&error)&&!owner.accept(requested,fields(),&out,&error),"same-model foreign library refuses");
+    check(selected_driver.advance(0,b,1,&requested)&&owner.bind(selected_driver,a,{0,0,0},&error)&&!owner.accept(requested,fields(),&out,&error),"skipped native callback refuses");
+    std::shared_ptr<const CharacterDirectionalMotionSnapshot> direction;check(driver.request_directional_follow(0,character_motion_directional_fixture::controls,0,5,0,1,{}, {},&direction)&&!owner.bind(driver,direction->primary(),{0,0,0},&error),"directional shared-root owner remains an explicit boundary");
+    auto loop=f;loop.profile.descriptors[0].bytes[6]|=4;loop.profile.descriptors[0].bytes[7]=1;CharacterMotionDriver loop_driver;check(load(loop,loop_driver,error)&&loop_driver.select(0,loop.profile.descriptors[0],false,{},0,1,&a)&&owner.bind(loop_driver,a,{0,0,0},&error),"native root loop setup");
+    numeric=fields();numeric.apply_position1d9b=0;for(unsigned tick=0;tick<1000;++tick){auto weak=std::weak_ptr<const CharacterProgramMotionContext>(a.context);check(loop_driver.advance(0,a,1,&b)&&owner.accept(b,numeric,&out,&error),"bounded retained-owner loop");if(tick==3)check(out.delta1da0==std::array<f32,3>{-2,-4,-6}&&b.rewound==1,"native loop rewind displacement is retained, not silently clamped/removed");a=b;check(weak.expired(),"no strong previous-snapshot history chain");}
+    CharacterMotionRootOwner moved=std::move(owner);check(moved.ready()&&!owner.ready()&&owner.state()==nullptr,"move retires prior owner output");
+    std::printf("ordinary native root owner: %u checks PASS; explicit actor fields, no full actor/directional admission\n",checks);return 0;
+}

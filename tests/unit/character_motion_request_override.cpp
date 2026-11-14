@@ -1,0 +1,20 @@
+#include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <iterator>
+#include <filesystem>
+#include "tests/unit/character_motion_driver_fixture.hpp"
+namespace {using namespace gf;unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"motion override: %s\n",why);std::abort();}}CharacterLocalPose seed(const CharacterPoseRig& r){CharacterLocalPose p;for(const auto& b:r.binding.bones){CharacterBonePose v;v.joint_offset=b.joint_offset;std::copy_n(b.translation,3,v.translation);p.bones.push_back(v);}return p;}std::vector<u8> read(const std::filesystem::path& p){std::ifstream f(p,std::ios::binary);return {std::istreambuf_iterator<char>(f),{}};}}
+int main(int argc,char** argv){using namespace gf;using namespace character_motion_driver_fixture;Fixture f;std::string error;check(f.load(&error),"fixture");auto initial=seed(f.rig);auto a=f.profile;
+    a.programs={{5,0,{1,5,0,2,2,0,0,0,0,0,0,0,1,5,1,2,2,0,0,0,0,1,255,255}}};CharacterMotionDriver driver;CharacterProgramVm vm;std::vector<CharacterProgramOperation> ops;
+    check(driver.load_transitions({f.model.data(),f.model.size()},f.rig,a,f.clips,initial,&error)&&vm.load_fresh_actor_transitions(a,&error),"extended resources");
+    check(vm.request_with_transition(5,0,3,0,1,{0,0},driver,&ops,&error)&&!driver.snapshot(vm.state().lanes[0].motion)->blending(),"caller0,0 overrides authored2,2");
+    check(vm.update(3,1,driver,&ops,&error)&&driver.snapshot(vm.state().lanes[0].motion)->blending()&&driver.snapshot(vm.state().lanes[0].motion)->blend_duration()==3,"override does not leak into later prefix");
+    for(auto transition:std::array<CharacterProgramTransition,3>{{{0,-1},{-1,0},{1,2}}}){check(vm.load_fresh_actor_transitions(a,&error)&&vm.request_with_transition(5,0,3,0,1,transition,driver,&ops,&error),"independent overrides");const auto* snap=driver.snapshot(vm.state().lanes[0].motion);check(transition.mode==2?snap->blending()&&snap->previous_weight()==.5f:!snap->blending(),"duration-zero delegation/mode-zero duration ignored");}
+    for(auto transition:std::array<CharacterProgramTransition,4>{{{-2,0},{256,2},{0,1},{0,-2}}}){check(vm.load_fresh_actor_transitions(a,&error),"fresh guard state");ops.push_back({});check(!vm.request_with_transition(5,0,3,0,1,transition,driver,&ops,&error)&&ops.empty()&&!vm.ready(),"unsupported override refuses and clears operations");}
+    check(vm.load_fresh_actor(f.profile,&error)&&!vm.request_with_transition(5,0,3,0,1,{0,0},driver,&ops,&error),"legacy VM cannot use opt-in override");
+    if(argc==2){const std::filesystem::path root=argv[1];for(const char* name:{"g-red","sasuke"}){auto path=root/name;auto model=read(path/"model.hsd"),prefix=read(path/"model-prefix.bin"),pose=read(path/"pose.gfcp"),profile=read(path/"preview.gfmp");auto bytes=[](const auto& b){return ByteView{b.data(),b.size()};};HsdModelBones bones;CharacterPoseRig rig;CharacterProgramAsset asset;check(hsd_bones_load(bytes(prefix),bytes(model),&bones,&error)&&character_pose_rig_load(bytes(pose),bones,&rig,&error)&&character_program_load_transitions(bytes(profile),character_program_model_hash(bytes(model)),&asset,&error),"actual preview input");std::vector<CharacterMotionClipBinding> clips;for(u8 i:{u8(0),u8(1),u8(6)}){auto data=read(path/("clip-0-"+std::to_string(i)+".hsd"));CharacterMotionClipBinding clip;clip.index=i;check(hsd_bone_motion_load(bytes(data),bones,&clip.clip,&error),"actual clip");clips.push_back(std::move(clip));}
+        auto rest=seed(rig);check(driver.load_transitions(bytes(model),rig,asset,clips,rest,&error)&&vm.load_fresh_actor_transitions(asset,&error)&&vm.request_with_transition(0,0,3,0,1,{0,0},driver,&ops,&error),"actual58244 request overrides");for(unsigned lane=0;lane<2;++lane){const auto* s=driver.snapshot(vm.state().lanes[lane].motion);check(s&&!s->blending()&&s->looping()&&s->index()==0&&s->previous_weight()==0&&vm.state().lanes[lane].motion.frame==0,"constructor selects instantaneous LOOP motion, not authored blend");}
+    }}else check(argc==1,"arguments");
+    std::printf("motion request override: %u checks PASS\n",checks);
+}

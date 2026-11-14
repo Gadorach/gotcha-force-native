@@ -1,0 +1,22 @@
+#include <cstdio>
+#include <cstdlib>
+#include "engine/graphics/source_text.hpp"
+#include "engine/core/headless_backends.hpp"
+#include "engine/gameplay/animated_model_scene.hpp"
+#include "tests/unit/hsd_record_texture_fixture.hpp"
+namespace {unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"source font: %s\n",why);std::abort();}}}
+int main(){
+    using namespace gf;std::vector<u8> tpl(120);store_be32(tpl.data(),kTplMagic);store_be32(tpl.data()+4,1);store_be32(tpl.data()+8,12);store_be32(tpl.data()+12,20);store_be16(tpl.data()+20,8);store_be16(tpl.data()+22,16);store_be32(tpl.data()+28,56);std::fill(tpl.begin()+56,tpl.begin()+88,255);
+    u32 hash=2166136261u;for(auto b:tpl)hash=(hash^b)*16777619u;std::vector<u8> profile(28);store_be32(profile.data(),0x4746464e);store_be32(profile.data()+4,1);store_be32(profile.data()+8,hash);for(auto [at,v]:std::array<std::pair<unsigned,u16>,8>{{{12,2},{14,8},{16,2},{18,1},{20,0x8140},{22,0},{24,0x8260},{26,0x8261}}})store_be16(profile.data()+at,v);
+    SourceFont font;std::string error;check(font.load({profile.data(),profile.size()},{tpl.data(),tpl.size()},&error),"owned font profile/atlas");check(font.glyph(0x8260)==0&&font.glyph(0x8261)==1&&font.glyph(0x8262)==-1,"encoded lookup");std::string encoded;check(font.encode_ascii("A B",&encoded)&&encoded==std::string("\x82\x60\x81\x40\x82\x61",6),"explicit keyboard encoding + source blank");check(!font.encode_ascii("AC",&encoded)&&encoded.empty(),"unknown character never substitutes glyph");
+    headless::Render backend;RenderEngine render(backend);headless::Window window;check(render.initialize({128,128,false,true,"owned font"},&window,&error),"owned renderer");SourceTextRenderer text;check(text.load(font,render,1),"shared atlas upload");Camera camera;camera.eye[2]=5;camera.target[2]=0;camera.viewport_width=camera.viewport_height=128;camera.near_plane=.1f;camera.far_plane=100;Mat4 world;
+    render.begin_frame({});render.reset_arena();check(font.encode_ascii("A B",&encoded)&&text.draw(render,camera,world,encoded,1,1,{255,255,255,255})&&render.pending_draws()==1,"source glyph quads one shared submission");check(render.end_frame(),"font finish");
+    render.begin_frame({});render.reset_arena();check(!text.draw(render,camera,world,std::string("\x82\x60\x82\x62",4),1,1,{255,255,255,255})&&render.pending_draws()==0,"late unknown glyph produces no partial draw");check(!text.draw(render,camera,world,std::string("\x82",1),1,1,{255,255,255,255}),"truncated encoded character refuses");check(text.draw(render,camera,world,std::string("\x81\x40",2),1,1,{255,255,255,255})&&render.pending_draws()==0,"space only advances, no fake glyph");check(render.end_frame(),"empty frame finish");
+    auto corrupt=profile;corrupt[26]=corrupt[24];corrupt[27]=corrupt[25];SourceFont bad;check(!bad.load({corrupt.data(),corrupt.size()},{tpl.data(),tpl.size()},&error),"duplicate map entry refuses");corrupt=profile;corrupt[11]^=1;check(!bad.load({corrupt.data(),corrupt.size()},{tpl.data(),tpl.size()},&error),"wrong atlas binding refuses");corrupt=profile;corrupt[19]=2;check(!bad.load({corrupt.data(),corrupt.size()},{tpl.data(),tpl.size()},&error),"wrong atlas geometry refuses");
+    auto fixture=hsd_record_texture_fixture::fixture();auto bytes=fixture.archive();HsdRecordAnimationBank bank;AnimatedModelScene model;check(bank.load({bytes.data(),bytes.size()},&error)&&model.load_textures(bank,0,2,0,0,&error)&&model.request(0,0,&error),"owned state selector");
+    check(model.request_again(2,0,&error)&&model.pose()->materials[0].uv_offset[0]==.375f&&model.request_again(0,0,&error)&&model.pose()->materials[0].uv_offset[0]==.25f,"explicit forward/backward request recreates FIRST_PLAY state");check(!model.request_again(NAN,0,&error)&&!model.ready()&&!model.request_again(0,0,&error),"failed owner cannot revive by re-request");
+    auto dormant=hsd_record_texture_fixture::fixture(2,0,0,true);dormant.word(0xf1c,0x77);dormant.block[0xf00]=99;bytes=dormant.archive();HsdScene decoded;
+    check(hsd_load({bytes.data(),bytes.size()},&decoded,&error)&&decoded.meshes[0].material_supported&&!decoded.meshes[0].texture_colour_lerp,"inactive custom expression retains ordinary texture mapping");
+    dormant.word(0xf1c,0x40000077);bytes=dormant.archive();check(hsd_load({bytes.data(),bytes.size()},&decoded,&error)&&!decoded.meshes[0].material_supported,"same unsupported expression refuses when activated");
+    std::printf("source font and re-request: %u owned checks PASS\n",checks);
+}

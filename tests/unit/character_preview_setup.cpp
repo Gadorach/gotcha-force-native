@@ -1,0 +1,13 @@
+#include <cstdio>
+#include <cstdlib>
+#include "engine/gameplay/character_preview_setup.hpp"
+#include "tests/unit/startup_actor_setup_fixture.hpp"
+namespace {unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"preview setup: %s\n",why);std::abort();}}}
+int main(){using namespace gf;CharacterPreviewProfile p;p.loaded=true;p.scene_hash=123;p.models={0x615,10};p.pitch=0x800;p.position={-60,15,0};p.one=1;p.radius=bits_to_f32(0x439e199a);p.near_plane=10;p.far_plane=40000;p.fov=41;p.aspect=640.f/480;p.angle_unit=bits_to_f32(0x38c90fdb);
+    auto bytes=startup_actor_setup_fixture::profile();StartupActorSetupProfile setup;std::string error;check(startup_actor_setup_load({bytes.data(),bytes.size()},1234,&setup,&error),"owned actor inputs");CharacterPreviewSetup result;check(character_preview_setup(p,setup,&result,&error)&&result.actor.scale_b4==1&&result.actor.actor_scale==std::array<f32,3>{1,1,1}&&result.position==p.position,"1/7FC preview normalization replaces rank scale");check(result.actor.rank.scale_b8>2&&result.actor.field66c==30&&result.actor.field668==80,"rank remains source state, dimensions recomputed once");
+    auto bad=setup;bad.model_id=9;check(!character_preview_setup(p,bad,&result,&error),"unqualified model refuses");bad=setup;bad.size_divisor=0;check(!character_preview_setup(p,bad,&result,&error),"zero divisor refuses");auto invalid=p;invalid.position[1]=14;check(!character_preview_setup(invalid,setup,&result,&error),"unreviewed fitted placement refuses");
+    Camera first,other;check(character_preview_camera(p,100,{0x800,0},&first)&&character_preview_camera(p,100,{0x800,0xffffffffu},&other)&&std::equal(first.eye,first.eye+3,other.eye),"yaw rotates actor, not camera orbit");
+    for(unsigned phase=0;phase<65536;++phase){Camera camera;Camera::Basis b;s8 up=0;check(character_preview_camera(p,100,{phase,0},&camera,&up)&&camera.basis(&b),"source angle domain has finite basis");const f32 angle=std::bit_cast<s16>(u16(phase))*p.angle_unit;check(camera.eye[0]==0&&camera.target[0]==0&&camera.target[1]==100&&camera.target[2]==0&&camera.eye[1]==std::fma(p.radius,std::sin(angle),100.f)&&camera.eye[2]==p.radius*std::cos(angle)&&up==(phase>=0x4000&&phase<=0xc000?-1:1),"raw source orbit and up-flip operands");const f32 dot=b.up[0]*b.forward[0]+b.up[1]*b.forward[1]+b.up[2]*b.forward[2];check(std::abs(dot)<.000001f&&std::abs(b.right[0]-1)<.000001f,"LookAt-equivalent orthogonal up, no clamp/fitted axis");}
+    check(!character_preview_camera(p,NAN,{},&first)&&!character_preview_camera(p,1e8f,{},&first)&&!character_preview_camera(p,1,{},nullptr),"camera numeric/output bounds");
+    std::printf("character preview setup: %u checks PASS (65536 angle inputs, not games)\n",checks);
+}

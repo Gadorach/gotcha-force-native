@@ -1,0 +1,23 @@
+#include <cstdio>
+#include <cstdlib>
+#include "engine/gameplay/force_editor_visual_state.hpp"
+#include "engine/gameplay/warehouse_list_view.hpp"
+#include "tests/unit/editor_review_corrections_fixture.hpp"
+namespace {using namespace gf;using namespace editor_review_corrections_fixture;unsigned checks=0;std::string error;void check(bool x,const char* why){++checks;if(!x){std::fprintf(stderr,"warehouse Y-style popup: %s (%s)\n",why,error.c_str());std::abort();}}}
+int main(){using namespace gf;using namespace editor_review_corrections_fixture;Fixture f;check(f.load(),"owned inventory and data");for(unsigned i=0;i<3;++i){check(f.owner.acquire(force_inventory_fixture::borg())==ForceChange::Applied&&f.owner.to_warehouse(3)==ForceChange::Applied,"distinct real stored instances");}WarehouseTools tools;WarehouseToolEvent event;WarehouseListView rows;ForceEditorPopupState popup;ForcePopupTimeline timeline;
+    check(tools.open(f.owner,f.data,{true,true})&&tools.step(f.owner,0,0x100,0,&event)&&tools.step(f.owner,4,0,0,&event)&&tools.step(f.owner,4,0,0,&event)&&tools.cursor()==2,"select third actual instance");const auto revision=f.owner.revision();
+    check(tools.step(f.owner,0,0x100,0,&event)&&tools.page()==WarehouseToolPage::Actions&&tools.cursor()==0&&tools.slot()==2&&tools.wait_updates()==10,"A opens source-style modal, no field editor");
+    check(WarehouseListView::build(f.owner,tools,&rows,&error)&&rows.cursor()==2&&rows.view().count==3&&rows.row(2)->source_slot==2&&rows.title()=="WAREHOUSE","popup sits over unchanged selected Borg list, not an action list");
+    check(warehouse_tool_popup_state(f.owner,tools,&popup)&&popup.popup&&popup.popup->kind==ForcePopupKind::Warehouse&&popup.popup->labels_ascii==std::vector<std::string>{"MOVE TO BOX","BACK"}&&timeline.step(popup.popup,popup.context),"same Y-menu popup kind/layout/timeline, accurate two labels");const auto context=popup.context;
+    for(unsigned i=0;i<10;++i){check(tools.step(f.owner,4,0x100,1,&event)&&tools.page()==WarehouseToolPage::Actions&&tools.cursor()==0&&f.owner.revision()==revision,"opening input wait consumes held/new confirm without mutating Borg");check(warehouse_tool_popup_state(f.owner,tools,&popup)&&timeline.step(popup.popup,popup.context),"one source popup animation tick per UI update");}
+    check(timeline.visible().size()==1&&timeline.visible()[0].frame==11,"popup uses existing opening clock, not draw calls");
+    check(tools.step(f.owner,2,0,0,&event)&&tools.cursor()==0,"modal ignores horizontal page jumps");check(tools.step(f.owner,4,0,0,&event)&&tools.cursor()==1&&tools.step(f.owner,0,0x100,0,&event)&&tools.page()==WarehouseToolPage::Instances&&tools.cursor()==2&&tools.wait_updates()==10,"Back returns to the same actual instance, never edit or row0");
+    check(warehouse_tool_popup_state(f.owner,tools,&popup)&&!popup.popup&&popup.context==context&&timeline.step(popup.popup,popup.context)&&timeline.visible()[0].frame==8,"closing uses same context/source close frame");
+    for(unsigned i=0;i<10;++i){check(tools.step(f.owner,0,0,0,&event)&&warehouse_tool_popup_state(f.owner,tools,&popup)&&timeline.step(popup.popup,popup.context),"parent input wait preserves popup close animation");}
+    check(timeline.visible().empty()&&tools.cursor()==2&&f.owner.revision()==revision,"closed modal leaves same identity/order/inventory");
+    check(tools.step(f.owner,0,0x100,0,&event)&&warehouse_tool_popup_state(f.owner,tools,&popup)&&popup.context!=context&&timeline.step(popup.popup,popup.context)&&timeline.visible()[0].frame==1,"new popup gets a new native context and fresh opening");while(tools.wait_updates()){check(tools.step(f.owner,0,0,0,&event),"second popup wait");}
+    check(tools.step(f.owner,0,0x100,0,&event)&&tools.page()==WarehouseToolPage::Models&&f.owner.state()->warehouse_count==2&&f.owner.state()->box_count==4,"Move to box uses existing actual transfer only");check(warehouse_tool_popup_state(f.owner,tools,&popup)&&!popup.popup&&timeline.step(popup.popup,popup.context)&&!timeline.visible().empty(),"successful transfer can animate popup closing without a stale inventory view");
+    ForcePopupPresentation bad;bad.kind=ForcePopupKind::Warehouse;bad.labels_ascii={"MOVE","BACK","EDIT"};check(!timeline.step(bad,popup.context),"wrong-count addon labels refused");bad.labels_ascii={std::string(33,'A'),"BACK"};check(!timeline.step(bad,popup.context),"unbounded addon wording refused");
+    Fixture neighbor;check(neighbor.load()&&!warehouse_tool_popup_state(neighbor.owner,tools,&popup)&&!popup.popup,"foreign owner clears popup, no copied-slot authority");
+    std::printf("warehouse modal popup: %u checks PASS; shared Y timeline/underlay/identity/guards\n",checks);return 0;
+}

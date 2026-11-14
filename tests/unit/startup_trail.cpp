@@ -1,0 +1,28 @@
+#include <cstdio>
+#include <cstdlib>
+#include <limits>
+#include "tests/unit/startup_trail_fixture.hpp"
+#include "tests/unit/startup_actor_frame_fixture.hpp"
+namespace {
+unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"startup trail: %s\n",why);std::abort();}}
+class Backend final:public gf::IRenderBackend {
+public:
+    std::vector<gf::DrawCall> calls;bool initialize(const gf::RenderConfig&,gf::IWindowBackend*,std::string*)override{return true;}void shutdown()override{}bool upload_vertices(const gf::Vertex*,std::size_t)override{return true;}bool upload_texture(gf::u32,const gf::TextureDesc&)override{return true;}bool upload_matrix(gf::u32,const gf::f32*)override{return true;}void begin_frame(const gf::FrameDesc&)override{calls.clear();}void submit(const gf::DrawCall& c)override{calls.push_back(c);}void end_frame()override{}void present()override{}
+};
+}
+int main(){
+    using namespace gf;std::string error;std::vector<HistoryCubic> cubic;
+    for(unsigned n=2;n<=16;++n){std::vector<HistoryPoint> points(n);for(unsigned i=0;i<n;++i)points[i]={f32(i)*7-5,f32(i)*3+1,f32(i)*-2};check(history_natural_cubic(points,&cubic)&&cubic.size()==n-1,"bounded natural cubic");for(unsigned i=0;i+1<n;++i)for(f32 u:{0.f,.125f,.5f,1.f}){const auto p=history_cubic_sample(cubic[i],u);for(unsigned k=0;k<3;++k)check(std::abs(p[k]-(points[i][k]+u*(points[i+1][k]-points[i][k])))<.0001f,"straight history remains exact line, no fitted path");}}
+    std::vector<HistoryPoint> invalid(17);check(!history_natural_cubic(invalid,&cubic)&&cubic.empty(),"point budget clears outputs");invalid.resize(2);invalid[0][0]=std::numeric_limits<f32>::infinity();check(!history_natural_cubic(invalid,&cubic),"nonfinite history refuses");
+    auto atlas=startup_trail_fixture::atlas(),raw=startup_trail_fixture::profile(atlas);StartupTrailProfile profile;check(startup_trail_load({raw.data(),raw.size()},&profile,&error),"owned source profile");for(unsigned offset:{0u,4u,6u,12u,16u,24u,25u,26u,27u,60u,64u,68u,72u,340u,344u,348u,352u,356u,357u,358u,359u}){auto bad=raw;bad[offset]^=0x80;StartupTrailProfile rejected;check(!startup_trail_load({bad.data(),bad.size()},&rejected,&error)&&!rejected.loaded,"exact source policy guards");}
+    startup_actor_frame_fixture::Fixture fixture;check(fixture.load(&error),"owned actor resources");std::array<StartupActorFrame,2> actors;StartupActorFrameOutput output;for(auto& a:actors)check(a.load(fixture.assets(),StartupActorFrameMode::IsolatedRequirements,0,&output,&error)&&a.reset(&output,&error)&&a.request(0,&output,&error),"fresh native actor generation");const std::array<const StartupActorFrame*,2> parents={&actors[0],&actors[1]};std::array<StartupTrailParentFields,2> fields;for(auto& f:fields)f.declared=true;
+    StartupTrailScene trails;check(trails.load(profile,{atlas.data(),atlas.size()},parents,&error),"trail source atlas/native parent binding");Backend backend;RenderEngine render(backend);check(render.initialize({64,64,false,true,"owned trail"},nullptr,&error)&&trails.upload_texture(render,77),"checked shared texture upload");Camera camera;camera.eye[2]=1000;camera.far_plane=10000;camera.fov_y_degrees=90;camera.viewport_width=camera.viewport_height=64;
+    for(unsigned frame=1;frame<=6;++frame){if(frame==4)fields[0].field_af=-1;check(trails.before_actors(frame,parents,fields,&error),"source group18 pre-actor order");for(unsigned p=0;p<2;++p){StartupActorFrameInput in;in.isolated_external_mutations=in.placement_declared=true;in.position={f32(p)*10,f32(frame)*8,0};check(actors[p].step(in,&output,&error),"accepted current actor world");}const std::array<u8,2> requests={0,1};check(trails.after_actors(frame,parents,fields,frame==1?std::span<const u8>(requests):std::span<const u8>{},&error),"registered history after actor; requests born without immediate initialization");
+        if(frame==1)check(trails.states().size()==2&&!trails.states()[0].registered&&!trails.states()[0].head_known,"allocation does not invent previous history");
+        if(frame==2)check(trails.states()[0].registered&&trails.states()[0].head_known&&!trails.states()[0].history_known&&!trails.states()[0].visible,"first head only, no uninitialized tail draw");
+        if(frame==3){std::vector<Vertex> strip;check(trails.strip(trails.states()[0],&strip)&&strip.size()==62,"15 segments times2 plus duplicate pair");check(strip[58].x==strip[60].x&&strip[58].y==strip[60].y&&strip[59].x==strip[61].x&&strip[59].y==strip[61].y,"source repeated final evaluation kept, not forced oldest endpoint");check(strip[0].a==127&&strip[0].u==0&&strip[1].u==.75f,"alpha truncation and source short UV normalization");}
+        render.begin_frame({});render.reset_arena();unsigned draws=99;check(trails.draw(render,camera,parents,&draws,&error),"shared strip rendering");render.end_frame();check(draws==(frame<3?0u:frame==3?2u:1u),"source visible phases and immediate mismatch hide");for(const auto& c:backend.calls)check(c.blend&&c.blend_src==5&&c.blend_dst==2&&c.depth_test&&!c.depth_write&&!c.cull_backface&&c.position_matrix==kIdentityPositionMatrix&&c.texture==77,"additive alpha/one, depth test no-write, explicit identity/atlas state");
+    }
+    check(trails.states().size()==1&&trails.states()[0].parent==1,"phase2 then3 then release unregisters retired parent0");check(actors[1].load(fixture.assets(),StartupActorFrameMode::IsolatedRequirements,0,&output,&error),"reload native parent");unsigned draws=99;check(!trails.draw(render,camera,parents,&draws,&error)&&draws==0&&!trails.ready(),"same-address reload refuses stale ribbon replay");
+    std::printf("{\"startup_trail_owned_checks\":%u,\"all_passed\":true}\n",checks);
+}

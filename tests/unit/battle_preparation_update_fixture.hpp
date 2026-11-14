@@ -1,0 +1,5 @@
+#pragma once
+#include "engine/gameplay/battle_preparation_context.hpp"
+namespace preparation_update_fixture {
+inline std::array<gf::u8,272> bytes(){using namespace gf;std::array<u8,272>b{};store_be32(b.data(),0x47465055);store_be32(b.data()+4,1);store_be32(b.data()+8,272);b[12]=3;b[13]=12;b[14]=7;b[15]=1;store_be16(b.data()+16,32);store_be16(b.data()+20,0xac);store_be16(b.data()+22,0xb0);store_be32(b.data()+24,0x8002844c);store_be32(b.data()+28,0x800295e0);const std::array<u32,3> h{0x80029648,0x80029688,0x800296e0};for(unsigned i=0;i<3;++i)store_be32(b.data()+32+4*i,h[i]);const std::array<BattlePreparationCall,19> calls{{{0x80089a94,40,1},{0x80089898,57,1},{0x80087cf0,0,0},{0x80089554,0,0},{0x8008a28c,0,0},{0x80089aec,0,0},{0x8002bb14,0,0},{0x80036e24,0,0},{0x8008972c,0,0},{0x80089658,0,0},{0x80089898,59,1},{0x80040b94,0,0},{0x8008a16c,0,0},{0x80089cd0,40,1},{0x80089c00,57,1},{0x80087814,0,0},{0x8008c0dc,0x80089eb4,1},{0x8008c104,0x80089f28,1},{0x8008c12c,0x80089f9c,1}}};for(unsigned i=0;i<calls.size();++i){store_be32(b.data()+44+12*i,calls[i].key);b[48+12*i]=calls[i].arguments;store_be32(b.data()+52+12*i,calls[i].argument);}return b;}
+}

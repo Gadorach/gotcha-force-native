@@ -1,0 +1,18 @@
+#include <cstdio>
+#include <cstdlib>
+#include <fstream>
+#include <iterator>
+#include "engine/gameplay/animated_model_scene.hpp"
+#include "engine/gameplay/frame_digest.hpp"
+#include "tests/unit/hsd_record_animation_fixture.hpp"
+namespace {unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"compact textures: %s\n",why);std::abort();}}}
+int main(int argc,char** argv){using namespace gf;std::string error;hsd_record_animation_fixture::Fixture fixture;auto bytes=fixture.archive();HsdRecordAnimationBank bank;check(bank.load({bytes.data(),bytes.size()},&error),"owned bank");AnimatedModelScene plain;check(plain.load_compact_static(bank,0,&error)&&plain.request(0,0,&error)&&plain.asset()->textures.empty(),"untextured record remains untextured");check(!plain.load_compact_static(bank,1,&error)&&!plain.ready(),"failed reload suppresses old pose");
+    MenuScene invalid;HsdScene scene;scene.source_texture_slots={0};check(!invalid.load_scene(scene,&error),"slot count mismatch refuses");scene.textures.resize(2);scene.source_texture_slots={1,1};check(!invalid.load_scene(scene,&error),"duplicate slot refuses");scene.source_texture_slots={0,u32(kHsdMaxNodes)};check(!invalid.load_scene(scene,&error),"source slot budget refuses");
+    if(argc==2){std::ifstream file(argv[1],std::ios::binary);std::vector<u8> input{std::istreambuf_iterator<char>(file),{}};check(bank.load({input.data(),input.size()},&error),"actual icon bank");for(unsigned id:{0u,1u,2u,7u,16u,31u,48u,63u,80u,99u,120u,141u,160u,179u,190u,201u}){
+            AnimatedModelScene old,compact;check(old.load(bank,u16(id),0,0,0,&error)&&compact.load_compact_static(bank,u16(id),&error),"both selection modes load");const auto& a=*old.asset();const auto& b=*compact.asset();check(b.textures.size()==b.source_texture_slots.size()&&b.textures.size()<a.textures.size()&&a.meshes.size()==b.meshes.size(),"only referenced textures retained");
+            for(unsigned i=0;i<b.textures.size();++i){const auto& x=a.textures[b.source_texture_slots[i]];const auto& y=b.textures[i];check(x.width==y.width&&x.height==y.height&&x.rgba==y.rgba&&x.wrap_s==y.wrap_s&&x.wrap_t==y.wrap_t&&x.linear==y.linear,"pixels and sampler exact");}
+            for(unsigned i=0;i<b.meshes.size();++i)check(a.meshes[i].texture==b.source_texture_slots[b.meshes[i].texture]&&a.meshes[i].indices==b.meshes[i].indices,"mesh index remaps to same original image");
+            RecordingRenderBackend ab,bb;RenderEngine ar(ab),br(bb);old.upload_textures_shared(ar,4096);compact.upload_textures_shared(br,4096);check(!ar.shared_texture_upload_failed()&&!br.shared_texture_upload_failed()&&br.shared_texture_count()==b.textures.size(),"stable original-bank upload namespace");check(old.request(0,0,&error)&&compact.request(0,0,&error),"pose request");old.set_enabled(true);compact.set_enabled(true);old.set_untextured_billboards(true);compact.set_untextured_billboards(true);Mat4 world;check(old.set_root_world(world,&error)&&compact.set_root_world(world,&error),"same world");Camera camera;camera.eye[2]=500;camera.target[2]=0;camera.near_plane=1;camera.far_plane=10000;ar.begin_frame({});br.begin_frame({});ar.reset_arena();br.reset_arena();const auto ac=old.draw(ar,camera),bc=compact.draw(br,camera);check(ac&&ac==bc&&ar.end_frame()&&br.end_frame(),"same actual draw count");ar.present();br.present();check(ab.last_frame_digest()==bb.last_frame_digest(),"submitted texture handles vertices matrices and state identical");
+        }
+    }else check(argc==1,"arguments");std::printf("compact record textures: %u checks PASS\n",checks);return 0;
+}

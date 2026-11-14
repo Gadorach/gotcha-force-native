@@ -1,0 +1,11 @@
+#define main retained_directional_unit_definitions_main
+#include "tests/unit/character_program_directional_control.cpp"
+#undef main
+int main(){using namespace gf;character_motion_directional_fixture::Fixture f;std::string error;check(f.load(&error),"fixture");auto p=asset(f);p.programs.push_back({0,4,{13,0,1,0,2,0,0,0,7,0,1,1,0,0,0,100,0,1,255,255}});CharacterMotionDriver driver;CharacterProgramVm vm;CharacterProgramDirectionalControl control;std::vector<CharacterProgramOperation> ops;
+    check(driver_load(f,p,driver,error)&&vm.load_fresh_actor_directional_controls(p,{0,1,0},&error)&&bind(vm,driver,control,error)&&vm.request_with_actor_controls(0,4,3,0,1,driver,control,&ops,&error),"opcode7 in directional prefix");
+    check(vm.state().actor.primary_models==std::array<u8,2>{1,1}&&vm.state().actor.models==std::array<u8,2>{1,1}&&control.directional_snapshot(vm.state().lanes[0].motion)->primary_models()==std::array<u8,2>{1,1},"op7 writes primary AND displayed models; next directional evaluator rebases from candidate actor, not stale snapshot metadata");
+    check(steer(vm,8192,error)&&vm.update_with_actor_controls(3,1,driver,control,&ops,&error)&&vm.state().actor.models==std::array<u8,2>{1,1},"source exact half directional weight retains rebased primary model");
+    check(steer(vm,16384,error)&&vm.update_with_actor_controls(3,1,driver,control,&ops,&error)&&vm.state().actor.models==std::array<u8,2>{6,1}&&vm.state().actor.alternate_models==std::array<u8,2>{6,7},"full side weight selects alternate bytes while unmatched model remains displayed value");
+    check(vm.request_with_actor_controls(0,2,3,0,1,driver,control,&ops,&error,{3,2})&&!vm.state().lanes[0].following&&!control.directional_snapshot(vm.state().lanes[0].motion)&&control.snapshot(vm.state().lanes[0].motion)->blending(),"normal motion interruption uses displayed dual pose and clears follow flag");
+    CharacterProgramClassFields view;check(vm.observe_class_fields(&view),"capture current steering scope");auto stale=view;stale.steering1dfc=0;check(!vm.write_class_steering(stale,3,&error)&&vm.state().actor.steering1dfc==16384,"stale steering writeback refuses without modifying current field");
+    std::printf("directional VM model-buffer/interruption edges: %u checks PASS\n",checks);return 0;}

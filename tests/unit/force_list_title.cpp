@@ -1,0 +1,15 @@
+#include <cstdio>
+#include <cstdlib>
+#include <limits>
+#include "engine/gameplay/force_list_title.hpp"
+#include "tests/unit/force_name_fixture.hpp"
+namespace {unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"list title: %s\n",why);std::abort();}}bool near(float a,float b){return std::abs(a-b)<.0001f;}}
+int main(){using namespace gf;HsdMesh mesh;mesh.vertices.resize(4);mesh.indices={0,1,2,1,3,2};for(unsigned i=0;i<4;++i){auto& v=mesh.vertices[i];v.position[0]=(i&1)?10.f:-10.f;v.position[1]=(i&2)?-5.f:5.f;v.uv[0]=(i&1)?1.f:0;v.uv[1]=(i&2)?1.f:0;}
+    HsdTexture texture;texture.width=8;texture.height=4;texture.rgba.resize(8*4*4);for(unsigned y=1;y<3;++y)for(unsigned x=1;x<3;++x)for(unsigned c=0;c<4;++c)texture.rgba[(y*8+x)*4+c]=255;
+    HsdAnimPose::Material material;material.present=material.has_texture=true;ForceListTitleSlot slot;check(force_list_title_slot(mesh,texture,material,&slot),"owned word plane");check(near(slot.x,-5)&&near(slot.y,0)&&near(slot.height,5)&&near(slot.width,20),"asymmetric transparent padding excluded");
+    const auto original=slot;for(unsigned kind=0;kind<10;++kind){auto m=mesh;auto t=texture;auto p=material;if(kind==0)m.indices[0]=4;else if(kind==1)m.indices={0,1,2,0,1,2};else if(kind==2)m.vertices[3].position[0]=9;else if(kind==3)m.vertices[2].position[2]=1;else if(kind==4)m.deformation_required=true;else if(kind==5)p.uv_offset[0]=-1;else if(kind==6)p.uv_scale[0]=-1;else if(kind==7)t.rgba.clear();else if(kind==8)std::fill(t.rgba.begin(),t.rgba.end(),0);else m.vertices[0].uv[0]=std::numeric_limits<f32>::quiet_NaN();slot=original;check(!force_list_title_slot(m,t,p,&slot)&&slot.height==0,"unknown word layout clears output");}
+    slot=original;const auto font=force_name_fixture::font();std::string text;check(font.encode_ascii("A",&text),"encoded source glyph");const f32 pos[3]={100,200,-300},scale3[3]={2,2,1};const auto world=mat4_multiply(mat4_translation(pos),mat4_scale(scale3));std::array<f32,3> position{};f32 scale=0;check(force_list_title_text(font,text,8,3,slot,world,&position,&scale)&&near(scale,1.25f)&&near(position[0],90)&&near(position[1],200)&&near(position[2],-300),"same source word ink size/centre with root applied once");
+    for(unsigned n=1;n<=20;++n){std::string value;for(unsigned i=0;i<n;++i)value+=text;const bool fit=(8+(n-1)*3)*.625f<=20;check(force_list_title_text(font,value,8,3,slot,world,&position,&scale)==fit,"long word fits slot or refuses, never clips/scales to arbitrary rectangle");}
+    for(unsigned kind=0;kind<9;++kind){auto w=world;auto s=slot;auto value=text;f32 extent=8,advance=3;if(kind==0)value.clear();else if(kind==1)value.pop_back();else if(kind==2)value=std::string("\x82\xff",2);else if(kind==3)extent=0;else if(kind==4)advance=-1;else if(kind==5)s.height=0;else if(kind==6)w.m[1]=1;else if(kind==7)w.m[5]=3;else w.m[0]=std::numeric_limits<f32>::infinity();check(!force_list_title_text(font,value,extent,advance,s,w,&position,&scale)&&scale==0&&position==std::array<f32,3>{},"bad fixed font/slot/root clears output");}
+    std::printf("list-title visible-ink layout: %u owned checks PASS\n",checks);return 0;
+}

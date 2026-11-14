@@ -1,0 +1,9 @@
+#define main retained_directional_fixture_definitions_main
+#include "tests/unit/character_program_directional_control.cpp"
+#undef main
+int main(){using namespace gf;character_motion_directional_fixture::Fixture f;std::string error;check(f.load(&error),"fixture");auto p=asset(f);auto other=p.descriptors[2];other.group=1;other.choice=0;p.descriptors.push_back(other);p.programs.push_back({0,5,{2,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,100,0,1,255,255}});CharacterProgramVm vm;CharacterMotionDriver driver;CharacterProgramDirectionalControl control;std::vector<CharacterProgramOperation> ops;
+    check(driver_load(f,p,driver,error)&&vm.load_fresh_actor_directional_controls(p,{0,1,0},&error)&&bind(vm,driver,control,error)&&vm.request_with_actor_controls(0,5,3,0,1,driver,control,&ops,&error),"explicit source default descriptor group");
+    check(vm.state().actor.default_group==1&&vm.state().lanes[0].descriptor_group==1&&control.snapshot(vm.state().lanes[0].motion)->index()==2&&vm.state().actor.primary_models==std::array<u8,2>{8,9},"opcode1 group0 resolves CURRENT582 before selecting descriptor/flags/models");
+    check(vm.state().lanes[1].descriptor_group==1&&control.snapshot(vm.state().lanes[1].motion)->index()==2,"default group resolution applies both lanes without clip alias0 substitution");
+    p.descriptors.pop_back();check(driver_load(f,p,driver,error)&&vm.load_fresh_actor_directional_controls(p,{0,1,0},&error)&&bind(vm,driver,control,error)&&!vm.request_with_actor_controls(0,5,3,0,1,driver,control,&ops,&error)&&ops.empty()&&vm.state().actor.default_group==0&&!vm.state().lanes[0].motion.selected,"missing resolved group refuses whole prefix instead of using group0 silently");
+    std::printf("scoped source descriptor default-group semantics: %u checks PASS\n",checks);return 0;}

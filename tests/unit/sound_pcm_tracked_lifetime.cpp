@@ -1,0 +1,19 @@
+#include <cstdio>
+#include <cstdlib>
+#include <type_traits>
+#include "tests/unit/sound_pcm_boundary_fixture.hpp"
+namespace {
+unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"tracked source lifetime edge: %s\n",why);std::abort();}}
+struct Provider final:gf::SoundPcmBoundaryProvider {
+ sound_pcm_boundary_fixture::Provider inputs;std::shared_ptr<const gf::SoundPcmBoundaryBinding> token;
+ bool valid(std::string* e)const override{return inputs.valid(e);}gf::u32 available(const gf::SoundCpuControlState& s)const override{return inputs.available(s);}bool boundary(gf::u32 n,gf::SoundPcmEventBoundary* out,std::string* e)const override{return inputs.boundary(n,out,e);}bool controls(const gf::SoundCpuControlState& s,gf::SoundVoiceControlObservation* c,std::vector<gf::SoundVoiceBankGainObservation>* b,std::string* e)const override{return inputs.controls(s,c,b,e);}std::shared_ptr<const gf::SoundPcmBoundaryBinding> binding()const override{return token;}
+};
+}
+int main(){
+ using namespace gf;static_assert(!std::is_copy_constructible_v<SoundPcmBoundaryBinding>);static_assert(!std::is_copy_assignable_v<SoundPcmBoundaryBinding>);static_assert(!std::is_move_assignable_v<SoundPcmBoundaryBinding>);std::string error;sound_pcm_boundary_fixture::Resources resources;check(resources.load(&error),"owned library");SoundControlOwner controls;const std::array<u8,1> ids={0};check(controls.initialize(ids,{},&error),"owned initialized source controls");
+ SoundPcmSource source;check(source.load(resources.library,resources.voice,resources.envelope,48000,&error),"fresh source");auto binding=source.create_boundary_binding(&error);auto producer=std::make_shared<const sound_pcm_boundary_detail::ProducerEpoch>();check(binding&&binding->claim(producer,&error),"source-issued producer claim");Provider provider;provider.token=binding;provider.inputs=sound_pcm_boundary_fixture::provider(resources,controls.snapshot(),&error);PcmMixer mixer;check(mixer.begin(64)&&source.prepare_tracked_boundaries(64,mixer,provider,&error)&&source.snapshot().pending&&!source.boundary_receipt().valid(),"preparation does not create source delivery authority");std::vector<s16> pcm;check(mixer.finish(&pcm)&&pcm.size()==128,"prepared sample block");sound_pcm_source_fixture::Sink sink;check(sink.try_submit(pcm.data(),64)&&sink.frames_available()==64,"owned sink really accepted bytes");producer.reset();check(!source.complete(true)&&source.failed()&&!source.boundary_receipt().valid()&&source.snapshot().event_boundary==0&&source.snapshot().generated_control_frames==0,"producer close between prepare and submit completion prevents stale source receipt despite accepted bytes");check(!source.complete(true)&&!binding->claim(std::make_shared<const sound_pcm_boundary_detail::ProducerEpoch>(),&error),"latched source/one-time binding cannot be rearmed or restored from a copy");
+ SoundPcmBoundaryReceipt receipt;std::shared_ptr<SoundPcmBoundaryBinding> retained;auto life=std::make_shared<const sound_pcm_boundary_detail::ProducerEpoch>();
+ {SoundPcmSource fresh;check(fresh.load(resources.library,resources.voice,resources.envelope,48000,&error),"second fresh source");retained=fresh.create_boundary_binding(&error);check(retained->claim(life,&error),"second source claim");Provider p;p.token=retained;p.inputs=sound_pcm_boundary_fixture::provider(resources,controls.snapshot(),&error);sound_pcm_source_fixture::Sink out;PcmQueue q(out);PcmMixer mix;check(q.start()&&fresh.pump_tracked_boundaries(q,mix,p,&error),"actual accepted second source");receipt=fresh.boundary_receipt();check(receipt.valid(),"receipt while source owner is live");}
+ check(!receipt.valid()&&!retained->live(),"source destruction expires authority even when producer/token objects are retained");
+ std::printf("{\"tracked_delivery_lifetime_edge_checks\":%u,\"binding_copy_restore_forbidden\":true,\"all_passed\":true}\n",checks);
+}

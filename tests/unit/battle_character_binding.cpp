@@ -1,0 +1,17 @@
+#include <cstdio>
+#include <cstdlib>
+#include "engine/gameplay/battle_character_binding.hpp"
+#include "tests/unit/battle_character_resource_fixture.hpp"
+namespace {unsigned checks=0;void check(bool b,const char* why){++checks;if(!b){std::fprintf(stderr,"battle character binding: %s\n",why);std::abort();}}
+std::vector<gf::u8> profile(){using namespace gf;using battle_character_resource_fixture::put;std::vector<u8> b(144);put(b,0,0x47464249);put(b,4,1);b[9]=1;b[11]=112;put(b,12,112);b[32]=6;b[33]=0x15;put(b,36,0x12345678);put(b,40,0x80010000);put(b,44,0x80020000);for(unsigned i=0;i<16;++i)put(b,48+4*i,0x80030000+4*i);for(unsigned i=0;i<4;++i)put(b,112+4*i,0x80040000+4*i);put(b,128,0x80050000);return b;}}
+int main(){
+    using namespace gf;using battle_character_resource_fixture::put;auto b=profile();BattleNormalClassProfile p;std::string error;check(p.load({b.data(),b.size()},&error)&&p.ready()&&p.find(0x615,0)&&!p.find(0x615,1)&&!p.find(10,0),"explicit class subset and normal variant0 only");
+    for(unsigned at:{0u,4u,9u,11u,15u,16u,31u,33u,34u,35u,40u,44u,52u,112u,128u,140u}){auto bad=b;bad[at]^=0x40;check(!p.load({bad.data(),bad.size()},&error)&&!p.ready()&&!p.find(0x615,0),"invalid profile invalidates prior class fields");}
+    check(!p.load({nullptr,b.size()},&error)&&!p.load({b.data(),b.size()-1},&error),"null/short profile");check(p.load({b.data(),b.size()},&error),"reload owned profile");
+    std::array<const ForceInventory*,2> owners{};ChallengeCharacterDescriptorReceipt fake;BattleCharacterBinding binding;check(!binding.prepared()&&!binding.current(owners)&&!binding.rig()&&!binding.motion_bank()&&!binding.class_fields()&&!binding.body_asset()&&!binding.material_state(),"closed binding exposes no old data");check(!binding.bind(fake,owners,p,{},{},{},&error)&&!binding.prepared()&&!binding.current(owners),"fake descriptor cannot bind a model");check(!binding.bind_declared({},p,{},{},{},&error),"failed owner cannot retry");
+    BattleCharacterBinding declared;check(!declared.bind_declared({},p,{},{},{},&error)&&!declared.prepared()&&!declared.current(owners),"declared input requires actual owned bytes, never native authority");
+    const auto bytes=battle_character_resource_fixture::bundle();auto data=std::make_shared<BattleCharacterResource>();const auto row=battle_character_resource_fixture::row(bytes);check(data->load(row,0,{bytes.data(),bytes.size()},&error),"owned byte resource fixture");BattleCharacterBinding unsupported;check(!unsupported.bind_declared(data,p,{},{},{},&error)&&!unsupported.prepared(),"unsupported model refuses before shared model/motion decode");
+    auto altered=row;altered.model=0x615;auto normal=std::make_shared<BattleCharacterResource>();check(normal->load(altered,0,{bytes.data(),bytes.size()},&error),"declared identity is DATA, not a native receipt");BattleCharacterBinding wrong;check(!wrong.bind_declared(normal,p,{},{},{},&error)&&!wrong.prepared(),"wrong class/model hash cannot publish partial fields");
+    const auto pending=wrong.pending();check(pending.all_bank_instances&&pending.class_callback4b8&&pending.scalar_variant_setup&&pending.motion_program&&pending.colliders_and_effects&&pending.placement_and_history&&pending.full_constructor,"all unfulfilled constructor consumers remain explicit");binding.retire();check(!binding.prepared()&&!binding.current(owners)&&binding.model_binding().expired(),"retirement remains closed without actor acknowledgement");
+    std::printf("battle character binding: %u owned checks PASS\n",checks);
+}
