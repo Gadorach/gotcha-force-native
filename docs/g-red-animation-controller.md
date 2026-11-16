@@ -13,6 +13,97 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Live ordered dash-to-ledge handoff (GFMM9)
+
+`--source-dash-ledge` / `--demo-source-dash-ledge` adds a **separate** native
+permission for normal G-Red's ordered ground dash to leave a verified static
+ledge. It reuses the owned-root dash, native-owned frame-start history, shared
+priority correction, VM, falling/contact and renderer systems. No new movement
+engine or per-Borg animation mapping is introduced.
+
+The departure frame is still a ground-dash controller update. It moves using
+the ordered entry/active/recovery speed and then applies the ground scalar
+change, including the recovery done/reset tail if present. A strict downward gap
+beyond60 retains incoming Y/zero48. Physical native air does **not** mean a
+takeoff callback, immediate falling program or resource spend occurred.
+
+Only the following accepted frame's higher-priority correction selects6/marker1,
+then program13 sets airborne flags/cache and begins falling. That correction
+uses the exact same-world/tick frame-start snapshot; it cannot reconstruct
+momentum from the last ground displacement, an earlier render pose or1DAC.
+Falling retains the **post-ground-update** scalar, multiplies it by0.99 and
+integrates old48 before applying gravity. Timer698 starts30 and suppresses only
+direct4-unit camera-relative drift, not retained scalar momentum.
+
+Native acceptance cross-checks the existing sealed dash/VM/root evidence against
+the separate ground-loss payload on departure. Walking departures cannot borrow
+this permission. Airborne frames cannot carry a copied ordered-root offer.
+The accepted handoff retires the old root lease; the numeric last-ordered-root
+diagnostic may remain, but is not fresh airborne root authority. All selector,
+flags, history, root/counter and pose changes remain staged until exact matching
+native acceptance. Native rejection preserves the prior frame; source refusal
+retires it without implicit MVP fallback.
+
+All earlier policies remain unchanged: ordered-ground still refuses every
+ledge; walk-ledge still refuses flick/dash input. The new mode refuses walking
+ledges, jump/air-dash/relaunch/flight/combat, nonflat dash surfaces/landings,
+unresolved root/multiplier/history/geometry variants and native clipping. The
+native input mapper limits fall/landing deflection to32 source units so held
+stick input does not manufacture a fresh airborne flick. This is a declared
+native convenience, not recovered device calibration. A newly buffered flick
+cannot outrank pending ground loss; its later unsupported airborne admission
+refuses rather than being silently consumed.
+
+The demo declares a **fresh native ground spawn** on the original roof at X/Z
+`(1012.360657,1403.599731)`, floor reference482.747589 and arena-half4500.
+Target and all stage bytes are unchanged. It holds one forward flick from5
+through the first post-delay drift, then releases. Interactive spawn/arena are
+unchanged; no airborne position is teleported and no original spawn script is
+claimed.
+
+| Accepted tick | Role / captured programs | State |
+| --- | --- | --- |
+| 6 | Dash entry/departure /27 | Moves25, retains24.5; Y held, flags20/cache0 |
+| 7 | Priority falling entry /13 | Scalar24.255001, old zero48 then−1;698=30, flags40/cache1 |
+| 8–36 | Falling /13 | Retained scalar×0.99; direct input drift inhibited |
+| 37 | Falling /13 | 698=0; one direct drift update, body heading unchanged |
+| 38 | Actual flat touchdown /13 | Y=10; flags40/cache1 still captured |
+| 39 | Landing /8 | Flags200/cache0, separate from touchdown |
+| 600 | Stable idle /0 | One departure/entry/landing, meter10000, no combat |
+
+Additional read-only original-stage fixtures cover:
+
+- Active departure from native Z1520: tick11 uses22.5, retains22; falling starts12
+  and touchdown43 follows.
+- Held-active departure from Z1600: tick14 uses/retains22 without inventing a
+  new AObj/root evaluation; falling starts15 and touchdown46 follows.
+- Recovery departure from Z1600 with input released at6: tick14 uses actual root
+  speed≈18.750244, retains≈18.250244 after−0.5; falling starts15 and touchdown46
+  follows. It does not inherit root speed, movement distance or legacy speed22.
+
+These are labelled native spawn/input/clock/libm/target/contact fixtures, not
+original hardware or whole actor-frame equivalence. All four start on real
+ground and run600 updates. `native_source_dash_ledge_owner` tests their phase,
+root/history/camera/receipt lifetimes, priority over a fresh flick, edited or
+missing evidence, held-root semantics, stable landing and older-mode refusals.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-dash-ledge-host-v1
+build/source-dash-ledge-host-v1/gf_native \
+  --demo-source-dash-ledge --headless --frames 600 --no-audio
+```
+
+Contact Sheet35 contains actual offscreen GL frames5/6/7/36/37/38/39/75 without
+taking desktop/classifier focus. Isolated native-only departure6 and touchdown38
+match the full working tree pixel-for-pixel. Captures stay local and outside Git:
+`local/recomp-evidence/contact-sheets/source-dash-ledge-v1/contact-sheet-35.png`.
+Isolated validation passed14 sanitizer binaries, all147 Python tests (including
+36 opt-in host integrations), host/all-header builds and the unchanged64-tick
+ordinary duel smoke. The new owner passed10313 checks across four600-update
+original-stage routes. All GFMM1–9 packs and original motion-bank bytes remain
+unchanged; game assets, private evidence and unrelated work are excluded.
+
 ## Live owned-root ordered ground dash (GFMM9)
 
 `--source-ordered-ground` / `--demo-source-ordered-ground` connects the ordered
@@ -91,7 +182,8 @@ heading, exact receipts, producer retirement and unchanged ledge refusal from a
 fresh ground spawn at the verified roof edge. The synthetic
 `character_program_dash_recovery_control` checks the scoped acknowledgement.
 Host clocks, libm, target-center and collision remain labelled native proxies.
-Dash-to-ledge integration is the next permission, not silently included here.
+Dash-to-ledge is not included in this mode; the separate permission above is
+required.
 
 Contact Sheet34 contains actual offscreen GL frames5/6/19/24/28/29/37/38, without
 taking desktop/classifier focus. Final isolated native-only frames24/29 match

@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -245,8 +245,9 @@ public:
             const bool recovery_push_policy=producer->policy_==NativeBorgMotionPolicy::RecoveryPush||windup_push_policy;
             const bool history_push_policy=producer->policy_==NativeBorgMotionPolicy::FallHistoryPush||recovery_push_policy;
             const bool push_policy=producer->policy_==NativeBorgMotionPolicy::StaticPush||history_push_policy;
-            const bool ledge_policy=producer->policy_==NativeBorgMotionPolicy::WalkLedge;
-            const bool ordered_policy=producer->policy_==NativeBorgMotionPolicy::OrderedGround;
+            const bool dash_ledge_policy=producer->policy_==NativeBorgMotionPolicy::DashLedge;
+            const bool ledge_policy=producer->policy_==NativeBorgMotionPolicy::WalkLedge||dash_ledge_policy;
+            const bool ordered_policy=producer->policy_==NativeBorgMotionPolicy::OrderedGround||dash_ledge_policy;
             const bool departure=o.kind==NativeBorgMotionKind::GroundDeparture;
             const bool ground_loss=native_borg_motion_ground_loss(o.kind);
             const unsigned phase=native_borg_motion_phase(o.kind);
@@ -267,7 +268,10 @@ public:
                       (positive_windup_entry&&!positive_windup_policy)||
                    (ledge_policy&&(!o.walk_ledge||(!ground_loss&&o.kind!=NativeBorgMotionKind::Ground&&o.kind!=NativeBorgMotionKind::JumpLanding)))||
                     (!ledge_policy&&(ground_loss||o.walk_ledge))||
-                    (ordered_policy&&o.kind!=NativeBorgMotionKind::Ground)||(!ordered_policy&&o.ordered_ground)||
+                     (ordered_policy&&!dash_ledge_policy&&o.kind!=NativeBorgMotionKind::Ground)||
+                     (!ordered_policy&&o.ordered_ground)||
+                     (dash_ledge_policy&&departure&&!o.ordered_ground)||
+                     (o.ordered_ground&&o.kind!=NativeBorgMotionKind::Ground&&!departure)||
                 !std::isfinite(o.vertical_speed)||std::abs(o.vertical_speed)>50||!std::isfinite(o.entry_vertical_delta)||
                 (native_borg_motion_relaunch_entry(o.kind)?(o.entry_vertical_delta<=0||o.entry_vertical_delta>50):o.entry_vertical_delta!=0))return false;
             if(opponent_ai||!motion_observation_current(o.observed)||!o.serial||
@@ -283,7 +287,7 @@ public:
             if(std::hypot(delta.x,delta.z)>config_.actor_radius)return false; //native endpoint-terrain budget
             const auto prior=actor.source_ground_motion?last_offer_.kind:NativeBorgMotionKind::Ground;
             const unsigned prior_phase=native_borg_motion_phase(prior);
-            if(ordered_policy){
+            if(ordered_policy&&(o.kind==NativeBorgMotionKind::Ground||departure)){
                 const auto* previous=actor.source_ground_motion&&last_offer_.ordered_ground?&*last_offer_.ordered_ground:nullptr;
                 if(!o.ordered_ground){
                     if(o.action==BattleMvpAction::GroundDash||(previous&&previous->next_selector))return false;
@@ -291,7 +295,8 @@ public:
                     const auto& e=*o.ordered_ground;
                     for(f32 v:{e.speed_before,e.move_speed,e.retained_speed,e.root_speed})if(!std::isfinite(v)||v<0||v>25)return false;
                     if(!std::isfinite(e.timer568)||std::abs(e.timer568)>1e5f||!std::isfinite(e.change4c)||!std::isfinite(e.next_change4c)||
-                       e.coarse57d>3||e.recovery546>1||e.next546>1||o.action!=BattleMvpAction::GroundDash||
+                       e.coarse57d>3||e.recovery546>1||e.next546>1||
+                       o.action!=(departure?BattleMvpAction::Jump:BattleMvpAction::GroundDash)||
                        (e.held5b4&~0xf0000u)||!e.root_updates)return false;
                     if(e.root_sampled){
                         const auto root=e.root_scope.lock();
@@ -340,7 +345,9 @@ public:
                     if(!terrain||!terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&current)||
                        !terrain->static_surface(o.proposed_position[0],o.proposed_position[2],actor.position[1],&selected)||
                        !native_borg_flat_surface(current)||!native_borg_flat_surface(selected)||
-                       current.height!=actor.position[1]||selected.height!=o.proposed_position[1]||selected.height!=current.height)return false;
+                       current.height!=actor.position[1]||o.proposed_position[1]!=current.height||
+                       (departure?(!dash_ledge_policy||selected.height>=f32(current.height-60.f)||!e.move_speed):
+                        selected.height!=current.height))return false;
                     auto expected=actor.position;
                     if(e.move_speed&&!native_gred_ground_position(actor.position,e.move_speed,e.travel5ae,current.normal,&expected))return false;
                     if(o.proposed_position!=expected)return false;
@@ -352,11 +359,11 @@ public:
             const bool windup_entry_prior=prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                 native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior);
             if(ledge_policy){
-                //Normal G-Red, rank1/fixed60Hz, static walking/flat landing.
+                //Normal G-Red, rank1/fixed60Hz, separately scoped ground loss.
                 //numeric validation; no original history/actor callback ACK.
                 const auto& e=*o.walk_ledge;
                 if(!terrain||e.frame_start!=actor.position||!std::isfinite(e.timer698)||e.timer698<0||e.timer698>30||
-                   !std::isfinite(e.speed44)||e.speed44<0||e.speed44>12)return false;
+                   !std::isfinite(e.speed44)||e.speed44<0||e.speed44>(dash_ledge_policy?25.f:12.f))return false;
                 if(actor.source_ground_motion&&!last_offer_.walk_ledge)return false;
                 const auto previous_timer=actor.source_ground_motion?last_offer_.walk_ledge->timer698:0.f;
                 const f32 timer=o.kind==NativeBorgMotionKind::GroundLossEntry?30.f:std::max(0.f,previous_timer-1.f);
@@ -365,10 +372,14 @@ public:
                    selected!=e.surface||!native_borg_static_surface_valid(selected))return false;
                 if(o.kind==NativeBorgMotionKind::Ground||departure){
                     NativeBorgStaticSurface current;
-                    if(!actor.grounded||actor.vertical_speed||o.vertical_speed||!native_gred_walk_speed(e.speed44)||e.drift_heading||
+                    if(!actor.grounded||actor.vertical_speed||o.vertical_speed||e.drift_heading||
                        !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&current)||
-                       !native_borg_static_surface_valid(current)||current.height!=actor.position[1]||o.action==BattleMvpAction::GroundDash)return false;
-                    if(delta!=BattlePoint{}){
+                       !native_borg_static_surface_valid(current)||current.height!=actor.position[1])return false;
+                    if(dash_ledge_policy){
+                        if(o.ordered_ground&&(e.speed44!=o.ordered_ground->retained_speed||e.travel5ae!=o.ordered_ground->travel5ae))return false;
+                        if(departure&&(!o.ordered_ground||!native_borg_flat_surface(current)||!native_borg_flat_surface(selected)))return false;
+                    }else if(!native_gred_walk_speed(e.speed44)||o.action==BattleMvpAction::GroundDash)return false;
+                    if(!dash_ledge_policy&&delta!=BattlePoint{}){
                         BattleMvpVec expected;
                         if(!native_gred_walk_position(actor.position,e.speed44,e.travel5ae,current.normal,&expected)||
                            expected[0]!=o.proposed_position[0]||expected[2]!=o.proposed_position[2])return false;
@@ -711,7 +722,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::OrderedGround)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::DashLedge)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

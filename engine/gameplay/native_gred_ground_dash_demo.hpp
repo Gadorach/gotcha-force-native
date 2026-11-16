@@ -41,7 +41,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround};
+    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge};
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -58,7 +58,7 @@ public:
         if(!read(files,inputs+"/locomotion.gfmp",65536,&encoded,error)||!read(files,inputs+"/pose-height.gfhc",28,&height,error)||
            !read(files,inputs+"/movement.gfmi",192,&movement,error)||!read(files,inputs+"/motion.gfmm",376,&motion,error)||
            !read(files,art+"/g-red.hsd",4u<<20,&model,error)||!read(files,art+"/g-red.motions",32u<<20,&motions,error))return false;
-        if(mode_==Mode::OrderedGround&&(motions.size()!=355264||character_program_model_hash(view(motions))!=0x276b4e9eu))
+        if(ordered_mode(mode_)&&(motions.size()!=355264||character_program_model_hash(view(motions))!=0x276b4e9eu))
             return fail(error,"ordered ground requires qualified original G-Red motion bank");
         if(character_program_model_hash(view(encoded))!=0x638570ffu||character_program_model_hash(view(model))!=0xe2b4439au||
            !character_program_load_control_flow(view(encoded),0xe2b4439au,&programs_,error)||
@@ -71,9 +71,9 @@ public:
         if(steep_mode(mode_)&&!motion_.steep_operands)return fail(error,"source steep contact requires GFMM6 operands");
         if(relaunch_floor_mode(mode_)&&!motion_.relaunch_floor_operands)return fail(error,"source null-callback floor contact requires GFMM7 operands");
         if(mode_==Mode::WalkLedge&&!motion_.ground_loss_operands)return fail(error,"source walk-ledge mode requires GFMM8 operands");
-        if(mode_==Mode::OrderedGround&&!motion_.ordered_dash_operands)return fail(error,"source ordered-ground mode requires GFMM9 operands");
+        if(ordered_mode(mode_)&&!motion_.ordered_dash_operands)return fail(error,"source ordered-ground mode requires GFMM9 operands");
         root_lane_=2;
-        if(mode_==Mode::OrderedGround){
+        if(ordered_mode(mode_)){
             for(unsigned lane=0;lane<2;++lane)for(unsigned i=seed.rig.cuts[lane];i<seed.rig.cuts[lane+1];++i)
                 if(seed.rig.order[i]==0)root_lane_=lane;
             if(root_lane_>=2||seed.rig.mirror[0]!=0)return fail(error,"ordered ground requires an owned unaliased root lane");
@@ -100,7 +100,7 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
-        if(mode_==Mode::OrderedGround)producer_=world.new_motion_producer(NativeBorgMotionPolicy::OrderedGround);
+        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
         else
         producer_=world.new_motion_producer(mode_==Mode::WalkLedge?NativeBorgMotionPolicy::WalkLedge:mode_==Mode::WindupEntryPush?NativeBorgMotionPolicy::WindupEntryPush:mode_==Mode::WindupPositiveFloor?NativeBorgMotionPolicy::WindupPositiveFloor:mode_==Mode::WindupEntryFloor?NativeBorgMotionPolicy::WindupEntryFloor:mode_==Mode::AirDashFloor?NativeBorgMotionPolicy::AirDashFloor:mode_==Mode::RelaunchFloor?NativeBorgMotionPolicy::RelaunchFloor:mode_==Mode::RelaunchEntrySurface?NativeBorgMotionPolicy::RelaunchEntryPush:mode_==Mode::RelaunchSurface?NativeBorgMotionPolicy::RelaunchPush:mode_==Mode::ActiveSurface?NativeBorgMotionPolicy::ActivePush:mode_==Mode::WindupSurface?NativeBorgMotionPolicy::WindupPush:mode_==Mode::RecoverySurface?NativeBorgMotionPolicy::RecoveryPush:mode_==Mode::FallingSurface?NativeBorgMotionPolicy::FallHistoryPush:mode_==Mode::Steep?NativeBorgMotionPolicy::StaticPush:relaunch_mode(mode_)?NativeBorgMotionPolicy::Relaunch:mode_==Mode::AirDash?NativeBorgMotionPolicy::AirDash:mode_==Mode::Jump?NativeBorgMotionPolicy::Jump:
             mode_==Mode::VerticalJump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
@@ -122,8 +122,8 @@ public:
         if(!ready_||pending_||!out||!world.observe_motion(&observed)||observed.scope.lock()!=world_scope_.lock()||observed.tick!=expected_tick_||
            current_binding.lock()!=binding_.lock()||binding_.expired()||
             (!observed.grounded&&((mode_!=Mode::VerticalJump&&!moving_mode(mode_))||
-                (!state_.jump.selector&&!(mode_==Mode::WalkLedge&&state_.ground_pending))))||
-            (held&~(mode_==Mode::WalkLedge?0xf0000u:(mode_==Mode::VerticalJump||moving_mode(mode_))?0xf0100u:0xf0000u)))
+                 (!state_.jump.selector&&!(ledge_mode(mode_)&&state_.ground_pending))))||
+             (held&~(ledge_mode(mode_)?0xf0000u:(mode_==Mode::VerticalJump||moving_mode(mode_))?0xf0100u:0xf0000u)))
             return fail(error,"bound movement frame required; requested feature is not enabled");
         if(mode_==Mode::WalkLedge){
             u8 flick=0;
@@ -144,7 +144,7 @@ public:
         auto candidate=std::make_unique<Pending>();candidate->state=state_;auto& s=candidate->state;
         s.motion.position=observed.position;s.motion.flags5e0=s.vm.state().actor.behaviour;s.contact_angle=-1;s.static_push.reset();s.relaunch_floor.reset();s.air_dash_floor.reset();
         s.ordered_ground.reset();
-        if(mode_==Mode::WalkLedge){
+        if(ledge_mode(mode_)){
             //Native-owned frame-start snapshot, bound to this observed scope/
             //tick. Never reinterpret the previous render/offer as source2C.
             s.frame_start=observed.position;s.previous_y=observed.position[1];
@@ -161,9 +161,10 @@ public:
             if(s.air_dash.contact69c>0)s.air_dash.contact69c=std::max(0.f,s.air_dash.contact69c-1);
             if(mode_==Mode::Jump&&s.jump.selector&&(s.input.directions5d8&0xf0u))return fail(error,"buffered air-dash branch is not enabled");
         }
-        if(mode_==Mode::WalkLedge){
+        if(ledge_mode(mode_)){
             s.ground_timer698=std::max(0.f,s.ground_timer698-1.f); //declared native768=1
-            if(s.input.directions5d8&0xf0u)return fail(error,"walk-ledge buffered dash is not enabled");
+            if((mode_==Mode::WalkLedge||(!s.ground_pending&&s.jump.selector))&&(s.input.directions5d8&0xf0u))
+                return fail(error,"ground-loss subset refuses buffered air/landing dash");
             if(s.ground_pending){
                 GRedGroundCorrectionFields fields;fields.declared=true;fields.previous2c=s.frame_start;
                 fields.override1d9b=s.vm.state().actor.lane1_descriptor[2];
@@ -172,8 +173,12 @@ public:
                    correction.motion.position!=s.motion.position||correction.motion.speed44!=s.motion.speed44||
                    correction.motion.travel5ae!=s.motion.travel5ae||
                    !ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::Correction,error)||
-                   s.vm.state().actor.behaviour!=correction.motion.flags5e0)return fail(error,"owned walk-ledge priority correction refused");
+                    s.vm.state().actor.behaviour!=correction.motion.flags5e0)return fail(error,"owned ground-loss priority correction refused");
                 s.motion=correction.motion;s.walk_selector=0;s.walk_entered=false;
+                if(mode_==Mode::DashLedge){
+                    s.dash.selector=0;s.dash_recovery546=0;s.dash_exit545=false;s.steering.completed547=false;
+                    s.dash_root_scope.reset(); //only staged; the accepted departure lease stays live until commit
+                }
                 const auto cached=s.jump.cached87;s.jump={};s.jump.cached87=cached;s.jump.selector=6;
                 s.jump.falling_after_ground_loss=true;s.jump.timer690=correction.falling->timer690;
                 s.ground_timer698=correction.falling->timer698;s.ground_pending=false;s.ground_active=true;
@@ -274,7 +279,7 @@ public:
             return false;
         }
         bool moving=s.dash.selector!=0;
-        if(moving&&mode_==Mode::OrderedGround){
+        if(moving&&ordered_mode(mode_)){
             std::string detail;
             if(!ordered_dash(s,world,frame,held,&detail))return fail(error,detail.c_str());
         }else if(moving){
@@ -301,8 +306,8 @@ public:
             if(!gred_ground_dash_finish(motion_,plan,s.vm.state().actor.control1[0],s.vm.state().lanes[1].done,held,1,&s.dash))return fail(error,"source dash finish refused");
             if(!s.dash.selector)s.motion.speed44=s.motion.planar_change4c=0; //native harness's common idle reset
         }
-        if(mode_==Mode::WalkLedge&&s.ground_pending)kind=NativeBorgMotionKind::GroundDeparture;
-        if(mode_==Mode::WalkLedge)s.jump.cached87=u8((s.vm.state().actor.behaviour&0x40u)!=0); //55EE4 post-update snapshot
+        if(ledge_mode(mode_)&&s.ground_pending)kind=NativeBorgMotionKind::GroundDeparture;
+        if(ledge_mode(mode_))s.jump.cached87=u8((s.vm.state().actor.behaviour&0x40u)!=0); //55EE4 post-update snapshot
         std::array<CharacterProgramMotion,2> motions{s.vm.state().lanes[0].motion,s.vm.state().lanes[1].motion};
         if(!driver_.compose_local_pose(motions,&candidate->local,error))return fail(error,"source pose composition refused");
         f32 x=0,z=0;source_heading_xz(s.body,&x,&z);
@@ -315,12 +320,12 @@ public:
         candidate->offer.relaunch_floor=s.relaunch_floor;
         candidate->offer.air_dash_floor=s.air_dash_floor;
         candidate->offer.ordered_ground=s.ordered_ground;
-        if(mode_==Mode::WalkLedge){
+        if(ledge_mode(mode_)){
             const auto final_ground=ground_for(s);StageGroundSurfaceResult selected;f32 height=0;
             if(!final_ground.height(s.motion.position,&height,error)||!final_ground.surface(s.motion.position,&selected,error)||
                !selected.selected||selected.height!=height||!native_borg_static_surface_valid({selected.height,selected.normal,selected.triangle})||
                ((kind==NativeBorgMotionKind::GroundLossTouchdown||kind==NativeBorgMotionKind::JumpLanding)&&selected.normal!=CharacterMotionVector{0,1,0}))
-                return fail(error,"walk-ledge requires matching static metadata and flat landing");
+                return fail(error,"ground loss requires matching static metadata and flat landing");
             candidate->offer.walk_ledge=NativeBorgWalkLedge{s.frame_start,{selected.height,selected.normal,selected.triangle},
                 s.ground_timer698,s.motion.speed44,s.motion.travel5ae,s.ground_drift_heading};
         }
@@ -428,6 +433,16 @@ public:
     u8 ascent_stage()const{return state_.jump.ascent_stage;}
     u8 selector()const{return state_.jump.selector?state_.jump.selector:state_.dash.selector?state_.dash.selector:state_.walk_selector;}
     bool map_input(const GamePadState& pad,NativeGRedGroundInput* out,std::string* error)const{
+        if(mode_==Mode::DashLedge){
+            NativeGRedGroundInput mapped;
+            if(!ready_||!out||!native_gred_ground_input(input_,pad,&mapped,error))return false;
+            if(state_.ground_pending||state_.jump.selector){
+                mapped.x=s16(std::clamp(s32(mapped.x),-32,32));mapped.y=s16(std::clamp(s32(mapped.y),-32,32));u8 direction=0;
+                if(!character_movement_stick_nibble(input_,mapped.x,mapped.y,input_.low_threshold,&direction))return false;
+                mapped.held=u32(direction)<<16; //declared native fall/landing convenience mapping, not original calibration
+            }
+            *out=mapped;return true;
+        }
         if(mode_!=Mode::VerticalJump&&!moving_mode(mode_))return ready_&&native_gred_ground_input(input_,pad,out,error);
         auto movement=pad;movement.b=false;NativeGRedGroundInput mapped;
         if(!ready_||!native_gred_ground_input(input_,movement,&mapped,error))return false;
@@ -476,6 +491,8 @@ public:
         *out=mapped;return true;
     }
 private:
+    static bool ordered_mode(Mode mode){return mode==Mode::OrderedGround||mode==Mode::DashLedge;}
+    static bool ledge_mode(Mode mode){return mode==Mode::WalkLedge||mode==Mode::DashLedge;}
     static bool positive_windup_floor_mode(Mode mode){return mode==Mode::WindupPositiveFloor||mode==Mode::WindupEntryPush;}
     static bool windup_entry_floor_mode(Mode mode){return mode==Mode::WindupEntryFloor||positive_windup_floor_mode(mode);}
     static bool air_dash_floor_mode(Mode mode){return mode==Mode::AirDashFloor||windup_entry_floor_mode(mode);}
@@ -492,7 +509,7 @@ private:
     static bool dash_jump_mode(Mode mode){return mode==Mode::DashJump||landing_mode(mode);}
     static bool relaunch_mode(Mode mode){return mode==Mode::Relaunch||dash_jump_mode(mode);}
     static bool air_dash_mode(Mode mode){return mode==Mode::AirDash||relaunch_mode(mode);}
-    static bool moving_mode(Mode mode){return mode==Mode::Jump||mode==Mode::WalkLedge||air_dash_mode(mode);}
+    static bool moving_mode(Mode mode){return mode==Mode::Jump||ledge_mode(mode)||air_dash_mode(mode);}
     bool air_contact(State& s,const CharacterMovementStaticGround& ground,const CharacterMovementMotionState& before,
                      const CharacterMovementMotionState& proposed,CharacterMovementMotionState* out,bool* touchdown,std::string* error,bool moving,bool allow_push=false){
         if(!surface_mode(mode_))return gred_vertical_jump_flat_contact(ground,before,proposed,out,touchdown,error,moving);
@@ -581,8 +598,12 @@ private:
         const auto ground=ground_for(s);StageGroundSurfaceResult start,end;CharacterMovementMotionState moved;
         if(!ground.surface(s.motion.position,&start,error)||!start.selected||start.normal!=CharacterMotionVector{0,1,0}||
            !character_movement_ground_step(motion_,s.motion,1,ground,&moved,error))return refuse("flat ground motion");
-        if(!ground.surface(moved.position,&end,error)||!end.selected||end.normal!=CharacterMotionVector{0,1,0}||
-           end.height!=start.height||moved.position[1]!=end.height)return refuse("ledge/height change remains disabled");
+        if(!ground.surface(moved.position,&end,error)||!end.selected||end.normal!=CharacterMotionVector{0,1,0})return refuse("unresolved/nonflat destination");
+        if(end.height!=start.height||moved.position[1]!=end.height){
+            if(mode_!=Mode::DashLedge||end.height>=f32(start.height-ground.step674)||moved.position[1]!=before.position[1]||
+               before.vertical48||moved.vertical48)return refuse("ledge/height change remains disabled");
+            s.ground_pending=true;
+        }
         const bool done=s.vm.state().lanes[1].done;GRedGroundDashOrderedResult result;
         if(!gred_ground_dash_ordered_finish(motion_,update,moved,done,&result))return refuse("post-motion finish");
         NativeBorgOrderedGround evidence;
@@ -725,7 +746,7 @@ private:
         const bool moving=moving_mode(mode_);
         GRedVerticalJumpPlan plan;
         if(!gred_vertical_jump_plan(motion_,s.jump,s.motion,s.resource.value736,held,&plan,moving))return false;
-        if(mode_==Mode::WalkLedge&&plan.state.selector==6&&plan.request&&plan.state.falling_after_ground_loss){
+        if(ledge_mode(mode_)&&plan.state.selector==6&&plan.request&&plan.state.falling_after_ground_loss){
             if(!ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::FallingEntry,error))return false;
             plan.motion.flags5e0=s.vm.state().actor.behaviour;
         }
@@ -748,7 +769,7 @@ private:
         auto select=[&](u8 program,u8 mask){return s.vm.request_with_actor_controls(1,program,mask,-1,1,driver_,s.height,&operations,error);};
         auto update=[&](u8 mask){return s.vm.update_with_actor_controls(mask,1,driver_,s.height,&operations,error);};
         if(plan.landing_prefix){
-            if(mode_==Mode::WalkLedge&&!ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::LandingEntry,error))return false;
+            if(ledge_mode(mode_)&&!ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::LandingEntry,error))return false;
             s.air_dash.contact69c=0; //60228 landing entry, not a refill/animation-completion shortcut
             if(!select(2,2))return false;
         }
@@ -769,8 +790,8 @@ private:
             CharacterMovementMotionState proposed;
             if(moving&&plan.state.selector==6){
                 if(!character_movement_heading(input_,motion_,u8((held>>16)&15),CharacterMovementHeadingMode::Held,frame,&heading,error)||
-                   (mode_==Mode::WalkLedge&&!s.ground_active))return false;
-                if(mode_==Mode::WalkLedge){
+                   (ledge_mode(mode_)&&!s.ground_active))return false;
+                if(ledge_mode(mode_)){
                     s.suppressed_ground_drift=heading.has_direction&&s.ground_timer698>0;
                     if(s.ground_timer698>0)heading.has_direction=false;
                     else if(heading.has_direction)s.ground_drift_heading=heading.desired5ac;
@@ -783,7 +804,7 @@ private:
                (touchdown&&plan.state.selector!=6))return false;
         }
         if(!gred_vertical_jump_finish(plan,s.vm.state().lanes[1].done,touchdown,&s.jump))return false;
-        if(mode_==Mode::WalkLedge&&plan.state.selector==7&&!s.jump.selector&&
+        if(ledge_mode(mode_)&&plan.state.selector==7&&!s.jump.selector&&
            !ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::Idle,error))return false;
         //The previously captured upper state runs after lower motion/contact,
         //even when lower completion selected another movement state.
@@ -793,7 +814,7 @@ private:
             touchdown?NativeBorgMotionKind::VerticalTouchdown:NativeBorgMotionKind::VerticalAir;
         if(moving)*kind=NativeBorgMotionKind(unsigned(*kind)+4);
         if(s.static_push)*kind=NativeBorgMotionKind::StaticPush;
-        if(mode_==Mode::WalkLedge&&plan.state.selector==6&&plan.state.falling_after_ground_loss){
+        if(ledge_mode(mode_)&&plan.state.selector==6&&plan.state.falling_after_ground_loss){
             *kind=touchdown?NativeBorgMotionKind::GroundLossTouchdown:
                 plan.request?NativeBorgMotionKind::GroundLossEntry:NativeBorgMotionKind::GroundLossAir;
             if(touchdown)s.ground_active=false;

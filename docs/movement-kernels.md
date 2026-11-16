@@ -25,7 +25,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   candidates model immediate entry motion and post-VM root speed1DAC, with the
   done/reset tail after motion. A separate ordered-ground owner now binds those
   candidates to actual AObj successors and sealed current-frame root reads.
-  It grants no dash-ledge permission; older modes retain the legacy dash prefix.
+  Its ground-only policy grants no ledge permission. A separate dash-ledge policy
+  now joins ordered departure to the next priority correction/falling/flat landing,
+  retaining post-motion scalar rather than inferring displacement/root momentum.
+  Walking ledges and other modes keep their existing restrictions.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

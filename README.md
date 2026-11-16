@@ -28,13 +28,14 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ordered-ground` (or
-`--demo-source-ordered-ground --headless --frames 600`), requiring a local GFMM9
-pack. Dash entry moves immediately; recovery follows actual animation-root speed
-through scoped post-VM observations before the motion/done/reset tail. Dash
-surfaces must be flat and unchanged-height; ledges, jump/flight/combat, clipping
-and unowned root variants remain refused. The demo uses unchanged native spawn,
-stage and bounds. Older policies, including walk-only ledge mode, are unchanged.
+The latest opt-in lab is `--source-dash-ledge` (or
+`--demo-source-dash-ledge --headless --frames 600`), requiring a local GFMM9 pack.
+Ordered dash departure retains its post-motion scalar; the following priority
+correction enters program13 with a30-update direct-drift delay and later flat
+touchdown. Walking ledges, jump/air-dash/flight/combat, nonflat dash/landing and
+clipping remain refused. The demo declares a fresh native ground spawn/reference
+at the original roof edge; stage/target are unchanged and no airborne position is
+teleported. Interactive settings and older policies are unchanged.
 Other Borgs do not inherit G-Red's recovered mappings.
 
 Some development demonstrations use private generated metadata profiles and
