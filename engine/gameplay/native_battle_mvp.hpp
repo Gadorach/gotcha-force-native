@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -110,6 +110,34 @@ struct NativeBorgWalkLedge {
     f32 timer698=0,speed44=0;s16 travel5ae=0;std::optional<s16> drift_heading{};
     bool operator==(const NativeBorgWalkLedge&)const=default;
 };
+//Sealed by the qualified movement owner AFTER the actual driver operation and
+//shared root evaluation. Offers hold weak leases, not public float authority.
+class NativeBorgOrderedRootScope {
+    friend class NativeGRedGroundDashDemo;
+    friend class NativeBattleMvp;
+    NativeBorgOrderedRootScope()=default;
+    NativeBorgOrderedRootScope(const NativeBorgOrderedRootScope&)=delete;
+    NativeBorgOrderedRootScope& operator=(const NativeBorgOrderedRootScope&)=delete;
+    std::weak_ptr<const NativeBorgMotionScope> world;
+    std::weak_ptr<const NativeBorgMotionProducer> producer;
+    u32 tick=0;u64 updates=0;f32 speed=0;bool evaluated=false,program_done=false;
+    u8 phase=0,control_before=0,control_after=0;
+};
+struct NativeBorgOrderedGround {
+    u8 phase=12,next_selector=13,coarse57d=0,control_before=0,control_after=0,recovery546=0,next546=0;
+    f32 speed_before=0,move_speed=0,retained_speed=0,change4c=0,next_change4c=0,root_speed=0,timer568=0;
+    s16 travel5ae=0;u32 held5b4=0;u64 root_updates=0;
+    bool root_sampled=false,root_evaluated=false,program_done=false;
+    std::weak_ptr<const NativeBorgOrderedRootScope> root_scope;
+    bool operator==(const NativeBorgOrderedGround& b)const{
+        return phase==b.phase&&next_selector==b.next_selector&&coarse57d==b.coarse57d&&
+            control_before==b.control_before&&control_after==b.control_after&&recovery546==b.recovery546&&next546==b.next546&&
+            speed_before==b.speed_before&&move_speed==b.move_speed&&retained_speed==b.retained_speed&&change4c==b.change4c&&
+            next_change4c==b.next_change4c&&root_speed==b.root_speed&&timer568==b.timer568&&travel5ae==b.travel5ae&&
+            held5b4==b.held5b4&&root_updates==b.root_updates&&root_sampled==b.root_sampled&&root_evaluated==b.root_evaluated&&program_done==b.program_done&&
+            !root_scope.owner_before(b.root_scope)&&!b.root_scope.owner_before(root_scope);
+    }
+};
 inline bool native_gred_walk_speed(f32 speed){return speed==0||speed==5||speed==7||speed==8||speed==9||speed==10||speed==12;}
 inline bool native_borg_flat_surface(const NativeBorgStaticSurface& s){return std::isfinite(s.height)&&s.normal==BattleMvpVec{0,1,0};}
 inline bool native_borg_static_surface_valid(const NativeBorgStaticSurface& s){
@@ -120,12 +148,15 @@ inline bool native_borg_static_surface_valid(const NativeBorgStaticSurface& s){
 inline BattleMvpVec native_borg_ground_cross(const BattleMvpVec& a,const BattleMvpVec& b){
     return {f32(a[1]*b[2]-a[2]*b[1]),f32(a[2]*b[0]-a[0]*b[2]),f32(a[0]*b[1]-a[1]*b[0])};
 }
-inline bool native_gred_walk_position(const BattleMvpVec& position,f32 speed,s16 travel,const BattleMvpVec& normal,BattleMvpVec* out){
-    if(!out||!std::isfinite(speed)||speed<=0||!native_gred_walk_speed(speed))return false;
+inline bool native_gred_ground_position(const BattleMvpVec& position,f32 speed,s16 travel,const BattleMvpVec& normal,BattleMvpVec* out){
+    if(!out||!std::isfinite(speed)||speed<=0||speed>1e5f)return false;
     f32 x=0,z=0;source_heading_xz(travel,&x,&z);const f32 vx=f32(speed*x),vz=f32(speed*z);
     const auto tangent=native_borg_ground_cross(native_borg_ground_cross(normal,{vx,0,vz}),normal);
     const f64 length=std::hypot(f64(tangent[0]),f64(tangent[1]),f64(tangent[2]));if(!std::isfinite(length)||!length)return false;
     *out={f32(position[0]+f32(f32(tangent[0]/length)*speed)),position[1],f32(position[2]+f32(f32(tangent[2]/length)*speed))};return true;
+}
+inline bool native_gred_walk_position(const BattleMvpVec& position,f32 speed,s16 travel,const BattleMvpVec& normal,BattleMvpVec* out){
+    return native_gred_walk_speed(speed)&&native_gred_ground_position(position,speed,travel,normal,out);
 }
 struct NativeBorgMotionOffer {
     NativeBorgMotionObservation observed;BattleMvpVec proposed_position{};BattlePoint facing{};
@@ -137,6 +168,7 @@ struct NativeBorgMotionOffer {
     std::optional<NativeBorgRelaunchFloor> relaunch_floor{};
     std::optional<NativeBorgAirDashFloor> air_dash_floor{};
     std::optional<NativeBorgWalkLedge> walk_ledge{};
+    std::optional<NativeBorgOrderedGround> ordered_ground{};
 };
 class NativeBorgMotionReceipt {
     friend class NativeBattleMvp;
@@ -214,6 +246,7 @@ public:
             const bool history_push_policy=producer->policy_==NativeBorgMotionPolicy::FallHistoryPush||recovery_push_policy;
             const bool push_policy=producer->policy_==NativeBorgMotionPolicy::StaticPush||history_push_policy;
             const bool ledge_policy=producer->policy_==NativeBorgMotionPolicy::WalkLedge;
+            const bool ordered_policy=producer->policy_==NativeBorgMotionPolicy::OrderedGround;
             const bool departure=o.kind==NativeBorgMotionKind::GroundDeparture;
             const bool ground_loss=native_borg_motion_ground_loss(o.kind);
             const unsigned phase=native_borg_motion_phase(o.kind);
@@ -233,7 +266,8 @@ public:
                      (windup_entry_floor&&!windup_entry_floor_policy)||
                       (positive_windup_entry&&!positive_windup_policy)||
                    (ledge_policy&&(!o.walk_ledge||(!ground_loss&&o.kind!=NativeBorgMotionKind::Ground&&o.kind!=NativeBorgMotionKind::JumpLanding)))||
-                   (!ledge_policy&&(ground_loss||o.walk_ledge))||
+                    (!ledge_policy&&(ground_loss||o.walk_ledge))||
+                    (ordered_policy&&o.kind!=NativeBorgMotionKind::Ground)||(!ordered_policy&&o.ordered_ground)||
                 !std::isfinite(o.vertical_speed)||std::abs(o.vertical_speed)>50||!std::isfinite(o.entry_vertical_delta)||
                 (native_borg_motion_relaunch_entry(o.kind)?(o.entry_vertical_delta<=0||o.entry_vertical_delta>50):o.entry_vertical_delta!=0))return false;
             if(opponent_ai||!motion_observation_current(o.observed)||!o.serial||
@@ -249,6 +283,69 @@ public:
             if(std::hypot(delta.x,delta.z)>config_.actor_radius)return false; //native endpoint-terrain budget
             const auto prior=actor.source_ground_motion?last_offer_.kind:NativeBorgMotionKind::Ground;
             const unsigned prior_phase=native_borg_motion_phase(prior);
+            if(ordered_policy){
+                const auto* previous=actor.source_ground_motion&&last_offer_.ordered_ground?&*last_offer_.ordered_ground:nullptr;
+                if(!o.ordered_ground){
+                    if(o.action==BattleMvpAction::GroundDash||(previous&&previous->next_selector))return false;
+                }else{
+                    const auto& e=*o.ordered_ground;
+                    for(f32 v:{e.speed_before,e.move_speed,e.retained_speed,e.root_speed})if(!std::isfinite(v)||v<0||v>25)return false;
+                    if(!std::isfinite(e.timer568)||std::abs(e.timer568)>1e5f||!std::isfinite(e.change4c)||!std::isfinite(e.next_change4c)||
+                       e.coarse57d>3||e.recovery546>1||e.next546>1||o.action!=BattleMvpAction::GroundDash||
+                       (e.held5b4&~0xf0000u)||!e.root_updates)return false;
+                    if(e.root_sampled){
+                        const auto root=e.root_scope.lock();
+                        if(!root||root->world.lock()!=motion_scope_||root->producer.lock()!=producer||root->tick!=tick_||
+                           root->updates!=e.root_updates||root->speed!=e.root_speed||root->evaluated!=e.root_evaluated||
+                           root->phase!=e.phase||root->control_before!=e.control_before||root->control_after!=e.control_after||
+                           root->program_done!=e.program_done)return false;
+                    }else{
+                        const std::weak_ptr<const NativeBorgOrderedRootScope> empty;
+                        if(e.root_scope.owner_before(empty)||empty.owner_before(e.root_scope)||e.root_evaluated)return false;
+                    }
+                    if(e.phase==12){
+                        if((previous&&previous->next_selector)||!e.root_sampled||!e.root_evaluated||e.root_speed!=0||e.move_speed!=25||
+                           e.change4c!=-.5f||e.retained_speed!=24.5f||e.next_change4c!=-.5f||e.timer568!=30||
+                           e.next_selector!=13||e.recovery546||e.next546)return false;
+                    }else{
+                        if(!previous||previous->next_selector!=e.phase||e.speed_before!=previous->retained_speed||
+                           e.coarse57d!=previous->coarse57d||
+                           e.root_updates!=previous->root_updates+u64(e.root_evaluated)||
+                           (!e.root_evaluated&&e.root_speed!=previous->root_speed))return false;
+                        f32 speed=e.speed_before,change=previous->next_change4c;u8 stage=0,next=0;
+                        if(e.phase==13){
+                            if(e.root_sampled!=!(e.control_before&1u)||e.root_evaluated!=e.root_sampled)return false;
+                            if(!e.root_sampled&&(e.control_before!=previous->control_after||e.control_after!=e.control_before||
+                               e.program_done!=previous->program_done))return false;
+                            if(speed<22){speed=22;change=0;}
+                            const f32 timer=e.control_after?f32(previous->timer568-1):previous->timer568;
+                            constexpr std::array<u32,4> masks={8u<<16,1u<<16,4u<<16,2u<<16};
+                            next=e.control_after&&(timer<=0||!(e.held5b4&masks[e.coarse57d]))?14:13;
+                            if(e.timer568!=timer||e.recovery546||e.next546)return false;
+                        }else if(e.phase==14){
+                            if(!e.root_sampled||(!e.root_evaluated&&!e.program_done)||e.timer568!=previous->timer568||
+                               (previous->phase!=14&&(e.control_before&2u)))return false;
+                            stage=previous->next546;
+                            if(!stage){speed=f32(speed*bits_to_f32(0x3f666666u));if(speed<e.root_speed){speed=e.root_speed;stage=1;}}
+                            else speed=e.root_speed;
+                            next=e.program_done?0:14;
+                            if(e.recovery546!=stage||e.next546!=(next?stage:0))return false;
+                        }else return false;
+                        const bool reset=e.phase==14&&e.program_done;
+                        if(e.move_speed!=speed||e.change4c!=change||e.next_selector!=next||
+                           e.retained_speed!=(reset?0.f:std::max(0.f,std::fma(change,1.f,speed)))||
+                           e.next_change4c!=(reset?0.f:change))return false;
+                    }
+                    NativeBorgStaticSurface current,selected;
+                    if(!terrain||!terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&current)||
+                       !terrain->static_surface(o.proposed_position[0],o.proposed_position[2],actor.position[1],&selected)||
+                       !native_borg_flat_surface(current)||!native_borg_flat_surface(selected)||
+                       current.height!=actor.position[1]||selected.height!=o.proposed_position[1]||selected.height!=current.height)return false;
+                    auto expected=actor.position;
+                    if(e.move_speed&&!native_gred_ground_position(actor.position,e.move_speed,e.travel5ae,current.normal,&expected))return false;
+                    if(o.proposed_position!=expected)return false;
+                }
+            }
             const bool relaunch_entry_prior=prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                 native_borg_motion_windup_update(prior)||native_borg_motion_active_entry(prior)||
                 native_borg_motion_active_update(prior)||native_borg_motion_recovery(prior);
@@ -440,7 +537,7 @@ public:
             NativeBorgContactRequest request{actor.position,other.position,delta,config_.arena_half,config_.actor_radius,config_.actor_height,config_.step_height,air?false:actor.grounded,other.health!=0};
             if(air)request.vertical_end_y=o.proposed_position[1];
             if(!native_borg_resolve_contact(request,terrain,&source_contact))return false;
-            if((push||floor_snap||ledge_policy)&&(source_contact.body_hit||source_contact.bounds_hit||source_contact.terrain_blocked||
+            if((push||floor_snap||ledge_policy||ordered_policy)&&(source_contact.body_hit||source_contact.bounds_hit||source_contact.terrain_blocked||
                source_contact.position[0]!=o.proposed_position[0]||source_contact.position[2]!=o.proposed_position[2]))return false;
             if(vertical){
                 f32 y=0;
@@ -614,7 +711,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::WalkLedge)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::OrderedGround)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
@@ -637,7 +734,8 @@ public:
            offer.proposed_position!=last_offer_.proposed_position||offer.facing!=last_offer_.facing||offer.action!=last_offer_.action||
            offer.kind!=last_offer_.kind||offer.vertical_speed!=last_offer_.vertical_speed||offer.observed.vertical_speed!=last_offer_.observed.vertical_speed||
             offer.entry_vertical_delta!=last_offer_.entry_vertical_delta||offer.static_push!=last_offer_.static_push||offer.relaunch_floor!=last_offer_.relaunch_floor||
-            offer.air_dash_floor!=last_offer_.air_dash_floor||offer.walk_ledge!=last_offer_.walk_ledge)return false;
+            offer.air_dash_floor!=last_offer_.air_dash_floor||offer.walk_ledge!=last_offer_.walk_ledge||
+            offer.ordered_ground!=last_offer_.ordered_ground)return false;
         *out=last_receipt_;return true;
     }
     bool motion_receipt_current(const NativeBorgMotionReceipt& receipt)const{

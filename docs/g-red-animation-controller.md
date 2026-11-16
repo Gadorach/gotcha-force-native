@@ -13,7 +13,98 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
-## Ordered ground-dash recovery (GFMM9 numeric candidates only)
+## Live owned-root ordered ground dash (GFMM9)
+
+`--source-ordered-ground` / `--demo-source-ordered-ground` connects the ordered
+dash candidates to the existing movement owner, VM, motion driver, numeric root
+evaluator, native contact/receipt and shared renderer. Other modes retain their
+earlier dash prefix. Walk-only ledge mode still cannot acquire dash permission.
+
+This is a deliberately **ground-only** checkpoint: walking uses the existing
+shared controller; dash motion requires a flat, unchanged-height floor. Ledges,
+airborne motion, jumping/flight/combat, nonflat dash surfaces and any native
+body/bounds/terrain clipping refuse. The ordinary MVP is unchanged.
+
+The owner requires the original355264-byte motion bank (FNV`276b4e9e`),
+in addition to the existing model/program/profile fingerprints; edited motion
+bytes cannot mint original root-speed authority. It finds bone0's actual lane
+in the qualified pose rig. Around each
+indicated dash VM request/advance it captures that lane's exact immutable driver
+snapshots, checks library/successor identity and evaluates the shared root kernel
+from the raw AObj observations. This is **not** root speed inferred from model
+rendering, world displacement, a previous offer or an animation label.
+
+The supported detached path declares native delta5F4/1DC8=1, bias1D9C=0 and
+suppress-selector1DB2=0. It reads actual lane1 metadata and requires1D9B=0: root
+speed is computed, but actor root position is never applied a second time.
+Public-null roots, alias/mirror-root substitutions and selected multipliers
+without an owned table remain refusals. No new manual classification is needed.
+
+Each post-VM root read receives a sealed, weakly published lease carrying the
+world, producer, exact observed tick, root speed/evaluation count and actual VM
+phase/control/completion result. The lease cannot be publicly constructed or
+copied; a float payload cannot mint that authority. Native acceptance checks it and
+independently verifies phase order, active minimum/timer rules, recovery damping/
+root latch, scalar update, exact flat-ground displacement and post-motion reset.
+The native per-step scalar/root budget is25. This is a scoped native contract,
+not original actor construction, input calibration or whole-frame equivalence.
+
+The distinction between **reading** a root state and **evaluating** a new root
+delta matters. A control-bit1 hold performs neither VM advance nor root sample.
+The actual final done-only VM operation can leave the root snapshot unchanged.
+That tail seals a fresh current-frame read of the retained root value without
+inventing an AObj/root update. Non-successors outside that exact done case refuse.
+Control3 is acknowledged through a narrow class-scoped VM write; no motion,
+clock, root, secondary control or callback authority comes with that write.
+
+All root/VM/phase/counter state remains pending until the exact matching native
+receipt. A rejected native candidate leaves the old accepted frame live; fatal
+source refusal or retirement revokes pending/root/pose leases. Receipts compare
+the complete ordered evidence, including lease identity, not just position.
+
+The native demo uses the **unchanged** ordinary spawn, target, stage and arena.
+It supplies one backward flick at ticks5–16, then releases. Accepted tick roles:
+
+| Tick | Ordered role |
+| --- | --- |
+| 6 | Entry immediately moves25; retained speed24.5, root request speed0 |
+| 12 | Incoming22 still decelerates to21.5; seventh actual root evaluation |
+| 13–18 | Minimum22/zero-change; VM hold retains root12.5; release selects14 |
+| 19 | First recovery:22×0.9=19.8, observed root12.5 |
+| 24 | Recovery phase546 latches to actual root12.5 |
+| 29 | Root becomes0; recovery visibly stops at X/Z≈−568.50/592.83 |
+| 32 | Post-VM control3 is acknowledged once |
+| 37 | Done-only retained-root read, then idle selection; still25 evaluations |
+| 38–600 | Shared idle program0, stable position/meter/health |
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-owned-ordered-host-v1
+build/source-owned-ordered-host-v1/gf_native \
+  --demo-source-ordered-ground --headless --frames 600 --no-audio
+```
+
+`native_source_ordered_ground_owner` covers real-stage operation ownership,
+neighbor/stale/edited/missing leases, staged rejection, phase/geometry tampering,
+VM holds and no-motion completion, root-derived stopping, camera-independent idle
+heading, exact receipts, producer retirement and unchanged ledge refusal from a
+fresh ground spawn at the verified roof edge. The synthetic
+`character_program_dash_recovery_control` checks the scoped acknowledgement.
+Host clocks, libm, target-center and collision remain labelled native proxies.
+Dash-to-ledge integration is the next permission, not silently included here.
+
+Contact Sheet34 contains actual offscreen GL frames5/6/19/24/28/29/37/38, without
+taking desktop/classifier focus. Final isolated native-only frames24/29 match
+the full working-tree captures pixel-for-pixel. Captures remain outside Git:
+`local/recomp-evidence/contact-sheets/source-owned-ordered-ground-v1/contact-sheet-34.png`.
+The real-stage owner passed2481 checks through600 updates. Isolated validation
+passed13 sanitizer binaries, followed by final owner/VM/native rechecks after
+sealing VM outcomes and qualifying the original motion bank. Host/all-header
+builds and the unchanged64-tick ordinary duel smoke also passed.
+The final isolated host rerun passed all146 Python tests, including35 opt-in host
+integrations, with the hardened root/VM leases and original-bank guard enabled.
+
+## Earlier ordered ground-dash recovery (GFMM9 numeric candidates only)
 
 Before admitting dash-to-ledge motion, the next recovery pass checked
 `80060C48/60C94`, `80060EC4/60F78` and `80061084/61160` against bounded

@@ -34,10 +34,14 @@ class NativeGRedGroundDashDemo {
         CharacterMotionVector frame_start{};f32 ground_timer698=0;
         bool ground_pending=false,ground_active=false,suppressed_ground_drift=false;
         std::optional<s16> ground_drift_heading{};
+        CharacterMotionRootState dash_root;
+        std::shared_ptr<const NativeBorgOrderedRootScope> dash_root_scope;
+        std::optional<NativeBorgOrderedGround> ordered_ground;
+        u8 dash_recovery546=0;bool dash_exit545=false;
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge};
+    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround};
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -54,6 +58,8 @@ public:
         if(!read(files,inputs+"/locomotion.gfmp",65536,&encoded,error)||!read(files,inputs+"/pose-height.gfhc",28,&height,error)||
            !read(files,inputs+"/movement.gfmi",192,&movement,error)||!read(files,inputs+"/motion.gfmm",376,&motion,error)||
            !read(files,art+"/g-red.hsd",4u<<20,&model,error)||!read(files,art+"/g-red.motions",32u<<20,&motions,error))return false;
+        if(mode_==Mode::OrderedGround&&(motions.size()!=355264||character_program_model_hash(view(motions))!=0x276b4e9eu))
+            return fail(error,"ordered ground requires qualified original G-Red motion bank");
         if(character_program_model_hash(view(encoded))!=0x638570ffu||character_program_model_hash(view(model))!=0xe2b4439au||
            !character_program_load_control_flow(view(encoded),0xe2b4439au,&programs_,error)||
            !character_pose_height_profile_load(view(height),&height_,error)||!character_movement_input_load(view(movement),&input_,error)||
@@ -65,6 +71,13 @@ public:
         if(steep_mode(mode_)&&!motion_.steep_operands)return fail(error,"source steep contact requires GFMM6 operands");
         if(relaunch_floor_mode(mode_)&&!motion_.relaunch_floor_operands)return fail(error,"source null-callback floor contact requires GFMM7 operands");
         if(mode_==Mode::WalkLedge&&!motion_.ground_loss_operands)return fail(error,"source walk-ledge mode requires GFMM8 operands");
+        if(mode_==Mode::OrderedGround&&!motion_.ordered_dash_operands)return fail(error,"source ordered-ground mode requires GFMM9 operands");
+        root_lane_=2;
+        if(mode_==Mode::OrderedGround){
+            for(unsigned lane=0;lane<2;++lane)for(unsigned i=seed.rig.cuts[lane];i<seed.rig.cuts[lane+1];++i)
+                if(seed.rig.order[i]==0)root_lane_=lane;
+            if(root_lane_>=2||seed.rig.mirror[0]!=0)return fail(error,"ordered ground requires an owned unaliased root lane");
+        }
         CharacterMotionBank bank;if(!character_motion_bank_load(view(motions),&bank,error))return false;
         std::array<std::array<bool,128>,16> needed{};
         for(const auto& descriptor:programs_.descriptors)for(unsigned lane=0;lane<2;++lane){
@@ -87,12 +100,15 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
+        if(mode_==Mode::OrderedGround)producer_=world.new_motion_producer(NativeBorgMotionPolicy::OrderedGround);
+        else
         producer_=world.new_motion_producer(mode_==Mode::WalkLedge?NativeBorgMotionPolicy::WalkLedge:mode_==Mode::WindupEntryPush?NativeBorgMotionPolicy::WindupEntryPush:mode_==Mode::WindupPositiveFloor?NativeBorgMotionPolicy::WindupPositiveFloor:mode_==Mode::WindupEntryFloor?NativeBorgMotionPolicy::WindupEntryFloor:mode_==Mode::AirDashFloor?NativeBorgMotionPolicy::AirDashFloor:mode_==Mode::RelaunchFloor?NativeBorgMotionPolicy::RelaunchFloor:mode_==Mode::RelaunchEntrySurface?NativeBorgMotionPolicy::RelaunchEntryPush:mode_==Mode::RelaunchSurface?NativeBorgMotionPolicy::RelaunchPush:mode_==Mode::ActiveSurface?NativeBorgMotionPolicy::ActivePush:mode_==Mode::WindupSurface?NativeBorgMotionPolicy::WindupPush:mode_==Mode::RecoverySurface?NativeBorgMotionPolicy::RecoveryPush:mode_==Mode::FallingSurface?NativeBorgMotionPolicy::FallHistoryPush:mode_==Mode::Steep?NativeBorgMotionPolicy::StaticPush:relaunch_mode(mode_)?NativeBorgMotionPolicy::Relaunch:mode_==Mode::AirDash?NativeBorgMotionPolicy::AirDash:mode_==Mode::Jump?NativeBorgMotionPolicy::Jump:
             mode_==Mode::VerticalJump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
         if(!producer_)return fail(error,"native movement producer lease refused");
         dash_fall_pushes_=relaunch_fall_pushes_=recovery_pushes_=windup_pushes_=active_pushes_=relaunch_surface_pushes_=0;
         relaunch_entry_surface_pushes_=0;
         windup_entry_surface_pushes_=0;
+        ordered_entries_=ordered_active_=ordered_recovery_=ordered_resets_=0;
         ground_departures_=ground_loss_entries_=ground_loss_landings_=suppressed_ground_drifts_=0;
         relaunch_floor_contacts_=0;last_relaunch_floor_programs_={0xffff,0xffff};
         windup_floor_contacts_=active_floor_contacts_=windup_entry_floor_contacts_=positive_windup_floor_contacts_=0;last_air_dash_floor_programs_={0xffff,0xffff};
@@ -127,6 +143,7 @@ public:
         if(air_dash_mode(mode_)&&!dash_jump_mode(mode_)&&state_.dash.selector&&(held&0x100u))return fail(error,"dash-to-jump is not enabled");
         auto candidate=std::make_unique<Pending>();candidate->state=state_;auto& s=candidate->state;
         s.motion.position=observed.position;s.motion.flags5e0=s.vm.state().actor.behaviour;s.contact_angle=-1;s.static_push.reset();s.relaunch_floor.reset();s.air_dash_floor.reset();
+        s.ordered_ground.reset();
         if(mode_==Mode::WalkLedge){
             //Native-owned frame-start snapshot, bound to this observed scope/
             //tick. Never reinterpret the previous render/offer as source2C.
@@ -257,7 +274,10 @@ public:
             return false;
         }
         bool moving=s.dash.selector!=0;
-        if(moving){
+        if(moving&&mode_==Mode::OrderedGround){
+            std::string detail;
+            if(!ordered_dash(s,world,frame,held,&detail))return fail(error,detail.c_str());
+        }else if(moving){
             GRedGroundDashPlan plan;
             if(!gred_ground_dash_plan(motion_,s.dash,s.motion.speed44,s.motion.planar_change4c,s.vm.state().actor.control1[0],&plan))return fail(error,"unreviewed dash handler branch");
             if(plan.request_program){if(!request(s,plan.program,error))return fail(error,"dash program request refused");}
@@ -294,6 +314,7 @@ public:
         candidate->offer.static_push=s.static_push;
         candidate->offer.relaunch_floor=s.relaunch_floor;
         candidate->offer.air_dash_floor=s.air_dash_floor;
+        candidate->offer.ordered_ground=s.ordered_ground;
         if(mode_==Mode::WalkLedge){
             const auto final_ground=ground_for(s);StageGroundSurfaceResult selected;f32 height=0;
             if(!final_ground.height(s.motion.position,&height,error)||!final_ground.surface(s.motion.position,&selected,error)||
@@ -324,6 +345,10 @@ public:
         ground_loss_entries_+=pending_->offer.kind==NativeBorgMotionKind::GroundLossEntry;
         ground_loss_landings_+=pending_->offer.kind==NativeBorgMotionKind::GroundLossTouchdown;
         suppressed_ground_drifts_+=state_.suppressed_ground_drift;
+        if(state_.ordered_ground){
+            ordered_entries_+=state_.ordered_ground->phase==12;ordered_active_+=state_.ordered_ground->phase==13;
+            ordered_recovery_+=state_.ordered_ground->phase==14;ordered_resets_+=state_.ordered_ground->next_selector==0;
+        }
         if(pending_->interrupted_dash){++dash_jumps_;last_dash_jump_=pending_->interrupted_dash;}
         landing_jumps_+=pending_->landing_target==4;landing_dashes_+=pending_->landing_target==12;
         if(native_borg_motion_phase(pending_->offer.kind)==3&&state_.contact_angle>=0){++surface_landings_;last_surface_angle_=state_.contact_angle;}
@@ -381,6 +406,9 @@ public:
     f32 ground_loss_timer698()const{return state_.ground_timer698;}
     u8 cached_airborne87()const{return state_.jump.cached87;}
     u32 movement_flags()const{return state_.vm.state().actor.behaviour;}
+    u64 ordered_entries()const{return ordered_entries_;}u64 ordered_active_frames()const{return ordered_active_;}
+    u64 ordered_recovery_frames()const{return ordered_recovery_;}u64 ordered_resets()const{return ordered_resets_;}
+    CharacterMotionRootState ordered_root()const{return state_.dash_root;}
     u64 active_pushes()const{return active_pushes_;}
     std::array<u16,2> last_active_push_programs()const{return last_active_push_programs_;}
     u64 relaunch_surface_pushes()const{return relaunch_surface_pushes_;}
@@ -493,10 +521,84 @@ private:
            !character_movement_heading(input_,motion_,admission.direction58f,CharacterMovementHeadingMode::CardinalDash,frame,&heading,error)||
            !gred_ground_dash_program(motion_,heading,&program,&klass))return false;
         s.input.directions5d8=admission.remaining_directions;s.dash={};s.dash.direction_class=klass;
+        s.dash_recovery546=0;s.dash_exit545=false;
         s.dash.coarse57d=u8(source_heading_sector(heading.relative734,2));
         s.steering={};s.steering.travel5ae=source_heading_wrap(s32(frame.camera5b0)-0x8000);
         s.walk_selector=0;s.walk_entered=false;s.jump.selector=0;s.jump.entered=false;s.jump.air_ready588=0;
         s.relaunch={};s.air_dash.selector=0;return true;
+    }
+    bool ordered_dash(State& s,const NativeBattleMvp& world,const CharacterMovementHeadingFrame& frame,u32 held,std::string* error){
+        const auto refuse=[&](const char* why){if(error)*error=std::string("ordered dash: ")+why;return false;};
+        const auto before=s.motion;const auto control_before=s.vm.state().actor.control1[0];
+        GRedGroundDashOrderedState initial{s.dash,s.dash_recovery546,s.dash_exit545};GRedGroundDashOrderedPlan plan;
+        if(!gred_ground_dash_ordered_plan(motion_,initial,before,control_before,&plan))return refuse("plan/forced-continuation refused");
+        auto steer=[&](f32 speed){
+            const auto& actor=world.actors()[0];const auto& target=world.actors()[1];if(!target.health)return false;
+            s.steering.body72=s.body;s.steering.camera5b0=frame.camera5b0;s.steering.speed44=speed;
+            s.steering.direction57c=s.dash.direction_class;s.steering.coarse57d=s.dash.coarse57d;
+            s.steering.distance75c=std::hypot(actor.position[0]-target.position[0],actor.position[2]-target.position[2]);
+            s.steering.distance_declared=true;GRedDashSteering next;
+            if(!gred_ground_dash_steer(motion_,s.steering,&next))return false;
+            s.steering=next;s.body=next.body72;s.motion.travel5ae=next.travel5ae;return true;
+        };
+        if(plan.steer_before_program&&!steer(plan.steering_speed44))return refuse("pre-VM steering");
+        const auto prior=s.vm.state().lanes[root_lane_].motion;
+        const bool sampled=plan.request_program||plan.advance_program;
+        if(plan.request_program?!request(s,plan.program,error):plan.advance_program&&!advance(s,error))return false;
+        bool evaluated=false;
+        if(sampled){
+            const auto after=s.vm.state().lanes[root_lane_].motion;const auto* snapshot=driver_.snapshot(after);
+            CharacterMotionRootObservation a,b;
+            if(!snapshot||s.vm.state().actor.lane1_descriptor[2]!=0)return refuse("owned AObj/zero1D9B required");
+            //Unscaled, detached numeric path only. A selected multiplier without
+            //its own table refuses; no null-AObj or forced-position fallback.
+            CharacterMotionRootFields fields;fields.delta5f4=1;
+            auto root=s.dash_root;
+            if(driver_.successor(prior,after)){
+                if(!driver_.root_observation(prior,&a)||!driver_.root_observation(after,&b)||
+                   !character_motion_root_step(a,b,snapshot->evaluation(),fields,s.dash_root,&root,error))return false;
+                evaluated=true;
+            }else if(initial.dash.selector!=14||!s.vm.state().lanes[1].done||!root.updates||
+                     prior.context!=after.context||!driver_.snapshot(prior)||
+                     !character_motion_driver_detail::same(prior,after))return refuse("non-successor outside exact no-motion done tail");
+            auto scope=std::shared_ptr<NativeBorgOrderedRootScope>(new NativeBorgOrderedRootScope);
+            scope->world=world_scope_;scope->producer=producer_;scope->tick=expected_tick_;scope->updates=root.updates;scope->speed=root.speed1dac;scope->evaluated=evaluated;
+            scope->phase=initial.dash.selector;scope->control_before=control_before;scope->control_after=s.vm.state().actor.control1[0];
+            scope->program_done=s.vm.state().lanes[1].done;
+            s.dash_root=root;s.dash_root_scope=std::move(scope);
+        }
+        const auto control_after=s.vm.state().actor.control1[0];GRedGroundDashOrderedUpdate update;
+        if(!gred_ground_dash_ordered_update(motion_,plan,control_after,held,1,
+            initial.dash.selector==14?&s.dash_root:nullptr,&update))return refuse("post-VM root update");
+        if(update.clear_control1d0f){
+            CharacterProgramClassFields observed;
+            if(!s.vm.observe_class_fields(&observed)||!s.vm.clear_ground_dash_recovery_control(observed,control_after,error))return false;
+        }
+        const auto travel=s.motion.travel5ae;s.motion=update.motion;
+        if(plan.steer_before_program)s.motion.travel5ae=travel;
+        if(update.steer_after_program&&!steer(s.motion.speed44))return refuse("post-VM steering");
+        s.motion.flags5e0=s.vm.state().actor.behaviour;
+        const auto ground=ground_for(s);StageGroundSurfaceResult start,end;CharacterMovementMotionState moved;
+        if(!ground.surface(s.motion.position,&start,error)||!start.selected||start.normal!=CharacterMotionVector{0,1,0}||
+           !character_movement_ground_step(motion_,s.motion,1,ground,&moved,error))return refuse("flat ground motion");
+        if(!ground.surface(moved.position,&end,error)||!end.selected||end.normal!=CharacterMotionVector{0,1,0}||
+           end.height!=start.height||moved.position[1]!=end.height)return refuse("ledge/height change remains disabled");
+        const bool done=s.vm.state().lanes[1].done;GRedGroundDashOrderedResult result;
+        if(!gred_ground_dash_ordered_finish(motion_,update,moved,done,&result))return refuse("post-motion finish");
+        NativeBorgOrderedGround evidence;
+        evidence.phase=initial.dash.selector;evidence.next_selector=result.state.dash.selector;evidence.coarse57d=initial.dash.coarse57d;
+        evidence.control_before=control_before;evidence.control_after=control_after;evidence.recovery546=update.state.recovery546;
+        evidence.next546=result.state.recovery546;evidence.speed_before=before.speed44;evidence.move_speed=s.motion.speed44;
+        evidence.retained_speed=result.motion.speed44;evidence.change4c=s.motion.planar_change4c;evidence.next_change4c=result.motion.planar_change4c;
+        evidence.root_speed=s.dash_root.speed1dac;evidence.root_updates=s.dash_root.updates;evidence.root_sampled=sampled;
+        evidence.root_evaluated=evaluated;
+        if(sampled)evidence.root_scope=s.dash_root_scope;
+        evidence.timer568=result.state.dash.timer568;evidence.travel5ae=s.motion.travel5ae;evidence.held5b4=held;evidence.program_done=done;
+        s.ordered_ground=evidence;s.motion=result.motion;s.dash=result.state.dash;
+        s.dash_recovery546=result.state.recovery546;s.dash_exit545=result.state.exit545;
+        if(initial.dash.selector!=s.dash.selector)s.steering.completed547=false;
+        if(result.idle_reset&&!ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::Idle,error))return false;
+        return true;
     }
     bool relaunch(State& s,u32 held,CharacterMovementHeadingFrame frame,NativeBorgMotionKind* kind,std::string* error){
         GRedRelaunchPlan plan;if(!gred_relaunch_plan(motion_,s.relaunch,s.motion,&plan))return false;
@@ -795,13 +897,14 @@ private:
         ground.query_height668=motion_.dimensions[2]*motion_.rank[0];ground.step674=motion_.dimensions[4]*motion_.rank[0];return ground;
     }
     bool fail(std::string* error,const char* why){retire();if(error)*error=std::string("source ground lab: ")+why;return false;}
-    void retire(){ready_=false;pending_.reset();frame_scope_.reset();producer_.reset();}
+    void retire(){ready_=false;pending_.reset();frame_scope_.reset();producer_.reset();state_.dash_root_scope.reset();}
     CharacterProgramAsset programs_;CharacterPoseHeightProfile height_;CharacterMovementInputProfile input_;CharacterMovementProfile motion_;CharacterMotionDriver driver_;
     std::array<StihGrid,3> grids_;State state_;std::unique_ptr<Pending> pending_;
     std::weak_ptr<const CharacterModelBinding> binding_;std::weak_ptr<const NativeBorgMotionScope> world_scope_;
     std::shared_ptr<const NativeBorgSourcePoseScope> frame_scope_;NativeBorgSourcePose pose_;u32 expected_tick_=0;u64 serial_=0;bool ready_=false;
     std::shared_ptr<const NativeBorgMotionProducer> producer_;
     u64 accepted_frames_=0,body_contacts_=0;
+    u64 ordered_entries_=0,ordered_active_=0,ordered_recovery_=0,ordered_resets_=0;unsigned root_lane_=2;
     u64 air_frames_=0,landings_=0;
     u64 air_dash_starts_=0,air_dash_active_=0;
     u64 relaunches_=0;

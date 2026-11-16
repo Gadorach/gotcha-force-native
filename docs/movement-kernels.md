@@ -23,8 +23,9 @@ callbacks, certify collision, or grant renderer/frame receipts.
   through distinct receipts. Older policies retain their ledge refusal.
 - GFMM9 separately owns normal-G-Red dash-recovery damping. Ordered numeric
   candidates model immediate entry motion and post-VM root speed1DAC, with the
-  done/reset tail after motion. They grant no live dash-ledge permission or root
-  sample ownership; older live modes retain the labelled legacy dash prefix.
+  done/reset tail after motion. A separate ordered-ground owner now binds those
+  candidates to actual AObj successors and sealed current-frame root reads.
+  It grants no dash-ledge permission; older modes retain the legacy dash prefix.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

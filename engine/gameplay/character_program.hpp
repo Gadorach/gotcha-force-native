@@ -316,6 +316,15 @@ public:
         else flags&=0x00ff0003u;
         return true;
     }
+    //61160's one-time control3 acknowledgement only; no VM advance/root update.
+    bool clear_ground_dash_recovery_control(const CharacterProgramClassFields& expected,u8 control,std::string* error){
+        if(!ready_||!fresh_actor_||!height_controls_||!class_scope_||expected.scope.lock()!=class_scope_||
+           expected.default_group!=state_.actor.default_group||expected.effect_control!=state_.actor.control0[3]||
+           expected.behaviour!=state_.actor.behaviour||expected.steering1dfc!=state_.actor.steering1dfc||
+           (expected.behaviour&0x81002043u)||control!=3||state_.actor.control1[0]!=control)
+            return refuse(error,"stale/foreign/unqualified ground-dash recovery control");
+        state_.actor.control1[0]=0;return true;
+    }
     //80057D9C consumes actor1CEF after the program update, not inside the VM.
     bool consume_primary_control(u8* out){
         if(!ready_||!out)return false;
