@@ -31,3 +31,18 @@ python3 -B tools/build_native.py --jobs 1 --sanitize --opt 0 \
 
 Tests use numeric fixtures. Where a test optionally reads a qualified local
 profile, it reports its absence; no game data is distributed with these kernels.
+
+## Native gameplay acceptance
+
+`NativeBattleMvp` supplies a separate, explicitly provisional duel policy and
+bounded projectile/contact simulation. Source motion can instead be offered by
+a same-world producer. Observations, producer policies and exact receipts reject
+stale/foreign/copied/restarted ownership. No source-controlled tick silently
+falls back to ordinary MVP movement.
+
+The acceptance layer independently checks static surface metadata and refuses
+clipped floor/push candidates. Relaunch-floor kinds remain airborne even at
+exact floor height; only a separate touchdown transition grants grounded state.
+The source planner/VM must commit its resource and pose state after acceptance,
+not when merely preparing an offer. These are native proxy receipts, not evidence
+that original whole-frame callbacks executed.
