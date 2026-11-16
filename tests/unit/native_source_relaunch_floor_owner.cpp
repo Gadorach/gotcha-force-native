@@ -128,6 +128,42 @@ int main(){
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v6",world,seed,&error,NativeGRedGroundDashDemo::Mode::RelaunchFloor)&&world.tick()==0,
         "GFMM6 cannot supply the caller's separately recovered floor operand");
-    std::printf("source null-callback floor/lane/resource/pose: %u checks PASS; snaps=%u/%u touchdown=%u; native proxies, no whole-frame equivalence\n",
-        checks,first,second,touchdown);
+    bind(NativeGRedGroundDashDemo::Mode::RelaunchFloor);u32 lift=0,held_touchdown=0;
+    for(unsigned t=0;t<600;++t){
+        GamePadState pad;pad.b=(t>=5&&t<31)||t>=78;
+        NativeBorgMotionOffer offer;const auto count=source.relaunch_floor_contacts();const auto meter=source.resource();
+        check(prepare(pad,&offer)&&source.relaunch_floor_contacts()==count&&source.resource()==meter,
+            "long held route still stages floor evidence and resource before acceptance");
+        accept(offer);
+        if(native_borg_motion_relaunch_floor(offer.kind)){
+            const auto tick=world.tick();const bool active=tick>=84;
+            check(tick>=79&&tick<=86&&source.relaunch_floor_contacts()==tick-78&&source.selector()==8&&
+                !world.actors()[0].grounded&&!source.landings()&&world.actors()[0].position[1]==10&&
+                source.resource()==8400-s16(100*(tick-79))&&
+                source.movement_programs()==std::array<u16,2>{u16(active?15:14),u16(active?15:14)},
+                "held snaps preserve airborne history, ordinary14-to15 handoff and continued spending");
+            if(tick==86)check(offer.kind==NativeBorgMotionKind::RelaunchActiveFloor&&offer.relaunch_floor&&
+                offer.relaunch_floor->response_factor==1&&offer.vertical_speed>0&&source.resource()==7700,
+                "last active snap preserves newly positive speed without applying negative-only .8 damping");
+            else check(offer.vertical_speed<0&&offer.relaunch_floor&&offer.relaunch_floor->response_factor==profile.relaunch_floor_damping,
+                "only the seven negative-speed held snaps apply caller .8 response");
+        }
+        if(!lift&&source.relaunch_floor_contacts()==8&&world.actors()[0].position[1]>10){
+            lift=world.tick();
+            check(lift==87&&offer.kind==NativeBorgMotionKind::RelaunchActive&&!offer.relaunch_floor&&
+                source.selector()==8&&!world.actors()[0].grounded&&source.resource()==7600,
+                "held relaunch lifts off through ordinary active motion after positive-speed floor snap");
+        }
+        if(offer.kind==NativeBorgMotionKind::JumpTouchdown){
+            held_touchdown=world.tick();
+            check(lift&&held_touchdown==242&&source.resource()==0&&source.selector()==7&&world.actors()[0].grounded,
+                "depleted held relaunch uses separate falling touchdown with no fabricated resource recovery");
+        }
+    }
+    check(lift==87&&held_touchdown==242&&source.relaunch_floor_contacts()==8&&source.relaunches()==1&&source.landings()==1&&
+        source.last_relaunch_floor_programs()==std::array<u16,2>{15,15}&&source.selector()==0&&source.resource()==10000&&
+        !world.shots_spawned()&&world.actors()[0].health==100&&world.actors()[1].health==100,
+        "held600-frame route does not auto-relaunch/refill on floor snaps or synthesize repeated jump edges after touchdown");
+    std::printf("source null-callback floor/lane/resource/pose: %u checks PASS; snaps=%u/%u touchdown=%u; held-snaps=8 lift=%u depleted-touchdown=%u; native proxies, no whole-frame equivalence\n",
+        checks,first,second,touchdown,lift,held_touchdown);
 }

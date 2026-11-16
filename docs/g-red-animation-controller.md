@@ -86,6 +86,26 @@ passed638 checks and its offscreen GL tick79 was pixel-identical to the full
 working tree. This checks the selected dependency boundary, not original-game
 equivalence.
 
+### Held relaunch after floor contact
+
+A separate real-stage owner regression keeps the re-pressed jump button held
+through600 native ticks instead of releasing after two snaps. It observes eight
+snaps at79–86. The normal independent animation lanes hand off14→15 at84 while
+the Borg remains airborne at floor height and continues spending resource.
+
+The seventh negative-speed response leaves48≈-0.407101. At86, acceleration makes
+48≈+0.392899: that eighth snap uses factor1, not0.8. Ordinary active relaunch
+motion lifts off at87 with meter7600; no new entry or resource refill is invented.
+Exhaustion later enters falling21, followed by actual touchdown at242 with
+meter0. Holding the old button does not fabricate another jump edge after
+grounded recovery; by600 the owner is idle with one relaunch, eight snaps, one
+landing and meter10000.
+
+This extends the regression of the same bounded source/native integration, not
+its supported contact geometry or a movement rule for other Borgs. Run
+`native_source_relaunch_floor_owner` to exercise both the two-snap release route
+and this held/depletion route.
+
 ## Native movement-input/resource subset
 
 The next native pieces are now implemented independently of the playable MVP:
