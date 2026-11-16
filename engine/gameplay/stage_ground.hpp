@@ -39,6 +39,27 @@ inline bool ceiling(const std::array<const StihGrid*,3>& grids,const StageGround
     }*out=best;return true;
 }
 }
+struct StageLowestFloorResult {f32 height=0;bool inside=false,found=false;u32 visited=0,triangle=0;};
+//3DD34's independent minimum-floor query. It does not use an actor, a ceiling,
+//moving platforms or the3D6E4 previous-height fallback policy.
+inline bool stage_lowest_floor(const StihGrid& floor,const StageGroundParameters& p,const std::array<f32,3>& point,StageLowestFloorResult* out,std::string* error){
+    if(out)*out={};
+    auto fail=[&](){if(error)*error="stage minimum floor: source grid/point/plane domain";return false;};
+    using namespace stage_ground_detail;
+    if(!out||!parameters(p)||!vector(point))return fail();
+    StageLowestFloorResult next;next.height=point[1];
+    if(!inside(p,point)){*out=next;if(error)error->clear();return true;}
+    next.inside=true;next.height=p.high34;std::span<const u32> refs;if(!cell(floor,p,point,&refs))return fail();
+    for(u32 index:refs){
+        ++next.visited;const auto& t=floor.triangles()[index];std::array<f32,2> delta;
+        if(!projected(t,point,false,&delta))continue;
+        f32 y=0;if(!height(t,delta,&y))return fail();
+        if(next.height>=y){next.height=y;next.triangle=index;next.found=true;}
+    }
+    //Source compares the sentinel value, even if a triangle had exactly high34.
+    if(next.height==p.high34)next.height=p.low68;
+    *out=next;if(error)error->clear();return true;
+}
 inline bool stage_ground_height(const std::array<const StihGrid*,3>& grids,const StageGroundParameters& p,const StageGroundActor& actor,
                                 const std::array<f32,3>& position,f32 height,f32* out,std::string* error){
     if(out)*out=0;

@@ -1,0 +1,33 @@
+# Portable normal G-Red movement kernels
+
+The headers under `engine/gameplay/character_movement*` and `gred_*` produce
+bounded movement candidates. They do not construct actors, execute original
+callbacks, certify collision, or grant renderer/frame receipts.
+
+- Input heading is camera-relative; body heading is a separate state.
+- Ground walk/stop/dash, jump/falling, air dash and relaunch have separate
+  planners. Relaunch preserves independent lower/upper animation latches.
+- Static contact uses a paired height/normal from the shared stage query.
+  Steep pushes, ordinary landing callbacks and null-callback height snaps
+  are distinct outcomes.
+- GFMM1–7 are immutable, hash-qualified normal-G-Red operand profiles.
+  Later capabilities require their corresponding version; loading newer
+  operands does not authorize a caller to widen its policy.
+- GFMM7 owns a separate relaunch floor-response operand: negative vertical
+  speed is multiplied by 0.8 after eligible static contact. A null callback
+  preserves acceleration and airborne history; it is not landing or refill.
+
+Host trigonometry, square roots and floating arithmetic are native approximations,
+not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
+unresolved contact geometry remain outside this subset. These mappings must not
+be generalized to other Borgs.
+
+CPU checks (at most two compiler jobs):
+
+```sh
+python3 -B tools/build_native.py --jobs 1 --sanitize --opt 0 \
+  --tests gred_air_dash,gred_dash_jump,gred_landing_input,gred_movement_input,gred_relaunch,gred_surface_contact,gred_vertical_jump,stage_ground_surface
+```
+
+Tests use numeric fixtures. Where a test optionally reads a qualified local
+profile, it reports its absence; no game data is distributed with these kernels.
