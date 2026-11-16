@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -245,7 +245,8 @@ public:
             const bool recovery_push_policy=producer->policy_==NativeBorgMotionPolicy::RecoveryPush||windup_push_policy;
             const bool history_push_policy=producer->policy_==NativeBorgMotionPolicy::FallHistoryPush||recovery_push_policy;
             const bool push_policy=producer->policy_==NativeBorgMotionPolicy::StaticPush||history_push_policy;
-            const bool dash_ledge_policy=producer->policy_==NativeBorgMotionPolicy::DashLedge;
+            const bool combined_ledge_policy=producer->policy_==NativeBorgMotionPolicy::GroundLedge;
+            const bool dash_ledge_policy=producer->policy_==NativeBorgMotionPolicy::DashLedge||combined_ledge_policy;
             const bool ledge_policy=producer->policy_==NativeBorgMotionPolicy::WalkLedge||dash_ledge_policy;
             const bool ordered_policy=producer->policy_==NativeBorgMotionPolicy::OrderedGround||dash_ledge_policy;
             const bool departure=o.kind==NativeBorgMotionKind::GroundDeparture;
@@ -270,7 +271,7 @@ public:
                     (!ledge_policy&&(ground_loss||o.walk_ledge))||
                      (ordered_policy&&!dash_ledge_policy&&o.kind!=NativeBorgMotionKind::Ground)||
                      (!ordered_policy&&o.ordered_ground)||
-                     (dash_ledge_policy&&departure&&!o.ordered_ground)||
+                      (dash_ledge_policy&&!combined_ledge_policy&&departure&&!o.ordered_ground)||
                      (o.ordered_ground&&o.kind!=NativeBorgMotionKind::Ground&&!departure)||
                 !std::isfinite(o.vertical_speed)||std::abs(o.vertical_speed)>50||!std::isfinite(o.entry_vertical_delta)||
                 (native_borg_motion_relaunch_entry(o.kind)?(o.entry_vertical_delta<=0||o.entry_vertical_delta>50):o.entry_vertical_delta!=0))return false;
@@ -375,11 +376,12 @@ public:
                     if(!actor.grounded||actor.vertical_speed||o.vertical_speed||e.drift_heading||
                        !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&current)||
                        !native_borg_static_surface_valid(current)||current.height!=actor.position[1])return false;
-                    if(dash_ledge_policy){
+                    const bool walking_contract=!dash_ledge_policy||(combined_ledge_policy&&!o.ordered_ground);
+                    if(!walking_contract){
                         if(o.ordered_ground&&(e.speed44!=o.ordered_ground->retained_speed||e.travel5ae!=o.ordered_ground->travel5ae))return false;
                         if(departure&&(!o.ordered_ground||!native_borg_flat_surface(current)||!native_borg_flat_surface(selected)))return false;
                     }else if(!native_gred_walk_speed(e.speed44)||o.action==BattleMvpAction::GroundDash)return false;
-                    if(!dash_ledge_policy&&delta!=BattlePoint{}){
+                    if(walking_contract&&delta!=BattlePoint{}){
                         BattleMvpVec expected;
                         if(!native_gred_walk_position(actor.position,e.speed44,e.travel5ae,current.normal,&expected)||
                            expected[0]!=o.proposed_position[0]||expected[2]!=o.proposed_position[2])return false;
@@ -722,7 +724,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::DashLedge)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundLedge)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

@@ -13,6 +13,83 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## One walking/ordered-dash ground-ledge controller (GFMM9)
+
+`--source-ground-ledge` / `--demo-source-ground-ledge` combines the verified
+walking, stop and owned-root ordered-dash paths in **one opt-in controller**.
+Both walking and dash departures use the existing next-frame priority
+correction, program13, timer698/direct drift and flat landing. The VM, driver,
+producer, world and render binding stay the same through walking, stopping,
+flicking, dashing, falling, landing and idle. No parallel controller or animation
+mapping is introduced.
+
+The combined native policy keeps the two departure contracts distinct. A
+walking candidate must use a qualified normal-G-Red walking scalar and pass the
+walking tangent check; its larger dash/fall budget cannot authorize speed25.
+An ordered dash still needs its own phase, VM/root provenance and post-motion
+scalar. Removing a dash payload cannot turn an in-progress dash into walking.
+Airborne damping continues from the accepted origin's scalar, not an inferred
+animation label, rendered displacement or root value. Walking never mints an
+ordered-root lease; historical ordered-root diagnostics are not airborne
+authority.
+
+Older policies are unchanged: walk-ledge remains walk-only, dash-ledge refuses
+walking ledges and ordered-ground refuses all ledges. The combined mode still
+refuses jump/air-dash/relaunch/flight/combat, nonflat dash surfaces/landings,
+clipping and unowned input/root/history/geometry variants. It is normal-G-Red
+only, with declared native clock, camera, target-center and contact proxies—not
+original actor construction or hardware/whole-frame equivalence.
+
+The recovered input window matters: pushing a long-held low-deflection walk to
+full deflection does **not** fabricate a fresh flick. Release and flick again.
+The native demo supplies that actual input, rather than forcing a selector:
+
+| Accepted tick | Same-controller role |
+| --- | --- |
+| 6–70 | Walking program1 on original roof249 |
+| 71–72 | Real neutral release/stop, program31 |
+| 73 | New flick requests27 and moves25; no extra walking motion |
+| 80 | Held-active dash departure; retained22, flags20/cache0,7 root evaluations |
+| 81 | Following priority entry13; scalar21.78, timer30, flags40/cache1 |
+| 111 | Timer0 permits one direct camera-relative drift update |
+| 112 | Actual flat touchdown on captured13/cache1 |
+| 113 | Separate landing8/flags200/cache0 |
+| 600 | Stable idle0; one dash-origin departure/landing, meter10000 |
+
+The demo starts once on real ground at X/Z`(1010.166015625,2315.240722656)`,
+floor reference482.747558594 and arena-half4500. Target and stage bytes are
+unchanged. Input is walk5–69, neutral70–71, flick72 onward through one post-delay
+drift, then release. There is no world restart, actor teleport, controller/driver
+replacement or rebind inside the sequence. Interactive spawn/bounds are unchanged.
+
+`native_source_ground_ledge_owner` runs four600-update original-stage routes:
+walking alone; the mixed walk/stop/flick/dash route; recovery dash departure; and
+a sustained-walk/full-push route that correctly stays walking without a new
+flick. It checks walking versus dash provenance, no double entry motion, one
+producer/world/render binding, staged rejection, history, camera-independent
+body heading, resource/pose lifetimes, older-pack refusal and stable idle.
+The existing narrower-policy owner tests remain regressions.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-ledge-host-v1
+build/source-ground-ledge-host-v1/gf_native \
+  --demo-source-ground-ledge --headless --frames 600 --no-audio
+```
+
+Contact Sheet36 shows actual offscreen GL frames69/71/73/80/81/111/112/150
+without taking desktop/classifier focus. Isolated native-only entry73 and
+touchdown112 match the full working tree pixel-for-pixel. Captures remain local:
+`local/recomp-evidence/contact-sheets/source-ground-ledge-v1/contact-sheet-36.png`.
+The isolated host suite passed all148 Python tests, including37 opt-in host
+integrations. Host/all-header builds and the unchanged64-tick ordinary duel smoke
+also passed. Original motion-bank bytes and immutable GFMM1–9 packs are unchanged.
+The isolated combined-owner test passed9910 checks across its four600-update
+original-stage routes, including sustained-walk input and the genuine mixed route.
+All15 isolated sanitizer binaries passed, including the existing walk-only,
+dash-only and ordered-ground owner regressions. Assets, private evidence, build
+outputs and unrelated Story/preparation changes remain outside this checkpoint.
+
 ## Live ordered dash-to-ledge handoff (GFMM9)
 
 `--source-dash-ledge` / `--demo-source-dash-ledge` adds a **separate** native

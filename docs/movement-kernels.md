@@ -28,7 +28,9 @@ callbacks, certify collision, or grant renderer/frame receipts.
   Its ground-only policy grants no ledge permission. A separate dash-ledge policy
   now joins ordered departure to the next priority correction/falling/flat landing,
   retaining post-motion scalar rather than inferring displacement/root momentum.
-  Walking ledges and other modes keep their existing restrictions.
+  A further combined ground-ledge policy admits both origins with their distinct
+  walking-tangent versus owned-dash checks in one VM/driver/producer. Older
+  walk-only, dash-only and ground-only policies retain their restrictions.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
