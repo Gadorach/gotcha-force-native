@@ -31,9 +31,9 @@ class GRedMotionTests(unittest.TestCase):
         setup = bytearray(1064);setup[864:876] = struct.pack(">3f", 1, 2, 3)
         with patch("tools.extract.gred_motion.qualify_setup", return_value=(data, config)):
             raw = encode(Source(), setup)
-            self.assertEqual(len(raw), 364)
+            self.assertEqual(len(raw), 372)
             self.assertEqual(struct.unpack_from(">IHHIII", raw),
-                              (0x47464D4D, 7, 0x615, 0xE2B4439A, 364, 12))
+                              (0x47464D4D, 8, 0x615, 0xE2B4439A, 372, 12))
             self.assertEqual(raw[32:56], data[0x18:0x30])
             self.assertEqual(raw[92:104], setup[864:876])
             self.assertEqual(raw[104:124], config[0x44:0x58])
@@ -46,6 +46,8 @@ class GRedMotionTests(unittest.TestCase):
             self.assertEqual(raw[352:356], bytes([0xF8])*4)
             self.assertEqual(raw[356:360], bytes([0xD4])*4)
             self.assertEqual(raw[360:364], bytes([0x1C])*4)
+            self.assertEqual(raw[364:368], bytes([0x2C])*4)
+            self.assertEqual(raw[368:372], bytes([0x48])*4)
             config[1] = 2
             with self.assertRaises(ValueError):
                 encode(Source(), setup)
@@ -93,6 +95,20 @@ class GRedMotionTests(unittest.TestCase):
             link = root/"dangling";link.symlink_to(root/"absent")
             with self.assertRaises(FileExistsError):
                 export_profile(root/"absent", root/"absent-setup", link)
+
+    def test_oversized_dol_refuses_before_loading_or_output_creation(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name);dol = root/"owned.dol";setup = root/"owned.gfcs"
+            with dol.open("wb") as stream:
+                stream.truncate((8 << 20)+1)
+            setup.write_bytes(bytes(1064))
+            with patch("tools.extract.gred_motion.DolImage") as image:
+                with self.assertRaisesRegex(ValueError, "DOL extent"):
+                    export_profile(dol, setup, root/"new"/"motion.gfmm")
+                image.assert_not_called()
+            self.assertFalse((root/"new").exists())
+            self.assertEqual(dol.stat().st_size, (8 << 20)+1)
+            self.assertEqual(setup.read_bytes(), bytes(1064))
 
 
 if __name__ == "__main__":

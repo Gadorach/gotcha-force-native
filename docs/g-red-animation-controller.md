@@ -13,6 +13,82 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Ground/ledge correction recovery (numeric candidate only)
+
+The ground-to-air investigation now has a bounded native `68DF8/6A5A4` numeric
+planner, `gred_ground_correction_plan()`, and separately qualified **GFMM8**
+operands. It is **not connected to the live movement owner**: walking/dashing off
+an unsupported ledge still refuses instead of manufacturing an actor or contact
+receipt. Existing source modes and the ordinary MVP retain their policies.
+
+Initialized-DOL disassembly resolves the paired-single decompiler truncations:
+
+- `670DC` performs ground movement and applies its strict step limits. A large
+  downward step retains incoming Y while keeping X/Z motion and updated44.
+  It does not select falling or run air integration there.
+- On the next applicable selection pass, ground handlers call `68DF8` before
+  jump/dash/walk admission. It queries `3D6E4` and compares the new height with
+  **previous30**, not incoming24. A strict drop below `-674` restores incoming24
+  and selects the falling handoff. A strict upward excess rewinds all coordinates
+  only if X/Z differ from previous2C/34; otherwise the queried height remains.
+- The drop path can increase44 to horizontal displacement length divided by5F8
+  and change travel5AE, but only when that value is **strictly greater** than
+  current44. It does not force the Borg's body heading.
+- `6A5A4` sets590=1,690=0, clears71B, masks unblocked flags and selects6.
+  Crucially, `5FECC` therefore requests **program13**, not ordinary program6.
+  Source marker590=1 is not uniquely an “after air dash” origin.
+- `68DF8` sets698=30. While positive, `5FECC` suppresses direct676D8 drift;
+  `677B0` uses the stricter AE angle gate instead of AC. Lower falling entry
+  separately sets airborne flags/history, installs the landing callback and
+  sets50. The correction planner does not pretend those callbacks executed.
+
+The planner consumes explicit, matching previous2C/30/34 fields and returns an
+optional transition. It preserves incoming48/50, and makes no VM/resource,
+collision, actor or lifetime acknowledgement. Forced732, stored1D9B momentum,
+offset/attached/platform and blocked/effect branches remain refused.
+
+History ownership is a prerequisite for integration. The common5685C writer
+copies20/24/28 into2C/30/34 before its caller's dispatch;55DCC/55EE4 snapshot
+airborne flags around update. The live lab's declared native previous-Y field
+must not simply be relabelled as this source-owned snapshot. Connecting that
+boundary, priority over buffered input, program13, scoped VM flag writes,
+timer698 decay, drift suppression and AE contact receipts is still pending.
+
+GFMM8 is372 bytes. Offset364 owns `8043762C`'s zero;368 owns `80437648`'s30 for
+this ground-loss path. They are not aliases of numerically equal operands owned
+by other callbacks. Motion SHA-256:
+`81f07734d657e3f1b85e3252e121c32610c9de020cf9edab1ab187e738368fe7`,
+FNV `9525c46e`. Other six pack components are unchanged; GFMM1–7 remain readable
+with their narrower capabilities. Both shared consumers accept the372-byte data
+extent without enabling new actor/controller authority.
+
+The exporter now emits GFMM8. Versioned packs in older milestone sections are
+saved immutable inputs, not paths to overwrite. Existing labs can read a new
+pack through `--source-ground-assets local/content/source-gred-ground-v8`;
+loading it does not enable live ground-loss dispatch.
+
+```sh
+python3 -B -m tools.extract.gred_ground_demo MAIN.dol GRED.gfcs STAGE473.gfnb \
+  local/content/source-gred-ground-v8
+python3 -B tools/build_native.py --jobs 1 --sanitize --opt 0 \
+  --tests gred_ground_correction,gred_movement_motion
+```
+
+Extraction stays read-only, bounds DOL input to8 MiB and refuses existing outputs
+and symlinks. Saved original inputs and immutable packs are not overwritten.
+Private bounded disassembly is under `local/recomp-evidence/gred-ground-ledge-v1/`;
+no original executable, decompilation or game data is distributed with this code.
+Host libm/square-root approximations are not original MSL/FPSCR equivalence.
+
+Isolated native-only validation passed14 sanitizer binaries, all142 Python tests
+(including31 host integrations), host/all-header builds and the64-tick ordinary
+duel smoke. The new correction/history/refusal test passed52 checks, including
+native ground-only ledge rejection without tick mutation or legacy fallback.
+All seven GFMM8 components re-export byte-for-byte; the other six components
+match GFMM7 and all qualified original inputs retain their hashes. GFMM8 supplied
+to the existing entry-push actor mode produces the same GL frame81 as the saved
+GFMM7 milestone. This is compatibility evidence, not a live ledge demonstration.
+
 ## Wind-up entry on a steep selected surface
 
 `--source-windup-entry-push` / `--demo-source-windup-entry-push` adds a separate

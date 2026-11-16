@@ -20,8 +20,8 @@ def encode(image, setup):
     data, config = qualify_setup(image, setup)
     if config[1] or int.from_bytes(config[8:12], "big") != 12:
         raise ValueError("unreviewed normal movement class")
-    raw = bytearray(364)
-    struct.pack_into(">IHHIII", raw, 0, 0x47464D4D, 7, 0x615, 0xE2B4439A, len(raw), 12)
+    raw = bytearray(372)
+    struct.pack_into(">IHHIII", raw, 0, 0x47464D4D, 8, 0x615, 0xE2B4439A, len(raw), 12)
     raw[20] = config[1]
     raw[32:56] = data[0x18:0x30]
     raw[56:66] = image.read(CONFIG + 0xC0, 10)
@@ -52,6 +52,8 @@ def encode(image, setup):
     raw[352:356] = image.read(0x804375F8, 4)
     raw[356:360] = image.read(0x804375D4, 4)
     raw[360:364] = image.read(0x8043751C, 4)
+    raw[364:368] = image.read(0x8043762C, 4)
+    raw[368:372] = image.read(0x80437648, 4)
     return bytes(raw)
 
 
@@ -60,6 +62,8 @@ def export_profile(dol, setup, output):
     if output.exists() or output.is_symlink():
         raise FileExistsError("motion profile already exists")
     with ReadOnlyFile(dol) as source, ReadOnlyFile(setup) as profile:
+        if not 0 < source.size <= 8 << 20:
+            raise ValueError("source DOL extent")
         if profile.size != 1064:
             raise ValueError("setup extent")
         raw = encode(DolImage(source.read(0, source.size), SOURCE_SHA256),

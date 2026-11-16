@@ -65,6 +65,15 @@ class SourceProgramReplayTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2, result.stdout)
             self.assertIn("qualified normal G-Red GFMM", result.stdout)
 
+    def test_gfmm8_remains_numeric_replay_data_not_ledge_actor_authority(self):
+        motion = Path("local/content/source-gred-ground-v8/motion.gfmm")
+        if not motion.is_file():
+            self.skipTest("optional qualified GFMM8 absent")
+        result = self.run_host([*self.base, *self.source, "--animation-motion-profile",
+                                str(motion), "--frames", "96"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("VM holds, timer expiry and recovery", result.stdout)
+
     def test_edited_source_profile_and_height_operands_refuse(self):
         original = self.programs.read_bytes()
         with tempfile.TemporaryDirectory(dir="/tmp/opencode") as name:

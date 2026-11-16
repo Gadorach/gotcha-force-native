@@ -50,6 +50,19 @@ class GRedGroundPackTests(unittest.TestCase):
                 prepare(dol, setup, root/"absent-stage", root/"out")
             self.assertFalse((root/"out").exists())
 
+    def test_oversized_dol_refuses_before_stage_or_output_access(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name);dol = root/"owned.dol";setup = root/"owned.gfcs"
+            with dol.open("wb") as stream:
+                stream.truncate((8 << 20)+1)
+            setup.write_bytes(bytes(1064))
+            with patch("tools.extract.gred_ground_demo.DolImage") as image:
+                with self.assertRaisesRegex(ValueError, "DOL extent"):
+                    prepare(dol, setup, root/"absent-stage", root/"out")
+                image.assert_not_called()
+            self.assertFalse((root/"out").exists())
+            self.assertEqual(dol.stat().st_size, (8 << 20)+1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,7 @@
 #include <string>
 #include "engine/core/types.hpp"
 namespace gf {
-//GFMM1..7: numeric normal-G-Red operands, not a controller or actor admission.
+//GFMM1..8: numeric normal-G-Red operands, not a controller or actor admission.
 struct CharacterMovementProfile {
     u16 model=0;u32 model_hash=0,class_flags=0;u8 movement_type=0;
     std::array<f32,6> walk_speeds{};std::array<u16,5> turn_counts{};
@@ -21,6 +21,7 @@ struct CharacterMovementProfile {
     std::array<s16,2> landing_angles{};f32 contact_motion_epsilon=0;bool surface_operands=false;
     f32 steep_damping=0;bool steep_operands=false;
     f32 relaunch_floor_damping=0;bool relaunch_floor_operands=false;
+    f32 ground_loss_zero=0,ground_loss_contact_delay=0;bool ground_loss_operands=false;
 };
 inline bool character_movement_profile_valid(const CharacterMovementProfile& p){
     if(!p.loaded||!p.model_hash||p.zero!=0||!std::isfinite(p.epsilon)||p.epsilon<=0||p.epsilon>1||
@@ -43,16 +44,18 @@ inline bool character_movement_profile_valid(const CharacterMovementProfile& p){
     if(p.surface_operands)for(auto angle:p.landing_angles)if(angle<0||angle>16384)return false;
     if(p.steep_operands&&(!p.surface_operands||!std::isfinite(p.steep_damping)||p.steep_damping<=0||p.steep_damping>1))return false;
     if(p.relaunch_floor_operands&&(!p.steep_operands||!std::isfinite(p.relaunch_floor_damping)||p.relaunch_floor_damping<=0||p.relaunch_floor_damping>1))return false;
+    if(p.ground_loss_operands&&(!p.relaunch_floor_operands||p.ground_loss_zero!=0||
+       !std::isfinite(p.ground_loss_contact_delay)||p.ground_loss_contact_delay<=0||p.ground_loss_contact_delay>1e5f))return false;
     for(auto value:p.direction_classes)if(value>3)return false;
     return p.limits[0]>=0&&p.limits[2]<=p.limits[1];
 }
 inline bool character_movement_load(ByteView b,CharacterMovementProfile* out,std::string* error){
     if(out)*out={};
     auto fail=[&](){if(error)*error="movement operands: qualified normal G-Red GFMM required";return false;};
-    if(!out||!b.data||b.size<320||b.be32(0)!=0x47464d4du||b.be16(4)<1||b.be16(4)>7||
-       b.size!=(b.be16(4)==7?364u:b.be16(4)==6?360u:b.be16(4)==5?356u:b.be16(4)==4?348u:b.be16(4)==3?340u:320u)||b.be16(6)!=0x615||b.be32(8)!=0xe2b4439au||b.be32(12)!=b.size)return fail();
+    if(!out||!b.data||b.size<320||b.be32(0)!=0x47464d4du||b.be16(4)<1||b.be16(4)>8||
+       b.size!=(b.be16(4)==8?372u:b.be16(4)==7?364u:b.be16(4)==6?360u:b.be16(4)==5?356u:b.be16(4)==4?348u:b.be16(4)==3?340u:320u)||b.be16(6)!=0x615||b.be32(8)!=0xe2b4439au||b.be32(12)!=b.size)return fail();
     u32 hash=2166136261u;for(std::size_t i=0;i<b.size;++i)hash=(hash^b.data[i])*16777619u;
-    if(hash!=(b.be16(4)==1?0x4e61230bu:b.be16(4)==2?0x0abec001u:b.be16(4)==3?0x474a31f2u:b.be16(4)==4?0x379246edu:b.be16(4)==5?0x001b5555u:b.be16(4)==6?0x91ebe47du:0x77c3d18eu))return fail();
+    if(hash!=(b.be16(4)==1?0x4e61230bu:b.be16(4)==2?0x0abec001u:b.be16(4)==3?0x474a31f2u:b.be16(4)==4?0x379246edu:b.be16(4)==5?0x001b5555u:b.be16(4)==6?0x91ebe47du:b.be16(4)==7?0x77c3d18eu:0x9525c46eu))return fail();
     CharacterMovementProfile p;p.model=b.be16(6);p.model_hash=b.be32(8);p.class_flags=b.be32(16);p.movement_type=b.data[20];
     for(unsigned i=0;i<6;++i)p.walk_speeds[i]=b.bef32(32+i*4);
     for(unsigned i=0;i<5;++i){p.turn_counts[i]=b.be16(56+i*2);p.dimensions[i]=b.bef32(104+i*4);p.dash_steering[i]=b.bef32(260+i*4);}
@@ -67,7 +70,8 @@ inline bool character_movement_load(ByteView b,CharacterMovementProfile* out,std
     if(b.be16(4)>=4){p.air_dash_operands=true;p.air_dash_windup_factor=b.bef32(340);p.air_dash_contact_delay=b.bef32(344);}
     if(b.be16(4)>=5){p.surface_operands=true;p.landing_angles={std::bit_cast<s16>(b.be16(348)),std::bit_cast<s16>(b.be16(350))};p.contact_motion_epsilon=b.bef32(352);}
     if(b.be16(4)>=6){p.steep_operands=true;p.steep_damping=b.bef32(356);}
-    if(b.be16(4)==7){p.relaunch_floor_operands=true;p.relaunch_floor_damping=b.bef32(360);}
+    if(b.be16(4)>=7){p.relaunch_floor_operands=true;p.relaunch_floor_damping=b.bef32(360);}
+    if(b.be16(4)==8){p.ground_loss_operands=true;p.ground_loss_zero=b.bef32(364);p.ground_loss_contact_delay=b.bef32(368);}
     if(!character_movement_profile_valid(p)||p.movement_type||p.class_flags!=12)return fail();
     *out=p;if(error)error->clear();return true;
 }

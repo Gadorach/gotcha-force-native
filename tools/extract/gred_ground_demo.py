@@ -17,6 +17,8 @@ def prepare(dol, setup, stage, output):
     if output.exists() or output.is_symlink():
         raise FileExistsError("source-ground demo output already exists")
     with ReadOnlyFile(dol) as source, ReadOnlyFile(setup) as profile:
+        if not 0 < source.size <= 8 << 20:
+            raise ValueError("source DOL extent")
         if profile.size != 1064:
             raise ValueError("setup extent")
         image = DolImage(source.read(0, source.size), SOURCE_SHA256)

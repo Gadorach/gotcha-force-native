@@ -25,6 +25,18 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("bind failed", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
+    def test_gfmm8_data_remains_usable_without_enabling_new_actor_callbacks(self):
+        pack = Path("local/content/source-gred-ground-v8")
+        if not (pack/"motion.gfmm").is_file():
+            self.skipTest("optional qualified GFMM8 pack absent")
+        result = self.run_host(["--demo-source-windup-entry-push", "--source-ground-assets",
+                                str(pack), "--headless", "--frames", "81", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=81", result.stdout)
+        self.assertIn("windup-entry-surface-pushes=1", result.stdout)
+        self.assertIn("landings=0 resource=8450 selector=15", result.stdout)
+        self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+
     def test_general_ground_walk_stop_dash_and_interactive_idle(self):
         for mode in ("--demo-source-ground", "--source-ground"):
             result = self.run_host([mode, "--headless", "--frames", "360", "--no-audio"])
