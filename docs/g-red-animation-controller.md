@@ -13,13 +13,94 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
-## Ground/ledge correction recovery (numeric candidate only)
+## Live walk-only ledge handoff (GFMM8)
+
+`--source-walk-ledge` / `--demo-source-walk-ledge` connects the recovered
+ground-loss subset through the existing owner, VM, motion, contact and renderer.
+Older ground and movement policies retain their ledge refusal. This mode accepts
+low-deflection walking only: jump, flick/dash, flight, attacks and landing
+cancellation refuse rather than skipping unresolved input/controller work.
+
+The owner creates a **native-owned frame-start snapshot** from the exact
+same-world/tick/binding observation. It does not relabel a previous render pose
+or the last movement's starting point as source2C/30/34. The unblocked detached
+subset declares4A0/732 zero, reads the VM's actual1D9B metadata, and refuses
+unowned overrides/attachments. No original actor constructor or whole callback
+frame is acknowledged.
+
+Distinct native departure, priority-entry, falling and touchdown kinds carry
+exact frame-start, timer698, scalar44, travel5AE, optional drift heading and
+selected-surface evidence. Native acceptance independently verifies source
+normal-G-Red/rank1 walking tangents, strict downward gap beyond60, retained
+departure Y/zero48,0.99 scalar damping, old-velocity air integration, timer order
+and delayed4-unit drift. All body/bounds/terrain clipping and endpoint/vertical
+budgets remain refusals. Actual landing is limited to a flat selected surface;
+overflight does not authorize a nonflat contact or borrow old push policies.
+
+The last ground step still publishes walking program1 and source flags10/cache0.
+The **following** priority correction selects6/marker1; scoped numeric VM flag
+portions run before program13 entry. That entry integrates old zero48, then
+applies50=-1, sets flags40/cache1 and starts698=30. Only after the timer reaches
+zero can direct camera-relative drift run. Retained travel and body heading are
+separate; camera motion does not force the Borg to turn.
+
+Flag writes reuse the shared VM with exact class-field/scope checks for the
+numeric portions of6A5A4,5FECC,60228 and6A474. They grant no actor/contact receipt
+on their own. All history, flags, counters, resource and pose-frame leases remain
+staged until matching native acceptance; source retirement revokes them.
+
+The native demo starts on authored roof triangle249, X/Z
+`(1010.166015625,2315.240722656)`, initial floor reference482.747558594 and
+arena-half4500. Target placement is unchanged. Interactive mode retains ordinary
+MVP spawn/arena/references. These are native demo assumptions, not original spawn
+data, and no airborne position, input calibration or stage asset is fabricated.
+It holds low walking input from5 through one accepted post-delay drift, then
+releases:
+
+| Tick | Role / program | Native/source state |
+| --- | --- | --- |
+| 85 | Ground departure /1 | Y held482.747589,48=0; flags10/cache0, no takeoff |
+| 86 | Priority falling entry /13 | Same Y then48=-1;698=30, flags40/cache1 |
+| 87–115 | Falling /13 | Retained momentum×0.99, direct drift inhibited |
+| 116 | Falling /13 | 698=0, one direct drift update while input remains held |
+| 117 | Actual flat touchdown /13 | Y=10, flags40/cache1 still captured |
+| 118 | Landing entry /8 | Scoped landing flags200/cache0; not early refill |
+| 240/600 | Stable idle /0 | Flags0/cache0, meter10000, one departure/entry/landing |
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-walk-ledge-host-v1
+build/source-walk-ledge-host-v1/gf_native \
+  --demo-source-walk-ledge --headless --frames 600 --no-audio
+```
+
+The mode retains explicit native clock, initialization, camera, collision and
+libm approximations, not original-hardware/full-game equivalence. Nonflat
+landings, small-step/native-proxy disagreements, clipping, unknown/layered
+geometry, external momentum/history, forced732, attachments, offsets and
+platforms remain refused. Tests: `character_program_ground_loss_flags`,
+`native_source_walk_ledge` and `native_source_walk_ledge_owner`.
+
+Contact Sheet33 shows actual offscreen GL frames84/85/86/115/116/117/118/180
+without taking desktop/classifier focus. It distinguishes the walking departure,
+program13 entry, delayed drift, captured touchdown and later landing/idle flags.
+Fall-entry frame86 is pixel-identical between the isolated native-only checkpoint
+and the full working tree. Captures remain local and outside Git:
+`local/recomp-evidence/contact-sheets/source-walk-ledge-v1/contact-sheet-33.png`.
+
+Isolated validation passed14 sanitizer binaries, all143 Python tests (including
+32 opt-in host integrations), host/all-header builds and the ordinary64-tick duel
+smoke. The real-stage owner test passed1963 checks through600 updates, including
+old-mode refusal, staged history/flags/timers, one post-delay drift, pose/receipt
+retirement and stable idle. The original seven-component GFMM8 pack is unchanged.
+
+## Earlier ground/ledge correction recovery (numeric candidate only)
 
 The ground-to-air investigation now has a bounded native `68DF8/6A5A4` numeric
 planner, `gred_ground_correction_plan()`, and separately qualified **GFMM8**
-operands. It is **not connected to the live movement owner**: walking/dashing off
-an unsupported ledge still refuses instead of manufacturing an actor or contact
-receipt. Existing source modes and the ordinary MVP retain their policies.
+operands. That milestone did **not connect the live movement owner**. Existing
+source modes and the ordinary MVP retain their policies; the later explicit
+walk-only bridge above is the sole new actor permission.
 
 Initialized-DOL disassembly resolves the paired-single decompiler truncations:
 

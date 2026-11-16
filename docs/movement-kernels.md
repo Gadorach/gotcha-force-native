@@ -18,8 +18,9 @@ callbacks, certify collision, or grant renderer/frame receipts.
   preserves acceleration and airborne history; it is not landing or refill.
 - GFMM8 separately owns ground-loss zero/timer operands. Its correction planner
   models strict previous-height step tests and optional selector6/marker1/
-  program13 metadata only. Live ledge exits remain refused until source history,
-  VM flags, timer/drift/contact and native receipt ownership are connected.
+  program13 metadata only. The separate walk-only ledge owner now connects native
+  frame-start history, scoped VM flag portions, delayed drift and flat landing
+  through distinct receipts. Older policies retain their ledge refusal.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

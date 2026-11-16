@@ -28,13 +28,13 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-windup-entry-push` (or
-`--demo-source-windup-entry-push --headless --frames 600`), requiring a local GFMM7
-pack. Entry halves speed without translating/applying acceleration, then a steep
-ret0 contact applies0.9 damping rather than floor-zero/landing/refill. Its demo
-declares a native placement, floor reference and wider arena on the original
-stage; interactive settings are unchanged. Earlier floor policies keep their
-narrower contracts.
+The latest opt-in lab is `--source-walk-ledge` (or
+`--demo-source-walk-ledge --headless --frames 600`), requiring a local GFMM8 pack.
+Low-deflection walking can leave a verified static ledge through an owned
+frame-start snapshot, delayed program13 entry,30-update drift delay and flat
+touchdown. Jump/flick/dash/flight/combat, clipping and nonflat landings remain
+refused. Demo placement/reference/bounds are native assumptions; interactive
+settings and older controller policies are unchanged.
 Other Borgs do not inherit G-Red's recovered mappings.
 
 Some development demonstrations use private generated metadata profiles and

@@ -11,6 +11,7 @@ struct GRedVerticalJumpState {
     u8 ascent_stage=0;bool direction550=false;f32 timer690=0;
     u8 air_ready588=0;bool falling_after_dash=false;
     bool falling_after_relaunch=false;u8 falling_coarse57d=0;
+    bool falling_after_ground_loss=false;
 };
 struct GRedVerticalJumpPlan {
     GRedVerticalJumpState state;CharacterMovementMotionState motion;
@@ -24,6 +25,7 @@ inline bool gred_vertical_jump_plan(const CharacterMovementProfile& p,const GRed
        (motion.flags5e0&0x2000u)||motion.field741||motion.field6cb||motion.vertical_only598||
        !std::isfinite(input.timer690)||input.timer690<0||input.timer690>1e5f||
        (moving&&!p.air_operands)||(moving&&input.selector==5&&input.entered&&input.ascent_stage!=1&&input.ascent_stage!=2)||
+       (input.falling_after_ground_loss&&(!p.ground_loss_operands||input.falling_after_dash||input.falling_after_relaunch))||
        (held&~(moving?0xf0100u:0x100u))||input.cached87>1||input.falling_coarse57d>3||input.selector<4||input.selector>7)return false;
     GRedVerticalJumpPlan plan;plan.state=input;plan.motion=motion;
     //5's release/resource admission precedes the lower callback. Its entry
@@ -45,7 +47,8 @@ inline bool gred_vertical_jump_plan(const CharacterMovementProfile& p,const GRed
         plan.motion.vertical_change50=std::fma(p.air[0],1.f,p.air[9]);
         break;
     case 6:
-        plan.program=input.falling_after_relaunch?u8(21+input.falling_coarse57d):input.falling_after_dash?13:6;plan.state.cached87=1;plan.air_move=true;
+        plan.program=input.falling_after_relaunch?u8(21+input.falling_coarse57d):
+            input.falling_after_dash||input.falling_after_ground_loss?13:6;plan.state.cached87=1;plan.air_move=true;
         if(plan.state.timer690<=0)plan.state.air_ready588=1;
         if(entry){plan.motion.vertical_change50=p.air[10];plan.motion.planar_change4c=0;}
         break;

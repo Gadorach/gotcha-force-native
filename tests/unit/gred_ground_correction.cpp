@@ -115,5 +115,5 @@ int main(){
         check(character_movement_load({raw.data(),raw.size()},&actual,&error)&&actual.ground_loss_operands&&
             actual.ground_loss_zero==0&&actual.ground_loss_contact_delay==30,"qualified separate8043762C/80437648 operands");
     }
-    std::printf("G-Red ground correction/history/priority operands: %u checks PASS; numeric candidates only, live ledge exit remains refused\n",checks);
+    std::printf("G-Red ground correction/history/priority operands: %u checks PASS; numeric candidates only, legacy ground-only ledge exit remains refused\n",checks);
 }

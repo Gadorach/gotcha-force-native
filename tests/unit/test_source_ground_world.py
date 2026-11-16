@@ -86,6 +86,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-windup-entry-floor", "--source-air-dash-floor"],
                        ["--source-windup-positive-floor", "--source-windup-entry-floor"],
                        ["--source-windup-entry-push", "--source-windup-positive-floor"],
+                       ["--source-walk-ledge", "--source-ground"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)
@@ -224,6 +225,33 @@ class SourceGroundWorldTests(unittest.TestCase):
                                 "local/content/source-gred-ground-v6", "--headless", "--no-audio"])
         self.assertEqual(result.returncode, 2, result.stdout)
         self.assertIn("requires GFMM7", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
+    def test_walk_ledge_delays_falling_vm_and_drift_without_fake_jump(self):
+        for tick, departures, entries, landings, timer, cached, flags in (
+                (85, 1, 0, 0, "0.0", 0, "10"), (86, 1, 1, 0, "30.0", 1, "40"),
+                (116, 1, 1, 0, "0.0", 1, "40"), (117, 1, 1, 1, "0.0", 1, "40"),
+                (118, 1, 1, 1, "0.0", 0, "200"), (240, 1, 1, 1, "0.0", 0, "0"),
+                (600, 1, 1, 1, "0.0", 0, "0")):
+            result = self.run_host(["--demo-source-walk-ledge", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"ground-departures={departures} loss-entries={entries} loss-landings={landings}", result.stdout)
+            self.assertIn(f"timer698={timer} cached87={cached} flags={flags}", result.stdout)
+            self.assertIn("resource=10000", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+            self.assertIn("interactive arena/spawn unchanged", result.stdout)
+            if tick>=116:
+                self.assertIn("suppressed-drift=30", result.stdout)
+        result = self.run_host(["--source-walk-ledge", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("ground-departures=0 loss-entries=0 loss-landings=0", result.stdout)
+        self.assertNotIn("walk-ledge demo only:", result.stdout)
+        result = self.run_host(["--source-walk-ledge", "--source-ground-assets",
+                                "local/content/source-gred-ground-v7", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM8", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
     def test_source_air_dash_policy_and_old_pack_refusal(self):

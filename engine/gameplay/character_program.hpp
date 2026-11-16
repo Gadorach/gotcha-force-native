@@ -8,6 +8,7 @@
 #include "engine/gameplay/character_pose_height.hpp"
 #include "engine/gameplay/character_motion_root_state.hpp"
 namespace gf {
+enum class CharacterProgramGroundLossFlagPhase {Correction,FallingEntry,LandingEntry,Idle};
 struct CharacterProgramMotionContext {virtual ~CharacterProgramMotionContext()=default;};
 struct CharacterProgramMotion {
     bool selected=false;f32 elapsed=0,frame=0;s16 end_frame=0;s8 finished=0,rewound=0;
@@ -295,6 +296,25 @@ public:
            expected.default_group!=state_.actor.default_group||expected.effect_control!=state_.actor.control0[3]||
            expected.behaviour!=state_.actor.behaviour)return refuse(error,"stale/foreign ground walk flag writeback");
         state_.actor.behaviour=(state_.actor.behaviour&~0x10u)|(walking?0x10u:0u);return true;
+    }
+    //Scoped numeric flag portions of6A5A4/5FECC/60228/6A474 only.
+    //No callback, selector, collision, actor or frame acknowledgement.
+    bool write_ground_loss_flags(const CharacterProgramClassFields& expected,CharacterProgramGroundLossFlagPhase phase,std::string* error){
+        if(!ready_||!fresh_actor_||!height_controls_||!class_scope_||expected.scope.lock()!=class_scope_||
+           expected.default_group!=state_.actor.default_group||expected.effect_control!=state_.actor.control0[3]||
+           expected.behaviour!=state_.actor.behaviour||expected.steering1dfc!=state_.actor.steering1dfc||
+           (expected.behaviour&0x81000003u)||unsigned(phase)>unsigned(CharacterProgramGroundLossFlagPhase::Idle))
+            return refuse(error,"stale/foreign/unqualified ground-loss flags");
+        auto& flags=state_.actor.behaviour;
+        if(phase==CharacterProgramGroundLossFlagPhase::Correction){
+            if(flags&0x2040u)return refuse(error,"ground-loss correction requires reviewed ground flags");
+            flags&=0x00ff0041u;
+        }else if(phase==CharacterProgramGroundLossFlagPhase::FallingEntry){
+            if(flags&0x2000u)return refuse(error,"ground-loss falling requires unblocked motion");
+            flags|=0x40u;
+        }else if(phase==CharacterProgramGroundLossFlagPhase::LandingEntry)flags=(flags&~0x2040u)|0x200u;
+        else flags&=0x00ff0003u;
+        return true;
     }
     //80057D9C consumes actor1CEF after the program update, not inside the VM.
     bool consume_primary_control(u8* out){
