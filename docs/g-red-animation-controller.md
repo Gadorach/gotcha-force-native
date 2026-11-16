@@ -106,6 +106,39 @@ its supported contact geometry or a movement rule for other Borgs. Run
 `native_source_relaunch_floor_owner` to exercise both the two-snap release route
 and this held/depletion route.
 
+### Air-dash floor caller recovery (candidate only)
+
+Air-dash contact must not inherit relaunch's0.8 floor response. Qualified
+initialized-DOL disassembly distinguishes:
+
+- Wind-up `61338` clears callback754 at entry, halves44/48 without translating,
+  and sets50 to data70. Continued frames integrate with `67310`, decrement568,
+  and may spend/select16 **before** contact. After `677B0` returns1, the caller
+  unconditionally zeros48, but does not reset50 or select landing7.
+- Active `61560` initially clears754 and later installs `65E64` when its minimum
+  active timer expires. Its `67310`/`677B0` tail has **no** additional response:
+  null-callback contact preserves48/50. A real installed callback remains normal
+  landing; depletion's selection17 can clear754 before the current contact.
+- Relaunch `6235C` instead multiplies only negative48 by0.8 after return1.
+  These three caller responses are not a shared Borg floor rule.
+
+`gred_air_dash_static_contact()` reuses the paired static query and explicit
+`Snapped` result to model the first two caller tails. Above/away and steep push
+returns do not trigger wind-up's vertical zero. It requires the reviewed GFMM7
+null-callback candidate domain but adds no new pack operands. Attachments,
+offsets, recovery-specific callers and invalid wind-up callback claims refuse.
+
+This checkpoint is **numeric candidate recovery only**: the native owner and
+producer policies still refuse early air-dash floor contact. A bounded original
+stage probe with ordinary spawn and a left flick at78 refuses after accepted
+tick79, while preparing its first continued wind-up contact. No receipt, cost, pose or
+legacy-MVP fallback is committed for that refused tick.
+
+The bounded handlers were cross-checked byte-for-byte against the qualified
+DOL; private evidence is under
+`local/recomp-evidence/gred-air-dash-floor-v1/`. Numeric regression:
+`gred_air_dash_floor`. No new manual animation classification is required.
+
 ## Native movement-input/resource subset
 
 The next native pieces are now implemented independently of the playable MVP:
