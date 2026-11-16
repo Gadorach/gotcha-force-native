@@ -11,6 +11,8 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <filesystem>
+#include <fstream>
 
 #include "engine/core/context.hpp"
 #include "engine/core/headless_backends.hpp"
@@ -35,6 +37,9 @@
 #include "engine/gameplay/session.hpp"
 #include "engine/assets/battle_test_config.hpp"
 #include "engine/gameplay/battle_test_view.hpp"
+#include "engine/gameplay/native_battle_mvp_view.hpp"
+#include "engine/gameplay/native_gred_ground_dash_demo.hpp"
+#include "engine/gameplay/native_animation_mosaic.hpp"
 #include "engine/graphics/render_engine.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/input/input_router.hpp"
@@ -56,6 +61,28 @@ struct Options {
     bool demo_credits_fast_back = false;
     bool no_audio = false;
     bool test_battle = false,demo_battle=false;
+    bool battle_mvp=false,demo_battle_mvp=false,demo_locomotion=false,demo_source_ground=false;
+    bool source_ground_walk=false,source_ground_interactive=false;
+    bool source_vertical_jump=false;
+    bool source_moving_jump=false;
+    bool source_air_dash=false;
+    bool source_relaunch=false;
+    bool source_dash_jump=false;
+    bool source_landing_interrupt=false;
+    bool source_surface=false;
+    bool source_steep=false;
+    bool source_fall_surface=false;
+    bool source_recovery_surface=false;
+    bool source_windup_surface=false;
+    bool source_active_surface=false;
+    bool source_relaunch_surface=false;
+    bool source_relaunch_entry_surface=false;
+    bool source_relaunch_floor=false;
+    std::string source_ground_assets;
+    std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
+    bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
+    std::string animation_export;unsigned animation_export_frames=36;bool animation_export_page_only=false;
+    std::string animation_programs,animation_height_profile,animation_motion_profile;
     std::string battle_config="content/test-battle/battle.ini";
     int probe_texture = -1;    // AFS index to decode as a TPL and draw over the menu
     bool placeholder_menu = false;   // force the box set instead of the real room
@@ -104,6 +131,57 @@ bool parse(int argc, char** argv, Options* options) {
         else if (arg == "--no-audio") options->no_audio=true;
         else if (arg == "--test-battle") options->test_battle=true;
         else if (arg == "--demo-battle") options->test_battle=options->demo_battle=true;
+        else if (arg == "--battle-mvp") options->battle_mvp=true;
+        else if (arg == "--demo-battle-mvp") options->battle_mvp=options->demo_battle_mvp=true;
+        else if (arg == "--demo-locomotion") options->battle_mvp=options->demo_locomotion=true;
+        else if (arg == "--demo-source-ground-dash" || arg == "--demo-source-ground" || arg == "--source-ground" ||
+                 arg == "--source-vertical-jump" || arg == "--demo-source-vertical-jump" ||
+                 arg == "--source-jump" || arg == "--demo-source-jump" ||
+                 arg == "--source-air-dash" || arg == "--demo-source-air-dash" ||
+                 arg == "--source-relaunch" || arg == "--demo-source-relaunch" ||
+                 arg == "--source-dash-jump" || arg == "--demo-source-dash-jump" ||
+                 arg == "--source-landing" || arg == "--demo-source-landing" ||
+                 arg == "--source-surface" || arg == "--demo-source-surface" ||
+                 arg == "--source-steep" || arg == "--demo-source-steep" ||
+                 arg == "--source-fall-surface" || arg == "--demo-source-fall-surface" ||
+                 arg == "--source-recovery-surface" || arg == "--demo-source-recovery-surface" ||
+                 arg == "--source-windup-surface" || arg == "--demo-source-windup-surface" ||
+                 arg == "--source-active-surface" || arg == "--demo-source-active-surface" ||
+                 arg == "--source-relaunch-surface" || arg == "--demo-source-relaunch-surface" ||
+                 arg == "--source-relaunch-entry-surface" || arg == "--demo-source-relaunch-entry-surface" ||
+                 arg == "--source-relaunch-floor" || arg == "--demo-source-relaunch-floor"){
+            if(options->demo_source_ground)return false;
+            options->battle_mvp=options->demo_source_ground=true;
+            options->source_ground_walk=arg!="--demo-source-ground-dash";
+            options->source_ground_interactive=arg=="--source-ground"||arg=="--source-vertical-jump"||arg=="--source-jump"||arg=="--source-air-dash"||arg=="--source-relaunch"||arg=="--source-dash-jump"||arg=="--source-landing"||arg=="--source-surface"||arg=="--source-steep"||arg=="--source-fall-surface"||arg=="--source-recovery-surface"||arg=="--source-windup-surface"||arg=="--source-active-surface"||arg=="--source-relaunch-surface"||arg=="--source-relaunch-entry-surface"||arg=="--source-relaunch-floor";
+            options->source_relaunch_floor=arg=="--source-relaunch-floor"||arg=="--demo-source-relaunch-floor";
+            options->source_relaunch_entry_surface=arg=="--source-relaunch-entry-surface"||arg=="--demo-source-relaunch-entry-surface"||options->source_relaunch_floor;
+            options->source_relaunch_surface=arg=="--source-relaunch-surface"||arg=="--demo-source-relaunch-surface"||options->source_relaunch_entry_surface;
+            options->source_active_surface=arg=="--source-active-surface"||arg=="--demo-source-active-surface"||options->source_relaunch_surface;
+            options->source_windup_surface=arg=="--source-windup-surface"||arg=="--demo-source-windup-surface"||options->source_active_surface;
+            options->source_recovery_surface=arg=="--source-recovery-surface"||arg=="--demo-source-recovery-surface"||options->source_windup_surface;
+            options->source_fall_surface=arg=="--source-fall-surface"||arg=="--demo-source-fall-surface"||options->source_recovery_surface;
+            options->source_steep=arg=="--source-steep"||arg=="--demo-source-steep"||options->source_fall_surface;
+            options->source_surface=arg=="--source-surface"||arg=="--demo-source-surface"||options->source_steep;
+            options->source_landing_interrupt=arg=="--source-landing"||arg=="--demo-source-landing"||options->source_surface;
+            options->source_dash_jump=arg=="--source-dash-jump"||arg=="--demo-source-dash-jump"||options->source_landing_interrupt;
+            options->source_relaunch=arg=="--source-relaunch"||arg=="--demo-source-relaunch"||options->source_dash_jump;
+            options->source_air_dash=arg=="--source-air-dash"||arg=="--demo-source-air-dash"||options->source_relaunch;
+            options->source_moving_jump=arg=="--source-jump"||arg=="--demo-source-jump"||options->source_air_dash;
+            options->source_vertical_jump=arg=="--source-vertical-jump"||arg=="--demo-source-vertical-jump"||options->source_moving_jump;
+        }
+        else if (arg == "--source-ground-assets" && i+1<argc) options->source_ground_assets=argv[++i];
+        else if (arg == "--battle-mvp-assets" && i+1<argc) options->battle_mvp_assets=argv[++i];
+        else if (arg == "--animation-mosaic") options->animation_mosaic=true;
+        else if (arg == "--animation-grid" && i+2<argc){options->animation_columns=std::strtoul(argv[++i],nullptr,10);options->animation_rows=std::strtoul(argv[++i],nullptr,10);}
+        else if (arg == "--animation-page" && i+1<argc){const auto page=std::strtoul(argv[++i],nullptr,10);if(!page)return false;options->animation_page=unsigned(page-1);}
+        else if (arg == "--animation-borg" && i+1<argc){const std::string borg=argv[++i];if(borg!="g-red"&&borg!="sasuke")return false;options->animation_borg=borg=="sasuke";}
+        else if (arg == "--animation-export" && i+1<argc) options->animation_export=argv[++i];
+        else if (arg == "--animation-export-frames" && i+1<argc) options->animation_export_frames=std::strtoul(argv[++i],nullptr,10);
+        else if (arg == "--animation-export-page-only") options->animation_export_page_only=true;
+        else if (arg == "--animation-programs" && i+1<argc) options->animation_programs=argv[++i];
+        else if (arg == "--animation-height-profile" && i+1<argc) options->animation_height_profile=argv[++i];
+        else if (arg == "--animation-motion-profile" && i+1<argc) options->animation_motion_profile=argv[++i];
         else if (arg == "--battle-config" && i+1<argc) options->battle_config=argv[++i];
         else if (arg == "--placeholder-menu") options->placeholder_menu = true;
         else if (arg == "--file-pose") options->file_pose = true;
@@ -156,6 +234,15 @@ bool parse(int argc, char** argv, Options* options) {
     }
     if(unsigned(options->demo_input)+unsigned(options->demo_option)+unsigned(options->demo_credits)>1)return false;
     if(options->test_battle&&(options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
+    if(options->battle_mvp&&(options->test_battle||options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
+    if(options->animation_mosaic&&(options->battle_mvp||options->test_battle||options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
+    if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
+    if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
+    if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
+    if(!options->animation_programs.empty()&&(!options->animation_mosaic||options->animation_borg||!options->animation_export.empty()))return false;
+    if(!options->animation_motion_profile.empty()&&options->animation_programs.empty())return false;
+    if(options->demo_source_ground&&(options->demo_battle_mvp||options->demo_locomotion))return false;
+    if(!options->source_ground_assets.empty()&&!options->demo_source_ground)return false;
     if (options->headless && options->frames == 0) options->frames = 3;
     return true;
 }
@@ -321,6 +408,274 @@ int run_battle_test(gf::Context& context,gf::RenderEngine& render,const Options&
     render.shutdown();return 0;
 }
 
+int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& options){
+    gf::NativeBattleMvp world;gf::NativeBattleMvpView view;std::string error;
+    gf::BattleMvpConfig config;
+    //Explicit native demo placement at original stage473 floor triangle1297's
+    //interior, not a recovered actor constructor/spawn or edited stage asset.
+    if(options.source_surface&&!options.source_ground_interactive)config.spawn[0]={-619.2617f,169.4453f};
+    if(options.source_steep&&!options.source_ground_interactive)config.spawn[0]={-606.6735f,-1373.0029f}; //native placement on steep original triangle1320
+    if(options.source_fall_surface&&!options.source_ground_interactive)config.spawn[0]={-606.4511719f,-1373.5872803f}; //native interior point on the same original steep face
+    //Bounded original-stage recovery route; BOTH placements are native demo
+    //assumptions, not recovered actor constructor/spawn or edited stage data.
+    if(options.source_recovery_surface&&!options.source_ground_interactive){
+        config.spawn[0]={44.928558350f,-332.878112793f};config.spawn[1]={1200,1200};
+    }
+    //Unchanged original mountain triangle2536. Wider bounds and a static-floor
+    //query reference are declared native DEMO assumptions only; normal play
+    //keeps its old arena/spawn and no airborne position is fabricated.
+    if(options.source_windup_surface&&!options.source_ground_interactive){
+        config.arena_half=4500;config.spawn[0]={-2302.447265625f,528.269836426f};
+        config.spawn_query_y[0]=591.912719727f;config.spawn[1]={240,-300};
+    }
+    //Native one-shot active-contact route. Both actors stand on real selected
+    //floors; only placement/bounds are demo assumptions, not source spawns.
+    if(options.source_active_surface&&!options.source_ground_interactive){
+        config.arena_half=4500;config.spawn[0]={295.518066406f,1631.279907227f};
+        config.spawn[1]={-2850,3000};config.spawn_query_y={0,0};
+    }
+    //This neutral relaunch demo needs only a native player placement on the
+    //original small incline; reset inherited demo-only bounds/target/reference.
+    if(options.source_relaunch_surface&&!options.source_ground_interactive){
+        config={};config.spawn[0]={-606.4511719f,-1373.5872803f};
+    }
+    if(options.source_relaunch_floor&&!options.source_ground_interactive)config={}; //ordinary native MVP spawn, target, bounds and floor references
+    if(!view.load(context.files(),options.battle_mvp_assets,render,&error)||!world.start(config,&view)||!view.update(world,&error)){
+        gf::log_error(context,"battle-mvp","initialization failed: %s",error.c_str());render.shutdown();return 2;}
+    gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
+    const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
+        options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
+    const auto source_mode=options.source_relaunch_floor?gf::NativeGRedGroundDashDemo::Mode::RelaunchFloor:options.source_relaunch_entry_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface:options.source_relaunch_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchSurface:options.source_active_surface?gf::NativeGRedGroundDashDemo::Mode::ActiveSurface:options.source_windup_surface?gf::NativeGRedGroundDashDemo::Mode::WindupSurface:options.source_recovery_surface?gf::NativeGRedGroundDashDemo::Mode::RecoverySurface:options.source_fall_surface?gf::NativeGRedGroundDashDemo::Mode::FallingSurface:options.source_steep?gf::NativeGRedGroundDashDemo::Mode::Steep:options.source_surface?gf::NativeGRedGroundDashDemo::Mode::Surface:options.source_landing_interrupt?gf::NativeGRedGroundDashDemo::Mode::LandingInterrupt:options.source_dash_jump?gf::NativeGRedGroundDashDemo::Mode::DashJump:options.source_relaunch?gf::NativeGRedGroundDashDemo::Mode::Relaunch:options.source_air_dash?gf::NativeGRedGroundDashDemo::Mode::AirDash:options.source_moving_jump?gf::NativeGRedGroundDashDemo::Mode::Jump:options.source_vertical_jump?gf::NativeGRedGroundDashDemo::Mode::VerticalJump:
+        options.source_ground_walk?gf::NativeGRedGroundDashDemo::Mode::Ground:gf::NativeGRedGroundDashDemo::Mode::DashOnly;
+    auto bind_source=[&](){gf::NativeBorgAnimationSeed seed;return view.source_seed(world,&seed)&&source.bind(context.files(),options.battle_mvp_assets,source_inputs,world,seed,&error,source_mode);};
+    if(options.demo_source_ground&&!bind_source()){gf::log_error(context,"source-ground","bind failed: %s",error.c_str());render.shutdown();return 2;}
+    gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
+    gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
+    if(options.demo_source_ground)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; %s; no original whole-frame equivalence",options.source_moving_jump?"ground plus moving jump/air steering":options.source_vertical_jump?"ground plus neutral vertical jump":options.source_ground_walk?"ground walk/turn/stop/dash only":"scripted dash only, no source walk/jump/combat");
+    if(options.source_ground_walk){
+        view.source_ground_controls(options.source_ground_interactive);
+        if(!options.source_vertical_jump)gf::log_info(context,"source-ground","%s source walk/turn/stop/dash; arrows/D-pad WALK, stick/WASD FLICK DASH; Enter pause, Q restart; jump/flight/combat refused before simulation; native rate664=1",options.source_ground_interactive?"interactive":"scripted");
+    }
+    if(options.source_vertical_jump){
+        view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
+        if(options.source_relaunch_floor){
+            gf::log_info(context,"source-ground","source null-callback relaunch floor response enabled: selecting8 clears754; static snap preserves50/87/latches, negative48 gets caller .8, NOT landing7/refill; distinct floor receipts and GFMM7; attachments/offsets/platforms/combat refused; native proxies, no whole-frame equivalence");
+            if(!options.source_ground_interactive)gf::log_info(context,"source-ground","relaunch-floor demo: ordinary native spawn/bounds/target/references; holds through two accepted null-callback snaps then releases to separate falling touchdown; not original input/AI/spawn data");
+        }else if(options.source_relaunch_entry_surface){
+            gf::log_info(context,"source-ground","source descending relaunch-entry surface push enabled: add15 BEFORE displacement/positive acceleration/clamp/.9 projection; request14 and spend150 once, no repeated additive entry/refill; distinct native entry-push capability/receipt, GFMM6; rising entries, relaunch landing, platforms/combat refused; native proxies, no whole-frame equivalence");
+            if(!options.source_ground_interactive)gf::log_info(context,"source-ground","entry-push demo only: native player placement on triangle1320, ordinary arena/target/references; releases jump and samples one soft left drift after accepted entry push, not a motion override or original input/spawn script");
+        }else if(options.source_relaunch_surface){
+            gf::log_info(context,"source-ground","source continued relaunch surface push enabled: programs14/15 retain separate lower/upper latches, continuation spend and positive neutral/directional acceleration; .9 projection stays airborne, no repeated additive entry; relaunch-only evidence/native receipt; entry pushes, landing, offsets/platforms/combat refused; GFMM6/native proxies, no whole-frame equivalence");
+            if(!options.source_ground_interactive)gf::log_info(context,"source-ground","relaunch demo only: native player placement on original triangle1320; ordinary arena-half1800, target and floor references retained; releases jump after first accepted relaunch push, not an original input/spawn script");
+        }else if(options.source_active_surface){
+            gf::log_info(context,"source-ground","source continued active surface push enabled: selector16/program11 spending before steering/motion/contact; readiness timer is not forced recovery, depletion preserves readiness then enters separate17; -.07 acceleration/.9 push, GFMM6; entry pushes, active-relaunch pushes, early/null landing, platforms and combat refused; native proxies, no whole-frame equivalence");
+            if(!options.source_ground_interactive)gf::log_info(context,"source-ground","active demo only: native arena-half=4500 and Borg placements; real floor references0; releases direction after first accepted active push, not an original AI/input script; interactive arena/spawn unchanged");
+        }
+        else if(options.source_windup_surface){
+            gf::log_info(context,"source-ground","source continued windup surface push enabled: selector15/program10 old-velocity integration, -.07 acceleration and .9 push damping; timer/cost before contact, separate active-entry reset; entry-frame pushes, early/null-callback landing, active dash/relaunch pushes, platforms and combat refused; GFMM6/native proxies, no whole-frame equivalence");
+            if(!options.source_ground_interactive)gf::log_info(context,"source-ground","windup demo only: native arena-half=4500 ground-query-reference=591.9127 at original triangle2536; native Borg placements, unchanged stage; interactive arena/spawn unchanged");
+        }else if(options.source_recovery_surface)gf::log_info(context,"source-ground","source airborne dash recovery surface push enabled: selector17/program12 motion and selected-plane .9 projection precede lower completion; no landing/refill shortcut; GFMM6 and distinct native recovery-push receipt; windup/active dash/relaunch pushes, grounded recovery, unresolved seams, platforms and combat refused; native proxies, no whole-frame equivalence");
+        else if(options.source_fall_surface)gf::log_info(context,"source-ground","source selector6 surface contact includes post-dash/relaunch falling: retains programs13/21-24, resets falling acceleration before shared motion/contact; selected-plane .9 push stays airborne without refill; GFMM6; windup/active dash/relaunch pushes, unresolved seams, platforms and combat refused; native proxies, no whole-frame equivalence");
+        else if(options.source_steep)gf::log_info(context,"source-ground","source static steep push enabled for ordinary falling only: selected-plane projection, .9 speed damping, remains airborne with no landing/refill; GFMM6 and independent native terrain validation required; takeoff samples re-press without locomotion cancel; dash/relaunch steep variants/attachments/combat refused; native proxies, no original whole-frame equivalence");
+        else if(options.source_surface)gf::log_info(context,"source-ground","source static surface landing enabled: paired selected height/normal, away-displacement gate and normal-G-Red angle limit; takeoff samples re-press without locomotion cancel; steep response/attachments/combat refused; native contact/camera/ceiling proxies, no original whole-frame equivalence");
+        else if(options.source_landing_interrupt)gf::log_info(context,"source-ground","source landing interruption enabled after accepted landing entry: jump before ground dash; cached87 resource recovery, no completion/refill shortcut; touchdown cancellation/takeoff interruption/combat refused; native flat-floor/ceiling proxy, effects omitted");
+        else if(options.source_dash_jump)gf::log_info(context,"source-ground","source dash-to-jump enabled: buffered/held jump admission before old dash dispatch; normal class12 clears dash speed; jump/air-dash/relaunch retained; landing/takeoff interruption/combat refused; native flat-floor/ceiling proxy, effects omitted");
+        else if(options.source_relaunch)gf::log_info(context,"source-ground","source relaunch enabled: fresh airborne Shift/B through source readiness/resource predicate; additive launch velocity; original lower/upper windup-to-ascent handoff; dash-to-jump/landing interruption/combat refused; native flat-floor/ceiling proxy, effects omitted");
+        else if(options.source_air_dash)gf::log_info(context,"source-ground","source air dash enabled: jump with Shift/B; arrows/D-pad steer, airborne WASD/stick flicks dash; source policy1 windup/active/recovery costs and timer; relaunch/dash-to-jump/combat refused; native flat-floor/ceiling proxy, effects omitted");
+        else if(options.source_moving_jump)gf::log_info(context,"source-ground","moving source jump enabled: Shift/B from walk/idle; native jump directions capped32 below flick threshold; ascent body turn, falling camera-relative drift; relaunch/air dash/dash-to-jump/combat refused; native flat-floor/ceiling proxy, effects omitted");
+        else gf::log_info(context,"source-ground","vertical source jump enabled: Shift/B from idle; neutral stick in air; held ascent spends source resource; release/depletion falls; moving takeoff/air steering/relaunch/dash/combat refused; native flat-floor/ceiling proxy, effects omitted");
+    }
+    bool input_refused=false;
+    gf::u32 landing_jump_script_tick=0,landing_dash_script_tick=0;
+    for(unsigned i=0;i<2;++i){gf::BattleMvpVec low,high;if(view.actor_bounds(i,&low,&high))gf::log_info(context,"battle-mvp","actor=%u ground-y=%.1f model-y=%.1f..%.1f",i,world.actors()[i].position[1],low[1],high[1]);}
+    while(context.window().pump_events()&&!context.window().should_close()){
+        const auto now=context.clock().monotonic_ns();if(options.seconds&&now-started>=gf::u64(options.seconds)*1000000000ull)break;
+        context.input().pump();const auto& snapshot=context.input().snapshot();const auto pad=router.route(snapshot,0);if(snapshot.quit||pad.quit_requested)break;
+        unsigned steps=1;
+        if(!options.headless&&!((options.demo_battle_mvp||options.demo_locomotion||(options.demo_source_ground&&!options.source_ground_interactive))&&options.frames)){
+            const auto elapsed=now>=previous?std::min<gf::u64>(now-previous,250000000):0;phase+=elapsed*60;steps=unsigned(std::min<gf::u64>(phase/1000000000ull,8));phase%=1000000000ull;}
+        previous=now;
+        for(unsigned i=0;i<steps;++i){
+            auto input=pad;
+            if(options.demo_battle_mvp){input={};const auto t=commands%600;input.a=t%90<30;input.x=t==120;input.b=t==180;input.y=t==599;input.stick_x=t>=60&&t<160?80:t>=220&&t<280?-80:0;}
+            if(options.demo_locomotion){
+                input={};const auto t=commands%360;input.y=t==359;input.b=t==160;
+                if(t<42){input.stick_y=-90;input.l=t==30;}
+                else if(t>=60&&t<72){input.stick_x=-127;input.l=t==60;}
+                else if(t>=90&&t<102){input.stick_y=127;input.l=t==90;}
+                else if(t>=120&&t<132){input.stick_x=127;input.l=t==120;}
+                else if(t==180){input.stick_x=127;input.l=true;}
+            }
+            const auto movement=gf::NativeBattleMvpView::movement_frame(world,options.width,options.height);
+            if(options.demo_source_ground){
+                gf::GamePadState controls;controls.start=pad.start;controls.y=pad.y;
+                gf::NativeGRedGroundInput mapped;
+                if(options.source_ground_walk){
+                    auto device=pad;
+                    if(!options.source_ground_interactive){
+                        device={};const unsigned t=world.tick()%(options.source_air_dash?480:options.source_moving_jump?480:options.source_vertical_jump?600:360);
+                         if(options.source_relaunch_floor){
+                             const auto tick=world.tick();device.b=(tick>=5&&tick<31)||(tick>=78&&source.relaunch_floor_contacts()<2);
+                         }else if(options.source_relaunch_entry_surface){
+                             const auto tick=world.tick();device.b=(tick>=5&&tick<31)||(tick>=78&&!source.relaunch_surface_pushes());
+                             if(source.relaunch_entry_surface_pushes()&&source.selector()==8)device.dpad_left=true;
+                         }else if(options.source_relaunch_surface){
+                             const auto tick=world.tick();device.b=(tick>=5&&tick<33)||(tick>=81&&!source.relaunch_surface_pushes());
+                         }else if(options.source_active_surface){
+                             const auto tick=world.tick();device.b=tick>=5&&tick<40;
+                             if(tick>=38&&!source.active_pushes())device.stick_x=127; //accepted-counter-driven demo input, never a motion override
+                         }else if(options.source_windup_surface){
+                             const auto tick=world.tick();device.b=tick>=5&&tick<33;
+                             if(tick>=79&&tick<129)device.stick_x=-127; //one-shot native route, not a recovered spawn/input script
+                         }else if(options.source_recovery_surface){
+                             device.b=t>=5&&t<22;if(t>=20&&t<61)device.stick_y=127;
+                         }else if(options.source_fall_surface){
+                             device.b=(t>=5&&t<33)||(t>=45&&t<60);
+                         }else if(options.source_surface){
+                             device.b=(t>=5&&t<8)||(t>=9&&t<(options.source_steep?33u:30u));
+                        }else if(options.source_landing_interrupt){
+                            const auto tick=world.tick();
+                            if(!source.landing_jumps()){
+                                device.b=tick>=5&&tick<30;
+                                if(source.landing_entry_accepted()){device.b=true;landing_jump_script_tick=tick;}
+                            }else if(!source.landing_dashes()){
+                                device.b=tick<landing_jump_script_tick+25;
+                                if(source.landing_entry_accepted()){device.b=false;device.stick_x=-127;landing_dash_script_tick=tick;}
+                            }else if(tick<landing_dash_script_tick+10)device.stick_x=-127;
+                        }else if(options.source_dash_jump){
+                            if(t>=5&&t<15)device.stick_y=-127;
+                            if(t>=180&&t<186)device.stick_x=-127;
+                            device.b=(t>=15&&t<45)||(t>=186&&t<216);
+                        }else if(options.source_relaunch){
+                            device.b=(t>=5&&t<35)||(t>=45&&t<85)||(t>=110&&t<150);
+                        }else if(options.source_air_dash){
+                            device.b=t>=5&&t<350;
+                            if((t>=45&&t<87)||(t>=90&&t<132))device.stick_y=-127;
+                        }else if(options.source_moving_jump){
+                            device.b=(t>=5&&t<35)||(t>=200&&t<230);
+                            device.dpad_right=t<20;device.dpad_up=t>=20&&t<35;device.dpad_left=t>=35&&t<65;
+                            if(t>=190&&t<215)device.dpad_left=true;
+                            if(t>=215&&t<230)device.dpad_right=true;
+                            if(t>=230&&t<260)device.dpad_down=true;
+                        }else if(options.source_vertical_jump){
+                            device.b=(t>=5&&t<30)||(t>=150&&t<450);
+                        }else{
+                            if(t>=5&&t<65){device.dpad_up=t<30;device.dpad_right=t>=30;}
+                            if(t>=95&&t<125)device.dpad_left=true;
+                            if(t>=125&&t<137)device.stick_y=-60;
+                            if(t>=230&&t<270)device.dpad_down=true;
+                            if(t>=278&&t<310)device.dpad_right=true;
+                        }
+                    }
+                    if(!source.map_input(device,&mapped,&error)){
+                        if(!input_refused)gf::log_info(context,"source-ground","%s; no simulation advanced",error.c_str());
+                        input_refused=true;continue;
+                    }
+                    input_refused=false;
+                }
+                const bool restart=controls.y&&!source_previous.y,pause=controls.start&&!source_previous.start;
+                if(restart||pause||world.paused()){
+                    if(!world.step({controls,{}},false,&view)){render.shutdown();return 2;}
+                    if(restart&&(!view.update(world,&error)||!bind_source())){gf::log_error(context,"source-ground","restart bind refused: %s",error.c_str());render.shutdown();return 2;}
+                }else{
+                    gf::s16 x=0,y=0;gf::u32 held=0;const unsigned t=world.tick()%360,part=t/90,phase=t%90;
+                    if(phase>=5&&phase<17){
+                        const std::array<gf::s16,4> xs={0,-60,0,60},ys={60,0,-60,0};
+                        const std::array<gf::u32,4> bits={8,1,4,2};x=xs[part];y=ys[part];held=bits[part]<<16;
+                    }
+                    if(options.source_ground_walk){x=mapped.x;y=mapped.y;held=mapped.held;}
+                    gf::NativeBorgMotionOffer offer;
+                    if(!source.prepare(world,view.source_binding(),movement,x,y,held,&offer,&error)||
+                       !world.step({controls,{}},false,&view,nullptr,&movement,&offer)||!source.commit(world,view.source_binding(),&error)){
+                        source.reject();gf::log_error(context,"source-ground","motion acceptance refused: tick=%u kind=%u from-y=%.3f proposed-y=%.3f old-v=%.3f; %s",world.tick(),unsigned(offer.kind),offer.observed.position[1],offer.proposed_position[1],offer.observed.vertical_speed,error.c_str());render.shutdown();return 2;
+                    }
+                }
+                source_previous=controls;++commands;continue;
+            }
+            if(!world.step({input,{}},!options.demo_locomotion,&view,nullptr,&movement)){gf::log_error(context,"battle-mvp","gameplay/terrain step failed");render.shutdown();return 2;}++commands;
+        }
+        bool posed=false;
+        if(options.demo_source_ground&&world.actors()[0].source_ground_motion){gf::NativeBorgSourcePose pose;posed=source.pose(world,&pose)&&view.update_source(world,pose,&error);}
+        else posed=view.update(world,&error);
+        if(!posed){gf::log_error(context,"battle-mvp","animation failed: %s",error.c_str());render.shutdown();return 2;}
+        if(options.source_vertical_jump)view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
+        render.begin_frame({frame,.15f,.21f,.3f});render.reset_arena();const auto draws=view.draw(render,world,options.width,options.height,&error);render.end_frame();
+        if(!draws){gf::log_error(context,"battle-mvp","draw failed: %s",error.c_str());render.shutdown();return 2;}
+        if(!captured)captured=capture_if_requested(context,options,frame);
+        render.present();context.advance_frame();++frame;if(options.frames&&frame>=options.frames)break;
+    }
+    gf::log_info(context,"battle-mvp","frames=%u ticks=%u projectiles-spawned=%u hits=%u health=%u/%u result=%u",frame,world.tick(),world.shots_spawned(),world.hits(),world.actors()[0].health,world.actors()[1].health,unsigned(world.result()));
+    if(options.demo_source_ground)gf::log_info(context,"source-ground","accepted native tick=%u G-Red-position=%.2f/%.2f/%.2f; accepted-frames=%llu body-proxy-contacts=%llu; scoped movement, native proxy response",world.tick(),world.actors()[0].position[0],world.actors()[0].position[1],world.actors()[0].position[2],static_cast<unsigned long long>(source.accepted_frames()),static_cast<unsigned long long>(source.body_contacts()));
+    if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; source jump subset, native contact proxy",options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
+    if(options.source_air_dash)gf::log_info(context,"source-ground","air-dash-starts=%llu active-frames=%llu; source policy1, no per-flight count substitution",static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.air_dash_active_frames()));
+    if(options.source_relaunch)gf::log_info(context,"source-ground","relaunches=%llu lower-stage=%u upper-stage=%u; source predicate/meter, no fixed jump-count substitution",static_cast<unsigned long long>(source.relaunches()),unsigned(source.relaunch_stages().lower_stage),unsigned(source.relaunch_stages().upper_stage));
+    if(options.source_dash_jump)gf::log_info(context,"source-ground","dash-jumps=%llu last-interrupted-selector=%u; source class12 takeoff reset, no MVP dash-momentum carry",static_cast<unsigned long long>(source.dash_jumps()),unsigned(source.last_dash_jump_selector()));
+    if(options.source_landing_interrupt)gf::log_info(context,"source-ground","landing-jumps=%llu landing-dashes=%llu; accepted landing entry required, no walk/instant-touchdown cancel",static_cast<unsigned long long>(source.landing_jumps()),static_cast<unsigned long long>(source.landing_dashes()));
+    if(options.source_surface)gf::log_info(context,"source-ground","paired-surface-landings=%llu last-angle-s16=%d; selected original static grid, no guessed UP normal or steep-response fallback",static_cast<unsigned long long>(source.surface_landings()),int(source.last_surface_angle()));
+    if(options.source_steep)gf::log_info(context,"source-ground","static-surface-pushes=%llu last-push-angle-s16=%d; accepted projection frames only, not landings or grounded refill",static_cast<unsigned long long>(source.surface_pushes()),int(source.last_push_angle()));
+    if(options.source_fall_surface)gf::log_info(context,"source-ground","post-dash-fall-pushes=%llu post-relaunch-fall-pushes=%llu last-push-programs=%u/%u; selector6 only, no active-callback push fallback",static_cast<unsigned long long>(source.dash_fall_pushes()),static_cast<unsigned long long>(source.relaunch_fall_pushes()),unsigned(source.last_push_programs()[0]),unsigned(source.last_push_programs()[1]));
+    if(options.source_recovery_surface)gf::log_info(context,"source-ground","recovery-surface-pushes=%llu; selector17 callback receipts, lower completion tested after contact, no fabricated landing",static_cast<unsigned long long>(source.recovery_pushes()));
+    if(options.source_windup_surface)gf::log_info(context,"source-ground","windup-surface-pushes=%llu; continued selector15 callback receipts, no repeated half-speed entry or landing/refill shortcut",static_cast<unsigned long long>(source.windup_pushes()));
+    if(options.source_active_surface)gf::log_info(context,"source-ground","active-surface-pushes=%llu last-active-push-programs=%u/%u; executed selector16 receipts, no entry replay/refill",static_cast<unsigned long long>(source.active_pushes()),unsigned(source.last_active_push_programs()[0]),unsigned(source.last_active_push_programs()[1]));
+    if(options.source_relaunch_surface)gf::log_info(context,"source-ground","relaunch-surface-pushes=%llu last-relaunch-push-programs=%u/%u; selector8 receipts, entry projections counted separately; no landing/refill or additive-entry replay",static_cast<unsigned long long>(source.relaunch_surface_pushes()),unsigned(source.last_relaunch_push_programs()[0]),unsigned(source.last_relaunch_push_programs()[1]));
+    if(options.source_relaunch_entry_surface)gf::log_info(context,"source-ground","relaunch-entry-surface-pushes=%llu; distinct additive entry receipts, no repeated entry or fabricated landing",static_cast<unsigned long long>(source.relaunch_entry_surface_pushes()));
+    if(options.source_relaunch_floor)gf::log_info(context,"source-ground","null-callback-relaunch-floor-contacts=%llu last-floor-programs=%u/%u; floor receipts preserve8/airborne, no65E64 or grounded refill on snaps",static_cast<unsigned long long>(source.relaunch_floor_contacts()),unsigned(source.last_relaunch_floor_programs()[0]),unsigned(source.last_relaunch_floor_programs()[1]));
+    render.shutdown();return 0;
+}
+
+int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Options& options){
+    gf::NativeAnimationMosaic mosaic;std::string error;
+    if(!mosaic.load(context.files(),options.battle_mvp_assets,render,options.animation_columns,options.animation_rows,&error)||
+       (!options.animation_programs.empty()&&!mosaic.load_source_programs(context.files(),options.animation_programs,options.animation_height_profile,render,&error))||
+       (!options.animation_motion_profile.empty()&&!mosaic.load_source_motion(context.files(),options.animation_motion_profile,render,&error))||
+       ((options.animation_borg||options.animation_page)&&!mosaic.select(options.animation_borg,options.animation_page,render,&error))){
+        gf::log_error(context,"animation-mosaic","load failed: %s",error.c_str());render.shutdown();return 2;}
+    if(!options.animation_programs.empty())gf::log_info(context,"animation-mosaic","G-Red source-program timelines: %zu essentials; 96-tick inspection replay, shared VM/height/pose/render systems; no gameplay input, physics or actor admission",mosaic.catalog(0).size());
+    else gf::log_info(context,"animation-mosaic","looping model previews: G-Red=%zu Sasuke=%zu; numbers are per-Borg raw group/clip IDs; shared IDs start10000",mosaic.catalog(0).size(),mosaic.catalog(1).size());
+    if(!options.animation_motion_profile.empty())gf::log_info(context,"animation-mosaic","held-input ground-dash handler planning enabled: lower/upper source order, VM holds, timer expiry and recovery; final inspection pose held, no world/contact admission");
+    if(!options.animation_export.empty()){
+        namespace fs=std::filesystem;std::error_code ec;const fs::path output(options.animation_export);
+        if(!fs::create_directory(output,ec)){gf::log_error(context,"animation-mosaic","export directory must be new: %s",options.animation_export.c_str());render.shutdown();return 2;}
+        auto safe=[](std::string s){for(char& c:s)if(c=='\t'||c=='\n'||c=='\r')c=' ';return s;};
+        std::ofstream metadata(output/"previews.tsv");metadata<<"borg\tpage\tcell\tid\tgroup\tchoice\tarchive\tcommon\tend_frame\tsupported\taliases\terror\tx\ty\twidth\theight\n";
+        std::ofstream info(output/"layout.tsv");info<<options.width<<'\t'<<options.height<<'\t'<<options.animation_columns<<'\t'<<options.animation_rows<<'\t'<<options.animation_export_frames<<'\n';info.close();
+        const unsigned first_page=options.animation_export_page_only?options.animation_page:0,last_page=options.animation_export_page_only?first_page+1:mosaic.page_count();
+        if(gf::u64(last_page-first_page)*options.animation_export_frames*options.width*options.height*3>(2ull<<30)){gf::log_error(context,"animation-mosaic","export exceeds2GiB raw-frame budget; use page-only export");render.shutdown();return 2;}
+        for(unsigned page=first_page;page<last_page;++page){
+            if(!mosaic.select(options.animation_borg,page,render,&error)){gf::log_error(context,"animation-mosaic","export page failed: %s",error.c_str());render.shutdown();return 2;}
+            const auto folder=output/("page-"+std::to_string(page));fs::create_directory(folder,ec);
+            if(ec){render.shutdown();return 2;}
+            const auto previews=mosaic.page_previews();
+            for(unsigned cell=0;cell<previews.size();++cell){const auto& p=previews[cell];metadata<<(options.animation_borg?"sasuke":"g-red")<<'\t'<<page<<'\t'<<cell<<'\t'<<p.entry.id<<'\t'<<unsigned(p.entry.group)<<'\t'<<p.entry.choice<<'\t'<<p.entry.archive<<'\t'<<p.entry.common<<'\t'<<p.end_frame<<'\t'<<p.supported<<'\t';
+                for(const auto& alias:p.entry.aliases){metadata<<unsigned(alias.first)<<':'<<alias.second<<',';}
+                metadata<<'\t'<<safe(p.error);for(auto value:mosaic.preview_bounds(options.width,options.height,cell))metadata<<'\t'<<value;metadata<<'\n';}
+            metadata.flush();
+            for(unsigned frame=0;frame<options.animation_export_frames;++frame){
+                mosaic.sample_phase(gf::f32(frame)/options.animation_export_frames);render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();const auto draws=mosaic.draw(render,options.width,options.height);render.end_frame();
+                if(!draws){gf::log_error(context,"animation-mosaic","export viewport too small or draw failed");render.shutdown();return 2;}
+                std::vector<gf::u8> rgba;gf::s32 width=0,height=0;const auto path=folder/("frame-"+std::to_string(frame)+".ppm");
+                if(!gf::gl::capture_framebuffer(rgba,&width,&height)||!gf::gl::write_ppm(path.string().c_str(),rgba,width,height)){render.shutdown();return 2;}
+                render.present();
+            }
+            gf::log_info(context,"animation-mosaic","exported Borg=%u page=%u/%u",options.animation_borg,page+1,mosaic.page_count());
+        }
+        metadata.close();render.shutdown();return 0;
+    }
+    gf::InputRouter router;unsigned frame=0;bool captured=false;const auto start=context.clock().monotonic_ns();auto previous=start;
+    while(context.window().pump_events()&&!context.window().should_close()){
+        const auto now=context.clock().monotonic_ns();if(options.seconds&&now-start>=gf::u64(options.seconds)*1000000000ull)break;
+        context.input().pump();const auto& snapshot=context.input().snapshot();const auto pad=router.route(snapshot,0);if(snapshot.quit||pad.quit_requested)break;
+        const gf::f32 dt=(options.headless||options.frames)?1.f/60:gf::f32(now>=previous?now-previous:0)/1e9f;previous=now;
+        if(!mosaic.step(pad,dt,render,&error)){gf::log_error(context,"animation-mosaic","step failed: %s",error.c_str());render.shutdown();return 2;}
+        render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();const auto draws=mosaic.draw(render,options.width,options.height);render.end_frame();
+        if(!captured)captured=capture_if_requested(context,options,frame);
+        render.present();context.advance_frame();++frame;
+        if(!draws){gf::log_error(context,"animation-mosaic","no preview draws");render.shutdown();return 2;}
+        if(options.frames&&frame>=options.frames)break;
+    }
+    gf::log_info(context,"animation-mosaic","frames=%u Borg=%u page=%u",frame,mosaic.borg(),mosaic.page()+1);render.shutdown();return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -331,7 +686,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::IFileSystem> headless_files;
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
-    if(options.headless&&options.test_battle){
+    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic)){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
     }
@@ -347,7 +702,7 @@ int main(int argc, char** argv) {
         }
         std::string error;
         gf::Backends backends =
-            platform->create({options.width, options.height, "Gotcha Force", false, false},
+            platform->create({options.width, options.height, options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
                              renderer.get(), &error);
         if (!backends.complete()) {
             std::fprintf(stderr, "platform initialization failed: %s\n",
@@ -361,13 +716,15 @@ int main(int argc, char** argv) {
     std::string error;
     // Windowed runs present with vsync so a --seconds demo runs in real time
     // rather than thousands of frames per second.
-    if (!render.initialize({options.width, options.height, !options.headless, true, "Gotcha Force"},
+    if (!render.initialize({options.width, options.height, !options.headless&&options.animation_export.empty(), true, "Gotcha Force"},
                            context.backends().window, &error)) {
         gf::log_error(context, "render", "initialization failed: %s", error.c_str());
         return 1;
     }
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
+    if(options.battle_mvp)return run_battle_mvp(context,render,options);
+    if(options.animation_mosaic)return run_animation_mosaic(context,render,options);
 
     gf::MenuWorld menu_world;
     menu_world.configure(static_cast<gf::s32>(options.width), static_cast<gf::s32>(options.height));

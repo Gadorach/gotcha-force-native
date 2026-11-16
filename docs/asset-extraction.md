@@ -42,6 +42,19 @@ empty substitute models.
 
 ## Remaining native-profile integration
 
+`python3 -m tools.extract.native_bundle ARCHIVE.pzz OUTPUT.gfnb` now packages the
+decoded blocks into the existing native GFNB format. It preserves empty blocks
+and decoded padding, reports block/file hashes and refuses overwrites. This is a
+generic container export; it does not guess the game-specific role of a block or
+create the separate identity-bound native metadata profiles.
+
+`python3 -m tools.extract.battle_initial_target MAIN.dol OUTPUT.gfnt --model 10`
+exports the bounded initial-target profile for normal Sasuke; use `--model 0x615`
+for normal G-Red. It requires the qualified DOL SHA-256, binds the class-config
+identity, checks the zero-selector policy and exports both reached timer tables.
+Inputs are read-only and existing outputs are refused. This profile supplies
+constructor operands, not actor or frame readiness.
+
 The engine consumes versioned native profiles for game-specific cameras, UI
 bindings, rosters, animation policies and source constants. Earlier research
 exports of those profiles are private. The reusable public readers alone do not

@@ -288,6 +288,14 @@ public:
         if(!ready_||!fresh_actor_||!class_scope_||expected.scope.lock()!=class_scope_||group>=128||expected.default_group!=state_.actor.default_group||expected.effect_control!=state_.actor.control0[3]||expected.behaviour!=state_.actor.behaviour)return refuse(error,"stale/foreign/unqualified class writeback");
         state_.actor.default_group=group;state_.actor.control0[3]=selector;return true;
     }
+    //Ordinary ground walk/stop callbacks own only behaviour bit10 here.
+    //This numeric write grants no actor/contact or callback execution receipt.
+    bool write_ground_walk_flag(const CharacterProgramClassFields& expected,bool walking,std::string* error){
+        if(!ready_||!fresh_actor_||!height_controls_||!class_scope_||expected.scope.lock()!=class_scope_||
+           expected.default_group!=state_.actor.default_group||expected.effect_control!=state_.actor.control0[3]||
+           expected.behaviour!=state_.actor.behaviour)return refuse(error,"stale/foreign ground walk flag writeback");
+        state_.actor.behaviour=(state_.actor.behaviour&~0x10u)|(walking?0x10u:0u);return true;
+    }
     //80057D9C consumes actor1CEF after the program update, not inside the VM.
     bool consume_primary_control(u8* out){
         if(!ready_||!out)return false;

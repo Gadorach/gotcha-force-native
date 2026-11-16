@@ -277,10 +277,7 @@ public:
         const bool pointer_frame=pointer_enabled_&&motion_enabled()&&!pass&&focus_item_==7&&(show_selector_||pointer_free_mode_)&&only_mesh_<0&&!menu_art_filter_;
         if(pointer_frame)pointer_geometry_.begin(camera.viewport_width,camera.viewport_height);
         if(pass)for(const auto& mesh:scene_.meshes)if((mesh.render_mode&0x60000000u)==0x20000000u){render.reject_model_pass();fail(nullptr,"unsupported source material pass classification");return 0;}
-        std::array<u32,14> camera_key{};unsigned key_index=0;
-        for(const f32* vector:{camera.eye,camera.target,camera.up})for(unsigned k=0;k<3;++k)camera_key[key_index++]=f32_to_bits(vector[k]);
-        camera_key[key_index++]=f32_to_bits(camera.fov_y_degrees);camera_key[key_index++]=f32_to_bits(camera.near_plane);camera_key[key_index++]=f32_to_bits(camera.far_plane);
-        camera_key[key_index++]=static_cast<u32>(camera.viewport_width);camera_key[key_index++]=static_cast<u32>(camera.viewport_height);
+        const auto camera_key=camera.cache_key();
         if(!cache_valid_||camera_key!=camera_key_){
             camera_key_=camera_key;cache_valid_=true;
             projected_.resize(scene_.meshes.size());
@@ -549,7 +546,7 @@ private:
     LinearFog fog_;bool fog_valid_=true;
     unsigned selection_=5;
     bool interaction_=true;
-    std::array<u32,14> camera_key_{};bool cache_valid_=false;
+    std::array<u32,17> camera_key_{};bool cache_valid_=false;
     std::vector<std::vector<Vertex>> projected_{};std::vector<bool> projected_ready_{};
     MenuMotionState motion_state_{};bool motion_dirty_=true;
     std::vector<bool> motion_affected_{},selector_joint_{},caption_valid_{};

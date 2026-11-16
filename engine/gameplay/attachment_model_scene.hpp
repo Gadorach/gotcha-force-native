@@ -4,9 +4,11 @@
 // actor/parent lifetime, shared efct hierarchy, alternate material or host hook.
 #include <memory>
 #include "engine/assets/hsd_skin.hpp"
+#include "engine/assets/hsd_record_animation.hpp"
 #include "engine/gameplay/actor_fade.hpp"
 #include "engine/gameplay/attachment_transform.hpp"
 #include "engine/gameplay/menu_scene.hpp"
+#include "engine/graphics/affine.hpp"
 namespace gf {
 struct AttachmentModelBinding {u32 bank_hash=0,root=0;u16 record=0;};
 // Immutable decoded bank for multiple rigid records. Pixel payloads are shared
@@ -18,11 +20,19 @@ public:
         auto s=std::make_shared<Storage>();if(!hsd_skin_load(bank,&s->skin,error)||!hsd_share_texture_images(s->skin.scene))return false;
         s->bytes.assign(bank.data,bank.data+bank.size);s->hash=2166136261u;for(auto byte:s->bytes)s->hash=(s->hash^byte)*16777619u;storage_=std::move(s);return true;
     }
+    //Reuse the actual decoded source bank. This prepares renderer geometry and
+    //skin metadata only; it creates no HsdJointInstanceOwner or scene descriptor.
+    bool load_prepared(const HsdRecordAnimationBank& bank,std::string* error){
+        storage_.reset();if(!bank.data_){if(error)*error="attachment bank: current decoded bank required";return false;}
+        auto s=std::make_shared<Storage>();s->source=bank.data_;s->skin.scene=s->source->scene;
+        if(!hsd_skin_metadata(s->skin.scene,s->source->reader,&s->skin.joints,&s->skin.meshes,error))return false;
+        s->skin.loaded=true;s->hash=2166136261u;for(auto byte:s->source->bytes)s->hash=(s->hash^byte)*16777619u;storage_=std::move(s);return true;
+    }
     bool ready()const{return bool(storage_);}u32 hash()const{return storage_?storage_->hash:0;}
     const HsdSkinAsset* asset()const{return storage_?&storage_->skin:nullptr;}
 private:
     friend class AttachmentModelScene;
-    struct Storage {std::vector<u8> bytes;HsdSkinAsset skin;u32 hash=0;};
+    struct Storage {std::vector<u8> bytes;std::shared_ptr<const hsd_record_detail::Bank> source;HsdSkinAsset skin;u32 hash=0;};
     std::shared_ptr<const Storage> storage_;
 };
 class AttachmentModelScene {
@@ -35,7 +45,7 @@ public:
     bool load_shared(const AttachmentModelBank& bank,u16 record,std::string* error){
         loaded_=ready_=false;binding_.reset();skin_={};geometry_={};
         if(!bank.storage_)return fail(error,"unloaded shared bank");
-        const auto& s=*bank.storage_;return load_record({s.bytes.data(),s.bytes.size()},record,s.skin,s.skin.scene.textures,error);
+        const auto& s=*bank.storage_;const auto& bytes=s.source?s.source->bytes:s.bytes;return load_record({bytes.data(),bytes.size()},record,s.skin,s.skin.scene.textures,error);
     }
 private:
     bool load_record(ByteView bank,u16 record,const HsdSkinAsset& full,std::vector<HsdTexture> textures,std::string* error){
@@ -98,6 +108,16 @@ private:
         skin_=std::move(selected);scene_=std::move(renderer);loaded_=true;if(error)error->clear();return true;
     }
 public:
+    //Authored rigid geometry without an actor fade/material callback. The scene
+    //owner separately qualifies the root and its lifetime.
+    bool set_world_static(const AttachmentBoneTransform& transform,std::string* error){
+        ready_=false;
+        if(!loaded_||!binding_||!transform.valid||!mat4_affine_bounded(transform.world))return fail(error,"current rigid model and bounded static world required");
+        HsdSkinGeometry next;const std::array<Mat4,1> world={transform.world};
+        if(!hsd_skin_sample(skin_,world,&next,error))return false;
+        geometry_=std::move(next);for(unsigned k=0;k<3;++k)origin_[k]=transform.world.at(k,3);
+        scene_.set_post_rgb_add({});ready_=true;if(error)error->clear();return true;
+    }
     // Explicit supplied-transform/material seam, NOT parent-instance ownership.
     // Alternate80007C54/7CAC changes render mode as well as alpha: refuse it.
     bool set_world_fade(const AttachmentBoneTransform& transform,const ActorFadeMaterial& material,bool alternate,std::string* error){

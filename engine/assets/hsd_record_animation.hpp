@@ -248,5 +248,6 @@ private:
     friend class HsdJointInstanceBank;
     friend class HsdJointInstanceOwner;
     friend class CharacterModelScene;
+    friend class AttachmentModelBank;
 };
 } // namespace gf

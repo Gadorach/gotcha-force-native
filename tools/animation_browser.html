@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Borg animation classification</title>
+<style>
+:root{color-scheme:dark;font:14px system-ui,sans-serif;background:#12161d;color:#edf1f7}
+body{margin:0}header{position:sticky;top:0;z-index:2;background:#181f2b;border-bottom:1px solid #394456;padding:14px 20px}
+h1{font-size:20px;margin:0 0 8px}p{margin:6px 0;color:#b8c4d5}.controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+button,select,input,textarea{font:inherit;color:inherit;background:#252f40;border:1px solid #46546a;border-radius:6px;padding:7px}
+button{cursor:pointer}button:hover{background:#35435a}select{max-width:100%}textarea{resize:vertical;min-height:48px;box-sizing:border-box;width:100%}
+main{padding:18px;display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:16px}
+article{background:#1b2330;border:1px solid #374458;border-radius:10px;overflow:hidden}
+canvas{display:block;width:100%;height:auto;background:#212833;aspect-ratio:376/220}
+.content{padding:12px}h2{font-size:20px;margin:0 0 5px}.metadata{font:12px ui-monospace,monospace;color:#9eafc7;overflow-wrap:anywhere}
+label{display:block;font-weight:600;margin:10px 0 5px}.category{width:100%;font-size:13px}.status{color:#9bd8ab}.warning{color:#ffcc80}
+.preview-message{padding:5px 12px;color:#a6b8d1;font-size:12px;min-height:16px}.error{color:#ff9d9d}.footer{padding:12px 20px;color:#a9b8cb}
+@media(min-width:1600px){main{grid-template-columns:repeat(4,minmax(240px,1fr))}}@media(max-width:900px){main{grid-template-columns:repeat(2,minmax(220px,1fr))}}@media(max-width:550px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>Borg animation classification</h1>
+<p>Looping captures from the shared native renderer. Classify by Borg + number; raw group/clip metadata stays attached.</p>
+<div class="controls">
+<label for="borg">Borg</label><select id="borg"></select>
+<button id="previous">Previous</button><span id="page"></span><button id="next">Next</button>
+<label for="pageSize">Per page</label><select id="pageSize"><option>6</option><option selected>12</option><option>24</option></select>
+<button id="pause">Pause previews</button>
+<label for="speed">Speed</label><select id="speed"><option value=".25">0.25x</option><option value=".5" selected>0.5x</option><option value="1">1x</option><option value="2">2x</option></select>
+<input id="search" placeholder="Find animation ID or G0 C1" aria-label="Find animation">
+<button id="export">Export classifications</button>
+</div>
+<p><span id="progress">Loading native previews…</span> · <span id="saved" class="status">Saves stay on this computer</span></p>
+<p class="warning">Classifications do not automatically change the gameplay map. Shared clips use IDs 10000+; aliases are retained.</p>
+</header>
+<main id="grid"></main>
+<div class="footer">Optional notes can describe direction, weapon state, uncertainty, conditional use, or differences between Borgs. “Other” is available for anything not yet identified.</div>
+<script>
+"use strict";
+let catalog,annotations={entries:{}},borg="g-red",page=0,pageSize=12,paused=false,speed=.5,elapsed=0,last=performance.now();
+let visible=[],media=[],timers=new Map();
+const el=id=>document.getElementById(id);
+const keyOf=entry=>`${borg}:${entry.id}`;
+function source(){return catalog.sources.find(s=>s.borg===borg)}
+function filtered(){const q=el("search").value.trim().toLowerCase();return source().entries.filter(e=>!q||`${e.id} g${e.group} c${e.choice}`.toLowerCase().includes(q))}
+function progress(){
+ const total=catalog.sources.reduce((n,s)=>n+s.entries.length,0),ready=catalog.sources.reduce((n,s)=>n+s.entries.filter(e=>e.ready).length,0);
+ const classified=Object.values(annotations.entries).filter(a=>a.category!=="unclassified").length;
+ const unsupported=catalog.sources.reduce((n,s)=>n+s.entries.filter(e=>e.ready&&!e.supported).length,0);
+ el("progress").textContent=`${ready}/${total} previews prepared · ${classified} classified${unsupported?` · ${unsupported} unsupported`:""}${catalog.status==="preparing"?" · preparing remaining previews":catalog.status==="failed"?" · preparation failed; see generation.log":""}`;
+}
+function loadMedia(entry,canvas,message){
+ if(!entry.ready){message.textContent="Preparing native-rendered loop…";return}
+ if(!entry.supported){message.textContent=`Unsupported native preview: ${entry.error||"decoder refused"}`;message.classList.add("error");return}
+ const image=new Image();const item={entry,canvas,image};media.push(item);
+ image.onload=()=>{message.textContent=`Native loop · ${Math.round(entry.end_frame+1)} source frames · in place`};
+ image.onerror=()=>{message.textContent="Preview image unavailable";message.classList.add("error")};
+ image.src=entry.media;canvas.width=entry.width;canvas.height=entry.height;
+}
+function render(){
+ const entries=filtered(),pages=Math.max(1,Math.ceil(entries.length/pageSize));page=Math.min(page,pages-1);
+ el("page").textContent=`Page ${page+1}/${pages}`;el("previous").disabled=page===0;el("next").disabled=page>=pages-1;
+ el("grid").replaceChildren();media=[];visible=[];elapsed=0;
+ for(const entry of entries.slice(page*pageSize,(page+1)*pageSize)){
+  const item=document.createElement("article"),canvas=document.createElement("canvas"),message=document.createElement("div"),content=document.createElement("div");
+  canvas.setAttribute("aria-label",`${source().name} animation ${entry.id}`);message.className="preview-message";content.className="content";
+  const title=document.createElement("h2");title.textContent=`${source().name} · ${String(entry.id).padStart(4,"0")}`;
+  const meta=document.createElement("div");meta.className="metadata";meta.textContent=`${entry.common?"Shared":"Borg"} bank · G${entry.group} C${entry.choice} · aliases ${entry.aliases.map(a=>`G${a[0]} C${a[1]}`).join(", ")}`;
+  const select=document.createElement("select");select.className="category";select.id=`category-${entry.id}`;
+  for(const [value,text] of catalog.categories){const option=document.createElement("option");option.value=value;option.textContent=text;select.append(option)}
+  const record=annotations.entries[keyOf(entry)]||{category:"unclassified",notes:""};select.value=record.category;
+  const selectLabel=document.createElement("label");selectLabel.htmlFor=select.id;selectLabel.textContent="Classification";
+  const notes=document.createElement("textarea");notes.id=`notes-${entry.id}`;notes.maxLength=2000;notes.rows=2;notes.value=record.notes;notes.placeholder="Optional detail, direction, conditions, uncertainty…";
+  const notesLabel=document.createElement("label");notesLabel.htmlFor=notes.id;notesLabel.textContent="Notes (optional)";
+  const capturedBorg=borg;
+  const change=()=>{
+   const key=`${capturedBorg}:${entry.id}`,record={category:select.value,notes:notes.value};annotations.entries[key]=record;progress();el("saved").textContent="Saving locally…";
+   clearTimeout(timers.get(key));timers.set(key,setTimeout(async()=>{
+    try{const response=await fetch("/api/annotations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({borg:capturedBorg,id:entry.id,...annotations.entries[key]})});
+     const result=await response.json();if(!response.ok)throw Error(result.error);el("saved").textContent="Saved locally to annotations.json";
+    }catch(error){el("saved").textContent=`Save failed: ${error.message}`;el("saved").classList.add("error")}
+   },200));
+  };
+  select.addEventListener("change",change);notes.addEventListener("input",change);
+  content.append(title,meta,selectLabel,select,notesLabel,notes);item.append(canvas,message,content);el("grid").append(item);
+  visible.push({entry,canvas,message});loadMedia(entry,canvas,message);
+ }
+ progress();
+}
+function animate(now){
+ if(!paused)elapsed+=Math.min((now-last)/1000,.25)*speed;last=now;
+ for(const {entry,canvas,image} of media)if(image.complete&&image.naturalWidth){
+  const frame=Math.floor((elapsed%entry.seconds)/entry.seconds*entry.frame_count),x=(frame%entry.sheet_columns)*entry.width,y=Math.floor(frame/entry.sheet_columns)*entry.height;
+  canvas.getContext("2d").drawImage(image,x,y,entry.width,entry.height,0,0,canvas.width,canvas.height);
+ }
+ requestAnimationFrame(animate);
+}
+el("borg").addEventListener("change",()=>{borg=el("borg").value;page=0;render()});
+el("previous").addEventListener("click",()=>{page=Math.max(0,page-1);render()});
+el("next").addEventListener("click",()=>{page++;render()});
+el("pageSize").addEventListener("change",()=>{pageSize=Number(el("pageSize").value);page=0;render()});
+el("search").addEventListener("input",()=>{page=0;render()});
+el("pause").addEventListener("click",()=>{paused=!paused;el("pause").textContent=paused?"Resume previews":"Pause previews"});
+el("speed").addEventListener("change",()=>speed=Number(el("speed").value));
+el("export").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify(annotations,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="borg-animation-classifications.json";a.click();URL.revokeObjectURL(url);
+});
+async function refresh(){
+ try{const next=await(await fetch("/api/catalog",{cache:"no-store"})).json();catalog=next;
+  for(const item of visible){const updated=source().entries.find(e=>e.id===item.entry.id);if(!item.entry.ready&&updated.ready){item.entry=updated;loadMedia(updated,item.canvas,item.message)}}
+  progress();
+ }catch(error){el("progress").textContent=`Catalog unavailable: ${error.message}`}
+}
+(async()=>{
+ try{
+  [catalog,annotations]=await Promise.all([fetch("/api/catalog").then(r=>r.json()),fetch("/api/annotations").then(r=>r.json())]);
+  if(annotations.dataset!==catalog.fingerprint)throw Error("Saved classifications belong to a different dataset");
+  for(const source of catalog.sources){const option=document.createElement("option");option.value=source.borg;option.textContent=source.name;el("borg").append(option)}
+  render();requestAnimationFrame(animate);setInterval(refresh,3000);
+ }catch(error){el("progress").textContent=error.message}
+})();
+</script>
+</body>
+</html>

@@ -65,8 +65,8 @@ inline void project_triangle(const Camera& camera, const Camera::Basis& basis,
         const f32 inv=1.0f/p.z;
         auto byte=[](f32 value){return u8(std::clamp(value,0.0f,255.0f)+0.5f);};
         Vertex v;
-        v.x=(p.x*inv/horizontal*0.5f+0.5f)*camera.viewport_width;
-        v.y=(0.5f-p.y*inv/basis.tan_half_fov*0.5f)*camera.viewport_height;
+        v.x=camera.viewport_x+(p.x*inv/horizontal*0.5f+0.5f)*camera.viewport_width;
+        v.y=camera.viewport_y+(0.5f-p.y*inv/basis.tan_half_fov*0.5f)*camera.viewport_height;
         v.z=std::clamp(camera.near_plane*inv,0.0f,1.0f);
         v.u=p.u; v.v=p.v; v.inv_w=inv;
         v.r=byte(p.r);v.g=byte(p.g);v.b=byte(p.b);v.a=byte(p.a);

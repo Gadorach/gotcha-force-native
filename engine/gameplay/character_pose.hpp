@@ -151,6 +151,15 @@ inline bool character_pose_rig_load(ByteView profile,const HsdModelBones& bindin
     next.loaded=true;if(!character_pose_detail::rig(next))return fail("topology/lane/mirror domain");
     *out=std::move(next);return true;
 }
+//4BB14's identity-matrix→quaternion case and logical LOCAL translations.
+//This initializes pose data only; it does not sample a clip or build a world.
+inline bool character_pose_initial_local(const CharacterPoseRig& rig,CharacterLocalPose* out,std::string* error){
+    if(out)*out={};
+    if(!out||!character_pose_detail::rig(rig)){if(error)*error="character initial local pose: current rig/output required";return false;}
+    CharacterLocalPose next;next.bones.reserve(rig.binding.bones.size());
+    for(const auto& bone:rig.binding.bones){CharacterBonePose p;p.joint_offset=bone.joint_offset;std::copy_n(bone.translation,3,p.translation);p.quaternion[0]=p.quaternion[1]=p.quaternion[2]=0;p.quaternion[3]=1;next.bones.push_back(p);}
+    *out=std::move(next);if(error)error->clear();return true;
+}
 inline bool character_pose_sample(const CharacterPoseRig& rig,const std::array<CharacterPoseLane,4>& lanes,CharacterLocalPose* out,std::string* error){
     if(out)*out={};
     auto fail=[&](const char* why){if(error)*error=std::string("character pose sample: ")+why;return false;};

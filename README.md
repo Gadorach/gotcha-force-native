@@ -12,7 +12,26 @@ reconstructed C decompilation, private evidence or credentials are included.
 - Native menu/editor systems, inventory and save formats.
 - Challenge setup and ordered battle initialization in progress.
 - Story setup/progression/UI/audio components.
-- **No assembled playable native battle or full-game compatibility claim yet.**
+- Standalone native G-Red/Sasuke duel MVP with provisional gameplay rules.
+- Opt-in normal-G-Red controller labs using the shared world, animation VM,
+  renderer and independently checked native contact receipts.
+- **No original-battle, original-hardware or full-game compatibility claim.**
+
+Build and run the desktop prototype:
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1
+build/direct/gf_native --battle-mvp --no-audio
+```
+
+Game data is not included. Prepare local art from your existing qualified native
+bundles with `python3 -m tools.extract.native_battle_mvp --help`.
+See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
+and [G-Red controller recovery](docs/g-red-animation-controller.md).
+The latest opt-in lab is `--source-relaunch-floor` (or
+`--demo-source-relaunch-floor --headless --frames 600`), requiring a local GFMM7
+pack. Its null-callback floor snaps remain airborne; a separate touchdown enables
+ordinary landing recovery. Other Borgs do not inherit G-Red's recovered mappings.
 
 Some development demonstrations use private generated metadata profiles and
 integration harnesses. Those artifacts are not distributed here. The public

@@ -6,6 +6,7 @@
 // needing a vertex-shader matrix stack. That keeps the render seam small and lets
 // the same scene draw under the headless recorder and the GL backend.
 #include <cmath>
+#include <array>
 
 #include "engine/core/types.hpp"
 
@@ -20,6 +21,19 @@ struct Camera {
     f32 far_plane = 400.0f;
     s32 viewport_width = 640;
     s32 viewport_height = 480;
+    s32 viewport_x = 0;
+    s32 viewport_y = 0;
+    // Zero retains pixel-derived aspect for existing scenes. Source projections
+    // may explicitly differ from the viewport's pixel ratio.
+    f32 projection_aspect = 0;
+
+    std::array<u32,17> cache_key() const {
+        std::array<u32,17> key{};unsigned at=0;
+        for(const f32* vector:{eye,target,up})for(unsigned k=0;k<3;++k)key[at++]=f32_to_bits(vector[k]);
+        for(f32 value:{fov_y_degrees,near_plane,far_plane})key[at++]=f32_to_bits(value);
+        for(s32 value:{viewport_width,viewport_height,viewport_x,viewport_y})key[at++]=u32(value);
+        key[at]=f32_to_bits(projection_aspect);return key;
+    }
 
     struct Basis {
         f32 right[3], up[3], forward[3];
@@ -33,13 +47,19 @@ struct Camera {
     bool basis(Basis* out) const {
         if (viewport_width <= 0 || viewport_height <= 0 || !std::isfinite(fov_y_degrees) ||
             fov_y_degrees <= 0 || fov_y_degrees >= 179 || !std::isfinite(near_plane) ||
-            !std::isfinite(far_plane) || near_plane <= 0 || far_plane <= near_plane) return false;
+            !std::isfinite(far_plane) || near_plane <= 0 || far_plane <= near_plane ||
+            viewport_x < 0 || viewport_y < 0 ||
+            s64(viewport_x)+viewport_width>0x7fffffff || s64(viewport_y)+viewport_height>0x7fffffff ||
+            !std::isfinite(projection_aspect) || projection_aspect < 0) return false;
+        const f32 tangent=static_cast<f32>(std::tan(fov_y_degrees * 3.14159265f / 360.0f));
+        const f32 aspect=projection_aspect>0 ? projection_aspect
+            : static_cast<f32>(viewport_width) / static_cast<f32>(viewport_height);
+        const f32 horizontal=tangent*aspect;
+        if(!std::isfinite(tangent)||!std::isfinite(horizontal)||!(tangent>0)||!(horizontal>0))return false;
         if(!orientation(out))return false;
         if(out){
-            out->tan_half_fov = static_cast<f32>(std::tan(fov_y_degrees * 3.14159265f / 360.0f));
-            out->aspect = (viewport_height > 0)
-                              ? static_cast<f32>(viewport_width) / static_cast<f32>(viewport_height)
-                              : 1.0f;
+            out->tan_half_fov = tangent;
+            out->aspect = aspect;
         }
         return true;
     }
@@ -88,8 +108,8 @@ struct Camera {
         if (!(tan > 0.0f)) return false;
         const f32 ndc_x = x / (depth * tan * b.aspect);
         const f32 ndc_y = y / (depth * tan);
-        if (screen_x) *screen_x = (ndc_x * 0.5f + 0.5f) * static_cast<f32>(viewport_width);
-        if (screen_y) *screen_y = (0.5f - ndc_y * 0.5f) * static_cast<f32>(viewport_height);
+        if (screen_x) *screen_x = viewport_x + (ndc_x * 0.5f + 0.5f) * static_cast<f32>(viewport_width);
+        if (screen_y) *screen_y = viewport_y + (0.5f - ndc_y * 0.5f) * static_cast<f32>(viewport_height);
         if (scale) *scale = near_plane / depth;
         return true;
     }

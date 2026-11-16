@@ -115,9 +115,7 @@ public:
     unsigned draw(RenderEngine& render,const Camera& camera){
         if(!ready_)return 0;
         Camera::Basis basis;if(!camera.basis(&basis))return 0;
-        std::array<u32,14> key{};unsigned at=0;
-        for(const f32* vector:{camera.eye,camera.target,camera.up})for(unsigned k=0;k<3;++k)key[at++]=f32_to_bits(vector[k]);
-        key[at++]=f32_to_bits(camera.fov_y_degrees);key[at++]=f32_to_bits(camera.near_plane);key[at++]=f32_to_bits(camera.far_plane);key[at++]=u32(camera.viewport_width);key[at++]=u32(camera.viewport_height);
+        const auto key=camera.cache_key();
         // Several world passes visit the same evaluated actor. Reflection and
         // identity-geometry publication depend on pose/view, not pass number.
         if(!draw_prepared_||key!=draw_camera_){
@@ -141,7 +139,7 @@ private:
     HsdSkinAsset skin_;CharacterPoseRig rig_;MenuScene scene_;HsdSkinGeometry geometry_;std::vector<bool> visibility_;
     std::vector<std::array<f32,3>> origins_;
     bool loaded_=false,ready_=false;std::string error_;
-    bool draw_prepared_=false;std::array<u32,14> draw_camera_{};
+    bool draw_prepared_=false;std::array<u32,17> draw_camera_{};
     std::shared_ptr<const CharacterModelBinding> binding_;
 };
 } // namespace gf

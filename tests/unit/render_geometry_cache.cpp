@@ -25,7 +25,12 @@ int main(){
  pose.joints[0].hidden=true;check(scene.set_pose(&pose));check(draw()==0&&sink.calls.empty());pose.joints[0].hidden=false;pose.materials[0].alpha=1;check(scene.set_pose(&pose));check(draw()==1&&sink.vertices[0].a==255);
  camera.target[2]=0;check(draw()==0&&sink.calls.empty());camera.target[2]=-1;check(draw()==1);
  // Moving the near plane past the mesh must invalidate cached projection.
- camera.near_plane=4.5f;check(draw()==0);camera.near_plane=.5f;check(scene.set_pose(nullptr));check(draw()==1);
+  camera.near_plane=4.5f;check(draw()==0);camera.near_plane=.5f;check(scene.set_pose(nullptr));check(draw()==1);
+  // A source projection may change aspect without changing viewport dimensions.
+  camera.eye[0]=camera.target[0]=0;check(draw()==1&&near(sink.vertices[0].x,48));
+  camera.projection_aspect=2;check(draw()==1&&near(sink.vertices[0].x,56)&&near(sink.vertices[0].y,80));
+  camera.viewport_x=64;camera.viewport_y=224;check(draw()==1&&near(sink.vertices[0].x,120)&&near(sink.vertices[0].y,304));
+  camera.projection_aspect=0;camera.viewport_x=camera.viewport_y=0;check(draw()==1&&near(sink.vertices[0].x,48)&&near(sink.vertices[0].y,80));
  // Off-screen geometry must not bypass the raw reflection-normal refusal.
  HsdScene invalid=asset;auto bad=mesh;bad.generated_uv_required=bad.reflection_uv_supported=true;bad.texture_coordinate_mode=1;bad.texture=0;for(auto& v:bad.vertices){v.position[0]+=1000;v.normal[2]=0;}invalid.meshes.insert(invalid.meshes.begin(),bad);invalid.mesh_joint.push_back(0);MenuScene guarded;guarded.set_interaction(false);check(guarded.load_scene(invalid,&error));render.begin_frame({});render.reset_arena();check(guarded.draw(render,camera)==0&&!guarded.error().empty());check(render.end_frame());
  std::puts("indexed geometry/cache: analytical positions, repeated indices, material/pose/view/visibility invalidation + offscreen generator refusal PASS");
