@@ -13,6 +13,90 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Ground/ledge/jump controller with ordered dash interruption (GFMM9)
+
+`--source-ground-jump` / `--demo-source-ground-jump` extends the combined
+normal-G-Red ground controller with the already recovered takeoff, rising,
+release/depletion falling and flat landing subset. Walking, stopping, owned-root
+dash, both ground-loss origins and jumping use one VM, driver, world, producer
+and render binding. Older controller modes retain their narrower permissions.
+
+A buffered/held jump can interrupt active or recovery ground dash **before**
+the old dash callback, root evaluation or motion. Normal class12 resets44/4C
+and48/50 during takeoff and requests program2 without moving or spending launch
+resource. The old root lease is only retired when that takeoff is accepted.
+Ascent waits for actual lower-program completion, requests4, integrates the
+initial15 velocity, then applies the source directional acceleration/clamps.
+Launch costs150 and continued rise costs100 per accepted update. Release or
+depletion enters normal falling program6, distinct from ground-loss program13.
+
+Native jump evidence independently checks source phase/entry/completion order,
+pre-integration speed, planar/vertical acceleration, the8/18/−30 bounds, retained
+0.99 falling momentum, optional4-unit drift, exact endpoints and actual selected
+flat contact. It cannot skip takeoff/landing completion, carry dash momentum into
+takeoff, manufacture ascent acceleration, borrow ground-loss lineage or replace
+a required ground-loss payload. Receipts compare every evidence field. VM,
+resource, phase, root/counters and pose remain staged until that exact receipt.
+
+The selector helpers explicitly separate dash-jump permission from relaunch and
+air-dash permission; enabling this mode does not inherit either. Fresh takeoff,
+airborne or landing cancellation presses, airborne flick/dash, relaunch, combat,
+nonflat landing, clipping and unknown root/geometry variants refuse. Held rise
+is the reviewed normal-G-Red jump/resource path, not support for another Borg's
+perpetual-flight/hover semantics. Native jump/air input is limited to32 units;
+this is still a convenience mapping, not original device calibration.
+
+The unchanged-spawn demo supplies walking5–24, neutral25–26, a backward
+flick27–34, held jump/direction35–70, then release. It never teleports or rebinds:
+
+| Accepted tick | Role / captured programs |
+| --- | --- |
+| 28 | Ordered dash entry27 moves immediately |
+| 35 | Active dash,7 actual ordered-root evaluations |
+| 36 | Jump wins before old dash motion; takeoff2, zero movement, meter10000 |
+| 48 | Actual ascent entry4: old15 velocity then acceleration; meter9850 |
+| 72 | Release selects normal falling6; meter7550, no new ordered-root evaluation |
+| 124 | Actual flat touchdown at native selected Y≈35.04099, still6/cache1 |
+| 125 | Separate landing8/cache0, no premature resource recovery |
+| 147–600 | Completed landing returns shared idle0; meter10000, stable position |
+
+The selected floor is queried, not forced to10. A completed ordinary jump landing
+may return to ground control without falsely requiring a previous ledge payload.
+Incomplete landing still cannot do so. A pending ground-loss correction retains
+priority over late jump input; it is not converted into an airborne takeoff.
+
+`native_source_ground_jump_owner` exercises eight600-update original-stage
+routes: neutral, walking, active dash, recovery dash, mixed walk/stop/dash/jump,
+held-resource depletion, walking ledge and dash ledge. It checks interruption
+order/root retirement, kinematic and lineage tampering, resource staging,
+camera-independent heading, selected-floor landing, completed-ground return,
+unsupported cancellation and stable idle. No new animation classification or
+non-G-Red mapping is inferred. Native initialization, clocks, libm, camera,
+target-center and contact remain labelled proxies, not hardware/full-frame
+equivalence.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-jump-host-v1
+build/source-ground-jump-host-v1/gf_native \
+  --demo-source-ground-jump --headless --frames 600 --no-audio
+```
+
+Contact Sheet37 shows actual offscreen GL frames25/28/35/36/48/72/124/150 without
+taking desktop/classifier focus. Isolated native-only takeoff36 and touchdown124
+match the full working tree pixel-for-pixel. Captures remain local and outside Git:
+`local/recomp-evidence/contact-sheets/source-ground-jump-v1/contact-sheet-37.png`.
+The isolated new-owner test passed23478 checks across eight600-update original-
+stage routes plus late-jump priority/refusal and old-mode capability checks.
+Host/all-header builds and the unchanged64-tick ordinary duel smoke also passed.
+The isolated host suite passed all149 Python tests, including38 opt-in host
+integrations. Original motion-bank bytes and all immutable GFMM1–9 packs remain
+unchanged.
+All16 isolated sanitizer binaries passed, including the older combined-ground,
+dash-only, walk-only, ordered-ground and legacy jump/ground owner regressions.
+Game assets, private evidence, captures, build outputs and unrelated work are
+excluded from the checkpoint.
+
 ## One walking/ordered-dash ground-ledge controller (GFMM9)
 
 `--source-ground-ledge` / `--demo-source-ground-ledge` combines the verified

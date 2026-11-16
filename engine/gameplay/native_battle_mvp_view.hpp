@@ -17,6 +17,7 @@ public:
     void source_ordered_ground_controls(){source_ordered_ground_=true;}
     void source_dash_ledge_controls(){source_dash_ledge_=true;}
     void source_ground_ledge_controls(){source_ground_ledge_=true;}
+    void source_ground_jump_controls(){source_ground_jump_=true;}
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error){
         ready_=false;std::vector<u8> stage,floor_bytes;
@@ -152,6 +153,7 @@ public:
         if(source_ordered_ground_)status="G-RED ORDERED GROUND DASH / NATIVE PROXY\nARROWS/DPAD WALK - WASD/STICK FLICK DASH\nENTRY MOTION - OWNED ROOT SPEED - POST-MOTION IDLE\nNO LEDGE/JUMP/FLIGHT/COMBAT - NO CLIPPING";
         if(source_dash_ledge_)status="G-RED SOURCE DASH LEDGE / NATIVE PROXY\nWASD/STICK DASH OFF EDGE - NO WALKING LEDGES\nPOST-DASH SCALAR THEN PRIORITY PROGRAM13 / DELAY30\nLOW FALL DRIFT - NO JUMP/FLIGHT/COMBAT/CLIPPING";
         if(source_ground_ledge_)status="G-RED GROUND LEDGE CONTROLLER / NATIVE PROXY\nARROWS/DPAD WALK - RELEASE THEN WASD/STICK FLICK DASH\nWALK OR DASH OFF EDGE - SHARED FALL/DRIFT/LANDING\nNO JUMP/AIR-DASH/FLIGHT/COMBAT/CLIPPING";
+        if(source_ground_jump_)status="G-RED GROUND/JUMP CONTROLLER / NATIVE PROXY\nARROWS WALK - WASD/STICK FLICK DASH - SHIFT JUMP\nDASH JUMP CANCELS OLD MOTION - SOURCE JUMP/METER\nNO AIR-DASH/RELAUNCH/LANDING CANCEL/COMBAT";
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
         draws+=text_.draw(render,status,24,f32(height)-80,style);render.state()=state;return draws;
@@ -181,6 +183,7 @@ private:
     bool source_ordered_ground_=false;
     bool source_dash_ledge_=false;
     bool source_ground_ledge_=false;
+    bool source_ground_jump_=false;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };
 }

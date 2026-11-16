@@ -86,6 +86,7 @@ struct Options {
     bool source_ordered_ground=false;
     bool source_dash_ledge=false;
     bool source_ground_ledge=false;
+    bool source_ground_jump=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -165,7 +166,8 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-walk-ledge" || arg == "--demo-source-walk-ledge" ||
                  arg == "--source-ordered-ground" || arg == "--demo-source-ordered-ground" ||
                  arg == "--source-dash-ledge" || arg == "--demo-source-dash-ledge" ||
-                 arg == "--source-ground-ledge" || arg == "--demo-source-ground-ledge"){
+                 arg == "--source-ground-ledge" || arg == "--demo-source-ground-ledge" ||
+                 arg == "--source-ground-jump" || arg == "--demo-source-ground-jump"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
             options->source_ground_walk=arg!="--demo-source-ground-dash";
@@ -173,8 +175,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_walk_ledge=arg=="--source-walk-ledge"||arg=="--demo-source-walk-ledge";
             options->source_dash_ledge=arg=="--source-dash-ledge"||arg=="--demo-source-dash-ledge";
             options->source_ground_ledge=arg=="--source-ground-ledge"||arg=="--demo-source-ground-ledge";
-            options->source_ordered_ground=arg=="--source-ordered-ground"||arg=="--demo-source-ordered-ground"||options->source_dash_ledge||options->source_ground_ledge;
-            if(options->source_ordered_ground)options->source_ground_interactive=arg=="--source-ordered-ground"||arg=="--source-dash-ledge"||arg=="--source-ground-ledge";
+            options->source_ground_jump=arg=="--source-ground-jump"||arg=="--demo-source-ground-jump";
+            options->source_ordered_ground=arg=="--source-ordered-ground"||arg=="--demo-source-ordered-ground"||options->source_dash_ledge||options->source_ground_ledge||options->source_ground_jump;
+            if(options->source_ordered_ground)options->source_ground_interactive=arg=="--source-ordered-ground"||arg=="--source-dash-ledge"||arg=="--source-ground-ledge"||arg=="--source-ground-jump";
             options->source_windup_entry_push=arg=="--source-windup-entry-push"||arg=="--demo-source-windup-entry-push";
             options->source_windup_positive_floor=arg=="--source-windup-positive-floor"||arg=="--demo-source-windup-positive-floor"||options->source_windup_entry_push;
             options->source_windup_entry_floor=arg=="--source-windup-entry-floor"||arg=="--demo-source-windup-entry-floor"||options->source_windup_positive_floor;
@@ -483,17 +486,21 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ordered_ground?"local/content/source-gred-ground-v9":options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
     const auto source_mode=options.source_walk_ledge?gf::NativeGRedGroundDashDemo::Mode::WalkLedge:options.source_windup_entry_push?gf::NativeGRedGroundDashDemo::Mode::WindupEntryPush:options.source_windup_positive_floor?gf::NativeGRedGroundDashDemo::Mode::WindupPositiveFloor:options.source_windup_entry_floor?gf::NativeGRedGroundDashDemo::Mode::WindupEntryFloor:options.source_air_dash_floor?gf::NativeGRedGroundDashDemo::Mode::AirDashFloor:options.source_relaunch_floor?gf::NativeGRedGroundDashDemo::Mode::RelaunchFloor:options.source_relaunch_entry_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface:options.source_relaunch_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchSurface:options.source_active_surface?gf::NativeGRedGroundDashDemo::Mode::ActiveSurface:options.source_windup_surface?gf::NativeGRedGroundDashDemo::Mode::WindupSurface:options.source_recovery_surface?gf::NativeGRedGroundDashDemo::Mode::RecoverySurface:options.source_fall_surface?gf::NativeGRedGroundDashDemo::Mode::FallingSurface:options.source_steep?gf::NativeGRedGroundDashDemo::Mode::Steep:options.source_surface?gf::NativeGRedGroundDashDemo::Mode::Surface:options.source_landing_interrupt?gf::NativeGRedGroundDashDemo::Mode::LandingInterrupt:options.source_dash_jump?gf::NativeGRedGroundDashDemo::Mode::DashJump:options.source_relaunch?gf::NativeGRedGroundDashDemo::Mode::Relaunch:options.source_air_dash?gf::NativeGRedGroundDashDemo::Mode::AirDash:options.source_moving_jump?gf::NativeGRedGroundDashDemo::Mode::Jump:options.source_vertical_jump?gf::NativeGRedGroundDashDemo::Mode::VerticalJump:
-        options.source_ground_ledge?gf::NativeGRedGroundDashDemo::Mode::GroundLedge:options.source_dash_ledge?gf::NativeGRedGroundDashDemo::Mode::DashLedge:options.source_ordered_ground?gf::NativeGRedGroundDashDemo::Mode::OrderedGround:options.source_ground_walk?gf::NativeGRedGroundDashDemo::Mode::Ground:gf::NativeGRedGroundDashDemo::Mode::DashOnly;
+        options.source_ground_jump?gf::NativeGRedGroundDashDemo::Mode::GroundJump:options.source_ground_ledge?gf::NativeGRedGroundDashDemo::Mode::GroundLedge:options.source_dash_ledge?gf::NativeGRedGroundDashDemo::Mode::DashLedge:options.source_ordered_ground?gf::NativeGRedGroundDashDemo::Mode::OrderedGround:options.source_ground_walk?gf::NativeGRedGroundDashDemo::Mode::Ground:gf::NativeGRedGroundDashDemo::Mode::DashOnly;
     auto bind_source=[&](){gf::NativeBorgAnimationSeed seed;return view.source_seed(world,&seed)&&source.bind(context.files(),options.battle_mvp_assets,source_inputs,world,seed,&error,source_mode);};
     if(options.demo_source_ground&&!bind_source()){gf::log_error(context,"source-ground","bind failed: %s",error.c_str());render.shutdown();return 2;}
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-    if(options.demo_source_ground)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; %s; no original whole-frame equivalence",options.source_walk_ledge?"walk-only ground loss and owned native frame history":options.source_moving_jump?"ground plus moving jump/air steering":options.source_vertical_jump?"ground plus neutral vertical jump":options.source_ground_walk?"ground walk/turn/stop/dash only":"scripted dash only, no source walk/jump/combat");
+    if(options.demo_source_ground)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; %s; no original whole-frame equivalence",options.source_ground_jump?"one ground/ledge/jump controller":options.source_walk_ledge?"walk-only ground loss and owned native frame history":options.source_moving_jump?"ground plus moving jump/air steering":options.source_vertical_jump?"ground plus neutral vertical jump":options.source_ground_walk?"ground walk/turn/stop/dash only":"scripted dash only, no source walk/jump/combat");
     if(options.source_ground_walk){
         view.source_ground_controls(options.source_ground_interactive);
         if(options.source_ordered_ground){
             view.source_ordered_ground_controls();
-            if(options.source_ground_ledge){
+            if(options.source_ground_jump){
+                view.source_ground_jump_controls();
+                gf::log_info(context,"source-ground","ground-jump controller enabled: shared walk/stop, owned ordered dash, both ledges and source jump; buffered dash-to-takeoff admission before old root/motion, source resource and exact jump kinematics; air dash/relaunch/landing cancellation/combat, nonflat landing and clipping refused; native proxies, older policies unchanged");
+                if(!options.source_ground_interactive)gf::log_info(context,"source-ground","ground-jump demo only: unchanged native spawn/arena/stage/target; walk5-24, neutral25-26, backward flick27-34, jump35-70 then release; one world/producer, no teleport/rebind");
+            }else if(options.source_ground_ledge){
                 view.source_ground_ledge_controls();
                 gf::log_info(context,"source-ground","ground-ledge controller enabled: shared walk/stop and owned-root ordered dash can both depart; distinct walking tangent vs post-dash scalar checks, next priority program13, delayed drift and flat landing; jump/air-dash/flight/combat, nonflat dash/landing and clipping refused; native proxies, older policies unchanged");
                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","ground-ledge demo only: native roof249 ground spawn/reference and arena4500; walk5-69, neutral70-71, genuine flick72 then one post-delay drift; same world/producer, no teleport/rebind or stage/target edit; interactive spawn/bounds unchanged");
@@ -503,7 +510,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","dash-ledge demo only: native ground spawn1012.360657/482.747589/1403.599731, arena4500, original roof/stage and unchanged target; hold through one post-delay drift then release; interactive spawn/bounds unchanged, no airborne teleport");
             }else gf::log_info(context,"source-ground","ordered ground enabled: immediate dash entry motion, incoming-speed steering, sealed post-VM AObj root-speed reads, motion before done/reset; flat dash floor only, no ledge/jump/flight/combat/clipping or multiplier/null-root fallback; native clocks/target/contact proxies, older modes unchanged");
         }
-        if(!options.source_vertical_jump)gf::log_info(context,"source-ground","%s source walk/turn/stop/dash; arrows/D-pad WALK, stick/WASD FLICK DASH; Enter pause, Q restart; jump/flight/combat refused before simulation; native rate664=1",options.source_ground_interactive?"interactive":"scripted");
+        if(!options.source_vertical_jump&&!options.source_ground_jump)gf::log_info(context,"source-ground","%s source walk/turn/stop/dash; arrows/D-pad WALK, stick/WASD FLICK DASH; Enter pause, Q restart; jump/flight/combat refused before simulation; native rate664=1",options.source_ground_interactive?"interactive":"scripted");
     }
     if(options.source_vertical_jump){
         view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
@@ -584,7 +591,12 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                     auto device=pad;
                     if(!options.source_ground_interactive){
                         device={};const unsigned t=world.tick()%(options.source_air_dash?480:options.source_moving_jump?480:options.source_vertical_jump?600:360);
-                         if(options.source_ground_ledge){
+                         if(options.source_ground_jump){
+                             const auto tick=world.tick();
+                             if(tick>=5&&tick<25)device.dpad_down=true;
+                             if(tick>=27&&tick<35)device.stick_y=127;
+                             if(tick>=35&&tick<71){device.b=true;device.dpad_down=true;}
+                         }else if(options.source_ground_ledge){
                              const auto tick=world.tick();
                              if(tick>=5&&(!source.ground_loss_entries()||source.ground_loss_timer698()>0)){
                                  if(tick<70)device.dpad_up=true;else if(tick>=72)device.stick_y=-127;
@@ -722,6 +734,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.source_ordered_ground)gf::log_info(context,"source-ground","ordered-entries=%llu active=%llu recovery=%llu resets=%llu root-updates=%llu root-speed=%.6f selector=%u flags=%x; scoped post-VM samples, not original actor/frame equivalence",static_cast<unsigned long long>(source.ordered_entries()),static_cast<unsigned long long>(source.ordered_active_frames()),static_cast<unsigned long long>(source.ordered_recovery_frames()),static_cast<unsigned long long>(source.ordered_resets()),static_cast<unsigned long long>(source.ordered_root().updates),source.ordered_root().speed1dac,unsigned(source.selector()),source.movement_flags());
     if(options.source_dash_ledge)gf::log_info(context,"source-ground","dash-loss-air-frames=%llu landings=%llu resource=%d selector=%u; last ordered root sample is historical data after priority handoff, not a fresh airborne root lease",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
     if(options.source_ground_ledge)gf::log_info(context,"source-ground","walk-departures=%llu dash-departures=%llu landings=%llu resource=%d selector=%u; one scoped controller/producer, distinct walking and ordered-dash evidence",static_cast<unsigned long long>(source.walk_departures()),static_cast<unsigned long long>(source.dash_departures()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
+    if(options.source_ground_jump)gf::log_info(context,"source-ground","ground-jump-air-frames=%llu landings=%llu resource=%d dash-jumps=%llu last-interrupted-selector=%u programs=%u/%u cached87=%u; source subset, no extra ordered root advance on takeoff",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),static_cast<unsigned long long>(source.dash_jumps()),unsigned(source.last_dash_jump_selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     render.shutdown();return 0;
 }
 

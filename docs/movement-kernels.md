@@ -31,6 +31,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   A further combined ground-ledge policy admits both origins with their distinct
   walking-tangent versus owned-dash checks in one VM/driver/producer. Older
   walk-only, dash-only and ground-only policies retain their restrictions.
+- A separate ground-jump policy joins reviewed takeoff/ascent/release-or-depletion/
+  falling/flat landing to that controller. It checks jump kinematics and lineage
+  independently and admits dash interruption before old root/motion dispatch.
+  Its capability does not inherit air-dash/relaunch or landing cancellation.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

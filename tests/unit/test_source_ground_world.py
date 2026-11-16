@@ -135,6 +135,36 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("requires GFMM9", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
+    def test_ground_jump_interrupts_owned_dash_before_motion_and_recovers(self):
+        for tick, roots, selector, program, cached, meter, landings, air in (
+                (28, 1, 13, 27, 0, 10000, 0, 0), (35, 7, 13, 27, 0, 10000, 0, 0),
+                (36, 7, 4, 2, 0, 10000, 0, 0), (48, 7, 5, 4, 1, 9850, 0, 1),
+                (72, 7, 6, 6, 1, 7550, 0, 25), (124, 7, 7, 6, 1, 7550, 1, 76),
+                (125, 7, 7, 8, 0, 7550, 1, 76), (147, 7, 0, 0, 0, 10000, 1, 76),
+                (600, 7, 0, 0, 0, 10000, 1, 76)):
+            result = self.run_host(["--demo-source-ground-jump", "--headless", "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"root-updates={roots}", result.stdout)
+            self.assertIn(f"selector={selector}", result.stdout)
+            self.assertIn(f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn(f"ground-jump-air-frames={air} landings={landings} resource={meter}", result.stdout)
+            self.assertIn(f"dash-jumps={int(tick>=36)} last-interrupted-selector={13 if tick>=36 else 0}", result.stdout)
+            self.assertIn("one ground/ledge/jump controller", result.stdout)
+            self.assertIn("unchanged native spawn/arena/stage/target", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+            if tick >= 124:
+                self.assertIn("G-Red-position=-852.77/35.04/806.94", result.stdout)
+        result = self.run_host(["--source-ground-jump", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("ground-jump-air-frames=0 landings=0 resource=10000 dash-jumps=0", result.stdout)
+        self.assertNotIn("ground-jump demo only:", result.stdout)
+        result = self.run_host(["--source-ground-jump", "--source-ground-assets",
+                                "local/content/source-gred-ground-v8", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM9", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
     def test_general_ground_walk_stop_dash_and_interactive_idle(self):
         for mode in ("--demo-source-ground", "--source-ground"):
             result = self.run_host([mode, "--headless", "--frames", "360", "--no-audio"])
@@ -191,6 +221,8 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-dash-ledge", "--source-walk-ledge"],
                        ["--source-ground-ledge", "--source-dash-ledge"],
                        ["--source-ground-ledge", "--source-walk-ledge"],
+                       ["--source-ground-jump", "--source-ground-ledge"],
+                       ["--source-ground-jump", "--source-jump"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)
