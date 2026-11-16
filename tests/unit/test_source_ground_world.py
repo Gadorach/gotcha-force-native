@@ -70,6 +70,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                       ["--source-relaunch-surface", "--source-active-surface"],
                        ["--source-relaunch-entry-surface", "--source-relaunch-surface"],
                        ["--source-relaunch-floor", "--source-relaunch-entry-surface"],
+                       ["--source-air-dash-floor", "--source-relaunch-floor"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)
@@ -103,6 +104,30 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("null-callback-relaunch-floor-contacts=0", result.stdout)
         self.assertNotIn("relaunch-floor demo:", result.stdout)
         result = self.run_host(["--source-relaunch-floor", "--source-ground-assets",
+                                "local/content/source-gred-ground-v6", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM7", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
+    def test_air_dash_floor_caller_responses_and_later_real_callback(self):
+        for tick, windup, active, landings, meter, selector in (
+                (80, 1, 0, 0, 8550, 15), (86, 7, 0, 0, 8100, 16),
+                (87, 7, 1, 0, 8050, 16), (116, 7, 30, 0, 6600, 16),
+                (117, 7, 30, 1, 6550, 7), (240, 7, 30, 1, 10000, 0),
+                (600, 7, 30, 1, 10000, 0)):
+            result = self.run_host(["--demo-source-air-dash-floor", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"air-dash-floor-windup={windup} active={active}", result.stdout)
+            self.assertIn(f"landings={landings} resource={meter} selector={selector}", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+            self.assertIn("ordinary native spawn/bounds/target/references", result.stdout)
+        result = self.run_host(["--source-air-dash-floor", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("air-dash-floor-windup=0 active=0", result.stdout)
+        self.assertNotIn("air-dash-floor demo:", result.stdout)
+        result = self.run_host(["--source-air-dash-floor", "--source-ground-assets",
                                 "local/content/source-gred-ground-v6", "--headless", "--no-audio"])
         self.assertEqual(result.returncode, 2, result.stdout)
         self.assertIn("requires GFMM7", result.stdout)

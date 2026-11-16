@@ -106,7 +106,65 @@ its supported contact geometry or a movement rule for other Borgs. Run
 `native_source_relaunch_floor_owner` to exercise both the two-snap release route
 and this held/depletion route.
 
-### Air-dash floor caller recovery (candidate only)
+### Air-dash null-callback floor integration
+
+The opt-in `--source-air-dash-floor` / `--demo-source-air-dash-floor` mode now
+connects the recovered caller tails below through the existing source owner,
+shared VM, native receipt validation and renderer. It inherits the GFMM7
+relaunch-floor mode without widening any older policy. No new asset pack or
+animation mapping is required.
+
+Distinct continued-wind-up, active-entry and continued-active floor kinds carry
+their own exact pre-contact position/speed/acceleration and selected-surface
+evidence. Native acceptance independently checks geometry, caller response,
+phase ordering, motion bounds and clipping. All remain airborne at floor height.
+Resource, timer, VM and pose-frame leases publish only after the matching receipt.
+Fatal source refusals retire the producer and revoke its prior pose/receipt
+leases; a rejected native candidate alone leaves the staged producer live.
+
+The native demo uses ordinary MVP spawn/bounds/target/references, holds jump5–30,
+and supplies a right flick78–104:
+
+| Tick | Contact/dispatch | Program | Meter |
+| --- | --- | --- | --- |
+| 80–85 | Wind-up snaps;48=0,50=-0.07, airborne | 10 | 8550 |
+| 86 | Seventh wind-up snap, cost/select16 before contact | 10 | 8100 |
+| 87 | Separate active entry, snap retains48=-0.07 | 11 | 8050 |
+| 88–116 | Early active snaps retain accumulating negative48 | 11 | 8000→6600 |
+| 117 | Minimum timer installs65E64; actual touchdown | 11 | 6550 |
+| 240/600 | Ordinary landing recovery then stable idle | 0 | 10000 |
+
+Wind-up entry floor snaps and entry pushes, ascending/raised-side contacts,
+attachments, offsets, moving platforms and unresolved geometry still refuse.
+A leftward version hits an unresolved raised-surface seam after accepted tick104
+and refuses atomically; the rightward demo does not bypass that refusal or alter
+spawn/arena/query references. This is bounded normal-G-Red native integration,
+not original actor-frame/hardware equivalence or a rule for other Borgs.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-air-dash-floor-host-v1
+build/source-air-dash-floor-host-v1/gf_native --demo-source-air-dash-floor \
+  --headless --frames 600 --no-audio
+```
+
+Regression targets: `gred_air_dash_floor`, `native_source_air_dash_floor` and
+`native_source_air_dash_floor_owner`, plus existing relaunch/wind-up/active
+acceptance and source-world replay tests.
+
+Contact Sheet29 shows actual offscreen GL entry, both caller responses,
+timer/callback handoffs, landing and recovery without taking desktop/classifier
+focus:
+`local/recomp-evidence/contact-sheets/source-air-dash-floor-v1/contact-sheet-29.png`.
+The captures and qualified source evidence remain local and excluded from Git.
+
+Validation from the isolated native-only staged tree passed14 sanitizer binaries,
+all135 Python tests (including26 opt-in host integrations), host/all-header
+builds, and the ordinary64-tick duel smoke. The real-stage air-dash-floor owner
+test passed1579 checks, including fatal-refusal lease revocation. Its GL tick87
+was pixel-identical to the full working-tree capture.
+
+### Earlier numeric air-dash floor caller recovery
 
 Air-dash contact must not inherit relaunch's0.8 floor response. Qualified
 initialized-DOL disassembly distinguishes:
@@ -128,10 +186,11 @@ returns do not trigger wind-up's vertical zero. It requires the reviewed GFMM7
 null-callback candidate domain but adds no new pack operands. Attachments,
 offsets, recovery-specific callers and invalid wind-up callback claims refuse.
 
-This checkpoint is **numeric candidate recovery only**: the native owner and
-producer policies still refuse early air-dash floor contact. A bounded original
-stage probe with ordinary spawn and a left flick at78 refuses after accepted
-tick79, while preparing its first continued wind-up contact. No receipt, cost, pose or
+That earlier checkpoint was **numeric candidate recovery only**: older native
+owner modes and producer policies still refuse early air-dash floor contact.
+A bounded original-stage probe in `RelaunchFloor` mode with ordinary spawn and a
+left flick at78 refuses after accepted tick79, while preparing its first continued
+wind-up contact. No receipt, cost, pose or
 legacy-MVP fallback is committed for that refused tick.
 
 The bounded handlers were cross-checked byte-for-byte against the qualified
