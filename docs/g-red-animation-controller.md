@@ -13,7 +13,82 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
-## Positive-speed wind-up entry at floor height
+## Wind-up entry on a steep selected surface
+
+`--source-windup-entry-push` / `--demo-source-windup-entry-push` adds a separate
+entry-push contract to the existing GFMM7 source owner. Older wind-up/floor
+policies retain their refusal. It reuses the same planner, VM, selected-surface
+math, native collision checks and renderer; no new assets, operands, animation
+labels or cross-Borg rules are introduced.
+
+`61338` entry halves44/48, clears4C and declares50=data70 **without** displacement
+or acceleration. If `677B0` takes its steep ret0 branch, it projects from that
+unchanged point and damps44/48 by0.9. Wind-up's ret1-only zero48 tail does not run.
+Thus the entry response is half-speed then0.9, not a repeated integration,
+continued-frame acceleration, floor snap, landing or refill.
+
+The distinct entry-push kind verifies same-position pre-contact evidence,
+half of previous accepted48, selected height/normal/triangle/angle, exact
+quantized projection and0.9 response. Native phase order, movement budgets,
+body/bounds/terrain clipping and post-projection floor checks remain unchanged.
+Resource, timer, VM and pose leases publish only after the exact receipt.
+
+The original-stage fixture uses authored triangle145. The **native demo only**
+declares arena-half4500, player X/Z `(-2760.075195312,-3528.048583984)` and initial
+floor query reference385.716827393. Target placement is unchanged; interactive
+mode retains ordinary arena/spawn/references. These are not recovered original
+spawn or input data, and no airborne position or stage asset is edited.
+
+Its bounded input holds jump5–7, re-presses9–31 without cancelling takeoff,
+then flicks toward the target for27 updates after the first accepted falling push:
+
+| Tick | Response / dispatch | Program | Meter |
+| --- | --- | --- | --- |
+| 80 | Ordinary falling push reaches triangle145 | 6 | 8450 |
+| 81 | Entry half48=-13.5, then ret0 response48=-12.15 | 10 | 8450 |
+| 82–85 | Continued wind-up pushes integrate/apply50, no entry replay | 10 | 8450 |
+| 86 | Fifth continued push; deferred450 cost/select16 before contact | 10 | 8000 |
+| 87 | Separate active-entry reset | 11 | 7950 |
+| 140 | Recovery's real landing callback | 12 | 6450 |
+| 240/600 | Stable idle after ordinary grounded recovery | 0 | 10000 |
+
+The entry in this verified route is exactly on the selected steep plane:
+projection distance is zero, but the source ret0 path still damps speed and stays
+airborne. It is not relabelled as a floor snap. A bounded read-only geometry
+witness search supplied the native placement, then ordinary input and accepted
+world/contact steps reproduced the route. The previous mode refuses after
+accepted tick80 and revokes its retired leases without staged cost/pose or MVP
+fallback.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-windup-entry-push-host-v1
+build/source-windup-entry-push-host-v1/gf_native \
+  --demo-source-windup-entry-push --headless --frames 600 --no-audio
+```
+
+Positive-speed entry pushes, active-dash entry pushes, raised-side/unknown
+geometry, clipping, attachments, offsets, platforms, combat/effects and whole
+original actor frames remain refused. The mode inherits earlier floor contracts
+separately; it does not turn them into pushes. Native initialization, clock,
+camera, collision and libm approximations remain explicitly non-equivalent to
+original hardware. Tests: `native_source_windup_entry_push` and
+`native_source_windup_entry_push_owner`, plus earlier controller suites.
+
+The isolated native-only tree passed14 sanitizer binaries, all138 Python tests
+(including29 host integrations), host/all-header builds and the ordinary64-tick
+duel smoke. The real-stage owner test passed1309 checks. Its continued pushes
+independently reselect pre-contact metadata across authored faces (including83),
+not an invented requirement to keep the entry triangle after projection.
+
+Contact Sheet32 shows actual offscreen GL frames79/80/81/82/86/87/140/180,
+without taking desktop/classifier focus. Frame81 was pixel-identical between
+the isolated checkpoint and full working tree. Captures remain local:
+`local/recomp-evidence/contact-sheets/source-windup-entry-push-v1/contact-sheet-32.png`.
+Bounded wind-up/contact handler bytes, independent0.5/0.9/zero operands and all
+seven GFMM7 pack components still match the qualified read-only inputs.
+
+## Earlier positive-speed wind-up entry at floor height
 
 `--source-windup-positive-floor` / `--demo-source-windup-positive-floor`
 separately admits positive48 during the **no-motion** wind-up entry. Older

@@ -81,6 +81,7 @@ struct Options {
     bool source_air_dash_floor=false;
     bool source_windup_entry_floor=false;
     bool source_windup_positive_floor=false;
+    bool source_windup_entry_push=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -155,12 +156,14 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-relaunch-floor" || arg == "--demo-source-relaunch-floor" ||
                  arg == "--source-air-dash-floor" || arg == "--demo-source-air-dash-floor" ||
                  arg == "--source-windup-entry-floor" || arg == "--demo-source-windup-entry-floor" ||
-                 arg == "--source-windup-positive-floor" || arg == "--demo-source-windup-positive-floor"){
+                 arg == "--source-windup-positive-floor" || arg == "--demo-source-windup-positive-floor" ||
+                 arg == "--source-windup-entry-push" || arg == "--demo-source-windup-entry-push"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
             options->source_ground_walk=arg!="--demo-source-ground-dash";
-            options->source_ground_interactive=arg=="--source-ground"||arg=="--source-vertical-jump"||arg=="--source-jump"||arg=="--source-air-dash"||arg=="--source-relaunch"||arg=="--source-dash-jump"||arg=="--source-landing"||arg=="--source-surface"||arg=="--source-steep"||arg=="--source-fall-surface"||arg=="--source-recovery-surface"||arg=="--source-windup-surface"||arg=="--source-active-surface"||arg=="--source-relaunch-surface"||arg=="--source-relaunch-entry-surface"||arg=="--source-relaunch-floor"||arg=="--source-air-dash-floor"||arg=="--source-windup-entry-floor"||arg=="--source-windup-positive-floor";
-            options->source_windup_positive_floor=arg=="--source-windup-positive-floor"||arg=="--demo-source-windup-positive-floor";
+            options->source_ground_interactive=arg=="--source-ground"||arg=="--source-vertical-jump"||arg=="--source-jump"||arg=="--source-air-dash"||arg=="--source-relaunch"||arg=="--source-dash-jump"||arg=="--source-landing"||arg=="--source-surface"||arg=="--source-steep"||arg=="--source-fall-surface"||arg=="--source-recovery-surface"||arg=="--source-windup-surface"||arg=="--source-active-surface"||arg=="--source-relaunch-surface"||arg=="--source-relaunch-entry-surface"||arg=="--source-relaunch-floor"||arg=="--source-air-dash-floor"||arg=="--source-windup-entry-floor"||arg=="--source-windup-positive-floor"||arg=="--source-windup-entry-push";
+            options->source_windup_entry_push=arg=="--source-windup-entry-push"||arg=="--demo-source-windup-entry-push";
+            options->source_windup_positive_floor=arg=="--source-windup-positive-floor"||arg=="--demo-source-windup-positive-floor"||options->source_windup_entry_push;
             options->source_windup_entry_floor=arg=="--source-windup-entry-floor"||arg=="--demo-source-windup-entry-floor"||options->source_windup_positive_floor;
             options->source_air_dash_floor=arg=="--source-air-dash-floor"||arg=="--demo-source-air-dash-floor"||options->source_windup_entry_floor;
             options->source_relaunch_floor=arg=="--source-relaunch-floor"||arg=="--demo-source-relaunch-floor"||options->source_air_dash_floor;
@@ -449,12 +452,15 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         config={};config.spawn[0]={-606.4511719f,-1373.5872803f};
     }
     if(options.source_relaunch_floor&&!options.source_ground_interactive)config={}; //ordinary native MVP spawn, target, bounds and floor references
+    if(options.source_windup_entry_push&&!options.source_ground_interactive){
+        config={};config.arena_half=4500;config.spawn[0]={-2760.075195312f,-3528.048583984f};config.spawn_query_y[0]=385.716827393f;
+    } //native-only placement/reference at original triangle145; interactive bounds/spawn unchanged
     if(!view.load(context.files(),options.battle_mvp_assets,render,&error)||!world.start(config,&view)||!view.update(world,&error)){
         gf::log_error(context,"battle-mvp","initialization failed: %s",error.c_str());render.shutdown();return 2;}
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
-    const auto source_mode=options.source_windup_positive_floor?gf::NativeGRedGroundDashDemo::Mode::WindupPositiveFloor:options.source_windup_entry_floor?gf::NativeGRedGroundDashDemo::Mode::WindupEntryFloor:options.source_air_dash_floor?gf::NativeGRedGroundDashDemo::Mode::AirDashFloor:options.source_relaunch_floor?gf::NativeGRedGroundDashDemo::Mode::RelaunchFloor:options.source_relaunch_entry_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface:options.source_relaunch_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchSurface:options.source_active_surface?gf::NativeGRedGroundDashDemo::Mode::ActiveSurface:options.source_windup_surface?gf::NativeGRedGroundDashDemo::Mode::WindupSurface:options.source_recovery_surface?gf::NativeGRedGroundDashDemo::Mode::RecoverySurface:options.source_fall_surface?gf::NativeGRedGroundDashDemo::Mode::FallingSurface:options.source_steep?gf::NativeGRedGroundDashDemo::Mode::Steep:options.source_surface?gf::NativeGRedGroundDashDemo::Mode::Surface:options.source_landing_interrupt?gf::NativeGRedGroundDashDemo::Mode::LandingInterrupt:options.source_dash_jump?gf::NativeGRedGroundDashDemo::Mode::DashJump:options.source_relaunch?gf::NativeGRedGroundDashDemo::Mode::Relaunch:options.source_air_dash?gf::NativeGRedGroundDashDemo::Mode::AirDash:options.source_moving_jump?gf::NativeGRedGroundDashDemo::Mode::Jump:options.source_vertical_jump?gf::NativeGRedGroundDashDemo::Mode::VerticalJump:
+    const auto source_mode=options.source_windup_entry_push?gf::NativeGRedGroundDashDemo::Mode::WindupEntryPush:options.source_windup_positive_floor?gf::NativeGRedGroundDashDemo::Mode::WindupPositiveFloor:options.source_windup_entry_floor?gf::NativeGRedGroundDashDemo::Mode::WindupEntryFloor:options.source_air_dash_floor?gf::NativeGRedGroundDashDemo::Mode::AirDashFloor:options.source_relaunch_floor?gf::NativeGRedGroundDashDemo::Mode::RelaunchFloor:options.source_relaunch_entry_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface:options.source_relaunch_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchSurface:options.source_active_surface?gf::NativeGRedGroundDashDemo::Mode::ActiveSurface:options.source_windup_surface?gf::NativeGRedGroundDashDemo::Mode::WindupSurface:options.source_recovery_surface?gf::NativeGRedGroundDashDemo::Mode::RecoverySurface:options.source_fall_surface?gf::NativeGRedGroundDashDemo::Mode::FallingSurface:options.source_steep?gf::NativeGRedGroundDashDemo::Mode::Steep:options.source_surface?gf::NativeGRedGroundDashDemo::Mode::Surface:options.source_landing_interrupt?gf::NativeGRedGroundDashDemo::Mode::LandingInterrupt:options.source_dash_jump?gf::NativeGRedGroundDashDemo::Mode::DashJump:options.source_relaunch?gf::NativeGRedGroundDashDemo::Mode::Relaunch:options.source_air_dash?gf::NativeGRedGroundDashDemo::Mode::AirDash:options.source_moving_jump?gf::NativeGRedGroundDashDemo::Mode::Jump:options.source_vertical_jump?gf::NativeGRedGroundDashDemo::Mode::VerticalJump:
         options.source_ground_walk?gf::NativeGRedGroundDashDemo::Mode::Ground:gf::NativeGRedGroundDashDemo::Mode::DashOnly;
     auto bind_source=[&](){gf::NativeBorgAnimationSeed seed;return view.source_seed(world,&seed)&&source.bind(context.files(),options.battle_mvp_assets,source_inputs,world,seed,&error,source_mode);};
     if(options.demo_source_ground&&!bind_source()){gf::log_error(context,"source-ground","bind failed: %s",error.c_str());render.shutdown();return 2;}
@@ -467,7 +473,11 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     if(options.source_vertical_jump){
         view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
-        if(options.source_windup_positive_floor){
+        if(options.source_windup_entry_push){
+            view.source_windup_entry_push_controls();
+            gf::log_info(context,"source-ground","source wind-up entry push enabled: half old44/48 without displacement/acceleration, then steep ret0 .9 projection; NOT ret1 zero48 or landing/refill; exact entry receipt; positive-speed entry pushes/raised-side/attached/unknown contacts refused; native proxies only");
+            if(!options.source_ground_interactive)gf::log_info(context,"source-ground","windup-entry-push demo only: native arena-half4500, player placement/reference at original triangle145; initial floor reference385.7168; flick after accepted falling push; target/interactive arena/spawn unchanged; not original input/spawn data");
+        }else if(options.source_windup_positive_floor){
             view.source_air_dash_floor_controls();view.source_windup_entry_floor_controls();view.source_windup_positive_floor_controls();
             gf::log_info(context,"source-ground","source positive-speed wind-up floor enabled: entry halves positive48 then ret1 zeros48 at unchanged position; no translation/acceleration/spend/refill, retain50/history; separate positive receipt; rising-motion/entry-push/raised-side/attached/unknown geometry refused; native proxies only");
             if(!options.source_ground_interactive)gf::log_info(context,"source-ground","windup-positive-floor demo: ordinary native spawn/bounds/target/references; eight relaunch snaps then right flick86-112; hold jump until accepted air-dash entry; not original input/AI/spawn data");
@@ -508,6 +518,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     bool input_refused=false;
     gf::u32 landing_jump_script_tick=0,landing_dash_script_tick=0;
+    gf::u32 windup_entry_push_flick_tick=0;
     for(unsigned i=0;i<2;++i){gf::BattleMvpVec low,high;if(view.actor_bounds(i,&low,&high))gf::log_info(context,"battle-mvp","actor=%u ground-y=%.1f model-y=%.1f..%.1f",i,world.actors()[i].position[1],low[1],high[1]);}
     while(context.window().pump_events()&&!context.window().should_close()){
         const auto now=context.clock().monotonic_ns();if(options.seconds&&now-started>=gf::u64(options.seconds)*1000000000ull)break;
@@ -535,7 +546,11 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                     auto device=pad;
                     if(!options.source_ground_interactive){
                         device={};const unsigned t=world.tick()%(options.source_air_dash?480:options.source_moving_jump?480:options.source_vertical_jump?600:360);
-                         if(options.source_windup_positive_floor){
+                         if(options.source_windup_entry_push){
+                             const auto tick=world.tick();device.b=(tick>=5&&tick<8)||(tick>=9&&tick<32);
+                             if(source.surface_pushes()&&!windup_entry_push_flick_tick)windup_entry_push_flick_tick=tick;
+                             if(windup_entry_push_flick_tick&&tick<windup_entry_push_flick_tick+27)device.stick_y=-127;
+                         }else if(options.source_windup_positive_floor){
                              const auto tick=world.tick();device.b=(tick>=5&&tick<31)||(tick>=78&&!source.air_dash_starts());
                              if(tick>=86&&tick<113)device.stick_x=127;
                          }else if(options.source_windup_entry_floor){
@@ -606,6 +621,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 if(restart||pause||world.paused()){
                     if(!world.step({controls,{}},false,&view)){render.shutdown();return 2;}
                     if(restart&&(!view.update(world,&error)||!bind_source())){gf::log_error(context,"source-ground","restart bind refused: %s",error.c_str());render.shutdown();return 2;}
+                    if(restart)windup_entry_push_flick_tick=0;
                 }else{
                     gf::s16 x=0,y=0;gf::u32 held=0;const unsigned t=world.tick()%360,part=t/90,phase=t%90;
                     if(phase>=5&&phase<17){
@@ -652,6 +668,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.source_air_dash_floor)gf::log_info(context,"source-ground","air-dash-floor-windup=%llu active=%llu last-air-floor-programs=%u/%u; wind-up zero48 / null-active preserves48; snaps retain50 and airborne history",static_cast<unsigned long long>(source.windup_floor_contacts()),static_cast<unsigned long long>(source.active_floor_contacts()),unsigned(source.last_air_dash_floor_programs()[0]),unsigned(source.last_air_dash_floor_programs()[1]));
     if(options.source_windup_entry_floor)gf::log_info(context,"source-ground","windup-entry-floor-contacts=%llu; distinct no-motion half-speed entry receipts, not repeated continuation or grounded refill",static_cast<unsigned long long>(source.windup_entry_floor_contacts()));
     if(options.source_windup_positive_floor)gf::log_info(context,"source-ground","windup-positive-floor-contacts=%llu; exact positive half-speed then zero48 at unchanged position, not rising integration or grounded refill",static_cast<unsigned long long>(source.positive_windup_floor_contacts()));
+    if(options.source_windup_entry_push)gf::log_info(context,"source-ground","windup-entry-surface-pushes=%llu; half-speed before .9 ret0 response, no translated entry or floor-zero/refill shortcut",static_cast<unsigned long long>(source.windup_entry_surface_pushes()));
     render.shutdown();return 0;
 }
 
