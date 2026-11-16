@@ -163,12 +163,14 @@ int main(){
         }
         check(motion.position[2]<300,"real original grid sequence produces world displacement");originals=3;
     }
-    for(const char* pack:{"source-gred-ground-v1","source-gred-ground-v2","source-gred-ground-v3","source-gred-ground-v4","source-gred-ground-v5","source-gred-ground-v6","source-gred-ground-v7","source-gred-ground-v8"}){
+    for(const char* pack:{"source-gred-ground-v1","source-gred-ground-v2","source-gred-ground-v3","source-gred-ground-v4","source-gred-ground-v5","source-gred-ground-v6","source-gred-ground-v7","source-gred-ground-v8","source-gred-ground-v9"}){
         auto bytes=read(std::string("local/content/")+pack+"/motion.gfmm");
         if(bytes.empty())continue;
         CharacterMovementProfile original;
         check(character_movement_load({bytes.data(),bytes.size()},&original,&error),"qualified GFMM1/2 pack backward compatibility");
-        check(original.walk_operands==(bytes[5]>=2)&&original.air_operands==(bytes[5]>=3)&&original.air_dash_operands==(bytes[5]>=4)&&original.surface_operands==(bytes[5]>=5)&&original.steep_operands==(bytes[5]>=6)&&original.relaunch_floor_operands==(bytes[5]>=7)&&original.ground_loss_operands==(bytes[5]==8),"versioned movement/contact capabilities remain distinct");
+        check(original.walk_operands==(bytes[5]>=2)&&original.air_operands==(bytes[5]>=3)&&original.air_dash_operands==(bytes[5]>=4)&&original.surface_operands==(bytes[5]>=5)&&original.steep_operands==(bytes[5]>=6)&&original.relaunch_floor_operands==(bytes[5]>=7)&&original.ground_loss_operands==(bytes[5]>=8)&&original.ordered_dash_operands==(bytes[5]>=9),"versioned movement/contact capabilities remain distinct");
+        if(original.ordered_dash_operands)check(original.dash_recovery_damping==bits_to_f32(0x3f666666u),
+            "GFMM9 separately owns61160's80437570 recovery damping despite numerically equal steep-contact damping");
         if(original.relaunch_floor_operands)check(original.relaunch_floor_damping==bits_to_f32(0x3f4ccccdu),"GFMM7 keeps the caller's8043751C .8 factor separate from .9 push and .8 data44 acceleration");
         if(original.ground_loss_operands)check(original.ground_loss_zero==0&&original.ground_loss_contact_delay==30,
             "GFMM8 keeps ground correction's8043762C zero and80437648 timer separate from air-dash69C operands");

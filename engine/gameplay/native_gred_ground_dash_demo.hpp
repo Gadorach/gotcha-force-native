@@ -52,7 +52,7 @@ public:
             return fail(error,"fresh same-world/model/stage pose seed required");
         std::vector<u8> encoded,height,movement,motion,model,motions;
         if(!read(files,inputs+"/locomotion.gfmp",65536,&encoded,error)||!read(files,inputs+"/pose-height.gfhc",28,&height,error)||
-           !read(files,inputs+"/movement.gfmi",192,&movement,error)||!read(files,inputs+"/motion.gfmm",372,&motion,error)||
+           !read(files,inputs+"/movement.gfmi",192,&movement,error)||!read(files,inputs+"/motion.gfmm",376,&motion,error)||
            !read(files,art+"/g-red.hsd",4u<<20,&model,error)||!read(files,art+"/g-red.motions",32u<<20,&motions,error))return false;
         if(character_program_model_hash(view(encoded))!=0x638570ffu||character_program_model_hash(view(model))!=0xe2b4439au||
            !character_program_load_control_flow(view(encoded),0xe2b4439au,&programs_,error)||

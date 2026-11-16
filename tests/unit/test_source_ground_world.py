@@ -37,6 +37,19 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("landings=0 resource=8450 selector=15", result.stdout)
         self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
 
+    def test_gfmm9_does_not_silently_replace_legacy_dash_or_walk_ledge_policy(self):
+        pack = Path("local/content/source-gred-ground-v9")
+        if not (pack/"motion.gfmm").is_file():
+            self.skipTest("optional qualified GFMM9 pack absent")
+        for mode, frames in (("--demo-source-ground-dash", "720"), ("--demo-source-walk-ledge", "118")):
+            args = [mode, "--headless", "--frames", frames, "--no-audio"]
+            old = self.run_host(args)
+            new = self.run_host([*args, "--source-ground-assets", str(pack)])
+            self.assertEqual(old.returncode, 0, old.stdout)
+            self.assertEqual(new.returncode, 0, new.stdout)
+            self.assertEqual(old.stdout, new.stdout)
+            self.assertIn(f"accepted native tick={frames}", new.stdout)
+
     def test_general_ground_walk_stop_dash_and_interactive_idle(self):
         for mode in ("--demo-source-ground", "--source-ground"):
             result = self.run_host([mode, "--headless", "--frames", "360", "--no-audio"])

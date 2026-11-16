@@ -86,7 +86,7 @@ public:
     bool load_source_motion(IFileSystem& files,const std::string& path,RenderEngine& render,std::string* error){
         if(!ready_||!source_programs_){if(error)*error="source motion replay: source-program scope required";return false;}
         ready_=false;cells_.clear();std::vector<u8> bytes;
-        if(!read(files,path,&bytes,error,372)||!character_movement_load(view(bytes),&program_motion_,error)||
+        if(!read(files,path,&bytes,error,376)||!character_movement_load(view(bytes),&program_motion_,error)||
            program_motion_.model_hash!=program_asset_.model_hash)return false;
         source_handlers_=true;ready_=true;return prepare_page(render,error);
     }

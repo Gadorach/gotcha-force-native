@@ -31,9 +31,9 @@ class GRedMotionTests(unittest.TestCase):
         setup = bytearray(1064);setup[864:876] = struct.pack(">3f", 1, 2, 3)
         with patch("tools.extract.gred_motion.qualify_setup", return_value=(data, config)):
             raw = encode(Source(), setup)
-            self.assertEqual(len(raw), 372)
+            self.assertEqual(len(raw), 376)
             self.assertEqual(struct.unpack_from(">IHHIII", raw),
-                              (0x47464D4D, 8, 0x615, 0xE2B4439A, 372, 12))
+                              (0x47464D4D, 9, 0x615, 0xE2B4439A, 376, 12))
             self.assertEqual(raw[32:56], data[0x18:0x30])
             self.assertEqual(raw[92:104], setup[864:876])
             self.assertEqual(raw[104:124], config[0x44:0x58])
@@ -48,6 +48,7 @@ class GRedMotionTests(unittest.TestCase):
             self.assertEqual(raw[360:364], bytes([0x1C])*4)
             self.assertEqual(raw[364:368], bytes([0x2C])*4)
             self.assertEqual(raw[368:372], bytes([0x48])*4)
+            self.assertEqual(raw[372:376], bytes([0x70])*4)
             config[1] = 2
             with self.assertRaises(ValueError):
                 encode(Source(), setup)

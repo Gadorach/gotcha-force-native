@@ -10,7 +10,7 @@ callbacks, certify collision, or grant renderer/frame receipts.
 - Static contact uses a paired height/normal from the shared stage query.
   Steep pushes, ordinary landing callbacks and null-callback height snaps
   are distinct outcomes.
-- GFMM1–8 are immutable, hash-qualified normal-G-Red operand profiles.
+- GFMM1–9 are immutable, hash-qualified normal-G-Red operand profiles.
   Later capabilities require their corresponding version; loading newer
   operands does not authorize a caller to widen its policy.
 - GFMM7 owns a separate relaunch floor-response operand: negative vertical
@@ -21,6 +21,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   program13 metadata only. The separate walk-only ledge owner now connects native
   frame-start history, scoped VM flag portions, delayed drift and flat landing
   through distinct receipts. Older policies retain their ledge refusal.
+- GFMM9 separately owns normal-G-Red dash-recovery damping. Ordered numeric
+  candidates model immediate entry motion and post-VM root speed1DAC, with the
+  done/reset tail after motion. They grant no live dash-ledge permission or root
+  sample ownership; older live modes retain the labelled legacy dash prefix.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

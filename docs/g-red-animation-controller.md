@@ -13,6 +13,78 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Ordered ground-dash recovery (GFMM9 numeric candidates only)
+
+Before admitting dash-to-ledge motion, the next recovery pass checked
+`80060C48/60C94`, `80060EC4/60F78` and `80061084/61160` against bounded
+initialized-DOL disassembly. Two important corrections to the earlier native
+prefix are now explicit:
+
+- **Entry moves immediately.** After requesting program27+direction, the helper
+  zeros48, copies data6C to50, loads25/−0.5/min22/timer30, initializes travel and
+  steers, then calls670DC. Selector13 follows that motion, not an empty entry
+  frame. At rank1/rate1 on flat ground this means distance25 but retained44=24.5.
+- **Recovery consumes animation-derived speed even with1D9B=0.** That metadata
+  disables root-position application, not the shared root evaluator's1DAC.
+  For normal G-Red (movement type0/class flags12), phase546=0 damps44 using
+  `80437570` (0.9), then clamps and latches546=1 only when strictly below the
+  post-VM1DAC. Phase1 copies the new1DAC directly. It must not be inferred from
+  rendered displacement, a previous native offer or a missing root sample.
+
+The existing `gred_ground_dash.hpp` now exposes ordered numeric plan/update/
+finish candidates, reusing the shared motion and root systems:
+
+| Phase | Order |
+| --- | --- |
+| Entry12 | Request VM → initialize motion → steer → ground motion → select13 |
+| Active13 | Steer using incoming44 → strict minimum clamp → conditional VM advance → control/timer/exit test → ground motion → optional select14 |
+| Recovery14 | Advance VM → control3 latch/clear → root-speed update → steer only if44>0 → ground motion → done test/common idle reset |
+
+The active exit frame still moves. At exactly22 the −0.5 change is retained;
+only the following value below22 triggers the minimum clamp/zero-change branch.
+Recovery's first control-bit2 path still refuses the unqualified4CFF4 forced
+continuation. Continued recovery advances normally. The source's done test is
+**after** motion; zeroing speed before that final move is incorrect.
+
+GFMM9 is376 bytes, FNV`409f4acc`, SHA-256
+`a3b383e875881749f1702ee65f424d10d830a83dbc2e586c3bdd567565cc78fc`.
+Its new offset372 separately owns recovery's`80437570` damping. The numerically
+equal steep-contact value at`804375D4` grants no recovery authority. GFMM1–8
+remain byte-for-byte unchanged and accepted with their previous capabilities.
+The read-only, bounded extractor now emits9 and retains overwrite/symlink
+refusals. The six other local pack components are unchanged.
+
+**No live controller changes in this milestone.** File bounds in the existing
+owner and inspection replay now admit376-byte GFMM9 data; tests compare their
+legacy output against older packs. Earlier modes retain their labelled
+request-only dash entry and legacy recovery prefix; GFMM9 alone does not opt them
+into the ordered controller. Walk-only ledge mode still refuses dash/flick/jump/
+flight/combat. The new candidates require an explicit post-VM root state for
+recovery, but their numeric `updates` check is not freshness or source ownership.
+They neither execute a VM nor issue actor/contact/frame receipts. A live dash
+owner must bind the shared root evaluator to the actual operation, rig and frame,
+then add distinct native phase/kinematic checks before dash-to-ledge admission.
+Unknown movement types, airborne/blocked motion and recovery phases remain
+outside this normal-G-Red subset.
+
+`gred_ground_dash_ordered` tests immediate entry motion, post-deceleration
+ground-loss momentum, steering/clamp/VM order, control/timer boundaries,
+root-speed derivation without root-position application, recovery latch equality,
+missing/invalid samples, motion-before-idle, old-entry preservation and strict
+GFMM9 truncation/edit refusals. These are numeric/native tests, not original
+hardware or full actor-frame equivalence. Bounded source evidence stays local:
+`local/recomp-evidence/gred-dash-order-v1/`.
+The seven-component GFMM9 pack re-exports byte-for-byte from qualified inputs;
+an overwrite attempt refuses, and DOL/setup/stage hashes remain unchanged.
+Actual offscreen GL legacy dash frame60 is pixel-identical with the default and
+GFMM9 packs. This is an unchanged-controller regression, not a new live dash:
+`local/recomp-evidence/contact-sheets/source-ordered-dash-compat-v1/`.
+Isolated validation passed11 sanitizer binaries and all145 Python tests
+(including34 opt-in host integrations), host/all-header builds and the unchanged
+64-tick ordinary duel smoke. The ordered numeric test passed815 checks; the
+existing live walk-ledge owner still passed1963. Final owner tests were rebuilt
+after updating the bounded GFMM9 file readers.
+
 ## Live walk-only ledge handoff (GFMM8)
 
 `--source-walk-ledge` / `--demo-source-walk-ledge` connects the recovered
@@ -143,14 +215,15 @@ FNV `9525c46e`. Other six pack components are unchanged; GFMM1–7 remain readab
 with their narrower capabilities. Both shared consumers accept the372-byte data
 extent without enabling new actor/controller authority.
 
-The exporter now emits GFMM8. Versioned packs in older milestone sections are
+This milestone emitted GFMM8; the current exporter emits GFMM9 as described
+above. Versioned packs in older milestone sections are
 saved immutable inputs, not paths to overwrite. Existing labs can read a new
-pack through `--source-ground-assets local/content/source-gred-ground-v8`;
+pack through `--source-ground-assets local/content/source-gred-ground-v9`;
 loading it does not enable live ground-loss dispatch.
 
 ```sh
 python3 -B -m tools.extract.gred_ground_demo MAIN.dol GRED.gfcs STAGE473.gfnb \
-  local/content/source-gred-ground-v8
+  local/content/source-gred-ground-v9
 python3 -B tools/build_native.py --jobs 1 --sanitize --opt 0 \
   --tests gred_ground_correction,gred_movement_motion
 ```

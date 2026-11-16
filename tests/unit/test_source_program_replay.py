@@ -74,6 +74,18 @@ class SourceProgramReplayTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("VM holds, timer expiry and recovery", result.stdout)
 
+    def test_gfmm9_keeps_the_legacy_inspection_replay(self):
+        motion = Path("local/content/source-gred-ground-v9/motion.gfmm")
+        if not motion.is_file():
+            self.skipTest("optional qualified GFMM9 absent")
+        args = [*self.base, *self.source, "--animation-motion-profile"]
+        old = self.run_host([*args, "local/content/source-gred-ground-v8/motion.gfmm", "--frames", "96"])
+        new = self.run_host([*args, str(motion), "--frames", "96"])
+        self.assertEqual(old.returncode, 0, old.stdout)
+        self.assertEqual(new.returncode, 0, new.stdout)
+        self.assertEqual(old.stdout, new.stdout)
+        self.assertIn("VM holds, timer expiry and recovery", new.stdout)
+
     def test_edited_source_profile_and_height_operands_refuse(self):
         original = self.programs.read_bytes()
         with tempfile.TemporaryDirectory(dir="/tmp/opencode") as name:

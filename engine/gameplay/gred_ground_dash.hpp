@@ -1,5 +1,7 @@
 #pragma once
 #include "engine/gameplay/character_movement_heading.hpp"
+#include "engine/gameplay/character_movement_motion.hpp"
+#include "engine/gameplay/character_motion_root_state.hpp"
 namespace gf {
 struct GRedDashSteering {
     s16 body72=0,camera5b0=0,travel5ae=0,desired5ac=0,delta5aa=0;
@@ -64,4 +66,98 @@ inline bool gred_ground_dash_finish(const CharacterMovementProfile& p,const GRed
     }else if(state.selector==14&&program_done)state.selector=0;
     *out=state;return true;
 }
+//Ordered numeric subset of60C94/60F78/61160 and their caller tails.
+//The older request-only entry API above remains a labelled legacy prefix.
+//These candidates grant NO VM/root-sample provenance, contact or frame receipt.
+struct GRedGroundDashOrderedState {
+    GRedGroundDashState dash;u8 recovery546=0;bool exit545=false;
+};
+struct GRedGroundDashOrderedPlan {
+    GRedGroundDashOrderedState state;CharacterMovementMotionState motion;
+    bool request_program=false,advance_program=false,steer_before_program=false;
+    u8 program=0;f32 steering_speed44=0;
+};
+struct GRedGroundDashOrderedUpdate {
+    GRedGroundDashOrderedState state;CharacterMovementMotionState motion;
+    bool steer_after_program=false,clear_control1d0f=false;
+};
+struct GRedGroundDashOrderedResult {
+    GRedGroundDashOrderedState state;CharacterMovementMotionState motion;bool idle_reset=false;
+};
+inline bool gred_ground_dash_ordered_domain(const CharacterMovementProfile& p,const GRedGroundDashOrderedState& s,
+                                            const CharacterMovementMotionState& motion){
+    return character_movement_profile_valid(p)&&p.model==0x615&&p.class_flags==12&&!p.movement_type&&p.ordered_dash_operands&&
+        character_movement_motion_valid(motion)&&motion.speed44>=0&&!(motion.flags5e0&0x2040u)&&s.recovery546<=1&&
+        s.dash.direction_class<=3&&s.dash.coarse57d<=3&&std::isfinite(s.dash.timer568)&&std::abs(s.dash.timer568)<=1e5f&&
+        (s.dash.selector==12||s.dash.selector==13||s.dash.selector==14);
 }
+//Active steering uses the INCOMING speed, before the minimum clamp and VM.
+//Entry requests first; recovery advances first. Their steering is post-VM.
+inline bool gred_ground_dash_ordered_plan(const CharacterMovementProfile& p,const GRedGroundDashOrderedState& input,
+                                         const CharacterMovementMotionState& motion,u8 control_before,GRedGroundDashOrderedPlan* out){
+    if(!out||!gred_ground_dash_ordered_domain(p,input,motion)||
+       (!input.dash.recovery_entered&&input.recovery546)||
+       (input.dash.selector!=14&&(input.dash.recovery_entered||input.recovery546))||
+       (input.dash.selector==12&&input.exit545))return false;
+    GRedGroundDashPlan legacy;
+    if(!gred_ground_dash_plan(p,input.dash,motion.speed44,motion.planar_change4c,control_before,&legacy))return false;
+    GRedGroundDashOrderedPlan plan;plan.state=input;plan.motion=motion;
+    plan.request_program=legacy.request_program;plan.advance_program=legacy.advance_program;plan.program=legacy.program;
+    plan.steer_before_program=input.dash.selector==13;plan.steering_speed44=motion.speed44;
+    plan.motion.speed44=legacy.speed44;plan.motion.planar_change4c=legacy.change4c;
+    if(input.dash.selector==12){
+        plan.state.dash.timer568=legacy.state.timer568;
+        plan.motion.vertical48=p.zero;plan.motion.vertical_change50=p.air[10]; //data6C
+    }
+    *out=plan;return true;
+}
+//Call AFTER the indicated VM operation. Recovery needs that operation's root
+//state even when lane1 metadata1D9B==0: it suppresses position, not speed1DAC.
+//The caller must own that sample; updates>0 is a numeric check, not a lease.
+inline bool gred_ground_dash_ordered_update(const CharacterMovementProfile& p,const GRedGroundDashOrderedPlan& plan,
+                                           u8 control_after,u32 held5b4,f32 delta1dc8,
+                                           const CharacterMotionRootState* root_after_program,GRedGroundDashOrderedUpdate* out){
+    if(!out||!gred_ground_dash_ordered_domain(p,plan.state,plan.motion)||
+       !std::isfinite(delta1dc8)||delta1dc8<0||delta1dc8>16)return false;
+    GRedGroundDashOrderedUpdate update;update.state=plan.state;update.motion=plan.motion;
+    auto& s=update.state;
+    if(s.dash.selector==12)update.steer_after_program=true;
+    else if(s.dash.selector==13){
+        if(control_after){
+            s.dash.timer568=f32(s.dash.timer568-delta1dc8);
+            if(s.dash.timer568<=0||!(held5b4&p.held_dash_masks[s.dash.coarse57d]))s.exit545=true;
+        }
+    }else{
+        if(!root_after_program||!character_motion_root_state_valid(*root_after_program)||!root_after_program->updates||
+           root_after_program->speed1dac>1e5f)return false;
+        if(!s.dash.recovery_entered)s.exit545=false; //61160 entry clears545
+        s.dash.recovery_entered=true;
+        if(!s.exit545&&control_after==3){s.exit545=true;update.clear_control1d0f=true;}
+        const f32 root_speed=root_after_program->speed1dac;
+        if(!s.recovery546){
+            update.motion.speed44=f32(update.motion.speed44*p.dash_recovery_damping);
+            if(update.motion.speed44<root_speed){update.motion.speed44=root_speed;s.recovery546=1;}
+        }else update.motion.speed44=root_speed;
+        update.steer_after_program=update.motion.speed44>0;
+    }
+    if(!character_movement_motion_valid(update.motion))return false;
+    *out=update;return true;
+}
+//Call only AFTER shared ground motion (including its scalar update). No early
+//idle reset on done:61084 tests1D0E after670DC. Idle flag/program writes remain
+//the caller's separately scoped VM operation; this result does not execute them.
+inline bool gred_ground_dash_ordered_finish(const CharacterMovementProfile& p,const GRedGroundDashOrderedUpdate& update,
+                                           const CharacterMovementMotionState& moved,bool program_done,GRedGroundDashOrderedResult* out){
+    if(!out||!gred_ground_dash_ordered_domain(p,update.state,update.motion)||
+       !gred_ground_dash_ordered_domain(p,update.state,moved))return false;
+    GRedGroundDashOrderedResult result;result.state=update.state;result.motion=moved;auto& s=result.state;
+    if(s.dash.selector==12){s.dash.selector=13;s.dash.recovery_entered=false;s.exit545=false;s.recovery546=0;}
+    else if(s.dash.selector==13&&s.exit545){s.dash.selector=14;s.dash.recovery_entered=false;s.exit545=false;s.recovery546=0;}
+    else if(s.dash.selector==14&&program_done){
+        s.dash.selector=0;s.dash.recovery_entered=false;s.exit545=false;s.recovery546=0;
+        result.motion.speed44=result.motion.planar_change4c=0;result.idle_reset=true;
+        result.motion.vertical48=result.motion.vertical_change50=0;
+    }
+    *out=result;return true;
+}
+} //namespace gf

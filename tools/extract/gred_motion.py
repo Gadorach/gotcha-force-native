@@ -20,8 +20,8 @@ def encode(image, setup):
     data, config = qualify_setup(image, setup)
     if config[1] or int.from_bytes(config[8:12], "big") != 12:
         raise ValueError("unreviewed normal movement class")
-    raw = bytearray(372)
-    struct.pack_into(">IHHIII", raw, 0, 0x47464D4D, 8, 0x615, 0xE2B4439A, len(raw), 12)
+    raw = bytearray(376)
+    struct.pack_into(">IHHIII", raw, 0, 0x47464D4D, 9, 0x615, 0xE2B4439A, len(raw), 12)
     raw[20] = config[1]
     raw[32:56] = data[0x18:0x30]
     raw[56:66] = image.read(CONFIG + 0xC0, 10)
@@ -54,6 +54,7 @@ def encode(image, setup):
     raw[360:364] = image.read(0x8043751C, 4)
     raw[364:368] = image.read(0x8043762C, 4)
     raw[368:372] = image.read(0x80437648, 4)
+    raw[372:376] = image.read(0x80437570, 4)  #61160 recovery, not steep-contact D4
     return bytes(raw)
 
 
