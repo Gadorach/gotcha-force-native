@@ -72,6 +72,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-relaunch-floor", "--source-relaunch-entry-surface"],
                        ["--source-air-dash-floor", "--source-relaunch-floor"],
                        ["--source-windup-entry-floor", "--source-air-dash-floor"],
+                       ["--source-windup-positive-floor", "--source-windup-entry-floor"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)
@@ -154,6 +155,32 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("windup-entry-floor-contacts=0", result.stdout)
         self.assertNotIn("windup-entry-floor demo:", result.stdout)
         result = self.run_host(["--source-windup-entry-floor", "--source-ground-assets",
+                                "local/content/source-gred-ground-v6", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM7", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
+    def test_positive_windup_floor_entry_is_not_upward_motion(self):
+        for tick, positive, entry, windup, active, landings, meter, selector in (
+                (86, 0, 0, 0, 0, 0, 7700, 8), (87, 1, 1, 1, 0, 0, 7700, 15),
+                (94, 1, 1, 8, 0, 0, 7250, 16), (95, 1, 1, 8, 1, 0, 7200, 16),
+                (125, 1, 1, 8, 30, 1, 5700, 7), (240, 1, 1, 8, 30, 1, 10000, 0),
+                (600, 1, 1, 8, 30, 1, 10000, 0)):
+            result = self.run_host(["--demo-source-windup-positive-floor", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"windup-positive-floor-contacts={positive}", result.stdout)
+            self.assertIn(f"windup-entry-floor-contacts={entry}", result.stdout)
+            self.assertIn(f"air-dash-floor-windup={windup} active={active}", result.stdout)
+            self.assertIn(f"landings={landings} resource={meter} selector={selector}", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+            self.assertIn("ordinary native spawn/bounds/target/references", result.stdout)
+        result = self.run_host(["--source-windup-positive-floor", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("windup-positive-floor-contacts=0", result.stdout)
+        self.assertNotIn("windup-positive-floor demo:", result.stdout)
+        result = self.run_host(["--source-windup-positive-floor", "--source-ground-assets",
                                 "local/content/source-gred-ground-v6", "--headless", "--no-audio"])
         self.assertEqual(result.returncode, 2, result.stdout)
         self.assertIn("requires GFMM7", result.stdout)

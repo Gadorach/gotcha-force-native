@@ -13,7 +13,75 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
-## Wind-up entry at floor height
+## Positive-speed wind-up entry at floor height
+
+`--source-windup-positive-floor` / `--demo-source-windup-positive-floor`
+separately admits positive48 during the **no-motion** wind-up entry. Older
+floor policies retain their refusal, including `WindupEntryFloor`'s
+nonascending-only kind. The new mode inherits that older kind separately for
+nonpositive entries; it does not relabel them as positive.
+
+The initialized-DOL `61338` entry branches around `67310`: it halves44/48,
+sets50, requests10 and reaches `677B0` without displacement or acceleration.
+Return1 unconditionally zeros48, including a positive half-speed. This does not
+authorize upward integration, rising relaunch contact, raised-side entry or a
+general hover/perpetual-flight rule for another Borg.
+
+The new positive entry receipt requires previous accepted48>0, exact half-speed
+evidence, retained data70 and zero post-contact48. Both pre-contact and final
+positions must equal the accepted starting position, with independently matched
+floor metadata. Even a tiny upward height adjustment refuses. Sign, kind,
+producer, phase, clipping and receipt checks remain separate from the older
+nonascending entry.
+
+The native demo keeps ordinary spawn/arena/target/query references, holds
+jump5–30, re-presses at78 until accepted dash entry and flicks right86–112:
+
+| Tick | Result | Program | Meter |
+| --- | --- | --- | --- |
+| 79–85 | Seven negative-speed relaunch snaps | 14→15 | 8400→7800 |
+| 86 | Eighth snap leaves48≈+0.392899, still airborne | 15 | 7700 |
+| 87 | Positive entry: half48≈+0.196449, then zero; no motion | 10 | 7700 |
+| 88–93 | Continued wind-up, no entry replay/refill | 10 | 7700 |
+| 94 | Deferred450 cost/select16 before contact | 10 | 7250 |
+| 95 | Separate active entry | 11 | 7200 |
+| 125 | Later minimum timer installs landing callback | 11 | 5700 |
+| 240/600 | Stable idle after ordinary grounded recovery | 0 | 10000 |
+
+The previous mode can prepare the numeric candidate after tick86, but its
+native policy refuses the positive speed. That rejection leaves private staged
+state unpublished and the current frame live until explicit producer retirement
+revokes it. Neither mode silently falls back to MVP movement.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-windup-positive-floor-host-v1
+build/source-windup-positive-floor-host-v1/gf_native \
+  --demo-source-windup-positive-floor --headless --frames 600 --no-audio
+```
+
+No new operands, asset pack, animation classification or per-Borg mapping is
+introduced. This still uses GFMM7, shared VM/model/render/contact systems and
+explicit native clock, initialization, collision, camera and libm assumptions.
+Entry pushes, actual rising motion/contact, raised/unknown geometry, offsets,
+attachments, moving platforms, combat/effects and whole original actor frames
+remain unsupported. Regression targets: `native_source_windup_positive_floor`
+and `native_source_windup_positive_floor_owner`, plus earlier floor suites.
+
+Contact Sheet31 contains actual offscreen GL frames85/86/87/88/94/95/125/150,
+without taking desktop/classifier focus. Positive entry frame87 was
+pixel-identical between the isolated native-only checkpoint and the full working
+tree. Captures remain local and excluded from Git:
+`local/recomp-evidence/contact-sheets/source-windup-positive-floor-v1/contact-sheet-31.png`.
+
+The isolated native-only tree passed14 sanitizer binaries, all137 Python tests
+(including28 host integrations), host/all-header builds and the ordinary64-tick
+duel smoke. The positive-entry owner regression passed1881 checks, including the
+older policy's rejection and inherited nonascending route. The bounded440-byte
+wind-up handler still matches the qualified DOL; all seven GFMM7 components and
+the half-speed/zero operands remain unchanged.
+
+## Earlier nonascending wind-up entry at floor height
 
 `--source-windup-entry-floor` / `--demo-source-windup-entry-floor` separately
 extends the GFMM7 air-dash-floor owner. Earlier floor modes retain their entry
@@ -59,7 +127,8 @@ build/source-windup-entry-floor-host-v1/gf_native \
   --demo-source-windup-entry-floor --headless --frames 600 --no-audio
 ```
 
-Positive-speed entry, entry pushes, raised-side/unknown geometry, attachments,
+In that narrower mode, positive-speed entry, entry pushes, raised-side/unknown
+geometry, attachments,
 nonzero offsets, moving platforms, combat/effects and original whole actor
 frames remain unsupported. Native clock, initialization, collision, camera and
 libm approximations are still explicitly not original-hardware equivalence.
