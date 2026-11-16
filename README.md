@@ -28,11 +28,13 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-air-dash-floor` (or
-`--demo-source-air-dash-floor --headless --frames 600`), requiring a local GFMM7
-pack. Wind-up and early-active floor snaps remain airborne with distinct speed
-responses; a later real landing callback enables grounded recovery. The separate
-`--source-relaunch-floor` mode retains its own negative-speed0.8 response.
+The latest opt-in lab is `--source-windup-entry-floor` (or
+`--demo-source-windup-entry-floor --headless --frames 600`), requiring a local GFMM7
+pack. It separately admits nonascending wind-up entry at floor height without
+translation, acceleration or entry cost/refill. Wind-up and early-active snaps
+remain airborne until a later landing callback enables grounded recovery.
+Earlier `--source-air-dash-floor` and `--source-relaunch-floor` policies retain
+their narrower contracts.
 Other Borgs do not inherit G-Red's recovered mappings.
 
 Some development demonstrations use private generated metadata profiles and

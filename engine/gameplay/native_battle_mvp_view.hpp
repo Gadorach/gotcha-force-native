@@ -10,6 +10,7 @@ class NativeBattleMvpView final:public IBattleMvpTerrain {
 public:
     void source_ground_controls(bool interactive){source_general_=true;source_interactive_=interactive;}
     void source_air_dash_floor_controls(){source_air_dash_floor_=true;}
+    void source_windup_entry_floor_controls(){source_windup_entry_floor_=true;}
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error){
         ready_=false;std::vector<u8> stage,floor_bytes;
@@ -138,6 +139,7 @@ public:
         if(source_relaunch_entry_surface_)status="G-RED SOURCE ENTRY PUSH / NATIVE CONTACT PROXY\nSHIFT JUMP/RELAUNCH - ARROWS STEER - WASD FLICK DASH\nADD15 BEFORE MOTION/ACCEL/CLAMP/PUSH - NO REFILL\nNO RISING ENTRY / RELAUNCH LANDING / COMBAT - METER "+std::to_string(source_resource_);
         if(source_relaunch_floor_)status="G-RED SOURCE NULL-CALLBACK FLOOR / NATIVE PROXY\nSHIFT JUMP/RELAUNCH - ARROWS STEER - WASD FLICK DASH\nSNAP IS NOT LANDING - NEGATIVE SPEED X .8\nRELAUNCH STAYS AIRBORNE - NO REFILL - METER "+std::to_string(source_resource_);
         if(source_air_dash_floor_)status="G-RED SOURCE AIR-DASH FLOOR / NATIVE PROXY\nSHIFT JUMP/RELAUNCH - ARROWS STEER - WASD FLICK DASH\nSNAP IS NOT LANDING - WINDUP ZERO / ACTIVE KEEPS SPEED\nNO REFILL ON SNAPS - REAL CALLBACK LANDS - METER "+std::to_string(source_resource_);
+        if(source_windup_entry_floor_)status="G-RED SOURCE WINDUP ENTRY FLOOR / NATIVE PROXY\nSHIFT JUMP/RELAUNCH - ARROWS STEER - WASD FLICK DASH\nENTRY HALVES SPEED THEN ZEROS VERTICAL - NO MOTION\nSNAP IS NOT LANDING OR REFILL - METER "+std::to_string(source_resource_);
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
         draws+=text_.draw(render,status,24,f32(height)-80,style);render.state()=state;return draws;
@@ -160,6 +162,7 @@ private:
     bool source_relaunch_entry_surface_=false;
     bool source_relaunch_floor_=false;
     bool source_air_dash_floor_=false;
+    bool source_windup_entry_floor_=false;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };
 }

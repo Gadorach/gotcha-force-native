@@ -13,6 +13,69 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Wind-up entry at floor height
+
+`--source-windup-entry-floor` / `--demo-source-windup-entry-floor` separately
+extends the GFMM7 air-dash-floor owner. Earlier floor modes retain their entry
+refusal. The same original programs, source planner, shared VM/renderer and native
+contact systems are reused; no new operands, asset pack or Borg mappings are
+introduced.
+
+Qualified `61338` entry clears754, halves44/48, clears4C, sets50 to data70 and
+requests10 **without** translating or applying acceleration. Its `677B0` return1
+tail then zeros48 only. A directional dash during an airborne relaunch floor
+snap can therefore enter wind-up at floor height without landing or refill.
+This is distinct from a continued wind-up update, which does integrate/apply50.
+
+The new entry-floor kind validates unchanged pre-contact position, half of the
+previous accepted vertical speed, retained data70, zero post-response48 and an
+independently selected eligible surface. Native phase/order/clipping and exact
+receipt checks remain in force. Private resource/timer/VM state and pose leases
+publish after acceptance; fatal source refusals revoke their old leases.
+
+The bounded native demo keeps ordinary spawn, target, arena and ground-query
+references. It holds jump5–30, re-presses at78 until accepted wind-up entry, and
+supplies a right flick80–106:
+
+| Native tick | Result | Program | Meter |
+| --- | --- | --- | --- |
+| 79/80 | Two airborne relaunch snaps | 14 | 8400/8300 |
+| 81 | Wind-up entry: half48=-3.904 before contact; zero48 after | 10 | 8300 |
+| 82–87 | Continued wind-up snaps; no entry replay or refill | 10 | 8300 |
+| 88 | Timer spends450/selects16 before contact | 10 | 7850 |
+| 89 | Separate active entry and null-callback snap | 11 | 7800 |
+| 119 | Minimum active timer installs landing callback | 11 | 6300 |
+| 240/600 | Stable idle after ordinary grounded recovery | 0 | 10000 |
+
+The entry snapshot does not add -.07 or translate by the half-speed. The cost at
+timer completion is not charged again on entry. The real-stage owner regression
+also verifies that `AirDashFloor` refuses the same input after accepted tick80
+with no staged cost/pose publication or legacy fallback.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-windup-entry-floor-host-v1
+build/source-windup-entry-floor-host-v1/gf_native \
+  --demo-source-windup-entry-floor --headless --frames 600 --no-audio
+```
+
+Positive-speed entry, entry pushes, raised-side/unknown geometry, attachments,
+nonzero offsets, moving platforms, combat/effects and original whole actor
+frames remain unsupported. Native clock, initialization, collision, camera and
+libm approximations are still explicitly not original-hardware equivalence.
+Regression targets: `native_source_windup_entry_floor` and
+`native_source_windup_entry_floor_owner`, plus the earlier floor suites.
+
+The isolated native-only checkpoint passed14 sanitizer binaries, all136 Python
+tests (including27 host integrations), host/all-header builds and the ordinary
+64-tick duel smoke. The real-stage owner test passed1304 checks. All seven GFMM7
+components and the three qualified original inputs retained their hashes.
+
+Contact Sheet30 contains actual offscreen GL captures79/80/81/82/88/89/119/150,
+without taking desktop/classifier focus. Entry frame81 was pixel-identical
+between the isolated checkpoint and the full working tree. Captures remain local:
+`local/recomp-evidence/contact-sheets/source-windup-entry-floor-v1/contact-sheet-30.png`.
+
 ## Null-callback relaunch floor response (GFMM7)
 
 The opt-in `--source-relaunch-floor` / `--demo-source-relaunch-floor` route
