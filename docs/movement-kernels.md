@@ -63,6 +63,12 @@ callbacks, certify collision, or grant renderer/frame receipts.
   halves44/48 without movement or gravity, then contact zeros48;50/cache/timer
   persist, with no entry cost. Handoff450 occurs after later wind-up movement
   but before contact. Push and positive698 overlap remain refused.
+- A separate combined ground-surface policy admits callback landing on eligible
+  selected static planes through an exact pre-response integration/height/normal/
+  triangle/angle payload. It uses the qualified zero698 gate and displacement
+  approach test, not a guessed UP or equal-height floor. Ground-loss landing
+  retains its existing flat-only subset; steep push and positive698 overlap
+  remain refused. Touchdown, landing entry and recovery are still separate.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

@@ -13,6 +13,90 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Combined paired static-surface landing (GFMM9)
+
+`--source-ground-surface` / `--demo-source-ground-surface` separately adds
+eligible static-surface callback landing to the combined normal-G-Red controller.
+Ordinary falling, released relaunch, active air dash and dash recovery use the
+shared `gred_surface_contact`/`gred_air_dash_static_contact` callers. No parallel
+physics, input, animation, resource or renderer engine is introduced.
+
+Every new-mode `JumpTouchdown`, even on a flat plane, requires a distinct
+`NativeBorgSurfaceLanding` payload in addition to its exact jump/air numeric
+proof. It binds the pre-callback endpoint, post-integration velocity and
+acceleration to the same selected height/normal/triangle and quantized angle.
+Native acceptance re-queries that result and checks the qualified normal-G-Red
+zero698 gate10240, motion epsilon`0x2edbe6fe` and bounded host displacement/
+normal approach calculation. It does not fabricate an UP floor, accept height-
+only metadata, or require the previous and selected plane heights to be equal.
+The prior combined policy retains those narrower contact refusals.
+
+Downward velocity, callback readiness, source pre-height/side-entry guards,
+native pre-snap and final endpoint/body/bounds checks and the real callback
+transition are still required. Snap/push metadata cannot substitute for landing.
+Touchdown retains its captured air/fall program and cached87; accepted landing8
+then clears that cache before ordinary resource recovery. All state and pose publication still
+wait for the exact complete native receipt.
+
+The default demo retains ordinary native spawn/arena/stage/target and one
+producer. It holds jump5–20 and supplies a genuine backward air flick48–107,
+releasing on actual touchdown before landing-entry input:
+
+| Accepted tick | Phase / plane / resource |
+| --- | --- |
+| 49 | Wind-up entry10 at y209.8, no translation/cost;9550 |
+| 58 | Last wind-up movement then450 spend before contact;9100 |
+| 59 | Active entry11, source30 move/29.95 retained;9050 |
+| 89 | Minimum active timer becomes callback-ready while still above ground;7550 |
+| 108 | Actual active callback on original inclined plane y82.003227, angle7187;6600/cache1 |
+| 109 | Separate accepted landing8 at the same selected height;6600/cache0 |
+| 131–600 | Shared idle0; common recovery to10000 |
+
+The prior mode stages that active callback candidate but native flat-only
+acceptance rejects it without retiring the prior live frame. A shorter genuine
+flick/release reaches recovery landing105 on another plane at y−5.238786,
+angle562; the prior recovery source path refuses that nonflat contact and
+retires authority. The new mode accepts both with their distinct contact
+payloads, not a silent fallback.
+
+`native_source_ground_surface_owner` tests five600-update routes: those active/
+recovery cases, ordinary jump/fall and released relaunch on a declared original
+shallow triangle, and an unchanged default-spawn flat landing. The shallow
+fixtures start with a fresh **grounded** native seed at x/z−619.2617/169.4453,
+height32.432983 and angle4448, not a midair teleport. Jump landing79 retains
+ordinary6; released-relaunch landing171 retains21. Tests cover exact shared
+resource accounting, selected-plane/integration/normal/angle/kind tampering,
+height-only refusal, receipt/copy/pose lifetime and stable separate landing/idle.
+
+Ground-loss landing deliberately keeps its existing flat/equal-height subset;
+the new ordinary callback contract does not infer alternate positive698 gates.
+A declared original steep-triangle jump still refuses on update82 before
+landing, push, resource publication or fallback. Steep push, ground-loss relaunch,
+positive698 air overlap, raised-surface/side-entry, clipping, combat and unknown
+variants remain refused. Ordered dash geometry remains its earlier subset.
+Native setup/input/clocks/libm/camera/target/contact approximations remain
+labelled; this is not original-hardware or whole-game equivalence and establishes
+no other Borg's movement-family semantics.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-surface-host
+build/source-ground-surface-host/gf_native \
+  --demo-source-ground-surface --headless --frames 600 --no-audio
+```
+
+The final isolated host/all-header builds,600-tick surface demo and unchanged
+64-tick ordinary duel smoke passed. All six final isolated sanitizer binaries
+passed; the new owner passed21061 checks across its five600-update routes plus
+old-policy/steep/timer refusals and the separate pre-snap body-sweep regression.
+Contact Sheet44 contains actual isolated offscreen GL frames49/59/89/107/108/
+109/131/600 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-surface-v1/contact-sheet-44.png`;
+captures, game assets and private evidence are not published.
+All156 final isolated Python tests passed, including45 host integrations.
+Original motion-bank/GFMM1–9 bytes are unchanged; assets, captures, private
+evidence, builds and unrelated Story/preparation work are excluded.
+
 ## Combined wind-up entry-floor response (GFMM9)
 
 `--source-ground-windup-entry-floor` /
