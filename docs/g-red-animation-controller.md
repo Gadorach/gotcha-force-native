@@ -13,6 +13,85 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Combined relaunch-floor response (GFMM9)
+
+`--source-ground-relaunch-floor` / `--demo-source-ground-relaunch-floor` adds
+only the verified null-callback relaunch static-floor contract to the combined
+normal-G-Red controller. The previous airborne-relaunch mode retains its floor
+refusal. Legacy push helpers are not used as a capability hierarchy: the source
+owner reuses `gred_relaunch_static_contact`, explicitly refuses a steep-push
+result in this mode, and publishes the shared VM/motion/pose only after matching
+native acceptance.
+
+Native acceptance cross-checks the complete relaunch scalar/velocity/endpoint/
+resource/latch payload against the pre-response selected-floor payload. 6235C's
+ret1 caller multiplies **negative** post-integration48 by0.8, retaining50,
+scalar, independent lower/upper latches and airborne history. If positive
+acceleration crosses48 above zero during a snap, its factor is1, not0.8.
+Null754 does not invoke landing7, clear cached87 or refill resource. The next
+positive-velocity update may lift off through the ordinary active path.
+Depletion/release, falling21–24, actual callback touchdown and accepted landing8
+remain separate transitions.
+
+The default demo retains ordinary native spawn/arena/stage/target and one
+producer: jump5–30, then genuine relaunch press78–242 held through depletion.
+There is no airborne state injection, teleport/rebind, stage edit or forced
+landing/refill.
+
+| Accepted tick | Phase / contact / resource |
+| --- | --- |
+| 79 | Entry14 adds15 to old−29; move−14, integrate48−13.2 then snap/.8→−10.56;8400 |
+| 80 | Continued14 null snap,48−9.76→−7.808;8300 |
+| 83 | Fifth snap; lower/upper latches2 while captured14/14 still runs;8000 |
+| 84 | Sixth snap; independent15/15 requests and latches3;7900 |
+| 85 | Seventh negative48 snap;7800 |
+| 86 | Eighth snap crosses48 positive≈0.3929, factor1;7700 |
+| 87 | Ordinary active relaunch lifts above floor without another snap;7600 |
+| 164 | Previous accepted meter0 selects separate falling21 and clears relaunch latches |
+| 242 | Actual callback touchdown, program21/cache1, still meter0 |
+| 243 | Separate landing8/cache0, still meter0 |
+| 265–600 | Shared idle0; common grounded recovery returns10000 |
+
+`native_source_ground_relaunch_floor_owner` tests three600-update genuine
+routes: two snaps then release/land81; eight held snaps, positive lift87,
+depletion/fall164 and land242; and four directional snaps then release/land83.
+It checks exact shared150/100 costs, negative-only tail, retained acceleration/
+latches/history, native endpoint/velocity/surface/callback tampering, receipt/
+pose lifetime, stable idle and unchanged older-mode refusal.
+
+The combined controller now genuinely reaches both negative and positive
+wind-up **entry** floor candidates after relaunch snaps (flick80 or86). They
+still refuse before air-dash spending/publication: relaunch-floor permission is
+not wind-up-entry permission. These fixtures no longer need a legacy-only
+controller, but accepting their distinct contract remains a later scoped step.
+
+Steep push, wind-up entry snaps, ground-loss relaunch, positive698 air overlap,
+nonflat landing, raised-surface/side-entry, clipping, combat and unknown variants
+remain refused. All initialization/input/clocks/libm/camera/target/contact
+assumptions remain native proxies, not original hardware or whole-game
+equivalence. No other Borg inherits this mapping or a hover/flight rule.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-relaunch-floor-host
+build/source-ground-relaunch-floor-host/gf_native \
+  --demo-source-ground-relaunch-floor --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds,600-tick demo and unchanged64-tick ordinary
+duel smoke passed. Contact Sheet42 contains actual isolated offscreen GL
+frames79/84/86/87/164/242/243/265 without taking desktop/classifier focus.
+It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-relaunch-floor-v1/contact-sheet-42.png`;
+captures, assets and private evidence are not published.
+All six isolated sanitizer binaries passed. The new owner passed11024 checks
+across its three600-update routes, old-policy refusal and both genuine
+wind-up-entry refusals, alongside prior combined and legacy relaunch-floor
+owners plus relaunch/world regressions.
+All154 isolated Python tests passed, including43 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged; the published checkpoint excludes
+assets, captures, private evidence, builds and unrelated Story/preparation work.
+
 ## Combined airborne relaunch (GFMM9)
 
 `--source-ground-relaunch` / `--demo-source-ground-relaunch` separately adds

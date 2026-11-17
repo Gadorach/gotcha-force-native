@@ -53,6 +53,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   evidence and distinct released-relaunch21–24 falling lineage. It reuses air-
   dash floor responses but grants no relaunch-floor, wind-up entry-floor or
   push capability. Ground-loss relaunch and positive698 overlap remain refused.
+- A separate combined ground-relaunch-floor policy adds paired pre-response
+  relaunch integration and static-floor evidence. Null snaps retain50/latches/
+  airborne history; only negative48 receives .8. Positive crossing/lift, later
+  depletion/release and callback landing remain distinct. Steep push and wind-up
+  entry-floor permissions are not inherited, even on genuinely reachable routes.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
