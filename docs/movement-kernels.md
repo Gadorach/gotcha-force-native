@@ -58,6 +58,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   airborne history; only negative48 receives .8. Positive crossing/lift, later
   depletion/release and callback landing remain distinct. Steep push and wind-up
   entry-floor permissions are not inherited, even on genuinely reachable routes.
+- A separate combined ground-windup-entry-floor policy admits the now-qualified
+  negative/positive entry snaps through genuine relaunch/flick routes. Entry
+  halves44/48 without movement or gravity, then contact zeros48;50/cache/timer
+  persist, with no entry cost. Handoff450 occurs after later wind-up movement
+  but before contact. Push and positive698 overlap remain refused.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

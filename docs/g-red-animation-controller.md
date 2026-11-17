@@ -13,6 +13,88 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Combined wind-up entry-floor response (GFMM9)
+
+`--source-ground-windup-entry-floor` /
+`--demo-source-ground-windup-entry-floor` adds only the verified wind-up
+entry-floor contract to the combined normal-G-Red controller. Both genuinely
+reachable nonascending and positive-velocity entries are covered, with distinct
+native kinds and sign domains. The older combined relaunch-floor policy still
+refuses both, even with identical qualified profiles.
+
+61338's entry halves44/48, clears4C and retains the data70 gravity operand in50,
+but does not move, integrate/clamp velocity, or decrement the newly chosen turn
+timer. It then queries677B0; null754 ret1 clears48 separately. Positive half-
+speed at unchanged floor height is therefore not rising displacement. The
+native air payload and paired selected-floor proof independently require the
+actual pre-response half-speed, unchanged endpoint, timer/stage and exact
+resource. No old jump/root, ordinary update, negative-entry or steep-push kind
+can substitute for the positive-entry contract.
+
+Entry spends no resource and keeps airborne cached87. On later wind-up updates,
+timer expiry spends450 **after movement but before contact**, then selects16.
+Active entry remains separate, costs50 before movement, and early-active snaps
+retain accumulated negative48. Only the later ready-stage landing callback
+grounds the actor; separate accepted landing8 then clears the airborne cache.
+VM/timer/resource/counters and pose leases commit only after exact native receipt.
+
+The default demo retains ordinary native spawn/arena/stage/target and one
+producer. It holds jump5–30, genuinely re-presses78–86, then supplies right
+flick86–124, releasing on touchdown before landing-entry input. The eighth
+relaunch snap supplies positive48 at floor height; no actor injection,
+teleport/rebind, stage edit or forced landing/refill is used.
+
+| Accepted tick | Phase / contact / resource |
+| --- | --- |
+| 86 | Real relaunch snap crosses48≈0.3929, factor1;7700/cache1 |
+| 87 | Wind-up entry10 halves pre48≈0.19645, unchanged position; contact zero48,7700 |
+| 88–94 | Seven continued wind-up snaps; final movement then450 spend before contact,7250 |
+| 95 | Separate active entry11/floor snap; retain48−0.07,7200 |
+| 96–124 |29 continued active snaps, accumulating48≈−2.1;5750 |
+| 125 | Ready-stage callback touchdown, captured11/cache1;5700 |
+| 126 | Separate accepted landing8/cache0, still5700 |
+| 148–600 | Shared idle0; common grounded recovery returns10000 |
+
+The negative fixture instead flicks80 after two relaunch snaps. Entry81
+halves old−7.808 to−3.904 without moving; contact then zeros48 at meter8300.
+Handoff88 leaves7850, active entry89 leaves7800, touchdown119 leaves6300,
+and separate landing120 clears the airborne cache.
+`native_source_ground_windup_entry_floor_owner` checks both600-update routes,
+sign-kind substitution, fabricated movement/gravity/cost/timer/callback,
+receipt/pose lifetime, old-policy refusals and positive ground-loss698 refusal.
+Saved legacy entry labels/fixtures are cross-checks, not a requirement for more
+manual classification.
+
+The capability is deliberately independent of the old push hierarchy.
+Steep pushes, ground-loss relaunch, unresolved positive698 air overlap,
+nonflat landing, raised-surface/side-entry, clipping, combat and unknown variants
+remain refused. Native initialization/input/clocks/libm/camera/target/contact
+assumptions remain labelled; this is not original hardware or whole-game
+equivalence and establishes no other Borg's hover/flight semantics.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-windup-entry-floor-host
+build/source-ground-windup-entry-floor-host/gf_native \
+  --demo-source-ground-windup-entry-floor --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds,600-tick positive-entry demo and unchanged
+64-tick ordinary duel smoke passed. The source-order note above corrects an
+earlier floor-demo description: the450 handoff cost follows movement but
+precedes contact, not the other way around.
+Contact Sheet43 contains actual isolated offscreen GL frames86/87/94/95/124/
+125/126/148 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-windup-entry-floor-v1/contact-sheet-43.png`;
+captures, game assets and private evidence are not published.
+All six isolated sanitizer binaries passed, including the prior combined
+relaunch-floor and legacy entry-floor owners plus air-dash/world regressions.
+The new owner passed7445 checks across both600-update genuine routes, both
+older-policy refusals and the positive698 refusal.
+All155 isolated Python tests passed, including44 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged. Assets, captures, private evidence,
+build outputs and unrelated Story/preparation work are excluded.
+
 ## Combined relaunch-floor response (GFMM9)
 
 `--source-ground-relaunch-floor` / `--demo-source-ground-relaunch-floor` adds
@@ -204,7 +286,7 @@ teleport/rebind, stage edits or additional animation classification is used.
 | --- | --- |
 | 61 | Wind-up entry10 at y35.8, old−21→−10.5 velocity; no movement/cost,9550 |
 | 64 | First continued wind-up floor snap at y10, pre48−10.71→0;9550 |
-| 65–66 | Two more wind-up snaps; last motion/contact precedes450 spend,9100 |
+| 65–66 | Two more wind-up snaps; last motion precedes450 spend, then contact,9100 |
 | 67 | Active entry11 moves30 and snaps height; retains48−0.07,9050 |
 | 68–96 |29 more early-active snaps;48 accumulates to approximately−2.1,7600 |
 | 97 | Active timer reaches ready stage; real callback touchdown,7550/cache1 |

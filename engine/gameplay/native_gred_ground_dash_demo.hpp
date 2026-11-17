@@ -44,7 +44,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor};
+    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor};
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -103,7 +103,7 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
-        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundRelaunchFloor?NativeBorgMotionPolicy::GroundRelaunchFloor:mode_==Mode::GroundRelaunch?NativeBorgMotionPolicy::GroundRelaunch:mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
+        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundWindupEntryFloor?NativeBorgMotionPolicy::GroundWindupEntryFloor:mode_==Mode::GroundRelaunchFloor?NativeBorgMotionPolicy::GroundRelaunchFloor:mode_==Mode::GroundRelaunch?NativeBorgMotionPolicy::GroundRelaunch:mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
         else
         producer_=world.new_motion_producer(mode_==Mode::WalkLedge?NativeBorgMotionPolicy::WalkLedge:mode_==Mode::WindupEntryPush?NativeBorgMotionPolicy::WindupEntryPush:mode_==Mode::WindupPositiveFloor?NativeBorgMotionPolicy::WindupPositiveFloor:mode_==Mode::WindupEntryFloor?NativeBorgMotionPolicy::WindupEntryFloor:mode_==Mode::AirDashFloor?NativeBorgMotionPolicy::AirDashFloor:mode_==Mode::RelaunchFloor?NativeBorgMotionPolicy::RelaunchFloor:mode_==Mode::RelaunchEntrySurface?NativeBorgMotionPolicy::RelaunchEntryPush:mode_==Mode::RelaunchSurface?NativeBorgMotionPolicy::RelaunchPush:mode_==Mode::ActiveSurface?NativeBorgMotionPolicy::ActivePush:mode_==Mode::WindupSurface?NativeBorgMotionPolicy::WindupPush:mode_==Mode::RecoverySurface?NativeBorgMotionPolicy::RecoveryPush:mode_==Mode::FallingSurface?NativeBorgMotionPolicy::FallHistoryPush:mode_==Mode::Steep?NativeBorgMotionPolicy::StaticPush:relaunch_mode(mode_)?NativeBorgMotionPolicy::Relaunch:mode_==Mode::AirDash?NativeBorgMotionPolicy::AirDash:mode_==Mode::Jump?NativeBorgMotionPolicy::Jump:
             mode_==Mode::VerticalJump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
@@ -544,7 +544,9 @@ public:
     }
 private:
     static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
-    static bool controller_relaunch_mode(Mode mode){return mode==Mode::GroundRelaunch||mode==Mode::GroundRelaunchFloor;}
+    static bool controller_windup_entry_floor_mode(Mode mode){return mode==Mode::GroundWindupEntryFloor;}
+    static bool controller_relaunch_floor_mode(Mode mode){return mode==Mode::GroundRelaunchFloor||controller_windup_entry_floor_mode(mode);}
+    static bool controller_relaunch_mode(Mode mode){return mode==Mode::GroundRelaunch||controller_relaunch_floor_mode(mode);}
     static bool controller_floor_mode(Mode mode){return mode==Mode::GroundAirFloor||controller_relaunch_mode(mode);}
     static bool ground_air_mode(Mode mode){return mode==Mode::GroundAir||controller_floor_mode(mode);}
     static bool ground_landing_mode(Mode mode){return mode==Mode::GroundLanding||ground_air_mode(mode);}
@@ -712,10 +714,10 @@ private:
         ceiling.stage_top34=20000;ceiling.query_height668=ground.query_height668;ceiling.previous_y30=s.previous_y;
         CharacterMovementMotionState proposed;bool touchdown=false;
         if(!character_movement_air_step(motion_,s.motion,1,1,true,ceiling,&proposed,error))return false;
-        if(relaunch_floor_mode(mode_)||mode_==Mode::GroundRelaunchFloor){
+        if(relaunch_floor_mode(mode_)||controller_relaunch_floor_mode(mode_)){
             GRedSurfaceContact contact;
             if(!gred_relaunch_static_contact(motion_,ground,before,proposed,&contact,error))return false;
-            if(mode_==Mode::GroundRelaunchFloor&&contact.kind==GRedSurfaceContactKind::Pushed){
+            if(controller_relaunch_floor_mode(mode_)&&contact.kind==GRedSurfaceContactKind::Pushed){
                 if(error)*error="combined relaunch-floor controller does not enable steep pushes";
                 return false;
             }
@@ -790,7 +792,7 @@ private:
             GRedSurfaceContact contact;
             if(!gred_air_dash_static_contact(motion_,ground,before,s.motion,selector,s.air_dash.contact_callback,push_enabled,&contact,error))return false;
             if(contact.kind==GRedSurfaceContactKind::Snapped){
-                if(selector==15&&entry&&!windup_entry_floor_mode(mode_)){if(error)*error="wind-up entry floor contact is not enabled";return false;}
+                if(selector==15&&entry&&!windup_entry_floor_mode(mode_)&&!controller_windup_entry_floor_mode(mode_)){if(error)*error="wind-up entry floor contact is not enabled";return false;}
                 s.air_dash_floor=NativeBorgAirDashFloor{s.motion.position,s.motion.vertical48,s.motion.vertical_change50,
                     {contact.surface.height,contact.surface.normal,contact.surface.triangle},contact.angle};
             }else if(contact.kind==GRedSurfaceContactKind::Pushed)
@@ -821,7 +823,7 @@ private:
             selector==16?NativeBorgMotionKind::AirDashActivePush:NativeBorgMotionKind::AirDashRecoveryPush;
         if(s.air_dash_floor)*kind=selector==15?(entry?NativeBorgMotionKind::AirDashWindupEntryFloor:NativeBorgMotionKind::AirDashWindupFloor):
             entry?NativeBorgMotionKind::AirDashActiveEntryFloor:NativeBorgMotionKind::AirDashActiveFloor;
-        if(s.air_dash_floor&&selector==15&&entry&&before.vertical48>0&&positive_windup_floor_mode(mode_))
+        if(s.air_dash_floor&&selector==15&&entry&&before.vertical48>0&&(positive_windup_floor_mode(mode_)||controller_windup_entry_floor_mode(mode_)))
             *kind=NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
         if(ground_air_mode(mode_)){
             evidence.next_selector=s.jump.selector;evidence.next_stage=s.air_dash.stage;evidence.timer568=s.air_dash.timer568;

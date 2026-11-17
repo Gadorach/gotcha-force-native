@@ -28,14 +28,14 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ground-relaunch-floor` (or
-`--demo-source-ground-relaunch-floor --headless --frames 600`), requiring GFMM9.
-The shared ground/air/relaunch controller now admits verified null-callback floor
-snaps with exact pre-response integration/contact/resource/latch evidence.
-Only negative vertical speed receives the0.8 tail; acceleration and airborne
-history persist through positive crossing/lift and later separate landing.
-Wind-up entry snaps, push, ground-loss relaunch/positive698 overlap, combat,
-nonflat landing and clipping remain refused.
+The latest opt-in lab is `--source-ground-windup-entry-floor` (or
+`--demo-source-ground-windup-entry-floor --headless --frames 600`), requiring GFMM9.
+The shared ground/air/relaunch/floor controller now admits verified negative
+and positive wind-up entry snaps: halve velocity without moving or spending,
+then zero vertical speed on contact while retaining gravity, timer and airborne
+history. Later handoff spending, active motion and landing remain separate.
+Push, ground-loss relaunch/positive698 overlap, combat, nonflat landing and
+clipping remain refused.
 Demo spawn/arena/stage/target are unchanged, with no teleport/rebind.
 Older modes retain their narrower permissions and native proxies stay labelled.
 Other Borgs do not inherit G-Red's recovered mappings.
