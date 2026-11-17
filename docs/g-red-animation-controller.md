@@ -13,6 +13,89 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Owned-timer ground-loss relaunch (GFMM9)
+
+`--source-ground-loss-relaunch` / `--demo-source-ground-loss-relaunch`
+separately admits verified relaunch after accepted ground-loss history,
+including positive698. Earlier modes retain their ground-loss/positive-timer
+relaunch refusal. It reuses the same VM, heading, motion/resource/contact/
+renderer systems and complete per-role timer witness.
+
+Read-only6235C disassembly confirms entry changes marker590 to the distinct
+relaunch origin, adds data4C15 to old48 before displacement and keeps698.
+Native acceptance now recognizes only the separately enabled accepted ground-
+loss entry/air predecessors; it still requires exact additive motion, resource,
+independent lower/upper14/15 latches, current timer and endpoint evidence.
+Released relaunch uses21–24 provenance, not ground-loss13 or ordinary jump6.
+Discarding ground-loss origin does not discard its timer.
+
+This also qualifies a previously refused numeric variant: the shared source
+air wrapper clamps planar speed to8 **only when4C is positive**. Neutral
+relaunch sets4C0 and applies0.98 scalar damping but does not blanket-clamp
+inherited speed8. The new policy checks that exact conditional behavior,
+including a genuine air-to-neutral-relaunch/released-fall scalar above25,
+without relaxing ordinary jump limits or widening older policy refusals.
+
+`gred_relaunch_static_contact` gains an explicit698 argument; default0 keeps
+legacy callers unchanged. The new owner supplies actual timer, and relaunch
+floor evidence binds it to the same accepted countdown and6144/10240 gate.
+Null754 snaps retain50, scalar, latches and cached87; only negative
+post-integration48 receives0.8. Positive crossing gets factor1, then ordinary
+active motion may lift off. Steep-push candidates still refuse in the owner.
+Resource, VM, timer, both latches and pose publish only after exact receipt.
+
+The default fixture uses declared grounded original-stage placement
+x/z−1368.47/−466.667, query reference94.339, native bounds4500 and unchanged
+target/stage. Down-right is held from5 until accepted falling entry; a genuine
+relaunch press146–595 stays held through actual depletion. No resource or
+airborne state is injected, and no midair teleport/rebind is used.
+
+| Accepted tick | Role / actual698 / resource |
+| --- | --- |
+| 147 | Entry14 adds15 to old−25, moves−10 before gravity;698=5,9850 |
+| 151 | First null-floor snap, post48−6→−4.8;698=1,9450; latches2 but captured14 |
+| 152 | Timer naturally0; separate15 requests/latches3; second snap,9350 |
+| 153–156 | Four more snaps, last newly positive48≈0.7232 uses factor1;8950 |
+| 157 | Ordinary active lift above floor,8850 |
+| 247 | Previous accepted meter0 selects released21 and clears relaunch latches |
+| 333 | Real callback touchdown, captured21/cache1, still meter0 |
+| 334 | Separate landing8/cache0, still meter0 |
+| 356–600 | Shared idle0 and common grounded recovery10000 |
+
+`native_source_ground_loss_relaunch_owner` checks six600-update genuine routes:
+early neutral release/callback199, early held depletion/callback327, late
+positive-timer release/callback148, held floor/lift/depletion/callback333,
+air-to-neutral high-scalar release/callback187 and directional clamp/callback180.
+It verifies conditional clamp/lineage, exact shared150/100 costs, actual timer
+and paired plane gates, negative-only tail, independent latch receipt data,
+both callback/landing boundaries, stable idle and old-policy refusal.
+Numeric inter-gate tests distinguish positive698 from declared-zero contact.
+
+Native placement/input/clocks/libm/camera/target/body/terrain approximations
+remain explicit, not original-hardware or whole-game equivalence. Push,
+nonflat ordered dash, raised-side/clipped/unknown contacts and combat remain
+refused. Other Borgs do not inherit these recovered timer/flight semantics.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-loss-relaunch-host
+build/source-ground-loss-relaunch-host/gf_native \
+  --demo-source-ground-loss-relaunch --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds, targeted new host integration,600-tick held
+floor/depletion demo and unchanged64-tick ordinary duel smoke passed.
+Contact Sheet49 contains actual isolated offscreen GL frames147/151/152/156/
+157/247/333/334 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-loss-relaunch-v1/contact-sheet-49.png`;
+captures, game assets and private evidence are not published.
+All six isolated sanitizer binaries passed, including prior air/relaunch/floor
+owners and shared relaunch/world regressions. The new owner passed24675 checks
+across six600-update genuine routes plus old-policy/gate/lineage refusals.
+All161 isolated Python tests passed, including50 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged; assets, captures, private evidence,
+builds and unrelated Story/preparation work are excluded.
+
 ## Owned-timer ground-loss air dash (GFMM9)
 
 `--source-ground-loss-air` / `--demo-source-ground-loss-air` separately admits

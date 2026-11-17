@@ -89,6 +89,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   remains the legacy contract. Positive698 floor/callback contacts use6144,
   expired contacts10240. Recovery suppresses direct drift while positive, as
   verified in617E4. Relaunch and steep-push permissions are not inferred.
+- A separate ground-loss-relaunch policy joins verified additive lift/latches
+  and null-floor responses to the actual698 chain. Explicit timer contact keeps
+  AE/AC gating and negative-only .8 tail. In this new scope, the source wrapper
+  clamps planar speed8 only for positive acceleration; neutral inherited scalar
+  and released-relaunch lineage may retain more. Old policies remain unchanged.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

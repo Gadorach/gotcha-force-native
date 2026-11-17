@@ -3,6 +3,7 @@
 #include "engine/gameplay/gred_relaunch.hpp"
 #include "engine/gameplay/gred_vertical_jump.hpp"
 #include "engine/gameplay/gred_movement_admission.hpp"
+#include "tests/unit/stage_ground_fixture.hpp"
 namespace {
 unsigned checks=0;std::string error;
 void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"source relaunch: %s (%s)\n",why,error.c_str());std::abort();}}
@@ -57,6 +58,25 @@ int main(){
     GRedVerticalJumpState fall{6,1,false};fall.falling_after_relaunch=true;fall.falling_coarse57d=3;GRedVerticalJumpPlan falling;
     check(gred_vertical_jump_plan(p,fall,moved,500,0,&falling,true)&&falling.program==24,"relaunch release uses reviewed retained-coarse variant, not ordinary apex or air-dash fall");
     check(!gred_relaunch_plan(p,{0,1},motion,&plan),"upper relaunch stage cannot precede qualified lower entry");
+    auto cp=p;cp.air_dash_operands=true;cp.air_dash_windup_factor=.5f;cp.air_dash_contact_delay=30;
+    cp.surface_operands=true;cp.landing_angles={10240,6144};cp.contact_motion_epsilon=bits_to_f32(0x2edbe6feu);
+    cp.steep_operands=true;cp.steep_damping=bits_to_f32(0x3f666666u);cp.relaunch_floor_operands=true;cp.relaunch_floor_damping=.8f;
+    auto triangle=stage_ground_fixture::triangle(0);const f32 diagonal=std::sqrt(2.f);
+    for(auto& v:triangle.vertices)v[1]=-v[0];
+    triangle.plane={1/diagonal,1/diagonal,0,0};StihGrid grid,empty;
+    const auto raw=stage_ground_fixture::bytes({triangle}),none=stage_ground_fixture::bytes({});
+    check(grid.load({raw.data(),raw.size()},&error)&&empty.load({none.data(),none.size()},&error),"bounded numeric inter-gate contact fixture");
+    CharacterMovementStaticGround ground;ground.grids={&grid,&empty,&empty};ground.parameters=stage_ground_fixture::parameters();
+    ground.actor.fields_declared=true;ground.actor.current24=ground.actor.previous30=205;ground.query_height668=80;ground.step674=30;
+    CharacterMovementMotionState before;before.position={-200,205,-200};before.vertical48=-10;before.speed44=8;
+    auto proposed=before;proposed.position[1]=195;proposed.vertical48=-9.2f;proposed.vertical_change50=.8f;GRedSurfaceContact contact;
+    check(gred_relaunch_static_contact(cp,ground,before,proposed,&contact,&error)&&contact.kind==GRedSurfaceContactKind::Snapped&&
+        contact.angle>6144&&contact.angle<=10240&&contact.motion.vertical48==f32(proposed.vertical48*.8f),
+        "declared-zero default keeps legacy AC snap and negative-only .8 tail");
+    check(gred_relaunch_static_contact(cp,ground,before,proposed,&contact,&error,7)&&contact.kind==GRedSurfaceContactKind::Pushed&&
+        contact.motion.vertical48==f32(proposed.vertical48*cp.steep_damping),
+        "explicit positive698 chooses AE candidate branch, not default-zero snap; native push permission remains separate");
+    check(!gred_relaunch_static_contact(cp,ground,before,proposed,&contact,&error,-1),"invalid caller timer refuses");
     p.model=10;check(!gred_relaunch_plan(p,{},motion,&plan),"G-Red relaunch is not generalized to Sasuke");
     std::printf("source relaunch admission/additive velocity/lower-upper handoff: %u checks PASS; numeric candidates, no whole-frame equivalence\n",checks);
 }

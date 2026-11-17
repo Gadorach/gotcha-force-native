@@ -44,12 +44,13 @@ inline bool gred_relaunch_upper_plan(const GRedRelaunchState& input,GRedRelaunch
 //6A750 clears754 on selecting8;6235C does not reinstall it. Static ret1 is
 //therefore a height snap, NOT65E64/landing7. At declared delta1DC8=1 the
 //caller's negative48 multiplier is8043751C (.8);50/87/latches stay intact.
+//Default zero698 is a legacy declaration; owners with a live countdown pass it.
 inline bool gred_relaunch_static_contact(const CharacterMovementProfile& p,const CharacterMovementStaticGround& ground,
                                          const CharacterMovementMotionState& before,const CharacterMovementMotionState& proposed,
-                                         GRedSurfaceContact* out,std::string* error){
+                                          GRedSurfaceContact* out,std::string* error,f32 timer698=0){
     if(!out||!p.relaunch_floor_operands)return false;
     GRedSurfaceContact result;
-    if(!gred_surface_contact(p,ground,before,proposed,{0,0,true,false},&result,error))return false;
+    if(!gred_surface_contact(p,ground,before,proposed,{timer698,0,true,false},&result,error))return false;
     if(result.kind==GRedSurfaceContactKind::Snapped&&result.motion.vertical48<0)
         result.motion.vertical48=f32(result.motion.vertical48*p.relaunch_floor_damping);
     *out=result;return true;

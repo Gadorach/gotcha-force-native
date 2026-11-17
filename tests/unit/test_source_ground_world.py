@@ -190,6 +190,37 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("requires GFMM9", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
+    def test_ground_loss_relaunch_keeps_actual_timer_floor_tail_and_depletion(self):
+        for tick, launches, timer, floors, lower, upper, landings, meter, selector, program, cached in (
+                (147, 1, 5, 0, 1, 1, 0, 9850, 8, 14, 1),
+                (151, 1, 1, 1, 2, 2, 0, 9450, 8, 14, 1),
+                (152, 1, 0, 2, 3, 3, 0, 9350, 8, 15, 1),
+                (156, 1, 0, 6, 3, 3, 0, 8950, 8, 15, 1),
+                (157, 1, 0, 6, 3, 3, 0, 8850, 8, 15, 1),
+                (247, 1, 0, 6, 0, 0, 0, 0, 6, 21, 1),
+                (333, 1, 0, 6, 0, 0, 1, 0, 7, 21, 1),
+                (334, 1, 0, 6, 0, 0, 1, 0, 7, 8, 0),
+                (600, 1, 0, 6, 0, 0, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-loss-relaunch", "--headless", "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-loss-relaunches={launches} timer698={timer:.1f} floors={floors} lower={lower} upper={upper} landings={landings} loss-landings=0 resource={meter} selector={selector}", result.stdout)
+            self.assertIn(f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("root-updates=0", result.stdout)
+            self.assertIn("declared original-stage grounded placement/query reference", result.stdout)
+            self.assertIn("no midair teleport/rebind", result.stdout)
+            self.assertIn("no push/nonflat-dash/combat authority", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+        result = self.run_host(["--source-ground-loss-relaunch", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("controller-loss-relaunches=0 timer698=0.0 floors=0 lower=0 upper=0 landings=0 loss-landings=0 resource=10000", result.stdout)
+        self.assertNotIn("ground-loss-relaunch demo only:", result.stdout)
+        result = self.run_host(["--source-ground-loss-relaunch", "--source-ground-assets",
+                                "local/content/source-gred-ground-v8", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM9", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
     def test_ground_loss_air_uses_actual_timer_without_reset_or_early_cost(self):
         for tick, starts, timer, landings, meter, selector, program, cached in (
                 (121, 0, 30, 0, 10000, 6, 13, 1),
@@ -581,6 +612,8 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-ground-loss-landing", "--source-ground-landing"],
                        ["--source-ground-loss-air", "--source-ground-loss-landing"],
                        ["--source-ground-loss-air", "--source-air-dash"],
+                       ["--source-ground-loss-relaunch", "--source-ground-loss-air"],
+                       ["--source-ground-loss-relaunch", "--source-relaunch-floor"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)
