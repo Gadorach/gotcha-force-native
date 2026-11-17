@@ -43,6 +43,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   active/recovery with exact scalar/timer/resource/endpoint evidence and distinct
   post-air falling lineage. Relaunch, floor/push responses and positive ground-
   loss698 overlap remain refused; no earlier policy is widened.
+- A separately scoped ground-air-floor policy admits wind-up-update and early-
+  active null-callback snaps using both exact air integration and selected floor
+  evidence. Wind-up clears48; active retains48/50. Both keep airborne history
+  until the minimum timer installs a real landing callback. Wind-up entry snaps,
+  relaunch, push and positive698 overlap remain refused in this combined policy.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

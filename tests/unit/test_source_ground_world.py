@@ -190,6 +190,35 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("requires GFMM9", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
+    def test_ground_air_floor_keeps_null_callback_and_later_landing_separate(self):
+        for tick, starts, windup, active, landings, meter, selector, program, cached in (
+                (61, 1, 0, 0, 0, 9550, 15, 10, 1),
+                (64, 1, 1, 0, 0, 9550, 15, 10, 1),
+                (66, 1, 3, 0, 0, 9100, 16, 10, 1),
+                (67, 1, 3, 1, 0, 9050, 16, 11, 1),
+                (96, 1, 3, 30, 0, 7600, 16, 11, 1),
+                (97, 1, 3, 30, 1, 7550, 7, 11, 1),
+                (98, 1, 3, 30, 1, 7550, 7, 8, 0),
+                (600, 1, 3, 30, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-air-floor", "--headless", "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-floor-starts={starts} windup={windup} active={active} entry=0 positive-entry=0 landings={landings} relaunches=0 resource={meter} selector={selector}", result.stdout)
+            self.assertIn(f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("root-updates=0", result.stdout)
+            self.assertIn("no entry-floor/push/relaunch authority", result.stdout)
+            self.assertIn("unchanged native spawn/arena/stage/target", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+        result = self.run_host(["--source-ground-air-floor", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("controller-floor-starts=0 windup=0 active=0 entry=0 positive-entry=0 landings=0 relaunches=0 resource=10000", result.stdout)
+        self.assertNotIn("ground-air-floor demo only:", result.stdout)
+        result = self.run_host(["--source-ground-air-floor", "--source-ground-assets",
+                                "local/content/source-gred-ground-v8", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM9", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
     def test_ground_air_keeps_windup_active_recovery_and_resource_contracts(self):
         for tick, starts, active, landings, meter, selector, program, cached in (
                 (46, 1, 0, 0, 7150, 15, 10, 1), (51, 1, 0, 0, 6700, 16, 10, 1),
@@ -278,6 +307,8 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-ground-landing", "--source-landing"],
                        ["--source-ground-air", "--source-ground-landing"],
                        ["--source-ground-air", "--source-air-dash"],
+                       ["--source-ground-air-floor", "--source-ground-air"],
+                       ["--source-ground-air-floor", "--source-air-dash-floor"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)

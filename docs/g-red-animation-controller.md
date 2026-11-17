@@ -13,6 +13,79 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Combined ground/air floor response (GFMM9)
+
+`--source-ground-air-floor` / `--demo-source-ground-air-floor` is a separate
+permission over the shared combined controller. It joins verified continued
+wind-up and early-active static floor responses without inheriting the legacy
+relaunch/push capability hierarchy. `--source-ground-air` and all older modes
+remain unchanged.
+
+The source owner reuses `gred_air_dash_static_contact`, the shared motion/VM/
+resource driver and the existing stage query/renderer. Native acceptance checks
+both the selector15/16 phase/timer/resource/integration payload and the paired
+selected-floor payload, including the exact pre-response endpoint and velocity.
+61338's continued wind-up ret1 tail clears48, while61560's early-active caller
+has no such tail: its accumulated negative48 and −0.07 acceleration50 survive
+the height snap. Neither null754 path grounds the actor, clears cached87,
+increments landing, or refills resource. Only the later ready-stage callback
+can select landing7; separate accepted landing8 then clears the airborne cache.
+All effects remain staged until the matching complete native receipt.
+
+The default demo uses ordinary native spawn/arena/stage/target with jump held
+5–20 and a genuine forward air flick60–96, releasing on touchdown before
+landing-entry input. No airborne state injection,
+teleport/rebind, stage edits or additional animation classification is used.
+
+| Accepted tick | Phase / contact / resource |
+| --- | --- |
+| 61 | Wind-up entry10 at y35.8, old−21→−10.5 velocity; no movement/cost,9550 |
+| 64 | First continued wind-up floor snap at y10, pre48−10.71→0;9550 |
+| 65–66 | Two more wind-up snaps; last motion/contact precedes450 spend,9100 |
+| 67 | Active entry11 moves30 and snaps height; retains48−0.07,9050 |
+| 68–96 |29 more early-active snaps;48 accumulates to approximately−2.1,7600 |
+| 97 | Active timer reaches ready stage; real callback touchdown,7550/cache1 |
+| 98 | Separate landing8 entry,7550/cache0 |
+| 120–600 | Shared idle0 with common grounded recovery to10000 |
+
+Two nearby genuine flick routes cross-check five wind-up/thirty active snaps
+(flick61, touchdown98) and zero wind-up/eight late early-active snaps (flick58,
+touchdown95). `native_source_ground_air_floor_owner` covers all three600-update
+routes, exact shared resource accounting, phase/timer/contact/endpoint tampering,
+receipt/pose retirement, unchanged older-policy refusal and positive698 refusal.
+
+Wind-up **entry** floor snaps, including positive half-speed at unchanged floor
+height, remain refused in this combined policy: the older qualified entry labs
+reach them through relaunch, which this policy does not authorize. No fixture
+has established their genuine combined-controller admission yet. Relaunch,
+steep push, unresolved positive ground-loss698, nonflat landing, raised-surface/
+side-entry, clipping, combat and unknown variants also remain refused.
+This is a normal-G-Red native proxy subset, not original hardware or whole-game
+equivalence, and does not establish hover/flight rules for other Borgs.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-air-floor-host
+build/source-ground-air-floor-host/gf_native \
+  --demo-source-ground-air-floor --headless --frames 600 --no-audio
+```
+
+Contact Sheet40 contains actual offscreen GL frames61/64/66/67/96/97/98/120
+from the isolated native-only tree, without taking desktop/classifier focus.
+It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-air-floor-v1/contact-sheet-40.png`;
+no captures, game assets or private evidence are published.
+
+The final isolated floor-owner sanitizer rerun passed12124 checks. Five prior
+air/entry-floor/kernel/world sanitizer binaries also passed against byte-identical
+test sources and engine headers. The final isolated host/all-header builds,
+600-tick floor demo and unchanged64-tick ordinary duel smoke passed.
+All152 final isolated Python tests passed, including41 host integrations. The
+owner regression explicitly requires program0/0 idle after releasing on
+touchdown, rather than accepting a held-through-landing stop program as idle.
+Original motion-bank/GFMM1–9 bytes are unchanged; the checkpoint excludes assets,
+captures, private evidence, builds and unrelated Story/preparation work.
+
 ## Combined ground/air-dash controller (GFMM9)
 
 `--source-ground-air` / `--demo-source-ground-air` joins the recovered normal
