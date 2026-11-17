@@ -79,6 +79,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   native-accepted timer chain, including takeoff without ground-loss metadata.
   Selector changes do not clear it. Positive698 target12 dash/flight/relaunch
   stays refused; actual ascent alone spends jump resource.
+- A separate ground-loss-landing policy also admits target12 dash after accepted
+  landing entry while698 persists, requiring the same all-role timer witness
+  plus privately sealed actual AObj/VM root observations. Entry motion25 then
+  retained24.5, active/recovery, root holds and done/reset order are unchanged.
+  Nonflat ordered-dash terrain, positive698 flight and push remain refused.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

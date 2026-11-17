@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -267,7 +267,8 @@ public:
             const bool positive_windup_entry=o.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             const bool windup_entry_floor=native_borg_motion_windup_floor_entry(o.kind);
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
-            const bool controller_landing_jump_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossJump;
+            const bool controller_landing_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossLanding;
+            const bool controller_landing_jump_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossJump||controller_landing_dash_policy;
             const bool controller_ground_loss_surface_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossSurface||controller_landing_jump_policy;
             const bool controller_surface_policy=producer->policy_==NativeBorgMotionPolicy::GroundSurface||controller_ground_loss_surface_policy;
             const bool controller_windup_entry_floor_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupEntryFloor||controller_surface_policy;
@@ -356,8 +357,9 @@ public:
                 last_offer_.jump_motion&&last_offer_.jump_motion->phase==7&&last_offer_.jump_motion->next_selector==7;
             if(o.landing_target){
                 if(controller_ground_loss_surface_policy&&last_offer_.walk_ledge&&last_offer_.walk_ledge->timer698>1.f&&
-                   (!controller_landing_jump_policy||o.landing_target!=4))return false;
-                if(controller_landing_jump_policy&&*o.controller_timer698>0&&o.landing_target!=4)return false;
+                   (!controller_landing_jump_policy||(o.landing_target!=4&&!(controller_landing_dash_policy&&o.landing_target==12))))return false;
+                if(controller_landing_jump_policy&&*o.controller_timer698>0&&o.landing_target!=4&&
+                   !(controller_landing_dash_policy&&o.landing_target==12))return false;
                 if(!landing_policy||!active_landing||!actor.grounded||actor.vertical_speed||
                    (o.landing_target==4?(o.kind!=NativeBorgMotionKind::JumpTakeoff||!o.jump_motion||
                                         o.jump_motion->phase!=4||!o.jump_motion->entry):
@@ -1068,7 +1070,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundLossJump)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundLossLanding)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

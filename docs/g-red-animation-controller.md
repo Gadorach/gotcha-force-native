@@ -13,6 +13,77 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Retained-timer ground-loss landing jump/dash (GFMM9)
+
+`--source-ground-loss-landing` / `--demo-source-ground-loss-landing` separately
+adds target12 owned-root dash cancellation after an accepted ground-loss
+landing8 entry while698 remains positive. It retains target4 jump support and
+the complete per-role accepted timer chain. The previous jump-only mode still
+refuses the same genuine positive698 dash input.
+
+This is admission through existing shared systems, not a new dash engine.
+The original selector/heading helper and60C94 path do not clear698. Native
+acceptance requires accepted landing provenance, exact target12/phase12
+matching, current timer evidence, matching frame-start/selected surface and a
+privately constructed current-world/current-producer post-VM root scope.
+Landing permission or a copied previous root cannot mint that authority.
+Entry moves25 then retains24.5; active, held/recovery reads, zero-control1D9B
+and motion-before-done/reset remain with the unchanged ordered controller.
+VM/root/timer/counters/pose publish only after the complete matching receipt.
+
+The default native fixture is declared grounded original-stage placement
+x/z−1368.47/−466.667, query reference94.339 and arena-half4500; target/stage data
+are unchanged. It holds down-right from5 until accepted falling entry, then
+supplies one genuine backward flick149 after accepted landing8. This is not an
+original actor spawn or a midair teleport/rebind.
+
+| Accepted tick | Role / timer / root |
+| --- | --- |
+| 121–122 | Walking departure then following-frame ground-loss13/698=30 |
+| 148 | Actual flat callback13/cache1,698=4 |
+| 149 | Separate accepted landing8/cache0,698=3 |
+| 150 | Target12 entry27: move25/retain24.5,698=2, first actual root observation |
+| 151–152 | Active13:698 naturally decays1→0; source VM/root ordering unchanged |
+| 157 | Recovery14 on captured27; actual post-VM move19.35/retain18.85, root updates8 |
+| 176–600 | Shared idle0 after done/reset;25 actual root evaluations retained, meter10000 |
+
+`native_source_ground_loss_landing_owner` tests three600-update genuine routes:
+single-flick dash recovery157/idle176, a held variant recovery159/idle178,
+and inherited landing jump150 with a separate second callback203.
+It covers landing provenance, missing/stale root scopes, fabricated entry
+scalar/timer, root/VM holds, zero-control retained-root reads, receipts and pose
+retirement. The earlier jump-only mode refuses before root publication.
+
+Geometry is deliberately unchanged. The same landing with a forward flick
+reaches a nonflat ordered-dash destination and still refuses; longer/other
+directions can leave the qualified flat subset as well. No plane is flattened
+or collision guessed to make a route pass. Positive698 air dash/relaunch,
+ground-loss relaunch, steep push, nonflat ordered-dash terrain, clipping, combat
+and unsupported variants remain refused. Native setup/input/clocks/libm/camera/
+target/contact approximations remain labelled, with no original-hardware,
+whole-game or other-Borg movement-family equivalence claim.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-loss-landing-host
+build/source-ground-loss-landing-host/gf_native \
+  --demo-source-ground-loss-landing --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds, targeted new host integration,600-tick demo
+and unchanged64-tick ordinary duel smoke passed. The demo reports one ordered
+entry,6 active/19 recovery updates, one reset and25 actual root evaluations.
+All six isolated sanitizer binaries passed, including prior landing-jump/
+landing owners and ordered-dash/root/world regressions. The new owner passed
+12257 checks across its three600-update genuine routes and refusal boundaries.
+Contact Sheet47 contains actual isolated offscreen GL frames148/149/150/151/
+157/175/176/600 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-loss-landing-v1/contact-sheet-47.png`;
+captures, game assets and private evidence are not published.
+All159 isolated Python tests passed, including48 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged; assets, captures, private evidence,
+builds and unrelated Story/preparation work are excluded.
+
 ## Retained-timer ground-loss landing jump (GFMM9)
 
 `--source-ground-loss-jump` / `--demo-source-ground-loss-jump` separately permits
