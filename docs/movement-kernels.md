@@ -48,6 +48,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   evidence. Wind-up clears48; active retains48/50. Both keep airborne history
   until the minimum timer installs a real landing callback. Wind-up entry snaps,
   relaunch, push and positive698 overlap remain refused in this combined policy.
+- A separate combined ground-relaunch policy adds airborne selector8 with
+  additive15 entry, independent lower/upper14/15 latches, exact numeric/resource
+  evidence and distinct released-relaunch21–24 falling lineage. It reuses air-
+  dash floor responses but grants no relaunch-floor, wind-up entry-floor or
+  push capability. Ground-loss relaunch and positive698 overlap remain refused.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

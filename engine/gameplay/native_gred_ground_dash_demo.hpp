@@ -39,11 +39,12 @@ class NativeGRedGroundDashDemo {
         std::optional<NativeBorgOrderedGround> ordered_ground;
         std::optional<NativeBorgJumpMotion> jump_motion;
         std::optional<NativeBorgAirMotion> air_motion;
+        std::optional<NativeBorgRelaunchMotion> relaunch_motion;
         u8 dash_recovery546=0;bool dash_exit545=false;
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor};
+    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch};
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -102,7 +103,7 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
-        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
+        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundRelaunch?NativeBorgMotionPolicy::GroundRelaunch:mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
         else
         producer_=world.new_motion_producer(mode_==Mode::WalkLedge?NativeBorgMotionPolicy::WalkLedge:mode_==Mode::WindupEntryPush?NativeBorgMotionPolicy::WindupEntryPush:mode_==Mode::WindupPositiveFloor?NativeBorgMotionPolicy::WindupPositiveFloor:mode_==Mode::WindupEntryFloor?NativeBorgMotionPolicy::WindupEntryFloor:mode_==Mode::AirDashFloor?NativeBorgMotionPolicy::AirDashFloor:mode_==Mode::RelaunchFloor?NativeBorgMotionPolicy::RelaunchFloor:mode_==Mode::RelaunchEntrySurface?NativeBorgMotionPolicy::RelaunchEntryPush:mode_==Mode::RelaunchSurface?NativeBorgMotionPolicy::RelaunchPush:mode_==Mode::ActiveSurface?NativeBorgMotionPolicy::ActivePush:mode_==Mode::WindupSurface?NativeBorgMotionPolicy::WindupPush:mode_==Mode::RecoverySurface?NativeBorgMotionPolicy::RecoveryPush:mode_==Mode::FallingSurface?NativeBorgMotionPolicy::FallHistoryPush:mode_==Mode::Steep?NativeBorgMotionPolicy::StaticPush:relaunch_mode(mode_)?NativeBorgMotionPolicy::Relaunch:mode_==Mode::AirDash?NativeBorgMotionPolicy::AirDash:mode_==Mode::Jump?NativeBorgMotionPolicy::Jump:
             mode_==Mode::VerticalJump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
@@ -146,6 +147,7 @@ public:
         if(air_dash_mode(mode_)&&!dash_jump_mode(mode_)&&state_.dash.selector&&(held&0x100u))return fail(error,"dash-to-jump is not enabled");
         if(ground_jump_mode(mode_)&&state_.jump.selector&&(held&0x100u)&&
            !(ground_landing_mode(mode_)&&landing_entry_accepted())&&
+           !(mode_==Mode::GroundRelaunch&&relaunch_input_phase(state_))&&
            (!(state_.input.previous_held&0x100u)||state_.jump.falling_after_ground_loss))
             return fail(error,"jump controller refuses takeoff/airborne/landing cancellation");
         auto candidate=std::make_unique<Pending>();candidate->state=state_;auto& s=candidate->state;
@@ -153,6 +155,7 @@ public:
         s.ordered_ground.reset();
         s.jump_motion.reset();
         s.air_motion.reset();
+        s.relaunch_motion.reset();
         if(ledge_mode(mode_)){
             //Native-owned frame-start snapshot, bound to this observed scope/
             //tick. Never reinterpret the previous render/offer as source2C.
@@ -236,6 +239,8 @@ public:
                     s.jump.selector=17;s.jump.air_ready588=0;
                 }else if(relaunch_mode(mode_)&&admission.selector==8){
                     if(observed.grounded||!s.jump.cached87)return fail(error,"relaunch needs accepted airborne state");
+                    if(mode_==Mode::GroundRelaunch&&s.jump.falling_after_ground_loss)
+                        return fail(error,"relaunch from ground-loss history is not enabled");
                     s.jump.selector=8;s.jump.entered=false;s.jump.air_ready588=0;s.relaunch={};s.air_dash.selector=0;
                 }else return fail(error,"air relaunch callback is not enabled");
             }
@@ -339,6 +344,7 @@ public:
         candidate->offer.ordered_ground=s.ordered_ground;
         candidate->offer.jump_motion=s.jump_motion;
         candidate->offer.air_motion=s.air_motion;
+        candidate->offer.relaunch_motion=s.relaunch_motion;
         if(ground_landing_mode(mode_))candidate->offer.landing_target=candidate->landing_target;
         const bool ledger_frame=ledge_mode(mode_)&&(kind==NativeBorgMotionKind::Ground||native_borg_motion_ground_loss(kind)||
             (kind==NativeBorgMotionKind::JumpLanding&&s.jump.falling_after_ground_loss));
@@ -470,7 +476,8 @@ public:
                 mapped.held=u32(direction)<<16;
             }
             if(pad.b){
-                if(state_.jump.selector&&!landing_input&&(!(state_.input.previous_held&0x100u)||state_.jump.falling_after_ground_loss)){
+                if(state_.jump.selector&&!landing_input&&!(mode_==Mode::GroundRelaunch&&relaunch_input_phase(state_))&&
+                   (!(state_.input.previous_held&0x100u)||state_.jump.falling_after_ground_loss)){
                     if(error)*error="jump controller refuses takeoff/airborne/landing cancellation";
                     return false;
                 }
@@ -536,7 +543,9 @@ public:
         *out=mapped;return true;
     }
 private:
-    static bool ground_air_mode(Mode mode){return mode==Mode::GroundAir||mode==Mode::GroundAirFloor;}
+    static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
+    static bool controller_floor_mode(Mode mode){return mode==Mode::GroundAirFloor||mode==Mode::GroundRelaunch;}
+    static bool ground_air_mode(Mode mode){return mode==Mode::GroundAir||controller_floor_mode(mode);}
     static bool ground_landing_mode(Mode mode){return mode==Mode::GroundLanding||ground_air_mode(mode);}
     static bool ground_jump_mode(Mode mode){return mode==Mode::GroundJump||ground_landing_mode(mode);}
     static bool dash_ledge_mode(Mode mode){return mode==Mode::DashLedge||mode==Mode::GroundLedge||ground_jump_mode(mode);}
@@ -558,7 +567,7 @@ private:
     static bool legacy_landing_mode(Mode mode){return mode==Mode::LandingInterrupt||surface_mode(mode);}
     static bool landing_mode(Mode mode){return legacy_landing_mode(mode)||ground_landing_mode(mode);}
     static bool dash_jump_mode(Mode mode){return mode==Mode::DashJump||legacy_landing_mode(mode)||ground_jump_mode(mode);}
-    static bool relaunch_mode(Mode mode){return mode==Mode::Relaunch||mode==Mode::DashJump||legacy_landing_mode(mode);}
+    static bool relaunch_mode(Mode mode){return mode==Mode::Relaunch||mode==Mode::DashJump||legacy_landing_mode(mode)||mode==Mode::GroundRelaunch;}
     static bool air_dash_mode(Mode mode){return mode==Mode::AirDash||relaunch_mode(mode)||ground_air_mode(mode);}
     static bool moving_mode(Mode mode){return mode==Mode::Jump||ledge_mode(mode)||air_dash_mode(mode);}
     bool air_contact(State& s,const CharacterMovementStaticGround& ground,const CharacterMovementMotionState& before,
@@ -674,6 +683,8 @@ private:
         return true;
     }
     bool relaunch(State& s,u32 held,CharacterMovementHeadingFrame frame,NativeBorgMotionKind* kind,std::string* error){
+        NativeBorgRelaunchMotion evidence;evidence.lower_before=s.relaunch.lower_stage;evidence.upper_before=s.relaunch.upper_stage;
+        evidence.speed_before=s.motion.speed44;evidence.resource_before=s.resource.value736;
         GRedRelaunchPlan plan;if(!gred_relaunch_plan(motion_,s.relaunch,s.motion,&plan))return false;
         const auto before=s.motion;const auto ground=ground_for(s);s.motion=plan.motion;
         if(plan.entry){
@@ -693,6 +704,9 @@ private:
         if(!character_movement_turn_steer(motion_,s.turn,heading.delta5aa,1,1,1,&s.turn))return false;
         s.body=s.turn.body72;s.motion.travel5ae=s.body;
         if(!gred_jump_acceleration(motion_,heading.has_direction,&s.motion))return false;
+        evidence.entry=plan.entry;evidence.direction=heading.has_direction;evidence.lower_done=s.vm.state().lanes[1].done;
+        evidence.lower_program=plan.program;evidence.move_speed=s.motion.speed44;evidence.vertical_before=s.motion.vertical48;
+        evidence.planar_accel=s.motion.planar_change4c;evidence.vertical_accel=s.motion.vertical_change50;evidence.travel5ae=s.motion.travel5ae;
         CharacterMovementCeiling ceiling;ceiling.mode=CharacterMovementCeilingMode::DeclaredStatic;
         ceiling.stage_top34=20000;ceiling.query_height668=ground.query_height668;ceiling.previous_y30=s.previous_y;
         CharacterMovementMotionState proposed;bool touchdown=false;
@@ -719,6 +733,11 @@ private:
             plan.program==15?NativeBorgMotionKind::RelaunchActivePush:NativeBorgMotionKind::RelaunchWindupPush;
         if(s.relaunch_floor)*kind=plan.entry?NativeBorgMotionKind::RelaunchEntryFloor:
             plan.program==15?NativeBorgMotionKind::RelaunchActiveFloor:NativeBorgMotionKind::RelaunchWindupFloor;
+        if(mode_==Mode::GroundRelaunch){
+            evidence.lower_after=s.relaunch.lower_stage;evidence.upper_after=s.relaunch.upper_stage;evidence.upper_program=upper.program;
+            evidence.coarse57d=s.jump.falling_coarse57d;evidence.speed44=s.motion.speed44;evidence.resource_after=s.resource.value736;
+            s.relaunch_motion=evidence;
+        }
         return true;
     }
     bool air_dash(State& s,u32 held,CharacterMovementHeadingFrame frame,NativeBorgMotionKind* kind,std::string* error){
@@ -762,7 +781,7 @@ private:
         bool touchdown=false;CharacterMovementMotionState contacted;
         const bool push_enabled=(recovery_surface_mode(mode_)&&selector==17)||(windup_surface_mode(mode_)&&selector==15&&!entry)||
             (active_surface_mode(mode_)&&selector==16&&!entry)||(mode_==Mode::WindupEntryPush&&selector==15&&entry);
-        if((air_dash_floor_mode(mode_)||mode_==Mode::GroundAirFloor)&&selector!=17){
+        if((air_dash_floor_mode(mode_)||controller_floor_mode(mode_))&&selector!=17){
             GRedSurfaceContact contact;
             if(!gred_air_dash_static_contact(motion_,ground,before,s.motion,selector,s.air_dash.contact_callback,push_enabled,&contact,error))return false;
             if(contact.kind==GRedSurfaceContactKind::Snapped){
@@ -891,6 +910,10 @@ private:
             evidence.phase=plan.state.selector;evidence.next_selector=s.jump.selector;evidence.ascent_stage=plan.state.ascent_stage;
             evidence.entry=plan.request;evidence.direction=plan.state.direction550;evidence.ground_loss=plan.state.falling_after_ground_loss;
             evidence.air_dash_origin=plan.state.falling_after_dash;
+            if(mode_==Mode::GroundRelaunch){
+                evidence.relaunch_origin=plan.state.falling_after_relaunch;
+                evidence.relaunch_coarse57d=evidence.relaunch_origin?plan.state.falling_coarse57d:0;
+            }
             evidence.speed44=s.motion.speed44;
             s.jump_motion=evidence;
         }

@@ -13,6 +13,90 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Combined airborne relaunch (GFMM9)
+
+`--source-ground-relaunch` / `--demo-source-ground-relaunch` separately adds
+reviewed normal-G-Red airborne relaunch to the shared ground/ledge/jump/accepted-
+landing/air-dash/floor controller. Older modes retain their narrower permissions.
+It does not inherit the legacy relaunch-floor/push lab hierarchy.
+
+The source owner uses the existing relaunch planner, heading/acceleration,
+motion driver, VM, resource, stage query and renderer. Its distinct relaunch
+payload independently checks additive15 entry before displacement, previous
+accepted retained scalar/resource, neutral0.98 damping versus directional
+45-degree acceleration, source8/18/−30 clamps, exact endpoints,150/100 costs
+before motion and lower/upper stage latches. It does not replace old velocity
+by15 or infer scalar from rendered displacement. Receipts compare the complete
+relaunch payload; rejected native candidates preserve the prior accepted frame.
+
+Lower completion changes stage1→2 while still updating14; the following lower
+update requests15/stage3. Upper stage1 observes that lower change but still
+updates14 before requesting15 on its own following stage2 update. No generic
+“mirror lower” shortcut is used. Resource, VM, both latches, counters and pose
+leases publish only after exact native acceptance.
+
+Release or depletion selects the distinct verified21–24 falling family through
+explicit relaunch origin/coarse57D metadata, not ordinary jump6, post-air13 or
+ground-loss history. The selector8→6 admission clears relaunch latches, retaining
+the separate falling-origin/coarse metadata instead. Relaunch may interrupt
+active air dash/recovery; a genuine
+air flick may interrupt relaunch and restore air-dash lineage. Ordinary ground
+input, owned dash/jump, landing-entry cancellation and scoped air-floor behavior
+remain in the same controller/producer.
+
+The default demo keeps ordinary native spawn/arena/stage/target: hold jump5–30,
+release, re-press60–99, release, fall and land. No airborne state injection,
+teleport/rebind, stage edits or further manual animation classification is used.
+
+| Accepted tick | Role / latches / programs / resource |
+| --- | --- |
+| 61 | Relaunch entry adds15 to old−11, moves4;14/14, stages1/1,8400 |
+| 65 | Lower completes; both latches2 but captured14/14 still used,8000 |
+| 66 | Each lane separately requests15; stages3/3,7900 |
+| 100 | Held relaunch, source upper18 clamp;4500 |
+| 101 | Release selects falling21 with−1 gravity, retains airborne history |
+| 171 | Real callback touchdown, captured21/cache1,4500 |
+| 172 | Separate landing8/cache0, still4500 |
+| 194–600 | Shared idle0 and common grounded recovery to10000 |
+
+`native_source_ground_relaunch_owner` tests five600-update genuine routes:
+neutral release, directional lift, held-resource depletion (fall146/land243),
+active-air-dash interruption (relaunch81/fall121/land200), and air flick out of
+relaunch (wind-up81/recovery118/post-air fall147/land151). It checks exact shared
+resource accounting, latch/scalar/velocity/proof tampering, receipt/pose lifetime,
+older-mode input refusal and a genuine relaunch-floor refusal before spending.
+
+Relaunch-floor contact and wind-up entry-floor snaps still refuse, as do steep
+push, relaunch from ground-loss history, positive ground-loss698 air overlap,
+nonflat landing, raised-surface/side-entry, clipping, combat and unknown variants.
+An input sweep of96 bounded original-stage jump/flick routes found no wind-up
+entry-floor fixture without relaunch; that is not proof of universal
+unreachability and does not widen its policy. The sweep logs remain private
+under `/tmp/opencode/ground-air-entry-sweep-v1/`.
+
+All initialization, input mapping, clocks, libm/camera/target/contact assumptions
+remain explicitly native proxies, not original hardware or whole-game
+equivalence. No other Borg inherits G-Red's mappings or hover/flight rules.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-relaunch-host
+build/source-ground-relaunch-host/gf_native \
+  --demo-source-ground-relaunch --headless --frames 600 --no-audio
+```
+
+Contact Sheet41 contains actual isolated offscreen GL frames61/65/66/100/101/
+171/172/194 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-relaunch-v1/contact-sheet-41.png`.
+The final isolated owner sanitizer passed18546 checks across its five600-
+update routes plus older-mode/floor refusals. The final isolated host/all-header
+builds,600-tick demo and unchanged64-tick ordinary duel smoke passed.
+All six final isolated sanitizer binaries passed, including the previous
+ground-air/floor owners and relaunch/jump/world regressions.
+All153 final isolated Python tests passed, including42 host integrations.
+Original motion-bank/GFMM1–9 bytes are unchanged. Assets, private evidence,
+captures, builds and unrelated Story/preparation changes are excluded.
+
 ## Combined ground/air floor response (GFMM9)
 
 `--source-ground-air-floor` / `--demo-source-ground-air-floor` is a separate
