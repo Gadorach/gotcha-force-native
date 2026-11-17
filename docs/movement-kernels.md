@@ -35,6 +35,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   falling/flat landing to that controller. It checks jump kinematics and lineage
   independently and admits dash interruption before old root/motion dispatch.
   Its capability does not inherit air-dash/relaunch or landing cancellation.
+- A further accepted-landing-entry policy admits target4/12 jump/owned-dash
+  interruption only after a matching prior landing callback receipt, never on
+  touchdown. It reuses source input/resource/VM/root paths; older jump and ground
+  policies retain their refusals and no air-dash/relaunch capability is inherited.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

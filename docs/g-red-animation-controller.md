@@ -13,6 +13,88 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Accepted-entry landing jump/dash responsiveness (GFMM9)
+
+`--source-ground-landing` / `--demo-source-ground-landing` adds the already
+recovered landing jump/ground-dash predicates to the combined ground/jump
+controller. They run before the old landing dispatch, but **only after a
+previously accepted landing-entry update**. Physical touchdown alone is not that
+permission. The shared VM, driver, root sampler, motion/contact, producer,
+resource and renderer systems are reused.
+
+The owner requires selector7 with an entered landing callback, grounded native
+contact and cached87=0, plus the reviewed unblocked upper/lower fields. Source
+buffered/held jump selects4 and resets normal-class takeoff motion; a full fresh
+flick selects12 through the owned-root ordered-dash path. Neither branch advances
+the old landing program first. A jump still takes off at zero displacement;
+an ordered landing dash immediately moves25 and retains24.5 after−0.5.
+
+A separate native policy and exact target4/12 evidence bind each interruption
+to the preceding accepted landing-entry role. Missing, unknown, swapped or
+premature targets refuse. The target is also part of exact receipt comparison.
+The new permission cannot mint root/VM provenance for a dash, skip a touchdown
+callback, turn arbitrary ground motion into a landing cancel or grant air dash,
+relaunch, combat, clipping or nonflat landing. Existing modes—including
+`--source-ground-jump`—retain their cancellation refusals. Helper capability
+groups explicitly avoid inheriting the legacy air-dash/relaunch hierarchy.
+
+Resource recovery is not special-cased on interruption. The common5568C branch
+uses the **previous accepted** cached87 and recovery operands before admission;
+664A0 still handles actual jump costs. Thus touchdown and the first landing-entry
+update retain the depleted meter, while the following grounded update can
+legitimately recover it—even when a jump/dash is admitted on that update. Tests
+model the exact shared recovery/cost kernels rather than assuming “no refill”
+means “the value can never increase during an interruption.” All resource,
+VM/root, counter and pose state remains staged until matching native acceptance.
+
+The default demo uses unchanged native spawn/arena/stage/target. It supplies one
+neutral held jump at5–34, then requests the next jump and later backward dash
+from **accepted owner counters/landing state**, not guessed clip timers:
+
+| Accepted tick | Role / programs / resource |
+| --- | --- |
+| 85 | Actual first touchdown, falling6/cache1, meter8150 |
+| 86 | Accepted landing entry8/cache0, still8150 |
+| 87 | Target4 interruption: takeoff2, no old landing/root/motion; common recovery10000 |
+| 99 | Second ascent4, launch cost leaves9850 |
+| 150 | Second actual touchdown6/cache1, meter9150 |
+| 151 | Accepted landing entry8/cache0, still9150 |
+| 152 | Target12: fresh ordered backward dash29, move25/retain24.5; common recovery10000 |
+| 600 | Stable idle0 after dash recovery; two landings, one landing jump/dash |
+
+The second jump is held20 updates from its accepted-entry trigger; the landing
+dash12 updates. No actor is teleported and the world, producer, model/driver/VM
+and render binding are not replaced.
+
+`native_source_ground_landing_owner` covers three600-update original-stage
+routes: ordinary jump landing → jump → dash; ground-loss landing → jump → dash;
+and ordinary landing → dash. It also checks raw touchdown/old-mode refusals,
+counter/resource staging, common cached-history recovery, missing/swapped/stale
+native targets, root authority and exact receipts/retirement. Native clock,
+input mapping, libm, camera, target-center and collision remain explicit proxies,
+not original actor construction or hardware/full-frame equivalence.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-landing-host-v1
+build/source-ground-landing-host-v1/gf_native \
+  --demo-source-ground-landing --headless --frames 600 --no-audio
+```
+
+Contact Sheet38 shows actual offscreen GL frames85/86/87/99/150/151/152/184
+without taking desktop/classifier focus. Isolated native-only landing-jump87 and
+landing-dash152 match the full working tree pixel-for-pixel. Captures stay local:
+`local/recomp-evidence/contact-sheets/source-ground-landing-v1/contact-sheet-38.png`.
+The isolated new-owner test passed9299 checks across three600-update original-
+stage routes plus raw touchdown/old-mode refusal fixtures. Host/all-header builds
+and the unchanged64-tick ordinary duel smoke also passed.
+The isolated host suite passed all150 Python tests, including39 opt-in host
+integrations. Original motion-bank bytes and all immutable GFMM1–9 packs are
+unchanged.
+All18 isolated sanitizer binaries passed, including prior controller owners,
+legacy landing-input/dash-jump kernels and native battle regressions. Game assets,
+private evidence, captures, build outputs and unrelated work are excluded.
+
 ## Ground/ledge/jump controller with ordered dash interruption (GFMM9)
 
 `--source-ground-jump` / `--demo-source-ground-jump` extends the combined

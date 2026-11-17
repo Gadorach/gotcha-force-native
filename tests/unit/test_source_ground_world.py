@@ -165,6 +165,31 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("requires GFMM9", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
+    def test_ground_landing_waits_for_accepted_entry_then_jumps_or_dashes(self):
+        for tick, jumps, dashes, landings, meter, program, cached, roots in (
+                (85, 0, 0, 1, 8150, 6, 1, 0), (86, 0, 0, 1, 8150, 8, 0, 0),
+                (87, 1, 0, 1, 10000, 2, 0, 0), (99, 1, 0, 1, 9850, 4, 1, 0),
+                (150, 1, 0, 2, 9150, 6, 1, 0), (151, 1, 0, 2, 9150, 8, 0, 0),
+                (152, 1, 1, 2, 10000, 29, 0, 1), (600, 1, 1, 2, 10000, 0, 0, 25)):
+            result = self.run_host(["--demo-source-ground-landing", "--headless", "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"landing-jumps={jumps} landing-dashes={dashes} landings={landings} resource={meter}", result.stdout)
+            self.assertIn(f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn(f"root-updates={roots}", result.stdout)
+            self.assertIn("after accepted landing-entry update, never on touchdown", result.stdout)
+            self.assertIn("unchanged native spawn/arena/stage/target", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+        result = self.run_host(["--source-ground-landing", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("landing-jumps=0 landing-dashes=0 landings=0 resource=10000", result.stdout)
+        self.assertNotIn("ground-landing demo only:", result.stdout)
+        result = self.run_host(["--source-ground-landing", "--source-ground-assets",
+                                "local/content/source-gred-ground-v8", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM9", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
     def test_general_ground_walk_stop_dash_and_interactive_idle(self):
         for mode in ("--demo-source-ground", "--source-ground"):
             result = self.run_host([mode, "--headless", "--frames", "360", "--no-audio"])
@@ -223,6 +248,8 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-ground-ledge", "--source-walk-ledge"],
                        ["--source-ground-jump", "--source-ground-ledge"],
                        ["--source-ground-jump", "--source-jump"],
+                       ["--source-ground-landing", "--source-ground-jump"],
+                       ["--source-ground-landing", "--source-landing"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)
