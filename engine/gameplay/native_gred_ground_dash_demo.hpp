@@ -45,7 +45,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding};
+    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir};
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -104,7 +104,7 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
-        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundLossLanding?NativeBorgMotionPolicy::GroundLossLanding:mode_==Mode::GroundLossJump?NativeBorgMotionPolicy::GroundLossJump:mode_==Mode::GroundLossSurface?NativeBorgMotionPolicy::GroundLossSurface:mode_==Mode::GroundSurface?NativeBorgMotionPolicy::GroundSurface:mode_==Mode::GroundWindupEntryFloor?NativeBorgMotionPolicy::GroundWindupEntryFloor:mode_==Mode::GroundRelaunchFloor?NativeBorgMotionPolicy::GroundRelaunchFloor:mode_==Mode::GroundRelaunch?NativeBorgMotionPolicy::GroundRelaunch:mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
+        if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundLossAir?NativeBorgMotionPolicy::GroundLossAir:mode_==Mode::GroundLossLanding?NativeBorgMotionPolicy::GroundLossLanding:mode_==Mode::GroundLossJump?NativeBorgMotionPolicy::GroundLossJump:mode_==Mode::GroundLossSurface?NativeBorgMotionPolicy::GroundLossSurface:mode_==Mode::GroundSurface?NativeBorgMotionPolicy::GroundSurface:mode_==Mode::GroundWindupEntryFloor?NativeBorgMotionPolicy::GroundWindupEntryFloor:mode_==Mode::GroundRelaunchFloor?NativeBorgMotionPolicy::GroundRelaunchFloor:mode_==Mode::GroundRelaunch?NativeBorgMotionPolicy::GroundRelaunch:mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
         else
         producer_=world.new_motion_producer(mode_==Mode::WalkLedge?NativeBorgMotionPolicy::WalkLedge:mode_==Mode::WindupEntryPush?NativeBorgMotionPolicy::WindupEntryPush:mode_==Mode::WindupPositiveFloor?NativeBorgMotionPolicy::WindupPositiveFloor:mode_==Mode::WindupEntryFloor?NativeBorgMotionPolicy::WindupEntryFloor:mode_==Mode::AirDashFloor?NativeBorgMotionPolicy::AirDashFloor:mode_==Mode::RelaunchFloor?NativeBorgMotionPolicy::RelaunchFloor:mode_==Mode::RelaunchEntrySurface?NativeBorgMotionPolicy::RelaunchEntryPush:mode_==Mode::RelaunchSurface?NativeBorgMotionPolicy::RelaunchPush:mode_==Mode::ActiveSurface?NativeBorgMotionPolicy::ActivePush:mode_==Mode::WindupSurface?NativeBorgMotionPolicy::WindupPush:mode_==Mode::RecoverySurface?NativeBorgMotionPolicy::RecoveryPush:mode_==Mode::FallingSurface?NativeBorgMotionPolicy::FallHistoryPush:mode_==Mode::Steep?NativeBorgMotionPolicy::StaticPush:relaunch_mode(mode_)?NativeBorgMotionPolicy::Relaunch:mode_==Mode::AirDash?NativeBorgMotionPolicy::AirDash:mode_==Mode::Jump?NativeBorgMotionPolicy::Jump:
             mode_==Mode::VerticalJump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
@@ -224,7 +224,8 @@ public:
                     }else return fail(error,"unreviewed landing interruption");
                 }else if(admission.selector==15){
                     if(observed.grounded||!s.jump.cached87)return fail(error,"air dash before accepted takeoff is not enabled");
-                    if(ground_air_mode(mode_)&&s.ground_timer698>0&&(s.jump.falling_after_ground_loss||controller_landing_jump_mode(mode_)))
+                    if(ground_air_mode(mode_)&&!controller_ground_loss_air_mode(mode_)&&s.ground_timer698>0&&
+                       (s.jump.falling_after_ground_loss||controller_landing_jump_mode(mode_)))
                         return fail(error,"air dash with unresolved positive ground-loss timer698 is not enabled");
                     CharacterMovementHeading heading;
                     if(!character_movement_heading(input_,motion_,admission.direction58f,CharacterMovementHeadingMode::OctantDash,frame,&heading,error)||!heading.has_direction)return fail(error,"octant air-dash heading refused");
@@ -557,7 +558,8 @@ public:
     }
 private:
     static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
-    static bool controller_landing_dash_mode(Mode mode){return mode==Mode::GroundLossLanding;}
+    static bool controller_ground_loss_air_mode(Mode mode){return mode==Mode::GroundLossAir;}
+    static bool controller_landing_dash_mode(Mode mode){return mode==Mode::GroundLossLanding||controller_ground_loss_air_mode(mode);}
     static bool controller_landing_jump_mode(Mode mode){return mode==Mode::GroundLossJump||controller_landing_dash_mode(mode);}
     static bool controller_ground_loss_surface_mode(Mode mode){return mode==Mode::GroundLossSurface||controller_landing_jump_mode(mode);}
     static bool controller_surface_mode(Mode mode){return mode==Mode::GroundSurface||controller_ground_loss_surface_mode(mode);}
@@ -796,8 +798,9 @@ private:
         }else if(selector==17){
             if(s.vm.state().actor.control1[0]){if(error)*error="unreviewed ground-motion recovery control";return false;}
             if(entry){s.turn.rate7e=s.turn.delta5aa=0;}
-            if(!character_movement_heading(input_,motion_,u8((held>>16)&15),CharacterMovementHeadingMode::Held,frame,&heading,error)||
-                !gred_jump_falling_drift(motion_,heading,&s.motion))return false;
+            if(!character_movement_heading(input_,motion_,u8((held>>16)&15),CharacterMovementHeadingMode::Held,frame,&heading,error))return false;
+            if(controller_ground_loss_air_mode(mode_)&&s.ground_timer698>0)heading.has_direction=false;
+            if(!gred_jump_falling_drift(motion_,heading,&s.motion))return false;
             if(heading.has_direction)evidence.drift_heading=heading.desired5ac;
         }
         evidence.move_speed=s.motion.speed44;evidence.vertical_before=s.motion.vertical48;evidence.travel5ae=s.motion.travel5ae;
@@ -814,11 +817,12 @@ private:
             (active_surface_mode(mode_)&&selector==16&&!entry)||(mode_==Mode::WindupEntryPush&&selector==15&&entry);
         if((air_dash_floor_mode(mode_)||controller_floor_mode(mode_))&&selector!=17){
             GRedSurfaceContact contact;
-            if(!gred_air_dash_static_contact(motion_,ground,before,s.motion,selector,s.air_dash.contact_callback,push_enabled,&contact,error))return false;
+            const f32 contact_timer=controller_ground_loss_air_mode(mode_)?s.ground_timer698:0.f;
+            if(!gred_air_dash_static_contact(motion_,ground,before,s.motion,selector,s.air_dash.contact_callback,push_enabled,&contact,error,contact_timer))return false;
             if(contact.kind==GRedSurfaceContactKind::Snapped){
                 if(selector==15&&entry&&!windup_entry_floor_mode(mode_)&&!controller_windup_entry_floor_mode(mode_)){if(error)*error="wind-up entry floor contact is not enabled";return false;}
                 s.air_dash_floor=NativeBorgAirDashFloor{s.motion.position,s.motion.vertical48,s.motion.vertical_change50,
-                    {contact.surface.height,contact.surface.normal,contact.surface.triangle},contact.angle};
+                    {contact.surface.height,contact.surface.normal,contact.surface.triangle},contact.angle,contact_timer};
             }else if(contact.kind==GRedSurfaceContactKind::Pushed)
                 s.static_push=NativeBorgStaticPush{s.motion.position,s.motion.vertical48,
                     {contact.surface.height,contact.surface.normal,contact.surface.triangle},contact.angle,motion_.steep_damping};
@@ -826,7 +830,7 @@ private:
             if(touchdown){
                 s.contact_angle=contact.angle;
                 if(controller_surface_mode(mode_))s.surface_landing=NativeBorgSurfaceLanding{s.motion.position,s.motion.vertical48,s.motion.vertical_change50,
-                    {contact.surface.height,contact.surface.normal,contact.surface.triangle},contact.angle};
+                    {contact.surface.height,contact.surface.normal,contact.surface.triangle},contact.angle,contact_timer};
             }
             contacted=contact.motion;
         }else if(!air_contact(s,ground,before,s.motion,&contacted,&touchdown,error,true,push_enabled)){

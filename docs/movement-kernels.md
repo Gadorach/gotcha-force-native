@@ -84,6 +84,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   plus privately sealed actual AObj/VM root observations. Entry motion25 then
   retained24.5, active/recovery, root holds and done/reset order are unchanged.
   Nonflat ordered-dash terrain, positive698 flight and push remain refused.
+- A separate ground-loss-air policy admits air-dash handoff with retained698.
+  Wind-up/active contact now receives explicit caller timer evidence; default0
+  remains the legacy contract. Positive698 floor/callback contacts use6144,
+  expired contacts10240. Recovery suppresses direct drift while positive, as
+  verified in617E4. Relaunch and steep-push permissions are not inferred.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

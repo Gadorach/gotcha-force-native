@@ -13,6 +13,91 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Owned-timer ground-loss air dash (GFMM9)
+
+`--source-ground-loss-air` / `--demo-source-ground-loss-air` separately admits
+air dash after accepted ground-loss history while698 remains positive. It
+retains the shared controller's established ground/jump/landing/dash/floor
+permissions. Previous modes still refuse this positive-timer handoff.
+
+61338 does not clear698. The same all-role native-accepted countdown therefore
+continues through wind-up/active/recovery instead of disappearing with the
+ground-loss origin bit. Wind-up entry halves44/48 without moving or spending;
+later handoff450 still follows movement and precedes contact, and active50
+precedes motion. VM/resource/timer/contact/pose publish only after exact receipt.
+
+The shared `gred_air_dash_static_contact` now has an explicit timer argument.
+Its default0 preserves all legacy callers; the new live owner supplies actual
+698. Wind-up/active floor evidence carries that same value and native
+acceptance checks6144 while positive or10240 after expiry, with the existing
+pre/final body/terrain checks and caller-specific zero48/no-tail responses.
+Callback landing also uses actual timer/plane evidence. Tests explicitly
+distinguish a45-degree numeric plane accepted at0 from refusal at positive698;
+no default-zero substitution, guessed UP floor or steep fallback is allowed.
+
+Read-only617E4 disassembly at`80061890–800618C8` also suppresses direct676D8
+drift while698 is positive, without skipping0.99 scalar damping or contact.
+The new source/native guards preserve that rule. The complete live routes below
+reach recovery after expiry; no positive-timer low-meter recovery fixture is
+claimed from an injected airborne/resource state.
+
+The default demo retains the previous declared grounded original-stage
+placement x/z−1368.47/−628.674, query reference94.339 and native arena-half4500,
+with unchanged target/stage. It walks down-right from5 until accepted ground-
+loss entry and supplies a genuine right flick122–171. There is no midair
+teleport/rebind or original actor-spawn equivalence claim.
+
+| Accepted tick | Role / actual698 / resource |
+| --- | --- |
+| 120–121 | Ground departure then accepted falling13/698=30/cache1 |
+| 122 | Still ground-loss13,698=29,10000 |
+| 123 | Wind-up entry10: halve old−2 to−1, no translation/cost;698=28,10000 |
+| 129 | Final wind-up movement then450 spend before contact;698=22,9550 |
+| 130 | Active entry11, source30 motion, no callback yet;698=21,9500 |
+| 150–151 | Natural timer decay1→0 during active, not on selector change;8500→8450 |
+| 173 | Released recovery12, actual timer0;7400 |
+| 185 | Actual paired-surface callback touchdown, captured12/cache1;7400 |
+| 186 | Separate accepted landing8/cache0, still7400 |
+| 208–600 | Shared idle0 and common grounded recovery10000 |
+
+`native_source_ground_loss_air_owner` tests five600-update genuine routes:
+right/left handoffs with callback185/183; shorter release with callback176;
+a later handoff with callback186; and a roof-origin exact-expiry handoff37,
+normal wind-up/active snaps and callback73. The earlier mode's prior-frame
+expiry refusal remains unchanged. These are bounded native placement/input/
+clock fixtures, not whole-frame or original-hardware equivalence.
+
+A later ground-loss flick also produces genuine wind-up snaps on ticks150/151
+with timers2/1. The native gate rejects forged zero timers or coherent45-degree
+metadata. That route later reaches an unsupported raised-side response on158
+and still refuses and retires authority; geometry is not edited or flattened to
+make it pass. Steep push, raised-side/clipped/unknown contacts, positive698
+relaunch, ground-loss relaunch, nonflat ordered dash and combat remain refused.
+No other Borg inherits G-Red's movement-family or timer/contact semantics.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-loss-air-host
+build/source-ground-loss-air-host/gf_native \
+  --demo-source-ground-loss-air --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds, corrected targeted host integration,
+600-tick demo and unchanged64-tick ordinary duel smoke passed. The targeted
+test explicitly checks actual expiry on151 (timer1 on150), rather than an
+off-by-one expectation.
+Contact Sheet48 contains actual isolated offscreen GL frames123/130/150/151/
+173/185/186/208 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-loss-air-v1/contact-sheet-48.png`;
+captures, game assets and private evidence are not published.
+All six isolated sanitizer binaries passed, including prior landing-input
+ownership and air-floor/air-dash/surface/world regressions. The new owner passed
+21371 checks across five600-update genuine routes plus old-policy, expiry,
+positive-floor gate and raised-side refusal boundaries.
+All160 isolated Python tests passed, including49 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged; assets, captures, private evidence,
+builds and unrelated Story/preparation work are excluded.
+
 ## Retained-timer ground-loss landing jump/dash (GFMM9)
 
 `--source-ground-loss-landing` / `--demo-source-ground-loss-landing` separately

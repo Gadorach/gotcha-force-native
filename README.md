@@ -28,15 +28,15 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ground-loss-landing` (or
-`--demo-source-ground-loss-landing --headless --frames 600`), requiring GFMM9.
-After accepted landing entry, the shared controller can jump or start an
-owned-root ground dash while698 remains positive. Timer and actual post-VM
-root observations stay independently bound to native acceptance; there is no
-touchdown skip, forced reset or displacement-derived root speed.
+The latest opt-in lab is `--source-ground-loss-air` (or
+`--demo-source-ground-loss-air --headless --frames 600`), requiring GFMM9.
+After accepted ground-loss history, the shared controller can air dash while
+698 remains positive without clearing it. Wind-up/active floor and recovery
+callback contacts use the actual timer-dependent plane gate, and positive
+recovery suppresses direct drift. Existing landing jump/dash support is retained.
 The demo declares grounded original-stage placement/query reference and4500
 native bounds, with unchanged target/stage and no midair teleport/rebind.
-Push, ground-loss relaunch, positive698 flight/relaunch, nonflat dash, combat, clipping and
+Push, ground-loss relaunch, positive698 relaunch, nonflat dash, combat, clipping and
 unsupported contacts remain refused.
 Older modes retain their narrower permissions and native proxies stay labelled.
 Other Borgs do not inherit G-Red's recovered mappings.

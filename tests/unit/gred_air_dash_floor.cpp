@@ -67,6 +67,25 @@ int main(){
         check(!gred_air_dash_static_contact(p,ground,before,proposed,selector,false,false,&contact,&error),
             "caller push opt-in remains required");
     }
+    auto slope=stage_ground_fixture::triangle(0);const f32 diagonal=std::sqrt(2.f);
+    for(auto& v:slope.vertices)v[1]=-v[0];
+    slope.plane={1/diagonal,1/diagonal,0,0};load(floor,{slope});
+    before.position[1]=205;proposed=before;proposed.position[1]=195;proposed.vertical48=-10;
+    proposed.vertical_change50=p.air[11];ground.actor.current24=ground.actor.previous30=205;
+    for(u8 selector:{u8(15),u8(16)}){
+        check(gred_air_dash_static_contact(p,ground,before,proposed,selector,false,false,&contact,&error)&&
+            contact.kind==GRedSurfaceContactKind::Snapped&&contact.angle>6144&&contact.angle<=10240,
+            "default declared-zero timer preserves existing AC floor contract");
+        const auto prior=contact.motion.position;
+        check(!gred_air_dash_static_contact(p,ground,before,proposed,selector,false,false,&contact,&error,7)&&contact.motion.position==prior,
+            "explicit positive698 reaches shared AE gate, not a default-zero substitution");
+    }
+    check(gred_air_dash_static_contact(p,ground,before,proposed,16,true,false,&contact,&error,0)&&contact.kind==GRedSurfaceContactKind::Landed,
+        "explicit zero698 callback uses original AC landing gate");
+    check(!gred_air_dash_static_contact(p,ground,before,proposed,16,true,false,&contact,&error,7),
+        "positive698 callback also uses stricter AE gate");
+    check(!gred_air_dash_static_contact(p,ground,before,proposed,15,false,false,&contact,&error,-1),
+        "caller cannot supply an invalid timer");
     ground.actor.attached1db=1;
     check(!gred_air_dash_static_contact(p,ground,before,proposed,15,false,true,&contact,&error),
         "attachment and moving-platform domain remains refused");
