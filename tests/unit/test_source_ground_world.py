@@ -190,6 +190,40 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("requires GFMM9", result.stdout)
         self.assertNotIn("accepted native tick=", result.stdout)
 
+    def test_ground_loss_surface_binds_angle_to_actual_timer_and_separate_landing(self):
+        for tick, touchdowns, surfaces, departures, entries, timer, angle, landings, selector, program, cached in (
+                (120, 0, 0, 1, 0, 0, 0, 0, 2, 1, 0),
+                (121, 0, 0, 1, 1, 30, 0, 0, 6, 13, 1),
+                (138, 0, 0, 1, 1, 13, 0, 0, 6, 13, 1),
+                (139, 1, 1, 1, 1, 12, 3911, 1, 7, 13, 1),
+                (140, 1, 1, 1, 1, 11, 3911, 1, 7, 8, 0),
+                (150, 1, 1, 1, 1, 1, 3911, 1, 7, 8, 0),
+                (151, 1, 1, 1, 1, 0, 3911, 1, 7, 8, 0),
+                (220, 1, 1, 1, 1, 0, 3911, 1, 0, 0, 0),
+                (600, 1, 1, 1, 1, 0, 3911, 1, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-loss-surface", "--headless", "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-loss-landings={touchdowns} surface-callbacks={surfaces} departures={departures} entries={entries} timer698={timer:.1f} angle-s16={angle} landings={landings} resource=10000 selector={selector}", result.stdout)
+            self.assertIn(f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("root-updates=0", result.stdout)
+            self.assertIn("declared original-stage grounded placement/query reference", result.stdout)
+            self.assertIn("native arena-half4500", result.stdout)
+            self.assertIn("no midair teleport/rebind", result.stdout)
+            self.assertIn("no push/positive698-air-or-landing-input/combat authority", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+            if tick >= 139:
+                self.assertRegex(result.stdout, r"G-Red-position=-?[\d.]+/16\.71/-?[\d.]+")
+        result = self.run_host(["--source-ground-loss-surface", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("controller-loss-landings=0 surface-callbacks=0 departures=0 entries=0 timer698=0.0 angle-s16=0 landings=0 resource=10000", result.stdout)
+        self.assertNotIn("ground-loss-surface demo only:", result.stdout)
+        result = self.run_host(["--source-ground-loss-surface", "--source-ground-assets",
+                                "local/content/source-gred-ground-v8", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM9", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
     def test_ground_surface_requires_paired_plane_for_actual_callback_landing(self):
         for tick, surfaces, angle, air, landings, meter, selector, program, cached in (
                 (48, 0, 0, 0, 0, 9550, 6, 6, 1),
@@ -441,6 +475,8 @@ class SourceGroundWorldTests(unittest.TestCase):
                        ["--source-ground-windup-entry-floor", "--source-windup-positive-floor"],
                        ["--source-ground-surface", "--source-ground-windup-entry-floor"],
                        ["--source-ground-surface", "--source-surface"],
+                       ["--source-ground-loss-surface", "--source-ground-surface"],
+                       ["--source-ground-loss-surface", "--source-walk-ledge"],
                       ["--source-ground-assets", "unused"]):
             result = self.run_host([*flags, "--headless", "--no-audio"])
             self.assertEqual(result.returncode, 2, result.stdout)

@@ -13,6 +13,90 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Timer-bound ground-loss surface landing (GFMM9)
+
+`--source-ground-loss-surface` / `--demo-source-ground-loss-surface` separately
+adds eligible selected-plane landing for the combined controller's ground-loss
+path. The earlier ordinary-surface mode retains its flat-only ground-loss
+restriction. Original stage/model/profile bytes and all other Borg mappings
+remain unchanged.
+
+Read-only initialized-DOL disassembly at`80067888–800678AC` selects classAE when
+698 is positive and classAC otherwise. Qualified normal-G-Red operands are6144
+and10240 respectively. Lower falling uses the existing program13/history
+handoff,0.99 retained scalar and positive-timer direct-drift suppression.
+This is not ordinary jump6 or proof that original actor constructors executed.
+
+The shared source contact now receives the actual owned ground-loss countdown
+only in the new mode. `NativeBorgSurfaceLanding.timer698` must equal the same
+current-frame `NativeBorgWalkLedge.timer698` that independently matches prior
+native acceptance and30→0 decay. Native validation checks the paired selected
+plane, pre-response motion, signed16 angle, approach test and pre/final native
+body/terrain budget against that gate. Matching forged zero timers cannot evade
+the history chain; coherent45-degree metadata cannot borrow AC while positive
+698 requires AE. No default-UP floor or steep-response fallback is invented.
+
+65E64 clears69C/48/50, not698. Touchdown therefore keeps the remaining timer,
+captured13 and cached87; accepted landing8 clears airborne history separately
+while timer decay continues. Jump/dash landing cancellation during positive698
+is deliberately refused in this mode until its follow-up lifetime is reviewed.
+Natural expiry restores the earlier accepted-landing input permission. Positive
+698 air-dash overlap and ground-loss relaunch also remain refused.
+
+The default scripted fixture uses a declared **grounded** native placement at
+x/z−1368.47/−628.674 with query reference94.339 and arena-half4500. These are
+native demo assumptions on unchanged original terrain, not an original spawn
+or forced actor height. Target/stage bytes are unchanged; no midair teleport or
+rebind is used. D-pad down-right is held from5 until accepted falling entry,
+then released. Interactive mode retains ordinary native spawn/bounds.
+
+| Accepted tick | Role / timer / contact |
+| --- | --- |
+| 120 | Last walking motion leaves the ledge; retained Y, no immediate air integration |
+| 121 | Priority correction/falling13 entry; native-owned frame start,698=30/cache1 |
+| 138 | Still falling13,698=13, no fabricated landing or refill |
+| 139 | Actual callback on inclined original plane at y≈16.71319, angle3911;698=12/cache1 |
+| 140 | Separate accepted landing8/cache0;698=11, not reset |
+| 150–151 | Landing continues while698 decays1→0 |
+| 220–600 | Shared idle0, timer0, no flight/combat/resource spending |
+
+`native_source_ground_loss_surface_owner` tests six600-update genuine original-
+stage routes. Callback timer/angle pairs are12/3911,7/3676,2/2038,0/354,
+4/0 and0/0. Placements/query references and4500 bounds are explicit native
+fixtures, never midair state injection. One positive-timer route retains held
+direction to verify direct-drift suppression/body-heading independence.
+Tests cover timer/history/plane/scalar/receipt tampering, the stricter inter-gate
+refusal, both prior-mode refusals, continuing landing/idle, positive landing-
+input refusal, natural expiry and the existing positive698 air-overlap refusal.
+The declared source resource remains on the shared kernel; a full meter here
+does not certify an original actor/resource lifecycle.
+
+Steep push, ground-loss relaunch, positive698 air/landing input, raised-surface/
+side-entry, clipping, combat and unknown variants remain refused. Native
+setup/input/clocks/libm/camera/target/contact approximations remain labelled,
+not original-hardware or whole-game equivalence. This does not establish hover
+or perpetual-flight contact rules for any Borg.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-loss-surface-host
+build/source-ground-loss-surface-host/gf_native \
+  --demo-source-ground-loss-surface --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds, targeted new host integration,600-tick demo
+and unchanged64-tick ordinary duel smoke passed. All six isolated sanitizer
+binaries passed, including prior surface/walk-ledge owners and shared surface/
+ground-correction/world regressions. The new owner passed22012 checks across
+the six600-update routes plus timer/gate/history and input-refusal boundaries.
+Contact Sheet45 contains actual isolated offscreen GL frames120/121/138/139/
+140/150/151/220 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-loss-surface-v1/contact-sheet-45.png`;
+captures, game assets and private evidence are not published.
+All157 isolated Python tests passed, including46 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged; assets, captures, private evidence,
+builds and unrelated Story/preparation work are excluded.
+
 ## Combined paired static-surface landing (GFMM9)
 
 `--source-ground-surface` / `--demo-source-ground-surface` separately adds

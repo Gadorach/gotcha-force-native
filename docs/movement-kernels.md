@@ -69,6 +69,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   approach test, not a guessed UP or equal-height floor. Ground-loss landing
   retains its existing flat-only subset; steep push and positive698 overlap
   remain refused. Touchdown, landing entry and recovery are still separate.
+- A separate combined ground-loss-surface policy binds callback plane evidence
+  to the owned frame-history countdown: positive698 selects6144, expired698
+  selects10240. Touchdown retains that timer; landing8 continues its decay.
+  Positive698 air overlap and landing cancellation stay refused. This does not
+  enable steep push or generalize the gate to other Borgs.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
