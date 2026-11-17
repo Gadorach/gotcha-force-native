@@ -39,6 +39,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   interruption only after a matching prior landing callback receipt, never on
   touchdown. It reuses source input/resource/VM/root paths; older jump and ground
   policies retain their refusals and no air-dash/relaunch capability is inherited.
+- A separate combined ground-air policy now admits source air-dash wind-up/
+  active/recovery with exact scalar/timer/resource/endpoint evidence and distinct
+  post-air falling lineage. Relaunch, floor/push responses and positive ground-
+  loss698 overlap remain refused; no earlier policy is widened.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

@@ -13,6 +13,90 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Combined ground/air-dash controller (GFMM9)
+
+`--source-ground-air` / `--demo-source-ground-air` joins the recovered normal
+G-Red air-dash wind-up/active/recovery subset to the existing ground/ledge/jump/
+accepted-landing-input controller. It reuses the same VM, motion driver, resource,
+contact/receipt and renderer systems. Older modes retain their narrower policies.
+
+This capability is deliberately independent of relaunch and the later floor/
+push labs. Wind-up/early-active null-callback floor response, steep push, relaunch,
+nonflat landing, native clipping and unknown root/geometry variants refuse.
+61338 does not clear698: a new air dash during positive ground-loss timer698 also
+refuses until that overlap has its own qualified contact contract. This is not a
+new universal movement-family rule.
+
+The native air payload distinguishes source selectors15/16/17 from jump and
+ground-loss evidence. It independently checks actual entry/continuation order,
+stage/timer/callback readiness, pre-integration scalar/velocity, −0.05 active
+deceleration, −0.07 wind-up/active gravity,0.99 recovery damping/4-unit drift/−1
+gravity, exact endpoints and selected flat contact. Wind-up entry halves44/48
+without moving or applying gravity. The450 handoff cost occurs after the final
+wind-up motion; active50 cost precedes motion. No old jump/root payload can mint
+that authority, and receipts compare the complete air evidence.
+
+Recovery tests lower completion after motion/contact. A real callback touchdown
+remains separate from “recovery completed while still airborne”; the latter
+selects the distinct post-air program13 falling path. Its retained scalar can
+exceed ordinary jump's8-unit bound, so the explicit air-origin lineage—not a
+blanket relaxed jump limit—carries that value through falling/landing. Copied
+ground-loss origin/timer or ordinary-jump metadata cannot substitute for it.
+Resource recovery/costs and all VM/phase/counter/pose changes remain staged until
+matching native acceptance.
+
+The unchanged-spawn/arena/stage/target demo holds the source jump/rise input5–349
+and supplies two genuine air flicks45–86 and90–131, then recovery and landing:
+
+| Accepted tick | Role / programs / resource |
+| --- | --- |
+| 46 | Wind-up entry10: old18→9 velocity, no translation/cost; meter7150 |
+| 51 | Last wind-up motion10, then450 spend; next selector16, meter6700 |
+| 52 | Active entry11 moves30, retains29.95; zero48 then−0.07, meter6650 |
+| 88 | Recovery12 after callback-ready active release; meter4900 |
+| 91 | Fresh flick interrupts recovery with another wind-up10 |
+| 100 | Second active entry11, meter4400 |
+| 133 | Second recovery12, meter2800 |
+| 159 | Actual flat callback touchdown, captured12/cache1 |
+| 160 | Separate landing8/cache0, still2800 |
+| 182–600 | Shared idle0, one landing; common recovery10000 |
+
+The same world/producer/binding is retained, with no airborne teleport or edited
+stage/target. A high-jump route reaches recovery completion first and enters
+post-air falling at150 before touchdown168. A held-active resource-depletion
+route enters recovery156 with meter0, falls after completion185 and lands196.
+That long held-active/depletion fixture declares native arena-half4500 to avoid
+the ordinary endpoint bound; it does not move/teleport the actor or edit stage
+data. The default two-dash demo retains ordinary arena/spawn settings.
+These are declared native input/clock/libm/camera/target/contact fixtures, not
+original hardware, full actor construction or whole-frame equivalence.
+
+`native_source_ground_air_owner` covers those three600-update original-stage
+routes plus positive698 refusal, phase/root/floor/push separation, early-spend/
+movement/callback tampering, exact shared costs/recovery, airborne completion
+lineage, receipt/pose retirement and stable idle. No extra animation
+classification or other-Borg flight/hover inference is introduced.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-air-host-v1
+build/source-ground-air-host-v1/gf_native \
+  --demo-source-ground-air --headless --frames 600 --no-audio
+```
+
+Contact Sheet39 shows actual offscreen GL frames46/51/52/88/91/133/159/182
+without taking desktop/classifier focus. Isolated native-only wind-up46 and
+touchdown159 match the full working tree pixel-for-pixel. Captures remain local:
+`local/recomp-evidence/contact-sheets/source-ground-air-v1/contact-sheet-39.png`.
+The isolated new-owner test passed11768 checks across its three600-update
+original-stage routes plus positive698 refusal. The isolated host suite passed
+all151 Python tests, including40 opt-in host integrations. Host/all-header builds
+and the unchanged64-tick ordinary duel smoke also passed.
+All20 isolated sanitizer binaries passed, including prior controller owners and
+legacy air-dash/jump/landing kernels. Original motion-bank/GFMM1–9 bytes remain
+unchanged; assets, private evidence, captures, builds and unrelated work are
+excluded from the checkpoint.
+
 ## Accepted-entry landing jump/dash responsiveness (GFMM9)
 
 `--source-ground-landing` / `--demo-source-ground-landing` adds the already

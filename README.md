@@ -28,14 +28,14 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ground-landing` (or
-`--demo-source-ground-landing --headless --frames 600`), requiring a local GFMM9
-pack. The shared ground/ledge/jump controller can start a new jump or owned-root
-ground dash after an accepted landing-entry update, never on touchdown alone.
-Exact target4/12 evidence, source buffered intent and cached-history resource
-recovery stay separate. Air dash/relaunch, combat, nonflat landing, clipping and
-unowned variants remain refused. Demo spawn/arena/stage/target are unchanged;
-there is no teleport/rebind. Older modes retain their narrower restrictions.
+The latest opt-in lab is `--source-ground-air` (or
+`--demo-source-ground-air --headless --frames 600`), requiring a local GFMM9 pack.
+The shared ground/ledge/jump/accepted-landing controller now includes source
+air-dash wind-up/active/recovery with exact phase/scalar/timer/resource evidence.
+Recovery completion and actual touchdown remain distinct. Relaunch, floor snap/
+push, positive ground-loss698 overlap, combat, nonflat landing and clipping remain
+refused. Demo spawn/arena/stage/target are unchanged, with no teleport/rebind.
+Older modes retain their narrower permissions and native proxies stay labelled.
 Other Borgs do not inherit G-Red's recovered mappings.
 
 Some development demonstrations use private generated metadata profiles and
