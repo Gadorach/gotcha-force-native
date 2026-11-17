@@ -74,6 +74,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   selects10240. Touchdown retains that timer; landing8 continues its decay.
   Positive698 air overlap and landing cancellation stay refused. This does not
   enable steep push or generalize the gate to other Borgs.
+- A separate ground-loss-jump policy permits target4 jump only after accepted
+  landing entry while698 remains positive. Every offered role carries the
+  native-accepted timer chain, including takeoff without ground-loss metadata.
+  Selector changes do not clear it. Positive698 target12 dash/flight/relaunch
+  stays refused; actual ascent alone spends jump resource.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

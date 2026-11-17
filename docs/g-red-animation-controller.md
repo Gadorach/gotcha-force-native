@@ -13,6 +13,87 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Retained-timer ground-loss landing jump (GFMM9)
+
+`--source-ground-loss-jump` / `--demo-source-ground-loss-jump` separately permits
+the reviewed target4 jump after an accepted ground-loss landing8 entry while
+698 is still positive. Earlier modes retain their refusal. This is jump-only:
+positive698 target12 dash, air dash and relaunch remain refused, as do steep
+push, ground-loss relaunch, clipping, combat and unsupported variants.
+
+Read-only initialized-DOL disassembly of65E64,60228,6A750 and5F978 shows no698
+reset in touchdown, landing entry, selector change or normal takeoff. Entry
+clears the appropriate old motion/cache/selector fields but retains this
+separate countdown. New takeoff2 does not integrate air motion or spend jump
+resource; actual rising4 entry later applies launch15 and costs150.
+
+The new policy requires `NativeBorgMotionOffer.controller_timer698` on **every
+role**, not just the ground-loss ledger. Native acceptance derives the expected
+value from the previous accepted same-world/same-producer offer and fixed native
+tick decay; only a qualified ground-loss entry resets it30. Ledger and callback
+timer evidence must agree with that carrier, and receipts compare it exactly.
+Thus a fresh takeoff cannot discard698 simply by clearing ground-loss origin or
+omitting walk metadata. Ordinary callback contacts still use the actual carried
+gate. Source VM/resource/timer/pose changes remain staged until matching receipt.
+
+This uses the same source admission, accepted-landing check, VM, movement,
+resource and renderer. No touchdown skip, direct air launch, forced698 reset,
+early150 spend or extra animation classification is introduced. Positive698
+flight stays refused even if a new jump has cleared the ground-loss origin bit.
+
+The scripted fixture retains the previous declared grounded original-stage
+placement/query reference and4500 native bounds; target/stage data are unchanged.
+It walks down-right from5 until accepted ground-loss entry, then genuinely holds
+jump140–154 after accepted landing8. There is no midair teleport/rebind and no
+original actor spawn or whole-frame equivalence claim.
+
+| Accepted tick | Role / timer / resource |
+| --- | --- |
+| 139 | Ground-loss callback13/cache1 on original incline;698=12,10000 |
+| 140 | Separate accepted landing8/cache0;698=11 |
+| 141 | Jump target4 selects shared takeoff2, no movement/cost;698=10 |
+| 150–151 | Takeoff continues while698 naturally decays1→0 |
+| 152 | Lower takeoff done selects5, captured2/cache0, still10000 |
+| 153 | Actual rising4 launch, cached87=1,150 spend;9850 |
+| 154–155 | Continued rising spends100 per update;9650 |
+| 156 | Released ordinary falling6, not ground-loss13, still9650 |
+| 194 | Second real surface callback, captured6/cache1;9650 |
+| 195 | Separate second landing8/cache0, still9650 |
+| 220–600 | Shared idle0, common grounded recovery10000 |
+
+`native_source_ground_loss_jump_owner` tests four600-update genuine routes:
+jump entry timers10,5,2 and0 with second touchdowns194,169,203 and148. The
+last route exercises natural expiry on the accepted jump boundary rather than
+a positive carry. It checks exact shared resource timing, complete per-role
+timer witnesses, stale/missing/reset metadata and receipt refusals, both
+landings/pose lifetimes, older-policy rejection, touchdown-skip refusal and
+continued positive698 dash/air-overlap refusal. Fresh placements and arena
+references remain explicit native assumptions on unchanged original terrain.
+
+Native setup/input/clocks/libm/camera/target/contact approximations remain
+labelled, not original-hardware or whole-game equivalence. Other Borgs do not
+inherit these timer, landing, hover or flight semantics.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 1 \
+  --output build/source-ground-loss-jump-host
+build/source-ground-loss-jump-host/gf_native \
+  --demo-source-ground-loss-jump --headless --frames 600 --no-audio
+```
+
+The isolated host/all-header builds, targeted new host integration,600-tick demo
+and unchanged64-tick ordinary duel smoke passed.
+All six isolated sanitizer binaries passed, including prior ground-loss surface
+and accepted-landing owners plus landing/jump/world regressions. The new owner
+passed19048 checks across its four600-update routes and refusal boundaries.
+Contact Sheet46 contains actual isolated offscreen GL frames139/140/141/150/
+153/194/195/220 without taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-loss-jump-v1/contact-sheet-46.png`;
+captures, game assets and private evidence are not published.
+All158 isolated Python tests passed, including47 host integrations. Original
+motion-bank/GFMM1–9 bytes are unchanged; assets, captures, private evidence,
+builds and unrelated Story/preparation work are excluded.
+
 ## Timer-bound ground-loss surface landing (GFMM9)
 
 `--source-ground-loss-surface` / `--demo-source-ground-loss-surface` separately
