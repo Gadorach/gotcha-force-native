@@ -11,6 +11,32 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_active_push_keeps_cost_recovery_and_landing_separate(self):
+        for tick, active, recovery, landings, meter, selector, program, cached in (
+                (156, 0, 0, 0, 1900, 16, 11, 1),
+                (157, 1, 0, 0, 1850, 16, 11, 1),
+                (158, 1, 1, 0, 1850, 17, 12, 1),
+                (159, 1, 1, 1, 1850, 7, 12, 1),
+                (160, 1, 1, 1, 1850, 7, 8, 0),
+                (360, 1, 1, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-active-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-active-pushes={active} recovery-pushes={recovery} starts=1 "
+                          f"landings={landings} resource={meter} selector={selector} "
+                          f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("no active entry, wind-up entry, active relaunch, ground-loss or positive698 push authority",
+                          result.stdout)
+
+    def test_interactive_active_push_has_no_demo_input(self):
+        result = self.run_host(["--source-ground-active-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-active-pushes=0 recovery-pushes=0 starts=0", result.stdout)
+        self.assertNotIn("ground-active-push demo only:", result.stdout)
+
     def test_combined_windup_push_keeps_timer_handoff_separate(self):
         for tick, pushes, landings, meter, selector, program, cached in (
                 (85, 0, 0, 8350, 15, 10, 1),

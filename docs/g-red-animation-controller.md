@@ -13,6 +13,40 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Continued active air-dash push in the combined controller (GFMM9)
+
+`--source-ground-active-push` adds descending steep contact during continued
+active16/program11 at zero698. The combined path checks the 50 meter spend,
+timer, readiness and depletion state before validating the selected-plane
+response. The push applies .9 to the integrated scalar and vertical speed and
+clears planar acceleration for the following update. It does not replay active
+entry, refill the meter or land the actor. Older policies remain unchanged.
+
+The demo uses grounded native placements for both actors and wider bounds on the
+unchanged stage. The ready active dash pushes at tick157 with meter1900→1850.
+Neutral input takes the existing recovery branch at158, which pushes again with
+its own gravity and no cost. Touchdown follows at159, landing8 at160, and idle
+refills normally. The owner also verifies a separate relaunch input after the
+accepted active push. Pre-readiness and depletion during contact are covered by
+numeric fixtures, not by this rendered route.
+
+Continued wind-up, recovery and falling pushes are retained. Active entry,
+wind-up entry, active relaunch, ground-loss and positive698 pushes remain
+unsupported.
+
+```sh
+build/direct/gf_native --demo-source-ground-active-push --headless --frames 360 --no-audio
+```
+
+[Contact Sheet 55](../local/recomp-evidence/contact-sheets/source-ground-active-push-v1/contact-sheet-55.png)
+captures the active push, separate recovery push and landing in offscreen
+OpenGL. The capture stays local and did not take desktop or classifier focus.
+
+The isolated host and all-header builds, three targeted host tests, and the
+unchanged 64-tick duel smoke passed. The active-contact sanitizer test passed
+2,741 checks, including refusal of incorrect timer, cost, readiness and
+contact records without advancing the world.
+
 ## Continued air-dash wind-up push in the combined controller (GFMM9)
 
 `--source-ground-windup-push` adds descending steep contact during continued

@@ -124,6 +124,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   Wind-up entry and active dash have separate push permissions and remain
   refused. Timer expiry on a verified push can hand off to active or relaunch
   on the following update without replaying the wind-up entry.
+- The ground-active-push policy adds descending continued active16 pushes at
+  zero698. Native acceptance verifies cost, timer, readiness and depletion
+  independently of surface response. A subsequent active or recovery update
+  uses the damped scalar and cleared planar acceleration. Neither dash entry
+  acquires push permission, and landing still requires separate contact.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
