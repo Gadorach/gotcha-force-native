@@ -28,13 +28,13 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ground-relaunch-fall-push` (or
-`--demo-source-ground-relaunch-fall-push --headless --frames 600`), requiring
-GFMM9. After relaunch release, the shared controller can perform a downward
-steep push at zero698 without losing its falling21–24 lineage. It retains
-ordinary and post-air fall pushes. Callback landing stays separate from the
-push. Ground-loss, positive698, and active relaunch or air-dash callback pushes
-remain refused, as do nonflat dash, combat and unsupported contacts.
+The latest opt-in lab is `--source-ground-recovery-push` (or
+`--demo-source-ground-recovery-push --headless --frames 240`), requiring GFMM9.
+It adds descending steep pushes during airborne air-dash recovery at zero698,
+with program12, completion, and landing kept separate. It retains ordinary,
+post-air, and released-relaunch falling pushes. Ground-loss, positive698,
+air-dash wind-up/active and active relaunch pushes remain refused, as do
+nonflat dash, combat and unsupported contacts.
 Older modes retain their narrower permissions and native proxies stay labelled.
 Other Borgs do not inherit G-Red's recovered mappings.
 

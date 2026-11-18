@@ -11,6 +11,31 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_recovery_push_stays_in_program_12_until_landing(self):
+        for tick, pushes, angle, landings, meter, selector, program, cached in (
+                (72, 0, 0, 0, 7650, 17, 12, 1),
+                (73, 1, 11582, 0, 7650, 17, 12, 1),
+                (74, 1, 11582, 1, 7650, 7, 12, 1),
+                (75, 1, 11582, 1, 7650, 7, 8, 0),
+                (240, 1, 11582, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-recovery-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-recovery-pushes={pushes} total-pushes={pushes} starts=1 "
+                          f"angle-s16={angle} timer698=0.0 landings={landings} resource={meter} "
+                          f"selector={selector} programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("no active/wind-up dash, active relaunch, ground-loss or positive698 push authority",
+                          result.stdout)
+
+    def test_interactive_recovery_push_has_no_demo_input(self):
+        result = self.run_host(["--source-ground-recovery-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-recovery-pushes=0 total-pushes=0 starts=0", result.stdout)
+        self.assertNotIn("ground-recovery-push demo only:", result.stdout)
+
     def test_combined_relaunch_release_push_keeps_program_and_landing_separate(self):
         for tick, pushes, angle, landings, meter, selector, program, cached in (
                 (61, 0, 0, 0, 6800, 6, 21, 1),

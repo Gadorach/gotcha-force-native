@@ -13,6 +13,43 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Air-dash recovery push in the combined controller (GFMM9)
+
+`--source-ground-recovery-push` adds descending, airborne selector17 steep
+contact at zero698. It inherits the existing falling push modes without
+granting push authority to wind-up, active dash, active relaunch, ground-loss
+falling, or positive698. The preceding combined mode still refuses contact
+inside recovery. The older `--source-recovery-surface` mode remains unchanged.
+
+Both paths share the program12 recovery, motion, and selected-plane response.
+The combined path verifies the .99 approach, pre-contact motion, projected
+position, and .9 damping against the accepted prior motion and contact records.
+It preserves gravity, clears planar acceleration for the following update, and
+does not spend or refill the meter on contact. Lower-lane completion is tested
+after the push, while the upper update still uses program12. A real landing
+requires a separate contact; simultaneous recovery completion and touchdown
+remain refused.
+
+The demo uses the older recovery fixture's grounded native placements and
+unchanged stage. At accepted tick73 the push keeps program12, selector17,
+cached87, and meter7650. Tick74 accepts a separate touchdown, tick75 switches
+to landing8, and the 240-tick run ends in idle with a full meter. This fixture
+does not demonstrate a push on the completion tick.
+
+```sh
+build/direct/gf_native --demo-source-ground-recovery-push --headless --frames 240 --no-audio
+```
+
+See the offscreen GL
+[contact sheet](../local/recomp-evidence/contact-sheets/source-ground-recovery-push-v1/contact-sheet-53.png)
+for the approach, recovery push, and separate touchdown. The capture stays
+local and did not take desktop or classifier focus.
+
+The isolated host and all-header builds, three targeted host tests, and the
+64-tick duel smoke test passed. The sanitizer recovery test passed 1,240 checks
+across the legacy and combined routes, including refusal of mismatched motion,
+contact, completion and meter records without advancing the world.
+
 ## Released-relaunch zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-fall-push` adds downward selector6 steep contact after

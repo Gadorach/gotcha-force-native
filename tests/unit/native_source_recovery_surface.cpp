@@ -59,8 +59,8 @@ int main(){
     NativeBattleMvp world;NativeBattleMvpView view;NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;NativeBorgSourcePose pose;
     check(view.load(files,art,render,&error),"qualified shared original stage and Borg models");
     BattleMvpConfig config;config.spawn={BattlePoint{44.928558350f,-332.878112793f},BattlePoint{1200,1200}};
-    auto bind=[&](NativeGRedGroundDashDemo::Mode mode){
-        check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,inputs,world,seed,&error,mode),
+    auto bind=[&](NativeGRedGroundDashDemo::Mode mode,const std::string& pack){
+        check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,pack,world,seed,&error,mode),
             "native-only demo placements, fresh same-world source actor/renderer binding");
         check(!source.surface_pushes()&&!source.recovery_pushes()&&!source.dash_fall_pushes()&&!source.relaunch_fall_pushes(),
             "fresh binding clears all committed push counters");
@@ -75,7 +75,7 @@ int main(){
         check(world.step({},false,&view,nullptr,&frame,&offer)&&source.commit(world,view.source_binding(),&error)&&
             source.pose(world,&pose)&&view.update_source(world,pose,&error),"exact native recovery receipt before source state/pose publication");
     };
-    bind(NativeGRedGroundDashDemo::Mode::FallingSurface);bool old_refused=false;
+    bind(NativeGRedGroundDashDemo::Mode::FallingSurface,inputs);bool old_refused=false;
     for(unsigned t=0;t<180&&!old_refused;++t){
         NativeBorgMotionOffer offer;const auto tick=world.tick();const auto selector=source.selector();const auto programs=source.movement_programs();
         if(!prepare(pad_at(t),&offer)){
@@ -85,11 +85,53 @@ int main(){
         }else accept(offer);
     }
     check(old_refused,"GFMM6 does not widen older selector6-only contact mode");
-    bind(NativeGRedGroundDashDemo::Mode::RecoverySurface);u32 push_tick=0,touchdown_tick=0;s16 push_resource=0;
+    const std::string combined_pack="local/content/source-gred-ground-v9";
+    if(files.exists(combined_pack+"/motion.gfmm")){
+        bind(NativeGRedGroundDashDemo::Mode::GroundRelaunchFallPush,combined_pack);
+        while(world.tick()<72){NativeBorgMotionOffer offer;check(prepare(pad_at(world.tick()),&offer),"combined predecessor follows the same recovery route");accept(offer);}
+        NativeBorgMotionOffer refused;const auto retained=pose;
+        check(!prepare(pad_at(72),&refused)&&world.tick()==72&&!source.surface_pushes()&&
+            retained.frame_scope.expired()&&!world.motion_receipt_current(retained.receipt)&&!world.step({},false,&view),
+            "preceding combined mode still refuses contact inside recovery and cannot fall back");
+    }
+    for(bool combined:{false,true}){
+    if(combined&&!files.exists(combined_pack+"/motion.gfmm")){std::puts("source recovery surface: optional qualified GFMM9 absent");continue;}
+    bind(combined?NativeGRedGroundDashDemo::Mode::GroundRecoveryPush:NativeGRedGroundDashDemo::Mode::RecoverySurface,
+        combined?combined_pack:inputs);u32 push_tick=0,touchdown_tick=0;s16 push_resource=0;
+    NativeBorgMotionOffer prior;
     for(unsigned t=0;t<240;++t){
         NativeBorgMotionOffer offer;const auto resource=source.resource();const auto pushes=source.recovery_pushes();const auto programs=source.movement_programs();
         check(prepare(pad_at(t),&offer)&&source.resource()==resource&&source.recovery_pushes()==pushes&&source.movement_programs()==programs,
-            "recovery resource/VM/counter changes remain staged until native acceptance");
+             "recovery resource/VM/counter changes remain staged until native acceptance");
+        if(combined&&offer.kind==NativeBorgMotionKind::AirDashRecoveryPush){
+            const auto& motion=*offer.air_motion;const auto& push=*offer.static_push;
+            const auto before=world.actors()[0];const auto retained=pose;
+            check(offer.controller_timer698==0.f&&prior.air_motion&&prior.air_motion->phase==17&&
+                motion.phase==17&&!motion.entry&&!motion.lower_done&&motion.next_selector==17&&motion.callback&&
+                motion.speed_before==prior.air_motion->speed44&&motion.move_speed==f32(motion.speed_before*bits_to_f32(0x3f7d70a4u))&&
+                motion.speed44==f32(std::max(0.f,std::fma(motion.planar_accel,1.f,motion.move_speed))*push.damping)&&
+                motion.vertical_before==before.vertical_speed&&motion.vertical_accel==-1&&
+                push.vertical_speed==std::max(-30.f,f32(before.vertical_speed-1.f))&&
+                push.damping==bits_to_f32(0x3f666666u)&&offer.vertical_speed==f32(push.vertical_speed*push.damping)&&
+                motion.resource_before==resource&&motion.resource_after==resource,
+                "combined recovery proves .99 motion, .9 response, unchanged meter and unfinished lower phase");
+            const auto rejects=[&](NativeBorgMotionOffer wrong,const char* why){
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==t&&world.actors()[0].position==before.position&&
+                    source.resource()==resource&&source.recovery_pushes()==pushes&&source.movement_programs()==programs&&
+                    !retained.frame_scope.expired()&&world.motion_receipt_current(retained.receipt),why);
+            };
+            auto wrong=offer;wrong.air_motion.reset();rejects(wrong,"recovery push requires the air-motion record");
+            wrong=offer;wrong.static_push.reset();rejects(wrong,"recovery push requires the plane record");
+            wrong=offer;wrong.controller_timer698=1;rejects(wrong,"positive698 does not grant recovery push");
+            wrong=offer;wrong.air_motion->next_selector=6;rejects(wrong,"contact cannot advance unfinished lower recovery");
+            wrong=offer;wrong.air_motion->resource_after=10000;rejects(wrong,"projection cannot refill in air");
+            wrong=offer;wrong.air_motion->speed44=motion.move_speed;rejects(wrong,"projection must damp retained scalar");
+            wrong=offer;wrong.air_motion->control=1;rejects(wrong,"grounded recovery control is unsupported");
+            wrong=offer;++wrong.static_push->surface.triangle;rejects(wrong,"projection requires the selected triangle");
+            wrong=offer;wrong.kind=NativeBorgMotionKind::AirDashActivePush;rejects(wrong,"active dash cannot borrow recovery push");
+            wrong=offer;wrong.kind=NativeBorgMotionKind::AirDashWindupPush;rejects(wrong,"wind-up cannot borrow recovery push");
+        }
         accept(offer);
         if(offer.kind==NativeBorgMotionKind::AirDashRecoveryPush){
             push_tick=world.tick();push_resource=source.resource();
@@ -109,17 +151,24 @@ int main(){
         if(offer.kind==NativeBorgMotionKind::JumpTouchdown){
             touchdown_tick=world.tick();
             check(push_tick&&touchdown_tick==push_tick+1&&source.selector()==7&&world.actors()[0].grounded&&source.resource()==push_resource&&
-                source.recovery_pushes()==1,"next original lower floor gives real touchdown, no instant refill or replayed push");
+                 source.recovery_pushes()==1,"next original lower floor gives real touchdown, no instant refill or replayed push");
+            if(combined)check(offer.air_motion&&offer.surface_landing&&prior.air_motion&&offer.air_motion->phase==17&&
+                !offer.air_motion->lower_done&&offer.air_motion->planar_accel==0.f&&
+                offer.air_motion->speed_before==prior.air_motion->speed44&&
+                offer.air_motion->vertical_before==prior.vertical_speed,
+                "separate touchdown inherits accepted damped motion and cleared planar acceleration");
         }
+        prior=offer;
     }
     check(push_tick==73&&touchdown_tick==74&&source.recovery_pushes()==1&&source.surface_pushes()==1&&source.air_dash_starts()==1&&
         source.landings()==1&&source.selector()==0&&source.resource()==10000&&world.actors()[0].health==100&&world.actors()[1].health==100&&
         !world.shots_spawned(),"qualified original recovery route pushes once, then lands/refills through existing source systems");
     const auto retained=pose;source.reject();
     check(retained.frame_scope.expired()&&!world.motion_receipt_current(retained.receipt),"recovery producer retirement revokes retained source pose and receipt");
+    std::printf("%s recovery surface: push tick=%u touchdown=%u resource=%d\n",combined?"combined":"legacy",push_tick,touchdown_tick,push_resource);
+    }
     check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v5",world,seed,&error,NativeGRedGroundDashDemo::Mode::RecoverySurface)&&world.tick()==0,
         "older contact pack cannot fabricate recovery projection operands");
-    std::printf("source recovery surface/VM/completion/resource/pose: %u checks PASS; push tick=%u touchdown=%u resource=%d; native proxies, no whole-frame equivalence\n",
-        checks,push_tick,touchdown_tick,push_resource);
+    std::printf("source recovery surface/VM/completion/resource/pose: %u checks PASS; native proxies, no whole-frame equivalence\n",checks);
 }

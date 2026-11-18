@@ -113,6 +113,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   verifies the accepted meter for the release/depletion transition, and reuses
   the falling integration and selected-plane .9 response. Active relaunch and
   air-dash callback pushes are still separate and refused.
+- The ground-recovery-push policy adds descending airborne recovery17/program12
+  pushes at zero698. It pairs the pre-contact recovery motion with the exact
+  projected endpoint and .9 retained damping. The next recovery step inherits
+  that scalar and velocity but not the cleared planar acceleration. Completion
+  remains after contact, and the push itself cannot land or refill.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
