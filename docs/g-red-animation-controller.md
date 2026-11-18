@@ -13,6 +13,73 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Ordinary zero698 falling push in the combined controller (GFMM9)
+
+`--source-ground-fall-push` / `--demo-source-ground-fall-push` adds one opt-in
+permission to the existing combined controller: ordinary downward falling6 at
+zero698, without ground-loss, post-air or released-relaunch lineage. Existing
+enum ordinals and earlier policies are unchanged. This does not enter the legacy
+push capability hierarchy or grant its broader callers.
+
+The same `gred_surface_contact` planner selects the pre-response plane and
+projects the integrated position. Native acceptance independently verifies the
+ordinary fall predecessor, .99 scalar tail, displacement before gravity, −1
+acceleration/−30 clamp, exact plane/triangle/angle and projection, then .9 damping
+of retained scalar and vertical speed. Gravity and cached87 persist. No landing,
+meter refill, VM reset or root handoff is inferred from the push. The existing
+native pre/post body, bounds and terrain/penetration checks still apply.
+
+The demo uses a declared native grounded original-stage placement
+x/z−606.6735/−1373.0029 with ordinary arena bounds/target. Jump is held at5–32,
+then input is neutral. There is no midair position/velocity/resource injection,
+teleport/rebind, edited terrain or substitute renderer.
+
+| Accepted tick | Actual role |
+| --- | --- |
+| 82 | Selected steep angle11582 projects y≈10.846179; post-gravity−30→−27; still falling6/program6/cache1, meter8350 |
+| 83 | Separate actual callback lands at native y10; program6/cache1/meter8350 retained |
+| 84 | Separate landing8 clears airborne cache |
+| 106 | Idle0, meter10000 |
+
+The owner also exercises a genuine longer-rise release38 route (push90,
+callback91, landing8 at92, idle114; pre-landing meter7850) and a nonzero-scalar
+route from grounded x/z−626.6735/−1393.0029 with one low D-pad-up update32:
+push82 retains scalar≈0.3457004→0.3111304 and vertical−30→−27, then lands
+separately. Each route runs600 accepted updates through one producer/VM.
+
+Release31 produces a genuine push candidate79 that projects below a different
+adjacent native floor. It remains rejected at world tick78 with the previous
+pose/receipt/resource/counters live until explicit retirement. Replacing the
+floor with UP, clipping, or forcing acceptance would violate the native boundary.
+Ground-loss/post-air/relaunch/dash/positive698 pushes, nonflat ordered dash,
+unsupported contacts and combat remain refused. Earlier combined relaunch mode
+still refuses the new steep response before publication. Nothing here grants
+original-hardware/whole-game equivalence or applies to other Borgs.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 2 \
+  --output build/source-ground-fall-push-host
+build/source-ground-fall-push-host/gf_native \
+  --demo-source-ground-fall-push --headless --frames 600 --no-audio
+```
+
+Contact Sheet50 contains actual isolated offscreen GL frames18/33/60/81/82/
+83/84/106. It shows ascent, falling, the airborne push pose, separate callback,
+landing8 and idle, without taking desktop/classifier focus. The inspected sheet
+remains local at
+`local/recomp-evidence/contact-sheets/source-ground-fall-push-v1/contact-sheet-50.png`;
+captures and game assets are not published.
+
+The isolated host/all-header builds and six sanitizer binaries passed: the new
+owner (10918 checks), prior ground-loss relaunch and paired-surface owners,
+legacy selected-plane push, shared surface contact and native motion acceptance.
+The full isolated Python run completed164 tests:157 passed, including all46
+world-host integrations; seven separate source-replay tests were skipped because
+their opt-in host was not requested.
+The unchanged64-tick ordinary duel smoke still reports11 shots,4 hits and
+health92/76. Original G-Red motion-bank and immutable GFMM1–9 bytes are unchanged;
+assets, private evidence, builds and unrelated Story/preparation work are excluded.
+
 ## Owned-timer ground-loss relaunch (GFMM9)
 
 `--source-ground-loss-relaunch` / `--demo-source-ground-loss-relaunch`

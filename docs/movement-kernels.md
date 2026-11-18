@@ -94,6 +94,13 @@ callbacks, certify collision, or grant renderer/frame receipts.
   AE/AC gating and negative-only .8 tail. In this new scope, the source wrapper
   clamps planar speed8 only for positive acceleration; neutral inherited scalar
   and released-relaunch lineage may retain more. Old policies remain unchanged.
+- A separate ground-fall-push policy adds only ordinary downward falling6 at
+  zero698, without ground-loss/post-air/relaunch provenance. It pairs the exact
+  fall integration with the selected-plane projection, then damps retained
+  scalar and vertical speed by .9 without changing gravity or airborne cache.
+  Projection is not landing/refill; callback and landing8 remain later accepted
+  roles. Native pre/post-contact bounds/body/penetration checks remain mandatory.
+  Ground-loss, post-air, relaunch, dash and positive698 pushes stay refused.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

@@ -11,6 +11,46 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_ordinary_fall_push_preserves_separate_landing(self):
+        for tick, pushes, angle, landings, meter, selector, program, cached in (
+                (81, 0, 0, 0, 8350, 6, 6, 1),
+                (82, 1, 11582, 0, 8350, 6, 6, 1),
+                (83, 1, 11582, 1, 8350, 7, 6, 1),
+                (84, 1, 11582, 1, 8350, 7, 8, 0),
+                (106, 1, 11582, 1, 10000, 0, 0, 0),
+                (600, 1, 11582, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-fall-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-fall-pushes={pushes} angle-s16={angle} timer698=0.0 "
+                          f"landings={landings} resource={meter} selector={selector} "
+                          f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("ordinary zero698 falling push", result.stdout)
+            self.assertIn("ordinary native bounds/target and unchanged stage", result.stdout)
+            self.assertIn("exact pre-response numeric/selected-plane projection", result.stdout)
+            self.assertIn("no ground-loss/post-air/relaunch/dash/positive698 push or combat authority",
+                          result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+            if tick >= 83:
+                self.assertIn("G-Red-position=-602.99/10.00/-1376.75", result.stdout)
+
+    def test_interactive_ordinary_push_has_no_scripted_placement_or_input(self):
+        result = self.run_host(["--source-ground-fall-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-fall-pushes=0 angle-s16=0 timer698=0.0 "
+                      "landings=0 resource=10000 selector=0 programs=0/0 cached87=0", result.stdout)
+        self.assertNotIn("ground-fall-push demo only:", result.stdout)
+
+    def test_combined_ordinary_push_refuses_older_operand_pack_without_fallback(self):
+        result = self.run_host(["--source-ground-fall-push", "--source-ground-assets",
+                                "local/content/source-gred-ground-v8", "--headless", "--no-audio"])
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("requires GFMM9", result.stdout)
+        self.assertNotIn("accepted native tick=", result.stdout)
+
     def test_scripted_ground_world_and_shared_renderer(self):
         result = self.run_host(["--demo-source-ground-dash", "--headless", "--frames", "720", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)
