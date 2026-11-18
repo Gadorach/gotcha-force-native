@@ -129,6 +129,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   independently of surface response. A subsequent active or recovery update
   uses the damped scalar and cleared planar acceleration. Neither dash entry
   acquires push permission, and landing still requires separate contact.
+- The ground-relaunch-push policy adds descending continued relaunch8 pushes
+  at zero698. It validates both lane latches, continued cost, and bounded
+  relaunch integration before the .9 steep response. It does not admit
+  entry pushes or replay entry lift, and released falling inherits the
+  accepted damped motion.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

@@ -13,6 +13,32 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Continued relaunch push in the combined controller (GFMM9)
+
+`--source-ground-relaunch-push` adds descending steep projection at zero698
+during ongoing relaunch8, with independent program14–15 lane checks. It applies
+.9 to the integrated scalar and vertical speed, retaining the relaunch
+acceleration and normal continued cost. This is distinct from the .8 null-floor
+snap and cannot replay the additive entry lift. Rising approaches, relaunch
+entry, dash entries, ground-loss falling and positive698 pushes remain refused.
+
+On the original-stage demo, relaunch enters without a push at tick82. The
+continued program14 projection at83 costs the normal 100 meter, leaving8100.
+Release on the following update takes the damped motion into falling21 and
+touches down at84. Landing8 and the refill remain separate. Program15 is checked
+by the numeric fixtures; the rendered route witnesses program14.
+
+```sh
+build/direct/gf_native --demo-source-ground-relaunch-push --headless --frames 240 --no-audio
+```
+
+[Contact Sheet 56](../local/recomp-evidence/contact-sheets/source-ground-relaunch-push-v1/contact-sheet-56.png)
+shows entry, the continued push, and the separate touchdown in offscreen
+OpenGL. The capture stays local. The isolated host and all-header builds,
+three targeted host tests, and unchanged 64-tick duel smoke passed. The
+relaunch sanitizer test passed 1,482 checks, including checks that reject
+incorrect lane, resource, lift, and contact records.
+
 ## Continued active air-dash push in the combined controller (GFMM9)
 
 `--source-ground-active-push` adds descending steep contact during continued
