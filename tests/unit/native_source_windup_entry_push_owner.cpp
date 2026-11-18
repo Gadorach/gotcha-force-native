@@ -183,6 +183,52 @@ int main(){
     check(retired.frame_scope.expired()&&!world.motion_receipt_current(retired.receipt),"entry producer retirement revokes retained pose and receipt");
     std::printf("%s entry: entry=%u handoff=%u active=%u touchdown=%u\n",combined?"combined":"legacy",entry,handoff,active,touchdown);
     }
+    if(has_combined){
+        //The active reset would move horizontally into a raised face. Projection
+        //math alone is not permission to cross the native pre-contact boundary.
+        BattleMvpConfig raised;raised.arena_half=4500;raised.spawn[0]={-2314,528};raised.spawn_query_y[0]=591.9127f;
+        check(world.start(raised,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,combined_pack,world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush),
+            "original raised-face fixture uses grounded placement, no injected motion");
+        auto raised_pad=[](unsigned t){
+            GamePadState pad;pad.b=t>=5&&t<32;if(t>=76&&t<107)pad.stick_x=127;return pad;
+        };
+        NativeBorgMotionOffer last;
+        while(world.tick()<84){check(prepare(raised_pad(world.tick()),&last),"raised-face approach");accept(last);}
+        const auto actor=world.actors()[0];const auto current=pose;const auto meter=source.resource();
+        const auto pushes=source.surface_pushes();const auto programs=source.movement_programs();
+        check(last.air_motion&&last.air_motion->phase==15&&last.air_motion->next_selector==16&&
+            last.air_motion->timer568==0&&source.selector()==16&&meter==8000,
+            "wind-up handoff has committed once, before the rejected active entry");
+        //Fixed heading of the fixture's active-entry probe. The candidate is
+        //computed only for the contact check, not applied to the actor.
+        f32 x=0,z=0;source_heading_xz(-80,&x,&z);
+        auto integrated=actor.position;
+        integrated[0]=std::fma(1.f,f32(profile.air[5]*x),integrated[0]);
+        integrated[2]=std::fma(1.f,f32(profile.air[5]*z),integrated[2]);
+        NativeBorgStaticSurface plane;BattleMvpVec projected;s16 angle=0;
+        check(view.static_surface(integrated[0],integrated[2],actor.position[1],&plane)&&plane.triangle==2536&&
+            source_surface_angle(plane.normal,&angle)&&angle>10240&&plane.height>integrated[1]&&
+            source_surface_push_position(integrated,plane.normal,plane.height,angle,&projected),
+            "horizontal active-entry approach overlaps a real steep raised native plane");
+        f32 projected_floor=0;
+        check(view.height(projected[0],projected[2],actor.position[1],&projected_floor)&&projected[1]>=projected_floor-.01f,
+            "a plausible projected endpoint does not excuse blocked pre-contact travel");
+        const BattlePoint movement{integrated[0]-actor.position[0],integrated[2]-actor.position[2]};
+        const auto& other=world.actors()[1];const auto& bounds=world.config();
+        NativeBorgContactRequest request{actor.position,other.position,movement,bounds.arena_half,bounds.actor_radius,
+            bounds.actor_height,bounds.step_height,false,other.health!=0};
+        request.vertical_end_y=integrated[1];NativeBorgContactResult rejected;
+        check(native_borg_resolve_contact(request,&view,&rejected)&&rejected.terrain_blocked&&!rejected.bounds_hit&&!rejected.body_hit,
+            "native pre-contact travel rejects the raised surface without relying on bounds or body overlap");
+        NativeBorgMotionOffer offer;
+        check(!prepare(raised_pad(84),&offer)&&error.find("steep push")!=std::string::npos&&world.tick()==84&&
+            world.actors()[0].position==actor.position&&source.selector()==16&&source.resource()==meter&&
+            source.surface_pushes()==pushes&&source.movement_programs()==programs&&
+            current.frame_scope.expired()&&!world.motion_receipt_current(current.receipt)&&!world.step({},false,&view),
+            "unsupported active-entry push does not commit its reset, spend, pose or a fallback frame");
+        std::puts("combined active entry: original raised-face approach refused at tick=85");
+    }
     check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v6",world,seed,&error,NativeGRedGroundDashDemo::Mode::WindupEntryPush),
         "combined entry-push mode retains qualified GFMM7 floor/caller requirements");

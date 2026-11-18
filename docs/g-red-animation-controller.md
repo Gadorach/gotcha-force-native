@@ -40,6 +40,24 @@ unchanged 64-tick duel smoke passed. The wind-up entry sanitizer test passed
 2,695 checks, including rejection of early cost, timer decrement, pre-contact
 displacement, and applying the future vertical acceleration.
 
+### Why active-entry steep pushes remain disabled
+
+The recovered active handler resets vertical speed to zero, spends the active
+cost, then moves and checks contact. On entry the pre-contact displacement is
+horizontal. With the same selected native plane, steep projection requires the
+endpoint to be at or below the plane, but native airborne travel refuses a
+plane higher than the start. Thus a projected endpoint above the final floor is
+not enough: the path to the pre-projection endpoint must also pass.
+
+A bounded original-stage probe found 39 steep candidates in 720 routes but no
+candidate satisfying both checks on the same plane. The owner regression follows
+one genuine wind-up to tick84 near the mountain. The would-be active step enters
+triangle2536 about 22.8 units below the selected surface, even though its
+projected endpoint is above the final floor. Tick85 remains refused without
+publishing entry motion, cost, or animation. Neither the native terrain check nor
+the active-entry push policy was widened. Existing gentle-floor active entry and
+continued active steep pushes remain distinct.
+
 ## Descending relaunch-entry push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-entry-push` adds a steep push on the relaunch entry
