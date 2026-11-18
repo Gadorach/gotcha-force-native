@@ -31,6 +31,7 @@ public:
     void source_ground_loss_air_controls(){source_ground_loss_air_=true;}
     void source_ground_loss_relaunch_controls(){source_ground_loss_relaunch_=true;}
     void source_ground_fall_push_controls(){source_ground_fall_push_=true;}
+    void source_ground_air_fall_push_controls(){source_ground_air_fall_push_=true;}
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error){
         ready_=false;std::vector<u8> stage,floor_bytes;
@@ -180,6 +181,7 @@ public:
         if(source_ground_loss_air_)status="G-RED GROUND LOSS AIR / NATIVE PROXY\nWASD/STICK AIR DASH AFTER ACCEPTED FALLING ENTRY\nRETAIN698 / TIMER-BOUND PLANE / RECOVERY DRIFT GATE\nNO POS698 RELAUNCH/PUSH/NONFLAT DASH/COMBAT";
         if(source_ground_loss_relaunch_)status="G-RED GROUND LOSS RELAUNCH / NATIVE PROXY\nSHIFT RELAUNCH / RETAIN698 / INDEPENDENT14-15\nACTUAL SCALAR-CLAMP / TIMER FLOOR / RELEASED21\nNO PUSH/NONFLAT DASH/CLIPPING/COMBAT";
         if(source_ground_fall_push_)status="G-RED ORDINARY FALL PUSH / NATIVE PROXY\nZERO698 FALL6 / SELECTED PLANE / .9 SPEED-V TAIL\nRETAIN GRAVITY-CACHE / SEPARATE CALLBACK LANDING\nNO LOSS/AIR/RELAUNCH/DASH PUSH OR COMBAT";
+        if(source_ground_air_fall_push_)status="G-RED POST-AIR FALL PUSH / NATIVE PROXY\nCOMPLETED RECOVERY -> FALL13 / ZERO698 / .9 TAIL\nRETAIN GRAVITY-CACHE / SEPARATE CALLBACK LANDING\nNO LOSS/RELAUNCH/ACTIVE PUSH OR COMBAT";
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
         draws+=text_.draw(render,status,24,f32(height)-80,style);render.state()=state;return draws;
@@ -223,6 +225,7 @@ private:
     bool source_ground_loss_air_=false;
     bool source_ground_loss_relaunch_=false;
     bool source_ground_fall_push_=false;
+    bool source_ground_air_fall_push_=false;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };
 }

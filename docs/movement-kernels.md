@@ -101,6 +101,13 @@ callbacks, certify collision, or grant renderer/frame receipts.
   Projection is not landing/refill; callback and landing8 remain later accepted
   roles. Native pre/post-contact bounds/body/penetration checks remain mandatory.
   Ground-loss, post-air, relaunch, dash and positive698 pushes stay refused.
+- A separate ground-air-fall-push policy adds post-air falling13 only after an
+  accepted recovery lower-done/next6 receipt, including immediate falling entry.
+  It checks that provenance and inherited scalar before the existing .99
+  integration/.9 projection tail. Both animation lanes retain program13 and
+  cached87 until separate callback/landing8. Ordinary push support is inherited;
+  recovery/active/wind-up callback, relaunch, ground-loss and positive698 pushes
+  are not. Native raised-side and post-projection penetration refusals persist.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

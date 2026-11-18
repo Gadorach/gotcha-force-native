@@ -13,6 +13,96 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Post-air zero698 falling push in the combined controller (GFMM9)
+
+`--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately
+admits downward selector6/program13 steep response after completed air-dash
+recovery, at zero698. Earlier ordinary-only mode retains its post-air refusal.
+This reuses the shared controller, source VM, resource/motion/contact planners
+and renderer; it does not enter the broader legacy push capability hierarchy.
+Existing enum ordinals are preserved with the new mode/policy appended.
+
+Read-only initialized-DOL disassembly of617E4 confirms motion/contact precede
+the lower-done test, which then sets history590=1 and selects6. In5FECC, that
+history selects program13; entry resets4C/50, retains cached87 and installs
+the ordinary landing callback. The common .99 scalar/direct-drift motion and
+677B0 contact tail follows. Upper5FE04 independently requests program13.
+The animation differs from ordinary falling6, not its shared contact arithmetic.
+
+Native admission now permits an immediate falling push only after the actual
+accepted recovery17 lower-done/next6 proof. The existing jump-motion validation
+independently binds air origin, entry, old scalar/vertical velocity, drift,
+heading, gravity/clamp and projected endpoint. Post-air scalar is not clamped
+to ordinary ascent8. Exact selected-plane/triangle evidence, .9 retained
+scalar/vertical tail, all-role698 chain and existing native pre/post contact
+checks remain required. VM, cache, resource, counters and pose publish only on
+the matching receipt. Neither recovery12 nor active11 may borrow this authority.
+
+The demo starts at a declared native grounded original-stage placement
+x/z−585/−3010 with4500 bounds and unchanged target/stage. It holds jump5–54
+and forward flick45–71, then adds low left only after completed recovery selects
+falling6. There is no midair teleport/rebind, velocity/resource injection or
+edited terrain.
+
+| Accepted tick | Actual role / resource |
+| --- | --- |
+| 46 | Air-dash wind-up entry;7150 |
+| 52 | Active entry after deferred450 handoff;6650 after active50 |
+| 83 | Recovery12 entry after minimum active timer;5150 |
+| 111 | Lower recovery completion selects6; captured12/cache1 |
+| 112 | Immediate falling13 push on angle11582; scalar≈21.081482→18.973333, vertical−30→−27, y≈21.060921;5150/cache1 |
+| 113 | Separate callback at y≈20.665068; captured13/cache1/5150 |
+| 114 | Separate landing8 clears cache |
+| 136 | Idle0,10000 |
+
+The owner also runs a second grounded placement−580/−3010 through the same
+genuine air/recovery/entry-push/landing sequence, plus the inherited ordinary
+falling6 route. Each runs600 accepted updates on one producer/VM. It checks
+missing/swapped numeric and plane proofs, caller/entry/timer tampering, exact
+receipts and explicit retirement. A continued post-air fall from−570/−3030
+(flick46–72, jump5–55, low left after recovery) stages a push114 whose
+projection is below an adjacent native floor. Native rejection preserves tick113,
+the previous live pose/receipt and uncommitted counters; no clipping or UP-floor
+substitute is introduced.
+
+A separate grounded5/10 fixture accepts a first post-air push113 and rejects a
+penetrating second push114. The second candidate uses the accepted .9 retained
+scalar followed by .99 falling damping, and accepted−27 vertical velocity before
+gravity−28 and the next .9 tail. Its rejection keeps exactly one accepted push,
+the prior meter and the previous pose/receipt live until explicit retirement.
+
+Ground-loss, released-relaunch, wind-up/active/recovery callback and positive698
+pushes, nonflat ordered dash, unknown/raised-side contacts and combat remain
+refused. Host trigonometry, clocks, camera/target-center and body/terrain queries
+remain labelled native proxies, not original-hardware or whole-game equivalence.
+This does not generalize G-Red's recovered mappings to other Borgs.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 2 \
+  --output build/source-ground-air-fall-push-host
+build/source-ground-air-fall-push-host/gf_native \
+  --demo-source-ground-air-fall-push --headless --frames 600 --no-audio
+```
+
+Contact Sheet51 contains actual isolated offscreen GL frames46/52/83/111/112/
+113/114/136. The inspected sheet shows wind-up/active/recovery, completed
+recovery, airborne falling13 push, separate callback/landing8 and idle without
+taking desktop/classifier focus. It remains local at
+`local/recomp-evidence/contact-sheets/source-ground-air-fall-push-v1/contact-sheet-51.png`;
+captures and original assets are excluded from publication.
+
+The isolated host/all-header builds and six sanitizer binaries passed. The new
+owner passed11419 checks across two post-air and one inherited ordinary600-update
+routes, including old-policy/caller/entry/plane/timer and penetration refusals.
+Earlier ordinary-push, combined-air, legacy falling-surface, selected-plane push
+and native acceptance regressions also passed. The unchanged64-tick ordinary
+duel smoke still reports11 shots,4 hits and health92/76. The qualified G-Red
+motion bank and immutable GFMM1–9 bytes are unchanged.
+The full isolated Python run completed167 tests:160 passed, including all49
+world-host integrations; seven separate source-replay tests were skipped because
+their opt-in host was not requested. Assets, captures, private evidence, builds
+and unrelated Story/preparation work are excluded from the checkpoint.
+
 ## Ordinary zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-fall-push` / `--demo-source-ground-fall-push` adds one opt-in

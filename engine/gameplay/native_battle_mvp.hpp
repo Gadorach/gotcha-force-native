@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -267,7 +267,8 @@ public:
             const bool positive_windup_entry=o.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             const bool windup_entry_floor=native_borg_motion_windup_floor_entry(o.kind);
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
-            const bool controller_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundFallPush;
+            const bool controller_air_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundAirFallPush;
+            const bool controller_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundFallPush||controller_air_fall_push_policy;
             const bool controller_ground_loss_relaunch_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossRelaunch||controller_fall_push_policy;
             const bool controller_ground_loss_air_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossAir||controller_ground_loss_relaunch_policy;
             const bool controller_landing_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossLanding||controller_ground_loss_air_policy;
@@ -535,7 +536,8 @@ public:
                 if(o.kind==NativeBorgMotionKind::Ground&&previous&&previous->next_selector&&o.landing_target!=12)return false;
                 if(o.jump_motion){
                     const auto& e=*o.jump_motion;
-                    if(controller_fall_push_frame&&(e.phase!=6||e.ground_loss||e.air_dash_origin||e.relaunch_origin||*o.controller_timer698>0))return false;
+                    if(controller_fall_push_frame&&(e.phase!=6||e.ground_loss||(e.air_dash_origin&&!controller_air_fall_push_policy)||
+                       e.relaunch_origin||*o.controller_timer698>0))return false;
                     const f32 speed_limit=e.air_dash_origin||(controller_ground_loss_relaunch_policy&&e.relaunch_origin)?30.f:25.f;
                     if(e.phase<4||e.phase>7||e.resource_before<0||e.resource_before>10000||
                        e.ground_loss!=(!jump_path)||!std::isfinite(e.speed_before)||e.speed_before<0||e.speed_before>speed_limit||
@@ -859,8 +861,10 @@ public:
                 //Source selector6 can be entered from finished dash recovery
                 //or released relaunch. It resets50 before this integration;
                 //the old policy deliberately cannot borrow this entry contract.
-                const bool history_entry=history_push_policy&&
-                    (native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior));
+                const bool history_entry=(history_push_policy&&
+                    (native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior)))||
+                    (controller_air_fall_push_policy&&prior==NativeBorgMotionKind::AirDashRecovery&&last_offer_.air_motion&&
+                     last_offer_.air_motion->phase==17&&last_offer_.air_motion->next_selector==6&&last_offer_.air_motion->lower_done);
                 const bool active_prior=native_borg_motion_active_entry(prior)||native_borg_motion_active_update(prior);
                 const bool recovery_prior=active_prior||
                     native_borg_motion_recovery(prior);
@@ -1087,7 +1091,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundFallPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundAirFallPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
