@@ -78,8 +78,8 @@ int main(){
     NativeBattleMvp world;NativeBattleMvpView view;NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;NativeBorgSourcePose pose;
     check(view.load(files,art,render,&error),"qualified shared original stage and normal Borg models");
     BattleMvpConfig config;config.arena_half=4500;config.spawn[0]={-2302.447265625f,528.269836426f};config.spawn_query_y[0]=591.912719727f;
-    auto bind=[&](NativeGRedGroundDashDemo::Mode mode){
-        check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,inputs,world,seed,&error,mode),
+    auto bind=[&](NativeGRedGroundDashDemo::Mode mode,const std::string& pack){
+        check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,pack,world,seed,&error,mode),
             "explicit native wider demo bounds and real original-floor query reference; no source spawn claim");
         check(world.actors()[0].grounded&&world.actors()[0].vertical_speed==0&&world.actors()[0].position[1]>590&&
             world.actors()[0].position[1]<594&&!source.windup_pushes()&&!source.recovery_pushes()&&!source.surface_pushes(),
@@ -95,7 +95,7 @@ int main(){
         check(world.step({},false,&view,nullptr,&frame,&offer)&&source.commit(world,view.source_binding(),&error)&&
             source.pose(world,&pose)&&view.update_source(world,pose,&error),"matching native wind-up receipt before VM/resource/counter/pose publication");
     };
-    bind(NativeGRedGroundDashDemo::Mode::RecoverySurface);bool old_refused=false;
+    bind(NativeGRedGroundDashDemo::Mode::RecoverySurface,inputs);bool old_refused=false;
     for(unsigned t=0;t<180&&!old_refused;++t){
         NativeBorgMotionOffer offer;const auto tick=world.tick();const auto selector=source.selector();const auto programs=source.movement_programs();
         if(!prepare(pad_at(t),&offer)){
@@ -105,11 +105,52 @@ int main(){
         }else accept(offer);
     }
     check(old_refused,"same GFMM6 cannot widen earlier mode's wind-up authority");
-    bind(NativeGRedGroundDashDemo::Mode::WindupSurface);u32 first_push=0,last_push=0,handoff=0;bool separate_active=false;unsigned entry_frames=0;
+    const std::string combined_pack="local/content/source-gred-ground-v9";
+    const bool has_combined=files.exists(combined_pack+"/motion.gfmm");
+    if(has_combined){
+        bind(NativeGRedGroundDashDemo::Mode::GroundRecoveryPush,combined_pack);
+        while(world.tick()<85){NativeBorgMotionOffer offer;check(prepare(pad_at(world.tick()),&offer),"previous combined mode follows the approach");accept(offer);}
+        NativeBorgMotionOffer refused;const auto current=pose;
+        check(!prepare(pad_at(85),&refused)&&world.tick()==85&&!source.windup_pushes()&&
+            current.frame_scope.expired()&&!world.motion_receipt_current(current.receipt)&&!world.step({},false,&view),
+            "previous combined mode still refuses continued wind-up without fallback");
+    }
+    for(const bool combined:{false,true}){
+    if(combined&&!has_combined)continue;
+    const auto mode=combined?NativeGRedGroundDashDemo::Mode::GroundWindupPush:NativeGRedGroundDashDemo::Mode::WindupSurface;
+    const auto& pack=combined?combined_pack:inputs;
+    bind(mode,pack);u32 first_push=0,last_push=0,handoff=0;bool separate_active=false;unsigned entry_frames=0;
+    NativeBorgMotionOffer prior;
     for(unsigned t=0;t<360;++t){
         NativeBorgMotionOffer offer;const auto meter=source.resource();const auto pushes=source.windup_pushes();const auto programs=source.movement_programs();
         check(prepare(pad_at(t),&offer)&&source.resource()==meter&&source.windup_pushes()==pushes&&source.movement_programs()==programs,
-            "wind-up timer/cost/contact pose remain staged before native acceptance");
+             "wind-up timer/cost/contact pose remain staged before native acceptance");
+        if(combined&&offer.kind==NativeBorgMotionKind::AirDashWindupPush){
+            check(offer.air_motion&&prior.air_motion&&offer.static_push&&offer.controller_timer698==0.f,"combined path requires both motion and plane records");
+            const auto& air=*offer.air_motion;const auto& contact=*offer.static_push;
+            check(air.phase==15&&!air.entry&&!air.callback&&air.timer_before==prior.air_motion->timer568&&
+                air.timer568==air.timer_before-1.f&&air.speed_before==prior.air_motion->speed44&&
+                air.speed44==f32(air.move_speed*contact.damping)&&air.vertical_accel==profile.air[11]&&
+                offer.vertical_speed==f32(contact.vertical_speed*contact.damping)&&offer.vertical_speed!=0.f&&
+                air.resource_before==meter&&air.resource_after==meter-(air.timer568==0.f?input.costs[2]:0),
+                "continued push retains damping rather than null-floor zero; timer alone decides once-only cost");
+            const auto retained=pose;const auto position=world.actors()[0].position;
+            const auto rejects=[&](NativeBorgMotionOffer wrong,const char* why){
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==t&&world.actors()[0].position==position&&
+                    source.resource()==meter&&source.windup_pushes()==pushes&&source.movement_programs()==programs&&
+                    !retained.frame_scope.expired()&&world.motion_receipt_current(retained.receipt),why);
+            };
+            auto wrong=offer;wrong.air_motion->timer568=air.timer_before;rejects(wrong,"contact cannot stall wind-up timer");
+            wrong=offer;wrong.air_motion->resource_after+=1;rejects(wrong,"contact cannot change cost");
+            wrong=offer;wrong.air_motion->callback=true;rejects(wrong,"wind-up cannot become a real landing callback");
+            wrong=offer;wrong.vertical_speed=0;rejects(wrong,"push cannot use null-floor zero response");
+            wrong=offer;wrong.controller_timer698=1;rejects(wrong,"positive698 remains unsupported");
+            wrong=offer;wrong.kind=NativeBorgMotionKind::AirDashWindupEntryPush;rejects(wrong,"entry push cannot borrow continued authority");
+            wrong=offer;wrong.air_motion->entry=true;rejects(wrong,"continued kind cannot fake wind-up entry");
+            wrong=offer;wrong.kind=NativeBorgMotionKind::AirDashActivePush;rejects(wrong,"active push remains unsupported");
+            wrong=offer;wrong.static_push->surface.normal={0,1,0};rejects(wrong,"exact selected plane is required");
+        }
         accept(offer);
         if(offer.kind==NativeBorgMotionKind::AirDashWindupEntry){
             ++entry_frames;
@@ -137,6 +178,7 @@ int main(){
                 source.resource()==meter-input.costs[3],"separate active-entry reset follows timer-completing push without an invented extra wind-up tick");
             separate_active=true;
         }
+        prior=offer;
     }
     check(first_push==86&&last_push==87&&handoff==87&&separate_active&&entry_frames==1&&source.windup_pushes()==2&&source.surface_pushes()==2&&
         source.air_dash_starts()==1&&source.landings()==1&&source.selector()==0&&source.resource()==10000&&
@@ -144,7 +186,7 @@ int main(){
         "bounded original mountain route pushes twice, enters active dash/recovery and lands/refills normally");
     const auto retained=pose;source.reject();
     check(retained.frame_scope.expired()&&!world.motion_receipt_current(retained.receipt),"wind-up producer retirement revokes retained pose and receipt");
-    bind(NativeGRedGroundDashDemo::Mode::WindupSurface);bool relaunched=false;
+    bind(mode,pack);bool relaunched=false;
     for(unsigned t=0;t<110&&!relaunched;++t){
         auto pad=pad_at(t);const bool admitted_handoff=source.windup_pushes()&&source.selector()==16;const auto tick=world.tick();
         if(admitted_handoff)pad.b=true;
@@ -157,9 +199,10 @@ int main(){
         }
     }
     check(relaunched,"real source/native relaunch handoff after timer-completing wind-up push");source.reject();
+    std::printf("%s wind-up surface: pushes=%u..%u handoff=%u\n",combined?"combined":"legacy",first_push,last_push,handoff);
+    }
     check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v5",world,seed,&error,NativeGRedGroundDashDemo::Mode::WindupSurface)&&world.tick()==0,
         "legacy pack cannot fabricate wind-up steep operands");
-    std::printf("source continued wind-up/timer/contact/pose: %u checks PASS; pushes=%u..%u handoff=%u; native proxies, no whole-frame equivalence\n",
-        checks,first_push,last_push,handoff);
+    std::printf("source continued wind-up/timer/contact/pose: %u checks PASS; native proxies, no whole-frame equivalence\n",checks);
 }

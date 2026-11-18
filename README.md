@@ -28,13 +28,12 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ground-recovery-push` (or
-`--demo-source-ground-recovery-push --headless --frames 240`), requiring GFMM9.
-It adds descending steep pushes during airborne air-dash recovery at zero698,
-with program12, completion, and landing kept separate. It retains ordinary,
-post-air, and released-relaunch falling pushes. Ground-loss, positive698,
-air-dash wind-up/active and active relaunch pushes remain refused, as do
-nonflat dash, combat and unsupported contacts.
+The latest opt-in lab is `--source-ground-windup-push` (or
+`--demo-source-ground-windup-push --headless --frames 360`), requiring GFMM9.
+It adds descending steep pushes during continued air-dash wind-up at zero698
+without changing the timer, handoff cost or separate landing. Recovery and
+falling pushes remain available. Wind-up entry, active dash, active relaunch,
+ground-loss and positive698 pushes remain refused.
 Older modes retain their narrower permissions and native proxies stay labelled.
 Other Borgs do not inherit G-Red's recovered mappings.
 

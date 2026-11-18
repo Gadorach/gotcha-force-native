@@ -118,6 +118,12 @@ callbacks, certify collision, or grant renderer/frame receipts.
   projected endpoint and .9 retained damping. The next recovery step inherits
   that scalar and velocity but not the cleared planar acceleration. Completion
   remains after contact, and the push itself cannot land or refill.
+- The ground-windup-push policy adds descending continued wind-up15 pushes at
+  zero698. It preserves the exact decrement, deferred handoff cost, and
+  .9 steep response rather than using the floor snap's vertical reset.
+  Wind-up entry and active dash have separate push permissions and remain
+  refused. Timer expiry on a verified push can hand off to active or relaunch
+  on the following update without replaying the wind-up entry.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

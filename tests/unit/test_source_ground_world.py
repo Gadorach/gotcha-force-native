@@ -11,6 +11,31 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_windup_push_keeps_timer_handoff_separate(self):
+        for tick, pushes, landings, meter, selector, program, cached in (
+                (85, 0, 0, 8350, 15, 10, 1),
+                (86, 1, 0, 8350, 15, 10, 1),
+                (87, 2, 0, 7900, 16, 10, 1),
+                (88, 2, 0, 7850, 16, 11, 1),
+                (360, 2, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-windup-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-windup-pushes={pushes} entry-pushes=0 starts=1 "
+                          f"landings={landings} resource={meter} selector={selector} "
+                          f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("no wind-up entry, active dash, active relaunch, ground-loss or positive698 push authority",
+                          result.stdout)
+
+    def test_interactive_windup_push_has_no_demo_input(self):
+        result = self.run_host(["--source-ground-windup-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-windup-pushes=0 entry-pushes=0 starts=0", result.stdout)
+        self.assertNotIn("ground-windup-push demo only:", result.stdout)
+
     def test_combined_recovery_push_stays_in_program_12_until_landing(self):
         for tick, pushes, angle, landings, meter, selector, program, cached in (
                 (72, 0, 0, 0, 7650, 17, 12, 1),

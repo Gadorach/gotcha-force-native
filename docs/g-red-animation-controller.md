@@ -13,6 +13,35 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Continued air-dash wind-up push in the combined controller (GFMM9)
+
+`--source-ground-windup-push` adds descending steep contact during continued
+wind-up15/program10 at zero698. Wind-up entry remains separate and cannot push.
+The shared selected-plane response retains the damped vertical speed and −0.07
+acceleration, unlike the null-callback floor snap that zeroes vertical speed.
+The push itself does not start landing, stall the wind-up timer, or refill the
+meter. Older combined and standalone policies are unchanged.
+
+The original mountain fixture uses a grounded native placement and wider demo
+bounds. Pushes at ticks86 and87 retain both program10 lanes. The second push
+coincides with timer expiry and the existing once-only 450 meter charge. Tick88
+normally enters active11 on a separate update. The controller also accepts the
+verified relaunch input at that handoff only after the accepted push record
+proves selector16, stage0, and timer zero.
+
+The mode retains recovery and falling pushes. Wind-up entry, active-dash,
+active-relaunch, ground-loss and positive698 pushes remain unsupported.
+
+```sh
+build/direct/gf_native --demo-source-ground-windup-push --headless --frames 360 --no-audio
+```
+
+[Contact Sheet 54](../local/recomp-evidence/contact-sheets/source-ground-windup-push-v1/contact-sheet-54.png)
+shows both pushes and the separate active entry in offscreen OpenGL. Host and
+all-header builds, three targeted host tests, and the unchanged 64-tick duel
+smoke passed. The wind-up sanitizer test passed 2,147 checks across the legacy
+and combined routes, including invalid timer, cost, and contact records.
+
 ## Air-dash recovery push in the combined controller (GFMM9)
 
 `--source-ground-recovery-push` adds descending, airborne selector17 steep
