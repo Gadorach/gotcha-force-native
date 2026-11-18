@@ -11,6 +11,32 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_relaunch_release_push_keeps_program_and_landing_separate(self):
+        for tick, pushes, angle, landings, meter, selector, program, cached in (
+                (61, 0, 0, 0, 6800, 6, 21, 1),
+                (123, 1, 11582, 0, 6800, 6, 21, 1),
+                (124, 1, 11582, 1, 6800, 7, 21, 1),
+                (125, 1, 11582, 1, 6800, 7, 8, 0),
+                (600, 1, 11582, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-relaunch-fall-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-relaunch-fall-pushes={pushes} relaunches=1 angle-s16={angle} "
+                          f"timer698=0.0 landings={landings} resource={meter} selector={selector} "
+                          f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("no active relaunch, air-dash callback, ground-loss or positive698 push authority",
+                          result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+
+    def test_interactive_relaunch_release_push_has_no_demo_input(self):
+        result = self.run_host(["--source-ground-relaunch-fall-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-relaunch-fall-pushes=0 relaunches=0", result.stdout)
+        self.assertNotIn("ground-relaunch-fall-push demo only:", result.stdout)
+
     def test_combined_post_air_fall_push_waits_for_completed_recovery(self):
         for tick, pushes, angle, landings, meter, selector, program, cached in (
                 (111, 0, 0, 0, 5150, 6, 12, 1),

@@ -13,6 +13,52 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Released-relaunch zero698 falling push in the combined controller (GFMM9)
+
+`--source-ground-relaunch-fall-push` adds downward selector6 steep contact after
+relaunch release (or depletion), at zero698. It inherits ordinary and post-air
+fall pushes. Active relaunch, air-dash callbacks, ground-loss falling and
+positive698 still cannot push. Earlier combined policies are unchanged.
+
+The same falling planner selects program21 plus the recorded coarse direction
+for relaunch history. Native acceptance binds that lineage to the preceding
+relaunch or falling receipt, checks the accepted meter (including for the
+release/depletion predicate), and rejects an additive relaunch lift on this
+path. It checks the pre-contact fall motion and selected-plane projection before
+applying the .9 scalar and vertical damping. Only a later callback lands the
+actor. The native pre- and post-contact checks are unchanged.
+
+The demo uses a grounded original-stage placement at x/z−606.4512/−1373.5873,
+with unchanged target and bounds. Jump is held on input ticks5–32 and relaunch
+on45–59. Released falling starts at accepted tick61. The angle11582 push at123
+keeps program21 and meter6800; vertical velocity changes from −30 to −27.
+Touchdown follows at124, landing8 at125, and idle with a full meter at147.
+
+The owner also checks a shorter route that releases on input tick82 and pushes
+on the first falling update at83. Both routes run600 updates in the same world
+and producer without teleporting or injecting motion. The rendered routes
+exercise program21, not every direction, and do not demonstrate depletion into
+a push. Holding relaunch through the immediate contact refuses, as does using
+the preceding post-air-only policy on the continued route.
+
+```sh
+python3 -B tools/build_native.py --host --headers --jobs 2
+build/direct/gf_native --demo-source-ground-relaunch-fall-push --headless --frames 600 --no-audio
+```
+
+The offscreen GL capture
+`local/recomp-evidence/contact-sheets/source-ground-relaunch-fall-push-v1/contact-sheet-52.png`
+shows relaunch, release, steep projection, callback, landing8 and idle at
+accepted ticks46/51/61/122/123/124/125/147. It remains local; the capture did
+not take desktop or classifier focus. All eight frames matched the final build
+byte-for-byte.
+
+The isolated host and all-header builds passed. The sanitizer owner passed
+6,241 checks, including rejection of a fabricated depletion on a release frame
+that has not yet touched the slope. Both new CLI tests and the preceding
+post-air push test passed. The ordinary 64-tick duel still produced 11 shots,
+4 hits, and health92/76.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

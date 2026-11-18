@@ -108,6 +108,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   cached87 until separate callback/landing8. Ordinary push support is inherited;
   recovery/active/wind-up callback, relaunch, ground-loss and positive698 pushes
   are not. Native raised-side and post-projection penetration refusals persist.
+- The ground-relaunch-fall-push policy adds released-relaunch falling at
+  zero698. It keeps the accepted coarse direction and program21–24 lineage,
+  verifies the accepted meter for the release/depletion transition, and reuses
+  the falling integration and selected-plane .9 response. Active relaunch and
+  air-dash callback pushes are still separate and refused.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

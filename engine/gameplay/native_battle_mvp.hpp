@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -267,7 +267,8 @@ public:
             const bool positive_windup_entry=o.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             const bool windup_entry_floor=native_borg_motion_windup_floor_entry(o.kind);
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
-            const bool controller_air_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundAirFallPush;
+            const bool controller_relaunch_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchFallPush;
+            const bool controller_air_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundAirFallPush||controller_relaunch_fall_push_policy;
             const bool controller_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundFallPush||controller_air_fall_push_policy;
             const bool controller_ground_loss_relaunch_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossRelaunch||controller_fall_push_policy;
             const bool controller_ground_loss_air_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossAir||controller_ground_loss_relaunch_policy;
@@ -537,7 +538,7 @@ public:
                 if(o.jump_motion){
                     const auto& e=*o.jump_motion;
                     if(controller_fall_push_frame&&(e.phase!=6||e.ground_loss||(e.air_dash_origin&&!controller_air_fall_push_policy)||
-                       e.relaunch_origin||*o.controller_timer698>0))return false;
+                       (e.relaunch_origin&&!controller_relaunch_fall_push_policy)||*o.controller_timer698>0))return false;
                     const f32 speed_limit=e.air_dash_origin||(controller_ground_loss_relaunch_policy&&e.relaunch_origin)?30.f:25.f;
                     if(e.phase<4||e.phase>7||e.resource_before<0||e.resource_before>10000||
                        e.ground_loss!=(!jump_path)||!std::isfinite(e.speed_before)||e.speed_before<0||e.speed_before>speed_limit||
@@ -602,7 +603,11 @@ public:
                                 e.relaunch_origin!=(from_relaunch||(previous&&previous->relaunch_origin))||
                                 e.relaunch_coarse57d!=(from_relaunch?relaunch_previous->coarse57d:previous?previous->relaunch_coarse57d:0)||
                                 e.travel5ae!=(from_air?air_previous->travel5ae:from_relaunch?relaunch_previous->travel5ae:previous->travel5ae)||o.facing!=actor.facing||
-                               e.next_selector!=(o.kind==NativeBorgMotionKind::JumpTouchdown?7:6))return false;
+                                e.next_selector!=(o.kind==NativeBorgMotionKind::JumpTouchdown?7:6))return false;
+                             //Seal release/depletion even on a non-push frame, so later
+                             //contact cannot inherit a fabricated falling predecessor.
+                             if(controller_relaunch_fall_push_policy&&e.relaunch_origin&&
+                                e.resource_before!=(from_relaunch?relaunch_previous->resource_after:previous->resource_before))return false;
                             speed=f32(speed*bits_to_f32(0x3f7d70a4u));acceleration=-1;
                             if(e.drift_heading){
                                 source_heading_xz(*e.drift_heading,&x,&z);
@@ -864,7 +869,8 @@ public:
                 const bool history_entry=(history_push_policy&&
                     (native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior)))||
                     (controller_air_fall_push_policy&&prior==NativeBorgMotionKind::AirDashRecovery&&last_offer_.air_motion&&
-                     last_offer_.air_motion->phase==17&&last_offer_.air_motion->next_selector==6&&last_offer_.air_motion->lower_done);
+                     last_offer_.air_motion->phase==17&&last_offer_.air_motion->next_selector==6&&last_offer_.air_motion->lower_done)||
+                    (controller_relaunch_fall_push_policy&&native_borg_motion_relaunch(prior)&&last_offer_.relaunch_motion);
                 const bool active_prior=native_borg_motion_active_entry(prior)||native_borg_motion_active_update(prior);
                 const bool recovery_prior=active_prior||
                     native_borg_motion_recovery(prior);
@@ -1091,7 +1097,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundAirFallPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRelaunchFallPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
