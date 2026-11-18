@@ -13,6 +13,33 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Descending air-dash wind-up entry push in the combined controller (GFMM9)
+
+`--source-ground-windup-entry-push` adds steep projection during wind-up entry
+at zero698 for a nonpositive incoming vertical speed. Entry halves scalar and
+vertical speed, checks contact at the unintegrated position, and applies .9
+steep damping. It does not move before contact, apply gravity, spend meter, or
+decrement the newly set timer. A gentle floor snap remains a separate response.
+
+The demo uses the existing native placement and floor reference on the original
+stage, with a continuous jump hold. After the first falling push, a forward
+flick produces the wind-up entry push at tick81 with 8450 meter. Continued
+wind-up applies gravity on the following updates and charges the usual 450
+handoff cost at86. Active entry at87 and touchdown at140 remain separate.
+Active-entry, rising wind-up entry, ground-loss falling, and positive698
+pushes remain unsupported.
+
+```sh
+build/direct/gf_native --demo-source-ground-windup-entry-push --headless --frames 600 --no-audio
+```
+
+[Contact Sheet 58](../local/recomp-evidence/contact-sheets/source-ground-windup-entry-push-v1/contact-sheet-58.png)
+shows the entry push, handoff, and later touchdown in offscreen OpenGL.
+The isolated host and all-header builds, three targeted host tests, and the
+unchanged 64-tick duel smoke passed. The wind-up entry sanitizer test passed
+2,695 checks, including rejection of early cost, timer decrement, pre-contact
+displacement, and applying the future vertical acceleration.
+
 ## Descending relaunch-entry push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-entry-push` adds a steep push on the relaunch entry

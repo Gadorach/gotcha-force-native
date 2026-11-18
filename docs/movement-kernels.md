@@ -138,6 +138,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   at zero698 if the approach is still nonpositive after the +15 lift.
   It verifies the entry cost, both lane requests and the exact post-lift
   displacement before the steep response, without replay or a landing.
+- The ground-windup-entry-push policy also admits zero698 wind-up entry
+  projection with nonpositive incoming vertical speed. It validates the
+  half-speed motion at the unintegrated position before the .9 steep response,
+  without gravity, timer decrement, or the deferred handoff cost.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

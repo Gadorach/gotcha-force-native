@@ -11,6 +11,34 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_windup_entry_push_defers_cost_and_keeps_active_entry_separate(self):
+        for tick, pushes, entries, landings, meter, selector, program, cached in (
+                (80, 0, 0, 0, 8450, 6, 6, 1),
+                (81, 1, 1, 0, 8450, 15, 10, 1),
+                (82, 2, 1, 0, 8450, 15, 10, 1),
+                (86, 6, 1, 0, 8000, 16, 10, 1),
+                (87, 6, 1, 0, 7950, 16, 11, 1),
+                (140, 6, 1, 1, 6450, 7, 12, 1),
+                (141, 6, 1, 1, 6450, 7, 8, 0),
+                (600, 6, 1, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-windup-entry-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-windup-pushes={pushes} entry-pushes={entries} starts={entries} "
+                          f"landings={landings} resource={meter} selector={selector} "
+                          f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("no rising entry, active entry, ground-loss falling or positive698 push authority",
+                          result.stdout)
+
+    def test_interactive_windup_entry_push_has_no_demo_input(self):
+        result = self.run_host(["--source-ground-windup-entry-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-windup-pushes=0 entry-pushes=0 starts=0", result.stdout)
+        self.assertNotIn("ground-windup-entry-push demo only:", result.stdout)
+
     def test_combined_relaunch_entry_push_charges_once_and_requires_separate_landing(self):
         for tick, pushes, landings, meter, selector, program, cached in (
                 (78, 0, 0, 8550, 6, 6, 1),

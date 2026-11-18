@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -267,7 +267,8 @@ public:
             const bool positive_windup_entry=o.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             const bool windup_entry_floor=native_borg_motion_windup_floor_entry(o.kind);
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
-            const bool controller_relaunch_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchEntryPush;
+            const bool controller_windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupEntryPush;
+            const bool controller_relaunch_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchEntryPush||controller_windup_entry_push_policy;
             const bool controller_relaunch_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchPush||controller_relaunch_entry_push_policy;
             const bool controller_active_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundActivePush||controller_relaunch_push_policy;
             const bool controller_windup_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupPush||controller_active_push_policy;
@@ -308,8 +309,10 @@ public:
             const bool controller_fall_push_frame=controller_fall_push_policy&&o.kind==NativeBorgMotionKind::StaticPush;
             const bool controller_recovery_push_frame=controller_recovery_push_policy&&recovery_push;
             const bool controller_windup_push_frame=controller_windup_push_policy&&o.kind==NativeBorgMotionKind::AirDashWindupPush;
+            const bool controller_windup_entry_push_frame=controller_windup_entry_push_policy&&windup_entry_push;
             const bool controller_active_push_frame=controller_active_push_policy&&active_push;
-            const bool controller_air_push_frame=controller_recovery_push_frame||controller_windup_push_frame||controller_active_push_frame;
+            const bool controller_air_push_frame=controller_recovery_push_frame||controller_windup_push_frame||
+                controller_windup_entry_push_frame||controller_active_push_frame;
             const bool controller_relaunch_push_frame=controller_relaunch_push_policy&&relaunch_push&&
                 (!relaunch_entry_push||controller_relaunch_entry_push_policy);
             const bool jump_kind=(unsigned(o.kind)>=5&&unsigned(o.kind)<=8)||controller_fall_push_frame;
@@ -325,8 +328,8 @@ public:
                    (relaunch&&!controller_relaunch_policy&&!push_policy&&producer->policy_!=NativeBorgMotionPolicy::Relaunch)||
                      (push&&((!push_policy&&!controller_fall_push_frame&&!controller_air_push_frame&&!controller_relaunch_push_frame)||!o.static_push))||(!push&&o.static_push)||
                    (recovery_push&&!recovery_push_policy&&!controller_recovery_push_frame)||
-                    (windup_push&&!windup_push_policy&&!controller_windup_push_frame)||
-                   (windup_entry_push&&!windup_entry_push_policy)||
+                    (windup_push&&!windup_push_policy&&!controller_windup_push_frame&&!controller_windup_entry_push_frame)||
+                   (windup_entry_push&&!windup_entry_push_policy&&!controller_windup_entry_push_frame)||
                    (active_push&&!active_push_policy&&!controller_active_push_frame)||
                    (relaunch_push&&!relaunch_push_policy&&!controller_relaunch_push_frame)||
                    (relaunch_entry_push&&!relaunch_entry_push_policy&&!controller_relaunch_push_frame)||
@@ -435,7 +438,8 @@ public:
                 const bool touchdown=o.kind==NativeBorgMotionKind::JumpTouchdown;
                  if((controller_air_push_frame&&*o.controller_timer698!=0.f)||
                     (controller_recovery_push_frame&&e.phase!=17)||
-                    (controller_windup_push_frame&&(e.phase!=15||e.entry))||
+                     (controller_windup_push_frame&&(e.phase!=15||e.entry))||
+                     (controller_windup_entry_push_frame&&(e.phase!=15||!e.entry))||
                     (controller_active_push_frame&&(e.phase!=16||e.entry)))return false;
                  //The offer records the acceleration used before contact. A
                  //steep push clears that acceleration for the next update.
@@ -449,8 +453,8 @@ public:
                             (jump&&jump->ground_loss&&last_offer_.walk_ledge&&last_offer_.walk_ledge->timer698>0&&!controller_ground_loss_air_policy)||
                            e.stage_before||timer<5||timer>9||std::floor(timer)!=timer)return false;
                         speed=f32(speed*.5f);vertical=f32(vertical*.5f);
-                        if((o.kind!=NativeBorgMotionKind::AirDashWindupEntry&&!windup_entry_floor)||touchdown||
-                           (!air_floor&&o.proposed_position!=actor.position))return false;
+                         if((o.kind!=NativeBorgMotionKind::AirDashWindupEntry&&!windup_entry_floor&&!controller_windup_entry_push_frame)||touchdown||
+                            (!air_floor&&!controller_windup_entry_push_frame&&o.proposed_position!=actor.position))return false;
                     }else{
                         if(!previous||previous->next_selector!=15||e.stage_before!=1||timer!=previous->timer568)return false;
                         timer=f32(timer-1);if(timer<=0){next=16;stage=0;cost=450;}
@@ -506,7 +510,8 @@ public:
                     }
                     next=7;
                  }else if(controller_air_push_frame){
-                     if(!project_integrated_push(expected,std::max(-30.f,std::fma(acceleration,1.f,vertical))))return false;
+                     const f32 integrated=moves?std::max(-30.f,std::fma(acceleration,1.f,vertical)):vertical;
+                     if(!project_integrated_push(expected,integrated))return false;
                  }else if(air_floor){
                     const auto& floor=*o.air_dash_floor;
                     const f32 integrated=moves?std::max(-30.f,std::fma(1.f,acceleration,vertical)):vertical;
@@ -1135,7 +1140,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRelaunchEntryPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWindupEntryPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
