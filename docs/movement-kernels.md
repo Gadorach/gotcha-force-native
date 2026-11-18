@@ -134,6 +134,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   relaunch integration before the .9 steep response. It does not admit
   entry pushes or replay entry lift, and released falling inherits the
   accepted damped motion.
+- The ground-relaunch-entry-push policy also admits a relaunch entry push
+  at zero698 if the approach is still nonpositive after the +15 lift.
+  It verifies the entry cost, both lane requests and the exact post-lift
+  displacement before the steep response, without replay or a landing.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

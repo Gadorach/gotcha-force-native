@@ -13,6 +13,30 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Descending relaunch-entry push in the combined controller (GFMM9)
+
+`--source-ground-relaunch-entry-push` adds a steep push on the relaunch entry
+update at zero698, but only when the vertical speed is still nonpositive
+after the +15 lift. The entry cost of 150 and separate program14 requests
+occur once. The lift changes the displacement before acceleration and .9
+steep damping; it does not grant landing, refill, or a second lift.
+
+The original-stage demo pushes on entry at tick79, leaving 8400 meter.
+The following update releases into falling21 with soft left drift and accepts
+touchdown at80. Landing8 at81 clears the airborne cache separately. The
+previous continued-only mode refuses this entry push. Rising entry,
+dash entries, ground-loss falling and positive698 pushes remain unsupported.
+
+```sh
+build/direct/gf_native --demo-source-ground-relaunch-entry-push --headless --frames 240 --no-audio
+```
+
+[Contact Sheet 57](../local/recomp-evidence/contact-sheets/source-ground-relaunch-entry-push-v1/contact-sheet-57.png)
+shows the entry push and separate touchdown in offscreen OpenGL. The isolated
+host and all-header builds, three targeted host tests, and unchanged 64-tick
+duel smoke passed. The entry sanitizer test passed 1,273 checks, including
+rejection of incorrect lift, cost, lane, timer, and damping records.
+
 ## Continued relaunch push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-push` adds descending steep projection at zero698

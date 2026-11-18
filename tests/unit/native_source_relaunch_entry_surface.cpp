@@ -67,8 +67,8 @@ int main(){
     NativeBattleMvp world;NativeBattleMvpView view;NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;NativeBorgSourcePose pose;
     check(view.load(files,art,render,&error),"qualified original stage and normal Borg models");
     BattleMvpConfig config;config.spawn[0]={-606.4511719f,-1373.5872803f};
-    auto bind=[&](NativeGRedGroundDashDemo::Mode mode){
-        check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,inputs,world,seed,&error,mode),
+    auto bind=[&](NativeGRedGroundDashDemo::Mode mode,const std::string& pack){
+        check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,pack,world,seed,&error,mode),
             "native player placement only, ordinary target/bounds/references and live source seed");
         check(!source.relaunches()&&!source.relaunch_surface_pushes()&&!source.relaunch_entry_surface_pushes(),"fresh committed entry counters");
     };
@@ -86,7 +86,7 @@ int main(){
         check(world.step({},false,&view,nullptr,&frame,&offer)&&source.commit(world,view.source_binding(),&error)&&
             source.pose(world,&pose)&&view.update_source(world,pose,&error),"matching entry-push native receipt before source cost/VM/pose publication");
     };
-    bind(NativeGRedGroundDashDemo::Mode::RelaunchSurface);bool old_refused=false;
+    bind(NativeGRedGroundDashDemo::Mode::RelaunchSurface,inputs);bool old_refused=false;
     for(unsigned t=0;t<150&&!old_refused;++t){
         NativeBorgMotionOffer offer;const auto tick=world.tick();const auto selector=source.selector();const auto meter=source.resource();
         if(!prepare(pad_at(t),&offer)){
@@ -96,7 +96,22 @@ int main(){
         }else accept(offer);
     }
     check(old_refused,"same GFMM6 does not widen earlier entry contact authority");
-    bind(NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface);u32 entry_tick=0,touchdown_tick=0;s16 entry_meter=0;
+    const std::string combined_pack="local/content/source-gred-ground-v9";
+    const bool has_combined=files.exists(combined_pack+"/motion.gfmm");
+    if(has_combined){
+        bind(NativeGRedGroundDashDemo::Mode::GroundRelaunchPush,combined_pack);
+        while(world.tick()<78){NativeBorgMotionOffer offer;check(prepare(pad_at(world.tick()),&offer),"previous combined mode follows the approach");accept(offer);}
+        NativeBorgMotionOffer refused;const auto current=pose;const auto meter=source.resource();
+        check(!prepare(pad_at(78),&refused)&&world.tick()==78&&!source.relaunches()&&source.resource()==meter&&
+            current.frame_scope.expired()&&!world.motion_receipt_current(current.receipt)&&!world.step({},false,&view),
+            "previous combined mode refuses entry contact without committing or falling back");
+    }
+    for(bool combined:{false,true}){
+    if(combined&&!has_combined)continue;
+    bind(combined?NativeGRedGroundDashDemo::Mode::GroundRelaunchEntryPush:NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface,
+         combined?combined_pack:inputs);
+    u32 entry_tick=0,touchdown_tick=0;s16 entry_meter=0;
+    NativeBorgMotionOffer prior;
     for(unsigned t=0;t<240;++t){
         NativeBorgMotionOffer offer;const auto tick=world.tick();const auto meter=source.resource();const auto count=source.relaunches();
         const auto pushes=source.relaunch_entry_surface_pushes();
@@ -105,10 +120,39 @@ int main(){
             source.movement_programs()==programs&&source.relaunch_stages().lower_stage==stages.lower_stage&&
             source.relaunch_stages().upper_stage==stages.upper_stage,"entry cost, latches and counters stay private before acceptance");
         if(offer.kind==NativeBorgMotionKind::RelaunchEntryPush){
-            auto edited=offer;edited.entry_vertical_delta=14;const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
-            check(!world.step({},false,&view,nullptr,&frame,&edited)&&world.tick()==tick&&source.resource()==meter&&!source.relaunches()&&
-                !source.relaunch_entry_surface_pushes()&&!retained.frame_scope.expired()&&world.motion_receipt_current(retained.receipt),
-                "edited entry delta cannot charge150, advance a world or revoke the previous accepted pose");
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            const auto position=world.actors()[0].position;
+            const auto rejects=[&](NativeBorgMotionOffer edited,const char* why){
+                check(!world.step({},false,&view,nullptr,&frame,&edited)&&world.tick()==tick&&world.actors()[0].position==position&&
+                    source.resource()==meter&&source.relaunches()==count&&source.relaunch_entry_surface_pushes()==pushes&&
+                    source.movement_programs()==programs&&!retained.frame_scope.expired()&&world.motion_receipt_current(retained.receipt),why);
+            };
+            auto edited=offer;edited.entry_vertical_delta=14;
+            rejects(edited,"edited lift cannot spend resource or revoke the prior accepted pose");
+            if(combined){
+                check(offer.relaunch_motion&&prior.jump_motion&&offer.controller_timer698==0.f,
+                    "combined entry proves the prior falling motion and zero timer");
+                const auto& e=*offer.relaunch_motion;const auto& p=*offer.static_push;
+                check(e.entry&&e.lower_before==0&&e.upper_before==0&&e.lower_after==1&&e.upper_after==1&&
+                    e.lower_program==14&&e.upper_program==14&&e.speed_before==prior.jump_motion->speed44&&
+                    e.vertical_before==f32(prior.vertical_speed+15)&&e.vertical_before<=0&&
+                    p.vertical_speed==std::clamp(std::fma(e.vertical_accel,1.f,e.vertical_before),-30.f,18.f)&&
+                    offer.vertical_speed==f32(p.vertical_speed*p.damping)&&e.resource_before==meter&&
+                    e.resource_after==meter-input.costs[0]&&!offer.relaunch_floor,
+                    "entry applies lift before integration, projects with .9 damping, and requests both lanes exactly once");
+                edited=offer;edited.relaunch_motion->vertical_before=prior.vertical_speed;
+                rejects(edited,"entry cannot integrate the unlifted velocity");
+                edited=offer;edited.kind=NativeBorgMotionKind::RelaunchWindupPush;edited.entry_vertical_delta=0;
+                rejects(edited,"an entry cannot borrow the continued push kind");
+                edited=offer;edited.relaunch_motion->resource_after=meter-input.costs[1];
+                rejects(edited,"entry cannot borrow continuation cost");
+                edited=offer;edited.relaunch_motion->upper_after=2;
+                rejects(edited,"entry cannot skip the first upper request");
+                edited=offer;edited.static_push->damping=.8f;
+                rejects(edited,"entry steep contact cannot use floor damping");
+                edited=offer;edited.controller_timer698=1;
+                rejects(edited,"positive698 remains unsupported");
+            }
         }
         accept(offer);
         if(offer.kind==NativeBorgMotionKind::RelaunchEntryPush){
@@ -132,17 +176,22 @@ int main(){
             touchdown_tick=world.tick();
             check(entry_tick&&touchdown_tick==entry_tick+1&&source.movement_programs()==std::array<u16,2>{21,21}&&source.selector()==7&&
                 source.resource()==entry_meter&&world.actors()[0].grounded&&world.actors()[0].facing==offer.observed.facing,
-                "accepted soft drift and falling21 give a separate real touchdown, not a relaunch landing/refill or camera-forced heading");
+                 "accepted soft drift and falling21 give a separate real touchdown, not a relaunch landing/refill or camera-forced heading");
+            if(combined)check(offer.jump_motion&&prior.relaunch_motion&&offer.jump_motion->relaunch_origin&&
+                offer.jump_motion->speed_before==prior.relaunch_motion->speed44&&offer.jump_motion->vertical_before==prior.vertical_speed,
+                "release inherits the damped entry response");
         }
+        prior=offer;
     }
     check(entry_tick==79&&touchdown_tick==80&&source.relaunches()==1&&source.relaunch_entry_surface_pushes()==1&&source.relaunch_surface_pushes()==1&&
         source.surface_pushes()==1&&source.landings()==1&&source.selector()==0&&source.resource()==10000&&!world.shots_spawned()&&
         world.actors()[0].health==100&&world.actors()[1].health==100,"bounded original entry-push route falls/lands/refills once through shared systems");
     const auto retained=pose;source.reject();
     check(retained.frame_scope.expired()&&!world.motion_receipt_current(retained.receipt),"entry producer retirement revokes pose and receipt");
+    std::printf("%s entry: entry=%u touchdown=%u meter=%d\n",combined?"combined":"legacy",entry_tick,touchdown_tick,entry_meter);
+    }
     check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v5",world,seed,&error,NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface)&&world.tick()==0,
         "legacy pack cannot fabricate entry-push operands");
-    std::printf("source relaunch-entry additive/spend/lane/contact/pose: %u checks PASS; entry=%u touchdown=%u meter=%d; native proxies, no whole-frame equivalence\n",
-        checks,entry_tick,touchdown_tick,entry_meter);
+    std::printf("source relaunch-entry additive/spend/lane/contact/pose: %u checks PASS; native proxies, no whole-frame equivalence\n",checks);
 }

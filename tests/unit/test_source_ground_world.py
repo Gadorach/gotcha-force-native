@@ -11,6 +11,31 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_combined_relaunch_entry_push_charges_once_and_requires_separate_landing(self):
+        for tick, pushes, landings, meter, selector, program, cached in (
+                (78, 0, 0, 8550, 6, 6, 1),
+                (79, 1, 0, 8400, 8, 14, 1),
+                (80, 1, 1, 8400, 7, 21, 1),
+                (81, 1, 1, 8400, 7, 8, 0),
+                (240, 1, 1, 10000, 0, 0, 0)):
+            result = self.run_host(["--demo-source-ground-relaunch-entry-push", "--headless",
+                                    "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn(f"controller-relaunch-pushes={pushes} entry-pushes={pushes} relaunches={pushes} "
+                          f"landings={landings} resource={meter} selector={selector} "
+                          f"programs={program}/{program} cached87={cached}", result.stdout)
+            self.assertIn("no rising entry, dash entry, ground-loss or positive698 push authority",
+                          result.stdout)
+
+    def test_interactive_relaunch_entry_push_has_no_demo_input(self):
+        result = self.run_host(["--source-ground-relaunch-entry-push", "--headless",
+                                "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("accepted native tick=10", result.stdout)
+        self.assertIn("controller-relaunch-pushes=0 entry-pushes=0 relaunches=0", result.stdout)
+        self.assertNotIn("ground-relaunch-entry-push demo only:", result.stdout)
+
     def test_combined_relaunch_push_keeps_entry_release_and_landing_separate(self):
         for tick, pushes, landings, meter, selector, program, cached in (
                 (82, 0, 0, 8200, 8, 14, 1),
