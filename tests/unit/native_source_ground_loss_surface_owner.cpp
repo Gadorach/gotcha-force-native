@@ -171,6 +171,46 @@ int main(){
     const auto position=world.actors()[0].position;const auto edge_frame=NativeBattleMvpView::movement_frame(world,1152,648);
     check(!source.prepare(world,view.source_binding(),edge_frame,60,0,1u<<16,&offer,&error)&&world.tick()==7&&world.actors()[0].position==position&&
         !source.air_dash_starts()&&pose.frame_scope.expired()&&!world.step({},false,&view),"positive698 contact support does not enable air-dash overlap");
+
+    //The positive timer classifies this genuine ledge-fall approach as steep,
+    //but the native pre-contact travel still crosses a raised face. A plausible
+    //post-projection endpoint must not be used to skip either check.
+    const Route raised{-1502.66699f,-97.3330078f,94.339f,10,138,0,28,9172,true};
+    bind(raised,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush);
+    NativeBorgMotionOffer last;
+    while(world.tick()<140){check(prepare(pad_at(world.tick(),raised),&last),"original raised-face approach");accept(last);}
+    check(source.ground_departures()==1&&source.ground_loss_entries()==1&&source.ground_loss_timer698()==raised.timer+1&&
+        last.kind==NativeBorgMotionKind::GroundLossAir&&last.walk_ledge&&last.walk_ledge->timer698==raised.timer+1&&
+        !last.walk_ledge->drift_heading&&source.movement_programs()==std::array<u16,2>{13,13},
+        "accepted countdown and suppressed drift come from a genuine ledge departure");
+    const auto falling=world.actors()[0];const auto current=pose;const auto resource=source.resource();
+    f32 x=0,z=0;source_heading_xz(last.walk_ledge->travel5ae,&x,&z);
+    const auto speed=f32(last.walk_ledge->speed44*bits_to_f32(0x3f7d70a4u));
+    auto integrated=falling.position;
+    integrated[0]=std::fma(1.f,f32(speed*x),integrated[0]);
+    integrated[1]=std::fma(falling.vertical_speed,1.f,integrated[1]);
+    integrated[2]=std::fma(1.f,f32(speed*z),integrated[2]);
+    NativeBorgStaticSurface surface;BattleMvpVec projected;s16 angle=0;
+    check(view.static_surface(integrated[0],integrated[2],falling.position[1],&surface)&&surface.triangle==2747&&
+        source_surface_angle(surface.normal,&angle)&&angle==raised.angle&&angle>6144&&angle<=10240&&
+        surface.height>falling.position[1]&&source_surface_push_position(integrated,surface.normal,surface.height,angle,&projected),
+        "actual plane crosses the positive timer angle gate and lies above the current actor");
+    f32 projected_floor=0;
+    check(view.height(projected[0],projected[2],falling.position[1],&projected_floor)&&projected[1]>=projected_floor-.01f,
+        "post-projection height alone would not reject the candidate");
+    const auto& other=world.actors()[1];const auto& bounds=world.config();
+    NativeBorgContactRequest travel{falling.position,other.position,
+        {integrated[0]-falling.position[0],integrated[2]-falling.position[2]},bounds.arena_half,bounds.actor_radius,
+        bounds.actor_height,bounds.step_height,false,other.health!=0};
+    travel.vertical_end_y=integrated[1];NativeBorgContactResult contact;
+    check(native_borg_resolve_contact(travel,&view,&contact)&&contact.terrain_blocked&&!contact.body_hit&&!contact.bounds_hit,
+        "native pre-contact travel refuses the raised face independently of body or bounds");
+    check(!prepare(pad_at(140,raised),&offer)&&error.find("steep push")!=std::string::npos&&world.tick()==140&&
+        world.actors()[0].position==falling.position&&source.ground_loss_timer698()==raised.timer+1&&source.resource()==resource&&
+        !source.landings()&&!source.surface_pushes()&&source.movement_programs()==std::array<u16,2>{13,13}&&
+        current.frame_scope.expired()&&!world.motion_receipt_current(current.receipt)&&!world.step({},false,&view),
+        "inter-gate ledge-fall contact cannot commit a push, landing, timer step or fallback");
+
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossSurface),"combined ground-loss surface requires GFMM9");
     std::printf("ground-loss/surface/timer-angle/history/receipt: %u checks PASS; six600-update genuine routes plus old-policy/positive-input/air-overlap refusals; native proxies only\n",checks);

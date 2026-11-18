@@ -58,6 +58,23 @@ publishing entry motion, cost, or animation. Neither the native terrain check no
 the active-entry push policy was widened. Existing gentle-floor active entry and
 continued active steep pushes remain distinct.
 
+### Ledge-fall steep contact still requires a verified travel path
+
+Ledge-fall contact uses the accepted countdown: a positive timer selects the
+6144 angle gate rather than the expired-timer gate of 10240. That can classify
+a face as steep before the falling actor reaches the floor, but it does not
+authorize the projection. In two bounded original-stage scans (2,000 routes
+and 1,764 nearby variations), no steep proposal passed both native plane
+matching and pre/post-contact travel checks.
+
+The ground-loss owner regression follows a genuine ledge departure at tick138
+and program13 falling. At the proposed tick141, the countdown would be 28
+and the selected face has angle 9172. The proposed projection clears its final
+floor, but native travel to the pre-contact point is blocked by the raised face.
+The existing policy refuses the frame and leaves the last accepted countdown,
+pose state, position and meter unchanged; the source lease retires without a
+fallback. Ledge-fall pushes remain disabled; no collision rules changed.
+
 ## Descending relaunch-entry push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-entry-push` adds a steep push on the relaunch entry
