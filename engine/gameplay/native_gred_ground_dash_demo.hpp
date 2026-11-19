@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/assets/borg_practice_profile.hpp"
 #include "engine/gameplay/stage_inclined_ledge.hpp"
 //Movement-only native harness around recovered G-Red ground components.
 //Native collider/target proxies are explicit approximations, NOT original
@@ -51,7 +52,8 @@ public:
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
     bool bind(IFileSystem& files,const std::string& art,const std::string& inputs,const NativeBattleMvp& world,
-              const NativeBorgAnimationSeed& seed,std::string* error,Mode mode=Mode::DashOnly){
+              const NativeBorgAnimationSeed& seed,std::string* error,Mode mode=Mode::DashOnly,
+              const NativeGRedPracticeAssets* practice=nullptr){
         retire();NativeBorgMotionObservation observed;
         mode_=mode;
         const auto binding=seed.binding.lock();
@@ -60,15 +62,25 @@ public:
            world.actors()[0].movement_speed||!binding||binding->model_hash!=0xe2b4439au||seed.stage_hash!=0xbdf8e542u||seed.floor_hash!=0x0d913901u)
             return fail(error,"fresh same-world/model/stage pose seed required");
         std::vector<u8> encoded,height,movement,motion,model,motions;
-        if(!read(files,inputs+"/locomotion.gfmp",65536,&encoded,error)||!read(files,inputs+"/pose-height.gfhc",28,&height,error)||
-           !read(files,inputs+"/movement.gfmi",192,&movement,error)||!read(files,inputs+"/motion.gfmm",376,&motion,error)||
-           !read(files,art+"/g-red.hsd",4u<<20,&model,error)||!read(files,art+"/g-red.motions",32u<<20,&motions,error))return false;
-        if(ordered_mode(mode_)&&(motions.size()!=355264||character_program_model_hash(view(motions))!=0x276b4e9eu))
+        ByteView program_bytes,height_bytes,input_bytes,motion_bytes,model_bytes,bank_bytes;
+        if(practice){
+            if(!ordered_mode(mode_)||!practice->qualified())return fail(error,"unqualified packaged practice controller inputs");
+            using A=NativeGRedPracticeAssets;const auto& p=*practice;
+            program_bytes=p[A::Programs];height_bytes=p[A::PoseHeight];input_bytes=p[A::MovementInput];
+            motion_bytes=p[A::MovementMotion];model_bytes=p[A::Body];bank_bytes=p[A::Bank];
+        }else{
+            if(!read(files,inputs+"/locomotion.gfmp",65536,&encoded,error)||!read(files,inputs+"/pose-height.gfhc",28,&height,error)||
+               !read(files,inputs+"/movement.gfmi",192,&movement,error)||!read(files,inputs+"/motion.gfmm",376,&motion,error)||
+               !read(files,art+"/g-red.hsd",4u<<20,&model,error)||!read(files,art+"/g-red.motions",32u<<20,&motions,error))return false;
+            program_bytes=view(encoded);height_bytes=view(height);input_bytes=view(movement);
+            motion_bytes=view(motion);model_bytes=view(model);bank_bytes=view(motions);
+        }
+        if(ordered_mode(mode_)&&(bank_bytes.size!=355264||character_program_model_hash(bank_bytes)!=0x276b4e9eu))
             return fail(error,"ordered ground requires qualified original G-Red motion bank");
-        if(character_program_model_hash(view(encoded))!=0x638570ffu||character_program_model_hash(view(model))!=0xe2b4439au||
-           !character_program_load_control_flow(view(encoded),0xe2b4439au,&programs_,error)||
-           !character_pose_height_profile_load(view(height),&height_,error)||!character_movement_input_load(view(movement),&input_,error)||
-           !character_movement_load(view(motion),&motion_,error))return fail(error,"qualified normal source profiles required");
+        if(character_program_model_hash(program_bytes)!=0x638570ffu||character_program_model_hash(model_bytes)!=0xe2b4439au||
+           !character_program_load_control_flow(program_bytes,0xe2b4439au,&programs_,error)||
+           !character_pose_height_profile_load(height_bytes,&height_,error)||!character_movement_input_load(input_bytes,&input_,error)||
+           !character_movement_load(motion_bytes,&motion_,error))return fail(error,"qualified normal source profiles required");
         if(!air_meter_.matches_operands(input_.resource_limit,input_.recovery_delay,input_.recovery_increment,input_.costs))
             return fail(error,"qualified movement meter operands must match normal G-Red's definition");
         if(mode_!=Mode::DashOnly&&!motion_.walk_operands)return fail(error,"general ground movement requires GFMM2 walk operands");
@@ -88,7 +100,7 @@ public:
                 if(seed.rig.order[i]==0)root_lane_=lane;
             if(root_lane_>=2||seed.rig.mirror[0]!=0)return fail(error,"ordered ground requires an owned unaliased root lane");
         }
-        CharacterMotionBank bank;if(!character_motion_bank_load(view(motions),&bank,error))return false;
+        CharacterMotionBank bank;if(!character_motion_bank_load(bank_bytes,&bank,error))return false;
         std::array<std::array<bool,128>,16> needed{};
         for(const auto& descriptor:programs_.descriptors)for(unsigned lane=0;lane<2;++lane){
             const unsigned at=4+lane*8,group=descriptor.bytes[at],choice=descriptor.bytes[at+1];
@@ -101,7 +113,7 @@ public:
             if(!character_motion_select(bank,group,choice,&selected,error)||selected.fallback||!hsd_bone_motion_load(selected.archive,seed.rig.binding,&clip.clip,error))return false;
             clips.push_back(std::move(clip));
         }
-        if(!driver_.load_frozen_target_transitions(view(model),seed.rig,programs_,clips,seed.local,error))return false;
+        if(!driver_.load_frozen_target_transitions(model_bytes,seed.rig,programs_,clips,seed.local,error))return false;
         constexpr std::array<u32,3> hashes={0x0d913901u,0x01859c01u,0xfe083e8fu};
         const std::array<const char*,3> names={"floor.stih","secondary.stih","tertiary.stih"};
         for(unsigned i=0;i<3;++i){std::vector<u8> bytes;if(!read(files,inputs+"/"+names[i],16u<<20,&bytes,error)||

@@ -42,7 +42,49 @@ escape the package, and symlink directories or assets are not followed.
 renderer. Discovery currently validates the manifest and the presence of its
 files, **not their contents**. The listed extensions are examples, not a claim
 that the host can import those formats or use those rules today. The packages
-do not grant ownership, enter the retail or battle pickers, or create actors.
+do not grant ownership, enter the retail or battle pickers, or create actors
+at discovery time.
+
+## Qualified normal G-Red practice package
+
+The first playable package path reuses the existing movement-only G-Red
+practice session. It requires an explicit stable package ID and the exact
+`normal` variant; it does not add an owned copy or admit a package to the
+duel, Challenge, or Story.
+
+```sh
+gf_native --gred-movement --practice-borg example:normal-gred --borg-variant normal --no-audio
+```
+
+Declare `model`, `animations`, `catalog`, and `rules` in `borg.manifest`.
+The catalogue must declare `normal` as its base variant. No variant
+overrides or separate `animation-map` are supported for this path. The
+manifest's `rules` file must declare:
+
+```text
+GFBORG-PRACTICE 1
+controller=normal-gred-gfmm9
+variant=normal
+rig-prefix=visual/g-red.prefix
+pose-profile=visual/g-red.pose
+locomotion=movement/locomotion.gfmp
+pose-height=movement/pose-height.gfhc
+movement-input=movement/movement.gfmi
+movement-motion=movement/motion.gfmm
+```
+
+The manifest's body and motion bank and these six files must match the
+qualified normal G-Red inputs already used by the native harness. This is
+not a generic import format, a rules interpreter, or a claim of package
+signature verification. File paths and reads are bounded. Missing, linked,
+modified, or unsupported files refuse instead of falling back to the
+loose G-Red files. Once loaded, the selected package bytes are held for the
+session and reused on **Q** restart.
+
+The qualified stage, its three static collision grids, and the stationary
+Sasuke target remain separate harness inputs; the package does not supply
+them. Preview art and editor icons are not required. Existing practice
+options such as `--practice-start` also work with an eligible package.
 
 ## Read-only installed Borg picker
 

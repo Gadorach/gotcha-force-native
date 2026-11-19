@@ -114,6 +114,10 @@ route with the same HUD. Both commands need the qualified local GFMM9 pack
 and native stage/model data. They do not change the duel, enable combat, or
 relax unsupported contact refusals.
 
+An explicitly selected [qualified normal G-Red package](borg-packages.md#qualified-normal-g-red-practice-package)
+can supply the player body, rig and controller for the same practice
+session. Stage and target assets stay in the existing harness.
+
 ### Try a demo route with your own inputs
 
 Add `--practice-start` to an interactive G-Red practice command to use its

@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/assets/borg_practice_profile.hpp"
 #include "engine/gameplay/stage_inclined_ledge.hpp"
 #include "engine/gameplay/native_battle_mvp_borg.hpp"
 #include "engine/gameplay/attachment_model_scene.hpp"
@@ -94,8 +95,10 @@ public:
         return draws;
     }
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
-    bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error){
-        ready_=false;source_practice_frame_.reset();std::vector<u8> stage,floor_bytes;
+    bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error,
+              const NativeGRedPracticeAssets* practice=nullptr){
+        ready_=false;source_practice_package_=false;source_practice_frame_.reset();std::vector<u8> stage,floor_bytes;
+        if(practice&&!practice->qualified()){if(error)*error="unqualified packaged practice view inputs";return false;}
         auto read=[&](const std::string& name,std::vector<u8>* out){u64 size=0;const auto path=directory+"/"+name;if(!files.file_size(path,&size)||!size||size>(32u<<20)||!files.read(path,*out)||out->size()!=size){if(error)*error="native MVP: missing/oversized asset "+path;return false;}return true;};
         if(!read("stage.hsd",&stage)||!read("floor.stih",&floor_bytes)||!floor_.load({floor_bytes.data(),floor_bytes.size()},error)||!stage_bank_.load({stage.data(),stage.size()},error,true))return false;
         floor_hash_=2166136261u;for(u8 byte:floor_bytes)floor_hash_=(floor_hash_^byte)*16777619u;
@@ -103,12 +106,17 @@ public:
         AttachmentBoneTransform root;root.valid=true;
         for(unsigned i=0;i<2;++i){if(!stage_[i].load_shared(geometry,u16(i*2),error)||!stage_[i].set_world_static(root,error))return false;stage_[i].upload_textures_shared(render,1000);}
         for(unsigned i=0;i<2;++i){
-            const std::string name=i?"sasuke":"g-red";std::vector<u8> model,prefix,pose,motions;
-            if(!read(name+".hsd",&model)||!read(name+".prefix",&prefix)||!read(name+".pose",&pose)||!read(name+".motions",&motions)||!borgs_[i].load(i?10:0x615,{model.data(),model.size()},{prefix.data(),prefix.size()},{pose.data(),pose.size()},{motions.data(),motions.size()},error))return false;
+            if(!i&&practice){
+                using A=NativeGRedPracticeAssets;const auto& p=*practice;
+                if(!borgs_[0].load(0x615,p[A::Body],p[A::RigPrefix],p[A::PoseProfile],p[A::Bank],error))return false;
+            }else{
+                const std::string name=i?"sasuke":"g-red";std::vector<u8> model,prefix,pose,motions;
+                if(!read(name+".hsd",&model)||!read(name+".prefix",&prefix)||!read(name+".pose",&pose)||!read(name+".motions",&motions)||!borgs_[i].load(i?10:0x615,{model.data(),model.size()},{prefix.data(),prefix.size()},{pose.data(),pose.size()},{motions.data(),motions.size()},error))return false;
+            }
             borgs_[i].upload(render,10000+i*2000);
         }
         if(render.shared_texture_upload_failed())return false;
-        ready_=true;return true;
+        source_practice_package_=practice!=nullptr;ready_=true;return true;
     }
     bool height(f32 x,f32 z,f32 current_y,f32* out)const override{
         NativeBorgStaticSurface surface;
@@ -303,6 +311,7 @@ public:
         if(source_practice_){
             status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  P STEP WHILE PAUSED\nQ RESTART  ESC CLOSE / NO COMBAT";
             if(source_interactive_)status+=source_practice_close_camera_?"\nC CAMERA: CLOSE":"\nC CAMERA: STANDARD";
+            if(source_practice_package_)status+="\nPACKAGE PRACTICE / NORMAL VARIANT";
             if(!source_practice_start_label_.empty())status+="\n"+source_practice_start_label_;
         }
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
@@ -361,6 +370,7 @@ private:
     bool source_practice_=false;
     bool source_practice_close_camera_=false;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_practice_frame_;
+    bool source_practice_package_=false;
     std::string source_practice_start_label_;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };
