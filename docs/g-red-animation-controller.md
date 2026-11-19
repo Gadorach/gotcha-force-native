@@ -436,6 +436,28 @@ policy and the newer inclined-dash policy both pass this walk replay.
 There is no dash root update, flight-meter spend, or steep push. This is one
 verified route, not a claim about arbitrary slopes or original spawns.
 
+## Dash interruption on an incline (GFMM9)
+
+`--demo-gred-inclined-dash-jump` uses the existing flat-to-incline
+fixture and dash-jump rules together. On the original stage, **S** on
+6 starts the ordered dash, which crosses from flat triangle 249 to
+incline 1052 at 11. Hold **Shift** on 14–37. Takeoff at 14 interrupts
+dash recovery at the already accepted height, without another root
+update or a meter charge. The old root lease retires only after that
+takeoff is accepted, when **DASH CANCELED** appears.
+
+```sh
+gf_native --demo-gred-inclined-dash-jump --headless --frames 120 --no-audio
+gf_native --gred-inclined-dash-jump --practice-start --no-audio
+```
+
+The first lift spends 150 at 26. Release into falling at 38 with
+8750 meter, touch down on the incline at 84, and enter the separate
+landing at 85. The alternate uphill fixture also completes an
+interruption during active dash. The bounded scan completed 153 of
+252 routes; incomplete trajectories did not grant any new movement
+or contact permissions.
+
 ## Descending air-dash wind-up entry push in the combined controller (GFMM9)
 
 `--source-ground-windup-entry-push` adds steep projection during wind-up entry

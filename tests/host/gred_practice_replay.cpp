@@ -6,7 +6,7 @@
 
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
-    RecoverySeamRestart,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
+    RecoverySeamRestart,InclineDashJump,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
@@ -51,6 +51,13 @@ public:
             snapshot_.frame_step=f==0||f==2||f==4||f==7||f==8;
             if(f>=4&&f<=6)raw.buttons|=1u<<3; // Restart wins over a simultaneous step.
             break;
+        case Replay::InclineDashJump:{
+            const unsigned tick=1+f/2;
+            snapshot_.frame_step=f%2==0;
+            if(tick==6)raw.axis[1]=20000; // S on the desktop keyboard adapter.
+            if(tick>=14&&tick<=37)raw.buttons|=1u<<1;
+            break;
+        }
         case Replay::PickerPractice:
             // Hold both launch and exit across the renderer/session handoff.
             if(f<=3||(f>=16&&f<=18))raw.buttons|=1u<<3;
@@ -143,11 +150,12 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
     Options options;
     const bool seam=replay==Replay::RecoverySeamRestart;
-    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam;
+    const bool incline=replay==Replay::InclineDashJump;
+    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
-         recovery[]="--gred-recovery-first-contact-seam";
+         recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump";
     char audio[]="--no-audio",start[]="--practice-start";
-    char* args[]={program,seam?recovery:fixture?expiry:practice,audio,start};
+    char* args[]={program,incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
     check(parse(fixture?4:3,args,&options),scenario,log.text);
     options.frames=frames;
     options.headless=replay==Replay::RaisedFace||fixture; // Exactly one scheduled tick per frame.
@@ -422,5 +430,15 @@ int main(int argc,char** argv){
         once(guide,"practice restarted at tick=0")&&has(guide,"frames=10 ticks=1")&&
         has(guide,"accepted native tick=1 G-Red-position=-240.00/10.00/300.00"),
         "guide starts and restarts paused without injecting movement; held step does not repeat",guide);
-    std::puts("G-Red practice replay: twelve desktop-loop scenarios PASS without opening devices");
+    const auto canceled=run(Replay::InclineDashJump,28,"incline dash-jump takeoff");
+    check(once(canceled,"incline dash jump guide: paused at tick=0")&&!has(canceled,"incline dash jump demo:")&&
+        has(canceled,"accepted native tick=14 G-Red-position=812.74/481.75/2374.44")&&
+        has(canceled,"practice-meter=10000/10000 at accepted tick=14")&&once(canceled,"practice-dash-takeoff=DASH CANCELED"),
+        "live S and Shift cancel dash recovery on the accepted slope without charging lift early",canceled);
+    const auto jump_landed=run(Replay::InclineDashJump,240,"incline dash-jump landing");
+    check(has(jump_landed,"accepted native tick=120 G-Red-position=812.74/481.75/2374.44")&&
+        has(jump_landed,"practice-meter=10000/10000 at accepted tick=120")&&has(jump_landed,"practice-phase=IDLE")&&
+        !has(jump_landed,"practice-dash-takeoff=")&&!has(jump_landed,"practice stopped"),
+        "live guide lands and refills on its original slope without retaining the takeoff cue",jump_landed);
+    std::puts("G-Red practice replay: fourteen desktop-loop scenarios PASS without opening devices");
 }

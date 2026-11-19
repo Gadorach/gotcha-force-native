@@ -741,6 +741,27 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("practice-phase=IDLE", result.stdout)
         self.assertIn("resets=1", result.stdout)
 
+    def test_inclined_dash_jump_keeps_takeoff_height_and_defers_cost(self):
+        for tick, phase, meter in (
+            (13, "GROUND DASH", 10000), (14, "TAKEOFF", 10000), (15, "TAKEOFF", 10000),
+            (26, "RISING", 9850), (38, "FALLING", 8750), (84, "TOUCHDOWN", 8750),
+            (85, "LANDING", 8750), (120, "IDLE", 10000),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-inclined-dash-jump", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertEqual("practice-dash-takeoff=DASH CANCELED" in run.stdout, tick==14)
+                self.assertIn("root-updates=8", run.stdout)
+                if tick in (13,14,120):
+                    self.assertIn("G-Red-position=812.74/481.75/2374.44", run.stdout)
+        guide = self.run_host(["--gred-inclined-dash-jump", "--practice-start", "--headless", "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("incline dash jump guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=830.73/482.75/2191.48", guide.stdout)
+        self.assertNotIn("incline dash jump demo:", guide.stdout)
+
     def test_slope_crease_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-crease-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

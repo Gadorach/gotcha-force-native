@@ -300,5 +300,76 @@ int main(){
             world.actors()[0].grounded&&source.selector()==0&&source.ground_loss_timer698()==0,
             "walk and dash permission are independent and the older walking path recovers to idle");
     }
-    std::printf("slope dash: %u checks PASS, original-stage seams, separate walk/dash cliff routes, older refusals\n",checks);
+    struct JumpRoute {
+        Route route;Mode mode;unsigned takeoff,held_until,lift,fall,touch,roots;u8 interrupted;u32 triangle;s16 meter;
+    };
+    const JumpRoute jumps[]={
+        {transitions[0].route,Mode::GroundSlopeTransitionDash,14,37,26,38,84,8,14,1052,8750},
+        {up,Mode::GroundSlopeDash,7,16,19,20,53,1,13,853,9850},
+    };
+    view.source_practice_controls();
+    for(const auto& j:jumps){
+        using Kind=NativeBorgMotionKind;
+        bind(j.route,j.mode);
+        const auto spawn=world.actors()[0].position;
+        unsigned takeoff=0,lift=0,fall=0,touch=0,land=0,seams=0;
+        std::weak_ptr<const NativeBorgOrderedRootScope> last_root;
+        NativeBorgMotionOffer prior;
+        while(world.tick()<120){
+            const unsigned tick=world.tick()+1;const auto before=world.actors()[0];const auto retained=pose;
+            GamePadState pad;pad.b=tick>=j.takeoff&&tick<=j.held_until;
+            if(tick==6){if(j.route.lateral)pad.stick_x=j.route.stick;else pad.stick_y=j.route.stick;}
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            NativeGRedGroundInput input;NativeBorgMotionOffer offer;
+            check(source.map_input(pad,&input,&error)&&
+                source.prepare(world,view.source_binding(),frame,input.x,input.y,input.held,&offer,&error),
+                "grounded incline approach, interruption, lift and landing all prepare");
+            if(offer.ordered_ground&&offer.walk_ledge){
+                NativeBorgStaticSurface plane;
+                check(view.static_surface(before.position[0],before.position[2],before.position[1],&plane),"accepted approach plane");
+                seams+=plane.triangle!=offer.walk_ledge->surface.triangle;
+                if(!offer.ordered_ground->root_scope.expired())last_root=offer.ordered_ground->root_scope;
+            }
+            if(tick==j.takeoff){
+                NativeBorgStaticSurface plane;
+                check(prior.ordered_ground&&source.ordered_root().updates==j.roots&&!last_root.expired()&&
+                    source.selector()==j.interrupted&&before.grounded&&before.position[1]!=spawn[1]&&
+                    view.static_surface(before.position[0],before.position[2],before.position[1],&plane)&&plane.triangle==j.triangle&&
+                    !native_borg_flat_surface(plane)&&plane.height==before.position[1]&&
+                    offer.kind==Kind::JumpTakeoff&&offer.jump_motion&&offer.jump_motion->entry&&!offer.ordered_ground&&
+                    offer.proposed_position==before.position&&offer.facing==before.facing&&!offer.vertical_speed,
+                    "takeoff on the accepted incline does not advance the old root, move, turn or flatten the actor");
+                check(source.resource()==10000&&!source.dash_jumps()&&view.practice_readout(world)&&
+                    !view.practice_readout(world)->dash_interrupted_takeoff,"staging does not publish cancel or meter use");
+                auto wrong=offer;wrong.proposed_position[1]=spawn[1];
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick-1&&world.actors()[0].position==before.position&&
+                    world.motion_receipt_current(retained.receipt)&&!last_root.expired()&&source.ordered_root().updates==j.roots&&
+                    !view.practice_readout(world)->dash_interrupted_takeoff,"old height cannot advance or retire the accepted root");
+                takeoff=tick;
+            }
+            if(takeoff&&offer.jump_motion&&offer.jump_motion->phase==5&&!lift)lift=tick;
+            if(lift&&offer.jump_motion&&offer.jump_motion->phase==6&&!fall)fall=tick;
+            if(offer.kind==Kind::JumpTouchdown){
+                touch=tick;
+                check(offer.surface_landing&&offer.surface_landing->surface.triangle==j.triangle,
+                    "separate callback selects the genuine incline again");
+            }
+            if(touch&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->dash_interrupted_takeoff==(tick==j.takeoff),"the cancel cue belongs to the accepted takeoff only");
+            if(tick==takeoff)check(last_root.expired()&&source.dash_jumps()==1&&source.last_dash_jump_selector()==j.interrupted&&
+                source.movement_programs()==std::array<u16,2>{2,2}&&source.resource()==10000&&world.actors()[0].grounded,
+                "one accepted takeoff retires the old root and publishes both takeoff lanes free of charge");
+            if(takeoff)check(source.ordered_root().updates==j.roots,"no further root update runs after the interruption");
+            if(tick==lift)check(source.resource()==9850&&!world.actors()[0].grounded,"the separate lift frame pays 150");
+            if(tick==fall||tick==touch||tick==land)check(source.resource()==j.meter,"release, touchdown and landing entry preserve the spent meter");
+            prior=offer;
+        }
+        check(takeoff==j.takeoff&&lift==j.lift&&fall==j.fall&&touch==j.touch&&land==touch+1&&
+            seams==(j.mode==Mode::GroundSlopeTransitionDash?1u:0u)&&!source.ground_departures()&&
+            source.dash_jumps()==1&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+            "mixed-seam recovery interruption and uphill active interruption both finish at full-meter idle");
+    }
+    std::printf("slope dash: %u checks PASS, original-stage seams, cliff routes, incline jump interruption and older refusals\n",checks);
 }

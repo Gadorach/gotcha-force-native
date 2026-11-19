@@ -200,6 +200,11 @@ speed. Releasing after liftoff gives the separate touchdown and
 landing. `--demo-gred-walk-ledge-timed-relaunch-floor` replays it
 under the existing contact rules.
 
+`--gred-inclined-dash-jump --practice-start` opens the flat-to-incline
+dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
+**DASH CANCELED** appears on accepted takeoff. The old dash does not
+move G-Red again, and the flight meter is first charged on lift.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement

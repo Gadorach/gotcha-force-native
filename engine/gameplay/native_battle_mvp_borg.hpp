@@ -19,6 +19,7 @@ struct NativeBorgSourceReadout {
     bool recovery_push_exit_drift=false; //Accepted first falling update with drift after that completing push.
     bool plain_windup_relaunch_ready=false; //Accepted plain handoff window, not a receipt for the next action.
     std::optional<bool> relaunch_floor_damped; //Accepted airborne snap; true only for the negative-speed tail.
+    bool dash_interrupted_takeoff=false; //First accepted takeoff after interrupting an existing dash.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
