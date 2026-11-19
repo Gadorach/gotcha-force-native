@@ -617,3 +617,12 @@ retail names that are not printable UTF-8. A mismatched or unreadable
 retail record fails rather than appearing as an empty Force. A known
 absent retail record is reported separately. Even a complete declared
 total is not a mode budget or admission receipt.
+
+The package placement session can stage **one** already-owned and enabled
+Borg with its exact saved variant into an empty Force position. It refuses
+an unverified retail record, either kind of occupancy and repeated
+membership in the same Force. On explicit confirmation it rechecks the
+retail record, selected variant metadata and original package record.
+The acknowledged write changes only the package placement, not ownership
+or the retail record. Cancellation and stale proposals write nothing.
+This transaction is not wired to a desktop editor or battle admission yet.
