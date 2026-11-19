@@ -68,9 +68,9 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
-    bool browse_borgs=false,demo_borg_browser=false;
-    std::string recovery_root,retail_force_catalogue;
-    gf::u64 recovery_account=0,recovery_save=0,recovery_notice=0,inspect_force=0;
+    bool browse_borgs=false,demo_borg_browser=false,browse_owned_borgs=false;
+    std::string selected_save_root,retail_force_catalogue;
+    gf::u64 selected_account=0,selected_save=0,recovery_notice=0,inspect_force=0,owned_instance=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,preview_variant;
     bool menu = false;
@@ -188,12 +188,15 @@ bool parse(int argc, char** argv, Options* options) {
             if(options->browse_borgs)return false;
             options->browse_borgs=true;options->demo_borg_browser=arg=="--demo-borg-browser";
         }
-        else if(arg=="--recover-borgs"||arg=="--inspect-borg-force"){
+        else if(arg=="--recover-borgs"||arg=="--inspect-borg-force"||arg=="--browse-owned-borgs"){
             const bool inspect=arg=="--inspect-borg-force";
-            if(i+3+int(inspect)>=argc||!options->recovery_root.empty())return false;
-            options->recovery_root=argv[++i];
-            if(options->recovery_root.empty()||!id(argv[++i],&options->recovery_account)||!id(argv[++i],&options->recovery_save))return false;
+            if(i+3+int(inspect)>=argc||!options->selected_save_root.empty())return false;
+            options->selected_save_root=argv[++i];
+            if(options->selected_save_root.empty()||!id(argv[++i],&options->selected_account)||!id(argv[++i],&options->selected_save))return false;
             if(inspect&&(!id(argv[++i],&options->inspect_force)||options->inspect_force>gf::kForceCount))return false;
+            options->browse_owned_borgs=arg=="--browse-owned-borgs";
+        }else if(arg=="--owned-instance"){
+            if(++i>=argc||options->owned_instance||!id(argv[i],&options->owned_instance))return false;
         }else if(arg=="--recovery-notice"){
             if(++i>=argc||options->recovery_notice||!id(argv[i],&options->recovery_notice))return false;
         }else if(arg=="--retail-catalog"){
@@ -425,6 +428,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-variants NAMESPACE:ID\n"
                          "       gf_native --browse-borgs [--headless] [--frames N]\n"
                          "       gf_native --recover-borgs ROOT ACCOUNT SAVE [--recovery-notice INSTANCE] [--headless]\n"
+                         "       gf_native --browse-owned-borgs ROOT ACCOUNT SAVE [--owned-instance INSTANCE] [--headless]\n"
                          "       gf_native --inspect-borg-force ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
             return false;
@@ -446,9 +450,10 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
        !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
        !options->check_borg_variants.empty()||options->width<440||options->height<320||options->width>4096||options->height>4096))return false;
-    if(options->recovery_notice&&(options->recovery_root.empty()||options->inspect_force))return false;
+    if(options->recovery_notice&&(options->selected_save_root.empty()||options->inspect_force||options->browse_owned_borgs))return false;
+    if(options->owned_instance&&!options->browse_owned_borgs)return false;
     if(!options->retail_force_catalogue.empty()&&!options->inspect_force)return false;
-    if(!options->recovery_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
+    if(!options->selected_save_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
        options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
        !options->preview_borg.empty()||options->browse_borgs||options->list_borgs||!options->check_borg_catalog.empty()||
        !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
@@ -1238,7 +1243,7 @@ void print_packaged_force_slot(const gf::PackageForceSlotView& row,const char* p
 }
 int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& packages){
     std::string error;
-    auto selected=gf::pc::open_borg_selected_save(options.recovery_root,options.recovery_account,options.recovery_save,&error);
+    auto selected=gf::pc::open_borg_selected_save(options.selected_save_root,options.selected_account,options.selected_save,&error);
     if(!selected){std::fprintf(stderr,"Borg Force: %s\n",error.c_str());return 2;}
     gf::PackageBorgSaveStore store(*selected->backend);gf::PackageBorgRoster roster;
     const auto loaded=store.load(&roster);
@@ -1302,7 +1307,7 @@ int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& pack
 int run_borg_recovery(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
     std::string error;
     auto fail=[&](const std::string& why){gf::log_error(context,"borg-recovery","%s",why.c_str());render.shutdown();return 2;};
-    auto selected=gf::pc::open_borg_selected_save(options.recovery_root,options.recovery_account,options.recovery_save,&error);
+    auto selected=gf::pc::open_borg_selected_save(options.selected_save_root,options.selected_account,options.selected_save,&error);
     if(!selected)return fail(error);
     const auto& save=selected->entry;
     gf::pc::BorgOwnedMetadata metadata;
@@ -1368,9 +1373,22 @@ int run_borg_recovery(gf::Context& context,gf::RenderEngine& render,const Option
 }
 
 int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
-    gf::BorgInstalledBrowser browser;browser.open(packages);
+    gf::BorgInstalledBrowser browser;
+    std::unique_ptr<gf::pc::BorgSelectedSave> owned_save;std::string error;
+    auto fail=[&](const std::string& why){gf::log_error(context,"borg-picker","%s",why.c_str());render.shutdown();return 2;};
+    if(options.browse_owned_borgs){
+        owned_save=gf::pc::open_borg_selected_save(options.selected_save_root,options.selected_account,options.selected_save,&error);
+        if(!owned_save)return fail(error);
+        gf::PackageBorgSaveStore reader(*owned_save->backend);gf::PackageBorgRoster roster;
+        const auto loaded=reader.load(&roster);
+        if(loaded!=gf::PackageBorgLoad::Loaded&&loaded!=gf::PackageBorgLoad::Missing)
+            return fail("package roster unavailable or invalid");
+        if(!browser.open_owned(packages,std::move(roster),options.owned_instance))
+            return fail("requested owned instance unavailable");
+        if(!reader.current())return fail("selected save changed while opening the collection");
+    }else browser.open(packages);
     gf::BorgInstalledBrowserView view;gf::BorgBrowserTile tile;gf::InputRouter router;
-    gf::NativeAnimationMosaic preview;std::string error;
+    gf::NativeAnimationMosaic preview;
     constexpr gf::u32 tile_handle=59001; // single replaceable texture in this isolated presentation mode
     bool confirmed=false,captured=false,preview_open=false,preview_unavailable=false,previous_back=false;
     auto refresh_tile=[&](){
@@ -1426,6 +1444,7 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
             break;
         case gf::BorgBrowserChange::Preview:
             if(const auto selection=browser.selection()){
+                if(owned_save&&!owned_save->backend->current())return fail("selected save changed; reopen to inspect the current collection");
                 gf::pc::BorgPackagePreviewFiles files;using Inputs=gf::pc::BorgPackagePreviewFiles;
                 if(gf::pc::load_borg_preview_files("borgs",browser.catalog(),selection->identity.id,selection->variant,&files,&error)&&
                     preview.load_package_preview(files.identity,files.profile,Inputs::view(files.model),Inputs::view(files.rig_prefix),
@@ -1445,7 +1464,8 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
         }
         render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();
         const auto draws=preview_open?preview.draw(render,options.width,options.height):
-            view.draw(render,options.width,options.height,browser,tile,confirmed,preview_unavailable);
+            view.draw(render,options.width,options.height,browser,tile,confirmed,preview_unavailable,
+                owned_save?std::string_view(owned_save->entry.name):std::string_view{});
         render.end_frame();
         if(!captured)captured=capture_if_requested(context,options,frame);
         render.present();context.advance_frame();++frame;
@@ -1456,6 +1476,13 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
     gf::log_info(context,"borg-picker","frames=%u packages=%zu selected=%s variant=%s view=%s",
         frame,browser.catalog().discovered.size(),selected?selected->manifest.identity.id.c_str():"none",
         variant?variant->id.c_str():"unavailable",preview_open?"preview":"picker");
+    if(owned_save){
+        const auto* saved=browser.owned_entry();const auto status=browser.owned_status();
+        gf::log_info(context,"borg-picker","owned-copies=%zu instance=%llu saved-variant=%s disabled=%u status=%s",
+            browser.size(),static_cast<unsigned long long>(saved?saved->instance:0),
+            saved&&saved->variant?saved->variant->id.c_str():"unspecified",unsigned(saved&&saved->disabled),
+            status.empty()?"NONE":status.data());
+    }
     if(!preview.close_package_preview(render)){gf::log_error(context,"borg-picker","could not release preview textures");render.shutdown();return 2;}
     render.shutdown();return 0;
 }
@@ -1676,7 +1703,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
     if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty()||
-       options.browse_borgs||!options.recovery_root.empty())){
+       options.browse_borgs||!options.selected_save_root.empty())){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
     }
@@ -1692,7 +1719,8 @@ int main(int argc, char** argv) {
         }
         std::string error;
         gf::Backends backends =
-            platform->create({options.width, options.height, !options.recovery_root.empty()?"Borg Save Recovery":
+             platform->create({options.width, options.height, options.browse_owned_borgs?"Owned Borg Collection":
+                              !options.selected_save_root.empty()?"Borg Save Recovery":
                               options.browse_borgs?"Installed Borg Picker":!options.preview_borg.empty()?"Borg Package Preview":
                               options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
                              renderer.get(), &error);
@@ -1719,8 +1747,8 @@ int main(int argc, char** argv) {
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
     if(options.battle_mvp)return run_battle_mvp(context,render,options);
-    if(!options.recovery_root.empty())return run_borg_recovery(context,render,options,borg_packages);
-    if(options.browse_borgs)return run_borg_browser(context,render,options,borg_packages);
+    if(options.browse_borgs||options.browse_owned_borgs)return run_borg_browser(context,render,options,borg_packages);
+    if(!options.selected_save_root.empty())return run_borg_recovery(context,render,options,borg_packages);
     if(options.animation_mosaic||!options.preview_borg.empty())return run_animation_mosaic(context,render,options,borg_packages);
 
     gf::MenuWorld menu_world;

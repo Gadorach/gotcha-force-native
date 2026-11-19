@@ -582,6 +582,23 @@ is supplied. A failed scan never authorizes a write. The menu does not create
 accounts or saves, migrate legacy files, or join the retail and package
 inventories. Retail menu integration remains separate.
 
+### Read-only owned collection
+
+```sh
+gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID
+```
+
+The installed picker's shared display and body preview can also browse the
+packaged copies in one explicitly selected save. **Up/Down** selects a copy;
+`--owned-instance INSTANCE` opens directly on that saved instance. The
+collection shows the cached names, the saved variant ID and Force placement
+count even for disabled or missing copies. It never changes a variant or
+silently falls back to the installed default. **E/X** requests a body
+preview only for an enabled copy whose exact variant resolves; the preview
+can still refuse missing or unsupported assets. **Shift/B** returns to the
+same copy. This is a snapshot of packaged ownership only, not a unified
+retail collection, editor, or battle picker.
+
 ### Read-only Force preflight
 
 ```sh

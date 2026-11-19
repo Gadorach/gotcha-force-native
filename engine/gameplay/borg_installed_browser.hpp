@@ -1,5 +1,5 @@
 #pragma once
-#include "engine/assets/borg_catalog_profile.hpp"
+#include "engine/gameplay/borg_package_roster.hpp"
 #include "engine/input/input_map.hpp"
 
 namespace gf {
@@ -10,18 +10,49 @@ struct BorgBrowserSelection {
 };
 enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview};
 
-// Read-only navigation of an installation snapshot. A selection is neither
-// a saved instance nor a permission to construct an actor.
+// Read-only navigation of installed packages or a selected save snapshot.
+// Body preview uses package identity, never owned-instance or actor authority.
 class BorgInstalledBrowser {
 public:
     void open(BorgPackageCatalog catalog){
         if(catalog.status!=BorgPackageScanStatus::Complete)catalog.discovered.clear();
-        catalog_=std::move(catalog);entry_=variant_=0;metadata_.reset();previous_={};
+        catalog_=std::move(catalog);entry_=variant_=0;metadata_.reset();owned_.reset();previous_={};
+    }
+    bool open_owned(BorgPackageCatalog catalog,PackageBorgRoster roster,u64 initial_instance=0){
+        if(!package_borg_roster_valid(roster))return false;
+        const auto* initial=initial_instance?roster.find(initial_instance):nullptr;
+        if(initial_instance&&!initial)return false;
+        const auto index=initial?std::size_t(initial-roster.owned.data()):0;
+        open(std::move(catalog));owned_=std::move(roster);entry_=index;return true;
     }
     const BorgPackageCatalog& catalog()const{return catalog_;}
+    const PackageBorgRoster* owned()const{return owned_?&*owned_:nullptr;}
+    const OwnedPackageBorg* owned_entry()const{
+        return owned_&&entry_<owned_->owned.size()?&owned_->owned[entry_]:nullptr;
+    }
+    std::size_t size()const{return owned_?owned_->owned.size():catalog_.discovered.size();}
+    std::string_view owned_status()const{
+        const auto* saved=owned_entry();
+        if(!saved)return {};
+        switch(package_borg_availability(catalog_,saved->identity.id)){
+        case PackageBorgAvailability::Missing:return "PACKAGE MISSING";
+        case PackageBorgAvailability::Incomplete:return "PACKAGE INCOMPLETE";
+        case PackageBorgAvailability::Conflict:return "CONFLICTING PACKAGES";
+        case PackageBorgAvailability::ScanUnavailable:return "PACKAGE SCAN UNAVAILABLE";
+        case PackageBorgAvailability::MissingVariant:return "SAVED VARIANT MISSING";
+        case PackageBorgAvailability::Discovered:break;
+        }
+        if(!saved->variant)return "SAVED VARIANT UNSPECIFIED";
+        if(!metadata_)return "CATALOGUE UNAVAILABLE";
+        return variant()?"EXACT VARIANT RESOLVED":"SAVED VARIANT MISSING";
+    }
     std::size_t package_index()const{return entry_;}
     std::size_t variant_index()const{return variant_;}
     const BorgPackageEntry* entry()const{
+        if(owned_){
+            const auto* saved=owned_entry();
+            return saved?catalog_.find(saved->identity.id):nullptr;
+        }
         return entry_<catalog_.discovered.size()?&catalog_.discovered[entry_]:nullptr;
     }
     const BorgCatalogSnapshot* metadata()const{return metadata_?&*metadata_:nullptr;}
@@ -31,13 +62,16 @@ public:
     bool bind(BorgCatalogSnapshot snapshot){
         const auto* current=entry();
         if(!current||current->folder!=snapshot.package.folder||current->manifest!=snapshot.package.manifest)return false;
-        const auto* initial=snapshot.profile.find(snapshot.profile.default_variant);
-        if(!initial)return false;
-        variant_=std::size_t(initial-snapshot.profile.variants.data());
+        const auto* fallback=snapshot.profile.find(snapshot.profile.default_variant);
+        if(!fallback)return false;
+        const auto* saved=owned_entry();
+        const auto* initial=saved?(saved->variant?snapshot.profile.find(saved->variant->id):nullptr):fallback;
+        variant_=initial?std::size_t(initial-snapshot.profile.variants.data()):snapshot.profile.variants.size();
         metadata_=std::move(snapshot);return true;
     }
     std::optional<BorgBrowserSelection> selection()const{
         const auto* value=variant();const auto* selected=entry();
+        if(const auto* saved=owned_entry();saved&&saved->disabled)return {};
         if(!value||!selected)return {};
         return BorgBrowserSelection{selected->manifest.identity,value->id,value->label};
     }
@@ -46,23 +80,25 @@ public:
         const bool up=pad.dpad_up&&!previous_.dpad_up,down=pad.dpad_down&&!previous_.dpad_down;
         const bool left=pad.dpad_left&&!previous_.dpad_left,right=pad.dpad_right&&!previous_.dpad_right;
         const bool confirm=pad.a&&!previous_.a,preview=pad.x&&!previous_.x;previous_=pad;
-        const auto entries=catalog_.discovered.size();
+        const auto entries=size();
         if(entries>1&&up!=down){
             entry_=up?(entry_+entries-1)%entries:(entry_+1)%entries;
             variant_=0;metadata_.reset();
             return BorgBrowserChange::Package;
         }
-        if(metadata_&&metadata_->profile.variants.size()>1&&left!=right){
+        if(!owned_&&metadata_&&metadata_->profile.variants.size()>1&&left!=right){
             const auto count=metadata_->profile.variants.size();
             variant_=left?(variant_+count-1)%count:(variant_+1)%count;
             return BorgBrowserChange::Variant;
         }
+        if(const auto* saved=owned_entry();saved&&saved->disabled)return BorgBrowserChange::None;
         if(!variant())return BorgBrowserChange::None;
         if(preview)return BorgBrowserChange::Preview;
         return confirm?BorgBrowserChange::Confirm:BorgBrowserChange::None;
     }
 private:
     BorgPackageCatalog catalog_;
+    std::optional<PackageBorgRoster> owned_;
     std::optional<BorgCatalogSnapshot> metadata_;
     std::size_t entry_=0,variant_=0;
     GamePadState previous_{};
