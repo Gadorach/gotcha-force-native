@@ -222,6 +222,20 @@ ticks left. Tap neutral-direction **Shift** on 32 to relaunch with
 six ticks remaining, or leave the controls neutral for active dash.
 `--demo-gred-walk-ledge-positive-snap-handoff` replays the relaunch.
 
+With `--practice-from-picker`, both browsers offer all three floor-snap
+guides. From **Standard**, press **Right** in the owned picker or **R** in
+the Force browser:
+
+| Presses | Guide |
+| ---: | --- |
+| 6 | **Positive Floor Handoff** — choose with seven ledge ticks left |
+| 7 | **Expired Floor Handoff** — choose after the timer has expired |
+| 8 | **Timed Snap Dash** — follow the snap into active dash and landing |
+
+**Q/Y** opens the paused guide. **P** steps with live input, and
+**Esc** returns to the same copy or slot and route. These are read-only
+practice routes, not changes to movement or battle admission.
+
 `--gred-inclined-dash-jump --practice-start` opens the flat-to-incline
 dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
 **DASH CANCELED** appears on accepted takeoff. The old dash does not

@@ -79,6 +79,13 @@ int main(){
     check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
         cursor.practice_route()==GRedPickerPracticeRoute::DirectExpiryRelaunch&&cursor.practice_route_name()=="DIRECT EXPIRY RELAUNCH"&&
         cursor.force()==force_before&&cursor.slot()==slot_before,"fifth Right shoulder reaches direct expiry relaunch without moving either cursor");
+    for(auto route:{GRedPickerPracticeRoute::PositiveFloorHandoff,GRedPickerPracticeRoute::ExpiredFloorHandoff,
+        GRedPickerPracticeRoute::TimedSnapDash}){
+        cursor.step({});
+        check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==route&&
+            cursor.step(next_route,true)==BorgForceBrowseChange::None&&cursor.force()==force_before&&cursor.slot()==slot_before,
+            "sixth through eighth Right shoulder select floor-snap guides without moving the Force or slot");
+    }
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

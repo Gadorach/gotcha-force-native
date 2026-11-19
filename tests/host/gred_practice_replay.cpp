@@ -10,7 +10,35 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     PositiveFloorHandoff,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
-    OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry};
+    OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
+    OwnedPositiveFloor,ForcePositiveFloor,OwnedExpiredFloor,ForceExpiredFloor,OwnedSnapDash,ForceSnapDash};
+
+struct FloorPickerReplay {
+    Replay sequence;
+    bool owned;
+    unsigned advances,ticks;
+    const char* route;
+    const char* guide;
+    const char* expected;
+    const char* receipt;
+    constexpr unsigned first_step()const{return 2*advances+5;}
+    constexpr unsigned after_steps()const{return first_step()+2*ticks;}
+    constexpr unsigned budget()const{return after_steps()+12;}
+};
+constexpr FloorPickerReplay floor_picker_replays[]{
+    {Replay::OwnedPositiveFloor,true,6,32,"POSITIVE FLOOR HANDOFF","positive floor wind-up relaunch",
+        "practice-meter=9250/10000 at accepted tick=32","practice-ledge-timer-ticks=6"},
+    {Replay::ForcePositiveFloor,false,6,110,"POSITIVE FLOOR HANDOFF","positive floor wind-up relaunch",
+        "accepted native tick=110 G-Red-position=1964.66/10.00/-1607.42","controller-loss-relaunches=1 timer698=0.0"},
+    {Replay::OwnedExpiredFloor,true,7,155,"EXPIRED FLOOR HANDOFF","floor wind-up relaunch",
+        "practice-meter=9300/10000 at accepted tick=155","practice-floor-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH"},
+    {Replay::ForceExpiredFloor,false,7,220,"EXPIRED FLOOR HANDOFF","floor wind-up relaunch",
+        "accepted native tick=220 G-Red-position=-2668.02/10.00/594.38","controller-loss-relaunches=2 timer698=0.0"},
+    {Replay::OwnedSnapDash,true,8,150,"TIMED SNAP DASH","timed snap to air dash",
+        "practice-meter=9750/10000 at accepted tick=150","practice-relaunch-snap-windup=AIRBORNE / RELAUNCH TO WIND-UP"},
+    {Replay::ForceSnapDash,false,8,220,"TIMED SNAP DASH","timed snap to air dash",
+        "accepted native tick=220 G-Red-position=-3094.35/10.00/1244.92","snap-dash-starts=1 windup-entry-floors=1 windup-floors=6 active-floors=30"},
+};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -195,6 +223,34 @@ public:
             if(f>=14+2*ticks&&f<=16+2*ticks)raw.quit=true;
             break;
         }
+        case Replay::OwnedPositiveFloor:
+        case Replay::ForcePositiveFloor:
+        case Replay::OwnedExpiredFloor:
+        case Replay::ForceExpiredFloor:
+        case Replay::OwnedSnapDash:
+        case Replay::ForceSnapDash:{
+            const auto* spec=std::find_if(std::begin(floor_picker_replays),std::end(floor_picker_replays),
+                [&](const auto& route){return route.sequence==replay_;});
+            if(spec==std::end(floor_picker_replays))break;
+            const unsigned select=2*spec->advances;
+            if(f<select&&f%2==0)raw.buttons|=1u<<(spec->owned?8:10);
+            if(f>=select&&f<=select+2)raw.buttons|=1u<<3;
+            if(f>=spec->first_step()&&f<spec->after_steps()){
+                const unsigned at=f-spec->first_step(),tick=1+at/2;
+                snapshot_.frame_step=at%2==0;
+                if(replay_==Replay::OwnedPositiveFloor||replay_==Replay::ForcePositiveFloor){
+                    if(tick>=6&&tick<=8)raw.buttons|=1u<<5;
+                    if(tick==25||tick==26||(spec->owned&&tick==32))raw.buttons|=1u<<1;
+                    if(tick==26)raw.axis[1]=-20000;
+                }else{
+                    if(tick>=6&&tick<=122)raw.buttons|=(1u<<6)|(1u<<8);
+                    if((tick>=148&&tick<=150)||(replay_==Replay::ForceExpiredFloor&&tick==156))raw.buttons|=1u<<1;
+                    if(tick==150)raw.axis[0]=raw.axis[1]=20000;
+                }
+            }
+            if(f>spec->after_steps()&&f<=spec->after_steps()+3)raw.quit=true;
+            break;
+        }
         }
     }
     const gf::InputSnapshot& snapshot()const override{return snapshot_;}
@@ -271,6 +327,15 @@ bool picker_guide_played(const std::string& log,const std::string& guide,unsigne
     return once(log,(guide+" guide: paused at tick=0").c_str())&&
         once(log,("practice stepped to tick="+std::to_string(ticks)+"\n").c_str())&&
         !has(log,(guide+" demo:").c_str())&&!has(log,"practice stopped")&&!has(log,"practice restarted");
+}
+bool floor_picker_played(const std::string& log,const FloorPickerReplay& spec){
+    const auto launch=std::string(spec.owned?"launched practice for owned instance=8 route=":
+        "launched practice for Force 1 slot 2 instance=8 route=")+spec.route;
+    const auto returned=std::string(spec.owned?"returned to owned instance=8 after practice route=":
+        "returned to Force 1 slot 2 after practice route=")+spec.route;
+    return once(log,launch.c_str())&&once(log,returned.c_str())&&picker_guide_played(log,spec.guide,spec.ticks)&&
+        has(log,spec.expected)&&has(log,spec.receipt)&&
+        (has(log,"practice-floor-windup-handoff=")==(spec.sequence==Replay::OwnedExpiredFloor));
 }
 std::size_t occurrences(std::string_view text,std::string_view part){
     std::size_t found=0;
@@ -409,6 +474,12 @@ int replay_owned_practice_picker(std::string root){
         !has(log.text,"practice-direct-expiry-relaunch=")&&
         once(log.text,"returned to owned instance=8 after practice route=DIRECT EXPIRY RELAUNCH"),
         "owned expiry guide offers the next input without dispatching it and returns to the exact copy and route",log.text);
+    for(const auto& route:floor_picker_replays)if(route.owned){
+        log.text.clear();input=ReplayInput(route.sequence);
+        auto count=std::to_string(route.budget());
+        check(run_picker(enabled,count.data())==route.budget()&&floor_picker_played(log.text,route),
+            "owned snap guide runs from live input and returns to the exact copy and route",log.text);
+    }
     log.text.clear();input=ReplayInput(Replay::PickerPractice);
     char disabled[]="9";
     check(run_picker(disabled,short_limit)>0&&!has(log.text,"launched practice for")&&
@@ -503,6 +574,12 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         !has(log.text,"practice-direct-expiry-request=")&&!has(log.text,"practice-direct-expiry-relaunch=")&&
         once(log.text,"returned to Force 1 slot 2 after practice route=DIRECT EXPIRY RELAUNCH")&&snapshot->current(),
         "Force direct expiry guide runs live through landing and returns without leaking either cue",log.text);
+    for(const auto& route:floor_picker_replays)if(!route.owned){
+        auto count=std::to_string(route.budget());
+        run(route.sequence,count.data());
+        check(floor_picker_played(log.text,route)&&snapshot->current(),
+            "Force snap guide runs from live input and returns to the exact slot and route",log.text);
+    }
     std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }

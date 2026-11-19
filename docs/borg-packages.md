@@ -121,6 +121,8 @@ choices use verified starts and live input, never demo input. From
 **Standard**, press **Right** once for **Recovery Seam**, twice for
 **Timed Relaunch Floor**, three times for **Incline Dash Jump**, four for
 **Timed Landing Dash**, or five for **Direct Expiry Relaunch**.
+Continue to the sixth, seventh, or eighth route for **Positive Floor
+Handoff**, **Expired Floor Handoff**, or **Timed Snap Dash**, respectively.
 These routes start paused with a
 [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
 Press **Left** three times for **Expiry Handoff**, or four times for
@@ -769,6 +771,8 @@ the same live G-Red routes as the owned picker without moving the Force
 cursor. From **Standard**, press **R** once for **Recovery Seam**,
 twice for **Timed Relaunch Floor**, three times for **Incline Dash Jump**,
 four for **Timed Landing Dash**, or five for **Direct Expiry Relaunch**.
+The sixth, seventh, and eighth presses reach **Positive Floor Handoff**,
+**Expired Floor Handoff**, and **Timed Snap Dash**.
 For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
 times, respectively.
 **Q/Y** rechecks the highlighted position and opens that route

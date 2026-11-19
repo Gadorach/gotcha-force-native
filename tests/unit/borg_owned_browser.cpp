@@ -98,6 +98,14 @@ int main(){
         browser.practice_route()==GRedPickerPracticeRoute::DirectExpiryRelaunch&&browser.practice_route_name()=="DIRECT EXPIRY RELAUNCH"&&
         browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
         "fifth Right reaches direct expiry relaunch without replacing the copy or variant");
+    for(auto route:{GRedPickerPracticeRoute::PositiveFloorHandoff,GRedPickerPracticeRoute::ExpiredFloorHandoff,
+        GRedPickerPracticeRoute::TimedSnapDash}){
+        browser.step({},true);
+        check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==route&&
+            browser.step(right,true)==BorgBrowserChange::None&&browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
+            "sixth through eighth Right reach separate floor-snap guides without changing the exact copy");
+    }
+    check(browser.practice_route_name()=="TIMED SNAP DASH","snap-dash route is distinct from the two handoff guides");
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,
         "disabled copy stays visible but cannot request preview");
