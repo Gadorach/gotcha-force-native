@@ -62,6 +62,17 @@ WASD flicks dash, and Shift jumps or rises. Release and press Shift again to
 relaunch when eligible. Enter pauses, Q restarts, and Esc closes. The HUD's
 flight bar reads the last accepted source frame, not pending input or animation.
 
+If interactive practice refuses a motion, it stops at the last accepted tick
+and shows a restart screen instead of closing. The stopped scene does not draw a
+retired pose or meter and does not advance or switch controllers. Press Q to
+start a fresh round, or Esc to close. Scripted movement labs still fail on a
+refusal so regressions are not hidden.
+
+[Contact Sheet 60](../local/recomp-evidence/contact-sheets/gred-practice-restart-v1/contact-sheet-60.png)
+shows an offscreen input replay that stops on a raised face after tick 104.
+The simulation remains at that tick until Q. Holding Q restarts once, and the
+meter returns only after a fresh source frame is accepted.
+
 `--demo-gred-movement --frames 600` runs the existing scripted wind-up-entry
 route with the same HUD. Both commands need the qualified local GFMM9 pack
 and native stage/model data. They do not change the duel, enable combat, or

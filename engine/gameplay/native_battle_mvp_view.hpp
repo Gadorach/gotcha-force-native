@@ -44,6 +44,19 @@ public:
         const auto frame=source_practice_frame_.lock();
         return source_practice_&&frame?frame->meter(world):std::nullopt;
     }
+    unsigned draw_practice_stop(RenderEngine& render,s32 width,s32 height,u32 tick)const{
+        if(!source_practice_||width<=0||height<=0)return 0;
+        const auto saved=render.state();
+        render.state()={};render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;
+        TextRenderer::Style title;title.scale=width>=360?2:1;title.r=255;title.g=210;title.b=80;
+        TextRenderer::Style body;body.scale=width>=640?2:1;
+        const s32 y=std::max(0,height/2-42);
+        auto draws=text_.draw_centered(render,"MOVEMENT PRACTICE STOPPED",width/2,y,title);
+        const auto detail="MOTION REFUSED / LAST TICK "+std::to_string(tick)+"\nQ RESTART   ESC CLOSE";
+        draws+=text_.draw_centered(render,detail,width/2,y+text_.line_height(title)+12,body);
+        render.state()=saved;
+        return draws;
+    }
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error){
         ready_=false;source_practice_frame_.reset();std::vector<u8> stage,floor_bytes;

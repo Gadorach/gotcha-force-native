@@ -248,6 +248,18 @@ int main(){
             source.surface_pushes()==pushes&&source.movement_programs()==programs&&
             current.frame_scope.expired()&&!world.motion_receipt_current(current.receipt)&&!world.step({},false,&view),
             "unsupported active-entry push does not commit its reset, spend, pose or a fallback frame");
+        render.begin_frame({0,.15f,.21f,.3f});render.reset_arena();
+        const auto stopped_draws=view.draw_practice_stop(render,1152,648,world.tick());render.end_frame();
+        check(stopped_draws==2&&world.tick()==84&&!view.practice_meter(world),
+            "stopped practice draws only the text panel, not a retired pose or meter");
+        bind(NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush,combined_pack);
+        check(world.tick()==0&&!view.practice_meter(world)&&!world.motion_receipt_current(current.receipt),
+            "fresh practice round cannot inherit a stopped frame's meter or receipt");
+        check(prepare({},&offer),"fresh source input after restart");accept(offer);
+        const auto fresh=view.practice_meter(world);
+        check(world.tick()==1&&fresh&&fresh->value==10000&&fresh->limit==10000,
+            "fresh movement and flight meter resume only on a new accepted source frame");
+        source.reject();
         std::puts("combined active entry: original raised-face approach refused at tick=85");
     }
     check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
