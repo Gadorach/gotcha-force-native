@@ -236,7 +236,7 @@ class SourceGroundWorldTests(unittest.TestCase):
             replay = subprocess.run([seed, "--replay-force-practice-picker", accounts, catalogue],
                                     cwd=root, capture_output=True, text=True, timeout=90)
             self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
-            self.assertIn("Force browser practice: exact slot launch/return and overlap refusal PASS", replay.stdout)
+            self.assertIn("Force browser practice: exact slot, live routes, and overlap refusal PASS", replay.stdout)
             self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):

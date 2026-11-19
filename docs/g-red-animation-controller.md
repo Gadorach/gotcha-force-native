@@ -156,6 +156,11 @@ active entry spends 50 at 63. Ordinary falling resumes at 123 with meter
 full meter. Six complete probe routes supported the handoff; the demo
 uses the one-sample left flick.
 
+The positive-timer version remains closed. An isolated scan offered 720
+immediate flicks after positive-timer walking pushes across 1,800 trials.
+It reached 712 wind-ups and 176 active entries without relaxing travel
+checks, but no route completed. Partial entries do not grant permission.
+
 Relaunch is different: a short neutral gap can already permit relaunch
 through the ordinary falling path. For example, two held Shift updates
 from tick 59 on the same fixture enter at 60 and land at 111 under the

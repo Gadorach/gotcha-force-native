@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/gameplay/borg_package_roster.hpp"
+#include "engine/gameplay/gred_picker_practice_route.hpp"
 #include "engine/input/input_map.hpp"
 
 namespace gf {
@@ -9,14 +10,6 @@ struct BorgBrowserSelection {
     bool operator==(const BorgBrowserSelection&)const=default;
 };
 enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview,Practice,PracticeRoute};
-// UI choices for the qualified normal-G-Red lab only. Choosing a route
-// selects neither a package variant nor permission to run any copy.
-enum class GRedPickerPracticeRoute : u8 {
-    Standard,SlopeJoin,InclinedWalk,InclinedDash,LedgePush,HighAnglePush,ExpiryPush,Count
-};
-inline constexpr std::array<std::string_view,unsigned(GRedPickerPracticeRoute::Count)> kGRedPickerPracticeRouteNames{
-    "STANDARD","SLOPE JOIN","INCLINED WALK","INCLINED DASH","WALK LEDGE PUSH","STEEPER LEDGE PUSH","LEDGE TIMER EXPIRY"
-};
 
 // Read-only navigation of installed packages or a selected save snapshot.
 // Body preview uses package identity, never owned-instance or actor authority.
@@ -58,7 +51,7 @@ public:
     std::size_t package_index()const{return entry_;}
     std::size_t variant_index()const{return variant_;}
     GRedPickerPracticeRoute practice_route()const{return practice_route_;}
-    std::string_view practice_route_name()const{return kGRedPickerPracticeRouteNames[unsigned(practice_route_)];}
+    std::string_view practice_route_name()const{return gred_picker_practice_route_name(practice_route_);}
     const BorgPackageEntry* entry()const{
         if(owned_){
             const auto* saved=owned_entry();
@@ -104,9 +97,7 @@ public:
             return BorgBrowserChange::Variant;
         }
         if(allow_practice&&owned_entry()&&left!=right){
-            constexpr auto count=unsigned(GRedPickerPracticeRoute::Count);
-            const auto index=unsigned(practice_route_);
-            practice_route_=GRedPickerPracticeRoute((index+(left?count-1:1))%count);
+            practice_route_=cycle_gred_picker_practice_route(practice_route_,left);
             return BorgBrowserChange::PracticeRoute;
         }
         // This is a request to check the exact owned copy, not a readiness

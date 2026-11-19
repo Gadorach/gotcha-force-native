@@ -43,6 +43,16 @@ int main(){
     cursor.step({});
     check(cursor.step(practice,true)==BorgForceBrowseChange::Practice&&cursor.step(practice,true)==BorgForceBrowseChange::None,
         "practice requests are single edges and cannot modify positions");
+    GamePadState lane;lane.l=true;
+    const auto force_before=cursor.force(),slot_before=cursor.slot();
+    check(cursor.step(lane)==BorgForceBrowseChange::None&&cursor.practice_route()==GRedPickerPracticeRoute::Standard,
+        "route switching is opt-in");
+    cursor.step({});lane.y=true;
+    check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==GRedPickerPracticeRoute::ExpiryPush&&
+        cursor.step(lane,true)==BorgForceBrowseChange::None,"route switch wraps and consumes a simultaneous launch edge");
+    cursor.step({});
+    check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==GRedPickerPracticeRoute::ExpiryAirDash&&
+        cursor.force()==force_before&&cursor.slot()==slot_before,"expiry air dash selection does not change the slot");
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

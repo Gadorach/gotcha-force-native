@@ -44,6 +44,12 @@ int main(){
         browser.selection()->variant=="silver"&&browser.owned_entry()->instance==3,
         "route wraps separately from the owned variant and wins over a simultaneous launch");
     browser.step({},true);
+    check(browser.step(route_and_launch,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::ExpiryAirDash,"second Left reaches the verified expiry air dash");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::ExpiryPush,
+        "Right returns to the expiry push route");
+    browser.step({},true);
     check(browser.step(q,true)==BorgBrowserChange::Practice&&browser.step(q,true)==BorgBrowserChange::None&&
         browser.owned_entry()->instance==3,"an opted-in practice request is a single edge on the exact copy");
     browser.step({},true);

@@ -149,6 +149,10 @@ original game spawns or new movement permissions.
 
 The [owned collection practice launcher](borg-packages.md#practice-an-owned-copy)
 offers the same live footholds through its **Left/Right** route selector.
+In the [Force browser](borg-packages.md#browse-a-saved-force), use **L/R**
+instead so the directional controls can still browse the saved roster.
+From Standard, select the previous route twice for **Expiry Air Dash**;
+after the zero-timer push, flick left (**A** on keyboard).
 
 To check the actual practice loop without opening a window or audio device:
 

@@ -1499,7 +1499,8 @@ int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& pack
 bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice){
     constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
         "--gred-movement","--gred-slope-transition-dash","--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
-        "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push","--gred-walk-ledge-expiry-push"
+        "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push","--gred-walk-ledge-expiry-air-dash",
+        "--gred-walk-ledge-expiry-push"
     };
     if(unsigned(route)>=modes.size())return false;
     std::string mode(modes[unsigned(route)]);
@@ -1599,12 +1600,14 @@ int run_borg_force_browser(gf::Context& context,gf::RenderEngine& render,const O
                         cursor.force()+1,cursor.slot()+1,error.c_str());
                 }else{
                     Options practice;
-                    if(!picker_practice_options(gf::GRedPickerPracticeRoute::Standard,&practice)){
-                        gf::log_error(context,"force-browser","could not select the existing practice mode");render.shutdown();return 2;
+                    if(!picker_practice_options(cursor.practice_route(),&practice)){
+                        gf::log_error(context,"force-browser","could not select the existing practice route");render.shutdown();return 2;
                     }
                     practice.force_practice=request;
+                    const auto route=cursor.practice_route_name();
                     const auto launch="launched practice for Force "+std::to_string(cursor.force()+1)+
-                        " slot "+std::to_string(cursor.slot()+1)+" instance="+std::to_string(qualified->saved().instance);
+                        " slot "+std::to_string(cursor.slot()+1)+" instance="+std::to_string(qualified->saved().instance)+
+                        " route="+std::string(route);
                     const auto outcome=run_practice_from_browser(context,render,options,std::move(practice),*qualified,
                         {start,frame,captured,renderer_active},"Saved Force Browser","force-browser",launch,&error);
                     if(outcome==BrowserPracticeReturn::Closed)break;
@@ -1616,7 +1619,8 @@ int run_borg_force_browser(gf::Context& context,gf::RenderEngine& render,const O
                     else{
                         practice_status=outcome==BrowserPracticeReturn::Returned?"RETURNED FROM PRACTICE":"PRACTICE UNAVAILABLE";
                         if(outcome==BrowserPracticeReturn::Returned)
-                            gf::log_info(context,"force-browser","returned to Force %u slot %u after practice",cursor.force()+1,cursor.slot()+1);
+                            gf::log_info(context,"force-browser","returned to Force %u slot %u after practice route=%.*s",
+                                cursor.force()+1,cursor.slot()+1,int(route.size()),route.data());
                     }
                     continue;
                 }
@@ -1624,6 +1628,10 @@ int run_borg_force_browser(gf::Context& context,gf::RenderEngine& render,const O
         }else if(live&&changed!=gf::BorgForceBrowseChange::None){
             practice_status={};
             live=changed==gf::BorgForceBrowseChange::Force?snapshot.project(packages,cursor.force(),&force):snapshot.current();
+            if(live&&changed==gf::BorgForceBrowseChange::PracticeRoute){
+                const auto route=cursor.practice_route_name();
+                gf::log_info(context,"force-browser","practice route=%.*s",int(route.size()),route.data());
+            }
             report();
         }
         render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();

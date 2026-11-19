@@ -48,7 +48,7 @@ public:
         fill(12,74,split-16,height-114,{24,36,48,255});
         fill(split,74,width-split-12,height-114,{31,43,56,255});
         text("SLOTS",22,87,split-36,title);
-        const unsigned room=unsigned(std::max(1,(height-153)/22));
+        const unsigned room=unsigned(std::max(1,(height-(practice?175:153))/22));
         const unsigned start=cursor.slot()>=room?cursor.slot()-room+1:0;
         for(unsigned slot=start;slot<std::min(kForceSlots,start+room);++slot){
             const auto* row=force->find_slot(slot);
@@ -87,9 +87,12 @@ public:
             text(std::string(slot_status(p.status))+(p.saved.disabled?" / DISABLED":""),
                 right,274,right_room,p.selectable_metadata()?muted:warning);
         }else text("NONE",right,226,right_room,small);
-        if(practice&&!practice->empty())text(*practice,right,height-61,right_room,muted);
-        text(practice?"UP/DOWN SLOT  LEFT/RIGHT FORCE  Q/Y PRACTICE  ESC CLOSE":
-            "UP/DOWN SLOT  LEFT/RIGHT FORCE  ESC CLOSE",16,height-24,width-32,small);
+        if(practice){
+            text("ROUTE: "+std::string(cursor.practice_route_name()),22,height-61,split-42,muted);
+            if(!practice->empty())text(*practice,right,height-61,right_room,muted);
+            text("UP/DOWN SLOT  LEFT/RIGHT FORCE  L/R ROUTE",16,height-35,width-32,small);
+            text("Q/Y PRACTICE  ESC CLOSE",16,height-22,width-32,small);
+        }else text("UP/DOWN SLOT  LEFT/RIGHT FORCE  ESC CLOSE",16,height-24,width-32,small);
         render.state()=saved;return draws;
     }
 private:

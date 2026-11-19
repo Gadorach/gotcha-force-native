@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice,PickerExpiry,ForcePicker};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -62,6 +62,14 @@ public:
             if((f>=11&&f<=13)||(f>=30&&f<=32))raw.quit=true;
             if(f==14||f==16)raw.buttons|=1u<<5; // First edge is consumed by return; second selects overlap.
             if(f==20)raw.buttons|=1u<<6;
+            if(f==21)raw.buttons|=1u<<9; // Select the expiry foothold without moving the Force cursor.
+            break;
+        case Replay::ForceExpiryAirDash:
+            if(f==0||f==2)raw.buttons|=1u<<9; // Standard -> expiry push -> expiry air dash.
+            if(f>=4&&f<=6)raw.buttons|=1u<<3;
+            if(f>=10&&f<30)raw.buttons|=1u<<7;
+            if(f==61)raw.axis[0]=-32768; // The live step immediately after accepted tick 56.
+            if(f>=306&&f<=308)raw.quit=true;
             break;
         }
     }
@@ -223,26 +231,41 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
     check(files&&load_retail_force_catalogue(*files,retail_path,&retail),"fixture catalogue","");
     gf::headless::Bundle headless;ReplayInput input(Replay::ForcePicker);ReplayLog log;
     auto backends=headless.get();backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
-    Options options;
-    char program[]="gf_native",mode[]="--browse-borg-force",account[]="7",save[]="11",force[]="1",slot[]="2";
-    char select[]="--force-slot",practice[]="--practice-from-picker",catalogue[]="--retail-catalog",
-         off[]="--headless",frames[]="--frames",count[]="44";
-    char* args[]={program,mode,root.data(),account,save,force,select,slot,practice,catalogue,retail_path.data(),off,frames,count};
-    check(parse(int(std::size(args)),args,&options),"Force browser options",log.text);
     const auto packages=gf::pc::scan_borg_packages("borgs");std::string error;
     auto snapshot=gf::pc::BorgForceBrowseSnapshot::open(root,{7,11},"borgs",packages,std::move(retail),&error);
     check(bool(snapshot),"verified mixed fixture",error);
-    gf::Context context(backends,60);gf::RenderEngine render(context.render());
-    check(render.initialize({640,480,false,true,"Force picker replay"},nullptr,&error),"Force browser renderer",error);
-    check(run_borg_force_browser(context,render,options,packages,*snapshot)==0&&context.frame_index()==44,
-        "Force browser has a single frame budget across both handoffs",log.text);
+    auto run=[&](Replay sequence,char* count){
+        input=ReplayInput(sequence);log.text.clear();Options options;
+        char program[]="gf_native",mode[]="--browse-borg-force",account[]="7",save[]="11",force[]="1",slot[]="2";
+        char select[]="--force-slot",practice[]="--practice-from-picker",catalogue[]="--retail-catalog",
+             off[]="--headless",frames[]="--frames";
+        char* args[]={program,mode,root.data(),account,save,force,select,slot,practice,catalogue,retail_path.data(),off,frames,count};
+        check(parse(int(std::size(args)),args,&options),"Force browser options",log.text);
+        gf::Context context(backends,60);gf::RenderEngine render(context.render());
+        check(render.initialize({640,480,false,true,"Force picker replay"},nullptr,&error),"Force browser renderer",error);
+        check(run_borg_force_browser(context,render,options,packages,*snapshot)==0&&context.frame_index()==options.frames,
+            "Force browser has a single frame budget across handoffs",log.text);
+    };
+    char short_limit[]="44",long_limit[]="325";
+    run(Replay::ForcePicker,short_limit);
     check(occurrences(log.text,"launched practice for Force 1 slot 2 instance=8")==2&&
         occurrences(log.text,"returned to Force 1 slot 2 after practice")==2&&
+        has(log.text,"launched practice for Force 1 slot 2 instance=8 route=STANDARD")&&
+        has(log.text,"returned to Force 1 slot 2 after practice route=LEDGE TIMER EXPIRY")&&
+        has(log.text,"G-Red-position=-1250.97/")&&
         occurrences(log.text,"Force 1 slot 2 supplies owned instance=8; one practice copy, not Force admission")==2&&
         once(log.text,"practice unavailable for Force 1 slot 1: the requested Force slot overlaps retail and package claims")&&
         !has(log.text,"practice restarted at tick=0")&&snapshot->current(),
         "exact Force slot launch and return, held input isolation, overlap refusal, and unchanged scope",log.text);
-    std::puts("Force browser practice: exact slot launch/return and overlap refusal PASS");
+    run(Replay::ForceExpiryAirDash,long_limit);
+    check(once(log.text,"launched practice for Force 1 slot 2 instance=8 route=EXPIRY AIR DASH")&&
+        once(log.text,"practice start: demo placement, live input, no scripted replay")&&
+        !has(log.text,"expiry air-dash demo:")&&!has(log.text,"motion acceptance refused")&&
+        has(log.text,"G-Red-position=1383.11/10.00/-3360.84")&&
+        has(log.text,"walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=EXPIRY AIR DASH")&&snapshot->current(),
+        "live input follows the expiry air dash and returns to the same exact slot and route",log.text);
+    std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }
 }
