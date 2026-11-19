@@ -437,6 +437,10 @@ uses the existing zero-timer response, not another timed
 permission. Holding Down alone into 38 still refuses at the
 approach. Choose **Expiry Drift Push** in either picker or use
 `--demo-gred-walk-ledge-timed-release-expiry-drift` for playback.
+In the live guide, you can also stay neutral on **39–40** and hold
+a fresh **Shift** on **41–50** for a second relaunch, then release
+to land. An earlier held press does not queue the move. The
+scripted playback still takes the neutral route.
 
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned

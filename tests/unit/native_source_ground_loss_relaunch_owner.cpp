@@ -997,6 +997,49 @@ int main(){
             source.relaunch_fall_pushes()==5&&source.relaunches()==1&&!source.air_dash_starts(),
             "the Down+Right continuation reaches distinct landing and full idle");
     }
+    for(const auto& [press,hold]:std::array<std::pair<unsigned,unsigned>,5>{{{38,10},{39,10},{40,10},{41,1},{41,10}}}){
+        third_prefix(Mode::GroundTimedWalkReleaseDownPush);
+        NativeBorgMotionOffer offer;
+        check(prepare(down,&offer)&&offer.jump_motion->down_timed_release_push,"second relaunch test starts with the genuine fourth push");
+        accept(offer);
+        const bool ready=press==41;
+        unsigned second_entry=0,active=0;
+        hit=land=0;
+        for(unsigned tick=38;tick<=175;++tick){
+            GamePadState pad;pad.b=tick>=press&&tick<press+hold;
+            pad.dpad_down=pad.dpad_right=tick==38&&press!=38;
+            const auto before=world.actors()[0];
+            check(prepare(pad,&offer)&&offer.controller_timer698==0.f,"fresh Shift changes neither the expiry clock nor contact permissions");
+            if(tick==38&&press!=38)check(offer.kind==Kind::StaticPush&&offer.static_push&&
+                offer.static_push->surface.triangle==2011&&offer.static_push->angle==13653,"the second relaunch follows a real fifth contact");
+            if(tick==38&&press==38)check(offer.kind==Kind::JumpAir&&!offer.static_push,
+                "early neutral Shift does not replace the missing Down+Right drift at expiry");
+            if(tick==41&&ready){
+                check(offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&offer.relaunch_motion->entry&&
+                    !offer.relaunch_motion->direction&&!offer.relaunch_motion->timed_walk_relaunch_tap&&
+                    !offer.static_push&&!offer.relaunch_floor&&before.vertical_speed<0.f&&offer.facing==before.facing&&
+                    offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&offer.vertical_speed>0.f&&
+                    offer.relaunch_motion->resource_before==9850&&offer.relaunch_motion->resource_after==9700&&
+                    source.resource()==9850&&source.relaunches()==1,"the fresh ready press stages plain neutral lift at the ordinary entry cost");
+                second_entry=tick;
+            }else check(!offer.relaunch_motion||!offer.relaunch_motion->entry,"early or held Shift never queues another relaunch entry");
+            if(!active&&offer.kind==Kind::RelaunchActive)active=tick;
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            if(tick==41&&ready)check(source.resource()==9700&&source.relaunches()==2&&!world.actors()[0].grounded,
+                "matching native acceptance publishes the second entry and its 150 meter charge");
+            if(tick==50)check(source.resource()==(ready?(hold==1?9700:8800):9850),
+                "nine held updates cost 100 each; an early hold or a released tap does not pay those costs");
+            if(ready&&tick==press+hold)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->relaunch_origin,
+                "releasing the second relaunch resumes ordinary falling");
+        }
+        check(source.relaunches()==(ready?2u:1u)&&second_entry==(ready?41u:0u)&&active==(ready&&hold==10?46u:0u)&&
+            hit==(ready?(hold==1?118u:139u):(press==38?102u:103u))&&land==hit+1&&
+            source.relaunch_fall_pushes()==(press==38?4u:5u)&&!source.air_dash_starts()&&
+            world.actors()[0].grounded&&!source.selector()&&source.resource()==10000,
+            "unbuffered early input, a fresh tap, and held ascent each reach their own complete landing and idle");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

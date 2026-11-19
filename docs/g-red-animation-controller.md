@@ -1323,6 +1323,20 @@ further pushes and accepted none; 914 trials reached idle
 without another push. This bounds the tested routes, not
 every possible zero-timer fall. No contact rule changes.
 
+### Second relaunch after the expiry drift
+
+After the fifth push, stay neutral on **39–40** and press
+**Shift** on **41**. This is a fresh relaunch from ordinary
+falling, not a new timer or contact permission. Neutral Shift
+started on 38, 39 or 40 does not relaunch or queue an entry
+when held through readiness. In the live **Expiry Drift Push**
+guide, holding Shift on **41–50** spends 150 on entry (9850 →
+9700) and 100 on each of the nine held updates (to 8800).
+Powered ascent starts on 46. Releasing on 51 leads to touchdown
+139 and landing 140, with five total pushes and one landing.
+A tap on 41 instead releases into falling on 42 and lands
+on 118–119. Both routes reach full idle without a sixth push.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

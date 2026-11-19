@@ -11,7 +11,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     ExpiringAirDashSnapRelaunch,
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
-    TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,
+    TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,TimedReleaseExpiryRelaunch,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -312,11 +312,13 @@ public:
         }
         case Replay::TimedReleaseThreePushes:
         case Replay::TimedReleaseFourPushes:
-        case Replay::TimedReleaseExpiryDrift:{
+        case Replay::TimedReleaseExpiryDrift:
+        case Replay::TimedReleaseExpiryRelaunch:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             raw.buttons|=replay_==Replay::TimedReleaseThreePushes?timed_release_inputs(tick,false,true):
-                timed_down_inputs(tick,replay_==Replay::TimedReleaseExpiryDrift);
+                timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes);
+            if(replay_==Replay::TimedReleaseExpiryRelaunch&&tick>=41&&tick<=50)raw.buttons|=1u<<1;
             break;
         }
         case Replay::PickerPractice:
@@ -589,7 +591,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_two=replay==Replay::TimedReleaseTwoPushes;
     const bool timed_release_three=replay==Replay::TimedReleaseThreePushes;
     const bool timed_release_four=replay==Replay::TimedReleaseFourPushes;
-    const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift;
+    const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift||replay==Replay::TimedReleaseExpiryRelaunch;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||incline_ledge_relaunch||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
@@ -1348,5 +1350,16 @@ int main(int argc,char** argv){
     check(picker_guide_played(expiry_drift_idle,"expiry drift push",145)&&
         has(expiry_drift_idle,"accepted native tick=145 G-Red-position=-3719.20/10.00/-3264.03")&&
         has(expiry_drift_idle,"practice-meter=10000/10000 at accepted tick=145"),"ordinary recovery follows the live expiry response",expiry_drift_idle);
-    std::puts("G-Red practice replay: sixty-one desktop-loop scenarios PASS without opening devices");
+    const auto second_lift=run(Replay::TimedReleaseExpiryRelaunch,100,"live second relaunch after expiry drift");
+    check(picker_guide_played(second_lift,"expiry drift push",50)&&has(second_lift,"optional fresh Shift on 41-50")&&
+        has(second_lift,"practice-phase=RELAUNCH\n")&&has(second_lift,"practice-meter=8800/10000 at accepted tick=50")&&
+        has(second_lift,"relaunch-fall-pushes=5 relaunches=2 timer698=0.0 landings=0"),
+        "the existing guide accepts fresh Shift and ordinary sustained lift without more pushes",second_lift);
+    const auto second_lift_idle=run(Replay::TimedReleaseExpiryRelaunch,350,"live second relaunch to idle");
+    check(picker_guide_played(second_lift_idle,"expiry drift push",175)&&has(second_lift_idle,"practice-phase=IDLE\n")&&
+        has(second_lift_idle,"accepted native tick=175 G-Red-position=-3686.82/10.00/-3242.19")&&
+        has(second_lift_idle,"practice-meter=10000/10000 at accepted tick=175")&&
+        has(second_lift_idle,"relaunch-fall-pushes=5 relaunches=2 timer698=0.0 landings=1"),
+        "releasing the second lift completes the same five-push route through landing and refill",second_lift_idle);
+    std::puts("G-Red practice replay: sixty-three desktop-loop scenarios PASS without opening devices");
 }
