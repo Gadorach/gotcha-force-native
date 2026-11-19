@@ -18,6 +18,6 @@ enum class NativeBorgMotionPolicy:u8 {
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
     GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
-    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap
+    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap,GroundWalkExpiringAirDashSnapRelaunch
 };
 }

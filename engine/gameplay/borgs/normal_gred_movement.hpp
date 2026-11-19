@@ -24,7 +24,7 @@ enum class NormalGRedMovementMode {
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
     GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
-    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap
+    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap,GroundWalkExpiringAirDashSnapRelaunch
 };
 
 struct NormalGRedMovementDefinition {
@@ -100,6 +100,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiringAirDashRelaunch,Policy::GroundWalkExpiringAirDashRelaunch,Behavior::WalkExpiringAirDashRelaunch},
         CombinedRule{Mode::GroundWalkExpiringShortAirDashRelaunch,Policy::GroundWalkExpiringShortAirDashRelaunch,Behavior::WalkExpiringShortAirDashRelaunch},
         CombinedRule{Mode::GroundWalkExpiringAirDashSnap,Policy::GroundWalkExpiringAirDashSnap,Behavior::WalkExpiringAirDashSnap},
+        CombinedRule{Mode::GroundWalkExpiringAirDashSnapRelaunch,Policy::GroundWalkExpiringAirDashSnapRelaunch,Behavior::WalkExpiringAirDashSnapRelaunch},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -163,6 +164,10 @@ struct NormalGRedMovementDefinition {
         if(!previous||previous>=expiring_walk_windup_end(short_windup))return 0;
         const bool matched=previous<=2?push&&face==2007&&angle==13653:!push;
         return matched?u8(previous+1):0;
+    }
+    static constexpr u8 expiring_snap_windup_complete=7; // one entry snap, six ordinary updates
+    static constexpr u8 expiring_snap_windup_next(u8 previous){
+        return previous&&previous<expiring_snap_windup_complete?u8(previous+1):0;
     }
 private:
     static constexpr auto cumulative_=[]{

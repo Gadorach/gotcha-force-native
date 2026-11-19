@@ -362,6 +362,13 @@ vertical speed without moving, grounding, or charging G-Red.
 The handoff and active entry still cost 450 and 50 on 46–47.
 Use `--demo-gred-walk-ledge-expiring-air-dash-snap` for playback.
 
+`--gred-walk-ledge-expiring-air-dash-snap-handoff --practice-start`
+uses the same start and inputs. After the wind-up pays 450 on
+46, tap neutral **Shift** on 47 to relaunch for 150, or stay
+neutral to dash for the usual active-entry cost. Use
+`--demo-gred-walk-ledge-expiring-air-dash-snap-handoff` for the
+relaunch playback.
+
 `--gred-walk-ledge-expiring-air-dash-handoff --practice-start`
 uses that same start and inputs, then shows the choice when the
 wind-up pays 450 on 44. Tap **Shift** without a direction on 45

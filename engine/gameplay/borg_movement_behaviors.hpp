@@ -17,7 +17,7 @@ enum class BorgMovementBehavior:u8 {
     TimedSnapWindupRelaunch, PositiveSnapWindupRelaunch, ExpiringSnapWindupRelaunch, WalkTimedDirectRelaunch,
     WalkTimedDirectUpRelaunch, TimedWalkReleasePush, TimedWalkReleaseSecondPush, WalkExpiringDirectRelaunch,
     WalkExpiringDirectRelaunchPush, WalkExpiringAdjacentRelaunchPush, WalkExpiringAirDash, WalkExpiringAirDashRelaunch,
-    WalkExpiringShortAirDashRelaunch, WalkExpiringAirDashSnap, Count
+    WalkExpiringShortAirDashRelaunch, WalkExpiringAirDashSnap, WalkExpiringAirDashSnapRelaunch, Count
 };
 static_assert(unsigned(BorgMovementBehavior::Count)<=64);
 

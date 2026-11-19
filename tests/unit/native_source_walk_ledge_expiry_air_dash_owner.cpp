@@ -846,5 +846,88 @@ int main(){
     check(!prepare(false,&offer,true)&&error.find("accepted expiry-push wind-up")!=std::string::npos&&world.tick()==46&&
         source.resource()==9550&&!source.relaunches()&&!source.air_dash_active_frames()&&!world.step({},false,&view),
         "same-height snap history cannot authorize relaunch or charge the active entry early");
+    auto paid_snap_windup=[&](){
+        snap_expiry_prefix(Mode::GroundWalkExpiringAirDashSnapRelaunch);
+        while(world.tick()<46){
+            const auto tick=world.tick()+1;const auto retained=pose;
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(prepare(tick==40,&offer)&&offer.air_motion&&offer.controller_timer698==0.f&&
+                offer.kind==(tick==40?Kind::AirDashWindupEntryFloor:Kind::AirDashWindup)&&
+                offer.air_motion->expiring_snap_windup_step==tick-39&&!offer.air_motion->expiring_walk_windup_step&&
+                !offer.air_motion->walk_expiry_windup&&!offer.air_motion->timed_relaunch_floor_windup,
+                "an accepted snap and six ordinary updates use their own history");
+            if(tick==40||tick==41||tick==46){
+                const auto meter=source.resource();auto wrong=offer;
+                wrong.air_motion->expiring_snap_windup_step=tick==46?0:7;
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick-1&&
+                    world.motion_receipt_current(retained.receipt)&&source.resource()==meter&&
+                    !view.practice_readout(world)->plain_windup_relaunch_ready,
+                    "native re-derives the snap and each continuation before exposing the choice");
+                wrong=offer;wrong.air_motion->expiring_walk_windup_step=tick-39;
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick-1&&
+                    world.motion_receipt_current(retained.receipt)&&source.resource()==meter,
+                    "snap history cannot be recast as plain wind-up or a pushed sequence");
+            }
+            accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->plain_windup_relaunch_ready==(tick==46)&&!shown->floor_windup_relaunch_ready&&
+                !shown->expiring_walk_air_dash_relaunch,"only accepted completion offers the new choice, not the snap");
+        }
+        check(offer.air_motion->next_selector==16&&source.resource()==9550&&source.windup_entry_floor_contacts()==1&&
+            source.windup_floor_contacts()==1&&!source.windup_pushes()&&!source.air_dash_active_frames(),"paid without a second contact");
+    };
+    paid_snap_windup();
+    check(!prepare(false,&offer,true,true)&&error.find("needs neutral Shift")!=std::string::npos&&
+        world.tick()==46&&source.resource()==9550&&!source.relaunches()&&!world.step({},false,&view),
+        "the new snap handoff does not admit directional relaunch");
+    paid_snap_windup();
+    check(prepare(false,&offer)&&offer.kind==Kind::AirDashActiveEntry&&offer.air_motion->resource_after==9500&&
+        !offer.air_motion->expiring_snap_windup_step,"neutral input chooses the ordinary dash and clears the snap history");
+    accept(offer);
+    check(!view.practice_readout(world)->plain_windup_relaunch_ready&&!view.practice_readout(world)->expiring_walk_air_dash_relaunch&&
+        source.resource()==9500&&source.air_dash_active_frames()==1,"the dash choice pays only its normal active-entry charge");
+    paid_snap_windup();
+    const auto snap_paid_actor=world.actors()[0];const auto snap_paid=offer;
+    check(prepare(false,&offer,true)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&offer.controller_timer698==0.f&&
+        !offer.air_motion&&!offer.static_push&&!offer.relaunch_floor&&!offer.surface_landing&&source.resource()==9550,
+        "relaunch stages without charging, snapping again or entering active dash");
+    const auto& snap_lift=*offer.relaunch_motion;
+    check(snap_lift.entry&&!snap_lift.direction&&offer.facing==snap_paid_actor.facing&&snap_paid_actor.vertical_speed<0.f&&
+        snap_lift.speed_before==snap_paid.air_motion->speed44&&snap_lift.move_speed==f32(snap_lift.speed_before*.98f)&&
+        snap_lift.vertical_before==f32(snap_paid_actor.vertical_speed+15.f)&&snap_lift.vertical_before>14.f&&
+        offer.vertical_speed==std::fma(.8f,1.f,snap_lift.vertical_before)&&
+        snap_lift.resource_before==9550&&snap_lift.resource_after==9400,"plain neutral lift spends 150 without refunding wind-up");
+    auto refuses_snap_handoff=[&](const NativeBorgMotionOffer& attempted,const char* why){
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        const bool refused=!world.step({},false,&view,nullptr,&frame,&attempted);
+        const auto shown=view.practice_readout(world);
+        check(refused&&world.tick()==46&&world.actors()[0].position==snap_paid_actor.position&&
+            world.motion_receipt_current(pose.receipt)&&source.resource()==9550&&!source.relaunches()&&
+            shown&&shown->plain_windup_relaunch_ready&&!shown->expiring_walk_air_dash_relaunch,why);
+    };
+    fake=offer;fake.relaunch_motion->resource_before=9500;refuses_snap_handoff(fake,"the skipped active entry cannot charge 50");
+    fake=offer;fake.relaunch_motion->resource_before=10000;refuses_snap_handoff(fake,"wind-up cost stays spent after a snap");
+    fake=offer;fake.relaunch_motion->direction=true;refuses_snap_handoff(fake,"snap proof does not authorize a directional branch");
+    fake=offer;fake.controller_timer698=1.f;refuses_snap_handoff(fake,"clock remains zero through the handoff");
+    fake=offer;fake.kind=Kind::RelaunchEntryFloor;fake.relaunch_floor=NativeBorgRelaunchFloor{};
+    refuses_snap_handoff(fake,"an entry floor response cannot borrow the snap handoff");
+    accept(offer);
+    check(view.practice_readout(world)->expiring_walk_air_dash_relaunch&&!view.practice_readout(world)->plain_windup_relaunch_ready&&
+        source.resource()==9400&&!source.air_dash_active_frames()&&!world.actors()[0].grounded,"one accepted rising handoff, no active dash");
+    touched=landed=0;
+    while(world.tick()<175){
+        const auto tick=world.tick()+1;
+        check(prepare(false,&offer)&&offer.controller_timer698==0.f,"ordinary release and landing retain the expired clock");
+        if(tick==48)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->entry&&offer.jump_motion->relaunch_origin,
+            "the one-tick Shift tap releases directly into falling");
+        if(offer.kind==Kind::JumpTouchdown)touched=tick;
+        if(touched&&!landed&&offer.kind==Kind::JumpLanding)landed=tick;
+        accept(offer);
+        check(!view.practice_readout(world)->expiring_walk_air_dash_relaunch,"the handoff cue lasts only on accepted entry");
+        if(tick==48||tick==touched||tick==landed)check(source.resource()==9400,"both charges survive touchdown and landing");
+    }
+    check(touched==131&&landed==132&&source.resource()==10000&&source.air_dash_starts()==1&&!source.air_dash_active_frames()&&
+        source.relaunches()==1&&source.windup_entry_floor_contacts()==1&&world.actors()[0].grounded&&!source.selector(),
+        "same-height snap relaunch completes ordinary landing and idle recovery");
     std::printf("Walking push air followups: %u checks PASS, timed and expiry entries with separate costs and landing\n",checks);
 }

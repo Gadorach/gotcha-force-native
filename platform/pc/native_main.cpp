@@ -72,7 +72,8 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 
 enum class TimedLedgeFollowup { None, Relaunch, AirDash, DirectAirDash, HandoffRelaunch, ExpiryHandoffRelaunch, ExpiryDirectRelaunch,
     DirectTimedRelaunch, DirectTimedUpRelaunch, TimedReleasePush, TimedReleaseTwoPushes, ExpiringDirectRelaunch, ExpiringDirectRelaunchPush,
-    ExpiringAdjacentRelaunchPush, ExpiringAirDash, ExpiringAirDashRelaunch, ExpiringShortAirDashRelaunch, ExpiringAirDashSnap };
+    ExpiringAdjacentRelaunchPush, ExpiringAirDash, ExpiringAirDashRelaunch, ExpiringShortAirDashRelaunch,
+    ExpiringAirDashSnap, ExpiringAirDashSnapRelaunch };
 
 struct Options {
     bool headless = false;
@@ -398,6 +399,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-walk-ledge-expiry-air-dash" || arg == "--demo-gred-walk-ledge-expiry-air-dash" ||
                  arg == "--gred-walk-ledge-expiring-air-dash" || arg == "--demo-gred-walk-ledge-expiring-air-dash" ||
                  arg == "--gred-walk-ledge-expiring-air-dash-snap" || arg == "--demo-gred-walk-ledge-expiring-air-dash-snap" ||
+                 arg == "--gred-walk-ledge-expiring-air-dash-snap-handoff" || arg == "--demo-gred-walk-ledge-expiring-air-dash-snap-handoff" ||
                  arg == "--gred-walk-ledge-expiring-air-dash-handoff" || arg == "--demo-gred-walk-ledge-expiring-air-dash-handoff" ||
                  arg == "--gred-walk-ledge-expiring-diagonal-dash-handoff" || arg == "--demo-gred-walk-ledge-expiring-diagonal-dash-handoff" ||
                  arg == "--gred-recovery-recontact" || arg == "--demo-gred-recovery-recontact" ||
@@ -461,6 +463,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg=="--gred-walk-ledge-direct-timed-air-dash"||arg=="--demo-gred-walk-ledge-direct-timed-air-dash"?TimedLedgeFollowup::DirectAirDash:
                  arg=="--gred-walk-ledge-expiring-air-dash"||arg=="--demo-gred-walk-ledge-expiring-air-dash"?TimedLedgeFollowup::ExpiringAirDash:
                  arg=="--gred-walk-ledge-expiring-air-dash-snap"||arg=="--demo-gred-walk-ledge-expiring-air-dash-snap"?TimedLedgeFollowup::ExpiringAirDashSnap:
+                 arg=="--gred-walk-ledge-expiring-air-dash-snap-handoff"||arg=="--demo-gred-walk-ledge-expiring-air-dash-snap-handoff"?TimedLedgeFollowup::ExpiringAirDashSnapRelaunch:
                  arg=="--gred-walk-ledge-expiring-air-dash-handoff"||arg=="--demo-gred-walk-ledge-expiring-air-dash-handoff"?TimedLedgeFollowup::ExpiringAirDashRelaunch:
                  arg=="--gred-walk-ledge-expiring-diagonal-dash-handoff"||arg=="--demo-gred-walk-ledge-expiring-diagonal-dash-handoff"?TimedLedgeFollowup::ExpiringShortAirDashRelaunch:
                 arg=="--gred-walk-ledge-direct-timed-relaunch"||arg=="--demo-gred-walk-ledge-direct-timed-relaunch"?TimedLedgeFollowup::DirectTimedRelaunch:
@@ -856,7 +859,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     const auto timed_followup=options.timed_ledge_followup;
     const bool expiring_short_relaunch=timed_followup==TimedLedgeFollowup::ExpiringShortAirDashRelaunch;
     const bool expiring_air_relaunch=expiring_short_relaunch||timed_followup==TimedLedgeFollowup::ExpiringAirDashRelaunch;
-    const bool expiring_air_snap=timed_followup==TimedLedgeFollowup::ExpiringAirDashSnap;
+    const bool expiring_snap_relaunch=timed_followup==TimedLedgeFollowup::ExpiringAirDashSnapRelaunch;
+    const bool expiring_air_snap=expiring_snap_relaunch||timed_followup==TimedLedgeFollowup::ExpiringAirDashSnap;
     const bool expiring_air_dash=expiring_air_relaunch||expiring_air_snap||timed_followup==TimedLedgeFollowup::ExpiringAirDash;
     const bool direct_expiry=timed_followup==TimedLedgeFollowup::ExpiryDirectRelaunch;
     const bool direct_expiring=timed_followup==TimedLedgeFollowup::ExpiringDirectRelaunch;
@@ -883,6 +887,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "air dash on expiry","Left Arrow 6-7, tap A on 38, then neutral"};
     constexpr PracticeTimingGuide ledge_expiring_dash_snap_guide{"WIND-UP ENTRY SNAP ON EXPIRY\nLEFT ARROW 6-9 / A 40 / NEUTRAL AFTER",
         "wind-up entry snap on expiry","Left Arrow 6-9, tap A on 40, then neutral"};
+    constexpr PracticeTimingGuide ledge_expiring_dash_snap_handoff_guide{"EXPIRY SNAP WIND-UP TO RELAUNCH\nLEFT ARROW 6-9 / A 40 / SHIFT 47 OR NEUTRAL DASH",
+        "expiry snap wind-up relaunch","Left Arrow 6-9, A on 40, then neutral Shift on 47 to relaunch or no input to dash"};
     constexpr PracticeTimingGuide ledge_expiring_dash_handoff_guide{"EXPIRY WIND-UP TO RELAUNCH\nLEFT ARROW 6-7 / A 38 / SHIFT 45 OR NEUTRAL DASH",
         "expiry-step wind-up relaunch","Left Arrow 6-7, tap A on 38, then neutral Shift on 45 to relaunch or no input to dash"};
     constexpr PracticeTimingGuide ledge_expiring_short_handoff_guide{"DIAGONAL EXPIRY WIND-UP TO RELAUNCH\nLEFT ARROW 6-7 / A+W 38 / SHIFT 44\nRELEASE SHIFT / DOWN ARROW 45-50",
@@ -930,6 +936,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         else if(timed_followup==TimedLedgeFollowup::DirectAirDash)guide=&ledge_direct_dash_guide;
         else if(expiring_short_relaunch)guide=&ledge_expiring_short_handoff_guide;
         else if(expiring_air_relaunch)guide=&ledge_expiring_dash_handoff_guide;
+        else if(expiring_snap_relaunch)guide=&ledge_expiring_dash_snap_handoff_guide;
         else if(expiring_air_snap)guide=&ledge_expiring_dash_snap_guide;
         else if(expiring_air_dash)guide=&ledge_expiring_dash_guide;
         else if(timed_followup==TimedLedgeFollowup::HandoffRelaunch)guide=&ledge_handoff_guide;
@@ -1044,7 +1051,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ordered_ground?"local/content/source-gred-ground-v9":options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
-    const auto source_mode=expiring_air_snap?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringAirDashSnap:
+    const auto source_mode=expiring_snap_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringAirDashSnapRelaunch:
+          expiring_air_snap?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringAirDashSnap:
           expiring_short_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringShortAirDashRelaunch:
           expiring_air_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringAirDashRelaunch:
           expiring_air_dash?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringAirDash:
@@ -1135,6 +1143,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
          "the qualified five-tick expiry wind-up may also relaunch; this guide needs Down drift on release to clear the next travel checks");
      else if(expiring_air_relaunch)gf::log_info(context,"source-ground",
          "neutral Shift may replace active dash after the qualified expiry-step entry, two face-2007 pushes and the paid six-tick wind-up");
+     else if(expiring_snap_relaunch)gf::log_info(context,"source-ground",
+         "neutral Shift may replace active dash only after the exact expiry snap and all six ordinary wind-up updates through the 450 charge");
      else if(expiring_air_snap)gf::log_info(context,"source-ground",
          "same-height wind-up entry snap on 1 to 0 from face 2001 to face 2000; no steep entry, grounding, entry cost or relaunch handoff");
      else if(expiring_air_dash)gf::log_info(context,"source-ground",
@@ -1205,6 +1215,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                             "diagonal expiry-step wind-up relaunch demo: Left Arrow on 6-7, A+W on 38, Shift on 44, Down Arrow on 45-50":
                             expiring_air_relaunch?
                             "expiry-step wind-up relaunch demo: Left Arrow on 6-7, A on 38, Shift on 45 instead of active dash":
+                            expiring_snap_relaunch?
+                            "expiry snap wind-up relaunch demo: Left Arrow on 6-9, A on 40, Shift on 47 instead of active dash":
                             expiring_air_snap?
                             "wind-up entry snap on expiry demo: Left Arrow on 6-9, A on 40, then neutral":
                             expiring_air_dash?
@@ -1516,6 +1528,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                             }else if(expiring_air_snap){
                                 device.dpad_left=world.tick()>=5&&world.tick()<9;
                                 if(world.tick()==39)device.stick_x=-127;
+                                device.b=expiring_snap_relaunch&&world.tick()==46;
                             }else if(expiring_air_dash){
                                 device.dpad_left=world.tick()==5||world.tick()==6;
                                 if(world.tick()==37){device.stick_x=-127;if(expiring_short_relaunch)device.stick_y=-127;}

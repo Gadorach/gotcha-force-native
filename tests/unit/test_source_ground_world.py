@@ -488,6 +488,30 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick == 175:
                     self.assertIn("G-Red-position=1349.75/10.00/-3466.02", result.stdout)
 
+    def test_expiring_air_dash_snap_handoff_relaunches_after_the_paid_windup(self):
+        snap = "practice-expiring-walk-air-dash-snap=AIRBORNE / WIND-UP ENTRY SNAP ON EXPIRY"
+        prompt = "practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH"
+        relaunch = "practice-expiring-walk-air-dash-relaunch=AIRBORNE / EXPIRY WIND-UP TO RELAUNCH"
+        for tick, phase, meter in (
+            (40, "DASH WIND-UP / FLOOR SNAP", 10000), (46, "DASH WIND-UP", 9550),
+            (47, "RELAUNCH", 9400), (48, "FALLING", 9400),
+            (131, "TOUCHDOWN", 9400), (132, "LANDING", 9400), (175, "IDLE", 10000),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-expiring-air-dash-snap-handoff",
+                                        "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn("expiring-dash-entry-snaps=1 continued-windup-snaps=0 active-snaps=0 entry-pushes=0", result.stdout)
+                self.assertIn(f"windup-pushes=0 active-frames=0 relaunches={int(tick>=47)} timer698=0.0", result.stdout)
+                self.assertEqual(snap in result.stdout, tick == 40)
+                self.assertEqual(prompt in result.stdout, tick == 46)
+                self.assertEqual(relaunch in result.stdout, tick == 47)
+                self.assertNotIn("practice-floor-windup-handoff=", result.stdout)
+                if tick == 175:
+                    self.assertIn("G-Red-position=-691.88/10.00/-3444.54", result.stdout)
+
     def test_expiring_air_dash_handoff_keeps_windup_cost_and_skips_active(self):
         prompt = "practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH"
         cue = "practice-expiring-walk-air-dash-relaunch=AIRBORNE / EXPIRY WIND-UP TO RELAUNCH"

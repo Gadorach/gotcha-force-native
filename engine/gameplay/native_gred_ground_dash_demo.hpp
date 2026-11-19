@@ -331,6 +331,7 @@ public:
         }
         const bool expiry_relaunch=allows(mode_,Behavior::ExpiryPlainWindupRelaunch);
         const bool expiring_air_dash_relaunch=allows(mode_,Behavior::WalkExpiringAirDashRelaunch);
+        const bool expiring_snap_relaunch=allows(mode_,Behavior::WalkExpiringAirDashSnapRelaunch);
         const bool timed_snap_handoff=allows(mode_,Behavior::TimedSnapWindupRelaunch);
         if(s.jump.selector==8){
             const auto& previous_air=state_.air_motion;
@@ -352,9 +353,10 @@ public:
             const bool timed_handoff=state_.ground_timer698>1.f&&s.ground_timer698==state_.ground_timer698-1.f;
             const bool expiry_handoff=expiry_relaunch&&previous_air&&previous_air->walk_expiry_windup&&
                 state_.ground_timer698==0.f&&s.ground_timer698==0.f;
-            const bool expiring_walk_handoff=expiring_air_dash_relaunch&&plain_windup_handoff&&
-                previous_air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_end(previous_air->expiring_walk_windup_short)&&
-                state_.ground_timer698==0.f&&s.ground_timer698==0.f;
+            const bool expiring_walk_handoff=plain_windup_handoff&&state_.ground_timer698==0.f&&s.ground_timer698==0.f&&
+                ((expiring_air_dash_relaunch&&previous_air->expiring_walk_windup_step==
+                    NormalGRedMovementDefinition::expiring_walk_windup_end(previous_air->expiring_walk_windup_short))||
+                 (expiring_snap_relaunch&&previous_air->expiring_snap_windup_step==NormalGRedMovementDefinition::expiring_snap_windup_complete));
             if(plain_windup_handoff&&!timed_handoff&&!expiry_handoff&&!expiring_walk_handoff)
                 return fail(error,expiry_relaunch?"plain wind-up relaunch needs a still-positive countdown or an accepted expiry-push wind-up":
                     "plain wind-up relaunch needs a still-positive ledge countdown");
@@ -450,6 +452,12 @@ public:
                         s.static_push?s.static_push->surface.triangle:0,s.static_push?s.static_push->angle:0,previous_air->expiring_walk_windup_short);
                     s.air_motion->expiring_walk_windup_short=s.air_motion->expiring_walk_windup_step&&previous_air->expiring_walk_windup_short;
                 }
+            }
+            if(expiring_snap_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
+                const auto& previous_air=state_.air_motion;
+                if(s.air_motion->entry)s.air_motion->expiring_snap_windup_step=expiring_snap?1:0;
+                else if(previous_air&&kind==NativeBorgMotionKind::AirDashWindup)
+                    s.air_motion->expiring_snap_windup_step=NormalGRedMovementDefinition::expiring_snap_windup_next(previous_air->expiring_snap_windup_step);
             }
             if(expiry_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
                 const auto& previous_air=state_.air_motion;
@@ -681,7 +689,9 @@ public:
             ((allows(mode_,Behavior::TimedPlainWindupRelaunch)&&*accepted.controller_timer698>1.f)||
              (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup)||
              (allows(mode_,Behavior::WalkExpiringAirDashRelaunch)&&*accepted.controller_timer698==0.f&&
-                air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_end(air->expiring_walk_windup_short)));
+                air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_end(air->expiring_walk_windup_short))||
+             (allows(mode_,Behavior::WalkExpiringAirDashSnapRelaunch)&&*accepted.controller_timer698==0.f&&
+                air->expiring_snap_windup_step==NormalGRedMovementDefinition::expiring_snap_windup_complete));
         const bool floor_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindupFloor&&windup_relaunch_ready&&
             state_.jump.cached87&&air->timed_relaunch_floor_windup&&NormalGRedMovementDefinition::floor_windup_handoff_clock(
                 NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),

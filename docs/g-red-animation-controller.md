@@ -401,6 +401,30 @@ airborne with full meter. The route pays for handoff at 46 and
 active entry at 47. Falling resumes at 107, touchdown and
 landing remain separate at 137–138, and idle refills normally.
 
+#### Relaunch after the paid same-height snap wind-up
+
+`--gred-walk-ledge-expiring-air-dash-snap-handoff` verifies one
+different predecessor for plain rising relaunch: the accepted
+1 → 0 snap above, followed by six ordinary wind-up updates
+through the 450 charge. Source and native track that sequence
+separately from the two-push stationary-start sequence and the
+flat-floor wind-up. Another push, snap, clock or early request
+cannot borrow it. The snap-only mode still refuses the handoff.
+
+Use the same start and **Left Arrow** on 6–9, then **A** on 40.
+After the accepted paid handoff at 46, tap **Shift** without a
+direction on 47 for relaunch, or stay neutral for active dash.
+Relaunch keeps the 450 spent, costs 150 and skips the 50 active
+entry. The incoming vertical speed of about −0.42 becomes
+14.58 before displacement and 15.38 after acceleration. It
+neither changes facing nor makes another contact. Release at 48;
+touchdown at 131 and landing at 132 keep 9400 until idle.
+
+The scratch probe staged 16 entries in 24 attempts; eight were
+accepted and reached idle, across both verified snap starts.
+The checked-in permission uses the proven sequence, not a generic
+zero timer. Steep wind-up entry remains closed.
+
 ### Relaunch instead of active dash after that expiry-step wind-up
 
 `--gred-walk-ledge-expiring-air-dash-handoff` adds a separate
