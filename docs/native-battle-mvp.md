@@ -200,6 +200,14 @@ speed. Releasing after liftoff gives the separate touchdown and
 landing. `--demo-gred-walk-ledge-timed-relaunch-floor` replays it
 under the existing contact rules.
 
+`--gred-walk-ledge-timed-snap-dash --practice-start` follows the timed
+relaunch snap into air dash. Step with **Down+Right Arrow** on 6–122,
+hold **Shift** on 148–150, and tap **D+S** on 150 while still holding
+Shift. The wind-up starts at the same height and meter as the
+preceding snap, while the ledge timer is still positive. The two
+dash charges and actual landing come later. Use
+`--demo-gred-walk-ledge-timed-snap-dash` for the automatic replay.
+
 `--gred-inclined-dash-jump --practice-start` opens the flat-to-incline
 dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
 **DASH CANCELED** appears on accepted takeoff. The old dash does not

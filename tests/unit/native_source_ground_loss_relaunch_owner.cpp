@@ -182,7 +182,115 @@ int main(){
         if(r.floors)check(positive_floor==1,"actual positive698 relaunch floor receipt exercised, not a default-zero substitution");
         source.reject();check(pose.frame_scope.expired()&&!world.motion_receipt_current(pose.receipt),"timer/relaunch/pose authority retirement");
     }
+    using Kind=NativeBorgMotionKind;
+    using Mode=NativeGRedGroundDashDemo::Mode;
+    struct SnapDash {unsigned press,flick,snaps,touch;f32 preceding_timer;u32 face;s16 meter;bool positive_speed=false;};
+    const SnapDash snap_dashes[]={{148,150,1,186,3.f,1116,9750},{147,152,1,188,1.f,900,9450},{147,157,6,193,0.f,900,8950,true}};
+    auto snap_dash_pad=[&](unsigned tick,const SnapDash& route,bool hold_on_flick){
+        GamePadState pad;
+        if(tick>=6&&!source.ground_loss_entries())pad.dpad_down=pad.dpad_right=true;
+        pad.b=tick>=route.press&&(tick<route.flick||(hold_on_flick&&tick==route.flick));
+        if(tick==route.flick)pad.stick_x=pad.stick_y=127;
+        return pad;
+    };
+    for(const auto& route:snap_dashes){
+        bind(1,Mode::GroundLossRelaunch);
+        NativeBorgMotionOffer previous;
+        std::weak_ptr<const NativeBorgMotionProducer> producer;
+        unsigned starts=0,paid=0,active=0,hit=0,land=0,air_snaps=0;
+        for(unsigned tick=1;tick<=220;++tick){
+            const auto before=world.actors()[0];const auto retained=pose;
+            const auto old_timer=source.ground_loss_timer698();const auto meter=source.resource();
+            NativeBorgMotionOffer offer;
+            check(prepare(snap_dash_pad(tick,route,true),&offer)&&source.resource()==meter&&source.ground_loss_timer698()==old_timer,
+                "release, enter or continue through the existing timed controller before publishing");
+            if(tick==1)producer=offer.producer;
+            check(!offer.producer.owner_before(producer)&&!producer.owner_before(offer.producer),
+                "same producer through floor snap, wind-up, active dash and landing");
+            const f32 timer=offer.kind==Kind::GroundLossEntry?30.f:std::max(0.f,old_timer-1.f);
+            check(offer.controller_timer698==timer,"the timer naturally decrements across the handoff without reset");
+            if(native_borg_motion_windup_entry(offer.kind)){
+                ++starts;
+                check(tick==route.flick&&old_timer==route.preceding_timer&&previous.relaunch_floor&&previous.relaunch_motion&&
+                    (before.vertical_speed>0)==route.positive_speed&&!before.grounded&&
+                    offer.kind==(route.positive_speed?Kind::AirDashWindupPositiveEntryFloor:Kind::AirDashWindupEntryFloor)&&
+                    offer.air_dash_floor&&offer.air_motion&&!offer.relaunch_floor&&!offer.relaunch_motion&&!offer.static_push,
+                    "one wind-up takes the accepted relaunch snap's timer and velocity domain, not a new grounded takeoff");
+                const auto& e=*offer.air_motion;const auto& floor=*offer.air_dash_floor;
+                check(floor.surface==previous.relaunch_floor->surface&&floor.surface.triangle==route.face&&floor.timer698==timer&&
+                    floor.integrated_position==before.position&&offer.proposed_position==before.position&&offer.vertical_speed==0.f&&
+                    e.vertical_before==before.vertical_speed*.5f&&e.vertical_before==floor.vertical_speed&&
+                    e.speed_before==previous.relaunch_motion->speed44&&e.speed44==e.speed_before*.5f&&
+                    e.resource_before==route.meter&&e.resource_after==route.meter&&!e.callback&&e.timer568==5.f,
+                    "wind-up snap halves real inherited velocity before zeroing 48, with no step, gravity integration, cost or callback yet");
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                auto rejects=[&](const NativeBorgMotionOffer& wrong,const char* why){
+                    const auto shown=view.practice_readout(world);
+                    check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick-1&&
+                        world.actors()[0].position==before.position&&world.motion_receipt_current(retained.receipt)&&
+                        source.resource()==route.meter&&source.ground_loss_timer698()==old_timer&&!source.air_dash_starts()&&
+                        shown&&shown->relaunch_floor_damped.has_value()&&!shown->windup_from_relaunch_snap,why);
+                };
+                auto wrong=offer;wrong.air_dash_floor->timer698=timer==0?1.f:0.f;
+                rejects(wrong,"floor gate must use the actual next timer");
+                wrong=offer;wrong.air_motion->vertical_before=0.f;
+                rejects(wrong,"the zeroed post-contact speed cannot stand in for the remembered half-speed");
+                wrong=offer;wrong.kind=route.positive_speed?Kind::AirDashWindupEntryFloor:Kind::AirDashWindupPositiveEntryFloor;
+                rejects(wrong,"positive and negative entry snaps keep distinct kinds");
+                wrong=offer;wrong.proposed_position[0]+=1.f;
+                rejects(wrong,"a stationary entry may not advance the root");
+                wrong=offer;wrong.air_motion->resource_after-=450;
+                rejects(wrong,"wind-up entry cannot borrow the later charge");
+            }
+            if(offer.air_motion&&offer.air_motion->phase==15&&offer.air_motion->next_selector==16){
+                paid=tick;check(tick==route.flick+5&&offer.air_motion->resource_after==route.meter-450,
+                    "the separate accepted wind-up handoff pays 450");
+            }
+            if(native_borg_motion_active_entry(offer.kind)){
+                active=tick;check(tick==paid+1&&offer.air_motion->resource_after==route.meter-500,"first active update then pays 50");
+            }
+            air_snaps+=bool(offer.air_dash_floor);
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->windup_from_relaunch_snap==(tick==route.flick)&&source.ground_loss_timer698()==timer&&
+                !source.surface_pushes(),"the snap-to-wind-up label is published on the matching accepted entry only");
+            if(offer.air_dash_floor)check(!world.actors()[0].grounded&&source.cached_airborne87()&&!source.landings(),
+                "neither wind-up nor active floor snaps are touchdown");
+            if(tick==hit||tick==land)check(world.actors()[0].grounded&&source.resource()==route.meter-2000,
+                "callback touchdown and the separate landing do not refill");
+            previous=offer;
+        }
+        check(starts==1&&paid==route.flick+5&&active==paid+1&&air_snaps==36&&hit==route.touch&&land==hit+1&&
+            source.resource()==10000&&source.landings()==1&&source.relaunch_floor_contacts()==route.snaps&&
+            source.air_dash_starts()==1&&source.relaunches()==1&&source.selector()==0,
+            "positive timer, expiry boundary and positive-speed routes all settle without any new contact permission");
+    }
+    bind(1,Mode::GroundLossRelaunch);
+    for(unsigned tick=1;tick<=150;++tick){
+        NativeBorgMotionOffer offer;
+        check(prepare(snap_dash_pad(tick,snap_dashes[0],false),&offer),"same flick with Shift released reaches touchdown");
+        if(tick==150)check(offer.kind==Kind::JumpTouchdown&&!offer.air_motion&&offer.controller_timer698==2.f,
+            "release wins over the simultaneous flick and the ordinary fall reaches real contact");
+        accept(offer);
+    }
+    const auto retained=pose;const auto stopped=world.actors()[0].position;NativeBorgMotionOffer denied;
+    check(!prepare({},&denied)&&error.find("refuses buffered air/landing dash")!=std::string::npos&&
+        world.tick()==150&&world.actors()[0].position==stopped&&source.resource()==9750&&source.ground_loss_timer698()==2.f&&
+        !source.air_dash_starts()&&source.landings()==1&&retained.frame_scope.expired()&&!world.step({},false,&view),
+        "the residual flick at landing still refuses, without changing touchdown or borrowing a land-dash permission");
+    bind(1,Mode::GroundLossRelaunch);
+    for(unsigned tick=1;tick<=190;++tick){
+        auto pad=snap_dash_pad(tick,snap_dashes[0],false);pad.stick_x=pad.stick_y=0;
+        NativeBorgMotionOffer offer;check(prepare(pad,&offer),"neutral release without the flick");
+        if(tick==150||tick==151)check(offer.kind==(tick==150?Kind::JumpTouchdown:Kind::JumpLanding),
+            "neutral release lands and accepts the following landing entry");
+        accept(offer);
+    }
+    check(!source.air_dash_starts()&&source.landings()==1&&source.resource()==10000&&source.selector()==0,
+        "neutral release settles normally without a pending dash");
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
-    std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; eight genuine routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);
+    std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);
 }

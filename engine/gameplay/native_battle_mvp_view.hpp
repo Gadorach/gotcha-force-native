@@ -64,6 +64,7 @@ public:
     static constexpr const char* landing_dash_hint="DASH FROM LANDING";
     static constexpr const char* direct_expiry_relaunch_hint="DIRECT EXPIRY RELAUNCH";
     static constexpr const char* direct_expiry_request_hint="UP+SHIFT/B TO REQUEST RELAUNCH";
+    static constexpr const char* windup_from_relaunch_snap_hint="AIRBORNE / RELAUNCH TO WIND-UP";
     static const char* practice_relaunch_floor_cue(const NativeBorgSourceReadout& frame){
         return frame.relaunch_floor_damped?
             (*frame.relaunch_floor_damped?"AIRBORNE / DESCENT DAMPED":"AIRBORNE / VERTICAL SPEED RETAINED"):nullptr;
@@ -283,6 +284,7 @@ public:
             if(practice->landing_dash_started){text+="\n";text+=landing_dash_hint;}
             if(practice->direct_expiry_relaunch){text+="\n";text+=direct_expiry_relaunch_hint;}
             if(practice->direct_expiry_relaunch_ready){text+="\n";text+=direct_expiry_request_hint;}
+            if(practice->windup_from_relaunch_snap){text+="\n";text+=windup_from_relaunch_snap_hint;}
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }

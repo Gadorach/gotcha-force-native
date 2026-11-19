@@ -132,6 +132,7 @@ struct Options {
     bool source_ground_loss_air=false;
     bool source_ground_loss_relaunch=false;
     bool gred_timed_relaunch_floor=false;
+    bool gred_timed_relaunch_snap_dash=false;
     bool source_ground_fall_push=false;
     bool source_ground_air_fall_push=false;
     bool source_ground_relaunch_fall_push=false;
@@ -347,6 +348,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-ground-loss-air" || arg == "--demo-source-ground-loss-air" ||
                  arg == "--source-ground-loss-relaunch" || arg == "--demo-source-ground-loss-relaunch" ||
                  arg == "--gred-walk-ledge-timed-relaunch-floor" || arg == "--demo-gred-walk-ledge-timed-relaunch-floor" ||
+                 arg == "--gred-walk-ledge-timed-snap-dash" || arg == "--demo-gred-walk-ledge-timed-snap-dash" ||
                  arg == "--source-ground-fall-push" || arg == "--demo-source-ground-fall-push" ||
                  arg == "--source-ground-air-fall-push" || arg == "--demo-source-ground-air-fall-push" ||
                  arg == "--source-ground-relaunch-fall-push" || arg == "--demo-source-ground-relaunch-fall-push" ||
@@ -401,7 +403,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_loss_jump=arg=="--source-ground-loss-jump"||arg=="--demo-source-ground-loss-jump";
             options->source_ground_loss_landing=arg=="--source-ground-loss-landing"||arg=="--demo-source-ground-loss-landing";
             options->source_ground_loss_air=arg=="--source-ground-loss-air"||arg=="--demo-source-ground-loss-air";
-            options->gred_timed_relaunch_floor=arg=="--gred-walk-ledge-timed-relaunch-floor"||arg=="--demo-gred-walk-ledge-timed-relaunch-floor";
+            options->gred_timed_relaunch_snap_dash=arg=="--gred-walk-ledge-timed-snap-dash"||arg=="--demo-gred-walk-ledge-timed-snap-dash";
+            options->gred_timed_relaunch_floor=options->gred_timed_relaunch_snap_dash||
+                arg=="--gred-walk-ledge-timed-relaunch-floor"||arg=="--demo-gred-walk-ledge-timed-relaunch-floor";
             options->source_ground_loss_relaunch=options->gred_timed_relaunch_floor||
                 arg=="--source-ground-loss-relaunch"||arg=="--demo-source-ground-loss-relaunch";
             options->source_ground_fall_push=arg=="--source-ground-fall-push"||arg=="--demo-source-ground-fall-push";
@@ -832,6 +836,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "direct expiry relaunch","Left Arrow 6-25, Up Arrow+Shift 57-76"};
     constexpr PracticeTimingGuide ledge_floor_guide{"TIMED RELAUNCH FLOOR\nDOWN+RIGHT ARROWS 6-122 / SHIFT 147-157",
         "timed relaunch floor","Down+Right Arrows 6-122, Shift 147-157"};
+    constexpr PracticeTimingGuide ledge_snap_dash_guide{"TIMED SNAP TO AIR DASH\nDOWN+RIGHT ARROWS 6-122 / SHIFT 148-150 / D+S 150",
+        "timed snap to air dash","Down+Right Arrows 6-122, Shift 148-150 with D+S on 150"};
     constexpr PracticeTimingGuide incline_jump_guide{"INCLINE DASH JUMP\nS 6 / SHIFT 14-37",
         "incline dash jump","S 6, Shift 14-37"};
     constexpr PracticeTimingGuide incline_landing_guide{"TIMED INCLINE LANDING DASH\nLEFT ARROW 6-9 / A 34",
@@ -844,6 +850,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         else if(timed_followup==TimedLedgeFollowup::HandoffRelaunch)guide=&ledge_handoff_guide;
         else if(timed_followup==TimedLedgeFollowup::ExpiryHandoffRelaunch)guide=&ledge_expiry_handoff_guide;
         else if(direct_expiry)guide=&ledge_expiry_direct_guide;
+        else if(options.gred_timed_relaunch_snap_dash)guide=&ledge_snap_dash_guide;
         else if(options.gred_timed_relaunch_floor)guide=&ledge_floor_guide;
         else if(options.gred_inclined_dash_jump)guide=&incline_jump_guide;
         else if(options.gred_timed_incline_landing_dash)guide=&incline_landing_guide;
@@ -1114,7 +1121,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             }else if(options.source_ground_loss_relaunch){
                 view.source_ground_loss_relaunch_controls();
                 gf::log_info(context,"source-ground","ground-loss-relaunch controller enabled: retained698/additive15 entry, exact conditional planar clamp and independent14/15 latches; relaunch floor receives actual6144/10240 timer gate and negative-only .8 tail; release21 lineage retains actual scalar; push, nonflat dash, clipping/unsupported contacts and combat refused; older policies unchanged");
-                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_timed_relaunch_floor?
+                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_timed_relaunch_snap_dash?
+                     "timed snap to air dash demo: Down+Right 6-122, Shift 148-150 with D+S on 150; watch free entry and separate charges":
+                     options.gred_timed_relaunch_floor?
                      "timed relaunch floor demo: Down+Right 6-122, Shift 147-157; observe the timed snap, expiry, liftoff and separate landing":
                      "ground-loss-relaunch demo only: declared original-stage grounded placement/query reference at -1368.47/-466.667/94.339 and4500 native bounds, unchanged target/stage; down-right5 until falling entry, genuine relaunch press146-595 held through source depletion; no midair teleport/rebind");
             }else if(options.source_ground_loss_air){
@@ -1384,7 +1393,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                          }else if(options.source_ground_loss_relaunch){
                              const auto tick=world.tick();
                              if(tick>=5&&!source.ground_loss_entries()){device.dpad_down=true;device.dpad_right=true;}
-                             device.b=tick>=146&&tick<(options.gred_timed_relaunch_floor?157u:596u);
+                              if(options.gred_timed_relaunch_snap_dash){
+                                  device.b=tick>=147&&tick<150;
+                                  if(tick==149)device.stick_x=device.stick_y=127;
+                              }else device.b=tick>=146&&tick<(options.gred_timed_relaunch_floor?157u:596u);
                          }else if(options.source_ground_loss_air){
                              const auto tick=world.tick();
                              if(tick>=5&&!source.ground_loss_entries()){device.dpad_down=true;device.dpad_right=true;}
@@ -1588,6 +1600,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                  gf::log_info(context,"source-ground","practice-direct-expiry-relaunch=%s",view.direct_expiry_relaunch_hint);
              if(practice->direct_expiry_relaunch_ready)
                  gf::log_info(context,"source-ground","practice-direct-expiry-request=%s",view.direct_expiry_request_hint);
+             if(practice->windup_from_relaunch_snap)
+                 gf::log_info(context,"source-ground","practice-relaunch-snap-windup=%s",view.windup_from_relaunch_snap_hint);
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");
@@ -1618,6 +1632,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
      if(direct_expiry)gf::log_info(context,"source-ground","relaunches=%llu air-dash-starts=%llu floors=%llu timer698=%.1f",
          static_cast<unsigned long long>(source.relaunches()),static_cast<unsigned long long>(source.air_dash_starts()),
          static_cast<unsigned long long>(source.relaunch_floor_contacts()),double(source.ground_loss_timer698()));
+     if(options.gred_timed_relaunch_snap_dash)gf::log_info(context,"source-ground","snap-dash-starts=%llu windup-entry-floors=%llu windup-floors=%llu active-floors=%llu",
+         static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.windup_entry_floor_contacts()),
+         static_cast<unsigned long long>(source.windup_floor_contacts()),static_cast<unsigned long long>(source.active_floor_contacts()));
     if(options.source_ground_jump)gf::log_info(context,"source-ground","ground-jump-air-frames=%llu landings=%llu resource=%d dash-jumps=%llu last-interrupted-selector=%u programs=%u/%u cached87=%u; source subset, no extra ordered root advance on takeoff",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),static_cast<unsigned long long>(source.dash_jumps()),unsigned(source.last_dash_jump_selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_landing)gf::log_info(context,"source-ground","landing-jumps=%llu landing-dashes=%llu landings=%llu resource=%d programs=%u/%u cached87=%u; accepted landing entry before interruption, no touchdown skip or forced refill",static_cast<unsigned long long>(source.landing_jumps()),static_cast<unsigned long long>(source.landing_dashes()),static_cast<unsigned long long>(source.landings()),int(source.resource()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.gred_timed_incline_landing_dash)gf::log_info(context,"source-ground","landing-dashes=%llu loss-landings=%llu timer698=%.1f resource=%d; retained countdown and independently checked shallow dash joins",

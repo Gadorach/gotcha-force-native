@@ -499,6 +499,7 @@ public:
         if(!ready_||!pending_||current_binding.lock()!=binding_.lock()||binding_.expired()||!world.motion_receipt(pending_->offer,&receipt))return fail(error,"source frame has no matching native contact receipt");
         const f32 previous_y=pending_->offer.observed.position[1];
         const auto& falling=pending_->offer.jump_motion;
+        const bool windup_from_relaunch_snap=state_.relaunch_floor&&native_borg_motion_windup_floor_entry(pending_->offer.kind);
         const bool recovery_push_exit_drift=state_.static_push&&state_.air_motion&&state_.air_motion->phase==17&&
             state_.air_motion->lower_done&&state_.air_motion->next_selector==6&&falling&&falling->phase==6&&
             falling->entry&&falling->air_dash_origin&&falling->drift_heading;
@@ -598,7 +599,7 @@ public:
                 recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift,plain_windup_relaunch_ready,
                 accepted.relaunch_floor?std::optional{accepted.relaunch_floor->response_factor<1.f}:std::nullopt,
                 pending_->interrupted_dash&&accepted.kind==NativeBorgMotionKind::JumpTakeoff,
-                accepted.landing_target==12,pending_->direct_expiry_relaunch,direct_expiry_relaunch_ready}));
+                accepted.landing_target==12,pending_->direct_expiry_relaunch,direct_expiry_relaunch_ready,windup_from_relaunch_snap}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

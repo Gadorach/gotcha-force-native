@@ -23,6 +23,7 @@ struct NativeBorgSourceReadout {
     bool landing_dash_started=false; //Accepted phase-12 dash replacing an entered landing.
     bool direct_expiry_relaunch=false; //Accepted plain relaunch directly from a zero-timer walking push.
     bool direct_expiry_relaunch_ready=false; //The accepted expiry push permits asking for soft-Up relaunch next.
+    bool windup_from_relaunch_snap=false; //Accepted wind-up floor entry from the preceding airborne relaunch snap.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

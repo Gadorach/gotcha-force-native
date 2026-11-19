@@ -1076,6 +1076,39 @@ Releasing immediately after the first snap also works: 152 is
 then real touchdown, with landing at 153. Neither snap itself
 counts as landing.
 
+### Timed relaunch snap to air dash
+
+On the same grounded start, use **Down+Right Arrow** on 6–122.
+Hold **Shift** on 148–150 and add a one-tick **D+S** flick on 150,
+**without releasing Shift** on that step. The relaunch floor snap at
+149 is still airborne. The wind-up entry at 150 uses its velocity and
+meter, halves the pre-response velocities, and zeros vertical speed
+at the selected floor without translating or spending meter.
+
+```sh
+gf_native --demo-gred-walk-ledge-timed-snap-dash --headless --frames 220 --no-audio
+gf_native --gred-walk-ledge-timed-snap-dash --practice-start --no-audio
+```
+
+| Accepted tick | Role | Ledge timer | Meter |
+| --- | --- | ---: | ---: |
+| 149 | Descending relaunch snap on face 1116 | 3 | 9750 |
+| 150 | Stationary wind-up entry floor snap | 2 | 9750 |
+| 151–152 | Wind-up continues through timer expiry | 1 → 0 | 9750 |
+| 155 | Wind-up handoff charge | 0 | 9300 |
+| 156 | Separate active entry charge and floor snap | 0 | 9250 |
+| 186–187 | Callback touchdown, then landing entry | 0 | 7750 |
+
+The **AIRBORNE / RELAUNCH TO WIND-UP** cue marks only the accepted
+handoff. Releasing Shift on the flick step instead gives touchdown,
+and the buffered landing dash still refuses on the following step.
+Release **without** the flick to finish a normal landing. Owner
+regressions also cover a wind-up on the 1 → 0 boundary and a
+positive-speed entry after expiry, with the same separate landing.
+No contact permissions changed. Of 2,480 scanned routes, 48
+completed and 19 still had a positive timer at wind-up entry.
+Incomplete routes do not authorize raised-side travel or steep contact.
+
 Native placement/input/clocks/libm/camera/target/body/terrain approximations
 remain explicit, not original-hardware or whole-game equivalence. Push,
 nonflat ordered dash, raised-side/clipped/unknown contacts and combat remain
