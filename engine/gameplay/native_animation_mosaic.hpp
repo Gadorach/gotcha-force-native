@@ -3,6 +3,7 @@
 //callback execution. Uses the shared model/pose/skin/renderer systems.
 #include <cstdio>
 #include <memory>
+#include "engine/assets/borg_preview_profile.hpp"
 #include "engine/gameplay/character_model_scene.hpp"
 #include "engine/gameplay/character_motion_driver.hpp"
 #include "engine/gameplay/character_program_height_control.hpp"
@@ -31,7 +32,7 @@ inline std::vector<NativeAnimationEntry> native_animation_catalog(const Characte
 class NativeAnimationMosaic {
 public:
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,unsigned columns,unsigned rows,std::string* error){
-        ready_=source_programs_=source_handlers_=false;cells_.clear();selected_=page_=0;
+        ready_=source_programs_=source_handlers_=package_preview_=false;cells_.clear();selected_=page_=0;
         if(!columns||!rows||columns>6||rows>4||columns*rows>24){if(error)*error="animation mosaic: grid must have1..24 cells";return false;}
         columns_=columns;rows_=rows;
         std::vector<u8> shared_bytes;CharacterMotionBank shared;
@@ -47,10 +48,35 @@ public:
         }
         ready_=true;return prepare_page(render,error);
     }
+    // A single explicitly mapped package body clip uses the same rendering and
+    // evaluation paths as the mosaic. It cannot request source programs or
+    // construct a gameplay actor.
+    bool load_package_preview(const BorgIdentity& identity,const BorgPreviewProfile& profile,
+                              ByteView model,ByteView prefix,ByteView pose,ByteView motions,
+                              RenderEngine& render,std::string* error){
+        ready_=source_programs_=source_handlers_=false;package_preview_=true;
+        cells_.clear();sources_={};selected_=page_=0;columns_=rows_=1;
+        clock_=yaw_=0;paused_=false;speed_=.5f;previous_={};
+        if(!borg_package_id_valid(identity.id)||!display_name_valid(identity.name,96)||!prefix.data||!prefix.size||
+           prefix.size>(1u<<16)||!pose.data||!pose.size||pose.size>(1u<<16)){
+            if(error)*error="package preview: invalid identity or rig assets";
+            return false;
+        }
+        auto& source=sources_[0];source.name=identity.name;
+        source.prefix.assign(prefix.data,prefix.data+prefix.size);source.pose.assign(pose.data,pose.data+pose.size);
+        if(!source.bank.load(model,error,true)||!character_motion_bank_load(motions,&source.motions,error))return false;
+        CharacterMotionSelection selected;
+        if(!character_motion_select(source.motions,profile.idle_group,profile.idle_choice,&selected,error)||selected.fallback){
+            if(error)*error="package preview: declared idle clip missing; fallback is not allowed";
+            return false;
+        }
+        source.entries.push_back({0,selected.index,profile.idle_group,profile.idle_choice,false,{}});
+        ready_=prepare_page(render,error);return ready_;
+    }
     //Explicit source-timeline inspection only. No input admission, root-motion
     //integration, attack effects or gameplay actor is produced by this view.
     bool load_source_programs(IFileSystem& files,const std::string& programs,const std::string& height,RenderEngine& render,std::string* error){
-        if(!ready_){if(error)*error="source program mosaic: normal model resources required";return false;}
+        if(!ready_||package_preview_){if(error)*error="source program mosaic: normal model resources required";return false;}
         ready_=source_handlers_=false;cells_.clear();
         std::vector<u8> encoded,height_bytes;
         if(!read(files,programs,&encoded,error,65536)||!read(files,height,&height_bytes,error,28)||
@@ -93,9 +119,11 @@ public:
     bool step(const GamePadState& pad,f32 seconds,RenderEngine& render,std::string* error){
         if(!ready_||!std::isfinite(seconds)||seconds<0)return false;
         bool changed=false;
-        if(!source_programs_&&((pad.dpad_up&&!previous_.dpad_up)||(pad.dpad_down&&!previous_.dpad_down))){selected_=1-selected_;page_=0;changed=true;}
-        if(pad.dpad_right&&!previous_.dpad_right){page_=(page_+1)%page_count();changed=true;}
-        if(pad.dpad_left&&!previous_.dpad_left){page_=(page_+page_count()-1)%page_count();changed=true;}
+        if(!package_preview_){
+            if(!source_programs_&&((pad.dpad_up&&!previous_.dpad_up)||(pad.dpad_down&&!previous_.dpad_down))){selected_=1-selected_;page_=0;changed=true;}
+            if(pad.dpad_right&&!previous_.dpad_right){page_=(page_+1)%page_count();changed=true;}
+            if(pad.dpad_left&&!previous_.dpad_left){page_=(page_+page_count()-1)%page_count();changed=true;}
+        }
         if(pad.a&&!previous_.a)paused_=!paused_;
         if(pad.x&&!previous_.x)speed_=std::min(4.f,speed_*2);
         if(pad.y&&!previous_.y)speed_=std::max(.125f,speed_*.5f);
@@ -104,7 +132,7 @@ public:
         if(changed&&!prepare_page(render,error))return false;
         if(!paused_)clock_+=std::min(seconds,.25f)*60*speed_;
         for(auto& cell:cells_)if(cell->valid&&!evaluate(*cell,clock_,&cell->error)){
-            cell->valid=false;if(source_programs_){if(error)*error="source program mosaic: "+cell->error;ready_=false;return false;}
+            cell->valid=false;if(source_programs_||package_preview_){if(error)*error=(package_preview_?"package preview: ":"source program mosaic: ")+cell->error;ready_=false;return false;}
         }
         return true;
     }
@@ -133,21 +161,26 @@ public:
         if(had)render.set_scene_lighting(old_light);else render.clear_scene_lighting();
         render.state()={};render.state().depth_test=render.state().depth_write=false;render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;render.state().cull_backface=false;
         TextRenderer::Style title;title.scale=2;char heading[192];
-        std::snprintf(heading,sizeof heading,"%s - %s - PAGE %u/%u - %u %s",source_handlers_?"VM + DASH HANDLER REPLAY":source_programs_?"SOURCE PROGRAM REPLAY":"ANIMATION MOSAIC",sources_[selected_].name.c_str(),page_+1,page_count(),unsigned(sources_[selected_].entries.size()),source_programs_?"PROGRAMS":"CLIPS");
+        if(package_preview_)std::snprintf(heading,sizeof heading,"PACKAGE BODY PREVIEW - %s",sources_[0].name.c_str());
+        else std::snprintf(heading,sizeof heading,"%s - %s - PAGE %u/%u - %u %s",source_handlers_?"VM + DASH HANDLER REPLAY":source_programs_?"SOURCE PROGRAM REPLAY":"ANIMATION MOSAIC",sources_[selected_].name.c_str(),page_+1,page_count(),unsigned(sources_[selected_].entries.size()),source_programs_?"PROGRAMS":"CLIPS");
         draws+=text_.draw(render,heading,12,10,title);
         TextRenderer::Style small;small.scale=1;
-        draws+=text_.draw(render,source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
-        char mode[160];std::snprintf(mode,sizeof mode,"%s - %.3gX %s",source_handlers_?"HELD-INPUT DASH HOLDS/TIMERS - 96-TICK WINDOW - FINISH POSE HELD":source_programs_?"VM WAITS/CONTROLS IN PLACE - 96-TICK REPLAY WINDOW":"BODY CLIPS IN PLACE - 10000+ IDS ARE SHARED CLIPS",double(speed_),paused_?"PAUSED":"LOOPING");draws+=text_.draw(render,mode,12,50,small);
+        draws+=text_.draw(render,package_preview_?"SPACE PAUSE  Q/E SPEED  Z ROTATE":source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
+        char mode[160];std::snprintf(mode,sizeof mode,"%s - %.3gX %s",package_preview_?"ONE DECLARED IDLE CLIP":
+            source_handlers_?"HELD-INPUT DASH HOLDS/TIMERS - 96-TICK WINDOW - FINISH POSE HELD":
+            source_programs_?"VM WAITS/CONTROLS IN PLACE - 96-TICK REPLAY WINDOW":"BODY CLIPS IN PLACE - 10000+ IDS ARE SHARED CLIPS",
+            double(speed_),paused_?"PAUSED":"LOOPING");draws+=text_.draw(render,mode,12,50,small);
         for(unsigned i=0;i<cells_.size();++i){
             const auto& cell=*cells_[i];const s32 x=s32((i%columns_)*tile_width)+10,y=top+s32((i/columns_)*tile_height)+tile_height-34;char label[128];
             if(source_handlers_&&cell.entry.choice>=27&&cell.entry.choice<=30)
                 std::snprintf(label,sizeof label,"P%u T%u F%.0f C%u %s",cell.entry.choice,cell.program_tick,double(cell.vm.state().lanes[1].motion.frame),cell.vm.state().actor.control1[0],cell.dash.selector==0?"DONE":cell.dash.selector==13?"ACTIVE":"RECOVER");
             else if(source_programs_)std::snprintf(label,sizeof label,"P%u:%u T%u CONTROL%u",cell.entry.group,cell.entry.choice,cell.program_tick,cell.vm.state().actor.control1[0]);
+            else if(package_preview_)std::snprintf(label,sizeof label,"DECLARED IDLE G%u C%u",cell.entry.group,cell.entry.choice);
             else std::snprintf(label,sizeof label,"%04u  G%u C%u%s",cell.entry.id,cell.entry.group,cell.entry.choice,cell.entry.common?" SHARED":"");
             draws+=text_.draw(render,label,x,y,title);
             if(!cell.valid)draws+=text_.draw(render,source_programs_?"UNSUPPORTED PROGRAM - NOT IDLE FALLBACK":"UNSUPPORTED CLIP - NOT IDLE FALLBACK",x,y-14,small);
         }
-        draws+=text_.draw(render,source_programs_?"SOURCE PROGRAM TIMELINES ONLY - NO GAMEPLAY INPUT, PHYSICS, ROOT INTEGRATION OR ATTACK EFFECTS.":"CLASSIFY BY BORG + NUMBER. IDS KEEP RAW GROUP/CLIP METADATA; NO UNIVERSAL LOCOMOTION MAP ASSUMED.",12,height-24,small);
+        draws+=text_.draw(render,package_preview_?"DECLARED BODY IDLE ONLY - NO ACTOR, GAMEPLAY RULES OR EFFECTS.":source_programs_?"SOURCE PROGRAM TIMELINES ONLY - NO GAMEPLAY INPUT, PHYSICS, ROOT INTEGRATION OR ATTACK EFFECTS.":"CLASSIFY BY BORG + NUMBER. IDS KEEP RAW GROUP/CLIP METADATA; NO UNIVERSAL LOCOMOTION MAP ASSUMED.",12,height-24,small);
         render.state()=saved;return draws;
     }
     unsigned page()const{return page_;}unsigned borg()const{return selected_;}
@@ -227,7 +260,7 @@ private:
             cell->valid=cell->model.load_with_record_bank(source.bank,view(source.prefix),view(source.pose),&cell->error);
             if(cell->valid&&!source_programs_){const auto& bytes=bank.archives[cell->entry.archive];cell->valid=hsd_bone_motion_load(view(bytes),cell->model.rig().binding,&cell->clip,&cell->error);}
             if(cell->valid)cell->valid=evaluate(*cell,0,&cell->error);
-            if(source_programs_&&!cell->valid){if(error)*error="source program mosaic: "+cell->error;ready_=false;return false;}
+            if((source_programs_||package_preview_)&&!cell->valid){if(error)*error=(package_preview_?"package preview: ":"source program mosaic: ")+cell->error;ready_=false;return false;}
             if(cell->valid){
                 std::array<f32,3> low{1e7f,1e7f,1e7f},high{-1e7f,-1e7f,-1e7f};
                 for(const auto& mesh:cell->model.world_geometry().world_vertices)for(const auto& v:mesh)for(unsigned k=0;k<3;++k){low[k]=std::min(low[k],v.position[k]);high[k]=std::max(high[k],v.position[k]);}
@@ -243,7 +276,7 @@ private:
     }
     std::array<Source,2> sources_;std::vector<std::unique_ptr<Cell>> cells_;TextRenderer text_;std::vector<Vertex> panels_;
     CharacterProgramAsset program_asset_;CharacterPoseHeightProfile program_height_;CharacterMotionDriver program_driver_;bool source_programs_=false;
-    CharacterMovementProfile program_motion_;bool source_handlers_=false;
+    CharacterMovementProfile program_motion_;bool source_handlers_=false,package_preview_=false;
     unsigned selected_=0,page_=0,columns_=4,rows_=3;f64 clock_=0;f32 speed_=.5f,yaw_=0;bool ready_=false,paused_=false;GamePadState previous_{};
 };
 }

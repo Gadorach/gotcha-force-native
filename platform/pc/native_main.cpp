@@ -56,7 +56,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
-    std::string check_borg_catalog;
+    std::string check_borg_catalog,preview_borg;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -165,6 +165,9 @@ bool parse(int argc, char** argv, Options* options) {
         else if (arg=="--check-borg-catalog"){
             if(++i>=argc||!options->check_borg_catalog.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_catalog=argv[i];
+        }else if(arg=="--preview-borg"){
+            if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->preview_borg=argv[i];
         }
         else if (arg == "--menu") options->menu = true;
         else if (arg == "--demo-input") options->demo_input = true;
@@ -350,7 +353,8 @@ bool parse(int argc, char** argv, Options* options) {
                          "usage: gf_native [--headless] [--menu] [--frames N] [--seconds N] [--size W H] "
                          "[--screenshot PATH.ppm]\n"
                          "       gf_native --gred-movement [--no-audio]\n"
-                         "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n");
+                         "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
+                         "       gf_native --preview-borg NAMESPACE:ID [--headless] [--frames N]\n");
             return false;
         }
     }
@@ -358,6 +362,9 @@ bool parse(int argc, char** argv, Options* options) {
     if(options->test_battle&&(options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
     if(options->battle_mvp&&(options->test_battle||options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
     if(options->animation_mosaic&&(options->battle_mvp||options->test_battle||options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
+    if(!options->preview_borg.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||options->menu||
+       options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||options->list_borgs||
+       !options->check_borg_catalog.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1130,15 +1137,25 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     render.shutdown();return 0;
 }
 
-int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Options& options){
+int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
     gf::NativeAnimationMosaic mosaic;std::string error;
-    if(!mosaic.load(context.files(),options.battle_mvp_assets,render,options.animation_columns,options.animation_rows,&error)||
+    const bool package_preview=!options.preview_borg.empty();
+    if(package_preview){
+        gf::pc::BorgPackagePreviewFiles files;using Inputs=gf::pc::BorgPackagePreviewFiles;
+        if(!gf::pc::load_borg_preview_files("borgs",packages,options.preview_borg,&files,&error)||
+           !mosaic.load_package_preview(files.identity,files.profile,Inputs::view(files.model),Inputs::view(files.rig_prefix),
+               Inputs::view(files.pose_profile),Inputs::view(files.motions),render,&error)){
+            gf::log_error(context,"borg-preview","load failed: %s",error.c_str());render.shutdown();return 2;
+        }
+        gf::log_info(context,"borg-preview","%s variant=%s idle=%u:%u; body preview only, no actor or gameplay rules",
+            files.identity.id.c_str(),files.profile.variant.c_str(),unsigned(files.profile.idle_group),unsigned(files.profile.idle_choice));
+    }else if(!mosaic.load(context.files(),options.battle_mvp_assets,render,options.animation_columns,options.animation_rows,&error)||
        (!options.animation_programs.empty()&&!mosaic.load_source_programs(context.files(),options.animation_programs,options.animation_height_profile,render,&error))||
        (!options.animation_motion_profile.empty()&&!mosaic.load_source_motion(context.files(),options.animation_motion_profile,render,&error))||
        ((options.animation_borg||options.animation_page)&&!mosaic.select(options.animation_borg,options.animation_page,render,&error))){
         gf::log_error(context,"animation-mosaic","load failed: %s",error.c_str());render.shutdown();return 2;}
     if(!options.animation_programs.empty())gf::log_info(context,"animation-mosaic","G-Red source-program timelines: %zu essentials; 96-tick inspection replay, shared VM/height/pose/render systems; no gameplay input, physics or actor admission",mosaic.catalog(0).size());
-    else gf::log_info(context,"animation-mosaic","looping model previews: G-Red=%zu Sasuke=%zu; numbers are per-Borg raw group/clip IDs; shared IDs start10000",mosaic.catalog(0).size(),mosaic.catalog(1).size());
+    else if(!package_preview)gf::log_info(context,"animation-mosaic","looping model previews: G-Red=%zu Sasuke=%zu; numbers are per-Borg raw group/clip IDs; shared IDs start10000",mosaic.catalog(0).size(),mosaic.catalog(1).size());
     if(!options.animation_motion_profile.empty())gf::log_info(context,"animation-mosaic","held-input ground-dash handler planning enabled: lower/upper source order, VM holds, timer expiry and recovery; final inspection pose held, no world/contact admission");
     if(!options.animation_export.empty()){
         namespace fs=std::filesystem;std::error_code ec;const fs::path output(options.animation_export);
@@ -1221,7 +1238,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::IFileSystem> headless_files;
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
-    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic)){
+    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty())){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
     }
@@ -1237,7 +1254,7 @@ int main(int argc, char** argv) {
         }
         std::string error;
         gf::Backends backends =
-            platform->create({options.width, options.height, options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
+            platform->create({options.width, options.height, !options.preview_borg.empty()?"Borg Package Preview":options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
                              renderer.get(), &error);
         if (!backends.complete()) {
             std::fprintf(stderr, "platform initialization failed: %s\n",
@@ -1262,7 +1279,7 @@ int main(int argc, char** argv) {
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
     if(options.battle_mvp)return run_battle_mvp(context,render,options);
-    if(options.animation_mosaic)return run_animation_mosaic(context,render,options);
+    if(options.animation_mosaic||!options.preview_borg.empty())return run_animation_mosaic(context,render,options,borg_packages);
 
     gf::MenuWorld menu_world;
     menu_world.configure(static_cast<gf::s32>(options.width), static_cast<gf::s32>(options.height));

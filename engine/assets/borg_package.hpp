@@ -16,7 +16,7 @@ struct BorgIdentity {
 struct BorgPackageManifest {
     BorgIdentity identity;
     std::string model,animations,rules,animation_map;
-    std::string catalog{};
+    std::string catalog{},preview{};
     bool operator==(const BorgPackageManifest&)const=default;
 };
 struct BorgPackageEntry {
@@ -84,7 +84,7 @@ inline bool borg_package_read_manifest(std::string_view text,BorgPackageManifest
         const auto key=row.substr(0,equals),value=row.substr(equals+1);
         auto* target=key=="id"?&next.identity.id:key=="name"?&next.identity.name:key=="model"?&next.model:
             key=="animations"?&next.animations:key=="rules"?&next.rules:key=="animation-map"?&next.animation_map:
-            key=="catalog"?&next.catalog:nullptr;
+            key=="catalog"?&next.catalog:key=="preview"?&next.preview:nullptr;
         if(!target||!target->empty()||value.empty())return false;
         if(!(key=="id"?borg_package_id_valid(value):key=="name"?display_name_valid(value,96):borg_package_asset_path_valid(value)))return false;
         *target=value;

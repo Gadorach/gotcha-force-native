@@ -73,6 +73,31 @@ or invalid catalogue or icon does not remove its discovery entry or count as a
 missing Borg in a save. This check validates neither 3D assets nor move logic,
 effects, battle fusion or transformations, and does not change the menus.
 
+## Standalone body preview
+
+For one default variant with compatible HSD assets, add `preview=preview.txt`
+to the manifest. `model` and `animations` now name the HSD model and motion
+bank for that variant. The extra sidecar gives the existing pose system the
+two rig inputs and an explicit raw `group:entry` binding for idle:
+
+```text
+GFBORG-PREVIEW 1
+model-format=hsd-body-v1
+variant=normal
+rig-prefix=visual/crane.prefix
+pose-profile=visual/crane.pose
+idle=0:0
+```
+
+Run `gf_native --preview-borg example:clockwork-crane` to open the body
+preview, or add `--headless --frames 3` for validation without a window. The
+package must pass the catalogue check. The same model/skin, bone sampler and
+renderer used by the animation mosaic handle the in-place clip. An absent or
+incompatible clip or rig fails, including a motion-bank request that would
+otherwise fall back to a default. Other variants, materials or formats are
+not inferred. This does not import glTF, load rules or effects, alter the
+classifier, or grant battle capability.
+
 ## Connecting discovery to gameplay and saves
 
 - Use one catalog in the collection, Borg picker, Challenge and Story. Keep
