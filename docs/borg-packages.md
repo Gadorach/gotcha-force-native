@@ -42,7 +42,23 @@ escape the package, and symlink directories or assets are not followed.
 renderer. Discovery currently validates the manifest and the presence of its
 files, **not their contents**. The listed extensions are examples, not a claim
 that the host can import those formats or use those rules today. The packages
-do not grant ownership, enter any picker, or create battle actors yet.
+do not grant ownership, enter the retail or battle pickers, or create actors.
+
+## Read-only installed Borg picker
+
+`gf_native --browse-borgs` opens the standalone installed-package picker.
+Use **Up/Down** to browse packages, **Left/Right** to switch the selected
+variant, and **Space/A** to inspect its exact IDs. The picker reads the
+selected catalogue's variant labels and Force costs, and decodes only the
+selected editor icon through the shared texture system. Placeholder,
+unresolved and unavailable icons are labelled separately. A package with
+no available catalogue stays visible without inventing a variant.
+
+This is a read-only picker for installed definitions, not the retail box,
+an owned collection, or mode admission. It does not open a save or a
+battle. The [standalone body preview](#standalone-body-preview) still takes
+explicit package and variant IDs. `--demo-borg-browser --frames 10` drives a
+repeatable navigation sequence for checks.
 
 ## Catalogue and editor-icon check
 

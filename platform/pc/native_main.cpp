@@ -40,6 +40,7 @@
 #include "engine/gameplay/native_battle_mvp_view.hpp"
 #include "engine/gameplay/native_gred_ground_dash_demo.hpp"
 #include "engine/gameplay/native_animation_mosaic.hpp"
+#include "engine/gameplay/borg_installed_browser_view.hpp"
 #include "engine/graphics/render_engine.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/input/input_router.hpp"
@@ -61,6 +62,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
+    bool browse_borgs=false,demo_borg_browser=false;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,preview_variant;
     bool menu = false;
@@ -168,6 +170,10 @@ bool parse(int argc, char** argv, Options* options) {
         const std::string arg = argv[i];
         if (arg == "--headless") options->headless = true;
         else if (arg == "--list-borgs") options->list_borgs = true;
+        else if (arg=="--browse-borgs"||arg=="--demo-borg-browser"){
+            if(options->browse_borgs)return false;
+            options->browse_borgs=true;options->demo_borg_browser=arg=="--demo-borg-browser";
+        }
         else if (arg=="--check-borg-catalog"){
             if(++i>=argc||!options->check_borg_catalog.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_catalog=argv[i];
@@ -391,6 +397,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-fusions NAMESPACE:ID\n"
                          "       gf_native --check-borg-acquisition NAMESPACE:ID\n"
                          "       gf_native --check-borg-variants NAMESPACE:ID\n"
+                         "       gf_native --browse-borgs [--headless] [--frames N]\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
             return false;
         }
@@ -405,6 +412,12 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
        !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->preview_variant.empty()&&options->preview_borg.empty())return false;
+    if(options->browse_borgs&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
+       options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
+       !options->preview_borg.empty()||options->list_borgs||!options->check_borg_catalog.empty()||
+       !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
+       !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
+       !options->check_borg_variants.empty()||options->width<440||options->height<320||options->width>4096||options->height>4096))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1177,6 +1190,65 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     render.shutdown();return 0;
 }
 
+int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
+    gf::BorgInstalledBrowser browser;browser.open(packages);
+    gf::BorgInstalledBrowserView view;gf::BorgBrowserTile tile;gf::InputRouter router;
+    constexpr gf::u32 tile_handle=59001; // single replaceable texture in this isolated presentation mode
+    bool confirmed=false,captured=false;
+    auto refresh_tile=[&](){
+        tile={};
+        const auto* variant=browser.variant();
+        if(!variant)return;
+        if(variant->placeholder_icon()){tile.status=gf::BorgBrowserTileStatus::Placeholder;return;}
+        if(variant->unresolved_icon()){tile.status=gf::BorgBrowserTileStatus::Unresolved;return;}
+        std::optional<gf::TplImage> image;
+        if(gf::pc::load_borg_variant_icon("borgs",*browser.metadata(),variant->id,&image,nullptr)&&image&&
+            render.upload_texture(tile_handle,{image->width,image->height,image->rgba.data(),0,0,false}))
+            tile={gf::BorgBrowserTileStatus::Image,tile_handle,image->width,image->height};
+    };
+    auto refresh_package=[&](){
+        if(const auto* entry=browser.entry()){
+            gf::BorgCatalogSnapshot snapshot;
+            if(gf::pc::load_borg_catalog_snapshot("borgs",browser.catalog(),entry->manifest.identity.id,&snapshot,nullptr))
+                browser.bind(std::move(snapshot));
+        }
+        refresh_tile();
+    };
+    refresh_package();
+    unsigned frame=0;const auto start=context.clock().monotonic_ns();
+    while(context.window().pump_events()&&!context.window().should_close()){
+        const auto now=context.clock().monotonic_ns();
+        if(options.seconds&&now-start>=gf::u64(options.seconds)*1000000000ull)break;
+        context.input().pump();const auto& input=context.input().snapshot();
+        auto pad=router.route(input,0);if(input.quit||pad.quit_requested)break;
+        if(options.demo_borg_browser){
+            pad={};pad.dpad_right=frame==1||frame==7;pad.dpad_down=frame==3;pad.dpad_up=frame==5;pad.a=frame==9;
+        }
+        switch(browser.step(pad)){
+        case gf::BorgBrowserChange::Package:confirmed=false;refresh_package();break;
+        case gf::BorgBrowserChange::Variant:confirmed=false;refresh_tile();break;
+        case gf::BorgBrowserChange::Confirm:
+            confirmed=true;
+            if(const auto selection=browser.selection())gf::log_info(context,"borg-picker","inspected %s variant=%s (no save or battle admission)",
+                selection->identity.id.c_str(),selection->variant.c_str());
+            break;
+        case gf::BorgBrowserChange::None:break;
+        }
+        render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();
+        const auto draws=view.draw(render,options.width,options.height,browser,tile,confirmed);
+        render.end_frame();
+        if(!captured)captured=capture_if_requested(context,options,frame);
+        render.present();context.advance_frame();++frame;
+        if(!draws){gf::log_error(context,"borg-picker","no browser draws");render.shutdown();return 2;}
+        if(options.frames&&frame>=options.frames)break;
+    }
+    const auto* selected=browser.entry();const auto* variant=browser.variant();
+    gf::log_info(context,"borg-picker","frames=%u packages=%zu selected=%s variant=%s",
+        frame,browser.catalog().discovered.size(),selected?selected->manifest.identity.id.c_str():"none",
+        variant?variant->id.c_str():"unavailable");
+    render.shutdown();return 0;
+}
+
 int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
     gf::NativeAnimationMosaic mosaic;std::string error;
     const bool package_preview=!options.preview_borg.empty();
@@ -1389,7 +1461,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::IFileSystem> headless_files;
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
-    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty())){
+    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty()||options.browse_borgs)){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
     }
@@ -1405,7 +1477,7 @@ int main(int argc, char** argv) {
         }
         std::string error;
         gf::Backends backends =
-            platform->create({options.width, options.height, !options.preview_borg.empty()?"Borg Package Preview":options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
+            platform->create({options.width, options.height, options.browse_borgs?"Installed Borg Picker":!options.preview_borg.empty()?"Borg Package Preview":options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
                              renderer.get(), &error);
         if (!backends.complete()) {
             std::fprintf(stderr, "platform initialization failed: %s\n",
@@ -1430,6 +1502,7 @@ int main(int argc, char** argv) {
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
     if(options.battle_mvp)return run_battle_mvp(context,render,options);
+    if(options.browse_borgs)return run_borg_browser(context,render,options,borg_packages);
     if(options.animation_mosaic||!options.preview_borg.empty())return run_animation_mosaic(context,render,options,borg_packages);
 
     gf::MenuWorld menu_world;

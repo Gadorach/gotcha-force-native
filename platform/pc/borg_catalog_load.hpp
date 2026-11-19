@@ -47,6 +47,21 @@ inline bool read_variants(const std::filesystem::path& folder,const BorgCatalogP
     }
     *out=std::move(next);if(error)error->clear();return true;
 }
+inline bool read_icon(const std::filesystem::path& folder,const BorgCatalogVariant& variant,
+                      std::optional<TplImage>* out,std::string* error){
+    if(variant.placeholder_icon()){out->reset();return true;}
+    if(variant.unresolved_icon()){
+        if(error)*error="editor icon is unresolved for variant "+variant.id;
+        return false;
+    }
+    std::string bytes;TplImage icon;
+    if(!borg_package_scan_detail::read_local(folder,variant.icon,kBorgCatalogIconBytes,&bytes)||
+       !borg_catalog_decode_icon({reinterpret_cast<const u8*>(bytes.data()),bytes.size()},&icon,nullptr)){
+        if(error)*error="missing, unsupported or oversized editor icon for variant "+variant.id;
+        return false;
+    }
+    *out=std::move(icon);return true;
+}
 }
 inline bool load_borg_catalog_snapshot(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
                                        std::string_view id,BorgCatalogSnapshot* out,std::string* error){
@@ -56,6 +71,16 @@ inline bool load_borg_catalog_snapshot(const std::filesystem::path& root,const B
     std::filesystem::path folder;
     if(!borg_catalog_detail::read_profile(root,*package,&folder,&next.profile,error))return false;
     *out=std::move(next);if(error)error->clear();return true;
+}
+inline bool load_borg_variant_icon(const std::filesystem::path& root,const BorgCatalogSnapshot& snapshot,
+                                   std::string_view variant_id,std::optional<TplImage>* out,std::string* error){
+    const auto* variant=snapshot.profile.find(variant_id);
+    if(!out||!variant){if(error)*error="a declared variant is required";return false;}
+    std::filesystem::path folder;
+    if(!borg_catalog_detail::current_folder(root,snapshot.package,&folder,error)||
+        !borg_catalog_detail::read_icon(folder,*variant,out,error))return false;
+    if(error)error->clear();
+    return true;
 }
 // Load for inspection on demand, not for every package on startup. Broken
 // catalogue or artwork data does not retroactively make a package "missing".
@@ -67,20 +92,10 @@ inline bool load_borg_catalog_card(const std::filesystem::path& root,const BorgP
     std::filesystem::path folder;
     BorgCatalogCard next;next.identity=package->manifest.identity;
     if(!borg_catalog_detail::read_profile(root,*package,&folder,&next.profile,error))return false;
-    std::string bytes;
     for(const auto& variant:next.profile.variants){
-        if(variant.placeholder_icon()){next.icons.emplace_back();continue;}
-        if(variant.unresolved_icon()){
-            if(error)*error="editor icon is unresolved for variant "+variant.id;
-            return false;
-        }
-        TplImage icon;
-        if(!borg_package_scan_detail::read_local(folder,variant.icon,kBorgCatalogIconBytes,&bytes)||
-            !borg_catalog_decode_icon({reinterpret_cast<const u8*>(bytes.data()),bytes.size()},&icon,nullptr)){
-            if(error)*error="missing, unsupported or oversized editor icon for variant "+variant.id;
-            return false;
-        }
-        next.icons.emplace_back(std::move(icon));
+        std::optional<TplImage> icon;
+        if(!borg_catalog_detail::read_icon(folder,variant,&icon,error))return false;
+        next.icons.push_back(std::move(icon));
     }
     *out=std::move(next);if(error)error->clear();return true;
 }
