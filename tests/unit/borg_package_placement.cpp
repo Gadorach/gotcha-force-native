@@ -1,5 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
+#include "engine/core/headless_backends.hpp"
+#include "engine/gameplay/borg_installed_browser_view.hpp"
+#include "engine/gameplay/borg_placement_confirmation.hpp"
 #include "engine/save/borg_package_placement.hpp"
 #include "tests/unit/account_save_fixture.hpp"
 #include "tests/unit/force_inventory_fixture.hpp"
@@ -48,6 +51,25 @@ int main(){
     auto prepare=[&](){return placement.prepare(1,0,1,&retail_catalogue,catalog,metadata);};
     check(prepare()==R::Ready&&placement.offer()->owned.variant->label=="Silver Ant"&&
         placement.offer()->declared_cost==225&&storage.write_calls==writes,"offer retains exact owned variant and position without writing");
+    BorgPlacementConfirmation input;GamePadState accept,down,both,back;
+    accept.a=true;down.dpad_down=true;both=down;both.a=true;back.b=back.a=true;
+    using Request=BorgPlacementRequest;
+    input.begin(accept);
+    check(!input.confirm_selected()&&input.step(accept)==Request::None&&input.step({})==Request::None&&
+        input.step(accept)==Request::Cancel,"held accept cannot advance; cancellation is first");
+    input.begin(accept);input.step({});
+    check(input.step(both)==Request::None&&input.confirm_selected()&&input.step(both)==Request::None&&
+        input.step(back)==Request::Cancel,"navigation isn't consent and back dominates accept");
+    input.begin(accept);input.step({});input.step(down);input.step({});
+    check(input.step(accept)==Request::Confirm&&storage.write_calls==writes,"separate confirm edge only requests a write");
+    headless::Render renderer;RenderEngine render(renderer);
+    check(render.initialize({640,480,false,true,"Package Placement"},nullptr,nullptr),"shared renderer");
+    BorgInstalledBrowser browser;BorgInstalledBrowserView view;
+    check(browser.open_owned(catalog,original),"owned fixture for placement presentation");
+    BorgPlacementPanel panel{0,1,{},&placement.offer()->owned,placement.offer()->declared_cost,false,false,false};
+    render.begin_frame({0,.05f,.07f,.09f});render.reset_arena();
+    const auto draws=view.draw(render,640,480,browser,{},false,false,"Selected Save",&panel);render.end_frame();
+    check(draws>0,"renders named offer and cancellation-first choices");
     placement.cancel();
     check(placement.confirm(&retail_catalogue,catalog,metadata)==R::NotConfirmed&&storage.write_calls==writes,
         "cancellation destroys the offer");
@@ -82,5 +104,11 @@ int main(){
     BorgPackagePlacementSession absent(*backend);
     check(absent.prepare(1,0,1,nullptr,catalog,metadata)==R::Ready&&absent.confirm(nullptr,catalog,metadata)==R::Saved,
         "a verified absent retail record does not require a retail catalogue");
-    std::puts("Borg placement: exact ownership, empty positions, stale refusal and package-only commit PASS");
+    check(absent.prepare(1,1,1,nullptr,catalog,metadata)==R::Ready,"another scoped proposal");
+    storage.next_write=AccountWrite::Uncertain;storage.commit_uncertain=true;
+    current_writes=storage.write_calls;
+    check(absent.confirm(nullptr,catalog,metadata)==R::SaveUnconfirmed&&!absent.offer()&&
+        absent.confirm(nullptr,catalog,metadata)==R::NotConfirmed&&!backend->current()&&storage.write_calls==current_writes+1,
+        "unacknowledged write is not retried or treated as acknowledged even if bytes reached storage");
+    std::puts("Borg placement: cancel-first input, exact ownership, stale refusal and one-shot package commit PASS");
 }

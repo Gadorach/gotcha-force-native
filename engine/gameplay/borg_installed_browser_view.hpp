@@ -10,11 +10,19 @@ struct BorgBrowserTile {
     BorgBrowserTileStatus status=BorgBrowserTileStatus::Unavailable;
     u32 texture=0,width=0,height=0;
 };
+struct BorgPlacementPanel {
+    unsigned force=0,slot=0;
+    std::string_view status;
+    const OwnedPackageBorg* offered=nullptr;
+    u16 declared_cost=0;
+    bool confirm_selected=false,locked=false,headless=false;
+};
 
 class BorgInstalledBrowserView {
 public:
     unsigned draw(RenderEngine& render,s32 width,s32 height,const BorgInstalledBrowser& browser,
-                  const BorgBrowserTile& tile,bool confirmed,bool preview_unavailable=false,std::string_view save_name={}){
+                  const BorgBrowserTile& tile,bool confirmed,bool preview_unavailable=false,std::string_view save_name={},
+                  const BorgPlacementPanel* placement=nullptr){
         if(width<440||height<320)return 0;
         const auto saved=render.state();
         render.state()={};render.state().depth_test=render.state().depth_write=false;
@@ -36,14 +44,49 @@ public:
             label.resize(std::min(label.size(),std::size_t(std::max(0,space)/(style.scale*6))));
             draws+=text_.draw(render,label,x,y,style);
         };
-        const s32 split=width*45/100,right=split+16,right_space=width-right-24;
-        fill(12,66,split-18,height-105,{25,36,48,255});
-        fill(split,66,width-split-12,height-105,{31,43,56,255});
         const auto* owned=browser.owned();
-        text(owned?"OWNED BORG COLLECTION":"INSTALLED BORG PICKER",16,12,width-32,title);
+        text(placement?"PLACE OWNED BORG":owned?"OWNED BORG COLLECTION":"INSTALLED BORG PICKER",16,12,width-32,title);
         const auto saved_label=printable(save_name);
-        if(owned)text(saved_label.empty()?"SELECTED SAVE - READ ONLY":"SAVE: "+saved_label+" - READ ONLY",16,40,width-32,small);
+        if(placement){
+            const auto target="FORCE "+std::to_string(placement->force+1)+" - SLOT "+std::to_string(placement->slot+1);
+            text(target,16,40,width-32,body);
+            text(saved_label.empty()?"SELECTED SAVE":"SAVE: "+saved_label,16,54,width-32,small);
+            if(placement->offered){
+                const auto& borg=*placement->offered;
+                const auto name=printable(borg.identity.name);
+                fill(12,74,width-24,height-112,{31,43,56,255});
+                text("CONFIRM PLACEMENT",22,88,width-44,title);
+                text(name.empty()?borg.identity.id:name,22,124,width-44,title);
+                if(borg.variant){
+                    const auto label=printable(borg.variant->label);
+                    text(label.empty()?borg.variant->id:label+" - "+borg.variant->id,22,149,width-44,body);
+                }
+                text("OWNED INSTANCE "+std::to_string(borg.instance)+" - DECLARED COST "+std::to_string(placement->declared_cost),
+                    22,170,width-44,small);
+                text("ADD TO THIS EMPTY POSITION ONLY",22,192,width-44,small);
+                const s32 first=height-115,second=height-87;
+                fill(18,(placement->confirm_selected?second:first)-5,width-36,22,{35,105,130,255});
+                text("CANCEL",22,first,width-44,small);
+                text("CONFIRM PLACEMENT",22,second,width-44,small);
+                text(placement->headless?"HEADLESS - NO SAVE WRITES":"UP/DOWN CHOOSE  SPACE/A ACCEPT  SHIFT/B CANCEL  ESC CLOSE",
+                    16,height-24,width-32,small);
+                render.state()=saved;
+                return draws;
+            }
+            if(placement->locked){
+                fill(12,74,width-24,height-112,{31,43,56,255});
+                text(placement->status,22,96,width-44,title);
+                text("REOPEN THE SAVE TO VIEW CURRENT FORCE SLOTS",22,127,width-44,body);
+                text("ESC CLOSE",16,height-24,width-32,small);
+                render.state()=saved;
+                return draws;
+            }
+        }else if(owned)text(saved_label.empty()?"SELECTED SAVE - READ ONLY":"SAVE: "+saved_label+" - READ ONLY",16,40,width-32,small);
         else text("READ ONLY - NO OWNERSHIP OR BATTLE ADMISSION",16,40,width-32,small);
+        const s32 split=width*45/100,right=split+16,right_space=width-right-24;
+        const s32 top=placement?74:66;
+        fill(12,top,split-18,height-top-39,{25,36,48,255});
+        fill(split,top,width-split-12,height-top-39,{31,43,56,255});
         text(owned?"OWNED COPIES":"PACKAGES",22,80,split-35,title);
         text("VARIANT DETAILS",right,80,right_space,title);
         if(!browser.size()){
@@ -107,9 +150,15 @@ public:
                 if(preview_unavailable)text("BODY PREVIEW UNAVAILABLE",right,height-79,right_space,small);
             }else text("CATALOGUE METADATA UNAVAILABLE",right,166,right_space,small);
         }
-        text(owned?"UP/DOWN OWNED COPY  SHIFT/B RETURN FROM PREVIEW":"UP/DOWN PACKAGE  LEFT/RIGHT VARIANT",
-            16,height-32,width-32,small);
-        text("SPACE/A INSPECT  E/X BODY PREVIEW  ESC CLOSE",16,height-19,width-32,small);
+        if(placement){
+            text(placement->status.empty()?"UP/DOWN SELECT AN OWNED COPY":placement->status,16,height-32,width-32,body);
+            text(placement->headless?"HEADLESS - NO SAVE WRITES  ESC CLOSE":"SPACE/A STAGE PLACEMENT  E/X BODY PREVIEW  ESC CLOSE",
+                16,height-19,width-32,small);
+        }else{
+            text(owned?"UP/DOWN OWNED COPY  SHIFT/B RETURN FROM PREVIEW":"UP/DOWN PACKAGE  LEFT/RIGHT VARIANT",
+                16,height-32,width-32,small);
+            text("SPACE/A INSPECT  E/X BODY PREVIEW  ESC CLOSE",16,height-19,width-32,small);
+        }
         render.state()=saved;
         return draws;
     }

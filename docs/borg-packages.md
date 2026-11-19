@@ -635,11 +635,25 @@ retail record fails rather than appearing as an empty Force. A known
 absent retail record is reported separately. Even a complete declared
 total is not a mode budget or admission receipt.
 
-The package placement session can stage **one** already-owned and enabled
-Borg with its exact saved variant into an empty Force position. It refuses
-an unverified retail record, either kind of occupancy and repeated
-membership in the same Force. On explicit confirmation it rechecks the
-retail record, selected variant metadata and original package record.
-The acknowledged write changes only the package placement, not ownership
-or the retail record. Cancellation and stale proposals write nothing.
-This transaction is not wired to a desktop editor or battle admission yet.
+### Place an owned Borg in an empty Force slot
+
+```sh
+gf_native --place-owned-borg ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER SLOT_NUMBER \
+  [--owned-instance INSTANCE] [--retail-catalog FILE]
+```
+
+Force and slot numbers are one-based. **Up/Down** selects an owned copy and
+**Space/A** stages it. Confirmation defaults to **Cancel**: press **Down**
+to highlight **Confirm Placement**, then press **Space/A** separately.
+**Shift/B** or closing the window cancels without writing. Supply the exact
+GFBC catalogue with `--retail-catalog` if a retail inventory record exists.
+`--headless` cannot commit a placement.
+
+This operation places one already-owned, enabled copy with its exact saved
+variant. It refuses an unverified retail record, either kind of occupancy,
+and repeated membership in the same Force. Confirmation rescans the
+package and rechecks both records on the selected account/save. A saved
+result changes only the package position, not ownership or the retail
+record. After a saved, stale, or unconfirmed result, reopen to inspect the
+save; the UI does not retry a write. This is not a full mixed Force editor
+and does not check a mode budget or admit the Force to battle.

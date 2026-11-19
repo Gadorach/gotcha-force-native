@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/save/account_save_repository.hpp"
 #include "engine/save/borg_package_save.hpp"
 #include "engine/save/force_inventory.hpp"
 
@@ -15,10 +16,11 @@ struct BorgPlacementOffer {
 
 // One explicit placement of an already owned package instance. This edits the
 // package roster only; it never acquires a Borg, replaces a position, or
-// changes the retail inventory. All authority comes from the selected backend.
+// changes the retail inventory. The selected account backend guards both
+// records with the same save revision, including at the atomic replacement.
 class BorgPackagePlacementSession {
 public:
-    explicit BorgPackagePlacementSession(ISaveBackend& backend):backend_(backend),store_(backend){}
+    explicit BorgPackagePlacementSession(AccountSaveBackend& backend):backend_(backend),store_(backend){}
     BorgPackagePlacementSession(const BorgPackagePlacementSession&)=delete;
     BorgPackagePlacementSession& operator=(const BorgPackagePlacementSession&)=delete;
     const BorgPlacementOffer* offer()const{return pending_?&pending_->offer:nullptr;}
@@ -101,7 +103,7 @@ private:
         *offer={*owned,force,slot,selected->force_cost};*package=snapshot->package;*variant=*selected;
         *out=std::move(candidate);return BorgPlacementResult::Ready;
     }
-    ISaveBackend& backend_;
+    AccountSaveBackend& backend_;
     PackageBorgSaveStore store_;
     std::optional<Pending> pending_;
 };
