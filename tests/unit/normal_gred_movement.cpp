@@ -86,6 +86,12 @@ int main(){
         !Definition::allows(Mode::GroundTimedWalkReleaseSecondPush,Behavior::WalkExpiringDirectRelaunch)&&
         Definition::allows(Mode::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiringDirectRelaunch)&&
         Definition::allows(Mode::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiryDirectRelaunch));
+    static_assert(unsigned(Mode::GroundWalkExpiringDirectRelaunchPush)==72&&unsigned(Policy::GroundWalkExpiringDirectRelaunchPush)==68&&
+        !Definition::allows(Mode::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiringDirectRelaunchPush)&&
+        Definition::allows(Mode::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringDirectRelaunchPush)&&
+        Definition::expiry_relaunch_push_faces(2009,8192,1999,13653)&&
+        !Definition::expiry_relaunch_push_faces(1999,8192,2009,13653)&&
+        !Definition::expiry_relaunch_push_faces(2009,8192,1999,13652));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));

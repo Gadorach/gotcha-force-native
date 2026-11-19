@@ -326,6 +326,15 @@ is neither the already-expired push route nor the floor wind-up
 handoff. Use `--demo-gred-walk-ledge-expiring-direct-relaunch`
 for automatic playback.
 
+`--gred-walk-ledge-expiring-relaunch-push --practice-start` is the
+separate steep-contact version. Step with **Left Arrow** on 6–25,
+hold **Up + Shift** on 56–59, then stay neutral. The 1 → 0 entry
+push costs 150, keeps G-Red airborne, and is not a floor snap.
+The three held updates each cost 100. **Up** alone on 57 also
+works after a tap on 56; releasing into neutral immediately
+does not pass the next travel check. Use
+`--demo-gred-walk-ledge-expiring-relaunch-push` for the held playback.
+
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
 tap **Shift** on 23, then leave the controls neutral. Ordinary

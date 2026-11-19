@@ -817,6 +817,29 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick == 125:
                     self.assertIn("G-Red-position=-755.24/10.00/-3150.42", result.stdout)
 
+    def test_expiring_relaunch_entry_push_is_distinct_from_plain_entry(self):
+        ready = "practice-direct-expiring-request=UP+SHIFT/B TO REQUEST RELAUNCH ON EXPIRY"
+        push = "practice-direct-expiring-entry-push=AIRBORNE / RELAUNCH ENTRY PUSH ON EXPIRY"
+        for tick, phase, meter, timer in (
+            (55, "LEDGE FALL / PUSH", 10000, 1), (56, "RELAUNCH / PUSH", 9850, 0),
+            (60, "FALLING", 9550, 0), (114, "TOUCHDOWN", 9550, 0), (115, "LANDING", 9550, 0),
+            (145, "IDLE", 10000, 0),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-expiring-relaunch-push", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"direct-expiring-push-relaunches={int(tick>=56)} air-dash-starts=0 floors=0 "
+                              f"entry-pushes={int(tick>=56)} relaunch-fall-pushes=0 timer698={timer}.0", result.stdout)
+                self.assertIn("walk-ledge-fall-pushes=1", result.stdout)
+                self.assertEqual(ready in result.stdout, tick == 55)
+                self.assertEqual(push in result.stdout, tick == 56)
+                self.assertNotIn("practice-direct-expiring-relaunch=", result.stdout)
+                if tick == 145:
+                    self.assertIn("G-Red-position=-419.40/10.00/-3301.88", result.stdout)
+
     def test_timed_release_push_uses_the_ordinary_falling_role(self):
         for tick, phase, meter, timer, pushes in (
             (23, "RELAUNCH", 9850, 16, 0), (24, "FALLING", 9850, 15, 0),

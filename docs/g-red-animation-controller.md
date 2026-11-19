@@ -518,6 +518,41 @@ foothold an immediate neutral release also fails the next native
 travel check. The older positive and already-expired modes still
 refuse the pending 1 → 0 request.
 
+### Projected soft-Up relaunch on the same timer transition
+
+`--gred-walk-ledge-expiring-relaunch-push` adds one separately
+qualified projected entry. The immediately preceding frame must be
+an accepted walking push on face 2009 (angle 8192) with one tick
+left. On 1 → 0, soft **Up + Shift** can enter descending relaunch
+and project against face 1999 (angle 13653). Other face pairs, floor
+snaps, raised-side entry and a merely already-zero clock do not
+gain this permission. The plain expiry-step mode still refuses
+this projection. A nearby probe at Z `-3315.80225` stages against
+face 1998 at the same angle; the opt-in still refuses that pair.
+
+```sh
+gf_native --gred-walk-ledge-expiring-relaunch-push --practice-start --no-audio
+gf_native --demo-gred-walk-ledge-expiring-relaunch-push --headless --frames 145 --no-audio
+```
+
+Use the earlier expiry foothold, X/Z `-1250.96863/-3313.80225`
+(query `1846.01367`, arena half-width `4500`). Hold **Left Arrow**
+on 6–25, then **Up + Shift** on 56–59; stay neutral afterward.
+Entry on 56 adds 15 to −27 before displacement, applies relaunch
+acceleration then projects and damps by `.9`. It costs 150, stays
+airborne, and shows **RELAUNCH ENTRY PUSH ON EXPIRY** only on
+that accepted frame. Native reselects the contact plane and
+checks the input turn, projected endpoint, and both travel checks
+independently. No dash or landing callback is involved.
+
+The three held wind-up updates each spend 100. Release at 60,
+touchdown at 114 and landing at 115 leave 9550 meter; idle then
+recovers normally. Alternatively, tap **Up + Shift** on 56 and keep
+**Up** alone on 57. That ordinary falling drift reaches touchdown
+and landing at 110–111 with 9850. An immediate neutral release on
+57 still fails native travel; the accepted entry does not authorize
+that next push.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the

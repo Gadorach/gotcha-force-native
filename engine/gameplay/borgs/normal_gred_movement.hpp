@@ -22,7 +22,7 @@ enum class NormalGRedMovementMode {
     GroundRecoveryRecontactSeam,GroundRecoveryFirstContactSeam,GroundWalkLedgeDirectTimedAirDash,
     GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch,GroundWalkExpiryDirectRelaunch,GroundTimedSnapWindupRelaunch,
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
-    GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch
+    GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush
 };
 
 struct NormalGRedMovementDefinition {
@@ -92,6 +92,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundTimedWalkReleasePush,Policy::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush},
         CombinedRule{Mode::GroundTimedWalkReleaseSecondPush,Policy::GroundTimedWalkReleaseSecondPush,Behavior::TimedWalkReleaseSecondPush},
         CombinedRule{Mode::GroundWalkExpiringDirectRelaunch,Policy::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiringDirectRelaunch},
+        CombinedRule{Mode::GroundWalkExpiringDirectRelaunchPush,Policy::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringDirectRelaunchPush},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -135,6 +136,11 @@ struct NormalGRedMovementDefinition {
     // steepest witnessed face, not a replacement for either source angle gate.
     static constexpr s16 walk_ledge_push_angle_cap(BorgMovementBehaviors flags){
         return flags.has(Behavior::WalkLedgeHighAnglePush)?13653:10240;
+    }
+    // The expiry-entry projection is qualified only for this witnessed
+    // transition on the bound original stage, not arbitrary steep contacts.
+    static constexpr bool expiry_relaunch_push_faces(u32 prior,s16 prior_angle,u32 contact,s16 angle){
+        return prior==2009&&prior_angle==8192&&contact==1999&&angle==13653;
     }
 private:
     static constexpr auto cumulative_=[]{

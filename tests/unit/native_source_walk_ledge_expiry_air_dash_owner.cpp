@@ -42,8 +42,8 @@ int main(){
     check(render.initialize({1152,648,false,true,"Expiry air dash"},nullptr,&error)&&view.load(files,art,render,&error),
         "qualified stage and model assets");
     view.source_practice_controls();
-    auto bind=[&](Mode mode){
-        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={-1250.96863f,-3313.80225f};cfg.spawn_query_y[0]=1846.01367f;
+    auto bind=[&](Mode mode,f32 z=-3313.80225f){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={-1250.96863f,z};cfg.spawn_query_y[0]=1846.01367f;
         check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
             source.bind(files,art,pack,world,seed,&error,mode),"fresh grounded placement on the original stage");
     };
@@ -458,5 +458,90 @@ int main(){
     check(touched==91&&landed==92&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
         source.walk_ledge_pushes()==1&&source.relaunches()==1&&!source.relaunch_surface_pushes()&&!source.relaunch_floor_contacts()&&
         !source.air_dash_starts(),"one plain entry, one walking push, separate landing, then full idle");
+    bind(Mode::GroundWalkExpiringDirectRelaunchPush,-3315.80225f);prefix(55);
+    check(offer.kind==Kind::GroundLossPush&&offer.static_push->surface.triangle==2009&&offer.controller_timer698==1.f&&
+        !prepare(false,&offer,true,true)&&error.find("plain descending entry without contact response")!=std::string::npos&&
+        world.tick()==55&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&!world.step({},false,&view),
+        "a genuine adjacent face-1998 response cannot borrow the face-1999 permission");
+    for(unsigned route:{0u,1u,2u}){
+        const bool held=route==2;
+        bind(Mode::GroundWalkExpiringDirectRelaunchPush);prefix(55);
+        const auto previous=offer;const auto old=world.actors()[0];const auto camera=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(previous.kind==Kind::GroundLossPush&&previous.walk_ledge->walk_origin&&previous.controller_timer698==1.f&&
+            previous.static_push->surface.triangle==2009&&previous.static_push->angle==8192&&
+            view.practice_readout(world)->direct_expiring_relaunch_ready&&prepare(false,&offer,true,true)&&
+            offer.kind==Kind::RelaunchEntryPush&&offer.controller_timer698==0.f&&offer.static_push&&offer.relaunch_motion&&
+            source.resource()==10000&&source.ground_loss_timer698()==1.f&&!source.relaunches(),
+            "real timer-one walking push stages a separate projected soft-Up entry without publishing");
+        const auto& move=*offer.relaunch_motion;const auto& contact=*offer.static_push;
+        BattleMvpVec projected;
+        check(contact.surface.triangle==1999&&contact.angle==13653&&contact.relaunch_acceleration==move.vertical_accel&&
+            offer.entry_vertical_delta==15.f&&move.vertical_before==f32(old.vertical_speed+15.f)&&move.vertical_before==-12.f&&
+            contact.integrated_position[1]==f32(old.position[1]+move.vertical_before)&&
+            contact.vertical_speed==std::fma(move.vertical_accel,1.f,move.vertical_before)&&
+            contact.damping==.9f&&offer.vertical_speed==f32(contact.vertical_speed*contact.damping)&&
+            source_surface_push_position(contact.integrated_position,contact.surface.normal,contact.surface.height,contact.angle,&projected)&&
+            offer.proposed_position==projected&&move.entry&&move.direction&&
+            native_gred_relaunch_up_turn(camera,old.facing,move.travel5ae,offer.facing)&&
+            move.speed_before==previous.jump_motion->speed44&&move.resource_before==10000&&move.resource_after==9850&&
+            !offer.relaunch_floor&&!offer.air_motion&&!offer.surface_landing,
+            "additive entry displacement, relaunch acceleration and steep damping are distinct from the selected face and charge");
+        if(held){
+            auto refuses=[&](const NativeBorgMotionOffer& candidate,const NativeBorgMovementFrame* proof,const char* why){
+                const bool refused=!world.step({},false,&view,nullptr,proof,&candidate);
+                const auto shown=view.practice_readout(world);
+                check(refused&&world.tick()==55&&world.actors()[0].position==old.position&&world.motion_receipt_current(pose.receipt)&&
+                    source.resource()==10000&&source.ground_loss_timer698()==1.f&&shown&&shown->direct_expiring_relaunch_ready&&
+                    !shown->direct_expiring_entry_push,why);
+            };
+            refuses(offer,nullptr,"a projected entry still needs independent soft-Up turn evidence");
+            auto fake=offer;fake.controller_timer698=1.f;refuses(fake,&camera,"prior positive clock is not the entry clock");
+            fake=offer;fake.static_push->surface.triangle=2009;refuses(fake,&camera,"cannot substitute the prior selected face");
+            fake=offer;fake.static_push->angle=13652;refuses(fake,&camera,"cannot broaden the verified projection angle");
+            fake=offer;fake.static_push->integrated_position[1]=f32(old.position[1]+old.vertical_speed);
+            refuses(fake,&camera,"pre-response motion cannot omit the additive 15");
+            fake=offer;fake.proposed_position[1]+=.5f;refuses(fake,&camera,"post-response projection must agree independently");
+            fake=offer;fake.vertical_speed=contact.vertical_speed;refuses(fake,&camera,"cannot skip the projected damping");
+            fake=offer;fake.kind=Kind::RelaunchEntryFloor;fake.static_push.reset();fake.relaunch_floor=NativeBorgRelaunchFloor{};
+            refuses(fake,&camera,"this provenance does not authorize an entry floor snap");
+        }
+        accept(offer);
+        const auto accepted=view.practice_readout(world);
+        check(accepted&&accepted->direct_expiring_entry_push&&!accepted->direct_expiring_relaunch_ready&&!accepted->direct_expiring_relaunch&&
+            !accepted->direct_expiry_relaunch&&!world.actors()[0].grounded&&source.cached_airborne87()==1&&source.ground_loss_timer698()==0.f&&
+            source.resource()==9850&&source.relaunch_entry_surface_pushes()==1&&source.movement_programs()==std::array<u16,2>{14,14},
+            "only the matching accepted entry publishes the push cue, meter, and both program-14 requests");
+        if(!route){
+            const auto retained=pose;const auto position=world.actors()[0].position;
+            const auto next=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(prepare(false,&offer)&&offer.kind==Kind::StaticPush&&
+                !world.step({},false,&view,nullptr,&next,&offer)&&world.tick()==56&&world.actors()[0].position==position&&
+                source.resource()==9850&&world.motion_receipt_current(retained.receipt)&&view.practice_readout(world)->direct_expiring_entry_push,
+                "immediate neutral release still cannot pass native travel on the following push");
+            source.reject();
+            check(retained.frame_scope.expired()&&!world.step({},false,&view),"no fallback after the following native refusal");
+            continue;
+        }
+        touched=landed=0;
+        while(world.tick()<145){
+            const auto tick=world.tick()+1;const bool continued=held&&tick<=59;
+            check(prepare(false,&offer,continued,continued||(!held&&tick==57))&&offer.controller_timer698==0.f,
+                "a short hold or soft-Up release follows the existing normal motion rules");
+            if(continued)check(offer.relaunch_motion&&!offer.relaunch_motion->entry&&offer.entry_vertical_delta==0.f&&
+                offer.relaunch_motion->resource_after==9850-int(tick-56)*100,
+                "held wind-up pays 100 per update and never repeats the entry impulse");
+            if(tick==(held?60u:57u))check(offer.kind==Kind::JumpAir&&offer.jump_motion->entry&&offer.jump_motion->relaunch_origin&&
+                bool(offer.jump_motion->drift_heading)==!held,"release resumes ordinary fall, with drift only on the tap route");
+            if(offer.kind==Kind::JumpTouchdown)touched=tick;
+            if(touched&&!landed&&offer.kind==Kind::JumpLanding)landed=tick;
+            accept(offer);
+            check(!view.practice_readout(world)->direct_expiring_entry_push,"entry cue clears on the next accepted frame");
+            if(tick==(held?60u:57u)||tick==touched||tick==landed)check(source.resource()==(held?9550:9850),
+                "release, touchdown and the separate landing preserve the spent meter");
+        }
+        check(touched==(held?114u:110u)&&landed==touched+1&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
+            source.walk_ledge_pushes()==1&&source.relaunches()==1&&source.relaunch_entry_surface_pushes()==1&&
+            !source.air_dash_starts()&&!source.relaunch_floor_contacts(),"both verified inputs land without further entry pushes or floor snaps");
+    }
     std::printf("Walking push air followups: %u checks PASS, timed and expiry entries with separate costs and landing\n",checks);
 }

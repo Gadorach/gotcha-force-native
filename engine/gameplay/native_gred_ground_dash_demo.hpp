@@ -49,7 +49,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {
         State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;
-        bool direct_expiry_relaunch=false,direct_timed_relaunch=false,direct_expiring_relaunch=false;
+        bool direct_expiry_relaunch=false,direct_timed_relaunch=false,direct_expiring_relaunch=false,direct_expiring_entry_push=false;
         std::shared_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion;
     };
 public:
@@ -378,7 +378,11 @@ public:
                 (!timed_up&&s.body!=state_.body)||observed.vertical_speed>=0.f||s.relaunch_motion->vertical_before<=0.f||s.motion.vertical48<=0.f))
                 return fail(error,timed_up_policy?"direct timed relaunch needs plain neutral or soft-Up lift without contact response":
                     "direct timed relaunch needs plain neutral lift without contact response");
-            if(direct_push&&!timed_direct&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||!s.relaunch_motion->direction||
+            const bool expiring_entry_push=expiring_direct&&allows(mode_,Behavior::WalkExpiringDirectRelaunchPush)&&
+                kind==NativeBorgMotionKind::RelaunchEntryPush&&s.static_push&&
+                NormalGRedMovementDefinition::expiry_relaunch_push_faces(state_.static_push->surface.triangle,state_.static_push->angle,
+                    s.static_push->surface.triangle,s.static_push->angle);
+            if(direct_push&&!timed_direct&&((kind!=NativeBorgMotionKind::RelaunchEntry&&!expiring_entry_push)||!s.relaunch_motion||!s.relaunch_motion->direction||
                 s.relaunch_motion->vertical_before>=0.f||s.motion.vertical48>=0.f))
                 return fail(error,"direct expiry relaunch requires plain descending entry without contact response");
             if(floor_windup_handoff){
@@ -395,7 +399,8 @@ public:
             }
             candidate->direct_expiry_relaunch=direct_push&&!timed_direct&&!expiring_direct;
             candidate->direct_timed_relaunch=timed_direct;
-            candidate->direct_expiring_relaunch=expiring_direct;
+            candidate->direct_expiring_relaunch=expiring_direct&&!expiring_entry_push;
+            candidate->direct_expiring_entry_push=expiring_entry_push;
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
             const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
                 state_.static_push&&s.jump.selector==15&&!s.air_dash.entered;
@@ -673,7 +678,7 @@ public:
                 relaunch_from_active_snap,accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&
                 accepted.jump_motion->timed_walk_relaunch_fall,accepted.kind==NativeBorgMotionKind::StaticPush&&
                 accepted.jump_motion&&accepted.jump_motion->second_timed_release_push,pending_->direct_expiring_relaunch,
-                direct_expiring_relaunch_ready}));
+                direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

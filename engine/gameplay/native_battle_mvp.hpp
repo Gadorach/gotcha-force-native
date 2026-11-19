@@ -949,13 +949,17 @@ public:
                      if(o.proposed_position!=expected)return false;
                 }
             }
-               const bool direct_expiring_relaunch=behaviors.has(Behavior::WalkExpiringDirectRelaunch)&&walking_push&&
+               const bool expiring_walking_push=behaviors.has(Behavior::WalkExpiringDirectRelaunch)&&walking_push&&
                    walking_push->timer698==1.f&&last_offer_.controller_timer698==1.f;
+               const bool descending_up_entry=walking_push&&o.controller_timer698==0.f&&o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
+                   o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
+                   native_gred_relaunch_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
                const bool direct_expiry_relaunch=behaviors.has(Behavior::WalkExpiryDirectRelaunch)&&walking_push&&
-                   (walking_push->timer698==0.f||direct_expiring_relaunch)&&o.controller_timer698==0.f&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
-                  o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
-                  o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
-                  native_gred_relaunch_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
+                   (walking_push->timer698==0.f||expiring_walking_push)&&o.kind==NativeBorgMotionKind::RelaunchEntry&&descending_up_entry;
+               const bool direct_expiring_entry_push=behaviors.has(Behavior::WalkExpiringDirectRelaunchPush)&&expiring_walking_push&&
+                   controller_relaunch_push_frame&&relaunch_entry_push&&o.static_push&&descending_up_entry&&
+                   NormalGRedMovementDefinition::expiry_relaunch_push_faces(last_offer_.static_push->surface.triangle,
+                       last_offer_.static_push->angle,o.static_push->surface.triangle,o.static_push->angle);
               bool direct_timed_relaunch=false;
               if(behaviors.has(Behavior::WalkTimedDirectRelaunch)&&walking_push&&walking_push->timer698>1.f&&
                   o.controller_timer698&&*o.controller_timer698==walking_push->timer698-1.f&&
@@ -969,7 +973,7 @@ public:
                       direct_timed_relaunch=travel==actor.facing&&o.facing==actor.facing;
                   }
               }
-              const bool relaunch_entry_prior=direct_expiry_relaunch||direct_timed_relaunch||
+               const bool relaunch_entry_prior=direct_expiry_relaunch||direct_timed_relaunch||direct_expiring_entry_push||
                  prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                 native_borg_motion_windup_update(prior)||native_borg_motion_active_entry(prior)||
                 native_borg_motion_active_update(prior)||native_borg_motion_recovery(prior)||
@@ -1390,7 +1394,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringDirectRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringDirectRelaunchPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
