@@ -140,6 +140,9 @@ release. The incline walk uses **Up Arrow**; the incline dash uses a
 right flick (**D** on keyboard). These are native practice starts, not
 original game spawns or new movement permissions.
 
+The [owned collection practice launcher](borg-packages.md#practice-an-owned-copy)
+offers the same live footholds through its **Left/Right** route selector.
+
 To check the actual practice loop without opening a window or audio device:
 
 ```sh

@@ -142,7 +142,7 @@ class SourceGroundWorldTests(unittest.TestCase):
             replay = subprocess.run([seed, "--replay-owned-practice-picker", accounts], capture_output=True,
                                     text=True, timeout=90, cwd=root)
             self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
-            self.assertIn("exact launch/return, disabled refusal, and held-key isolation PASS", replay.stdout)
+            self.assertIn("exact launch/return, live routes, disabled refusal, and held-key isolation PASS", replay.stdout)
             self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):

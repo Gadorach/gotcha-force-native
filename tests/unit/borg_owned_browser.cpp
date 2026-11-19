@@ -36,14 +36,23 @@ int main(){
     GamePadState q;q.y=true;
     check(tap(q)==BorgBrowserChange::None,"practice is not a default picker action");
     browser.step({},true);
+    auto route_and_launch=q;route_and_launch.dpad_left=true;
+    check(browser.practice_route()==GRedPickerPracticeRoute::Standard&&
+        browser.step(route_and_launch,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::ExpiryPush&&
+        browser.step(route_and_launch,true)==BorgBrowserChange::None&&
+        browser.selection()->variant=="silver"&&browser.owned_entry()->instance==3,
+        "route wraps separately from the owned variant and wins over a simultaneous launch");
+    browser.step({},true);
     check(browser.step(q,true)==BorgBrowserChange::Practice&&browser.step(q,true)==BorgBrowserChange::None&&
         browser.owned_entry()->instance==3,"an opted-in practice request is a single edge on the exact copy");
     browser.step({},true);
     auto together=q;together.x=true;
     check(browser.step(together,true)==BorgBrowserChange::Preview,"a simultaneous preview never launches practice");
     browser.sync_input(down);
-    check(browser.step(down)==BorgBrowserChange::None&&browser.owned_entry()->instance==3,
-        "held navigation after preview cannot change owned copy");
+    check(browser.step(down)==BorgBrowserChange::None&&browser.owned_entry()->instance==3&&
+        browser.practice_route()==GRedPickerPracticeRoute::ExpiryPush,
+        "held navigation after preview cannot change the owned copy or its route");
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,
         "disabled copy stays visible but cannot request preview");

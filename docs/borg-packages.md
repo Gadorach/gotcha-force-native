@@ -115,12 +115,18 @@ practice enabled:
 gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID --practice-from-picker --no-audio
 ```
 
-**Q/Y** checks the highlighted copy and opens ordinary live practice if
-it qualifies. The check can still refuse a disabled copy, unsupported
-variant, or unavailable assets. **Esc** in practice returns to the same
-copy; release and press it again to close the collection. Each view owns
-its renderer resources only while active. If the selected save has changed,
-reopen the collection rather than continuing with a stale selection.
+**Left/Right** chooses a practice route without changing the copy or its
+saved variant. **Standard** starts in the ordinary arena. The other choices
+start live practice at the verified slope join, inclined walk, inclined
+dash, walking ledge push, steeper push, or timer-expiry foothold. They do
+not inject demo input.
+
+**Q/Y** checks the highlighted copy and opens the selected route if it
+qualifies. The check can still refuse a disabled copy, unsupported variant,
+or unavailable assets. **Esc** returns to the same copy and route; release
+and press it again to close the collection. Each view owns its renderer
+resources only while active. If the selected save has changed, reopen the
+collection rather than continuing with a stale selection.
 
 ## Read-only installed Borg picker
 

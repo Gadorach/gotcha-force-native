@@ -157,7 +157,9 @@ public:
             text(placement->headless?"HEADLESS - NO SAVE WRITES  ESC CLOSE":"SPACE/A STAGE PLACEMENT  E/X BODY PREVIEW  ESC CLOSE",
                 16,height-19,width-32,small);
         }else{
-            text(owned?"UP/DOWN OWNED COPY  SHIFT/B RETURN FROM PREVIEW":"UP/DOWN PACKAGE  LEFT/RIGHT VARIANT",
+            if(practice&&browser.owned_entry())text("ROUTE: "+std::string(browser.practice_route_name()),22,height-61,split-40,body);
+            text(practice?"UP/DOWN OWNED COPY  LEFT/RIGHT PRACTICE ROUTE":
+                owned?"UP/DOWN OWNED COPY  SHIFT/B RETURN FROM PREVIEW":"UP/DOWN PACKAGE  LEFT/RIGHT VARIANT",
                 16,height-32,width-32,small);
             text(practice?"SPACE/A INSPECT  E/X PREVIEW  Q/Y PRACTICE  ESC CLOSE":"SPACE/A INSPECT  E/X BODY PREVIEW  ESC CLOSE",
                 16,height-19,width-32,small);

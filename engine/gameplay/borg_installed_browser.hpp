@@ -8,7 +8,15 @@ struct BorgBrowserSelection {
     std::string variant,label;
     bool operator==(const BorgBrowserSelection&)const=default;
 };
-enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview,Practice};
+enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview,Practice,PracticeRoute};
+// UI choices for the qualified normal-G-Red lab only. Choosing a route
+// selects neither a package variant nor permission to run any copy.
+enum class GRedPickerPracticeRoute : u8 {
+    Standard,SlopeJoin,InclinedWalk,InclinedDash,LedgePush,HighAnglePush,ExpiryPush,Count
+};
+inline constexpr std::array<std::string_view,unsigned(GRedPickerPracticeRoute::Count)> kGRedPickerPracticeRouteNames{
+    "STANDARD","SLOPE JOIN","INCLINED WALK","INCLINED DASH","WALK LEDGE PUSH","STEEPER LEDGE PUSH","LEDGE TIMER EXPIRY"
+};
 
 // Read-only navigation of installed packages or a selected save snapshot.
 // Body preview uses package identity, never owned-instance or actor authority.
@@ -17,6 +25,7 @@ public:
     void open(BorgPackageCatalog catalog){
         if(catalog.status!=BorgPackageScanStatus::Complete)catalog.discovered.clear();
         catalog_=std::move(catalog);entry_=variant_=0;metadata_.reset();owned_.reset();previous_={};
+        practice_route_=GRedPickerPracticeRoute::Standard;
     }
     bool open_owned(BorgPackageCatalog catalog,PackageBorgRoster roster,u64 initial_instance=0){
         if(!package_borg_roster_valid(roster))return false;
@@ -48,6 +57,8 @@ public:
     }
     std::size_t package_index()const{return entry_;}
     std::size_t variant_index()const{return variant_;}
+    GRedPickerPracticeRoute practice_route()const{return practice_route_;}
+    std::string_view practice_route_name()const{return kGRedPickerPracticeRouteNames[unsigned(practice_route_)];}
     const BorgPackageEntry* entry()const{
         if(owned_){
             const auto* saved=owned_entry();
@@ -92,6 +103,12 @@ public:
             variant_=left?(variant_+count-1)%count:(variant_+1)%count;
             return BorgBrowserChange::Variant;
         }
+        if(allow_practice&&owned_entry()&&left!=right){
+            constexpr auto count=unsigned(GRedPickerPracticeRoute::Count);
+            const auto index=unsigned(practice_route_);
+            practice_route_=GRedPickerPracticeRoute((index+(left?count-1:1))%count);
+            return BorgBrowserChange::PracticeRoute;
+        }
         // This is a request to check the exact owned copy, not a readiness
         // receipt. Preview and inspect win if pressed on the same sample.
         if(practice&&!preview&&!confirm&&owned_entry())return BorgBrowserChange::Practice;
@@ -105,6 +122,7 @@ private:
     std::optional<PackageBorgRoster> owned_;
     std::optional<BorgCatalogSnapshot> metadata_;
     std::size_t entry_=0,variant_=0;
+    GRedPickerPracticeRoute practice_route_=GRedPickerPracticeRoute::Standard;
     GamePadState previous_{};
 };
 }

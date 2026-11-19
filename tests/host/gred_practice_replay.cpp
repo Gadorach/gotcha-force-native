@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice,PickerExpiry};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -50,6 +50,12 @@ public:
             if(f<=3||(f>=16&&f<=18))raw.buttons|=1u<<3;
             if((f>=11&&f<=13)||(f>=22&&f<=24))raw.quit=true;
             if(f==14)raw.buttons|=1u<<6; // Held on the return/release frame, not a fresh collection move.
+            if(f==15)raw.buttons|=1u<<7; // Wrap from Standard to the timer-expiry foothold for the second launch.
+            break;
+        case Replay::PickerExpiry:
+            if(f==0||(f>=7&&f<27))raw.buttons|=1u<<7; // First choose the route, then walk with live input.
+            if(f>=1&&f<=4)raw.buttons|=1u<<3;
+            if(f>=190&&f<=192)raw.quit=true;
             break;
         }
     }
@@ -146,11 +152,11 @@ int replay_owned_practice_picker(std::string root){
     auto files=gf::sdl::create_file_system();
     gf::headless::Bundle headless;ReplayInput input(Replay::PickerPractice);ReplayLog log;
     auto backends=headless.get();backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
-    auto run_picker=[&](char* instance){
+    auto run_picker=[&](char* instance,char* limit){
         Options options;
         char program[]="gf_native",mode[]="--browse-owned-borgs",account[]="7",save[]="11";
-        char owned[]="--owned-instance",practice[]="--practice-from-picker",off[]="--headless",frames[]="--frames",count[]="32";
-        char* args[]={program,mode,root.data(),account,save,owned,instance,practice,off,frames,count};
+        char owned[]="--owned-instance",practice[]="--practice-from-picker",off[]="--headless",frames[]="--frames";
+        char* args[]={program,mode,root.data(),account,save,owned,instance,practice,off,frames,limit};
         check(parse(int(std::size(args)),args,&options),"owned picker options",log.text);
         gf::Context context(backends,60);gf::RenderEngine render(context.render());std::string error;
         check(render.initialize({640,480,false,true,"Owned picker replay"},nullptr,&error),"picker renderer",error);
@@ -163,20 +169,31 @@ int replay_owned_practice_picker(std::string root){
         for(std::size_t at=0;(at=text.find(part,at))!=std::string_view::npos;at+=part.size())++found;
         return found;
     };
-    char enabled[]="8";
-    check(run_picker(enabled)==32&&count(log.text,"launched practice for owned instance=8")==2&&
+    char enabled[]="8",short_limit[]="32",long_limit[]="205";
+    check(run_picker(enabled,short_limit)==32&&count(log.text,"launched practice for owned instance=8")==2&&
         count(log.text,"returned to owned instance=8 after practice")==2&&
         count(log.text,"owned instance=8 (Saved G-Red / Saved Standard); save is read-only")==2&&
+        has(log.text,"launched practice for owned instance=8 route=STANDARD")&&
+        has(log.text,"launched practice for owned instance=8 route=LEDGE TIMER EXPIRY")&&
+        has(log.text,"returned to owned instance=8 after practice route=LEDGE TIMER EXPIRY")&&
+        has(log.text,"G-Red-position=-1250.97/")&&
         !has(log.text,"practice restarted at tick=0")&&has(log.text,"selected=fixture:gred variant=normal view=picker")&&
         has(log.text,"frames=32 packages=1")&&has(log.text,"instance=8 saved-variant=normal"),
-        "two fresh launches, held-key isolation, exact return and one total frame budget",log.text);
+        "two distinct routes, held-key isolation, exact return and one total frame budget",log.text);
+    log.text.clear();input=ReplayInput(Replay::PickerExpiry);
+    check(run_picker(enabled,long_limit)==205&&once(log.text,"launched practice for owned instance=8 route=LEDGE TIMER EXPIRY")&&
+        once(log.text,"practice start: demo placement, live input, no scripted replay")&&
+        !has(log.text,"walk ledge expiry demo:")&&has(log.text,"ground-departures=1 loss-entries=1 loss-landings=1")&&
+        has(log.text,"walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0")&&
+        once(log.text,"returned to owned instance=8 after practice route=LEDGE TIMER EXPIRY"),
+        "selected foothold runs the full route from live input and returns with the route retained",log.text);
     log.text.clear();input=ReplayInput(Replay::PickerPractice);
     char disabled[]="9";
-    check(run_picker(disabled)>0&&!has(log.text,"launched practice for")&&
+    check(run_picker(disabled,short_limit)>0&&!has(log.text,"launched practice for")&&
         has(log.text,"practice unavailable for instance=9: the requested owned copy is disabled")&&
         has(log.text,"instance=9 saved-variant=normal disabled=1"),
         "disabled copy stays in the collection but cannot launch",log.text);
-    std::puts("Owned picker practice: exact launch/return, disabled refusal, and held-key isolation PASS");
+    std::puts("Owned picker practice: exact launch/return, live routes, disabled refusal, and held-key isolation PASS");
     return 0;
 }
 }
