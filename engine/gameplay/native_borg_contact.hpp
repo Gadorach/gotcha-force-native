@@ -15,6 +15,7 @@ public:
     virtual bool height(f32 x,f32 z,f32 current_y,f32* out)const=0;
     //Height-only providers deliberately cannot authorize selected-plane pushes.
     virtual bool static_surface(f32,f32,f32,NativeBorgStaticSurface*)const{return false;}
+    virtual bool coplanar_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&)const{return false;}
 };
 struct NativeBorgContactRequest {
     std::array<f32,3> position{},other_position{};BattlePoint delta{};

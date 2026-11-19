@@ -146,6 +146,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   single selected incline. It recomputes tangent movement and checks endpoint
   height against the same native triangle and normal. Native step, body, and
   bounds checks remain in force. Nonflat seams and departures remain refused.
+- `GroundSlopeSeamDash` also permits a shared edge between exact coplanar
+  triangles with nonoverlapping projected interiors. Both source and native
+  floor data must independently certify that travel crosses the shared segment,
+  not its extension; the previous slope mode
+  and all crease, gap, and departure refusals stay unchanged.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

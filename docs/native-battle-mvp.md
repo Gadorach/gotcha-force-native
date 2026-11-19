@@ -135,6 +135,12 @@ triangle 1014 from a native grounded fixture. The owner tests also exercise
 an uphill dash, reject off-tangent motion and flat-height substitutes, and
 keep the older mode and slope seams closed.
 
+`--gred-slope-seam-dash` additionally admits adjacent triangles only if their
+stored plane equations and shared edge match exactly. Creases, gaps, nonflat
+ledge departures, and obstructed travel still refuse. The original
+`--gred-slope-dash` mode remains single-triangle. Try the verified crossing
+from triangle 254 to 255 with `--demo-gred-slope-seam-dash --frames 100`.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

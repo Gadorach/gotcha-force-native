@@ -111,6 +111,7 @@ struct Options {
     bool source_ground_windup_entry_push=false;
     bool gred_practice=false;
     bool gred_slope_dash=false;
+    bool gred_slope_seam_dash=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -214,7 +215,8 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-ground-relaunch-entry-push" || arg == "--demo-source-ground-relaunch-entry-push" ||
                  arg == "--source-ground-windup-entry-push" || arg == "--demo-source-ground-windup-entry-push" ||
                  arg == "--gred-movement" || arg == "--demo-gred-movement" ||
-                 arg == "--gred-slope-dash" || arg == "--demo-gred-slope-dash"){
+                 arg == "--gred-slope-dash" || arg == "--demo-gred-slope-dash" ||
+                 arg == "--gred-slope-seam-dash" || arg == "--demo-gred-slope-seam-dash"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
             options->source_ground_walk=arg!="--demo-source-ground-dash";
@@ -243,7 +245,8 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_active_push=arg=="--source-ground-active-push"||arg=="--demo-source-ground-active-push";
             options->source_ground_relaunch_push=arg=="--source-ground-relaunch-push"||arg=="--demo-source-ground-relaunch-push";
             options->source_ground_relaunch_entry_push=arg=="--source-ground-relaunch-entry-push"||arg=="--demo-source-ground-relaunch-entry-push";
-            options->gred_slope_dash=arg=="--gred-slope-dash"||arg=="--demo-gred-slope-dash";
+            options->gred_slope_seam_dash=arg=="--gred-slope-seam-dash"||arg=="--demo-gred-slope-seam-dash";
+            options->gred_slope_dash=options->gred_slope_seam_dash||arg=="--gred-slope-dash"||arg=="--demo-gred-slope-dash";
             options->gred_practice=options->gred_slope_dash||arg=="--gred-movement"||arg=="--demo-gred-movement";
             options->source_ground_windup_entry_push=(options->gred_practice&&!options->gred_slope_dash)||
                 arg=="--source-ground-windup-entry-push"||arg=="--demo-source-ground-windup-entry-push";
@@ -571,13 +574,15 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     } //declared native grounded original-stage fixture, unchanged bounds and target
     if(options.gred_slope_dash&&!options.source_ground_interactive){
         config.arena_half=4500;config.spawn[0]={-1443.46997f,-703.674011f};config.spawn_query_y[0]=94.339f;
+        if(options.gred_slope_seam_dash){config.spawn[0]={1406.01709f,2922.08545f};config.spawn_query_y[0]=485.585205f;}
     }
     if(!view.load(context.files(),options.battle_mvp_assets,render,&error)||!world.start(config,&view)||!view.update(world,&error)){
         gf::log_error(context,"battle-mvp","initialization failed: %s",error.c_str());render.shutdown();return 2;}
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ordered_ground?"local/content/source-gred-ground-v9":options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
-    const auto source_mode=options.gred_slope_dash?gf::NativeGRedGroundDashDemo::Mode::GroundSlopeDash:
+    const auto source_mode=options.gred_slope_seam_dash?gf::NativeGRedGroundDashDemo::Mode::GroundSlopeSeamDash:
+        options.gred_slope_dash?gf::NativeGRedGroundDashDemo::Mode::GroundSlopeDash:
         options.source_ground_windup_entry_push?gf::NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush:
         options.source_ground_relaunch_entry_push?gf::NativeGRedGroundDashDemo::Mode::GroundRelaunchEntryPush:
         options.source_ground_relaunch_push?gf::NativeGRedGroundDashDemo::Mode::GroundRelaunchPush:
@@ -591,7 +596,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.demo_source_ground&&!bind_source()){gf::log_error(context,"source-ground","bind failed: %s",error.c_str());render.shutdown();return 2;}
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-    if(options.gred_slope_dash)gf::log_info(context,"source-ground","ordered ground dash on one selected slope triangle; paired tangent and height, native step/contact limits; nonflat seams and ledges remain refused");
+    if(options.gred_slope_seam_dash)gf::log_info(context,"source-ground","ordered slope dash across exact coplanar edges; native step/contact limits; creases, gaps and nonflat ledges remain refused");
+    else if(options.gred_slope_dash)gf::log_info(context,"source-ground","ordered ground dash on one selected slope triangle; paired tangent and height, native step/contact limits; nonflat seams and ledges remain refused");
     else if(options.source_ground_windup_entry_push)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; one combined controller with descending zero698 wind-up entry push; no original whole-frame equivalence");
     else if(options.source_ground_relaunch_entry_push)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; one combined controller with descending zero698 relaunch-entry push; no original whole-frame equivalence");
     else if(options.source_ground_relaunch_push)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; one combined controller with continued zero698 relaunch push; no original whole-frame equivalence");
@@ -612,7 +618,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_ordered_ground_controls();
             if(options.gred_slope_dash){
                 if(!options.source_ground_interactive)
-                    gf::log_info(context,"source-ground","slope demo: one backward flick down original triangle1014 from a grounded native placement");
+                    gf::log_info(context,"source-ground","%s",options.gred_slope_seam_dash?
+                        "slope seam demo: one backward flick from original triangle254 across a certified edge":
+                        "slope demo: one backward flick down original triangle1014 from a grounded native placement");
             }else if(options.source_ground_windup_entry_push){
                 view.source_ground_windup_entry_push_controls();
                 gf::log_info(context,"source-ground","wind-up entry push at zero698: half-speed then .9, no pre-contact motion, gravity step or entry spend; deferred handoff; no rising entry, active entry, ground-loss falling or positive698 push authority");

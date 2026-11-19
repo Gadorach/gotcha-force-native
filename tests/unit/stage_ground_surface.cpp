@@ -28,5 +28,20 @@ int main(){
     for(const std::array<f32,3> outside:{std::array<f32,3>{p.bounds_min,50,0},{p.bounds_max,50,0},{0,50,p.bounds_min},{0,50,p.bounds_max}})check(stage_ground_surface(grids,p,actor,outside,30,&result,&error)&&!result.inside&&!result.selected&&result.height==-5000&&result.normal==std::array<f32,3>{0,1,0});
     auto attached=actor;attached.attached1db=1;check(!stage_ground_surface(grids,p,attached,point,30,&result,&error));
     auto undeclared=actor;undeclared.fields_declared=false;check(!stage_ground_surface(grids,p,undeclared,point,30,&result,&error));
+    auto adjacent=a;
+    adjacent.vertices={a.vertices[1],{1000,260,1000},a.vertices[2]};
+    auto crease=adjacent;crease.plane[0]+=.00001f;
+    auto gap=adjacent;gap.vertices[0][2]+=1;
+    auto overlap=adjacent;overlap.vertices[1]={-500,-115,-500};
+    load(floor,{a,adjacent,crease,gap,overlap,a});
+    const std::array<f32,3> a_point{-100,-15,0},b_point{100,35,0};
+    check(stage_ground_coplanar_crossing(floor,0,1,a_point,b_point)&&stage_ground_coplanar_crossing(floor,1,0,b_point,a_point));
+    for(u32 index:{0u,2u,3u,4u,5u,6u})check(!stage_ground_coplanar_crossing(floor,0,index,a_point,b_point));
+    auto narrow_left=a,narrow_right=a;
+    narrow_left.vertices={{{0,10,0},{0,10,10},{-10,7.5f,30}}};
+    narrow_right.vertices={{{0,10,10},{0,10,0},{10,12.5f,30}}};
+    load(floor,{narrow_left,narrow_right});
+    check(stage_ground_coplanar_crossing(floor,0,1,{-1,9.75f,5},{1,10.25f,5}));
+    check(!stage_ground_coplanar_crossing(floor,0,1,{-6,8.5f,20},{6,11.5f,20}));
     std::printf("static surface selected normals, ties, strict gates, span, empty and bounds: %u checks PASS\n",checks);
 }

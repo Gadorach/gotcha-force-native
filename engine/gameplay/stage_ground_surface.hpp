@@ -6,6 +6,41 @@ struct StageGroundSurfaceResult {
     bool inside=false,selected=false;
     bool operator==(const StageGroundSurfaceResult&)const=default;
 };
+// A narrowly certified static seam, not a tolerance for creases or gaps.
+inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
+                                          const std::array<f32,3>& start,const std::array<f32,3>& end){
+    const auto triangles=grid.triangles();
+    if(from==to||from>=triangles.size()||to>=triangles.size())return false;
+    const auto& a=triangles[from];const auto& b=triangles[to];
+    if(a.plane!=b.plane||a.plane[1]<=0)return false;
+    std::array<unsigned,2> common{};
+    unsigned matches=0,other_a=0,other_b=0;
+    for(unsigned i=0;i<3;++i){
+        bool shared=false;
+        for(unsigned j=0;j<3;++j)if(a.vertices[i]==b.vertices[j]){shared=true;break;}
+        if(shared){if(matches==2)return false;common[matches++]=i;}
+        else other_a=i;
+    }
+    if(matches!=2)return false;
+    unsigned unmatched=0;
+    for(unsigned i=0;i<3;++i)if(b.vertices[i]!=a.vertices[common[0]]&&b.vertices[i]!=a.vertices[common[1]]){
+        ++unmatched;other_b=i;
+    }
+    if(unmatched!=1)return false;
+    const auto& p=a.vertices[common[0]];const auto& q=a.vertices[common[1]];
+    const auto side=[](const auto& u,const auto& v,const auto& point){
+        return (f64(v[0])-u[0])*(f64(point[2])-u[2])-(f64(v[2])-u[2])*(f64(point[0])-u[0]);
+    };
+    // A shared edge must actually separate the two projected triangle interiors.
+    const f64 left=side(p,q,a.vertices[other_a]),right=side(p,q,b.vertices[other_b]);
+    const f64 start_side=side(p,q,start),end_side=side(p,q,end);
+    if(!((left<0&&right>0&&start_side<=0&&end_side>=0)||
+         (left>0&&right<0&&start_side>=0&&end_side<=0)))return false;
+    // Opposite endpoint sides alone allow crossing the infinite line outside
+    // the edge, where the union of two triangles can contain a gap.
+    const f64 near=side(start,end,p),far=side(start,end,q);
+    return (near<0&&far>0)||(near>0&&far<0);
+}
 //3E0A8's STATIC height+normal sibling. Reuses shared cell/projection/plane and
 //ceiling kernels; its outside return is the source constant-5000, NOT pointY.
 //Moving platforms and3F688's nonzero87/capsule-query branch remain refused.

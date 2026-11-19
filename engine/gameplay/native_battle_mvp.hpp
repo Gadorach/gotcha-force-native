@@ -46,7 +46,7 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash};
+enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -267,7 +267,8 @@ public:
             const bool positive_windup_entry=o.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             const bool windup_entry_floor=native_borg_motion_windup_floor_entry(o.kind);
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
-            const bool slope_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundSlopeDash;
+            const bool slope_seam_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundSlopeSeamDash;
+            const bool slope_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundSlopeDash||slope_seam_dash_policy;
             const bool controller_windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupEntryPush||slope_dash_policy;
             const bool controller_relaunch_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchEntryPush||controller_windup_entry_push_policy;
             const bool controller_relaunch_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchPush||controller_relaunch_entry_push_policy;
@@ -749,7 +750,9 @@ public:
                         current.height!=actor.position[1])return false;
                      const bool same_slope=slope_dash_policy&&!departure&&!native_borg_flat_surface(current)&&
                          native_borg_static_surface_valid(current)&&native_borg_static_surface_valid(selected)&&
-                         current.triangle==selected.triangle&&current.normal==selected.normal&&
+                         current.normal==selected.normal&&(current.triangle==selected.triangle||
+                             (slope_seam_dash_policy&&terrain->coplanar_crossing(current.triangle,selected.triangle,
+                                 actor.position,o.proposed_position)))&&
                          std::abs(selected.height-current.height)<=std::min(60.f,config_.step_height);
                      if(same_slope){
                          if(o.proposed_position[1]!=selected.height)return false;
@@ -1153,7 +1156,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundSlopeDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundSlopeSeamDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

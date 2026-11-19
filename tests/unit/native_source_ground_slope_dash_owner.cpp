@@ -98,5 +98,38 @@ int main(){
     const auto before=world.actors()[0].position;
     check(!prepare(seam,&refused)&&world.tick()==6&&world.actors()[0].position==before&&
         pose.frame_scope.expired()&&!world.step({},false,&view),"different slope triangle is not authorized");
+    const Route coplanar{1406.01709f,2922.08545f,485.585205f,127};
+    bind(coplanar,Mode::GroundSlopeDash);
+    while(world.tick()<32){
+        NativeBorgMotionOffer offer;if(!prepare(coplanar,&offer))break;accept(offer);
+    }
+    const auto blocked_tick=world.tick();
+    check(blocked_tick>=5&&blocked_tick<31&&pose.frame_scope.expired()&&!world.step({},false,&view),
+        "the single-triangle policy still refuses this coplanar seam");
+    bind(coplanar,Mode::GroundSlopeSeamDash);unsigned crossed=0;
+    while(world.tick()<100){
+        NativeBorgMotionOffer offer;
+        check(prepare(coplanar,&offer),"prepare coplanar dash and recovery");
+        if(offer.ordered_ground&&offer.walk_ledge){
+            NativeBorgStaticSurface start;const auto& p=offer.observed.position;
+            check(view.static_surface(p[0],p[2],p[1],&start),"selected starting plane");
+            const auto& end=offer.walk_ledge->surface;
+            if(start.triangle!=end.triangle){
+                ++crossed;
+                check(world.tick()==blocked_tick&&start.triangle==254&&end.triangle==255&&
+                    view.coplanar_crossing(start.triangle,end.triangle,p,offer.proposed_position)&&start.normal==end.normal,
+                    "exact native coplanar witness on the first previously refused tick");
+            }
+        }
+        accept(offer);
+        check(world.actors()[0].grounded&&world.actors()[0].vertical_speed==0&&source.resource()==10000,
+            "coplanar slope dash remains grounded");
+    }
+    check(crossed==1&&source.selector()==0&&source.ordered_root().updates>0&&
+        std::abs(world.actors()[0].position[1]-479.957f)<.01f,"complete dash/recovery across the original edge");
+    bind(seam,Mode::GroundSlopeSeamDash);
+    while(world.tick()<6){NativeBorgMotionOffer offer;check(prepare(seam,&offer),"noncoplanar seam prefix");accept(offer);}
+    check(!prepare(seam,&refused)&&world.tick()==6&&pose.frame_scope.expired()&&!world.step({},false,&view),
+        "a noncoplanar seam still refuses with the new policy");
     std::printf("slope dash: %u checks PASS, two complete original-stage routes and older/seam refusals\n",checks);
 }

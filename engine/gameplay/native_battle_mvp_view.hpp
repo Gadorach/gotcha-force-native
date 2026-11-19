@@ -1,7 +1,7 @@
 #pragma once
 #include "engine/gameplay/native_battle_mvp_borg.hpp"
 #include "engine/gameplay/attachment_model_scene.hpp"
-#include "engine/gameplay/stage_ground.hpp"
+#include "engine/gameplay/stage_ground_surface.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/graphics/text.hpp"
 #include "engine/core/backends.hpp"
@@ -99,6 +99,9 @@ public:
         NativeBorgStaticSurface surface;
         if(!out||!static_surface(x,z,current_y,&surface))return false;
         *out=surface.height;return true;
+    }
+    bool coplanar_crossing(u32 from,u32 to,const BattleMvpVec& start,const BattleMvpVec& end)const override{
+        return ready_&&stage_ground_coplanar_crossing(floor_,from,to,start,end);
     }
     bool static_surface(f32 x,f32 z,f32 current_y,NativeBorgStaticSurface* out)const override{
         if(!ready_||!out)return false;
