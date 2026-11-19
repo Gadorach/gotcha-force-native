@@ -52,11 +52,12 @@ timing, and other qualified operands still have G-Red-specific code/data owners.
 them behind the definition as those boundaries become explicit, without
 copying terrain code or applying G-Red's rules to Sasuke.
 
-## Future content packaging
+## Content packaging
 
-A self-contained Borg package could contain a manifest, models, animations,
-textures, audio, abilities and AI definitions. glTF2/Blender authoring is a
-candidate direction. Prefer validated behaviour primitives; sandboxed scripting
+[Borg package discovery](borg-packages.md) scans `borgs/<package>/` for a
+manifest that names its assets and rules. The catalog is metadata-only so far.
+Validated asset loading, shared mode availability, and save recovery are
+separate steps. Prefer validated behaviour primitives; sandboxed scripting
 is a possibility to evaluate later, not a dependency to introduce now.
 
 ## Multiplayer/replay preparation
@@ -76,5 +77,5 @@ need appropriate review; an engine's code license does not license original
 game assets or other protected material.
 
 Reusable binary-analysis/decompilation tooling may be maintained separately from
-the game runtime. None of these notes authorizes dependency changes, a mod API,
-new content formats, networking work or publication during the current MVP task.
+the game runtime. The discovery manifest does not introduce dependencies, a
+mod API, or network support.

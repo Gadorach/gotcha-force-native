@@ -45,6 +45,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
+#include "platform/pc/borg_package_scan.hpp"
 #include "platform/pc/gred_practice_input.hpp"
 #include "platform/pc/sdl_platform.hpp"
 
@@ -54,6 +55,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 
 struct Options {
     bool headless = false;
+    bool list_borgs = false;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -158,6 +160,7 @@ bool parse(int argc, char** argv, Options* options) {
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--headless") options->headless = true;
+        else if (arg == "--list-borgs") options->list_borgs = true;
         else if (arg == "--menu") options->menu = true;
         else if (arg == "--demo-input") options->demo_input = true;
         else if (arg == "--demo-option") options->demo_option = true;
@@ -1180,6 +1183,18 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
 int main(int argc, char** argv) {
     Options options;
     if (!parse(argc, argv, &options)) return 2;
+    const auto borg_packages=gf::pc::scan_borg_packages("borgs");
+    using BorgScan=gf::BorgPackageScanStatus;
+    const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
+    if(options.list_borgs){
+        if(scan_failed){std::fprintf(stderr,"Borg package scan could not complete: borgs/\n");return 2;}
+        for(const auto& entry:borg_packages.discovered){
+            const auto& identity=entry.manifest.identity;
+            std::printf("%s\t%s\n",identity.id.c_str(),identity.name.c_str());
+        }
+        if(!borg_packages.issues.empty())std::fprintf(stderr,"%zu Borg package directories were rejected\n",borg_packages.issues.size());
+        return 0;
+    }
 
     gf::headless::Bundle headless;
     std::unique_ptr<gf::IFileSystem> headless_files;
@@ -1210,6 +1225,9 @@ int main(int argc, char** argv) {
         }
         context = gf::Context(backends, 60);
     }
+    if(scan_failed)gf::log_warn(context,"borg-packages","could not complete startup scan of borgs/");
+    else if(borg_packages.status==BorgScan::Complete)gf::log_info(context,"borg-packages",
+        "discovered=%zu rejected=%zu (metadata only; not gameplay-ready)",borg_packages.discovered.size(),borg_packages.issues.size());
 
     gf::RenderEngine render(*context.backends().render);
     std::string error;

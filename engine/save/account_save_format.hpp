@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include "engine/core/account_save_storage.hpp"
+#include "engine/core/display_name.hpp"
 #include "engine/save/save_engine.hpp"
 
 namespace gf {
@@ -15,20 +16,7 @@ namespace account_save_detail {
 inline constexpr u8 empty_byte=0;
 //Native metadata policy, not a source-game name limit. Strict UTF-8, no control
 //characters. The UI separately checks whether its font can display a name.
-inline bool name_valid(const std::string& name){
-    if(name.empty()||name.size()>64)return false;
-    for(std::size_t i=0;i<name.size();){
-        const auto c=u8(name[i++]);u32 code=0,minimum=0;unsigned continuation=0;
-        if(c<0x80)code=c;
-        else if(c>=0xc2&&c<=0xdf){code=c&0x1fu;minimum=0x80;continuation=1;}
-        else if(c>=0xe0&&c<=0xef){code=c&0xfu;minimum=0x800;continuation=2;}
-        else if(c>=0xf0&&c<=0xf4){code=c&7u;minimum=0x10000;continuation=3;}
-        else return false;
-        if(continuation>name.size()-i)return false;
-        for(unsigned n=0;n<continuation;++n){const auto next=u8(name[i++]);if((next&0xc0u)!=0x80u)return false;code=(code<<6)|(next&0x3fu);}
-        if(code<minimum||code>0x10ffffu||(code>=0xd800&&code<=0xdfff)||code<32||(code>=0x7f&&code<=0x9f))return false;
-    }return true;
-}
+inline bool name_valid(const std::string& name){return display_name_valid(name,64);}
 //Reuse the existing SaveEngine framing, never maintain a second checksum/codec.
 struct Framing final:ISaveBackend {
     std::vector<u8> bytes;
