@@ -600,3 +600,20 @@ instance is not disabled. It does not imply art, physics, or battle readiness.
 The declared package cost is available only if every packaged slot is
 metadata-ready and enabled; it is not a total for retail slots or a mode
 budget. The command doesn't open devices or modify the save.
+
+To include an existing retail roster, add `--retail-catalog FILE` with
+the exact GFBC catalogue used by that save:
+
+```sh
+gf_native --inspect-borg-force ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER \
+  --retail-catalog FILE
+```
+
+This read-only join shows retail and packaged entries in the same slot
+order. An overlap prints both claims and withholds the combined cost; it
+does not move or replace either entry. It retains the retail model,
+variant index, original box slot and edit provenance. It does not decode
+retail names that are not printable UTF-8. A mismatched or unreadable
+retail record fails rather than appearing as an empty Force. A known
+absent retail record is reported separately. Even a complete declared
+total is not a mode budget or admission receipt.

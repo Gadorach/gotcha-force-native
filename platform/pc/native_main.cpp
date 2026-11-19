@@ -44,6 +44,8 @@
 #include "engine/gameplay/borg_installed_browser_view.hpp"
 #include "engine/gameplay/borg_recovery_menu_view.hpp"
 #include "engine/gameplay/borg_package_force_view.hpp"
+#include "engine/gameplay/borg_mixed_force_view.hpp"
+#include "engine/save/force_inventory.hpp"
 #include "engine/graphics/render_engine.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/input/input_router.hpp"
@@ -67,7 +69,7 @@ struct Options {
     bool headless = false;
     bool list_borgs = false;
     bool browse_borgs=false,demo_borg_browser=false;
-    std::string recovery_root;
+    std::string recovery_root,retail_force_catalogue;
     gf::u64 recovery_account=0,recovery_save=0,recovery_notice=0,inspect_force=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,preview_variant;
@@ -194,6 +196,9 @@ bool parse(int argc, char** argv, Options* options) {
             if(inspect&&(!id(argv[++i],&options->inspect_force)||options->inspect_force>gf::kForceCount))return false;
         }else if(arg=="--recovery-notice"){
             if(++i>=argc||options->recovery_notice||!id(argv[i],&options->recovery_notice))return false;
+        }else if(arg=="--retail-catalog"){
+            if(++i>=argc||!options->retail_force_catalogue.empty()||!*argv[i])return false;
+            options->retail_force_catalogue=argv[i];
         }
         else if (arg=="--check-borg-catalog"){
             if(++i>=argc||!options->check_borg_catalog.empty()||!gf::borg_package_id_valid(argv[i]))return false;
@@ -420,7 +425,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-variants NAMESPACE:ID\n"
                          "       gf_native --browse-borgs [--headless] [--frames N]\n"
                          "       gf_native --recover-borgs ROOT ACCOUNT SAVE [--recovery-notice INSTANCE] [--headless]\n"
-                         "       gf_native --inspect-borg-force ROOT ACCOUNT SAVE FORCE\n"
+                         "       gf_native --inspect-borg-force ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
             return false;
         }
@@ -442,6 +447,7 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
        !options->check_borg_variants.empty()||options->width<440||options->height<320||options->width>4096||options->height>4096))return false;
     if(options->recovery_notice&&(options->recovery_root.empty()||options->inspect_force))return false;
+    if(!options->retail_force_catalogue.empty()&&!options->inspect_force)return false;
     if(!options->recovery_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
        options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
        !options->preview_borg.empty()||options->browse_borgs||options->list_borgs||!options->check_borg_catalog.empty()||
@@ -1221,33 +1227,74 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     render.shutdown();return 0;
 }
 
+void print_packaged_force_slot(const gf::PackageForceSlotView& row,const char* prefix){
+    constexpr const char* status[]{"metadata-ready","scan-unavailable","package-missing","package-incomplete","conflict",
+        "variant-unspecified","catalogue-unavailable","variant-missing"};
+    std::printf("%sslot=%u\tinstance=%llu\t%s\t%s\tvariant=%s",prefix,
+        unsigned(row.slot)+1,static_cast<unsigned long long>(row.saved.instance),row.saved.identity.id.c_str(),
+        row.saved.identity.name.c_str(),row.saved.variant?row.saved.variant->id.c_str():"unspecified");
+    if(row.saved.variant)std::printf("\t%s",row.saved.variant->label.c_str());
+    std::printf("\tstatus=%s\tdisabled=%u\n",status[unsigned(row.status)],unsigned(row.saved.disabled));
+}
 int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& packages){
     std::string error;
     auto selected=gf::pc::open_borg_selected_save(options.recovery_root,options.recovery_account,options.recovery_save,&error);
     if(!selected){std::fprintf(stderr,"Borg Force: %s\n",error.c_str());return 2;}
     gf::PackageBorgSaveStore store(*selected->backend);gf::PackageBorgRoster roster;
     const auto loaded=store.load(&roster);
-    if(loaded==gf::PackageBorgLoad::Missing){std::puts("This save has no package roster.");return 0;}
-    if(loaded!=gf::PackageBorgLoad::Loaded){std::fputs("Borg Force: package roster unavailable or invalid\n",stderr);return 2;}
+    if(loaded==gf::PackageBorgLoad::Missing&&options.retail_force_catalogue.empty()){
+        std::puts("This save has no package roster.");return 0;
+    }
+    if(loaded!=gf::PackageBorgLoad::Loaded&&loaded!=gf::PackageBorgLoad::Missing){
+        std::fputs("Borg Force: package roster unavailable or invalid\n",stderr);return 2;
+    }
     const auto metadata=gf::pc::load_borg_owned_metadata("borgs",packages,roster);
     gf::PackageForceView view;
     const auto index=unsigned(options.inspect_force-1);
     if(!gf::package_borg_force_view(roster,packages,metadata.snapshots,index,&view)||!store.current()){
         std::fputs("Borg Force: roster changed or could not be inspected\n",stderr);return 2;
     }
+    if(!options.retail_force_catalogue.empty()){
+        auto files=gf::sdl::create_file_system();gf::u64 size=0;std::vector<gf::u8> bytes;gf::ForceCatalog retail_catalogue;
+        const auto& path=options.retail_force_catalogue;
+        if(!files||!files->file_size(path,&size)||!size||size>(128u<<10)||
+           !files->read_range(path,0,std::size_t(size),bytes)||bytes.size()!=size||
+           !retail_catalogue.load({bytes.data(),bytes.size()},&error)){
+            std::fputs("Borg Force: could not read the explicit retail catalogue\n",stderr);return 2;
+        }
+        gf::ForceInventory retail;gf::ForceInventoryStore inventory(*selected->backend);
+        const auto original=inventory.load(retail_catalogue,&retail);
+        if(original!=gf::ForceInventoryLoad::Loaded&&original!=gf::ForceInventoryLoad::Missing){
+            std::fputs("Borg Force: retail record unavailable, invalid or mismatched to the explicit catalogue\n",stderr);return 2;
+        }
+        gf::MixedBorgForceView mixed;
+        if(!gf::borg_mixed_force_view(view,original==gf::ForceInventoryLoad::Loaded?&retail:nullptr,&mixed)||!store.current()){
+            std::fputs("Borg Force: selected save changed or views could not be joined\n",stderr);return 2;
+        }
+        std::printf("Force %u: slots=%zu retail-record=%s overlaps=%u declared-combined-cost=",mixed.force+1,mixed.slots.size(),
+            mixed.retail_record_present?"present":"absent",mixed.overlaps);
+        if(mixed.declared_cost)std::printf("%u\n",unsigned(*mixed.declared_cost));
+        else std::puts("unavailable");
+        for(const auto& row:mixed.slots){
+            if(row.overlap())std::printf("slot=%u\tOVERLAP: both retail and package claim this position\n",unsigned(row.slot)+1);
+            if(row.retail){
+                const auto& old=*row.retail;
+                std::printf("retail\tslot=%u\tbox=%u\tmodel=%04X\tcollection=%u\tvariant-index=%u\tedited=%u\tcost=%u",
+                    unsigned(row.slot)+1,unsigned(old.box_slot)+1,unsigned(gf::u16(old.value.model)),
+                    unsigned(old.collection_number)+1,unsigned(old.value.variant),unsigned(old.value.edits.modified),unsigned(old.declared_cost));
+                if(gf::display_name_valid(old.source_name,96))std::printf("\t%s",old.source_name.c_str());
+                std::putchar('\n');
+            }
+            if(row.packaged)print_packaged_force_slot(*row.packaged,"package\t");
+        }
+        std::puts("Read-only joined Force; no conflict resolved, mode budget checked, or save changed.");
+        return 0;
+    }
     std::printf("Force %u: packaged-slots=%zu selectable-metadata=%u declared-package-cost=",
         view.force+1,view.slots.size(),view.selectable);
     if(view.declared_package_cost)std::printf("%u\n",unsigned(*view.declared_package_cost));
     else std::puts("unavailable");
-    constexpr const char* status[]{"metadata-ready","scan-unavailable","package-missing","package-incomplete","conflict",
-        "variant-unspecified","catalogue-unavailable","variant-missing"};
-    for(const auto& row:view.slots){
-        std::printf("slot=%u\tinstance=%llu\t%s\t%s\tvariant=%s",
-            unsigned(row.slot)+1,static_cast<unsigned long long>(row.saved.instance),row.saved.identity.id.c_str(),
-            row.saved.identity.name.c_str(),row.saved.variant?row.saved.variant->id.c_str():"unspecified");
-        if(row.saved.variant)std::printf("\t%s",row.saved.variant->label.c_str());
-        std::printf("\tstatus=%s\tdisabled=%u\n",status[unsigned(row.status)],unsigned(row.saved.disabled));
-    }
+    for(const auto& row:view.slots)print_packaged_force_slot(row,"");
     std::puts("Package projection only; no retail slots, battle admission, or save changes.");
     return 0;
 }
