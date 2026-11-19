@@ -182,6 +182,16 @@ expired walking-push fixture instead. Step with **Left Arrow** on
 expiry-push history all the way through plain wind-up, not just a
 zero on the clock.
 
+Both handoff guides are also available in the pickers with
+`--practice-from-picker`. From **Standard**, select the previous route
+three times for **Expiry Handoff**, or four for **Timed Handoff**
+(**Left** in the owned picker, **L** in the Force browser).
+When the accepted wind-up opens the handoff, the HUD shows
+**SHIFT/B RELAUNCH / NEUTRAL DASH**. On the next step, tap Shift/B to
+relaunch or leave the controls neutral to continue the dash. The prompt
+doesn't override contact checks. Esc returns to the same copy or slot
+and route without editing the save.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement

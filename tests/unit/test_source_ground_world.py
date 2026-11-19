@@ -429,6 +429,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                     self.assertIn(f"practice-phase={phase}\n", run.stdout)
                     self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
                     self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=8191", run.stdout)
+                    self.assertNotIn("practice-windup-handoff=", run.stdout)
                     if timer:
                         self.assertIn(f"practice-ledge-timer-ticks={timer} cue=LEDGE TIMER {timer} TICKS\n", run.stdout)
                     else:
@@ -493,6 +494,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                 self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
                 self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=8191", run.stdout)
                 self.assertNotIn("practice-dash-release-ticks=", run.stdout)
+                self.assertEqual("practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH" in run.stdout, tick==35)
                 if timer is None:
                     self.assertNotIn("practice-ledge-timer-ticks=", run.stdout)
                 else:
@@ -520,6 +522,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                 self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
                 self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=13653", run.stdout)
                 self.assertNotIn("practice-dash-release-ticks=", run.stdout)
+                self.assertEqual("practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH" in run.stdout, tick==62)
                 if tick==56:
                     self.assertIn("practice-ledge-timer-ticks=0 cue=LEDGE TIMER 0 TICKS", run.stdout)
                 else:

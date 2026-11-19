@@ -53,6 +53,12 @@ int main(){
     cursor.step({});
     check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==GRedPickerPracticeRoute::ExpiryAirDash&&
         cursor.force()==force_before&&cursor.slot()==slot_before,"expiry air dash selection does not change the slot");
+    cursor.step({});
+    check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==GRedPickerPracticeRoute::ExpiryHandoff&&
+        cursor.force()==force_before&&cursor.slot()==slot_before,"third Left shoulder reaches the expiry handoff");
+    cursor.step({});
+    check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==GRedPickerPracticeRoute::TimedHandoff&&
+        cursor.force()==force_before&&cursor.slot()==slot_before,"fourth Left shoulder reaches the timed handoff");
     GamePadState next_route;next_route.r=true;
     check(cursor.open(force_before,slot_before)&&cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
         cursor.practice_route()==GRedPickerPracticeRoute::RecoverySeam&&cursor.force()==force_before&&cursor.slot()==slot_before,

@@ -119,9 +119,12 @@ gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID --practice-
 saved variant. **Standard** starts in the ordinary arena. The other choices
 start live practice at the verified recovery seam, slope join, inclined
 walk, inclined dash, walking ledge push, steeper push, timer-expiry push,
-or expiry air-dash foothold. They do not inject demo input. From
+expiry air dash, or either wind-up handoff foothold. They do not inject
+demo input. From
 **Standard**, press **Right** once for **Recovery Seam**. It starts
 paused with a [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
+Press **Left** three times for **Expiry Handoff**, or four times for
+**Timed Handoff**.
 
 **Q/Y** checks the highlighted copy and opens the selected route if it
 qualifies. The check can still refuse a disabled copy, unsupported variant,
@@ -764,6 +767,8 @@ instead of inspecting stale claims.
 With `--practice-from-picker`, **L/R** (keys or shoulder buttons) selects
 the same live G-Red routes as the owned picker without moving the Force
 cursor. From **Standard**, press **R** once for **Recovery Seam**.
+For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
+times, respectively.
 **Q/Y** rechecks the highlighted position and opens that route
 for the exact qualified package copy. Retail-only,
 overlapping, disabled and empty slots do not launch. **Esc** returns to the

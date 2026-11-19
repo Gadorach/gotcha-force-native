@@ -6,7 +6,8 @@
 
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
-    RecoverySeamRestart,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam};
+    RecoverySeamRestart,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
+    OwnedTimedHandoff,ForceExpiryHandoff};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -92,6 +93,22 @@ public:
             if(f==415)raw.buttons|=1u<<3;
             if(f==418)raw.buttons|=1u<<(replay_==Replay::OwnedRecoverySeam?5:6); // Back to the original selection.
             break;
+        case Replay::OwnedTimedHandoff:
+        case Replay::ForceExpiryHandoff:{
+            const bool expiry=replay_==Replay::ForceExpiryHandoff;
+            const unsigned routes=expiry?3:4,ticks=expiry?200:180;
+            if(f<2*routes&&f%2==0)raw.buttons|=1u<<(expiry?9:7); // Previous route from Standard.
+            if(f>=2*routes&&f<=2*routes+2)raw.buttons|=1u<<3;
+            if(f>=13&&f<13+2*ticks){
+                const unsigned tick=1+(f-13)/2;
+                snapshot_.frame_step=(f-13)%2==0;
+                if(tick>=6&&tick<=(expiry?25:8))raw.buttons|=1u<<(expiry?7:8);
+                if(tick==(expiry?57:30))raw.axis[expiry?0:1]=-32768;
+                if(tick==(expiry?63:36))raw.buttons|=1u<<1;
+            }
+            if(f>=14+2*ticks&&f<=16+2*ticks)raw.quit=true;
+            break;
+        }
         }
     }
     const gf::InputSnapshot& snapshot()const override{return snapshot_;}
@@ -227,7 +244,7 @@ int replay_owned_practice_picker(std::string root){
         check(run_borg_browser(context,render,options,packages)==0,"owned picker practice",log.text);
         return context.frame_index();
     };
-    char enabled[]="8",short_limit[]="32",long_limit[]="205",seam_limit[]="426";
+    char enabled[]="8",short_limit[]="32",long_limit[]="205",seam_limit[]="426",handoff_limit[]="390";
     check(run_picker(enabled,short_limit)==32&&occurrences(log.text,"launched practice for owned instance=8")==2&&
         occurrences(log.text,"returned to owned instance=8 after practice")==2&&
         occurrences(log.text,"owned instance=8 (Saved G-Red / Saved Standard); save is read-only")==2&&
@@ -251,6 +268,13 @@ int replay_owned_practice_picker(std::string root){
         once(log.text,"returned to owned instance=8 after practice route=RECOVERY SEAM")&&
         once(log.text,"practice unavailable for instance=9: the requested owned copy is disabled"),
         "owned recovery seam guide runs on live step input and returns to the exact copy and route",log.text);
+    log.text.clear();input=ReplayInput(Replay::OwnedTimedHandoff);
+    check(run_picker(enabled,handoff_limit)==390&&once(log.text,"launched practice for owned instance=8 route=TIMED HANDOFF")&&
+        once(log.text,"timed wind-up relaunch guide: paused at tick=0")&&once(log.text,"practice stepped to tick=180")&&
+        !has(log.text,"timed wind-up relaunch demo:")&&!has(log.text,"motion acceptance refused")&&
+        has(log.text,"accepted native tick=180 G-Red-position=791.15/10.00/-3357.36")&&
+        once(log.text,"returned to owned instance=8 after practice route=TIMED HANDOFF"),
+        "owned timed handoff runs from live inputs and returns to the same copy and route",log.text);
     log.text.clear();input=ReplayInput(Replay::PickerPractice);
     char disabled[]="9";
     check(run_picker(disabled,short_limit)>0&&!has(log.text,"launched practice for")&&
@@ -281,7 +305,7 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         check(run_borg_force_browser(context,render,options,packages,*snapshot)==0&&context.frame_index()==options.frames,
             "Force browser has a single frame budget across handoffs",log.text);
     };
-    char short_limit[]="44",long_limit[]="325",seam_limit[]="426";
+    char short_limit[]="44",long_limit[]="325",seam_limit[]="426",handoff_limit[]="430";
     run(Replay::ForcePicker,short_limit);
     check(occurrences(log.text,"launched practice for Force 1 slot 2 instance=8")==2&&
         occurrences(log.text,"returned to Force 1 slot 2 after practice")==2&&
@@ -307,6 +331,13 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         once(log.text,"practice unavailable for Force 1 slot 1: the requested Force slot overlaps retail and package claims")&&
         snapshot->current(),
         "Force recovery seam guide runs on live step input and returns to the exact slot and route",log.text);
+    run(Replay::ForceExpiryHandoff,handoff_limit);
+    check(once(log.text,"launched practice for Force 1 slot 2 instance=8 route=EXPIRY HANDOFF")&&
+        once(log.text,"expiry wind-up relaunch guide: paused at tick=0")&&once(log.text,"practice stepped to tick=200")&&
+        !has(log.text,"expiry wind-up relaunch demo:")&&!has(log.text,"motion acceptance refused")&&
+        has(log.text,"accepted native tick=200 G-Red-position=-588.61/10.00/-3366.51")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=EXPIRY HANDOFF")&&snapshot->current(),
+        "Force expiry handoff runs from live inputs and returns to the exact slot and route",log.text);
     std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }

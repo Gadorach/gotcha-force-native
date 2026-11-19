@@ -59,6 +59,7 @@ public:
         const auto frame=practice_readout(world);
         return frame?std::optional{frame->meter}:std::nullopt;
     }
+    static constexpr const char* windup_handoff_hint="SHIFT/B RELAUNCH / NEUTRAL DASH";
     static const char* practice_phase(const NativeBorgSourceReadout& frame){
         const auto kind=frame.kind;
         if(kind==NativeBorgMotionKind::Ground){
@@ -264,6 +265,7 @@ public:
             if(practice->recovery_seam)text+="\nFLAT SEAM";
             if(practice->recovery_push_complete)text+="\nRECOVERY COMPLETE";
             if(practice->recovery_push_exit_drift)text+="\nEXIT DRIFT";
+            if(practice->plain_windup_relaunch_ready){text+="\n";text+=windup_handoff_hint;}
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }

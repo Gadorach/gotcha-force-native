@@ -140,9 +140,12 @@ int main(){
             const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
             auto wrong=offer;wrong.air_motion->walk_expiry_windup=!scoped;
             check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick&&
-                world.actors()[0].position==before.position&&source.resource()==10000&&world.motion_receipt_current(pose.receipt),
+                world.actors()[0].position==before.position&&source.resource()==10000&&world.motion_receipt_current(pose.receipt)&&
+                !view.practice_readout(world)->plain_windup_relaunch_ready,
                 "expiry history cannot be fabricated in the older mode or erased from a scoped frame");
             accept(offer);
+            check(view.practice_readout(world)->plain_windup_relaunch_ready==(scoped&&world.tick()==62),
+                "the prompt requires the accepted, completed expiry wind-up and the matching policy");
         }
         check(offer.kind==Kind::AirDashWindup&&offer.air_motion->next_selector==16&&offer.air_motion->next_stage==0&&
             !offer.air_motion->timer568&&offer.controller_timer698==0&&source.resource()==9550&&
@@ -181,7 +184,8 @@ int main(){
         refuses(wrong,"expiry lineage does not authorize a relaunch floor response at entry");
         accept(offer);
         check(source.movement_programs()==std::array<u16,2>{14,14}&&source.resource()==9400&&source.relaunches()==1&&
-            !source.air_dash_active_frames(),"accepted handoff runs relaunch, not active dash");
+            !source.air_dash_active_frames()&&!view.practice_readout(world)->plain_windup_relaunch_ready,
+            "accepted handoff runs relaunch, not active dash, and clears the prompt");
         unsigned active_tick=0,fall_tick=0,hit=0,land=0;
         while(world.tick()<210){
             const unsigned tick=world.tick()+1;

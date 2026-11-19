@@ -1531,6 +1531,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                  gf::log_info(context,"source-ground","practice-recovery-seam=%u->%u cue=FLAT SEAM",(*seam)[0],(*seam)[1]);
              if(practice->recovery_push_complete)gf::log_info(context,"source-ground","practice-recovery-push=RECOVERY COMPLETE");
              if(practice->recovery_push_exit_drift)gf::log_info(context,"source-ground","practice-recovery-exit=EXIT DRIFT");
+             if(practice->plain_windup_relaunch_ready)
+                 gf::log_info(context,"source-ground","practice-windup-handoff=%s",view.windup_handoff_hint);
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");
@@ -1662,7 +1664,8 @@ bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice
     constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
         "--gred-movement","--gred-recovery-first-contact-seam","--gred-slope-transition-dash",
         "--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
-        "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push","--gred-walk-ledge-expiry-air-dash",
+        "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push",
+        "--gred-walk-ledge-timed-handoff-relaunch","--gred-walk-ledge-expiry-handoff-relaunch","--gred-walk-ledge-expiry-air-dash",
         "--gred-walk-ledge-expiry-push"
     };
     if(unsigned(route)>=modes.size())return false;

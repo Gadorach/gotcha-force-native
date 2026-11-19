@@ -395,6 +395,10 @@ int main(){
                     world.motion_receipt_current(pose.receipt),"a newly zero timer cannot manufacture accepted expiry-push history");
             }
             accept(offer);
+            const bool prompt=(mode==Mode::GroundTimedPlainWindupRelaunch||mode==Mode::GroundExpiryPlainWindupRelaunch)&&
+                world.tick()==handoff&&source.ground_loss_timer698()>1.f;
+            check(view.practice_readout(world)->plain_windup_relaunch_ready==prompt,
+                "only the accepted eligible positive handoff displays the prompt");
         }
         check(offer.kind==Kind::AirDashWindup&&offer.air_motion&&offer.air_motion->next_selector==16&&
             offer.air_motion->next_stage==0&&offer.air_motion->timer568==0&&offer.air_motion->resource_after==9550&&
@@ -450,7 +454,8 @@ int main(){
         rejects(wrong,"a contact response cannot borrow the plain handoff");
         accept(offer);
         check(source.relaunches()==1&&source.air_dash_active_frames()==0&&source.resource()==9400&&
-            source.movement_programs()==std::array<u16,2>{14,14}&&view.practice_readout(world)->ledge_timer_ticks==timer-1,
+            source.movement_programs()==std::array<u16,2>{14,14}&&view.practice_readout(world)->ledge_timer_ticks==timer-1&&
+            !view.practice_readout(world)->plain_windup_relaunch_ready,
             "accepted handoff keeps countdown and independently publishes relaunch program and cost");
         unsigned fall_tick=0,touch=0,land=0;
         while(world.tick()<180){

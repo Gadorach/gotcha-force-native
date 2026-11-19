@@ -47,6 +47,19 @@ int main(){
     check(browser.step(route_and_launch,true)==BorgBrowserChange::PracticeRoute&&
         browser.practice_route()==GRedPickerPracticeRoute::ExpiryAirDash,"second Left reaches the verified expiry air dash");
     browser.step({},true);
+    check(browser.step(route_and_launch,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::ExpiryHandoff,"third Left reaches the expiry handoff");
+    browser.step({},true);
+    check(browser.step(route_and_launch,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::TimedHandoff&&browser.owned_entry()->instance==3,
+        "fourth Left reaches the timed handoff without changing the exact copy");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::ExpiryHandoff,
+        "Right returns to the expiry handoff");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::ExpiryAirDash,
+        "Right returns to the earlier expiry air dash");
+    browser.step({},true);
     check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::ExpiryPush,
         "Right returns to the expiry push route");
     browser.step({},true);

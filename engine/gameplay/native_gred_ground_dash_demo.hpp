@@ -564,10 +564,15 @@ public:
         const bool recovery_drift_active=pending_->recovery_completion&&pending_->recovery_completion->drift_offset.has_value();
         const bool recovery_push_complete=accepted.kind==NativeBorgMotionKind::AirDashRecoveryPush&&
             accepted.air_motion&&accepted.air_motion->lower_done&&accepted.air_motion->next_selector==6;
+        const bool plain_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindup&&air&&
+            air->phase==15&&air->next_selector==16&&air->next_stage==0&&air->timer568==0&&accepted.controller_timer698&&
+            state_.resource.value736>0&&!(state_.vm.state().actor.behaviour&2u)&&
+            ((allows(mode_,Behavior::TimedPlainWindupRelaunch)&&*accepted.controller_timer698>1.f)||
+             (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup));
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
                 accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active,
-                recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift}));
+                recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift,plain_windup_relaunch_ready}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
