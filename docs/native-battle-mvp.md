@@ -178,6 +178,13 @@ handler across the same authored cliff band from a separate grounded
 placement. It leaves on tick 8 with no ordered-dash root update, touches
 down at 23, and returns to idle without spending flight meter.
 
+`--gred-walk-ledge-fall-push` additionally permits a verified continued
+push during a descending walk-origin fall while its ledge timer is still
+positive. The source plane and native travel before and after projection
+must agree. Run `--demo-gred-walk-ledge-fall-push --headless --frames 120
+--no-audio` for two pushes, a later separate landing, and unchanged meter.
+The older modes do not gain this permission.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

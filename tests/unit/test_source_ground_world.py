@@ -51,6 +51,25 @@ class SourceGroundWorldTests(unittest.TestCase):
                 else:
                     self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
 
+    def test_walk_ledge_fall_push_demo_accepts_projection_then_separate_landing(self):
+        for tick, phase, pushes, landings, cue in (
+            (24, "LEDGE FALL / PUSH", 1, 0, "15 cue=DRIFT LOCKED 15 TICKS"),
+            (77, "TOUCHDOWN", 2, 1, "0 cue=LEDGE TIMER 0 TICKS"),
+            (78, "LANDING", 2, 1, "0 cue=LEDGE TIMER 0 TICKS"),
+            (120, "IDLE", 2, 1, None),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-fall-push", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"walk-ledge-fall-pushes={pushes} last-angle-s16=8191 landings={landings} resource=10000", result.stdout)
+                self.assertIn(f"practice-meter=10000/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn("root-updates=0", result.stdout)
+                if cue:
+                    self.assertIn(f"practice-ledge-timer-ticks={cue}\n", result.stdout)
+                else:
+                    self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

@@ -13,6 +13,45 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Continued walking ledge-fall push (GFMM9)
+
+`--gred-walk-ledge-fall-push` opts into a descending, continued program 13
+push after an accepted **walking** departure. It requires positive owned
+timer698 and a selected angle greater than 6144 and at most 10240. Fall
+entry, dash-origin falls, held jump, expired timers, steeper angles, and
+air-dash or relaunch handoffs from the push are not enabled by this change.
+Earlier modes keep their refusal.
+
+The native receipt carries walking provenance from departure. It checks
+the usual 0.99 retained momentum on approach, consumes the integrated
+descending velocity and selected source plane, then applies the existing
+0.9 scalar/velocity damping. The exact projected endpoint and both native
+travel checks must pass. There is no landing callback, timer reset, meter
+spend, or refill on a push. A solver candidate on a raised plane still
+refuses and cannot publish a pose, timer, or root update.
+
+A bounded original-stage scan of walks and dashes from inclined starts
+checked 1,253 routes before finding four source/native travel witnesses.
+Nearby grounded variations found three complete push-and-landing routes.
+The demo starts at native X/Z `1000.65021/-3363.34546`, floor query
+`1549.25293`, and uses **D-pad Right** after five idle ticks, then neutral:
+
+| Accepted tick | Result |
+| --- | --- |
+| 8 / 9 | Walking departure / separate fall entry |
+| 24 / 25 | Face 1953 pushes, angle 8191, timer 15 / 14 |
+| 77 / 78 | Flat touchdown / separate landing program 8 |
+| 120 | Grounded idle, meter still 10000 |
+
+```sh
+gf_native --demo-gred-walk-ledge-fall-push --headless --frames 120 --no-audio
+```
+
+The nearby refusal fixtures include an out-of-range face after three
+accepted pushes, a steep candidate after timer expiry, and the earlier
+raised-side approach. Native clocks, terrain queries, body response,
+and the demo spawn are not original hardware or whole-actor equivalence.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the
@@ -120,9 +159,10 @@ The ground-loss owner regression follows a genuine ledge departure at tick138
 and program13 falling. At the proposed tick141, the countdown would be 28
 and the selected face has angle 9172. The proposed projection clears its final
 floor, but native travel to the pre-contact point is blocked by the raised face.
-The existing policy refuses the frame and leaves the last accepted countdown,
+The earlier policy refuses the frame and leaves the last accepted countdown,
 pose state, position and meter unchanged; the source lease retires without a
-fallback. Ledge-fall pushes remain disabled; no collision rules changed.
+fallback. The later continued walking-fall mode still rejects this raised
+approach at native acceptance; no collision rules changed.
 
 ## Descending relaunch-entry push in the combined controller (GFMM9)
 

@@ -33,7 +33,7 @@ class NativeGRedGroundDashDemo {
         std::optional<NativeBorgRelaunchFloor> relaunch_floor{};
         std::optional<NativeBorgAirDashFloor> air_dash_floor{};
         CharacterMotionVector frame_start{};f32 ground_timer698=0;
-        bool ground_pending=false,ground_active=false,suppressed_ground_drift=false;
+        bool ground_pending=false,ground_active=false,suppressed_ground_drift=false,walk_loss_origin=false;
         std::optional<s16> ground_drift_heading{};
         CharacterMotionRootState dash_root;
         std::shared_ptr<const NativeBorgOrderedRootScope> dash_root_scope;
@@ -114,7 +114,7 @@ public:
         windup_entry_surface_pushes_=0;
         ordered_entries_=ordered_active_=ordered_recovery_=ordered_resets_=0;
         ground_departures_=ground_loss_entries_=ground_loss_landings_=suppressed_ground_drifts_=0;
-        walk_departures_=dash_departures_=0;
+        walk_departures_=dash_departures_=walk_ledge_pushes_=0;
         relaunch_floor_contacts_=0;last_relaunch_floor_programs_={0xffff,0xffff};
         windup_floor_contacts_=active_floor_contacts_=windup_entry_floor_contacts_=positive_windup_floor_contacts_=0;last_air_dash_floor_programs_={0xffff,0xffff};
         last_push_programs_=last_active_push_programs_=last_relaunch_push_programs_={0xffff,0xffff};
@@ -340,6 +340,9 @@ public:
             if(!s.dash.selector)s.motion.speed44=s.motion.planar_change4c=0; //native harness's common idle reset
         }
         if(ledge_mode(mode_)&&s.ground_pending)kind=NativeBorgMotionKind::GroundDeparture;
+        s.walk_loss_origin=allows(mode_,Behavior::WalkLedgeFallPush)&&
+            (kind==NativeBorgMotionKind::GroundDeparture?!s.ordered_ground:
+                native_borg_motion_ground_loss(kind)&&state_.walk_loss_origin);
         if(ledge_mode(mode_))s.jump.cached87=u8((s.vm.state().actor.behaviour&0x40u)!=0); //55EE4 post-update snapshot
         std::array<CharacterProgramMotion,2> motions{s.vm.state().lanes[0].motion,s.vm.state().lanes[1].motion};
         if(!driver_.compose_local_pose(motions,&candidate->local,error))return fail(error,"source pose composition refused");
@@ -370,7 +373,7 @@ public:
                 return fail(error,controller_ground_loss_surface_mode(mode_)?"ground loss requires matching timer-bound static metadata":
                     "ground loss requires matching static metadata and flat landing");
             candidate->offer.walk_ledge=NativeBorgWalkLedge{s.frame_start,{selected.height,selected.normal,selected.triangle},
-                s.ground_timer698,s.motion.speed44,s.motion.travel5ae,s.ground_drift_heading};
+                s.ground_timer698,s.motion.speed44,s.motion.travel5ae,s.ground_drift_heading,s.walk_loss_origin};
         }
         if(kind!=NativeBorgMotionKind::Ground)candidate->offer.action=native_borg_motion_phase(kind)==4?BattleMvpAction::Land:BattleMvpAction::Jump;
         if(native_borg_motion_air_dash(kind))candidate->offer.action=BattleMvpAction::AirDash;
@@ -405,7 +408,8 @@ public:
         if(native_borg_motion_phase(pending_->offer.kind)==3&&state_.contact_angle>=0){++surface_landings_;last_surface_angle_=state_.contact_angle;}
         if(native_borg_motion_push(pending_->offer.kind)){
             ++surface_pushes_;last_push_angle_=state_.static_push->angle;
-            if(pending_->offer.kind==NativeBorgMotionKind::StaticPush){
+            if(pending_->offer.kind==NativeBorgMotionKind::GroundLossPush)++walk_ledge_pushes_;
+            else if(pending_->offer.kind==NativeBorgMotionKind::StaticPush){
                 dash_fall_pushes_+=state_.jump.falling_after_dash;relaunch_fall_pushes_+=state_.jump.falling_after_relaunch;
             }else if(pending_->offer.kind==NativeBorgMotionKind::AirDashRecoveryPush)++recovery_pushes_;
             else if(native_borg_motion_windup_push(pending_->offer.kind)){
@@ -437,7 +441,8 @@ public:
         const auto timer=accepted.controller_timer698?accepted.controller_timer698:
             accepted.walk_ledge?std::optional{accepted.walk_ledge->timer698}:std::nullopt;
         const bool ledge_fall_or_landing=accepted.kind==NativeBorgMotionKind::GroundLossEntry||
-            accepted.kind==NativeBorgMotionKind::GroundLossAir||accepted.kind==NativeBorgMotionKind::GroundLossTouchdown||
+            accepted.kind==NativeBorgMotionKind::GroundLossAir||accepted.kind==NativeBorgMotionKind::GroundLossPush||
+            accepted.kind==NativeBorgMotionKind::GroundLossTouchdown||
             (accepted.kind==NativeBorgMotionKind::JumpLanding&&accepted.walk_ledge);
         std::optional<u8> ledge_timer_ticks;
         if(timer&&(*timer>0||ledge_fall_or_landing))ledge_timer_ticks=u8(*timer);
@@ -470,6 +475,7 @@ public:
     u64 windup_entry_surface_pushes()const{return windup_entry_surface_pushes_;}
     u64 ground_departures()const{return ground_departures_;}
     u64 walk_departures()const{return walk_departures_;}u64 dash_departures()const{return dash_departures_;}
+    u64 walk_ledge_pushes()const{return walk_ledge_pushes_;}
     u64 ground_loss_entries()const{return ground_loss_entries_;}
     u64 ground_loss_landings()const{return ground_loss_landings_;}
     u64 suppressed_ground_drifts()const{return suppressed_ground_drifts_;}
@@ -635,8 +641,8 @@ private:
     static bool air_dash_mode(Mode mode){return mode==Mode::AirDash||relaunch_mode(mode)||ground_air_mode(mode);}
     static bool moving_mode(Mode mode){return mode==Mode::Jump||ledge_mode(mode)||air_dash_mode(mode);}
     bool air_contact(State& s,const CharacterMovementStaticGround& ground,const CharacterMovementMotionState& before,
-                     const CharacterMovementMotionState& proposed,CharacterMovementMotionState* out,bool* touchdown,std::string* error,bool moving,
-                     bool allow_push=false,bool recovery_push=false){
+                      const CharacterMovementMotionState& proposed,CharacterMovementMotionState* out,bool* touchdown,std::string* error,bool moving,
+                      bool allow_push=false,bool recovery_push=false,bool walk_loss_push=false){
         const bool ground_loss_surface=controller_ground_loss_surface_mode(mode_)&&s.jump.falling_after_ground_loss;
         const bool controller_surface=controller_surface_mode(mode_)&&(!s.jump.falling_after_ground_loss||ground_loss_surface);
         if(!surface_mode(mode_)&&!controller_surface)return gred_vertical_jump_flat_contact(ground,before,proposed,out,touchdown,error,moving);
@@ -649,8 +655,13 @@ private:
             !s.jump.falling_after_ground_loss&&(!s.jump.falling_after_dash||controller_air_fall_push_mode(mode_))&&
             (!s.jump.falling_after_relaunch||controller_relaunch_fall_push_mode(mode_));
         const bool combined_recovery_push=recovery_push&&controller_recovery_push_mode(mode_)&&before.vertical48<=0&&timer==0;
-        if(!gred_surface_contact(motion_,ground,before,proposed,{timer,0,(steep_mode(mode_)&&allow_push)||fall_push||combined_recovery_push},&result,error))return false;
+        if(!gred_surface_contact(motion_,ground,before,proposed,{timer,0,(steep_mode(mode_)&&allow_push)||fall_push||
+            combined_recovery_push||walk_loss_push},&result,error))return false;
         if(result.kind==GRedSurfaceContactKind::Pushed){
+            if(walk_loss_push&&result.angle>motion_.landing_angles[0]){
+                if(error)*error="ground-loss push: above the verified inter-gate angle range";
+                return false;
+            }
             s.static_push=NativeBorgStaticPush{proposed.position,proposed.vertical48,
                 {result.surface.height,result.surface.normal,result.surface.triangle},result.angle,motion_.steep_damping};
         }
@@ -995,11 +1006,13 @@ private:
             }
             evidence.move_speed=s.motion.speed44;evidence.vertical_before=s.motion.vertical48;
             evidence.planar_accel=s.motion.planar_change4c;evidence.vertical_accel=s.motion.vertical_change50;evidence.travel5ae=s.motion.travel5ae;
+            const bool walk_loss_push=allows(mode_,Behavior::WalkLedgeFallPush)&&s.walk_loss_origin&&s.ground_timer698>0&&
+                plan.state.selector==6&&plan.state.falling_after_ground_loss&&!plan.request&&before.vertical48<0&&!(held&0x100u);
             if(!character_movement_air_step(motion_,s.motion,1,1,plan.clamp_wrapper,ceiling,&proposed,error)||
-               !air_contact(s,ground,before,proposed,&s.motion,&touchdown,error,moving,
-                       plan.state.selector==6&&(history_surface_mode(mode_)||(!plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
-                           (controller_air_fall_push_mode(mode_)&&plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
-                           (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)))||
+                !air_contact(s,ground,before,proposed,&s.motion,&touchdown,error,moving,
+                        plan.state.selector==6&&(history_surface_mode(mode_)||(!plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
+                            (controller_air_fall_push_mode(mode_)&&plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
+                            (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)),false,walk_loss_push)||
                (touchdown&&plan.state.selector!=6))return false;
         }
         evidence.lower_done=s.vm.state().lanes[1].done;
@@ -1015,8 +1028,8 @@ private:
         if(moving)*kind=NativeBorgMotionKind(unsigned(*kind)+4);
         if(s.static_push)*kind=NativeBorgMotionKind::StaticPush;
         if(ledge_mode(mode_)&&plan.state.selector==6&&plan.state.falling_after_ground_loss){
-            *kind=touchdown?NativeBorgMotionKind::GroundLossTouchdown:
-                plan.request?NativeBorgMotionKind::GroundLossEntry:NativeBorgMotionKind::GroundLossAir;
+            *kind=s.static_push?NativeBorgMotionKind::GroundLossPush:touchdown?NativeBorgMotionKind::GroundLossTouchdown:
+                 plan.request?NativeBorgMotionKind::GroundLossEntry:NativeBorgMotionKind::GroundLossAir;
             if(touchdown)s.ground_active=false;
         }
         if(ground_jump_mode(mode_)){
@@ -1147,7 +1160,7 @@ private:
     u64 relaunch_entry_surface_pushes_=0;
     u64 windup_entry_surface_pushes_=0;
     u64 ground_departures_=0,ground_loss_entries_=0,ground_loss_landings_=0,suppressed_ground_drifts_=0;
-    u64 walk_departures_=0,dash_departures_=0;
+    u64 walk_departures_=0,dash_departures_=0,walk_ledge_pushes_=0;
     u64 relaunch_floor_contacts_=0;std::array<u16,2> last_relaunch_floor_programs_{0xffff,0xffff};
     u64 windup_floor_contacts_=0,active_floor_contacts_=0;std::array<u16,2> last_air_dash_floor_programs_{0xffff,0xffff};
     u64 windup_entry_floor_contacts_=0;

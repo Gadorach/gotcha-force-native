@@ -61,7 +61,7 @@ public:
         if(native_borg_motion_phase(kind)==1)return "TAKEOFF";
         if(kind==NativeBorgMotionKind::GroundDeparture)return "LEDGE DEPARTURE";
         if(kind==NativeBorgMotionKind::GroundLossEntry)return "LEDGE FALL ENTRY";
-        if(kind==NativeBorgMotionKind::GroundLossAir)return "LEDGE FALL";
+        if(kind==NativeBorgMotionKind::GroundLossAir||kind==NativeBorgMotionKind::GroundLossPush)return "LEDGE FALL";
         if(native_borg_motion_windup_entry(kind)||native_borg_motion_windup_update(kind))return "DASH WIND-UP";
         if(native_borg_motion_active_entry(kind)||native_borg_motion_active_update(kind))return "AIR DASH";
         if(native_borg_motion_recovery(kind))return "DASH RECOVERY";
@@ -71,7 +71,8 @@ public:
     static std::string practice_ledge_cue(const NativeBorgSourceReadout& frame){
         if(!frame.ledge_timer_ticks)return {};
         const auto ticks=*frame.ledge_timer_ticks;
-        if(frame.kind==NativeBorgMotionKind::GroundLossEntry||frame.kind==NativeBorgMotionKind::GroundLossAir)
+        if(frame.kind==NativeBorgMotionKind::GroundLossEntry||frame.kind==NativeBorgMotionKind::GroundLossAir||
+            frame.kind==NativeBorgMotionKind::GroundLossPush)
             return ticks?"DRIFT LOCKED "+std::to_string(ticks)+" TICKS":"DRIFT UNLOCKED";
         return "LEDGE TIMER "+std::to_string(ticks)+" TICKS";
     }
