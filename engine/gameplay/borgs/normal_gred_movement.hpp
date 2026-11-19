@@ -23,7 +23,7 @@ enum class NormalGRedMovementMode {
     GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch,GroundWalkExpiryDirectRelaunch,GroundTimedSnapWindupRelaunch,
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
-    GroundWalkExpiringAdjacentRelaunchPush
+    GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash
 };
 
 struct NormalGRedMovementDefinition {
@@ -95,6 +95,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiringDirectRelaunch,Policy::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiringDirectRelaunch},
         CombinedRule{Mode::GroundWalkExpiringDirectRelaunchPush,Policy::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringDirectRelaunchPush},
         CombinedRule{Mode::GroundWalkExpiringAdjacentRelaunchPush,Policy::GroundWalkExpiringAdjacentRelaunchPush,Behavior::WalkExpiringAdjacentRelaunchPush},
+        CombinedRule{Mode::GroundWalkExpiringAirDash,Policy::GroundWalkExpiringAirDash,Behavior::WalkExpiringAirDash},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -143,6 +144,9 @@ struct NormalGRedMovementDefinition {
     // A matching slope does not authorize another face.
     static constexpr bool expiry_relaunch_push_faces(u32 prior,s16 prior_angle,u32 contact,s16 angle,bool adjacent){
         return prior==2009&&prior_angle==8192&&angle==13653&&(contact==1999||(adjacent&&contact==1998));
+    }
+    static constexpr bool walk_expiring_air_dash_face(u32 prior,s16 angle){
+        return prior==2001&&angle==8192; // Only this grounded approach completed the subsequent wind-up.
     }
 private:
     static constexpr auto cumulative_=[]{

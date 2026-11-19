@@ -344,6 +344,13 @@ select adjacent face 1998. This separate opt-in does not change
 the **Entry Push on Expiry** picker guide, which still uses face
 1999 only.
 
+`--gred-walk-ledge-expiring-air-dash --practice-start` opens the
+air-dash version of the 1 → 0 timing. Step with **Left Arrow**
+on 6–7, tap **A** on 38, then stay neutral. Entry is stationary
+and free; the existing two wind-up pushes come afterward. The
+450 handoff and 50 active-entry charges are separate. Use
+`--demo-gred-walk-ledge-expiring-air-dash` for playback.
+
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
 tap **Shift** on 23, then leave the controls neutral. Ordinary

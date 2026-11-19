@@ -327,6 +327,38 @@ then touchdown at 123 and landing at 124; idle refills normally.
 **W** alone on this same start does enter the dash, but the next travel
 after active entry still refuses a raised-side contact at 35.
 
+### Air-dash wind-up on the 1 → 0 walking-push update
+
+`--gred-walk-ledge-expiring-air-dash` adds one stationary
+wind-up on the exact expiry step after the accepted timer-one
+walking push on face 2001 (angle 8192). Entry halves the incoming
+speed, moves no distance, spends nothing, and neither snaps nor
+pushes. It does not create the already-zero entry's wind-up-to-
+relaunch permission. The positive and already-expired modes
+still refuse this pending decrement.
+
+```sh
+gf_native --gred-walk-ledge-expiring-air-dash --practice-start --no-audio
+gf_native --demo-gred-walk-ledge-expiring-air-dash --headless --frames 175 --no-audio
+```
+
+From X/Z `-1067.30347/-3415.41772` (query `1846.01367`, arena
+half-width `4500`), hold **Left Arrow** on 6–7, tap **A** on 38,
+then stay neutral. The push on 37 leaves one tick. Wind-up
+on 38 halves −27 to −13.5 as the timer expires. The two pushes
+on face 2007 at 39–40 are existing continued wind-up contacts,
+not part of the new entry response. Tick 44 spends 450 for the
+handoff, 45 spends the separate 50 for active entry, and falling
+resumes at 105 with 8000. Touchdown and landing at 132–133 keep
+that meter until normal recovery.
+
+The 3,888-route local probe accepted 2,136 stationary entries but
+none reached the paid handoff. On the older face-2009 start,
+the next wind-up push's pre-projection floor is above the actor,
+even when the projected endpoint clears the floor. That refusal
+is not relaxed. The stage sweep found 20 complete routes in 1,002
+attempts, all from face 2001.
+
 ### Relaunch instead of active dash after a timed plain wind-up
 
 `--gred-walk-ledge-timed-handoff-relaunch` accepts a plain relaunch

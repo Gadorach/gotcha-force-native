@@ -443,6 +443,29 @@ class SourceGroundWorldTests(unittest.TestCase):
             self.assertIn("accepted native tick=0 G-Red-position=1000.65/", guide.stdout)
             self.assertNotIn(f"timed ledge {move.replace('-', ' ')} demo:", guide.stdout)
 
+    def test_walk_ledge_expiring_air_dash_starts_plain_on_expiry(self):
+        cue = "practice-expiring-walk-air-dash=AIRBORNE / DASH WIND-UP ON EXPIRY"
+        for tick, phase, meter, timer, pushes in (
+            (37, "LEDGE FALL / PUSH", 10000, 1, 0), (38, "DASH WIND-UP", 10000, 0, 0),
+            (39, "DASH WIND-UP / PUSH", 10000, 0, 1), (40, "DASH WIND-UP / PUSH", 10000, 0, 2),
+            (44, "DASH WIND-UP", 9550, 0, 2), (45, "AIR DASH", 9500, 0, 2),
+            (105, "FALLING", 8000, 0, 2), (132, "TOUCHDOWN", 8000, 0, 2),
+            (133, "LANDING", 8000, 0, 2), (175, "IDLE", 10000, 0, 2),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-expiring-air-dash",
+                                        "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"expiring-air-dash-starts={int(tick>=38)} windup-pushes={pushes} active-frames=", result.stdout)
+                self.assertIn(f"relaunches=0 timer698={timer}.0", result.stdout)
+                self.assertIn("walk-ledge-fall-pushes=1", result.stdout)
+                self.assertNotIn("practice-windup-handoff=", result.stdout)
+                self.assertEqual(cue in result.stdout, tick == 38)
+                if tick == 175:
+                    self.assertIn("G-Red-position=1296.58/10.00/-3473.49", result.stdout)
+
     def test_walk_ledge_direct_timed_air_dash_starts_plain_before_expiry(self):
         for tick, phase, meter, timer, cue in (
             (27, "LEDGE FALL / PUSH", 10000, 12, "DRIFT LOCKED 12 TICKS"),

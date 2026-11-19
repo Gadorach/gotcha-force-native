@@ -548,5 +548,88 @@ int main(){
             source.walk_ledge_pushes()==1&&source.relaunches()==1&&source.relaunch_entry_surface_pushes()==1&&
             !source.air_dash_starts()&&!source.relaunch_floor_contacts(),"both verified inputs land without further entry pushes or floor snaps");
     }
+    auto expiring_dash_prefix=[&](Mode mode){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={-1067.30347f,-3415.41772f};cfg.spawn_query_y[0]=1846.01367f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"grounded timer-one wind-up fixture");
+        prefix(37);
+        check(offer.kind==Kind::GroundLossPush&&offer.walk_ledge->walk_origin&&offer.controller_timer698==1.f&&
+            offer.static_push->surface.triangle==2001&&offer.static_push->angle==8192&&offer.vertical_speed==-27.f,
+            "the actual timer-one push is accepted first");
+    };
+    expiring_dash_prefix(Mode::GroundWalkExpiringAdjacentRelaunchPush);
+    check(!prepare(true,&offer)&&error.find("still-positive walking-push countdown")!=std::string::npos&&
+        world.tick()==37&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&!world.step({},false,&view),
+        "newer relaunch permissions do not change the old air-dash clock gate");
+    bind(Mode::GroundWalkExpiringAirDash);prefix(55);
+    check(!prepare(true,&offer)&&error.find("face 2001")!=std::string::npos&&world.tick()==55&&
+        source.ground_loss_timer698()==1.f&&source.resource()==10000&&!world.step({},false,&view),
+        "a timer-one push with matching angle but the unsupported face 2009 stays excluded");
+    expiring_dash_prefix(Mode::GroundWalkExpiringAirDash);
+    const auto dash_before=world.actors()[0];const auto dash_prior=offer;
+    const auto dash_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(prepare(true,&offer)&&offer.kind==Kind::AirDashWindupEntry&&offer.air_motion&&offer.controller_timer698==0.f&&
+        offer.proposed_position==dash_before.position&&offer.facing==dash_before.facing&&offer.vertical_speed==-13.5f&&
+        !offer.static_push&&!offer.air_dash_floor&&!offer.surface_landing&&source.ground_loss_timer698()==1.f&&source.resource()==10000,
+        "the staged 1 to 0 entry does not translate, turn, spend or create any contact");
+    const auto& windup=*offer.air_motion;
+    check(windup.phase==15&&windup.entry&&windup.timer568==6.f&&windup.move_speed==f32(dash_prior.jump_motion->speed44*.5f)&&
+        windup.vertical_before==f32(dash_before.vertical_speed*.5f)&&windup.resource_before==10000&&windup.resource_after==10000&&
+        !windup.walk_expiry_windup&&!windup.timed_relaunch_floor_windup,"entry halves speed and never publishes zero-to-zero relaunch lineage");
+    auto refuses_dash=[&](const NativeBorgMotionOffer& attempted,const char* why){
+        const bool refused=!world.step({},false,&view,nullptr,&dash_frame,&attempted);
+        const auto shown=view.practice_readout(world);
+        check(refused&&world.tick()==37&&world.actors()[0].position==dash_before.position&&world.motion_receipt_current(pose.receipt)&&
+            source.resource()==10000&&source.ground_loss_timer698()==1.f&&!source.air_dash_starts()&&shown&&!shown->expiring_walk_air_dash,why);
+    };
+    auto fake=offer;fake.controller_timer698=1.f;refuses_dash(fake,"entry cannot keep timer one");
+    fake=offer;fake.air_motion->walk_expiry_windup=true;refuses_dash(fake,"cannot label 1 to 0 as accepted at zero already");
+    fake=offer;fake.proposed_position[0]+=.5f;refuses_dash(fake,"stationary entry cannot translate");
+    fake=offer;fake.air_motion->resource_after=9550;refuses_dash(fake,"handoff cost cannot be staged at entry");
+    fake=offer;fake.kind=Kind::AirDashWindupEntryFloor;fake.air_dash_floor=NativeBorgAirDashFloor{};
+    refuses_dash(fake,"entry snap cannot borrow the 1 to 0 permission");
+    fake=offer;fake.kind=Kind::AirDashWindupEntryPush;fake.static_push=dash_prior.static_push;
+    refuses_dash(fake,"entry push cannot borrow the stationary permission");
+    accept(offer);
+    check(view.practice_readout(world)->expiring_walk_air_dash&&source.ground_loss_timer698()==0.f&&source.resource()==10000&&
+        source.air_dash_starts()==1&&!source.windup_pushes()&&!world.actors()[0].grounded,
+        "only acceptance publishes the expiry-dash cue, clock and entry");
+    touched=landed=fall=active=handoff=0;unsigned continued_pushes=0;
+    while(world.tick()<175){
+        const auto tick=world.tick()+1;const auto before=world.actors()[0];
+        check(prepare(false,&offer)&&offer.controller_timer698==0.f,"no timer restart after the new entry");
+        if(offer.kind==Kind::AirDashWindupPush){
+            ++continued_pushes;
+            check((tick==39||tick==40)&&offer.air_motion&&!offer.air_motion->entry&&offer.static_push->surface.triangle==2007&&
+                offer.static_push->angle==13653&&offer.static_push->integrated_position[1]==f32(before.position[1]+before.vertical_speed)&&
+                offer.vertical_speed==f32(offer.static_push->vertical_speed*.9f),
+                "both pushes occur on later wind-up updates and use the existing integration and damping");
+        }
+        if(offer.air_motion&&offer.air_motion->phase==15&&offer.air_motion->next_selector==16){
+            handoff=tick;check(offer.air_motion->resource_before==10000&&offer.air_motion->resource_after==9550&&
+                !offer.air_motion->walk_expiry_windup,"the paid handoff at zero still has no relaunch permission");
+        }
+        if(native_borg_motion_active_entry(offer.kind)){
+            active=tick;check(offer.air_motion->resource_before==9550&&offer.air_motion->resource_after==9500,"separate 50 active-entry cost");
+        }
+        if(!fall&&offer.kind==Kind::JumpAir)fall=tick;
+        if(offer.kind==Kind::JumpTouchdown)touched=tick;
+        if(touched&&!landed&&offer.kind==Kind::JumpLanding)landed=tick;
+        accept(offer);
+        const auto shown=view.practice_readout(world);
+        check(shown&&!shown->expiring_walk_air_dash&&!shown->plain_windup_relaunch_ready,
+            "the entry-only cue clears and does not turn into a relaunch prompt");
+        if(tick==fall||tick==touched||tick==landed)check(source.resource()==8000,"spent meter lasts through the separate landing");
+    }
+    check(continued_pushes==2&&handoff==44&&active==45&&fall==105&&touched==132&&landed==133&&source.resource()==10000&&
+        source.air_dash_starts()==1&&!source.relaunches()&&world.actors()[0].grounded&&!source.selector(),
+        "timer-expiry wind-up leads through existing paid phases to full idle");
+    expiring_dash_prefix(Mode::GroundWalkExpiringAirDash);
+    while(world.tick()<44){
+        check(prepare(world.tick()==37,&offer),"same prefix through the paid wind-up");accept(offer);
+    }
+    check(!prepare(false,&offer,true)&&error.find("accepted expiry-push wind-up")!=std::string::npos&&
+        world.tick()==44&&source.resource()==9550&&!source.relaunches()&&!source.air_dash_active_frames()&&!world.step({},false,&view),
+        "the pending-expiry entry does not grant a post-handoff relaunch or spend the active charge");
     std::printf("Walking push air followups: %u checks PASS, timed and expiry entries with separate costs and landing\n",checks);
 }
