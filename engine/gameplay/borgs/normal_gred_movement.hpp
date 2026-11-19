@@ -23,7 +23,7 @@ enum class NormalGRedMovementMode {
     GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch,GroundWalkExpiryDirectRelaunch,GroundTimedSnapWindupRelaunch,
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
-    GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash
+    GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch
 };
 
 struct NormalGRedMovementDefinition {
@@ -96,6 +96,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiringDirectRelaunchPush,Policy::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringDirectRelaunchPush},
         CombinedRule{Mode::GroundWalkExpiringAdjacentRelaunchPush,Policy::GroundWalkExpiringAdjacentRelaunchPush,Behavior::WalkExpiringAdjacentRelaunchPush},
         CombinedRule{Mode::GroundWalkExpiringAirDash,Policy::GroundWalkExpiringAirDash,Behavior::WalkExpiringAirDash},
+        CombinedRule{Mode::GroundWalkExpiringAirDashRelaunch,Policy::GroundWalkExpiringAirDashRelaunch,Behavior::WalkExpiringAirDashRelaunch},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -147,6 +148,12 @@ struct NormalGRedMovementDefinition {
     }
     static constexpr bool walk_expiring_air_dash_face(u32 prior,s16 angle){
         return prior==2001&&angle==8192; // Only this grounded approach completed the subsequent wind-up.
+    }
+    static constexpr u8 expiring_walk_windup_complete=7; // entry, two pushes, four ordinary updates
+    static constexpr u8 expiring_walk_windup_next(u8 previous,bool push,u32 face,s16 angle){
+        if(!previous||previous>=expiring_walk_windup_complete)return 0;
+        const bool matched=previous<=2?push&&face==2007&&angle==13653:!push;
+        return matched?u8(previous+1):0;
     }
 private:
     static constexpr auto cumulative_=[]{

@@ -351,6 +351,13 @@ and free; the existing two wind-up pushes come afterward. The
 450 handoff and 50 active-entry charges are separate. Use
 `--demo-gred-walk-ledge-expiring-air-dash` for playback.
 
+`--gred-walk-ledge-expiring-air-dash-handoff --practice-start`
+uses that same start and inputs, then shows the choice when the
+wind-up pays 450 on 44. Tap **Shift** without a direction on 45
+to relaunch for 150 instead of entering active dash, or leave
+the controls neutral for the usual dash. Use
+`--demo-gred-walk-ledge-expiring-air-dash-handoff` for the relaunch replay.
+
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
 tap **Shift** on 23, then leave the controls neutral. Ordinary

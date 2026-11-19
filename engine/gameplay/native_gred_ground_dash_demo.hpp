@@ -50,7 +50,7 @@ class NativeGRedGroundDashDemo {
     struct Pending {
         State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;
         bool direct_expiry_relaunch=false,direct_timed_relaunch=false,direct_expiring_relaunch=false,direct_expiring_entry_push=false;
-        bool expiring_walk_air_dash=false;
+        bool expiring_walk_air_dash=false,expiring_walk_air_dash_relaunch=false;
         std::shared_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion;
     };
 public:
@@ -330,6 +330,7 @@ public:
             }
         }
         const bool expiry_relaunch=allows(mode_,Behavior::ExpiryPlainWindupRelaunch);
+        const bool expiring_air_dash_relaunch=allows(mode_,Behavior::WalkExpiringAirDashRelaunch);
         const bool timed_snap_handoff=allows(mode_,Behavior::TimedSnapWindupRelaunch);
         if(s.jump.selector==8){
             const auto& previous_air=state_.air_motion;
@@ -351,9 +352,14 @@ public:
             const bool timed_handoff=state_.ground_timer698>1.f&&s.ground_timer698==state_.ground_timer698-1.f;
             const bool expiry_handoff=expiry_relaunch&&previous_air&&previous_air->walk_expiry_windup&&
                 state_.ground_timer698==0.f&&s.ground_timer698==0.f;
-            if(plain_windup_handoff&&!timed_handoff&&!expiry_handoff)
+            const bool expiring_walk_handoff=expiring_air_dash_relaunch&&plain_windup_handoff&&
+                previous_air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_complete&&
+                state_.ground_timer698==0.f&&s.ground_timer698==0.f;
+            if(plain_windup_handoff&&!timed_handoff&&!expiry_handoff&&!expiring_walk_handoff)
                 return fail(error,expiry_relaunch?"plain wind-up relaunch needs a still-positive countdown or an accepted expiry-push wind-up":
                     "plain wind-up relaunch needs a still-positive ledge countdown");
+            if(expiring_walk_handoff&&(stick_x||stick_y))
+                return fail(error,"expiry-step wind-up relaunch needs neutral Shift");
             const bool floor_windup_handoff=timed_snap_handoff&&!s.relaunch.lower_stage&&state_.air_dash_floor&&
                 previous_air&&previous_air->phase==15&&previous_air->next_selector==16&&previous_air->next_stage==0&&previous_air->timer568==0.f;
             const bool positive_floor_handoff=allows(mode_,Behavior::PositiveSnapWindupRelaunch);
@@ -373,6 +379,9 @@ public:
                 !state_.static_push&&!state_.surface_landing)s.relaunch_motion->timed_walk_relaunch_tap=true;
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
+            if(expiring_walk_handoff&&(!s.relaunch_motion||s.relaunch_motion->direction||s.body!=state_.body||
+                observed.vertical_speed>=0.f||s.relaunch_motion->vertical_before<=0.f||s.motion.vertical48<=0.f))
+                return fail(error,"expiry-step wind-up relaunch needs plain rising motion without turning");
             const bool timed_up_policy=allows(mode_,Behavior::WalkTimedDirectUpRelaunch);
             const bool timed_up=timed_up_policy&&stick_x==0&&stick_y==32;
             if(timed_direct&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||s.relaunch_motion->direction!=timed_up||
@@ -402,6 +411,7 @@ public:
             candidate->direct_timed_relaunch=timed_direct;
             candidate->direct_expiring_relaunch=expiring_direct&&!expiring_entry_push;
             candidate->direct_expiring_entry_push=expiring_entry_push;
+            candidate->expiring_walk_air_dash_relaunch=expiring_walk_handoff;
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
             const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
                 state_.static_push&&s.jump.selector==15&&!s.air_dash.entered;
@@ -423,6 +433,14 @@ public:
                 return fail(error,timed?"timed push air dash requires plain wind-up without contact response":
                     "expiry air dash requires plain wind-up without contact response");
             candidate->expiring_walk_air_dash=expiring;
+            if(expiring_air_dash_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
+                const auto& previous_air=state_.air_motion;
+                if(s.air_motion->entry)s.air_motion->expiring_walk_windup_step=expiring&&s.air_motion->timer568==6.f?1:0;
+                else if(previous_air&&(kind==NativeBorgMotionKind::AirDashWindup||kind==NativeBorgMotionKind::AirDashWindupPush))
+                    s.air_motion->expiring_walk_windup_step=NormalGRedMovementDefinition::expiring_walk_windup_next(
+                        previous_air->expiring_walk_windup_step,kind==NativeBorgMotionKind::AirDashWindupPush,
+                        s.static_push?s.static_push->surface.triangle:0,s.static_push?s.static_push->angle:0);
+            }
             if(expiry_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
                 const auto& previous_air=state_.air_motion;
                 s.air_motion->walk_expiry_windup=s.air_motion->entry?
@@ -651,7 +669,9 @@ public:
             accepted.controller_timer698&&state_.resource.value736>0&&!(state_.vm.state().actor.behaviour&2u);
         const bool plain_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindup&&windup_relaunch_ready&&
             ((allows(mode_,Behavior::TimedPlainWindupRelaunch)&&*accepted.controller_timer698>1.f)||
-             (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup));
+             (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup)||
+             (allows(mode_,Behavior::WalkExpiringAirDashRelaunch)&&*accepted.controller_timer698==0.f&&
+                air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_complete));
         const bool floor_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindupFloor&&windup_relaunch_ready&&
             state_.jump.cached87&&air->timed_relaunch_floor_windup&&NormalGRedMovementDefinition::floor_windup_handoff_clock(
                 NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),
@@ -684,7 +704,8 @@ public:
                 relaunch_from_active_snap,accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&
                 accepted.jump_motion->timed_walk_relaunch_fall,accepted.kind==NativeBorgMotionKind::StaticPush&&
                 accepted.jump_motion&&accepted.jump_motion->second_timed_release_push,pending_->direct_expiring_relaunch,
-                direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push,pending_->expiring_walk_air_dash}));
+                direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push,pending_->expiring_walk_air_dash,
+                pending_->expiring_walk_air_dash_relaunch}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

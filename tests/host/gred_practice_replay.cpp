@@ -7,7 +7,7 @@
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
     RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,DirectExpiryRelaunch,ExpiringDirectRelaunch,ExpiringDirectRelaunchPush,
-    ExpiringAdjacentRelaunchPush,ExpiringAirDash,
+    ExpiringAdjacentRelaunchPush,ExpiringAirDash,ExpiringAirDashRelaunch,
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
@@ -205,11 +205,13 @@ public:
             raw.buttons|=expiring_entry_inputs(tick,replay_!=Replay::ExpiringDirectRelaunch);
             break;
         }
-        case Replay::ExpiringAirDash:{
+        case Replay::ExpiringAirDash:
+        case Replay::ExpiringAirDashRelaunch:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             if(tick==6||tick==7)raw.buttons|=1u<<7;
             if(tick==38)raw.axis[0]=-20000;
+            if(tick==45&&replay_==Replay::ExpiringAirDashRelaunch)raw.buttons|=1u<<1;
             break;
         }
         case Replay::TimedReleasePush:
@@ -435,6 +437,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool direct_expiring_push=replay==Replay::ExpiringDirectRelaunchPush;
     const bool adjacent_expiring_push=replay==Replay::ExpiringAdjacentRelaunchPush;
     const bool expiring_air_dash=replay==Replay::ExpiringAirDash;
+    const bool expiring_air_relaunch=replay==Replay::ExpiringAirDashRelaunch;
     const bool snap_handoff=replay==Replay::FloorWindupRelaunch||replay==Replay::FloorWindupDash;
     const bool positive_handoff=replay==Replay::PositiveFloorHandoff;
     const bool expiring_handoff=replay==Replay::ExpiringFloorHandoff;
@@ -446,7 +449,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
-        direct_timed||direct_timed_up||active_snap_relaunch||expiring_air_dash||
+        direct_timed||direct_timed_up||active_snap_relaunch||expiring_air_dash||expiring_air_relaunch||
         timed_release_push||timed_release_two;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
@@ -454,6 +457,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
            expiring_direct[]="--gred-walk-ledge-expiring-direct-relaunch",expiring_push[]="--gred-walk-ledge-expiring-relaunch-push",
            expiring_adjacent_push[]="--gred-walk-ledge-expiring-adjacent-relaunch-push",
            expiring_dash[]="--gred-walk-ledge-expiring-air-dash",
+           expiring_dash_relaunch[]="--gred-walk-ledge-expiring-air-dash-handoff",
           timed_snap_dash[]="--gred-walk-ledge-timed-snap-dash",floor_handoff[]="--gred-walk-ledge-timed-snap-handoff",
           positive_floor_handoff[]="--gred-walk-ledge-positive-snap-handoff",
           expiring_floor_handoff[]="--gred-walk-ledge-expiring-snap-handoff",
@@ -462,7 +466,8 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
            after_active_snap[]="--gred-walk-ledge-active-snap-relaunch",release_push[]="--gred-walk-ledge-timed-release-push",
            release_two[]="--gred-walk-ledge-timed-release-two-pushes";
     char audio[]="--no-audio",start[]="--practice-start";
-     char* args[]={program,expiring_air_dash?expiring_dash:timed_release_two?release_two:timed_release_push?release_push:active_snap_relaunch?after_active_snap:
+     char* args[]={program,expiring_air_relaunch?expiring_dash_relaunch:expiring_air_dash?expiring_dash:
+         timed_release_two?release_two:timed_release_push?release_push:active_snap_relaunch?after_active_snap:
         direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
         expiring_handoff?expiring_floor_handoff:positive_handoff?positive_floor_handoff:
         snap_handoff?floor_handoff:snap_dash?timed_snap_dash:
@@ -1060,5 +1065,17 @@ int main(int argc,char** argv){
         has(expiry_dash_idle,"practice-meter=10000/10000 at accepted tick=175")&&
         has(expiry_dash_idle,"expiring-air-dash-starts=1 windup-pushes=2")&&!has(expiry_dash_idle,"practice-expiring-walk-air-dash="),
         "the unchanged wind-up pushes and separate dash and landing phases finish at idle",expiry_dash_idle);
-    std::puts("G-Red practice replay: forty-five desktop-loop scenarios PASS without opening devices");
+    const auto expiry_relaunch=run(Replay::ExpiringAirDashRelaunch,90,"live relaunch after paid expiry-step wind-up");
+    check(picker_guide_played(expiry_relaunch,"expiry-step wind-up relaunch",45)&&
+        has(expiry_relaunch,"practice-meter=9400/10000 at accepted tick=45")&&
+        once(expiry_relaunch,"practice-expiring-walk-air-dash-relaunch=AIRBORNE / EXPIRY WIND-UP TO RELAUNCH")&&
+        has(expiry_relaunch,"expiring-air-dash-starts=1 windup-pushes=2 active-frames=0 relaunches=1 timer698=0.0")&&
+        !has(expiry_relaunch,"practice-windup-handoff="),
+        "live Shift keeps the 450 charge, spends 150 and skips active dash",expiry_relaunch);
+    const auto expiry_relaunch_idle=run(Replay::ExpiringAirDashRelaunch,290,"live expiry-step wind-up relaunch to idle");
+    check(picker_guide_played(expiry_relaunch_idle,"expiry-step wind-up relaunch",145)&&
+        has(expiry_relaunch_idle,"accepted native tick=145 G-Red-position=-736.86/10.00/-3446.59")&&
+        has(expiry_relaunch_idle,"practice-meter=10000/10000 at accepted tick=145")&&
+        !has(expiry_relaunch_idle,"practice-expiring-walk-air-dash-relaunch="),"the existing fall and landing finish the live relaunch",expiry_relaunch_idle);
+    std::puts("G-Red practice replay: forty-seven desktop-loop scenarios PASS without opening devices");
 }

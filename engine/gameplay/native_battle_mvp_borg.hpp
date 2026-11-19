@@ -34,6 +34,7 @@ struct NativeBorgSourceReadout {
     bool direct_expiring_relaunch_ready=false; //The accepted timer-one walking push permits asking for that entry.
     bool direct_expiring_entry_push=false; //Accepted projected soft-Up entry from the timer-one walking push.
     bool expiring_walk_air_dash=false; //Accepted stationary wind-up as the walking-push timer reaches zero.
+    bool expiring_walk_air_dash_relaunch=false; //Accepted relaunch instead of active dash after the qualified expiry-step wind-up.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

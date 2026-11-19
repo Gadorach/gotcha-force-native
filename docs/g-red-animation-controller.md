@@ -359,6 +359,37 @@ even when the projected endpoint clears the floor. That refusal
 is not relaxed. The stage sweep found 20 complete routes in 1,002
 attempts, all from face 2001.
 
+### Relaunch instead of active dash after that expiry-step wind-up
+
+`--gred-walk-ledge-expiring-air-dash-handoff` adds a separate
+choice on the paid handoff. Source and native each require the
+stationary 1 → 0 entry from face 2001 with a six-tick wind-up,
+two consecutive pushes on face 2007 at angle 13653, then four
+ordinary wind-up updates through the 450 charge. A different wind-up
+length, a missing push, another face, a floor snap or a generic zero
+timer cannot earn this history. The standalone air-dash mode
+still refuses this relaunch.
+
+```sh
+gf_native --gred-walk-ledge-expiring-air-dash-handoff --practice-start --no-audio
+gf_native --demo-gred-walk-ledge-expiring-air-dash-handoff --headless --frames 145 --no-audio
+```
+
+Use the same grounded start, **Left Arrow** on 6–7 and **A** on
+38. The paid wind-up at 44 shows **SHIFT/B RELAUNCH / NEUTRAL
+DASH**. Tap **Shift** without a direction on 45 for a plain rising
+relaunch, or leave the controls neutral for the unchanged active
+dash. Relaunch keeps the 450 spent, charges 150 instead of the
+50 active-entry charge, and leaves 9400. The one-tap release at
+46 begins ordinary falling; touchdown at 111 and landing at 112
+keep the spent meter until idle. A directional relaunch or entry
+contact cannot borrow that choice.
+
+The isolated probe staged and accepted 48 neutral entries; 20
+reached landing and idle. The checked-in permission uses only
+the complete six-tick sequence; accepting entry alone was not
+treated as proof of a complete route.
+
 ### Relaunch instead of active dash after a timed plain wind-up
 
 `--gred-walk-ledge-timed-handoff-relaunch` accepts a plain relaunch

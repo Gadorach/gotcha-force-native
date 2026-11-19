@@ -106,6 +106,13 @@ int main(){
         Definition::allows(Mode::GroundWalkExpiringAirDash,Behavior::WalkExpiringAirDash)&&
         Definition::walk_expiring_air_dash_face(2001,8192)&&!Definition::walk_expiring_air_dash_face(2009,8192)&&
         !Definition::walk_expiring_air_dash_face(2001,8191));
+    static_assert(unsigned(Mode::GroundWalkExpiringAirDashRelaunch)==75&&unsigned(Policy::GroundWalkExpiringAirDashRelaunch)==71&&
+        !Definition::allows(Mode::GroundWalkExpiringAirDash,Behavior::WalkExpiringAirDashRelaunch)&&
+        Definition::allows(Mode::GroundWalkExpiringAirDashRelaunch,Behavior::WalkExpiringAirDashRelaunch)&&
+        Definition::expiring_walk_windup_next(1,true,2007,13653)==2&&Definition::expiring_walk_windup_next(2,true,2007,13653)==3&&
+        Definition::expiring_walk_windup_next(6,false,0,0)==Definition::expiring_walk_windup_complete&&
+        !Definition::expiring_walk_windup_next(1,false,0,0)&&!Definition::expiring_walk_windup_next(2,true,2001,13653)&&
+        !Definition::expiring_walk_windup_next(3,true,2007,13653)&&!Definition::expiring_walk_windup_next(0,true,2007,13653));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));
