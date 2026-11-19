@@ -12,6 +12,6 @@ enum class NativeBorgMotionPolicy:u8 {
     GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,
     GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash,
     GroundSlopeTransitionDash,GroundInclinedDashLedge,GroundWalkLedgeFallPush,GroundWalkLedgeHighAnglePush,
-    GroundWalkLedgeExpiryPush,GroundWalkLedgeExpiryAirDash
+    GroundWalkLedgeExpiryPush,GroundWalkLedgeExpiryAirDash,GroundRecoveryRecontact
 };
 }

@@ -73,6 +73,7 @@ public:
         if(kind==NativeBorgMotionKind::GroundLossAir||kind==NativeBorgMotionKind::GroundLossPush)return "LEDGE FALL";
         if(native_borg_motion_windup_entry(kind)||native_borg_motion_windup_update(kind))return "DASH WIND-UP";
         if(native_borg_motion_active_entry(kind)||native_borg_motion_active_update(kind))return "AIR DASH";
+        if(kind==NativeBorgMotionKind::AirDashRecoveryFloorComplete)return "DASH RECOVERY / FLOOR CONTACT";
         if(native_borg_motion_recovery(kind))return "DASH RECOVERY";
         if(native_borg_motion_relaunch(kind))return "RELAUNCH";
         return frame.ascent?"RISING":"FALLING";

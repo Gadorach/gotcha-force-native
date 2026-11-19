@@ -160,6 +160,12 @@ tick 57 is the neutral fall; hold Shift while stepping ticks 58–77 to
 match `--demo-gred-walk-ledge-expiry-relaunch`. Pressing Shift directly
 after the push still refuses.
 
+`--gred-recovery-recontact` uses the ordinary practice start and opts into
+the verified flat-floor recovery overlap. Try
+`--demo-gred-recovery-recontact --headless --frames 200 --no-audio` to see
+the difference between **Dash Recovery / Floor Contact**, **Touchdown**,
+and **Landing**. Keep controls neutral for the update after floor contact.
+
 To check the actual practice loop without opening a window or audio device:
 
 ```sh

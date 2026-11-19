@@ -13,6 +13,44 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Air-dash recovery completion on a flat floor (GFMM9)
+
+`--gred-recovery-recontact` admits one narrow overlap between recovery
+completion and floor contact. Other modes still refuse it. In the initialized
+DOL, `617E4` calls `677B0` before reading the lower-lane completion byte.
+The `65E64` callback zeros vertical speed and acceleration and selects 7.
+`6A750` does not clear the lower completion byte, so the recovery tail can
+still overwrite selector 7 with selector 6 on the same update. The snapped
+height and zero vertical speed are retained, along with planar momentum.
+Landing program 8 hasn't run and there is no meter refill on that frame.
+
+```sh
+gf_native --demo-gred-recovery-recontact --headless --frames 200 --no-audio
+```
+
+The replay uses the ordinary native spawn on the unchanged stage: hold
+Shift for updates 6–39, release, flick backward at 43, then leave the
+controls neutral. Six candidates reached the old refusal in a bounded
+200-route scan. The selected route completes:
+
+| Accepted tick | Result |
+| --- | --- |
+| 80 | Program 12 starts; 5750 meter |
+| 108 | Floor contact on triangle 1631, lower recovery completes; both lanes still use program 12 and selector becomes 6 |
+| 109 | Neutral program 13 update confirms touchdown on the same triangle, without another descent |
+| 110 | Separate program 8 landing entry; meter still 5750 |
+| 111 | Refill starts; idle eventually reaches 10000 |
+
+The source owner seals the actual recovery completion before native acceptance.
+The native check independently requires continued recovery with the previous
+travel heading, zero timer698, the same selected flat triangle for approach,
+contact and recontact, and the existing travel/body checks. The next update
+must be neutral ordinary falling with the same meter, not a dash, lift, drift
+or forced landing animation. The
+first frame shows **DASH RECOVERY / FLOOR CONTACT**, not **TOUCHDOWN**.
+Slopes, changed planes, positive timers and other overlapping transitions
+are not covered.
+
 ## Continued walking ledge-fall push (GFMM9)
 
 `--gred-walk-ledge-fall-push` opts into a descending, continued program 13
@@ -420,8 +458,8 @@ position, and .9 damping against the accepted prior motion and contact records.
 It preserves gravity, clears planar acceleration for the following update, and
 does not spend or refill the meter on contact. Lower-lane completion is tested
 after the push, while the upper update still uses program12. A real landing
-requires a separate contact; simultaneous recovery completion and touchdown
-remain refused.
+requires a separate contact. This earlier mode still refuses simultaneous
+recovery completion and touchdown.
 
 The demo uses the older recovery fixture's grounded native placements and
 unchanged stage. At accepted tick73 the push keeps program12, selector17,

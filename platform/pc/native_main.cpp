@@ -152,6 +152,7 @@ struct Options {
     bool gred_walk_ledge_expiry_air_dash=false;
     bool demo_gred_walk_ledge_expiry_drift=false;
     bool demo_gred_walk_ledge_expiry_relaunch=false;
+    bool gred_recovery_recontact=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -354,6 +355,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-walk-ledge-high-angle-push" || arg == "--demo-gred-walk-ledge-high-angle-push" ||
                  arg == "--gred-walk-ledge-expiry-push" || arg == "--demo-gred-walk-ledge-expiry-push" ||
                  arg == "--gred-walk-ledge-expiry-air-dash" || arg == "--demo-gred-walk-ledge-expiry-air-dash" ||
+                 arg == "--gred-recovery-recontact" || arg == "--demo-gred-recovery-recontact" ||
                  arg == "--demo-gred-walk-ledge-expiry-drift" || arg == "--demo-gred-walk-ledge-expiry-relaunch"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
@@ -401,13 +403,14 @@ bool parse(int argc, char** argv, Options* options) {
             options->gred_slope_crease_dash=options->gred_slope_transition_dash||arg=="--gred-slope-crease-dash"||arg=="--demo-gred-slope-crease-dash";
             options->gred_slope_seam_dash=options->gred_slope_crease_dash||arg=="--gred-slope-seam-dash"||arg=="--demo-gred-slope-seam-dash";
             options->gred_slope_dash=options->gred_slope_seam_dash||arg=="--gred-slope-dash"||arg=="--demo-gred-slope-dash";
-            options->gred_practice=options->gred_slope_dash||arg=="--gred-movement"||arg=="--demo-gred-movement";
-            options->source_ground_windup_entry_push=(options->gred_practice&&!options->gred_slope_dash)||
+            options->gred_recovery_recontact=arg=="--gred-recovery-recontact"||arg=="--demo-gred-recovery-recontact";
+            options->gred_practice=options->gred_recovery_recontact||options->gred_slope_dash||arg=="--gred-movement"||arg=="--demo-gred-movement";
+            options->source_ground_windup_entry_push=(options->gred_practice&&!options->gred_slope_dash&&!options->gred_recovery_recontact)||
                 arg=="--source-ground-windup-entry-push"||arg=="--demo-source-ground-windup-entry-push";
             options->source_ordered_ground=arg=="--source-ordered-ground"||arg=="--demo-source-ordered-ground"||options->source_dash_ledge||options->source_ground_ledge||options->source_ground_jump||options->source_ground_landing||options->source_ground_air||options->source_ground_air_floor||options->source_ground_relaunch||options->source_ground_relaunch_floor||options->source_ground_windup_entry_floor||options->source_ground_surface||options->source_ground_loss_surface||options->source_ground_loss_jump||options->source_ground_loss_landing||options->source_ground_loss_air||options->source_ground_loss_relaunch||options->source_ground_fall_push||options->source_ground_air_fall_push;
             if(options->source_ordered_ground)options->source_ground_interactive=arg=="--source-ordered-ground"||arg=="--source-dash-ledge"||arg=="--source-ground-ledge"||arg=="--source-ground-jump"||arg=="--source-ground-landing"||arg=="--source-ground-air"||arg=="--source-ground-air-floor"||arg=="--source-ground-relaunch"||arg=="--source-ground-relaunch-floor"||arg=="--source-ground-windup-entry-floor"||arg=="--source-ground-surface"||arg=="--source-ground-loss-surface"||arg=="--source-ground-loss-jump"||arg=="--source-ground-loss-landing"||arg=="--source-ground-loss-air"||arg=="--source-ground-loss-relaunch"||arg=="--source-ground-fall-push"||arg=="--source-ground-air-fall-push";
             options->source_windup_entry_push=arg=="--source-windup-entry-push"||arg=="--demo-source-windup-entry-push";
-            if(options->gred_slope_dash||options->source_ground_relaunch_fall_push||options->source_ground_recovery_push||options->source_ground_windup_push||options->source_ground_active_push||options->source_ground_relaunch_push||options->source_ground_relaunch_entry_push||options->source_ground_windup_entry_push){
+            if(options->gred_recovery_recontact||options->gred_slope_dash||options->source_ground_relaunch_fall_push||options->source_ground_recovery_push||options->source_ground_windup_push||options->source_ground_active_push||options->source_ground_relaunch_push||options->source_ground_relaunch_entry_push||options->source_ground_windup_entry_push){
                 options->source_ordered_ground=true;
                 options->source_ground_interactive=!arg.starts_with("--demo-");
             }
@@ -822,7 +825,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ordered_ground?"local/content/source-gred-ground-v9":options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
-    const auto source_mode=options.gred_walk_ledge_expiry_air_dash?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryAirDash:
+    const auto source_mode=options.gred_recovery_recontact?gf::NativeGRedGroundDashDemo::Mode::GroundRecoveryRecontact:
+         options.gred_walk_ledge_expiry_air_dash?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryAirDash:
          options.gred_walk_ledge_expiry_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryPush:
          options.gred_walk_ledge_high_angle_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeHighAnglePush:
          options.gred_walk_ledge_fall_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeFallPush:
@@ -865,7 +869,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(picker)view.source_practice_back(options.force_practice?gf::PracticeBackScreen::ForceBrowser:gf::PracticeBackScreen::OwnedCollection);
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-     if(options.gred_walk_ledge_expiry_air_dash)gf::log_info(context,"source-ground","plain air-dash wind-up after the accepted zero-timer walking expiry push only; no entry contact response, later costs and travel unchanged");
+     if(options.gred_recovery_recontact)gf::log_info(context,"source-ground","recovery completion at zero timer698: floor contact then falling, not landing entry; neutral recontact on the same flat triangle only");
+     else if(options.gred_walk_ledge_expiry_air_dash)gf::log_info(context,"source-ground","plain air-dash wind-up after the accepted zero-timer walking expiry push only; no entry contact response, later costs and travel unchanged");
      else if(options.gred_walk_ledge_expiry_push)gf::log_info(context,"source-ground","walking ledge push at timer698 1 to 0 only after an accepted push, without drift; expired landing gate 10240 and native cap 13653; both travel checks");
      else if(options.gred_walk_ledge_high_angle_push)gf::log_info(context,"source-ground","continued descending walk-ledge push with positive owned timer698; native cap 13653, same selected-plane and pre/post-travel checks");
      else if(options.gred_walk_ledge_fall_push)gf::log_info(context,"source-ground","continued descending walk-ledge push with positive owned timer698 and angle above 6144 through 10240; separate native travel on both sides of projection");
@@ -905,7 +910,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         }
         if(options.source_ordered_ground){
             view.source_ordered_ground_controls();
-            if(options.gred_slope_dash){
+             if(options.gred_recovery_recontact){
+                 if(!options.source_ground_interactive)
+                     gf::log_info(context,"source-ground","recovery recontact demo: ordinary native start; jump on ticks 6-39, backward flick at 43, then neutral");
+             }else if(options.gred_slope_dash){
                 if(!options.source_ground_interactive)
                      gf::log_info(context,"source-ground","%s",options.gred_walk_ledge_expiry_air_dash?
                           "walk ledge expiry air-dash demo: D-pad left then neutral, one left flick after accepted tick56":options.demo_gred_walk_ledge_expiry_drift?
@@ -1018,7 +1026,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","dash-ledge demo only: native ground spawn1012.360657/482.747589/1403.599731, arena4500, original roof/stage and unchanged target; hold through one post-delay drift then release; interactive spawn/bounds unchanged, no airborne teleport");
             }else gf::log_info(context,"source-ground","ordered ground enabled: immediate dash entry motion, incoming-speed steering, sealed post-VM AObj root-speed reads, motion before done/reset; flat dash floor only, no ledge/jump/flight/combat/clipping or multiplier/null-root fallback; native clocks/target/contact proxies, older modes unchanged");
         }
-        if(!options.gred_slope_dash&&!options.source_ground_windup_entry_push&&!options.source_ground_relaunch_entry_push&&!options.source_ground_relaunch_push&&!options.source_ground_active_push&&!options.source_ground_windup_push&&!options.source_ground_recovery_push&&!options.source_ground_relaunch_fall_push&&!options.source_vertical_jump&&!options.source_ground_jump&&!options.source_ground_landing&&!options.source_ground_air&&!options.source_ground_air_floor&&!options.source_ground_relaunch&&!options.source_ground_relaunch_floor&&!options.source_ground_windup_entry_floor&&!options.source_ground_surface&&!options.source_ground_loss_surface&&!options.source_ground_loss_jump&&!options.source_ground_loss_landing&&!options.source_ground_loss_air&&!options.source_ground_loss_relaunch&&!options.source_ground_fall_push&&!options.source_ground_air_fall_push)gf::log_info(context,"source-ground","%s source walk/turn/stop/dash; arrows/D-pad WALK, stick/WASD FLICK DASH; Enter pause, Q restart; jump/flight/combat refused before simulation; native rate664=1",options.source_ground_interactive?"interactive":"scripted");
+         if(!options.gred_practice&&!options.source_ground_windup_entry_push&&!options.source_ground_relaunch_entry_push&&!options.source_ground_relaunch_push&&!options.source_ground_active_push&&!options.source_ground_windup_push&&!options.source_ground_recovery_push&&!options.source_ground_relaunch_fall_push&&!options.source_vertical_jump&&!options.source_ground_jump&&!options.source_ground_landing&&!options.source_ground_air&&!options.source_ground_air_floor&&!options.source_ground_relaunch&&!options.source_ground_relaunch_floor&&!options.source_ground_windup_entry_floor&&!options.source_ground_surface&&!options.source_ground_loss_surface&&!options.source_ground_loss_jump&&!options.source_ground_loss_landing&&!options.source_ground_loss_air&&!options.source_ground_loss_relaunch&&!options.source_ground_fall_push&&!options.source_ground_air_fall_push)gf::log_info(context,"source-ground","%s source walk/turn/stop/dash; arrows/D-pad WALK, stick/WASD FLICK DASH; Enter pause, Q restart; jump/flight/combat refused before simulation; native rate664=1",options.source_ground_interactive?"interactive":"scripted");
     }
     if(options.source_vertical_jump){
         view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
@@ -1147,7 +1155,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                     if(practice_restartable)practice_input.take(device);
                     if(!options.source_ground_interactive){
                         device={};const unsigned t=world.tick()%(options.source_air_dash?480:options.source_moving_jump?480:options.source_vertical_jump?600:360);
-                          if(options.gred_walk_ledge_fall_push){
+                           if(options.gred_recovery_recontact){
+                               const auto tick=world.tick();device.b=tick>=5&&tick<39;
+                               if(tick==42)device.stick_y=-127;
+                           }else if(options.gred_walk_ledge_fall_push){
                               if(world.tick()>=5&&world.tick()<30&&!source.ground_departures()){
                                   device.dpad_right=!options.gred_walk_ledge_expiry_push;
                                   device.dpad_left=options.gred_walk_ledge_expiry_push;
@@ -1421,6 +1432,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.source_ground_air_fall_push)gf::log_info(context,"source-ground","controller-air-fall-pushes=%llu total-pushes=%llu starts=%llu angle-s16=%d timer698=%.1f landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u; no ground-loss/relaunch/active-callback/positive698 push or combat authority",static_cast<unsigned long long>(source.dash_fall_pushes()),static_cast<unsigned long long>(source.surface_pushes()),static_cast<unsigned long long>(source.air_dash_starts()),int(source.last_push_angle()),double(source.ground_loss_timer698()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_relaunch_fall_push)gf::log_info(context,"source-ground","controller-relaunch-fall-pushes=%llu relaunches=%llu angle-s16=%d timer698=%.1f landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u",static_cast<unsigned long long>(source.relaunch_fall_pushes()),static_cast<unsigned long long>(source.relaunches()),int(source.last_push_angle()),double(source.ground_loss_timer698()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_recovery_push)gf::log_info(context,"source-ground","controller-recovery-pushes=%llu total-pushes=%llu starts=%llu angle-s16=%d timer698=%.1f landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u",static_cast<unsigned long long>(source.recovery_pushes()),static_cast<unsigned long long>(source.surface_pushes()),static_cast<unsigned long long>(source.air_dash_starts()),int(source.last_push_angle()),double(source.ground_loss_timer698()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
+    if(options.gred_recovery_recontact)gf::log_info(context,"source-ground","recovery-recontact landings=%llu resource=%d selector=%u programs=%u/%u",
+        static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),
+        source.movement_programs()[0],source.movement_programs()[1]);
     if(options.source_ground_windup_push||options.source_ground_windup_entry_push)gf::log_info(context,"source-ground","controller-windup-pushes=%llu entry-pushes=%llu starts=%llu landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u",static_cast<unsigned long long>(source.windup_pushes()),static_cast<unsigned long long>(source.windup_entry_surface_pushes()),static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_active_push)gf::log_info(context,"source-ground","controller-active-pushes=%llu recovery-pushes=%llu starts=%llu landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u",static_cast<unsigned long long>(source.active_pushes()),static_cast<unsigned long long>(source.recovery_pushes()),static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_relaunch_push||options.source_ground_relaunch_entry_push)gf::log_info(context,"source-ground","controller-relaunch-pushes=%llu entry-pushes=%llu relaunches=%llu landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u",static_cast<unsigned long long>(source.relaunch_surface_pushes()),static_cast<unsigned long long>(source.relaunch_entry_surface_pushes()),static_cast<unsigned long long>(source.relaunches()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));

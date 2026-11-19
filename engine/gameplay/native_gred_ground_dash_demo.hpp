@@ -35,6 +35,7 @@ class NativeGRedGroundDashDemo {
         std::optional<NativeBorgAirDashFloor> air_dash_floor{};
         CharacterMotionVector frame_start{};f32 ground_timer698=0;
         bool ground_pending=false,ground_active=false,suppressed_ground_drift=false,walk_loss_origin=false;
+        bool recovery_floor_complete=false;
         std::optional<s16> ground_drift_heading{};
         CharacterMotionRootState dash_root;
         std::shared_ptr<const NativeBorgOrderedRootScope> dash_root_scope;
@@ -45,7 +46,10 @@ class NativeGRedGroundDashDemo {
         std::optional<NativeBorgSurfaceLanding> surface_landing;
         u8 dash_recovery546=0;bool dash_exit545=false;
     };
-    struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
+    struct Pending {
+        State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;
+        std::shared_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion;
+    };
 public:
     using Mode=NormalGRedMovementMode;
     NativeGRedGroundDashDemo()=default;
@@ -166,6 +170,8 @@ public:
            !(controller_relaunch_mode(mode_)&&relaunch_input_phase(state_))&&
            (!(state_.input.previous_held&0x100u)||state_.jump.falling_after_ground_loss))
             return fail(error,"jump controller refuses takeoff/airborne/landing cancellation");
+        if(state_.recovery_floor_complete&&(stick_x||stick_y||held))
+            return fail(error,"recovery floor completion requires a neutral recontact update");
         auto candidate=std::make_unique<Pending>();candidate->state=state_;auto& s=candidate->state;
         s.motion.position=observed.position;s.motion.flags5e0=s.vm.state().actor.behaviour;s.contact_angle=-1;s.static_push.reset();s.relaunch_floor.reset();s.air_dash_floor.reset();
         s.ordered_ground.reset();
@@ -173,6 +179,7 @@ public:
         s.air_motion.reset();
         s.relaunch_motion.reset();
         s.surface_landing.reset();
+        s.recovery_floor_complete=false;
         if(ledge_mode(mode_)){
             //Native-owned frame-start snapshot, bound to this observed scope/
             //tick. Never reinterpret the previous render/offer as source2C.
@@ -332,6 +339,10 @@ public:
             if(error&&!detail.empty())*error+=" / "+detail;
             return false;
         }
+        if(state_.recovery_floor_complete&&(kind!=NativeBorgMotionKind::JumpTouchdown||!s.jump_motion||
+            !s.jump_motion->entry||!s.jump_motion->air_dash_origin||s.ground_timer698!=0.f||!s.surface_landing||
+            !state_.surface_landing||s.surface_landing->surface!=state_.surface_landing->surface))
+            return fail(error,"recovery recontact needs the same flat floor and ordinary falling entry");
         bool moving=s.dash.selector!=0;
         if(moving&&ordered_mode(mode_)){
             std::string detail;
@@ -400,6 +411,12 @@ public:
         if(native_borg_motion_air_dash(kind))candidate->offer.action=BattleMvpAction::AirDash;
         if(native_borg_motion_relaunch_entry(kind))candidate->offer.entry_vertical_delta=f32(motion_.air[2]*motion_.rank[2]);
         if(!serial_)return fail(error,"source serial exhausted");
+        if(allows(mode_,Behavior::RecoveryFloorRecontact)&&s.air_motion&&s.air_motion->phase==17){
+            auto proof=std::shared_ptr<NativeBorgRecoveryCompletionScope>(new NativeBorgRecoveryCompletionScope);
+            proof->world=observed.scope;proof->producer=producer_;proof->tick=observed.tick;proof->serial=serial_;
+            proof->lower_done=s.air_motion->lower_done;proof->kind=kind;
+            candidate->offer.recovery_completion=proof;candidate->recovery_completion=std::move(proof);
+        }
         *out=candidate->offer;pending_=std::move(candidate);return true;
     }
     bool commit(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,std::string* error){
@@ -951,7 +968,18 @@ private:
         const bool done=s.vm.state().lanes[1].done;
         evidence.lower_done=done;evidence.callback=s.air_dash.contact_callback;
         GRedAirDashContactTail tail;
-        if(!gred_air_dash_contact_tail(selector,s.air_dash.contact_callback,done,touchdown,&tail)){
+        if(allows(mode_,Behavior::RecoveryFloorRecontact)&&selector==17&&done&&touchdown&&
+           s.air_dash.contact_callback&&!entry&&!evidence.drift_heading&&!state_.static_push&&s.ground_timer698==0.f&&
+           s.surface_landing&&native_borg_flat_surface(s.surface_landing->surface)){
+            StageGroundSurfaceResult start;
+            if(!ground.surface(before.position,&start,error)||!start.selected||
+                NativeBorgStaticSurface{start.height,start.normal,start.triangle}!=s.surface_landing->surface)
+                return false;
+            // 617E4 reads lower completion after 65E64's zero/selector7
+            // callback. 6A750 does not clear the completion latch; selector6
+            // supersedes 7 but keeps the contact's height and zero speeds.
+            tail.falling=true;s.recovery_floor_complete=true;
+        }else if(!gred_air_dash_contact_tail(selector,s.air_dash.contact_callback,done,touchdown,&tail)){
             if(error)*error="unsupported early floor contact or simultaneous recovery-completion/landing";
             return false;
         }
@@ -959,7 +987,8 @@ private:
         if(tail.landing){s.jump.selector=7;s.jump.entered=false;s.jump.air_ready588=0;s.air_dash.selector=0;}
         else if(tail.falling){s.jump.selector=6;s.jump.entered=false;s.jump.air_ready588=0;s.jump.falling_after_dash=true;s.jump.falling_after_relaunch=false;s.air_dash.selector=0;}
         if(plan.request?!select(plan.program,1):!update(1))return false;
-        *kind=touchdown?NativeBorgMotionKind::JumpTouchdown:
+        *kind=s.recovery_floor_complete?NativeBorgMotionKind::AirDashRecoveryFloorComplete:
+            touchdown?NativeBorgMotionKind::JumpTouchdown:
             selector==15?(entry?NativeBorgMotionKind::AirDashWindupEntry:NativeBorgMotionKind::AirDashWindup):
             selector==16?(entry?NativeBorgMotionKind::AirDashActiveEntry:NativeBorgMotionKind::AirDashActive):NativeBorgMotionKind::AirDashRecovery;
         if(s.static_push)*kind=selector==15?(entry?NativeBorgMotionKind::AirDashWindupEntryPush:NativeBorgMotionKind::AirDashWindupPush):

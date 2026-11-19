@@ -430,6 +430,22 @@ class SourceGroundWorldTests(unittest.TestCase):
                 else:
                     self.assertNotIn("practice-ledge-timer-ticks=", run.stdout)
 
+    def test_gred_recovery_floor_contact_precedes_touchdown_and_refill(self):
+        for tick, phase, meter, landings, selector, program in (
+            (107, "DASH RECOVERY", 5750, 0, 17, 12),
+            (108, "DASH RECOVERY / FLOOR CONTACT", 5750, 0, 6, 12),
+            (109, "TOUCHDOWN", 5750, 1, 7, 13),
+            (110, "LANDING", 5750, 1, 7, 8),
+            (111, "LANDING", 7750, 1, 7, 8),
+            (200, "IDLE", 10000, 1, 0, 0),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-recovery-recontact", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn(f"recovery-recontact landings={landings} resource={meter} selector={selector} programs={program}/{program}", run.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)
