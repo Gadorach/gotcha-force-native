@@ -55,6 +55,9 @@ int main(){
     static_assert(unsigned(Mode::GroundWalkExpiryDirectRelaunch)==63&&unsigned(Policy::GroundWalkExpiryDirectRelaunch)==59&&
         !Definition::allows(Mode::GroundExpiryPlainWindupRelaunch,Behavior::WalkExpiryDirectRelaunch)&&
         Definition::allows(Mode::GroundWalkExpiryDirectRelaunch,Behavior::WalkExpiryDirectRelaunch));
+    static_assert(unsigned(Mode::GroundTimedSnapWindupRelaunch)==64&&unsigned(Policy::GroundTimedSnapWindupRelaunch)==60&&
+        !Definition::allows(Mode::GroundWalkExpiryDirectRelaunch,Behavior::TimedSnapWindupRelaunch)&&
+        Definition::allows(Mode::GroundTimedSnapWindupRelaunch,Behavior::TimedSnapWindupRelaunch));
     static_assert(unsigned(Behavior::WalkLedgeExpiryPush)==32&&
         !Definition::allows(Mode::GroundWalkLedgeHighAnglePush,Behavior::WalkLedgeExpiryPush)&&
         Definition::allows(Mode::GroundWalkLedgeExpiryPush,Behavior::WalkLedgeExpiryPush));

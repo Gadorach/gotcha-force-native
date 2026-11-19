@@ -1109,6 +1109,39 @@ No contact permissions changed. Of 2,480 scanned routes, 48
 completed and 19 still had a positive timer at wind-up entry.
 Incomplete routes do not authorize raised-side travel or steep contact.
 
+### Neutral relaunch from the completed timed floor wind-up
+
+`--gred-walk-ledge-timed-snap-handoff` opts into one later choice:
+relaunch instead of active entry after the verified floor wind-up.
+It must start from an accepted descending relaunch snap with enough
+ledge time to enter wind-up **still positive**. Every wind-up update
+must remain an accepted snap on the same flat level; a triangle
+change also needs its own shared-edge proof. That sequence cannot be
+inferred from a zero timer or from the last floor height alone.
+
+```sh
+gf_native --demo-gred-walk-ledge-timed-snap-handoff --headless --frames 220 --no-audio
+gf_native --gred-walk-ledge-timed-snap-handoff --practice-start --no-audio
+```
+
+Follow the timed snap-to-dash inputs above through 150, then neutral
+through 155. Wind-up crosses the verified coplanar edge 1116 → 900 at
+151 and the ledge timer expires at 152. Tick 155 pays 450, leaving
+9300 meter, and shows **SHIFT/B RELAUNCH / NEUTRAL DASH**. On 156:
+
+- Tap **Shift** with no direction held to rise 15 units above the
+  same triangle. This costs 150, leaving 9150, with no active-dash
+  charge or entry snap. Release on 157; touchdown and landing are
+  separate at 190 and 191.
+- Leave the controls neutral to start active dash at 9250, with its
+  unchanged touchdown and landing at 186 and 187.
+
+The source and native owner each verify the accepted sequence and
+same-triangle entry. Older policies still refuse the floor handoff.
+A wind-up that enters at zero, a relaunch request before expiry,
+directional entry, and entry contact responses remain unsupported
+under this new permission. This does not change landing or refill.
+
 Native placement/input/clocks/libm/camera/target/body/terrain approximations
 remain explicit, not original-hardware or whole-game equivalence. Push,
 nonflat ordered dash, raised-side/clipped/unknown contacts and combat remain

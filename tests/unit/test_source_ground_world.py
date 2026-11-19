@@ -605,6 +605,34 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("accepted native tick=0 G-Red-position=-1368.47/", guide.stdout)
         self.assertNotIn("timed snap to air dash demo:", guide.stdout)
 
+    def test_timed_snap_windup_handoff_keeps_the_charge_and_skips_active(self):
+        for tick, phase, meter, count in (
+            (150, "DASH WIND-UP / FLOOR SNAP", 9750, 1), (154, "DASH WIND-UP / FLOOR SNAP", 9750, 1),
+            (155, "DASH WIND-UP / FLOOR SNAP", 9300, 1), (156, "RELAUNCH", 9150, 2),
+            (157, "FALLING", 9150, 2), (190, "TOUCHDOWN", 9150, 2), (191, "LANDING", 9150, 2),
+            (220, "IDLE", 10000, 2),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-timed-snap-handoff", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"controller-loss-relaunches={count}", result.stdout)
+                self.assertIn("active-floors=0", result.stdout)
+                self.assertEqual("practice-floor-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH" in result.stdout, tick == 155)
+                self.assertNotIn("practice-windup-handoff=", result.stdout)
+                if tick == 156:
+                    self.assertIn("/25.00/", result.stdout)
+                if tick == 220:
+                    self.assertIn("G-Red-position=-2668.02/10.00/594.38", result.stdout)
+        guide = self.run_host(["--gred-walk-ledge-timed-snap-handoff", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("floor wind-up relaunch guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-1368.47/", guide.stdout)
+        self.assertNotIn("floor wind-up relaunch demo:", guide.stdout)
+
     def test_walk_ledge_direct_expiry_relaunch_has_no_air_dash_charge(self):
         for tick, phase, meter in (
             (56, "LEDGE FALL / PUSH", 10000), (57, "RELAUNCH", 9850),

@@ -173,6 +173,7 @@ struct NativeBorgAirMotion {
     f32 speed_before=0,move_speed=0,speed44=0,vertical_before=0,planar_accel=0,vertical_accel=0,timer_before=0,timer568=0;
     s16 travel5ae=0,resource_before=0,resource_after=0;std::optional<s16> drift_heading;
     bool walk_expiry_windup=false; //Scoped uninterrupted plain wind-up from an accepted walking expiry push.
+    bool timed_relaunch_floor_windup=false; //Uninterrupted flat-floor wind-up that entered directly from a timed descending relaunch snap.
     bool operator==(const NativeBorgAirMotion&)const=default;
 };
 struct NativeBorgRelaunchMotion {
@@ -527,6 +528,24 @@ public:
                     (e.entry?(o.kind==NativeBorgMotionKind::AirDashWindupEntry&&walking_push&&walking_push->timer698==0.f):
                         (o.kind==NativeBorgMotionKind::AirDashWindup&&previous&&previous->phase==15&&previous->walk_expiry_windup));
                 if(e.walk_expiry_windup!=expiry_lineage)return false;
+                bool timed_floor_lineage=false;
+                if(behaviors.has(Behavior::TimedSnapWindupRelaunch)&&e.phase==15&&o.air_dash_floor&&
+                    native_borg_flat_surface(o.air_dash_floor->surface)&&o.controller_timer698){
+                    const auto& selected=o.air_dash_floor->surface;
+                    if(e.entry){
+                        timed_floor_lineage=o.kind==NativeBorgMotionKind::AirDashWindupEntryFloor&&
+                            native_borg_motion_relaunch_floor(prior)&&last_offer_.relaunch_floor&&
+                            last_offer_.relaunch_floor->surface==selected&&actor.vertical_speed<0.f&&
+                            last_offer_.controller_timer698>1.f&&*o.controller_timer698>0.f;
+                    }else if(o.kind==NativeBorgMotionKind::AirDashWindupFloor&&previous&&previous->phase==15&&
+                        previous->timed_relaunch_floor_windup&&last_offer_.air_dash_floor){
+                        const auto& start=last_offer_.air_dash_floor->surface;
+                        timed_floor_lineage=selected.height==start.height&&actor.position[1]==start.height&&
+                            (selected==start||(terrain&&terrain->coplanar_crossing(start.triangle,selected.triangle,
+                                actor.position,o.proposed_position)));
+                    }
+                }
+                if(e.timed_relaunch_floor_windup!=timed_floor_lineage)return false;
                 const auto* jump=actor.source_ground_motion&&last_offer_.jump_motion?&*last_offer_.jump_motion:nullptr;
                 const auto* relaunched=controller_relaunch_policy&&last_offer_.relaunch_motion?&*last_offer_.relaunch_motion:nullptr;
                 const f32 prior_speed=previous?previous->speed44:jump?jump->speed44:relaunched?relaunched->speed44:0;
@@ -647,10 +666,24 @@ public:
                           *o.controller_timer698==*last_offer_.controller_timer698-1.f;
                       const bool expiry_plain_handoff=plain_handoff&&behaviors.has(Behavior::ExpiryPlainWindupRelaunch)&&
                           air->walk_expiry_windup&&*last_offer_.controller_timer698==0.f&&*o.controller_timer698==0.f;
+                      const bool timed_floor_handoff=completed_windup&&behaviors.has(Behavior::TimedSnapWindupRelaunch)&&
+                          prior==NativeBorgMotionKind::AirDashWindupFloor&&air->timed_relaunch_floor_windup&&
+                          last_offer_.air_dash_floor&&last_offer_.controller_timer698==0.f&&o.controller_timer698==0.f&&
+                          o.kind==NativeBorgMotionKind::RelaunchEntry;
+                      if(timed_floor_handoff){
+                          const auto& floor=last_offer_.air_dash_floor->surface;
+                          NativeBorgStaticSurface start,end;
+                          BattlePoint facing;source_heading_xz(e.travel5ae,&facing.x,&facing.z);
+                          if(!terrain||actor.vertical_speed||e.direction||facing!=actor.facing||o.facing!=actor.facing||
+                              !native_borg_flat_surface(floor)||actor.position[1]!=floor.height||
+                              !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&start)||start!=floor||
+                              !terrain->static_surface(o.proposed_position[0],o.proposed_position[2],actor.position[1],&end)||end!=floor)
+                              return false;
+                      }
                        const auto entry_kind=relaunch_entry_push?NativeBorgMotionKind::RelaunchEntryPush:
                            relaunch_floor?NativeBorgMotionKind::RelaunchEntryFloor:NativeBorgMotionKind::RelaunchEntry;
                        if(previous||(!air&&!jump)||(air&&air->phase!=16&&air->phase!=17&&
-                           !windup_push_handoff&&!timed_plain_handoff&&!expiry_plain_handoff)||
+                           !windup_push_handoff&&!timed_plain_handoff&&!expiry_plain_handoff&&!timed_floor_handoff)||
                         (jump&&(jump->phase!=6||(jump->ground_loss&&!controller_ground_loss_relaunch_policy)))||e.upper_before||
                         o.kind!=entry_kind||o.entry_vertical_delta!=15)return false;
                 }else if(!previous||e.lower_before!=previous->lower_after||e.upper_before!=previous->upper_after||
@@ -1313,7 +1346,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiryDirectRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedSnapWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

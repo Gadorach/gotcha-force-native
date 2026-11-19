@@ -278,7 +278,7 @@ public:
             if(practice->recovery_seam)text+="\nFLAT SEAM";
             if(practice->recovery_push_complete)text+="\nRECOVERY COMPLETE";
             if(practice->recovery_push_exit_drift)text+="\nEXIT DRIFT";
-            if(practice->plain_windup_relaunch_ready){text+="\n";text+=windup_handoff_hint;}
+            if(practice->plain_windup_relaunch_ready||practice->floor_windup_relaunch_ready){text+="\n";text+=windup_handoff_hint;}
             if(const char* cue=practice_relaunch_floor_cue(*practice)){text+="\n";text+=cue;}
             if(practice->dash_interrupted_takeoff){text+="\n";text+=dash_interrupt_hint;}
             if(practice->landing_dash_started){text+="\n";text+=landing_dash_hint;}

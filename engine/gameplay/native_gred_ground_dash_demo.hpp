@@ -329,6 +329,7 @@ public:
             }
         }
         const bool expiry_relaunch=allows(mode_,Behavior::ExpiryPlainWindupRelaunch);
+        const bool timed_snap_handoff=allows(mode_,Behavior::TimedSnapWindupRelaunch);
         if(s.jump.selector==8){
             const auto& previous_air=state_.air_motion;
             const bool direct_push=allows(mode_,Behavior::WalkExpiryDirectRelaunch)&&!s.relaunch.lower_stage&&
@@ -346,12 +347,29 @@ public:
             if(plain_windup_handoff&&!timed_handoff&&!expiry_handoff)
                 return fail(error,expiry_relaunch?"plain wind-up relaunch needs a still-positive countdown or an accepted expiry-push wind-up":
                     "plain wind-up relaunch needs a still-positive ledge countdown");
+            const bool floor_windup_handoff=timed_snap_handoff&&!s.relaunch.lower_stage&&state_.air_dash_floor&&
+                previous_air&&previous_air->phase==15&&previous_air->next_selector==16&&previous_air->next_stage==0&&previous_air->timer568==0.f;
+            if(floor_windup_handoff&&(!previous_air->timed_relaunch_floor_windup||
+                state_.ground_timer698!=0.f||s.ground_timer698!=0.f))
+                return fail(error,"floor wind-up relaunch needs uninterrupted timed snap history and an expired countdown");
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
             if(direct_push&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||!s.relaunch_motion->direction||
                 s.relaunch_motion->vertical_before>=0.f||s.motion.vertical48>=0.f))
                 return fail(error,"direct expiry relaunch requires plain descending entry without contact response");
+            if(floor_windup_handoff){
+                const auto& floor=state_.air_dash_floor->surface;
+                const auto ground=ground_for(state_);
+                auto matches=[&](const auto& position){
+                    StageGroundSurfaceResult e;
+                    return ground.surface(position,&e,error)&&e.selected&&NativeBorgStaticSurface{e.height,e.normal,e.triangle}==floor;
+                };
+                if(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||s.relaunch_motion->direction||
+                    s.body!=state_.body||observed.vertical_speed||!native_borg_flat_surface(floor)||observed.position[1]!=floor.height||
+                    !matches(observed.position)||!matches(s.motion.position))
+                    return fail(error,"timed floor handoff needs plain neutral relaunch over the same flat triangle");
+            }
             candidate->direct_expiry_relaunch=direct_push;
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
             const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
@@ -374,6 +392,21 @@ public:
                 s.air_motion->walk_expiry_windup=s.air_motion->entry?
                     (kind==NativeBorgMotionKind::AirDashWindupEntry&&push_windup&&state_.ground_timer698==0.f):
                     (kind==NativeBorgMotionKind::AirDashWindup&&previous_air&&previous_air->phase==15&&previous_air->walk_expiry_windup);
+            }
+            if(timed_snap_handoff&&s.air_motion&&s.air_motion->phase==15&&s.air_dash_floor&&
+                native_borg_flat_surface(s.air_dash_floor->surface)){
+                const auto& selected=s.air_dash_floor->surface;
+                const auto& previous_air=state_.air_motion;
+                if(s.air_motion->entry){
+                    s.air_motion->timed_relaunch_floor_windup=kind==NativeBorgMotionKind::AirDashWindupEntryFloor&&
+                        state_.relaunch_floor&&state_.relaunch_floor->surface==selected&&observed.vertical_speed<0.f&&
+                        state_.ground_timer698>1.f&&s.ground_timer698>0.f;
+                }else if(kind==NativeBorgMotionKind::AirDashWindupFloor&&previous_air&&previous_air->phase==15&&
+                    previous_air->timed_relaunch_floor_windup&&state_.air_dash_floor){
+                    const auto& start=state_.air_dash_floor->surface;
+                    s.air_motion->timed_relaunch_floor_windup=selected.height==start.height&&observed.position[1]==start.height&&
+                        (selected==start||stage_ground_coplanar_crossing(grids_[0],start.triangle,selected.triangle,observed.position,s.motion.position));
+                }
             }
         }else if(s.jump.selector&&!jump(s,held,frame,&kind,error)){
             const std::string detail=error?*error:"";fail(error,"source jump/landing handler refused");
@@ -576,11 +609,13 @@ public:
         const bool recovery_drift_active=pending_->recovery_completion&&pending_->recovery_completion->drift_offset.has_value();
         const bool recovery_push_complete=accepted.kind==NativeBorgMotionKind::AirDashRecoveryPush&&
             accepted.air_motion&&accepted.air_motion->lower_done&&accepted.air_motion->next_selector==6;
-        const bool plain_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindup&&air&&
-            air->phase==15&&air->next_selector==16&&air->next_stage==0&&air->timer568==0&&accepted.controller_timer698&&
-            state_.resource.value736>0&&!(state_.vm.state().actor.behaviour&2u)&&
+        const bool windup_relaunch_ready=air&&air->phase==15&&air->next_selector==16&&air->next_stage==0&&air->timer568==0&&
+            accepted.controller_timer698&&state_.resource.value736>0&&!(state_.vm.state().actor.behaviour&2u);
+        const bool plain_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindup&&windup_relaunch_ready&&
             ((allows(mode_,Behavior::TimedPlainWindupRelaunch)&&*accepted.controller_timer698>1.f)||
              (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup));
+        const bool floor_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindupFloor&&windup_relaunch_ready&&
+            state_.jump.cached87&&air->timed_relaunch_floor_windup&&*accepted.controller_timer698==0.f;
         bool direct_expiry_relaunch_ready=false;
         if(allows(mode_,Behavior::WalkExpiryDirectRelaunch)&&accepted.kind==NativeBorgMotionKind::GroundLossPush&&
             accepted.static_push&&accepted.walk_ledge&&accepted.walk_ledge->walk_origin&&
@@ -599,7 +634,8 @@ public:
                 recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift,plain_windup_relaunch_ready,
                 accepted.relaunch_floor?std::optional{accepted.relaunch_floor->response_factor<1.f}:std::nullopt,
                 pending_->interrupted_dash&&accepted.kind==NativeBorgMotionKind::JumpTakeoff,
-                accepted.landing_target==12,pending_->direct_expiry_relaunch,direct_expiry_relaunch_ready,windup_from_relaunch_snap}));
+                accepted.landing_target==12,pending_->direct_expiry_relaunch,direct_expiry_relaunch_ready,windup_from_relaunch_snap,
+                floor_windup_relaunch_ready}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

@@ -26,6 +26,12 @@ struct AnglePlane final:gf::IBattleMvpTerrain{
         out->normal=normal;return true;
     }
 };
+struct NoCoplanarProof final:gf::IBattleMvpTerrain{
+    const gf::NativeBattleMvpView& view;
+    explicit NoCoplanarProof(const gf::NativeBattleMvpView& v):view(v){}
+    bool height(gf::f32 x,gf::f32 z,gf::f32 y,gf::f32* out)const override{return view.height(x,z,y,out);}
+    bool static_surface(gf::f32 x,gf::f32 z,gf::f32 y,gf::NativeBorgStaticSurface* out)const override{return view.static_surface(x,z,y,out);}
+};
 }
 int main(){
     using namespace gf;Files files;const std::string art="local/content/native-battle-mvp-v1",pack="local/content/source-gred-ground-v9";
@@ -290,6 +296,114 @@ int main(){
     }
     check(!source.air_dash_starts()&&source.landings()==1&&source.resource()==10000&&source.selector()==0,
         "neutral release settles normally without a pending dash");
+    auto floor_windup_prefix=[&](Mode mode,const SnapDash& route){
+        bind(1,mode);
+        for(unsigned tick=1;tick<=route.flick+5;++tick){
+            NativeBorgMotionOffer offer;
+            check(prepare(snap_dash_pad(tick,route,true),&offer),"accepted snap and uninterrupted wind-up prefix");
+            accept(offer);
+        }
+    };
+    GamePadState relaunch_tap;relaunch_tap.b=true;
+    floor_windup_prefix(Mode::GroundWalkExpiryDirectRelaunch,snap_dashes[0]);
+    {
+        NativeBorgMotionOffer offer;const auto retained=pose;const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(!view.practice_readout(world)->floor_windup_relaunch_ready&&prepare(relaunch_tap,&offer)&&offer.kind==Kind::RelaunchEntry&&
+            !world.step({},false,&view,nullptr,&frame,&offer)&&world.tick()==155&&source.resource()==9300&&
+            world.motion_receipt_current(retained.receipt),"the same floor route in an older mode still cannot publish relaunch");
+        source.reject();
+    }
+    floor_windup_prefix(Mode::GroundTimedSnapWindupRelaunch,snap_dashes[1]);
+    {
+        NativeBorgMotionOffer offer;
+        check(!view.practice_readout(world)->floor_windup_relaunch_ready&&!prepare(relaunch_tap,&offer)&&world.tick()==157&&
+            error.find("uninterrupted timed snap history")!=std::string::npos&&source.resource()==9000&&!world.step({},false,&view),
+            "wind-up starting on a pending 1-to-0 cannot claim positive-entry ancestry later");
+    }
+    floor_windup_prefix(Mode::GroundTimedSnapWindupRelaunch,snap_dashes[0]);
+    {
+        auto direction=relaunch_tap;direction.dpad_up=true;
+        NativeBorgMotionOffer offer;
+        check(view.practice_readout(world)->floor_windup_relaunch_ready&&!prepare(direction,&offer)&&world.tick()==155&&
+            error.find("plain neutral relaunch")!=std::string::npos&&source.resource()==9300&&!world.step({},false,&view),
+            "the new permission is only for neutral relaunch, not steering or a ground fallback");
+    }
+    for(unsigned hold:{0u,1u,4u}){
+        bind(1,Mode::GroundTimedSnapWindupRelaunch);
+        unsigned floor_frames=0,hit=0,land=0,release=0;
+        NativeBorgMotionOffer previous;
+        std::weak_ptr<const NativeBorgMotionProducer> producer;
+        for(unsigned tick=1;tick<=225;++tick){
+            const auto before=world.actors()[0];const auto retained=pose;
+            auto pad=snap_dash_pad(tick,snap_dashes[0],true);
+            if(tick>=156&&tick<156+hold)pad.b=true;
+            const auto meter=source.resource();const auto timer=source.ground_loss_timer698();
+            NativeBorgMotionOffer offer;
+            check(prepare(pad,&offer)&&source.resource()==meter&&source.ground_loss_timer698()==timer,
+                "lineage, contact, timer and charges remain staged");
+            if(tick==1)producer=offer.producer;
+            check(!offer.producer.owner_before(producer)&&!producer.owner_before(offer.producer),
+                "both choices keep one producer and one renderer through landing");
+            const bool lineage=tick>=150&&tick<=155;
+            check((offer.air_motion&&offer.air_motion->timed_relaunch_floor_windup)==lineage,
+                "only six consecutive qualified floor wind-up frames carry lineage");
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            auto refuses=[&](const NativeBorgMotionOffer& wrong,const IBattleMvpTerrain& terrain,const char* why){
+                const auto shown=view.practice_readout(world);
+                check(!world.step({},false,&terrain,nullptr,&frame,&wrong)&&world.tick()==tick-1&&
+                    world.actors()[0].position==before.position&&world.motion_receipt_current(retained.receipt)&&
+                    source.resource()==meter&&source.ground_loss_timer698()==timer&&shown&&
+                    shown->floor_windup_relaunch_ready==(tick==156),why);
+            };
+            if(lineage){
+                ++floor_frames;
+                check(offer.air_dash_floor&&!before.grounded&&offer.proposed_position[1]==before.position[1]&&
+                    offer.controller_timer698==std::max(0.f,152.f-f32(tick)),
+                    "floor continuity and natural expiry do not imply landing");
+                auto wrong=offer;wrong.air_motion->timed_relaunch_floor_windup=false;
+                refuses(wrong,view,"the current offer cannot edit the certified ancestry");
+            }
+            if(tick==151){
+                NoCoplanarProof missing(view);
+                check(previous.air_dash_floor&&previous.air_dash_floor->surface.triangle==1116&&
+                    offer.air_dash_floor->surface.triangle==900,"the wind-up actually crosses the original flat seam");
+                refuses(offer,missing,"an unverified seam cannot extend the timed floor lineage");
+            }
+            if(tick==155)check(offer.air_motion->resource_before==9750&&offer.air_motion->resource_after==9300&&
+                offer.air_motion->next_selector==16,"completed floor wind-up spends its own 450");
+            if(tick==156&&hold){
+                check(offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&offer.relaunch_motion->entry&&!offer.relaunch_motion->direction&&
+                    !before.grounded&&!before.vertical_speed&&offer.proposed_position[1]==before.position[1]+15.f&&offer.vertical_speed==15.8f&&
+                    offer.facing==before.facing&&offer.controller_timer698==0.f&&offer.relaunch_motion->resource_before==9300&&
+                    offer.relaunch_motion->resource_after==9150&&!offer.relaunch_floor&&!offer.air_dash_floor&&!offer.static_push,
+                    "neutral rising entry from the same floor pays 150 but not active dash");
+                auto wrong=offer;wrong.relaunch_motion->resource_before=9750;
+                refuses(wrong,view,"a relaunch cannot undo the paid wind-up");
+                wrong=offer;wrong.relaunch_motion->resource_after-=50;
+                refuses(wrong,view,"a relaunch cannot charge for the active dash it replaced");
+                wrong=offer;wrong.controller_timer698=1.f;
+                refuses(wrong,view,"entry cannot revive the expired timer");
+                AnglePlane other_plane(view);
+                refuses(offer,other_plane,"native must independently select the same flat plane over the new entry");
+            }
+            if(tick==156&&!hold)check(offer.kind==Kind::AirDashActiveEntryFloor&&offer.air_motion&&
+                offer.air_motion->resource_after==9250,"neutral input still selects the ordinary paid active dash");
+            if(hold&&tick>156&&!release&&offer.kind==Kind::JumpAir)release=tick;
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->floor_windup_relaunch_ready==(tick==155)&&!shown->plain_windup_relaunch_ready,
+                "only the accepted paid floor wind-up gives the choice");
+            if(tick==release||tick==hit||tick==land)check(source.resource()==(hold?9150-100*int(hold-1):7750),
+                "no landing or release prematurely recovers meter");
+            previous=offer;
+        }
+        check(floor_frames==6&&hit==(hold==1?190u:hold==4?200u:186u)&&land==hit+1&&
+            release==(hold?156+hold:0)&&source.relaunches()==(hold?2u:1u)&&
+            (source.air_dash_active_frames()==0)==bool(hold)&&source.resource()==10000&&source.landings()==1&&!source.selector(),
+            "both the ordinary dash and neutral relaunch choices reach separate landing and idle");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

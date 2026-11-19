@@ -208,6 +208,13 @@ preceding snap, while the ledge timer is still positive. The two
 dash charges and actual landing come later. Use
 `--demo-gred-walk-ledge-timed-snap-dash` for the automatic replay.
 
+`--gred-walk-ledge-timed-snap-handoff --practice-start` gives a choice
+at the end of that floor wind-up. Follow the same inputs through
+150, then wait for **SHIFT/B RELAUNCH / NEUTRAL DASH** at 155.
+Tap **Shift** without a direction on 156 to relaunch, or leave the
+controls neutral to dash. Both keep the 450 cost already paid.
+Use `--demo-gred-walk-ledge-timed-snap-handoff` for the relaunch replay.
+
 `--gred-inclined-dash-jump --practice-start` opens the flat-to-incline
 dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
 **DASH CANCELED** appears on accepted takeoff. The old dash does not
