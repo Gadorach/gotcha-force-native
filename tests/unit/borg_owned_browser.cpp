@@ -79,6 +79,16 @@ int main(){
     check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::RecoverySeam&&
         browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
         "Recovery Seam selects a route, not a different copy or a different variant");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::TimedRelaunchFloor&&browser.practice_route_name()=="TIMED RELAUNCH FLOOR"&&
+        browser.step(right,true)==BorgBrowserChange::None,
+        "second Right reaches the timed floor guide once per press");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::InclineDashJump&&browser.practice_route_name()=="INCLINE DASH JUMP"&&
+        browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
+        "third Right selects the incline jump without changing saved contents");
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,
         "disabled copy stays visible but cannot request preview");

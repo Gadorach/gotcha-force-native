@@ -1685,7 +1685,8 @@ int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& pack
 
 bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice){
     constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
-        "--gred-movement","--gred-recovery-first-contact-seam","--gred-slope-transition-dash",
+        "--gred-movement","--gred-recovery-first-contact-seam","--gred-walk-ledge-timed-relaunch-floor","--gred-inclined-dash-jump",
+        "--gred-slope-transition-dash",
         "--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
         "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push",
         "--gred-walk-ledge-timed-handoff-relaunch","--gred-walk-ledge-expiry-handoff-relaunch","--gred-walk-ledge-expiry-air-dash",

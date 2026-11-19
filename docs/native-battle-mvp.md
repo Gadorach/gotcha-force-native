@@ -205,6 +205,12 @@ dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
 **DASH CANCELED** appears on accepted takeoff. The old dash does not
 move G-Red again, and the flight meter is first charged on lift.
 
+Both guides are available with `--practice-from-picker`. From
+**Standard**, select the next route twice for **Timed Relaunch Floor**
+or three times for **Incline Dash Jump** (**Right** in the owned picker,
+**R** in the Force browser). **Q/Y** opens the guide paused, **P** steps
+with real input, and **Esc** returns to the same copy or slot and route.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement

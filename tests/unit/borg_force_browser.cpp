@@ -63,6 +63,14 @@ int main(){
     check(cursor.open(force_before,slot_before)&&cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
         cursor.practice_route()==GRedPickerPracticeRoute::RecoverySeam&&cursor.force()==force_before&&cursor.slot()==slot_before,
         "one Right shoulder from Standard selects Recovery Seam without moving either cursor");
+    cursor.step({});
+    check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
+        cursor.practice_route()==GRedPickerPracticeRoute::TimedRelaunchFloor&&cursor.practice_route_name()=="TIMED RELAUNCH FLOOR"&&
+        cursor.step(next_route,true)==BorgForceBrowseChange::None,"second Right shoulder reaches the timed floor guide once");
+    cursor.step({});
+    check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
+        cursor.practice_route()==GRedPickerPracticeRoute::InclineDashJump&&cursor.practice_route_name()=="INCLINE DASH JUMP"&&
+        cursor.force()==force_before&&cursor.slot()==slot_before,"third Right shoulder reaches incline dash jump without moving either cursor");
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

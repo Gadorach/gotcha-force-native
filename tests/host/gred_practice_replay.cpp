@@ -7,7 +7,7 @@
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
     RecoverySeamRestart,InclineDashJump,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
-    OwnedTimedHandoff,ForceExpiryHandoff};
+    OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -116,6 +116,29 @@ public:
             if(f>=14+2*ticks&&f<=16+2*ticks)raw.quit=true;
             break;
         }
+        case Replay::OwnedTimedFloor:
+        case Replay::ForceTimedFloor:
+        case Replay::OwnedInclineJump:
+        case Replay::ForceInclineJump:{
+            const bool owned=replay_==Replay::OwnedTimedFloor||replay_==Replay::OwnedInclineJump;
+            const bool floor=replay_==Replay::OwnedTimedFloor||replay_==Replay::ForceTimedFloor;
+            const unsigned routes=floor?2:3,ticks=floor?(owned?200:152):(owned?14:120);
+            if(f<2*routes&&f%2==0)raw.buttons|=1u<<(owned?8:10); // Next route, not a different copy or slot.
+            if(f>=2*routes&&f<=2*routes+2)raw.buttons|=1u<<3;
+            if(f>=13&&f<13+2*ticks){
+                const unsigned tick=1+(f-13)/2;
+                snapshot_.frame_step=(f-13)%2==0;
+                if(floor){
+                    if(tick>=6&&tick<=122)raw.buttons|=(1u<<6)|(1u<<8);
+                    if(tick>=147&&tick<=(owned?157:151))raw.buttons|=1u<<1;
+                }else{
+                    if(tick==6)raw.axis[1]=20000;
+                    if(tick>=14&&tick<=37)raw.buttons|=1u<<1;
+                }
+            }
+            if(f>=14+2*ticks&&f<=16+2*ticks)raw.quit=true;
+            break;
+        }
         }
     }
     const gf::InputSnapshot& snapshot()const override{return snapshot_;}
@@ -176,6 +199,11 @@ bool recovery_seam_completed(const std::string& log){
         !has(log,"recovery first-contact seam demo:")&&!has(log,"motion acceptance refused")&&
         !has(log,"practice restarted")&&has(log,"accepted native tick=200 G-Red-position=1134.61/10.00/-611.42")&&
         has(log,"recovery-recontact landings=1 resource=10000 selector=0");
+}
+bool picker_guide_played(const std::string& log,const std::string& guide,unsigned ticks){
+    return once(log,(guide+" guide: paused at tick=0").c_str())&&
+        once(log,("practice stepped to tick="+std::to_string(ticks)+"\n").c_str())&&
+        !has(log,(guide+" demo:").c_str())&&!has(log,"practice stopped")&&!has(log,"practice restarted");
 }
 std::size_t occurrences(std::string_view text,std::string_view part){
     std::size_t found=0;
@@ -283,6 +311,22 @@ int replay_owned_practice_picker(std::string root){
         has(log.text,"accepted native tick=180 G-Red-position=791.15/10.00/-3357.36")&&
         once(log.text,"returned to owned instance=8 after practice route=TIMED HANDOFF"),
         "owned timed handoff runs from live inputs and returns to the same copy and route",log.text);
+    log.text.clear();input=ReplayInput(Replay::OwnedTimedFloor);
+    char floor_limit[]="426",incline_limit[]="54";
+    check(run_picker(enabled,floor_limit)==426&&picker_guide_played(log.text,"timed relaunch floor",200)&&
+        once(log.text,"launched practice for owned instance=8 route=TIMED RELAUNCH FLOOR")&&
+        has(log.text,"accepted native tick=200 G-Red-position=-2656.36/10.00/537.58")&&
+        has(log.text,"floors=6")&&has(log.text,"practice-meter=10000/10000 at accepted tick=200")&&
+        once(log.text,"returned to owned instance=8 after practice route=TIMED RELAUNCH FLOOR"),
+        "owned floor guide lifts off after six snaps, lands, and returns to the same exact copy and route",log.text);
+    log.text.clear();input=ReplayInput(Replay::OwnedInclineJump);
+    check(run_picker(enabled,incline_limit)==54&&picker_guide_played(log.text,"incline dash jump",14)&&
+        once(log.text,"launched practice for owned instance=8 route=INCLINE DASH JUMP")&&
+        has(log.text,"accepted native tick=14 G-Red-position=812.74/481.75/2374.44")&&
+        has(log.text,"practice-meter=10000/10000 at accepted tick=14")&&
+        once(log.text,"practice-dash-takeoff=DASH CANCELED")&&
+        once(log.text,"returned to owned instance=8 after practice route=INCLINE DASH JUMP"),
+        "owned incline guide publishes the accepted cancel and returns to the same exact copy and route",log.text);
     log.text.clear();input=ReplayInput(Replay::PickerPractice);
     char disabled[]="9";
     check(run_picker(disabled,short_limit)>0&&!has(log.text,"launched practice for")&&
@@ -346,6 +390,21 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         has(log.text,"accepted native tick=200 G-Red-position=-588.61/10.00/-3366.51")&&
         once(log.text,"returned to Force 1 slot 2 after practice route=EXPIRY HANDOFF")&&snapshot->current(),
         "Force expiry handoff runs from live inputs and returns to the exact slot and route",log.text);
+    char floor_limit[]="330",incline_limit[]="267";
+    run(Replay::ForceTimedFloor,floor_limit);
+    check(picker_guide_played(log.text,"timed relaunch floor",152)&&
+        once(log.text,"launched practice for Force 1 slot 2 instance=8 route=TIMED RELAUNCH FLOOR")&&
+        has(log.text,"practice-phase=TOUCHDOWN")&&has(log.text,"practice-meter=9450/10000 at accepted tick=152")&&
+        !has(log.text,"practice-relaunch-floor=")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=TIMED RELAUNCH FLOOR")&&snapshot->current(),
+        "Force floor guide accepts early release instead of holding the snap, then returns to the exact slot and route",log.text);
+    run(Replay::ForceInclineJump,incline_limit);
+    check(picker_guide_played(log.text,"incline dash jump",120)&&
+        once(log.text,"launched practice for Force 1 slot 2 instance=8 route=INCLINE DASH JUMP")&&
+        has(log.text,"accepted native tick=120 G-Red-position=812.74/481.75/2374.44")&&
+        has(log.text,"practice-meter=10000/10000 at accepted tick=120")&&has(log.text,"practice-phase=IDLE")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=INCLINE DASH JUMP")&&snapshot->current(),
+        "Force incline guide completes live and returns to the same exact slot and route",log.text);
     std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }
