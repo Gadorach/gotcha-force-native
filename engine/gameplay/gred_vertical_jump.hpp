@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/borgs/normal_gred_movement_programs.hpp"
 #include "engine/gameplay/character_movement_motion.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/character_movement_heading.hpp"
@@ -28,6 +29,7 @@ inline bool gred_vertical_jump_plan(const CharacterMovementProfile& p,const GRed
        (input.falling_after_ground_loss&&(!p.ground_loss_operands||input.falling_after_dash||input.falling_after_relaunch))||
        (held&~(moving?0xf0100u:0x100u))||input.cached87>1||input.falling_coarse57d>3||input.selector<4||input.selector>7)return false;
     GRedVerticalJumpPlan plan;plan.state=input;plan.motion=motion;
+    using Programs=NormalGRedMovementPrograms;
     //5's release/resource admission precedes the lower callback. Its entry
     //sets588=1; a freshly selected5 still performs its initial launch update.
     if(plan.state.selector==5&&plan.state.entered&&(!(held&0x100u)||!resource)){
@@ -37,24 +39,25 @@ inline bool gred_vertical_jump_plan(const CharacterMovementProfile& p,const GRed
     plan.request=entry;plan.advance=!entry;
     switch(plan.state.selector){
     case 4:
-        plan.program=2;plan.state.cached87=0;
+         plan.program=Programs::jump_takeoff;plan.state.cached87=0;
         if(entry)plan.motion.speed44=plan.motion.planar_change4c=0; //normal class12, not class flag1 momentum preservation
         plan.motion.vertical48=plan.motion.vertical_change50=0;break;
     case 5:
-        plan.program=4;plan.state.cached87=1;plan.air_move=plan.clamp_wrapper=true;
+         plan.program=Programs::jump_lift;plan.state.cached87=1;plan.air_move=plan.clamp_wrapper=true;
         plan.cost_index=u8(entry?AirMeterCharge::LiftEntry:AirMeterCharge::LiftUpdate);
         if(entry){plan.motion.vertical48=p.air[1];plan.state.ascent_stage=1;plan.state.timer690=p.air_ready_delay;plan.state.air_ready588=1;}
         //Even neutral ascent evaluates cos(0), rather than using data68 alone.
         plan.motion.vertical_change50=std::fma(p.air[0],1.f,p.air[9]);
         break;
     case 6:
-        plan.program=input.falling_after_relaunch?u8(21+input.falling_coarse57d):
-            input.falling_after_dash||input.falling_after_ground_loss?13:6;plan.state.cached87=1;plan.air_move=true;
+         plan.program=input.falling_after_relaunch?Programs::relaunch_fall[input.falling_coarse57d]:
+             input.falling_after_dash||input.falling_after_ground_loss?Programs::momentum_fall:Programs::jump_fall;
+         plan.state.cached87=1;plan.air_move=true;
         if(plan.state.timer690<=0)plan.state.air_ready588=1;
         if(entry){plan.motion.vertical_change50=p.air[10];plan.motion.planar_change4c=0;}
         break;
     case 7:
-        plan.program=8;plan.state.cached87=0;plan.landing_prefix=entry;
+         plan.program=Programs::landing;plan.state.cached87=0;plan.landing_prefix=entry;
         plan.motion.speed44=plan.motion.planar_change4c=0;
         plan.motion.vertical48=plan.motion.vertical_change50=0;break;
     default:return false;

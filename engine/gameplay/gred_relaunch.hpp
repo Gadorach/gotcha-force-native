@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/borgs/normal_gred_movement_programs.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/character_movement_motion.hpp"
 #include "engine/gameplay/gred_surface_contact.hpp"
@@ -9,7 +10,7 @@ namespace gf {
 struct GRedRelaunchState {u8 lower_stage=0,upper_stage=0;};
 struct GRedRelaunchPlan {
     GRedRelaunchState state;CharacterMovementMotionState motion;
-    bool request=false;u8 program=14,cost_index=u8(AirMeterCharge::LiftEntry);bool entry=false;
+    bool request=false;u8 program=NormalGRedMovementPrograms::relaunch_windup,cost_index=u8(AirMeterCharge::LiftEntry);bool entry=false;
 };
 inline bool gred_relaunch_plan(const CharacterMovementProfile& p,const GRedRelaunchState& input,
                               const CharacterMovementMotionState& motion,GRedRelaunchPlan* out){
@@ -22,8 +23,8 @@ inline bool gred_relaunch_plan(const CharacterMovementProfile& p,const GRedRelau
         plan.state.lower_stage=1;plan.request=true;
         plan.motion.vertical48=f32(motion.vertical48+p.air[2]);
     }else if(input.lower_stage==2){
-        plan.state.lower_stage=3;plan.program=15;plan.request=true;
-    }else if(input.lower_stage==3)plan.program=15;
+         plan.state.lower_stage=3;plan.program=NormalGRedMovementPrograms::relaunch_active;plan.request=true;
+    }else if(input.lower_stage==3)plan.program=NormalGRedMovementPrograms::relaunch_active;
     if(!character_movement_motion_valid(plan.motion))return false;
     *out=plan;return true;
 }
@@ -33,14 +34,14 @@ inline bool gred_relaunch_lower_finished(const GRedRelaunchPlan& plan,bool done,
     if(!plan.request&&state.lower_stage==1&&done)state.lower_stage=2;
     *out=state;return true;
 }
-struct GRedRelaunchUpperPlan {u8 next_stage=0,program=14;bool request=false;};
+struct GRedRelaunchUpperPlan {u8 next_stage=0,program=NormalGRedMovementPrograms::relaunch_windup;bool request=false;};
 inline bool gred_relaunch_upper_plan(const GRedRelaunchState& input,GRedRelaunchUpperPlan* out){
     if(!out||input.lower_stage<1||input.lower_stage>3||input.upper_stage>3)return false;
     GRedRelaunchUpperPlan plan;plan.next_stage=input.upper_stage;
     if(!input.upper_stage){plan.next_stage=1;plan.request=true;}
     else if(input.upper_stage==1){if(input.lower_stage>1)plan.next_stage=2;} //update14 now, request15 NEXT update
-    else if(input.upper_stage==2){plan.next_stage=3;plan.program=15;plan.request=true;}
-    else plan.program=15;
+     else if(input.upper_stage==2){plan.next_stage=3;plan.program=NormalGRedMovementPrograms::relaunch_active;plan.request=true;}
+     else plan.program=NormalGRedMovementPrograms::relaunch_active;
     *out=plan;return true;
 }
 //6A750 clears754 on selecting8;6235C does not reinstall it. Static ret1 is

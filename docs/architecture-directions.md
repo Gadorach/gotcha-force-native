@@ -34,9 +34,15 @@ based on the previously accepted grounded cache, and named lift, handoff,
 and active-dash costs. The source binding checks those operands against the
 qualified GFMI pack. Spending and recovery arithmetic remain shared.
 
+The definition also names the reviewed idle, walk, jump, dash, relaunch
+and landing program IDs, including the two directional tables. These IDs
+refer to normal G-Red's qualified movement programs, not to universal clips
+or movement selectors. VM dispatch, lane ordering and completion still use
+the existing engine services.
+
 This is part of a self-contained definition, not a content format or completed
 registry. Stage queries, tangent movement, shared-edge checks, body collision
-and frame receipts remain engine services. Action admission, program selection,
+and frame receipts remain engine services. Action admission, transition timing,
 and other qualified operands still have G-Red-specific code/data owners. Move
 them behind the definition as those boundaries become explicit, without
 copying terrain code or applying G-Red's rules to Sasuke.

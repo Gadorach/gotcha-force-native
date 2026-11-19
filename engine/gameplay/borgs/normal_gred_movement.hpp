@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include "engine/gameplay/borg_movement_behaviors.hpp"
+#include "engine/gameplay/borgs/normal_gred_movement_programs.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/native_borg_motion_policy.hpp"
 
@@ -27,6 +28,7 @@ struct NormalGRedMovementDefinition {
     using Mode=NormalGRedMovementMode;
     using Policy=NativeBorgMotionPolicy;
     using Behavior=BorgMovementBehavior;
+    using Programs=NormalGRedMovementPrograms;
     struct CombinedRule {Mode mode;Policy policy;Behavior adds;};
 
     // Each opt-in combined lab inherits the preceding behaviors plus its own

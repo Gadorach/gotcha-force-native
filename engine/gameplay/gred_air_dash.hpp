@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/borgs/normal_gred_movement_programs.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/character_movement_motion.hpp"
 namespace gf {
@@ -23,10 +24,11 @@ inline bool gred_air_dash_plan(const CharacterMovementProfile& p,const GRedAirDa
        !std::isfinite(input.timer568)||std::abs(input.timer568)>1e5f||
        !std::isfinite(input.contact69c)||input.contact69c<0||input.contact69c>1e5f)return false;
     GRedAirDashPlan plan;plan.state=input;plan.motion=motion;
+    using Programs=NormalGRedMovementPrograms;
     const bool entry=!input.entered;plan.state.entered=true;plan.request=entry;plan.advance=!entry;
     plan.state.contact69c=p.air_dash_contact_delay;
     if(input.selector==15){
-        plan.program=10;
+         plan.program=Programs::air_dash_windup;
         if(entry){
             plan.state.stage=1;plan.state.contact_callback=false;plan.state.air_ready588=0;plan.move=false;
             plan.motion.speed44=f32(motion.speed44*p.air_dash_windup_factor);
@@ -37,7 +39,7 @@ inline bool gred_air_dash_plan(const CharacterMovementProfile& p,const GRedAirDa
             if(plan.state.timer568<=0){plan.state.selector=16;plan.state.entered=false;plan.state.stage=0;plan.state.air_ready588=0;plan.state.contact_callback=false;plan.cost_index=u8(AirMeterCharge::DashHandoff);plan.cost_after_move=true;}
         }
     }else if(input.selector==16){
-        plan.program=11;plan.steer_active=true;plan.cost_index=u8(AirMeterCharge::DashActive);
+         plan.program=Programs::air_dash_active;plan.steer_active=true;plan.cost_index=u8(AirMeterCharge::DashActive);
         if(entry){
             plan.state.stage=1;plan.state.timer568=p.air[8];plan.state.air_ready588=0;plan.state.contact_callback=false;
             plan.motion.speed44=p.air[5];plan.motion.planar_change4c=p.air[6];
@@ -50,7 +52,7 @@ inline bool gred_air_dash_plan(const CharacterMovementProfile& p,const GRedAirDa
             if(plan.motion.speed44<0)plan.motion.speed44=plan.motion.planar_change4c=0;
         }
     }else{
-        plan.program=12;
+         plan.program=Programs::air_dash_recovery;
         if(entry){plan.state.stage=1;plan.state.air_ready588=1;plan.state.contact_callback=true;plan.motion.vertical_change50=p.air[10];}
     }
     *out=plan;return true;
@@ -60,7 +62,7 @@ inline bool gred_air_dash_spent(const GRedAirDashPlan& plan,s16 resource_after,G
     auto state=plan.state;
     //Policy1's 550 is0: the active timer enables release/landing but does not
     //force recovery. Depletion switches after this update's resource spend.
-    if(plan.program==11&&resource_after<1){
+    if(plan.program==NormalGRedMovementPrograms::air_dash_active&&resource_after<1){
         state.selector=17;state.entered=false;state.stage=0;state.contact_callback=false;
     }
     *out=state;return true;

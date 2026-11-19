@@ -105,7 +105,7 @@ public:
         state_={};state_.dash.selector=0;state_.motion.position=observed.position;state_.previous_y=observed.position[1];state_.resource.value736=air_meter_.limit;
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
-        if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
+        if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,Programs::idle,error))return false;
         producer_=world.new_motion_producer(NormalGRedMovementDefinition::native_policy(mode_));
         if(!producer_)return fail(error,"native movement producer lease refused");
         dash_fall_pushes_=relaunch_fall_pushes_=recovery_pushes_=windup_pushes_=active_pushes_=relaunch_surface_pushes_=0;
@@ -292,7 +292,7 @@ public:
             }else if(!s.dash.selector&&!s.jump.selector){
                 const auto* snapshot=driver_.snapshot(s.vm.state().lanes[1].motion);
                 if(!snapshot)return fail(error,"idle source snapshot missing");
-                if(snapshot->group()!=0||snapshot->index()!=0){if(!request(s,0,error))return fail(error,"idle program reset refused");}
+                if(snapshot->group()!=0||snapshot->index()!=0){if(!request(s,Programs::idle,error))return fail(error,"idle program reset refused");}
                 else if(!advance(s,error))return fail(error,"idle program update refused");
                 s.motion.speed44=s.motion.planar_change4c=0;
             }
@@ -574,6 +574,7 @@ public:
         *out=mapped;return true;
     }
 private:
+    using Programs=NormalGRedMovementDefinition::Programs;
     static constexpr const auto& air_meter_=NormalGRedMovementDefinition::air_meter;
     using Behavior=BorgMovementBehavior;
     static bool allows(Mode mode,Behavior behavior){return NormalGRedMovementDefinition::allows(mode,behavior);}
@@ -811,11 +812,12 @@ private:
         GRedRelaunchUpperPlan upper;
         if(!gred_relaunch_upper_plan(s.relaunch,&upper)||(upper.request?!select(upper.program,1):!update(1)))return false;
         s.relaunch.upper_stage=upper.next_stage;
-        *kind=plan.entry?NativeBorgMotionKind::RelaunchEntry:plan.program==15?NativeBorgMotionKind::RelaunchActive:NativeBorgMotionKind::RelaunchWindup;
+        const bool active=plan.program==Programs::relaunch_active;
+        *kind=plan.entry?NativeBorgMotionKind::RelaunchEntry:active?NativeBorgMotionKind::RelaunchActive:NativeBorgMotionKind::RelaunchWindup;
         if(s.static_push)*kind=plan.entry?NativeBorgMotionKind::RelaunchEntryPush:
-            plan.program==15?NativeBorgMotionKind::RelaunchActivePush:NativeBorgMotionKind::RelaunchWindupPush;
+            active?NativeBorgMotionKind::RelaunchActivePush:NativeBorgMotionKind::RelaunchWindupPush;
         if(s.relaunch_floor)*kind=plan.entry?NativeBorgMotionKind::RelaunchEntryFloor:
-            plan.program==15?NativeBorgMotionKind::RelaunchActiveFloor:NativeBorgMotionKind::RelaunchWindupFloor;
+            active?NativeBorgMotionKind::RelaunchActiveFloor:NativeBorgMotionKind::RelaunchWindupFloor;
         if(controller_relaunch_mode(mode_)){
             evidence.lower_after=s.relaunch.lower_stage;evidence.upper_after=s.relaunch.upper_stage;evidence.upper_program=upper.program;
             evidence.coarse57d=s.jump.falling_coarse57d;evidence.speed44=s.motion.speed44;evidence.resource_after=s.resource.value736;
@@ -947,7 +949,7 @@ private:
         if(plan.landing_prefix){
             if(ledge_mode(mode_)&&!ground_loss_flags(s,CharacterProgramGroundLossFlagPhase::LandingEntry,error))return false;
             s.air_dash.contact69c=0; //60228 landing entry, not a refill/animation-completion shortcut
-            if(!select(2,2))return false;
+            if(!select(Programs::landing_prefix,2))return false;
         }
         if(plan.request?!select(plan.program,2):!update(2))return false;
         s.motion.flags5e0=s.vm.state().actor.behaviour;
@@ -1063,10 +1065,10 @@ private:
             if(!character_movement_heading(input_,motion_,u8(s.input.previous_held>>16),CharacterMovementHeadingMode::Held,frame,&heading,error)||
                !gred_ground_walk_entry(motion_,heading,s.turn,&start)||!walk_flag(s,true,error))return false;
             s.turn=start.turn;s.motion.speed44=start.speed44;s.motion.planar_change4c=0;s.motion.travel5ae=start.travel5ae;
-            if(!select(1,2,start.blend_duration))return false;
+            if(!select(Programs::walk,2,start.blend_duration))return false;
             const auto* lower=driver_.snapshot(s.vm.state().lanes[1].motion);if(!lower)return false;
             //F318 reads lower blend duration1B2C, not the current clip frame.
-            return select(1,1,std::max(0,int(lower->blend_duration())-1));
+            return select(Programs::walk,1,std::max(0,int(lower->blend_duration())-1));
         }
         if(selector==1){
             bool complete=false;
@@ -1092,7 +1094,7 @@ private:
             if(!descriptor||(descriptor->bytes[6]&3u)!=1u||(descriptor->bytes[14]&3u)!=1u)return false;
             for(const auto& lane:s.vm.state().lanes){const auto* old=driver_.snapshot(lane.motion);if(!old||old->transition_mode()>2)return false;}
             s.motion.speed44=s.motion.planar_change4c=0;
-            return select(31,2)&&walk_move(s,error)&&select(31,1);
+            return select(Programs::walk_stop,2)&&walk_move(s,error)&&select(Programs::walk_stop,1);
         }else{
             if(!update(2))return false;
             const auto* lower=driver_.snapshot(s.vm.state().lanes[1].motion);if(!lower)return false;

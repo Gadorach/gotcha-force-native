@@ -549,15 +549,17 @@ public:
                         o.kind!=entry_kind||o.entry_vertical_delta!=15)return false;
                 }else if(!previous||e.lower_before!=previous->lower_after||e.upper_before!=previous->upper_after||
                          e.coarse57d!=previous->coarse57d||o.entry_vertical_delta)return false;
-                const u8 program=e.lower_before==2||e.lower_before==3?15:14;
+                 using Programs=NormalGRedMovementDefinition::Programs;
+                 const u8 program=e.lower_before==2||e.lower_before==3?Programs::relaunch_active:Programs::relaunch_windup;
                 u8 lower=e.entry?1:e.lower_before==2?3:e.lower_before;
                 if(!e.entry&&lower==1&&e.lower_done)lower=2;
-                u8 upper=e.upper_before;const u8 upper_program=upper>=2?15:14;
-                if(!upper)upper=1;else if(upper==1&&lower>1)upper=2;else if(upper==2)upper=3;
-                 const auto continued_kind=controller_relaunch_push_frame?
-                     (program==14?NativeBorgMotionKind::RelaunchWindupPush:NativeBorgMotionKind::RelaunchActivePush):
-                     (relaunch_floor?(program==14?NativeBorgMotionKind::RelaunchWindupFloor:NativeBorgMotionKind::RelaunchActiveFloor):
-                         (program==14?NativeBorgMotionKind::RelaunchWindup:NativeBorgMotionKind::RelaunchActive));
+                 u8 upper=e.upper_before;const u8 upper_program=upper>=2?Programs::relaunch_active:Programs::relaunch_windup;
+                 if(!upper)upper=1;else if(upper==1&&lower>1)upper=2;else if(upper==2)upper=3;
+                 const bool windup=program==Programs::relaunch_windup;
+                  const auto continued_kind=controller_relaunch_push_frame?
+                      (windup?NativeBorgMotionKind::RelaunchWindupPush:NativeBorgMotionKind::RelaunchActivePush):
+                      (relaunch_floor?(windup?NativeBorgMotionKind::RelaunchWindupFloor:NativeBorgMotionKind::RelaunchActiveFloor):
+                          (windup?NativeBorgMotionKind::RelaunchWindup:NativeBorgMotionKind::RelaunchActive));
                  if(e.lower_program!=program||e.upper_program!=upper_program||e.lower_after!=lower||e.upper_after!=upper||
                     (!e.entry&&o.kind!=continued_kind))return false;
                 f32 sine=0,cosine=1;source_heading_xz(e.direction?8192:0,&sine,&cosine);

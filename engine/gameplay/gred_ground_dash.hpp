@@ -1,8 +1,14 @@
 #pragma once
+#include "engine/gameplay/borgs/normal_gred_movement_programs.hpp"
 #include "engine/gameplay/character_movement_heading.hpp"
 #include "engine/gameplay/character_movement_motion.hpp"
 #include "engine/gameplay/character_motion_root_state.hpp"
 namespace gf {
+inline bool gred_ground_dash_program(const CharacterMovementProfile& profile,const CharacterMovementHeading& heading,u8* program,u8* direction_class){
+    if(!program||!direction_class||!character_movement_profile_valid(profile)||profile.model!=0x615||(profile.class_flags&0x20u)||!heading.has_direction)return false;
+    const auto klass=profile.direction_classes[source_heading_sector(heading.delta5aa,0)];
+    *direction_class=klass;*program=NormalGRedMovementPrograms::ground_dash[klass];return true;
+}
 struct GRedDashSteering {
     s16 body72=0,camera5b0=0,travel5ae=0,desired5ac=0,delta5aa=0;
     u8 direction57c=0,coarse57d=0;f32 distance75c=0,speed44=0;bool distance_declared=false,completed547=false;
@@ -44,7 +50,7 @@ inline bool gred_ground_dash_plan(const CharacterMovementProfile& p,const GRedGr
        !std::isfinite(input.timer568)||std::abs(input.timer568)>1e5f||!std::isfinite(speed)||!std::isfinite(change))return false;
     GRedGroundDashPlan plan;plan.state=input;plan.speed44=speed;plan.change4c=change;
     const auto& operands=p.ground_dash[input.direction_class==0?0:input.direction_class==2?2:1];
-    if(input.selector==12){plan.speed44=operands[0];plan.change4c=operands[1];plan.state.timer568=operands[3];plan.state.selector=13;plan.state.recovery_entered=false;plan.request_program=true;plan.program=u8(27+input.direction_class);}
+    if(input.selector==12){plan.speed44=operands[0];plan.change4c=operands[1];plan.state.timer568=operands[3];plan.state.selector=13;plan.state.recovery_entered=false;plan.request_program=true;plan.program=NormalGRedMovementPrograms::ground_dash[input.direction_class];}
     else if(input.selector==13){if(plan.speed44<operands[2]){plan.speed44=operands[2];plan.change4c=0;}plan.advance_program=!(control_before&1u);plan.move=true;}
     else if(input.selector==14){
         //CFF4's forced-continuation branch needs a separately reviewed owner.

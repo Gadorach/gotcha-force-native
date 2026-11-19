@@ -13,6 +13,14 @@ int main(){
     using Mode=Definition::Mode;
     using Policy=Definition::Policy;
     using Behavior=Definition::Behavior;
+    using Programs=Definition::Programs;
+    static_assert(Programs::idle==0&&Programs::walk==1&&Programs::walk_stop==31);
+    static_assert(Programs::jump_takeoff==2&&Programs::jump_lift==4&&Programs::jump_fall==6&&Programs::landing==8&&
+        Programs::landing_prefix==2&&Programs::momentum_fall==13);
+    static_assert(Programs::air_dash_windup==10&&Programs::air_dash_active==11&&Programs::air_dash_recovery==12);
+    static_assert(Programs::relaunch_windup==14&&Programs::relaunch_active==15);
+    static_assert(Programs::ground_dash==std::array<gf::u8,4>{27,28,29,30});
+    static_assert(Programs::relaunch_fall==std::array<gf::u8,4>{21,22,23,24});
     static_assert(unsigned(Mode::OrderedGround)==22&&unsigned(Mode::GroundSlopeCreaseDash)==49);
     static_assert(unsigned(Policy::OrderedGround)==18&&unsigned(Policy::GroundSlopeCreaseDash)==45);
     constexpr Policy legacy[]{
@@ -62,5 +70,5 @@ int main(){
         check(gf::character_air_resource_recover(state,movement_type,0,1,meter.limit,meter.increment,&next)&&
             next.value736==10000&&next.air_actions747==1,"legacy special gate ignores ground cache and preserves action count");
     }
-    std::puts("normal G-Red movement: stable legacy/combined capability and meter boundaries PASS");
+    std::puts("normal G-Red movement: stable program IDs, legacy/combined capabilities and meter boundaries PASS");
 }

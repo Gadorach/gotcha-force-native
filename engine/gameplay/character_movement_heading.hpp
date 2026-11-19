@@ -58,9 +58,4 @@ inline bool character_movement_turn_step(const CharacterMovementTurn& input,f32 
     }
     *out=result;*complete=done;return true;
 }
-inline bool gred_ground_dash_program(const CharacterMovementProfile& profile,const CharacterMovementHeading& heading,u8* program,u8* direction_class){
-    if(!program||!direction_class||!character_movement_profile_valid(profile)||profile.model!=0x615||(profile.class_flags&0x20u)||!heading.has_direction)return false;
-    const auto klass=profile.direction_classes[source_heading_sector(heading.delta5aa,0)];
-    *direction_class=klass;*program=u8(27+klass);return true;
-}
 }
