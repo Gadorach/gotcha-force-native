@@ -70,20 +70,26 @@ inline PackageBorgAvailability package_borg_availability(const BorgPackageCatalo
     return State::Missing;
 }
 enum class SavedPackageVariantStatus {Unspecified,PackageUnavailable,CatalogueUnavailable,Present,Missing};
+inline const BorgCatalogSnapshot* package_borg_catalog_snapshot(std::string_view id,const BorgPackageCatalog& catalog,
+                                                                 std::span<const BorgCatalogSnapshot> metadata){
+    const auto* entry=catalog.status==BorgPackageScanStatus::Complete?catalog.find(id):nullptr;
+    if(!entry)return nullptr;
+    const BorgCatalogSnapshot* current=nullptr;
+    for(const auto& snapshot:metadata)if(snapshot.package.manifest.identity.id==id){
+        if(current||snapshot.package.folder!=entry->folder||snapshot.package.manifest!=entry->manifest)
+            return nullptr;
+        current=&snapshot;
+    }
+    return current&&current->profile.find(current->profile.default_variant)?current:nullptr;
+}
 inline SavedPackageVariantStatus package_borg_variant_status(const OwnedPackageBorg& borg,
                                                               const BorgPackageCatalog& catalog,
                                                               std::span<const BorgCatalogSnapshot> metadata){
     using Status=SavedPackageVariantStatus;
     if(!borg.variant)return Status::Unspecified;
     if(package_borg_availability(catalog,borg.identity.id)!=PackageBorgAvailability::Discovered)return Status::PackageUnavailable;
-    const auto* entry=catalog.find(borg.identity.id);
-    const BorgCatalogSnapshot* current=nullptr;
-    for(const auto& snapshot:metadata)if(snapshot.package.manifest.identity.id==borg.identity.id){
-        if(current||snapshot.package.folder!=entry->folder||snapshot.package.manifest!=entry->manifest)
-            return Status::CatalogueUnavailable;
-        current=&snapshot;
-    }
-    if(!current||!current->profile.find(current->profile.default_variant))return Status::CatalogueUnavailable;
+    const auto* current=package_borg_catalog_snapshot(borg.identity.id,catalog,metadata);
+    if(!current)return Status::CatalogueUnavailable;
     return current->profile.find(borg.variant->id)?Status::Present:Status::Missing;
 }
 struct MissingPackageBorg {

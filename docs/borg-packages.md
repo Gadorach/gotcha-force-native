@@ -581,3 +581,22 @@ To inspect a particular notice directly, add `--recovery-notice INSTANCE`.
 is supplied. A failed scan never authorizes a write. The menu does not create
 accounts or saves, migrate legacy files, or join the retail and package
 inventories. Retail menu integration remains separate.
+
+### Read-only Force preflight
+
+```sh
+gf_native --inspect-borg-force ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER
+```
+
+The Force number is one-based. This prints only packaged positions from the
+explicitly selected save, retaining each owned instance ID, saved name and
+saved variant. It distinguishes missing/incomplete/conflicting packages,
+unavailable catalogue metadata, unspecified legacy variants, missing
+variants and saved disable state. It never replaces a missing or unspecified
+variant with the default.
+
+`selectable-metadata` means the exact saved ID and variant resolved and the
+instance is not disabled. It does not imply art, physics, or battle readiness.
+The declared package cost is available only if every packaged slot is
+metadata-ready and enabled; it is not a total for retail slots or a mode
+budget. The command doesn't open devices or modify the save.

@@ -43,13 +43,13 @@
 #include "engine/gameplay/native_animation_mosaic.hpp"
 #include "engine/gameplay/borg_installed_browser_view.hpp"
 #include "engine/gameplay/borg_recovery_menu_view.hpp"
-#include "engine/save/account_save_repository.hpp"
+#include "engine/gameplay/borg_package_force_view.hpp"
 #include "engine/graphics/render_engine.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
-#include "platform/pc/account_save_storage.hpp"
+#include "platform/pc/borg_selected_save.hpp"
 #include "platform/pc/borg_acquisition_load.hpp"
 #include "platform/pc/borg_effect_load.hpp"
 #include "platform/pc/borg_form_load.hpp"
@@ -68,7 +68,7 @@ struct Options {
     bool list_borgs = false;
     bool browse_borgs=false,demo_borg_browser=false;
     std::string recovery_root;
-    gf::u64 recovery_account=0,recovery_save=0,recovery_notice=0;
+    gf::u64 recovery_account=0,recovery_save=0,recovery_notice=0,inspect_force=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,preview_variant;
     bool menu = false;
@@ -186,10 +186,12 @@ bool parse(int argc, char** argv, Options* options) {
             if(options->browse_borgs)return false;
             options->browse_borgs=true;options->demo_borg_browser=arg=="--demo-borg-browser";
         }
-        else if(arg=="--recover-borgs"){
-            if(i+3>=argc||!options->recovery_root.empty())return false;
+        else if(arg=="--recover-borgs"||arg=="--inspect-borg-force"){
+            const bool inspect=arg=="--inspect-borg-force";
+            if(i+3+int(inspect)>=argc||!options->recovery_root.empty())return false;
             options->recovery_root=argv[++i];
             if(options->recovery_root.empty()||!id(argv[++i],&options->recovery_account)||!id(argv[++i],&options->recovery_save))return false;
+            if(inspect&&(!id(argv[++i],&options->inspect_force)||options->inspect_force>gf::kForceCount))return false;
         }else if(arg=="--recovery-notice"){
             if(++i>=argc||options->recovery_notice||!id(argv[i],&options->recovery_notice))return false;
         }
@@ -418,6 +420,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-variants NAMESPACE:ID\n"
                          "       gf_native --browse-borgs [--headless] [--frames N]\n"
                          "       gf_native --recover-borgs ROOT ACCOUNT SAVE [--recovery-notice INSTANCE] [--headless]\n"
+                         "       gf_native --inspect-borg-force ROOT ACCOUNT SAVE FORCE\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
             return false;
         }
@@ -438,13 +441,14 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
        !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
        !options->check_borg_variants.empty()||options->width<440||options->height<320||options->width>4096||options->height>4096))return false;
-    if(options->recovery_notice&&options->recovery_root.empty())return false;
+    if(options->recovery_notice&&(options->recovery_root.empty()||options->inspect_force))return false;
     if(!options->recovery_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
        options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
        !options->preview_borg.empty()||options->browse_borgs||options->list_borgs||!options->check_borg_catalog.empty()||
        !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
        !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
-       !options->check_borg_variants.empty()||options->width<520||options->height<360||options->width>4096||options->height>4096))return false;
+       !options->check_borg_variants.empty()||(!options->inspect_force&&
+        (options->width<520||options->height<360||options->width>4096||options->height>4096))))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1217,51 +1221,57 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     render.shutdown();return 0;
 }
 
+int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& packages){
+    std::string error;
+    auto selected=gf::pc::open_borg_selected_save(options.recovery_root,options.recovery_account,options.recovery_save,&error);
+    if(!selected){std::fprintf(stderr,"Borg Force: %s\n",error.c_str());return 2;}
+    gf::PackageBorgSaveStore store(*selected->backend);gf::PackageBorgRoster roster;
+    const auto loaded=store.load(&roster);
+    if(loaded==gf::PackageBorgLoad::Missing){std::puts("This save has no package roster.");return 0;}
+    if(loaded!=gf::PackageBorgLoad::Loaded){std::fputs("Borg Force: package roster unavailable or invalid\n",stderr);return 2;}
+    const auto metadata=gf::pc::load_borg_owned_metadata("borgs",packages,roster);
+    gf::PackageForceView view;
+    const auto index=unsigned(options.inspect_force-1);
+    if(!gf::package_borg_force_view(roster,packages,metadata.snapshots,index,&view)||!store.current()){
+        std::fputs("Borg Force: roster changed or could not be inspected\n",stderr);return 2;
+    }
+    std::printf("Force %u: packaged-slots=%zu selectable-metadata=%u declared-package-cost=",
+        view.force+1,view.slots.size(),view.selectable);
+    if(view.declared_package_cost)std::printf("%u\n",unsigned(*view.declared_package_cost));
+    else std::puts("unavailable");
+    constexpr const char* status[]{"metadata-ready","scan-unavailable","package-missing","package-incomplete","conflict",
+        "variant-unspecified","catalogue-unavailable","variant-missing"};
+    for(const auto& row:view.slots){
+        std::printf("slot=%u\tinstance=%llu\t%s\t%s\tvariant=%s",
+            unsigned(row.slot)+1,static_cast<unsigned long long>(row.saved.instance),row.saved.identity.id.c_str(),
+            row.saved.identity.name.c_str(),row.saved.variant?row.saved.variant->id.c_str():"unspecified");
+        if(row.saved.variant)std::printf("\t%s",row.saved.variant->label.c_str());
+        std::printf("\tstatus=%s\tdisabled=%u\n",status[unsigned(row.status)],unsigned(row.saved.disabled));
+    }
+    std::puts("Package projection only; no retail slots, battle admission, or save changes.");
+    return 0;
+}
+
 int run_borg_recovery(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
     std::string error;
     auto fail=[&](const std::string& why){gf::log_error(context,"borg-recovery","%s",why.c_str());render.shutdown();return 2;};
-    auto storage=gf::pc::create_account_save_storage(options.recovery_root,false,&error);
-    if(!storage)return fail(error);
-    gf::AccountSaveRepository repository(*storage);gf::AccountSavePage page;
-    if(repository.accounts(options.recovery_account-1,1,&page)!=gf::AccountResult::Ok||
-       page.entries.empty()||page.entries.front().key!=gf::AccountSaveKey{options.recovery_account,0})
-        return fail("requested account unavailable");
-    const auto account=page.entries.front();
-    if(repository.saves(account,options.recovery_save-1,1,&page)!=gf::AccountResult::Ok||
-       page.entries.empty()||page.entries.front().key!=gf::AccountSaveKey{options.recovery_account,options.recovery_save})
-        return fail("requested save unavailable");
-    const auto save=page.entries.front();
-    std::unique_ptr<gf::AccountSaveBackend> selected;
-    if(repository.open(save,&selected)!=gf::AccountResult::Ok)return fail("could not open the requested save");
-    auto metadata_for=[](const gf::BorgPackageCatalog& catalog,const gf::PackageBorgRoster& roster,unsigned* unavailable){
-        std::vector<std::string> ids;
-        for(const auto& owned:roster.owned)
-            if(owned.variant&&catalog.find(owned.identity.id))ids.push_back(owned.identity.id);
-        std::sort(ids.begin(),ids.end());ids.erase(std::unique(ids.begin(),ids.end()),ids.end());
-        std::vector<gf::BorgCatalogSnapshot> snapshots;
-        *unavailable=0;
-        for(const auto& id:ids){
-            gf::BorgCatalogSnapshot snapshot;
-            if(gf::pc::load_borg_catalog_snapshot("borgs",catalog,id,&snapshot,nullptr))snapshots.push_back(std::move(snapshot));
-            else ++*unavailable;
-        }
-        return snapshots;
-    };
-    unsigned unavailable=0;
-    std::vector<gf::BorgCatalogSnapshot> metadata;
+    auto selected=gf::pc::open_borg_selected_save(options.recovery_root,options.recovery_account,options.recovery_save,&error);
+    if(!selected)return fail(error);
+    const auto& save=selected->entry;
+    gf::pc::BorgOwnedMetadata metadata;
     if(packages.status==gf::BorgPackageScanStatus::Complete){
         // Read only to find which variant catalogues are needed. The recovery
         // session takes its own checked roster snapshot before any confirmation.
-        gf::PackageBorgSaveStore inspector(*selected);gf::PackageBorgRoster roster;
-        if(inspector.load(&roster)==gf::PackageBorgLoad::Loaded)metadata=metadata_for(packages,roster,&unavailable);
+        gf::PackageBorgSaveStore inspector(*selected->backend);gf::PackageBorgRoster roster;
+        if(inspector.load(&roster)==gf::PackageBorgLoad::Loaded)metadata=gf::pc::load_borg_owned_metadata("borgs",packages,roster);
     }
-    gf::BorgPackageRecoverySession session(*selected);gf::BorgRecoveryMenu menu;
+    gf::BorgPackageRecoverySession session(*selected->backend);gf::BorgRecoveryMenu menu;
     gf::BorgRecoveryMenuView view;gf::InputRouter router;
     std::string notice_status;
-    const auto opened=session.open(packages,metadata);
+    const auto opened=session.open(packages,metadata.snapshots);
     switch(opened){
     case gf::BorgRecoveryOpen::Ready:
-        if(unavailable)notice_status="SOME VARIANT CATALOGUES COULD NOT BE CHECKED";
+        if(metadata.unavailable)notice_status="SOME VARIANT CATALOGUES COULD NOT BE CHECKED";
         break;
     case gf::BorgRecoveryOpen::NoRoster:notice_status="THIS SAVE HAS NO PACKAGE ROSTER";break;
     case gf::BorgRecoveryOpen::ScanUnavailable:notice_status="PACKAGE SCAN UNAVAILABLE - NO RECOVERY AUTHORIZED";break;
@@ -1288,8 +1298,8 @@ int run_borg_recovery(gf::Context& context,gf::RenderEngine& render,const Option
             if(options.headless){session.cancel();notice_status="HEADLESS INSPECTION DOES NOT WRITE";}
             else{
                 const auto current=gf::pc::scan_borg_packages("borgs");
-                const auto snapshots=metadata_for(current,*session.roster(),&unavailable);
-                switch(session.confirm(current,snapshots)){
+                const auto checked=gf::pc::load_borg_owned_metadata("borgs",current,*session.roster());
+                switch(session.confirm(current,checked.snapshots)){
                 case gf::BorgRecoveryApply::Saved:notice_status="CHANGE SAVED";break;
                 case gf::BorgRecoveryApply::Unchanged:notice_status="NO CHANGE NEEDED";break;
                 case gf::BorgRecoveryApply::StaleNotice:notice_status="NOTICE CHANGED - NO WRITE ATTEMPTED";break;
@@ -1478,6 +1488,7 @@ int main(int argc, char** argv) {
        unsigned(!options.check_borg_forms.empty())+unsigned(!options.check_borg_fusions.empty())+
        unsigned(!options.check_borg_acquisition.empty())+unsigned(!options.check_borg_variants.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
+    if(options.inspect_force)return inspect_borg_force(options,borg_packages);
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
     if(options.list_borgs){
