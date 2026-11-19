@@ -1014,7 +1014,11 @@ private:
             }
             evidence.move_speed=s.motion.speed44;evidence.vertical_before=s.motion.vertical48;
             evidence.planar_accel=s.motion.planar_change4c;evidence.vertical_accel=s.motion.vertical_change50;evidence.travel5ae=s.motion.travel5ae;
-            const bool walk_loss_push=allows(mode_,Behavior::WalkLedgeFallPush)&&s.walk_loss_origin&&s.ground_timer698>0&&
+            // The staged zero timer may continue the just-accepted push at
+            // one. Other zero-timer falls do not inherit this authorization.
+            const bool on_expiry=allows(mode_,Behavior::WalkLedgeExpiryPush)&&s.ground_timer698==0&&
+                state_.ground_timer698==1&&state_.walk_loss_origin&&state_.static_push&&!s.ground_drift_heading;
+            const bool walk_loss_push=allows(mode_,Behavior::WalkLedgeFallPush)&&s.walk_loss_origin&&(s.ground_timer698>0||on_expiry)&&
                 plan.state.selector==6&&plan.state.falling_after_ground_loss&&!plan.request&&before.vertical48<0&&!(held&0x100u);
             if(!character_movement_air_step(motion_,s.motion,1,1,plan.clamp_wrapper,ceiling,&proposed,error)||
                 !air_contact(s,ground,before,proposed,&s.motion,&touchdown,error,moving,

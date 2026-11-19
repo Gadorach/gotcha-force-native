@@ -208,9 +208,83 @@ int main(){
     while(world.tick()<55){check(prepare(expires,&offer),"approach and one push on the final timer tick");accept(offer);}
     check(source.walk_ledge_pushes()==1&&source.ground_loss_timer698()==1&&
         !prepare(expires,&offer)&&world.tick()==55&&source.ground_loss_timer698()==1&&source.walk_ledge_pushes()==1,
-        "a subsequent steep contact at timer zero does not inherit push permission");
+        "the high-angle policy still refuses the next zero-timer push without publishing that decrement");
 
-    bind(raised,Mode::GroundWalkLedgeHighAnglePush);
+    bind(expires,Mode::GroundWalkLedgeExpiryPush);
+    departure=fall=touchdown=landing=0;unsigned boundary_push=0;
+    std::optional<NativeBorgStaticPush> expiry_packet;
+    while(world.tick()<180){
+        const auto tick=world.tick()+1;const auto before=world.actors()[0];
+        check(prepare(expires,&offer),"complete walking route across the natural timer expiry");
+        if(offer.kind==Kind::GroundDeparture)departure=tick;
+        if(offer.kind==Kind::GroundLossEntry)fall=tick;
+        if(offer.kind==Kind::GroundLossPush){
+            const auto& push=*offer.static_push;
+            check((tick==55&&offer.walk_ledge->timer698==1&&push.surface.triangle==2009&&push.angle==8192)||
+                (tick==56&&offer.walk_ledge->timer698==0&&push.surface.triangle==1999&&push.angle==13653),
+                "the positive-timer and expiry pushes use their own actual selected plane and gate");
+            if(tick==56){
+                ++boundary_push;expiry_packet=push;
+                check(source.ground_loss_timer698()==1&&source.walk_ledge_pushes()==1&&offer.walk_ledge->walk_origin&&
+                    !offer.walk_ledge->drift_heading&&!offer.surface_landing,
+                    "only the immediately previous accepted timer-one walking push licenses the staged zero");
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                auto rejects=[&](const NativeBorgMotionOffer& wrong,const IBattleMvpTerrain& terrain,const char* why){
+                    const auto shown=view.practice_readout(world);
+                    check(!world.step({},false,&terrain,nullptr,&frame,&wrong)&&world.tick()==55&&
+                        world.actors()[0].position==before.position&&world.motion_receipt_current(pose.receipt)&&
+                        source.ground_loss_timer698()==1&&source.walk_ledge_pushes()==1&&source.resource()==10000&&
+                        shown&&shown->ledge_timer_ticks==1&&view.practice_readout(world)->ledge_timer_ticks==1,why);
+                };
+                const RaisedTravel pre(view,push.integrated_position),post(view,offer.proposed_position);
+                rejects(offer,pre,"expiry does not allow a raised approach");
+                rejects(offer,post,"expiry does not allow a blocked projection");
+                auto wrong=offer;wrong.walk_ledge->drift_heading=0;wrong.jump_motion->drift_heading=0;
+                rejects(wrong,view,"zero-timer steering cannot be folded into the witnessed expiry push");
+                wrong=offer;wrong.controller_timer698=1;wrong.walk_ledge->timer698=1;
+                rejects(wrong,view,"cannot keep the positive timer/angle gate for one more update");
+            }
+        }
+        if(tick==57){
+            check(offer.kind==Kind::GroundLossAir&&offer.walk_ledge->timer698==0&&expiry_packet,"ordinary zero-timer fall follows the boundary push");
+            auto wrong=offer;wrong.kind=Kind::GroundLossPush;wrong.static_push=expiry_packet;
+            wrong.walk_ledge->speed44=wrong.jump_motion->speed44=f32(wrong.jump_motion->move_speed*bits_to_f32(0x3f666666u));
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==56&&world.motion_receipt_current(pose.receipt),
+                "a zero-timer continued fall cannot replay the 1-to-0 permission");
+        }
+        if(offer.kind==Kind::GroundLossTouchdown)touchdown=tick;
+        if(touchdown&&!landing&&offer.kind==Kind::JumpLanding)landing=tick;
+        accept(offer);
+        check(source.resource()==10000&&!source.ordered_root().updates&&!source.air_dash_starts()&&!source.relaunches(),
+            "expiry transition keeps the same meter and does not borrow a movement handler");
+        if(tick==56||tick==57){
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->ledge_timer_ticks==0&&NativeBattleMvpView::practice_ledge_cue(*shown)==
+                (tick==56?"LEDGE TIMER 0 TICKS":"DRIFT UNLOCKED"),"neutral expiry push and unlocked fall report distinct cues");
+        }
+    }
+    check(departure==25&&fall==26&&boundary_push==1&&source.walk_ledge_pushes()==2&&touchdown==103&&landing==104&&
+        source.walk_departures()==1&&!source.dash_departures()&&world.actors()[0].grounded&&
+        world.actors()[0].position[1]==10&&source.selector()==0,
+        "real timer expiry route lands independently and reaches idle with no meter spend");
+
+    const Route dash_push_candidate{726.917969f,3344.20435f,487.747589f,0};
+    bind(dash_push_candidate,Mode::GroundWalkLedgeExpiryPush);
+    auto prepare_dash_candidate=[&](){
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        GamePadState pad;if(world.tick()==5)pad.stick_y=-127;
+        NativeGRedGroundInput input;
+        return source.map_input(pad,&input,&error)&&
+            source.prepare(world,view.source_binding(),frame,input.x,input.y,input.held,&offer,&error);
+    };
+    while(world.tick()<13){check(prepare_dash_candidate(),"accepted prefix of the genuine dash-origin contact candidate");accept(offer);}
+    check(offer.walk_ledge&&!offer.walk_ledge->walk_origin&&source.dash_departures()==1&&
+        !prepare_dash_candidate()&&error.find("steep push")!=std::string::npos&&world.tick()==13&&
+        !source.walk_ledge_pushes()&&!view.practice_readout(world)&&!world.step({},false,&view),
+        "dash-origin candidate remains unsupported even in the expiry mode");
+
+    bind(raised,Mode::GroundWalkLedgeExpiryPush);
     while(world.tick()<140){check(prepare(raised,&offer),"known raised-face approach");accept(offer);}
     check(prepare(raised,&offer)&&offer.kind==Kind::GroundLossPush&&offer.walk_ledge->timer698==28&&
         offer.static_push->surface.height>world.actors()[0].position[1],"source can compute a raised-face candidate");

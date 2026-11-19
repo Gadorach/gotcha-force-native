@@ -192,6 +192,12 @@ skip either travel check. `--demo-gred-walk-ledge-high-angle-push --frames 120`
 shows three inter-gate pushes followed by two steeper pushes and a later
 landing. The inter-gate mode keeps its original cap.
 
+`--gred-walk-ledge-expiry-push` adds just the first zero-timer update,
+with no steering drift and only after an accepted timer-one walking push.
+`--demo-gred-walk-ledge-expiry-push --frames 180` shows the two pushes,
+the ordinary fall that follows, and a separate landing. It does not enable
+general zero-timer or dash-origin pushes.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

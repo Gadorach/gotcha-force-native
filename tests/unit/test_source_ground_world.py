@@ -90,6 +90,27 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick <= 27:
                     self.assertIn(f"practice-ledge-timer-ticks={39 - tick} cue=DRIFT LOCKED {39 - tick} TICKS", result.stdout)
 
+    def test_walk_ledge_expiry_push_only_bridges_the_timer_boundary(self):
+        for tick, phase, pushes, angle, landings, cue in (
+            (55, "LEDGE FALL / PUSH", 1, 8192, 0, "1 cue=DRIFT LOCKED 1 TICKS"),
+            (56, "LEDGE FALL / PUSH", 2, 13653, 0, "0 cue=LEDGE TIMER 0 TICKS"),
+            (57, "LEDGE FALL", 2, 13653, 0, "0 cue=DRIFT UNLOCKED"),
+            (103, "TOUCHDOWN", 2, 13653, 1, "0 cue=LEDGE TIMER 0 TICKS"),
+            (104, "LANDING", 2, 13653, 1, "0 cue=LEDGE TIMER 0 TICKS"),
+            (180, "IDLE", 2, 13653, 1, None),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-expiry-push", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn("timer698 1 to 0 only after an accepted push, without drift", result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"walk-ledge-fall-pushes={pushes} last-angle-s16={angle} landings={landings} resource=10000", result.stdout)
+                self.assertIn(f"practice-meter=10000/10000 at accepted tick={tick}", result.stdout)
+                if cue:
+                    self.assertIn(f"practice-ledge-timer-ticks={cue}\n", result.stdout)
+                else:
+                    self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

@@ -27,6 +27,10 @@ int main(){
     static_assert(unsigned(Mode::GroundInclinedDashLedge)==51&&unsigned(Policy::GroundInclinedDashLedge)==47);
     static_assert(unsigned(Mode::GroundWalkLedgeFallPush)==52&&unsigned(Policy::GroundWalkLedgeFallPush)==48);
     static_assert(unsigned(Mode::GroundWalkLedgeHighAnglePush)==53&&unsigned(Policy::GroundWalkLedgeHighAnglePush)==49);
+    static_assert(unsigned(Mode::GroundWalkLedgeExpiryPush)==54&&unsigned(Policy::GroundWalkLedgeExpiryPush)==50);
+    static_assert(unsigned(Behavior::WalkLedgeExpiryPush)==32&&
+        !Definition::allows(Mode::GroundWalkLedgeHighAnglePush,Behavior::WalkLedgeExpiryPush)&&
+        Definition::allows(Mode::GroundWalkLedgeExpiryPush,Behavior::WalkLedgeExpiryPush));
     static_assert(Definition::walk_ledge_push_angle_cap(Definition::behaviors(Policy::GroundWalkLedgeFallPush))==10240&&
         Definition::walk_ledge_push_angle_cap(Definition::behaviors(Policy::GroundWalkLedgeHighAnglePush))==13653);
     constexpr Policy legacy[]{

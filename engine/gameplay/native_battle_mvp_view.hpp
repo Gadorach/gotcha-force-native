@@ -72,7 +72,7 @@ public:
         if(!frame.ledge_timer_ticks)return {};
         const auto ticks=*frame.ledge_timer_ticks;
         if(frame.kind==NativeBorgMotionKind::GroundLossEntry||frame.kind==NativeBorgMotionKind::GroundLossAir||
-            frame.kind==NativeBorgMotionKind::GroundLossPush)
+            (frame.kind==NativeBorgMotionKind::GroundLossPush&&ticks))
             return ticks?"DRIFT LOCKED "+std::to_string(ticks)+" TICKS":"DRIFT UNLOCKED";
         return "LEDGE TIMER "+std::to_string(ticks)+" TICKS";
     }

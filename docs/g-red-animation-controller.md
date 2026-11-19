@@ -75,6 +75,37 @@ of those pushes. The meter stays at 10000 throughout. An expired timer,
 blocked approach or projection, and angles above the verified ceiling
 still refuse.
 
+### One continued push on the walking timer's expiry tick
+
+`--gred-walk-ledge-expiry-push` admits one neutral push at the natural
+counter transition **1 → 0**, immediately after an accepted timer-one
+walking push. It does not authorize ordinary zero-timer pushes, steering
+drift on the expiry-push update, or dash-origin pushes. The response uses
+the expired landing gate of 10240 instead of 6144, retains the native
+ceiling of 13653, and requires the same selected plane and both native
+travel checks. No timer reset, ground callback, meter spend or refill is
+part of the push.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiry-push --headless --frames 180 --no-audio
+```
+
+The demo uses a native grounded placement at X/Z
+`-1250.96863/-3313.80225`, query `1846.01367`, and D-pad Left after
+five idle ticks, then neutral after departure. It departs at 25, enters
+the fall at 26, pushes on face 2009 at tick 55 (angle 8192, timer 1),
+then pushes on face 1999 at 56 (angle 13653, timer 0). Tick 57 is an
+ordinary zero-timer fall; touchdown at 103 and landing at 104 are
+separate. It returns to idle at full meter. The high-angle mode without
+expiry permission still refuses before tick 56.
+
+Dash-origin pushes remain unsupported. A bounded scan of 284 ordered-dash
+routes found eight matching source/native first-push candidates. A
+separate isolated replay of 648 nearby variations accepted at least one
+push in 274 routes, but none completed a clean fall and landing. These are
+partial witnesses, not a reason to grant dash-origin permission or relax
+collision checks.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the

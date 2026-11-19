@@ -11,9 +11,9 @@ enum class BorgMovementBehavior:u8 {
     RetainedTimerAirDash, RetainedTimerRelaunch, FallPush, PostAirFallPush,
     ReleasedRelaunchPush, RecoveryPush, WindupPush, ActivePush, RelaunchPush,
     RelaunchEntryPush, WindupEntryPush, SlopeDash, CoplanarSlopeDash, ShallowCreaseDash, FlatInclineDash,
-    InclinedDashLedge, WalkLedgeFallPush, WalkLedgeHighAnglePush, Count
+    InclinedDashLedge, WalkLedgeFallPush, WalkLedgeHighAnglePush, WalkLedgeExpiryPush, Count
 };
-static_assert(unsigned(BorgMovementBehavior::Count)<=32);
+static_assert(unsigned(BorgMovementBehavior::Count)<=64);
 
 struct BorgMovementBehaviors {
     constexpr bool has(BorgMovementBehavior behavior)const{return (bits_&bit(behavior))!=0;}
@@ -24,9 +24,9 @@ struct BorgMovementBehaviors {
             !start_flat&&has(BorgMovementBehavior::ShallowCreaseDash);
     }
 private:
-    static constexpr u32 bit(BorgMovementBehavior behavior){
-        return behavior<BorgMovementBehavior::Count?u32{1}<<unsigned(behavior):0;
+    static constexpr u64 bit(BorgMovementBehavior behavior){
+        return behavior<BorgMovementBehavior::Count?u64{1}<<unsigned(behavior):0;
     }
-    u32 bits_=0;
+    u64 bits_=0;
 };
 }

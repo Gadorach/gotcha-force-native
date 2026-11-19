@@ -850,7 +850,11 @@ public:
                         (e.timer698>0&&e.drift_heading))return false;
                     const f32 travel_speed=f32(last_offer_.walk_ledge->speed44*bits_to_f32(0x3f7d70a4u));
                     if(ground_loss_push){
-                        if(!walked||timer<=0||entry||actor.vertical_speed>=0||!o.jump_motion||
+                        // One witnessed boundary only: a neutral update
+                        // immediately after the accepted positive-timer push.
+                        const bool on_expiry=behaviors.has(Behavior::WalkLedgeExpiryPush)&&timer==0&&previous_timer==1&&
+                            prior==NativeBorgMotionKind::GroundLossPush&&!e.drift_heading;
+                        if(!walked||(timer<=0&&!on_expiry)||entry||actor.vertical_speed>=0||!o.jump_motion||
                            o.jump_motion->move_speed!=travel_speed||e.speed44!=f32(travel_speed*push_damping))return false;
                     }else if(e.speed44!=travel_speed)return false;
                     auto expected=actor.position;f32 x=0,z=0;
@@ -997,7 +1001,8 @@ public:
                    surface!=e.surface||!std::isfinite(surface.height)||e.integrated_position[1]>surface.height)return false;
                 s16 angle=0;BattleMvpVec projected;
                  if(!source_surface_angle(surface.normal,&angle)||angle!=e.angle||
-                    (ground_loss_push?(angle<=6144||angle>NormalGRedMovementDefinition::walk_ledge_push_angle_cap(behaviors)):angle<=10240)||
+                    (ground_loss_push?(angle<=(o.walk_ledge->timer698>0?6144:10240)||
+                        angle>NormalGRedMovementDefinition::walk_ledge_push_angle_cap(behaviors)):angle<=10240)||
                    !source_surface_push_position(e.integrated_position,surface.normal,surface.height,angle,&projected)||
                    projected!=o.proposed_position)return false;
                 f32 dot=0;for(unsigned k=0;k<3;++k)dot=f32(dot+f32(f32(e.integrated_position[k]-actor.position[k])*surface.normal[k]));
@@ -1192,7 +1197,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkLedgeHighAnglePush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkLedgeExpiryPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
