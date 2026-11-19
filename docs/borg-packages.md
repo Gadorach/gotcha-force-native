@@ -60,5 +60,14 @@ do not grant ownership, enter any picker, or create battle actors yet.
   rewrite the save. Another Borg with the same display name cannot substitute
   for the missing stable ID.
 
-The save extension, missing-Borg prompt, and mode integration are not yet
-implemented. Existing saves and retail compatibility checks are unchanged.
+The native save extension now has a tested store for package-owned instances
+and their Force positions. It records the stable package ID, saved name, and
+disable flag independently of installed files. It can produce a missing-Borg
+notice and stage a disable, delete, or re-enable candidate. A duplicate-ID
+conflict is reported separately and cannot authorize a missing-package action.
+Deletion affects only the selected owned instance and its Force references.
+
+The extension uses a new optional per-save record; unchanged accounts and saves
+without it still use the existing format. The current game modes do not write
+this record yet. Joining package and retail Force slots, loading package assets,
+and connecting the missing-Borg prompt to the menus remain separate work.

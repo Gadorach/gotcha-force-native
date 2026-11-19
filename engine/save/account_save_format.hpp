@@ -10,7 +10,8 @@ struct AccountSaveDescription {
     AccountSaveKey key;std::string name;bool retired=false;
     bool operator==(const AccountSaveDescription&)const=default;
 };
-struct AccountSaveRecords {std::array<std::vector<u8>,3> records;};
+inline constexpr u32 kBorgPackageSaveSlot=3;
+struct AccountSaveRecords {std::array<std::vector<u8>,kBorgPackageSaveSlot+1> records;};
 
 namespace account_save_detail {
 inline constexpr u8 empty_byte=0;
@@ -25,7 +26,7 @@ struct Framing final:ISaveBackend {
     bool erase(u32)override{return false;}
 };
 inline bool framed(const std::vector<u8>& bytes){Framing sink;SaveEngine codec(sink);std::vector<u8> empty;SaveReader reader(empty);return codec.read_record(bytes,reader);}
-inline bool allowed(AccountSaveKey key,unsigned slot){return key.save?(slot==0||slot==2):slot==1;}
+inline bool allowed(AccountSaveKey key,unsigned slot){return key.save?(slot==0||slot==2||slot==kBorgPackageSaveSlot):slot==1;}
 }
 
 inline bool account_description_encode(const AccountSaveDescription& value,std::vector<u8>* out){
@@ -46,17 +47,24 @@ inline bool account_description_decode(const std::vector<u8>& bytes,AccountSaveK
 inline bool account_records_encode(AccountSaveKey key,const AccountSaveRecords& value,std::vector<u8>* out){
     if(!out)return false;
     out->clear();if(!key.valid())return false;
-    SaveWriter writer;writer.u32_field(0x47464152u);writer.u32_field(1);writer.u64_field(key.account);writer.u64_field(key.save);
-    std::size_t total=0;for(unsigned slot=0;slot<3;++slot){const auto& record=value.records[slot];if((!account_save_detail::allowed(key,slot)&&!record.empty())||record.size()>kAccountObjectBytes-total||(!record.empty()&&!account_save_detail::framed(record)))return false;total+=record.size();writer.blob(record.empty()?&account_save_detail::empty_byte:record.data(),record.size());}
+    const bool extended=!value.records[kBorgPackageSaveSlot].empty();
+    if(extended&&!key.save)return false;
+    const unsigned slots=kBorgPackageSaveSlot+unsigned(extended);
+    SaveWriter writer;writer.u32_field(0x47464152u);writer.u32_field(extended?2:1);writer.u64_field(key.account);writer.u64_field(key.save);
+    std::size_t total=0;for(unsigned slot=0;slot<slots;++slot){const auto& record=value.records[slot];if((!account_save_detail::allowed(key,slot)&&!record.empty())||record.size()>kAccountObjectBytes-total||(!record.empty()&&!account_save_detail::framed(record)))return false;total+=record.size();writer.blob(record.empty()?&account_save_detail::empty_byte:record.data(),record.size());}
     account_save_detail::Framing sink;SaveEngine codec(sink);if(!codec.write(0,writer)||sink.bytes.size()>kAccountObjectBytes)return false;*out=std::move(sink.bytes);return true;
 }
 inline bool account_records_decode(const std::vector<u8>& bytes,AccountSaveKey expected,AccountSaveRecords* out){
     if(out)*out={};
     if(!out||!expected.valid()||bytes.size()>kAccountObjectBytes)return false;
     account_save_detail::Framing sink;SaveEngine codec(sink);std::vector<u8> empty;SaveReader reader(empty);
-    if(!codec.read_record(bytes,reader)||reader.u32_field()!=0x47464152u||reader.u32_field()!=1||reader.u64_field()!=expected.account||reader.u64_field()!=expected.save)return false;
-    AccountSaveRecords next;for(unsigned slot=0;slot<3;++slot){next.records[slot]=reader.blob();if((!account_save_detail::allowed(expected,slot)&&!next.records[slot].empty())||(!next.records[slot].empty()&&!account_save_detail::framed(next.records[slot])))return false;}
-    if(!reader.consumed())return false;
+    if(!codec.read_record(bytes,reader)||reader.u32_field()!=0x47464152u)return false;
+    const auto version=reader.u32_field();
+    if((version!=1&&version!=2)||(version==2&&!expected.save)||
+        reader.u64_field()!=expected.account||reader.u64_field()!=expected.save)return false;
+    const unsigned slots=kBorgPackageSaveSlot+unsigned(version==2);
+    AccountSaveRecords next;for(unsigned slot=0;slot<slots;++slot){next.records[slot]=reader.blob();if((!account_save_detail::allowed(expected,slot)&&!next.records[slot].empty())||(!next.records[slot].empty()&&!account_save_detail::framed(next.records[slot])))return false;}
+    if(!reader.consumed()||(version==2&&next.records[kBorgPackageSaveSlot].empty()))return false;
     *out=std::move(next);return true;
 }
 

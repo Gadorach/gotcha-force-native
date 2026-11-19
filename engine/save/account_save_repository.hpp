@@ -56,13 +56,13 @@ class AccountSaveBackend final:public ISaveBackend {
 public:
     bool load(u32 slot,std::vector<u8>& out)override{return read_slot(slot,out)==SaveReadStatus::Loaded;}
     SaveReadStatus read_slot(u32 slot,std::vector<u8>& out)override{
-        out.clear();const auto lease=lease_.lock();if(slot>2||!lease||!lease->current())return SaveReadStatus::Error;
+        out.clear();const auto lease=lease_.lock();if(slot>kBorgPackageSaveSlot||!lease||!lease->current())return SaveReadStatus::Error;
         const auto& record=slot==1?lease->account.records.records[1]:lease->save.records.records[slot];
         if(record.empty())return SaveReadStatus::Missing;
         out=record;return SaveReadStatus::Loaded;
     }
     bool store(u32 slot,const u8* data,std::size_t size)override{
-        const auto lease=lease_.lock();if(slot>2||!data||size>kAccountObjectBytes||!lease||!lease->current())return false;
+        const auto lease=lease_.lock();if(slot>kBorgPackageSaveSlot||!data||size>kAccountObjectBytes||!lease||!lease->current())return false;
         std::vector<u8> record(data,data+size);if(!account_save_detail::framed(record))return false;
         auto next=slot==1?lease->account:lease->save;next.records.records[slot]=std::move(record);
         std::vector<u8> metadata,payload;
@@ -119,7 +119,7 @@ public:
     }
     void close(){active_.reset();}
     bool selected(AccountSaveKey* out)const{if(out)*out={};if(!out||!active_||active_->failed)return false;*out=active_->save.description.key;return true;}
-    //Save As copies the exact gameplay+cheat records into a new exclusive object.
+    //Save As copies the exact per-save records into a new exclusive object.
     //The old context remains selected until the UI explicitly closes/rebinds it.
     AccountResult save_as(u64 id,const std::string& name,AccountSaveEntry* out){
         if(!active_||!active_->current()||!id)return AccountResult::Invalid;
