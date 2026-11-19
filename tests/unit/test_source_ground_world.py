@@ -11,6 +11,17 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_slope_transition_dash_demo_crosses_and_recovers(self):
+        result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("slope transition demo: one backward flick from flat triangle249 onto incline1052", result.stdout)
+        self.assertIn("actor=0 ground-y=482.7", result.stdout)
+        self.assertIn("accepted native tick=100", result.stdout)
+        self.assertRegex(result.stdout, r"G-Red-position=[^/]+/479\.49/")
+        self.assertIn("practice-meter=10000/10000 at accepted tick=100", result.stdout)
+        self.assertIn("practice-phase=IDLE", result.stdout)
+        self.assertIn("resets=1", result.stdout)
+
     def test_slope_crease_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-crease-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

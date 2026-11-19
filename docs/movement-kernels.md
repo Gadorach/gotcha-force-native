@@ -156,6 +156,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   The grounded dash uses the starting face's tangent and the selected
   destination height. This is a bounded native policy; it does not change
   the previous modes or admit sharp creases, gaps, and departures.
+- `GroundSlopeTransitionDash` adds the `FlatInclineDash` behavior for one flat
+  face and one inclined face. Both source and native still certify the
+  same shallow-edge witness and enforce the existing contact and step checks.
+  The flat-to-flat path and all earlier policies are unchanged.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

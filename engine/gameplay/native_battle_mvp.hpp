@@ -270,7 +270,6 @@ public:
             using Behavior=BorgMovementBehavior;
             const auto behaviors=NormalGRedMovementDefinition::behaviors(producer->policy_);
             constexpr const auto& meter=NormalGRedMovementDefinition::air_meter;
-            const bool slope_crease_dash_policy=behaviors.has(Behavior::ShallowCreaseDash);
             const bool slope_seam_dash_policy=behaviors.has(Behavior::CoplanarSlopeDash);
             const bool slope_dash_policy=behaviors.has(Behavior::SlopeDash);
             const bool controller_windup_entry_push_policy=behaviors.has(Behavior::WindupEntryPush);
@@ -754,23 +753,24 @@ public:
                      if(!terrain||!terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&current)||
                         !terrain->static_surface(o.proposed_position[0],o.proposed_position[2],actor.position[1],&selected)||
                         current.height!=actor.position[1])return false;
-                     const bool same_slope=slope_dash_policy&&!departure&&!native_borg_flat_surface(current)&&
-                         native_borg_static_surface_valid(current)&&native_borg_static_surface_valid(selected)&&
-                         ((current.normal==selected.normal&&(current.triangle==selected.triangle||
-                             (slope_seam_dash_policy&&terrain->coplanar_crossing(current.triangle,selected.triangle,
-                                 actor.position,o.proposed_position))))||
-                          (slope_crease_dash_policy&&!native_borg_flat_surface(selected)&&
-                           terrain->gentle_slope_crossing(current.triangle,selected.triangle,actor.position,o.proposed_position)))&&
-                         std::abs(selected.height-current.height)<=std::min(60.f,config_.step_height);
-                     if(same_slope){
-                         if(o.proposed_position[1]!=selected.height)return false;
-                     }else if(!native_borg_flat_surface(current)||!native_borg_flat_surface(selected)||
+                      const bool start_flat=native_borg_flat_surface(current),end_flat=native_borg_flat_surface(selected);
+                      const bool supported_slope=slope_dash_policy&&!departure&&
+                          native_borg_static_surface_valid(current)&&native_borg_static_surface_valid(selected)&&
+                          ((!start_flat&&current.normal==selected.normal&&(current.triangle==selected.triangle||
+                              (slope_seam_dash_policy&&terrain->coplanar_crossing(current.triangle,selected.triangle,
+                                  actor.position,o.proposed_position))))||
+                           (behaviors.allows_shallow_dash_join(start_flat,end_flat)&&
+                            terrain->gentle_slope_crossing(current.triangle,selected.triangle,actor.position,o.proposed_position)))&&
+                          std::abs(selected.height-current.height)<=std::min(60.f,config_.step_height);
+                      if(supported_slope){
+                          if(o.proposed_position[1]!=selected.height)return false;
+                      }else if(!start_flat||!end_flat||
                          o.proposed_position[1]!=current.height||
                          (departure?(!dash_ledge_policy||selected.height>=f32(current.height-60.f)||!e.move_speed):
                           selected.height!=current.height))return false;
                      auto expected=actor.position;
                      if(e.move_speed&&!native_gred_ground_position(actor.position,e.move_speed,e.travel5ae,current.normal,&expected))return false;
-                     if(same_slope)expected[1]=selected.height;
+                      if(supported_slope)expected[1]=selected.height;
                      if(o.proposed_position!=expected)return false;
                 }
             }
@@ -1165,7 +1165,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundSlopeCreaseDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundSlopeTransitionDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

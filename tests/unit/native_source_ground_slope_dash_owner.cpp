@@ -175,5 +175,51 @@ int main(){
     }
     check(crossed==1&&source.selector()==0&&std::abs(world.actors()[0].position[1]-150.908f)<.01f,
         "dash completes across the original crease and returns to idle");
-    std::printf("slope dash: %u checks PASS, original-stage routes and older/seam refusals\n",checks);
+
+    const struct Transition {Route route;u32 from,to,accepted_tick;f32 final_height;bool starts_flat;} transitions[]{
+        {{830.733398f,2191.48145f,487.747528f,127},249,1052,11,479.49008f,true},
+        {{-1692.49365f,-135.725586f,99.3391876f,-127,true},245,890,6,94.33919f,false},
+    };
+    for(const auto& t:transitions){
+        bind(t.route,Mode::GroundSlopeCreaseDash);
+        while(world.tick()+1<t.accepted_tick){
+            NativeBorgMotionOffer offer;check(prepare(t.route,&offer),"approach mixed join in the earlier mode");accept(offer);
+        }
+        check(!prepare(t.route,&refused)&&world.tick()+1==t.accepted_tick&&pose.frame_scope.expired()&&
+            !world.step({},false,&view),"the earlier crease mode still refuses the mixed join");
+        bind(t.route,Mode::GroundSlopeTransitionDash);crossed=0;unsigned resets=0;
+        while(world.tick()<100){
+            const auto tick=world.tick();NativeBorgMotionOffer offer;
+            check(prepare(t.route,&offer),"prepare mixed transition and ordered recovery");
+            if(offer.ordered_ground&&offer.walk_ledge){
+                const auto& e=*offer.ordered_ground;const auto& p=offer.observed.position;
+                const auto& end=offer.walk_ledge->surface;NativeBorgStaticSurface start;
+                check(view.static_surface(p[0],p[2],p[1],&start),"verify the starting floor independently");
+                const bool start_flat=native_borg_flat_surface(start);
+                if(start_flat!=native_borg_flat_surface(end)){
+                    ++crossed;BattleMvpVec tangent;
+                    check(tick+1==t.accepted_tick&&start.triangle==t.from&&end.triangle==t.to&&start_flat==t.starts_flat&&
+                        view.gentle_slope_crossing(t.from,t.to,p,offer.proposed_position)&&
+                        native_gred_ground_position(p,e.move_speed,e.travel5ae,start.normal,&tangent)&&
+                        tangent[0]==offer.proposed_position[0]&&tangent[2]==offer.proposed_position[2]&&
+                        end.height==offer.proposed_position[1]&&p[1]!=end.height,
+                        "mixed crossing uses the real shared edge, start tangent and destination height");
+                    const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                    const auto retained=pose;WithoutCreaseProof unverified(view);
+                    auto wrong=offer;wrong.proposed_position[1]=p[1];
+                    check(!world.step({},false,&unverified,nullptr,&frame,&offer)&&
+                        !world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick&&world.actors()[0].position==p&&
+                        world.motion_receipt_current(retained.receipt)&&!retained.frame_scope.expired(),
+                        "missing native edge proof or wrong endpoint height preserves the previously accepted pose");
+                }
+                resets+=e.phase==14&&!e.next_selector;
+            }
+            accept(offer);
+            check(world.actors()[0].grounded&&world.actors()[0].vertical_speed==0&&source.resource()==10000,
+                "mixed dash is not a ledge departure and does not use flight meter");
+        }
+        check(crossed==1&&resets==1&&source.selector()==0&&std::abs(world.actors()[0].position[1]-t.final_height)<.01f,
+            "one mixed join and one ordered recovery reach the original-stage endpoint");
+    }
+    std::printf("slope dash: %u checks PASS, original-stage routes including flat/incline joins and older refusals\n",checks);
 }

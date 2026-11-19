@@ -148,6 +148,15 @@ bounds limits still apply. The 10° cutoff is a native safeguard, not a recovere
 game constant. Try `--demo-gred-slope-crease-dash --frames 100` for the
 verified crossing from triangle 295 to 508, a turn in the slope of about 6.2°.
 
+`--gred-slope-transition-dash` also permits an ordered dash between flat
+ground and a shallow incline, in either direction. It uses the same 10°
+native limit, shared-edge and height checks, and native step/body/bounds
+limits. The earlier modes keep their narrower policies. Run
+`--demo-gred-slope-transition-dash --headless --frames 100 --no-audio` for
+the flat-to-incline route from triangle 249 to 1052. The owner test also
+replays the incline-to-flat route from triangle 245 to 890. Both joins are
+about 9.5°; neither spends flight meter or leaves the ground.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

@@ -23,6 +23,7 @@ int main(){
     static_assert(Programs::relaunch_fall==std::array<gf::u8,4>{21,22,23,24});
     static_assert(unsigned(Mode::OrderedGround)==22&&unsigned(Mode::GroundSlopeCreaseDash)==49);
     static_assert(unsigned(Policy::OrderedGround)==18&&unsigned(Policy::GroundSlopeCreaseDash)==45);
+    static_assert(unsigned(Mode::GroundSlopeTransitionDash)==50&&unsigned(Policy::GroundSlopeTransitionDash)==46);
     constexpr Policy legacy[]{
         Policy::GroundOnly,Policy::GroundOnly,Policy::VerticalJump,Policy::Jump,Policy::AirDash,Policy::Relaunch,
         Policy::Relaunch,Policy::Relaunch,Policy::Relaunch,Policy::StaticPush,Policy::FallHistoryPush,
@@ -45,6 +46,13 @@ int main(){
             check(Definition::allows(mode,Behavior(b))==(b<=i),"each lab adds exactly one reviewed behavior");
     }
     check(!Definition::allows(Mode::GroundSlopeSeamDash,Behavior::ShallowCreaseDash),"exact seams do not permit a crease");
+    const auto crease=Definition::behaviors(Policy::GroundSlopeCreaseDash);
+    const auto mixed=Definition::behaviors(Policy::GroundSlopeTransitionDash);
+    check(crease.allows_shallow_dash_join(false,false)&&!crease.allows_shallow_dash_join(true,false)&&
+        !crease.allows_shallow_dash_join(false,true),"the earlier crease policy only allows pairs of inclined faces");
+    check(mixed.allows_shallow_dash_join(false,false)&&mixed.allows_shallow_dash_join(true,false)&&
+        mixed.allows_shallow_dash_join(false,true)&&!mixed.allows_shallow_dash_join(true,true),
+        "the opt-in transition allows either mixed direction but cannot use slope proof on two flat faces");
     check(!Definition::allows(Mode::GroundLossRelaunch,Behavior::FallPush),"positive timer coverage does not grant generic push");
     check(!Definition::allows(Mode::GroundSlopeCreaseDash,Behavior(255))&&
         !Definition::behaviors(Policy(255)).has(Behavior::OrderedGround),"unknown IDs cannot grant behavior");

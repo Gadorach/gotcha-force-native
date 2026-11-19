@@ -579,7 +579,6 @@ private:
     using Behavior=BorgMovementBehavior;
     static bool allows(Mode mode,Behavior behavior){return NormalGRedMovementDefinition::allows(mode,behavior);}
     static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
-    static bool slope_dash_mode(Mode mode){return allows(mode,Behavior::SlopeDash);}
     static bool controller_windup_entry_push_mode(Mode mode){return allows(mode,Behavior::WindupEntryPush);}
     static bool controller_relaunch_entry_push_mode(Mode mode){return allows(mode,Behavior::RelaunchEntryPush);}
     static bool controller_relaunch_push_mode(Mode mode){return allows(mode,Behavior::RelaunchPush);}
@@ -722,22 +721,23 @@ private:
         if(plan.steer_before_program)s.motion.travel5ae=travel;
         if(update.steer_after_program&&!steer(s.motion.speed44))return refuse("post-VM steering");
         s.motion.flags5e0=s.vm.state().actor.behaviour;
+        const auto behaviors=NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_));
         const auto ground=ground_for(s);StageGroundSurfaceResult start,end;CharacterMovementMotionState moved;
         if(!ground.surface(s.motion.position,&start,error)||!start.selected||
-           (!slope_dash_mode(mode_)&&start.normal!=CharacterMotionVector{0,1,0})||
+           (!behaviors.has(Behavior::SlopeDash)&&start.normal!=CharacterMotionVector{0,1,0})||
            !character_movement_ground_step(motion_,s.motion,1,ground,&moved,error))return refuse("ground motion");
         if(!ground.surface(moved.position,&end,error)||!end.selected)return refuse("unresolved dash destination");
-        const bool same_slope=slope_dash_mode(mode_)&&!(s.motion.flags5e0&0x40u)&&
-            start.normal!=CharacterMotionVector{0,1,0}&&
-            ((start.normal==end.normal&&(start.triangle==end.triangle||(allows(mode_,Behavior::CoplanarSlopeDash)&&
+        const bool start_flat=start.normal==CharacterMotionVector{0,1,0},end_flat=end.normal==CharacterMotionVector{0,1,0};
+        const bool supported_slope=behaviors.has(Behavior::SlopeDash)&&!(s.motion.flags5e0&0x40u)&&
+            ((!start_flat&&start.normal==end.normal&&(start.triangle==end.triangle||(behaviors.has(Behavior::CoplanarSlopeDash)&&
                 stage_ground_coplanar_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position))))||
-             (allows(mode_,Behavior::ShallowCreaseDash)&&end.normal!=CharacterMotionVector{0,1,0}&&
+             (behaviors.allows_shallow_dash_join(start_flat,end_flat)&&
                 stage_ground_slope_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position,true)))&&
             start.height==before.position[1]&&moved.position[1]==end.height&&
             std::abs(end.height-start.height)<=std::min(ground.step674,world.config().step_height);
-        if(!same_slope&&(start.normal!=CharacterMotionVector{0,1,0}||end.normal!=CharacterMotionVector{0,1,0}))
+        if(!supported_slope&&(!start_flat||!end_flat))
             return refuse("unresolved/nonflat destination");
-        if(!same_slope&&(end.height!=start.height||moved.position[1]!=end.height)){
+        if(!supported_slope&&(end.height!=start.height||moved.position[1]!=end.height)){
             if(!dash_ledge_mode(mode_)||end.height>=f32(start.height-ground.step674)||moved.position[1]!=before.position[1]||
                before.vertical48||moved.vertical48)return refuse("ledge/height change remains disabled");
             s.ground_pending=true;
