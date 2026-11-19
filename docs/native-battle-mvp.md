@@ -165,6 +165,12 @@ gf_native --gred-walk-ledge-timed-relaunch --practice-start --no-audio
 gf_native --gred-walk-ledge-timed-air-dash --practice-start --no-audio
 ```
 
+The separate `--gred-walk-ledge-direct-timed-air-dash --practice-start`
+guide uses the steeper walking fixture. Step with Right Arrow on 6–8,
+then flick **A+W** together on 28 after the fifth push. Only this
+opt-in allows plain wind-up directly from the still-positive walking
+push. Direct relaunch and entry contact responses still refuse.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement

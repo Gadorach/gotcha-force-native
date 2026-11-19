@@ -330,17 +330,21 @@ public:
         if(s.jump.selector==8){
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
-            const bool expiry_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
+            const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
                 state_.static_push&&s.jump.selector==15&&!s.air_dash.entered;
-            if(expiry_windup&&(state_.ground_timer698!=0||s.ground_timer698!=0))
-                return fail(error,"air dash needs the accepted zero-timer expiry push");
+            const bool timed_policy=allows(mode_,Behavior::WalkLedgeDirectTimedAirDash);
+            const bool timed=timed_policy&&state_.ground_timer698>1.f&&s.ground_timer698==state_.ground_timer698-1.f;
+            if(push_windup&&!timed&&(state_.ground_timer698!=0.f||s.ground_timer698!=0.f))
+                return fail(error,timed_policy?"air dash needs an accepted expiry push or a still-positive walking-push countdown":
+                    "air dash needs the accepted zero-timer expiry push");
             if(!air_dash(s,held,frame,&kind,error)){
                 const std::string detail=error?*error:"";fail(error,"source air-dash handler/contact branch refused");
                 if(error&&!detail.empty())*error+=" / "+detail;
                 return false;
             }
-            if(expiry_windup&&kind!=NativeBorgMotionKind::AirDashWindupEntry)
-                return fail(error,"expiry air dash requires plain wind-up without contact response");
+            if(push_windup&&kind!=NativeBorgMotionKind::AirDashWindupEntry)
+                return fail(error,timed?"timed push air dash requires plain wind-up without contact response":
+                    "expiry air dash requires plain wind-up without contact response");
         }else if(s.jump.selector&&!jump(s,held,frame,&kind,error)){
             const std::string detail=error?*error:"";fail(error,"source jump/landing handler refused");
             if(error&&!detail.empty())*error+=" / "+detail;

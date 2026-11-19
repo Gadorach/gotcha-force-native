@@ -273,6 +273,114 @@ int main(){
             "both timed follow-ups finish a real landing and reach full-meter idle");
     }
 
+    auto high_push_prefix=[&](Mode mode){
+        bind(inter_gate,mode);
+        while(world.tick()<27){check(prepare(inter_gate,&offer),"five positive-timer walking pushes");accept(offer);}
+        check(offer.kind==Kind::GroundLossPush&&offer.walk_ledge->walk_origin&&offer.walk_ledge->timer698==12&&
+            source.walk_ledge_pushes()==5&&source.resource()==10000,"the direct entry predecessor is an accepted walking push");
+    };
+    GamePadState diagonal;diagonal.stick_x=diagonal.stick_y=-127;
+    high_push_prefix(Mode::GroundWalkLedgeHighAnglePush);
+    check(prepare(inter_gate,&offer,diagonal)&&offer.kind==Kind::AirDashWindupEntry,"older mode can stage the genuine diagonal candidate");
+    const auto old_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(!world.step({},false,&view,nullptr,&old_frame,&offer)&&world.tick()==27&&
+        world.motion_receipt_current(pose.receipt)&&source.resource()==10000&&!source.air_dash_starts(),
+        "older high-angle mode still refuses immediate positive-timer dash");
+    source.reject();
+    check(!world.step({},false,&view),"there is no fallback on an older direct-timed refusal");
+
+    high_push_prefix(Mode::GroundWalkLedgeExpiryAirDash);
+    check(!prepare(inter_gate,&offer,diagonal)&&error.find("zero-timer expiry push")!=std::string::npos&&world.tick()==27&&
+        source.ground_loss_timer698()==12&&source.resource()==10000,"expiry opt-in still refuses positive timer entry");
+
+    high_push_prefix(Mode::GroundWalkLedgeDirectTimedAirDash);
+    GamePadState lift;lift.b=true;
+    if(prepare(inter_gate,&offer,lift)){
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(!world.step({},false,&view,nullptr,&frame,&offer),"direct timed air dash does not authorize relaunch");
+        source.reject();
+    }
+    check(world.tick()==27&&source.ground_loss_timer698()==12&&!source.relaunches()&&source.resource()==10000,
+        "direct relaunch still cannot publish against the positive push");
+
+    for(const bool high:{true,false}){
+        const auto& route=high?inter_gate:complete;
+        const unsigned start=high?28:26,active_tick=high?35:34;
+        const unsigned before_timer=high?12:14;
+        bind(route,Mode::GroundWalkLedgeDirectTimedAirDash);
+        unsigned entry=0,active=0,fall_tick=0,hit=0,land=0;
+        NativeBorgMotionOffer prior;
+        while(world.tick()<200){
+            const auto tick=world.tick()+1;const auto before=world.actors()[0];
+            GamePadState pad;
+            if(tick==start){
+                if(high)pad=diagonal;else pad.stick_x=127;
+            }
+            if(!high&&tick>active_tick&&tick<=active_tick+18)pad.dpad_up=true;
+            check(prepare(route,&offer,pad),"complete direct-timed air dash on the real stage");
+            if(tick==start){
+                check(prior.kind==Kind::GroundLossPush&&prior.walk_ledge->walk_origin&&prior.walk_ledge->timer698==f32(before_timer)&&
+                    offer.kind==Kind::AirDashWindupEntry&&offer.air_motion&&offer.air_motion->entry&&
+                    offer.controller_timer698==f32(before_timer-1)&&!offer.static_push&&!offer.air_dash_floor&&
+                    offer.proposed_position==before.position&&offer.facing==before.facing&&
+                    offer.air_motion->vertical_before==f32(before.vertical_speed*.5f)&&
+                    offer.air_motion->resource_before==10000&&offer.air_motion->resource_after==10000,
+                    "direct entry keeps the countdown and starts stationary wind-up without cost or contact");
+                ++entry;
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                auto refuse=[&](const NativeBorgMotionOffer& wrong,const char* why){
+                    check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==start-1&&
+                        world.actors()[0].position==before.position&&source.resource()==10000&&
+                        source.ground_loss_timer698()==f32(before_timer)&&world.motion_receipt_current(pose.receipt)&&
+                        view.practice_readout(world)->ledge_timer_ticks==before_timer,why);
+                };
+                auto wrong=offer;wrong.controller_timer698=0;refuse(wrong,"fabricated expiry cannot borrow the known route");
+                wrong=offer;wrong.controller_timer698=f32(before_timer);refuse(wrong,"entry cannot pause the positive countdown");
+                wrong=offer;wrong.proposed_position[0]+=1;refuse(wrong,"direct entry has no pre-motion displacement");
+                wrong=offer;wrong.air_motion->resource_after=9550;refuse(wrong,"direct entry cannot charge handoff early");
+                wrong=offer;wrong.kind=Kind::AirDashWindupEntryFloor;wrong.air_dash_floor=NativeBorgAirDashFloor{};
+                refuse(wrong,"a floor response cannot borrow the new plain-entry lineage");
+            }
+            if(tick==active_tick-1)check(offer.air_motion&&offer.air_motion->phase==15&&offer.air_motion->next_selector==16&&
+                offer.controller_timer698==f32(40-active_tick)&&offer.air_motion->resource_after==9550,
+                "wind-up handoff spends 450 while timer698 is still positive");
+            if(native_borg_motion_active_entry(offer.kind)){
+                active=tick;
+                check(tick==active_tick&&offer.controller_timer698==f32(39-active_tick)&&
+                    offer.air_motion->resource_before==9550&&offer.air_motion->resource_after==9500,
+                    "active entry spends 50 on a separate positive-countdown tick");
+            }
+            if(tick==39)check(offer.controller_timer698==0&&native_borg_motion_active_update(offer.kind),
+                "positive countdown expires in the running dash, not on the push or wind-up");
+            if(entry&&offer.kind==Kind::JumpAir&&!fall_tick)fall_tick=tick;
+            if(entry&&offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            if(tick==start)check(view.practice_readout(world)->ledge_timer_ticks==before_timer-1&&source.resource()==10000,
+                "HUD only reports the decrement after the entry is accepted");
+            if(tick==fall_tick||tick==hit||tick==land)check(source.resource()==8000,"recovery, touchdown and landing entry preserve the dash costs");
+            prior=offer;
+        }
+        check(entry==1&&active==active_tick&&fall_tick==(high?95:94)&&hit==(high?123:122)&&land==hit+1&&source.landings()==1&&
+            source.walk_ledge_pushes()==(high?5u:2u)&&source.air_dash_starts()==1&&!source.relaunches()&&
+            source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+            "diagonal route and separately steered inter-gate route both complete through landing and idle");
+    }
+
+    bind(inter_gate,Mode::GroundWalkLedgeDirectTimedAirDash);
+    while(world.tick()<34){
+        GamePadState pad;if(world.tick()==27)pad.stick_y=-127;
+        check(prepare(inter_gate,&offer,pad),"W alone shares the push and enters the dash, but not the complete route");
+        accept(offer);
+    }
+    check(native_borg_motion_active_entry(offer.kind)&&source.ground_loss_timer698()==5&&source.resource()==9500,
+        "the cardinal attempt genuinely reached active entry");
+    const auto cardinal_position=world.actors()[0].position;
+    check(!prepare(inter_gate,&offer)&&error.find("raised-surface/side-entry")!=std::string::npos&&world.tick()==34&&
+        world.actors()[0].position==cardinal_position&&source.ground_loss_timer698()==5&&source.resource()==9500&&
+        !source.landings()&&!world.step({},false,&view),
+        "plain entry does not let the next active update cross a raised face or spend another 50");
+
     const Route dash{2582.89014f,-2846.36206f,116.592773f,0};
     bind(dash,Mode::GroundWalkLedgeFallPush);
     while(world.tick()<7){

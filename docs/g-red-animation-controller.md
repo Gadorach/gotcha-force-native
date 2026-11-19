@@ -287,10 +287,38 @@ active entry spends 50 at 63. Ordinary falling resumes at 123 with meter
 full meter. Six complete probe routes supported the handoff; the demo
 uses the one-sample left flick.
 
-The positive-timer version remains closed. An isolated scan offered 720
-immediate flicks after positive-timer walking pushes across 1,800 trials.
-It reached 712 wind-ups and 176 active entries without relaxing travel
-checks, but no route completed. Partial entries do not grant permission.
+The expiry mode still refuses a positive-timer push. An earlier isolated
+scan offered 720 immediate cardinal flicks across 1,800 positive-timer
+trials. It reached 712 wind-ups and 176 active entries without relaxing
+travel checks, but no route completed. That partial evidence did not
+grant permission.
+
+### Direct air-dash wind-up with time remaining
+
+`--gred-walk-ledge-direct-timed-air-dash` opts into a **plain** wind-up
+directly after an accepted positive-timer walking push. The countdown
+must still be positive after its ordinary decrement. An accepted
+timer-one push cannot borrow the pending expiry; this does not admit
+direct relaunch, a floor response or a steep push on the entry, or a
+dash-origin ledge push. The older timed guides still require an
+accepted ordinary fall. Existing native motion and contact checks are
+unchanged.
+
+```sh
+gf_native --demo-gred-walk-ledge-direct-timed-air-dash --headless --frames 200 --no-audio
+```
+
+The diagonal-flick probe found five complete routes in 265 attempts.
+An independent steer-after-entry probe found five in 177 attempts,
+including a two-push inter-gate route. The demo uses the steeper walking
+fixture at X/Z `1000.65021/-3362.34546`. **Right Arrow** on 6–8
+leads to five pushes ending at tick 27 with timer 12. A single **A+W**
+flick on 28 starts stationary wind-up with timer 11 and full meter.
+The 450 charge comes on 34, the separate 50 on active entry at 35.
+Timer expiry at 39 does not stop the dash. Falling resumes at 95,
+then touchdown at 123 and landing at 124; idle refills normally.
+**W** alone on this same start does enter the dash, but the next travel
+after active entry still refuses a raised-side contact at 35.
 
 ### Relaunch after the first ordinary fall
 

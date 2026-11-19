@@ -78,6 +78,12 @@ int main(){
         source.ground_loss_timer698()==1&&!source.air_dash_starts()&&source.resource()==10000&&!view.practice_readout(world),
         "the next decrement cannot substitute for a previously accepted expiry push");
 
+    bind(Mode::GroundWalkLedgeDirectTimedAirDash);prefix(55);
+    check(offer.kind==Kind::GroundLossPush&&source.ground_loss_timer698()==1&&
+        !prepare(true,&offer)&&error.find("still-positive walking-push countdown")!=std::string::npos&&world.tick()==55&&
+        source.ground_loss_timer698()==1&&!source.air_dash_starts()&&source.resource()==10000,
+        "direct timed mode cannot borrow a pending timer expiry either");
+
     bind(Mode::GroundWalkLedgeExpiryAirDash);prefix(56);
     check(offer.kind==Kind::GroundLossPush&&offer.walk_ledge->walk_origin&&offer.walk_ledge->timer698==0,"exact expiry predecessor");
     unsigned entry=0,handoff=0,active=0,fall=0,touchdown=0,landing=0;

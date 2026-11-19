@@ -43,6 +43,9 @@ int main(){
     static_assert(unsigned(Mode::GroundRecoveryFirstContactSeam)==59&&unsigned(Policy::GroundRecoveryFirstContactSeam)==55&&
         !Definition::allows(Mode::GroundRecoveryRecontactSeam,Behavior::RecoveryFirstContactSeam)&&
         Definition::allows(Mode::GroundRecoveryFirstContactSeam,Behavior::RecoveryFirstContactSeam));
+    static_assert(unsigned(Mode::GroundWalkLedgeDirectTimedAirDash)==60&&unsigned(Policy::GroundWalkLedgeDirectTimedAirDash)==56&&
+        !Definition::allows(Mode::GroundWalkLedgeExpiryAirDash,Behavior::WalkLedgeDirectTimedAirDash)&&
+        Definition::allows(Mode::GroundWalkLedgeDirectTimedAirDash,Behavior::WalkLedgeDirectTimedAirDash));
     static_assert(unsigned(Behavior::WalkLedgeExpiryPush)==32&&
         !Definition::allows(Mode::GroundWalkLedgeHighAnglePush,Behavior::WalkLedgeExpiryPush)&&
         Definition::allows(Mode::GroundWalkLedgeExpiryPush,Behavior::WalkLedgeExpiryPush));

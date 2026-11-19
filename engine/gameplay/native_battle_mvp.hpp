@@ -860,14 +860,20 @@ public:
                 native_borg_motion_windup_update(prior)||native_borg_motion_active_entry(prior)||
                 native_borg_motion_active_update(prior)||native_borg_motion_recovery(prior)||
                  (controller_ground_loss_relaunch_policy&&(prior==NativeBorgMotionKind::GroundLossEntry||prior==NativeBorgMotionKind::GroundLossAir));
-             // A plain wind-up may follow the already accepted walking
-             // expiry push, not a positive-timer push or a contact entry.
-             const bool expiry_windup=behaviors.has(Behavior::WalkLedgeExpiryAirDash)&&prior==NativeBorgMotionKind::GroundLossPush&&
-                 last_offer_.walk_ledge&&last_offer_.walk_ledge->walk_origin&&last_offer_.walk_ledge->timer698==0&&
-                 o.kind==NativeBorgMotionKind::AirDashWindupEntry&&o.controller_timer698&&*o.controller_timer698==0;
+              // Direct entry takes the accepted walking-push history and is
+              // plain wind-up only. Pending 1 -> 0 does not count as an
+              // accepted expiry push or a still-positive countdown.
+              const bool push_windup=prior==NativeBorgMotionKind::GroundLossPush&&last_offer_.static_push&&
+                  last_offer_.walk_ledge&&last_offer_.walk_ledge->walk_origin&&o.kind==NativeBorgMotionKind::AirDashWindupEntry&&
+                  o.controller_timer698;
+              const bool expiry_windup=behaviors.has(Behavior::WalkLedgeExpiryAirDash)&&push_windup&&
+                  last_offer_.walk_ledge->timer698==0.f&&*o.controller_timer698==0.f;
+              const bool timed_push_windup=behaviors.has(Behavior::WalkLedgeDirectTimedAirDash)&&push_windup&&
+                  last_offer_.walk_ledge->timer698>1.f&&*o.controller_timer698==last_offer_.walk_ledge->timer698-1.f;
              const bool windup_entry_prior=prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                  native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior)||
-                 (controller_air_policy&&(prior==NativeBorgMotionKind::GroundLossEntry||prior==NativeBorgMotionKind::GroundLossAir))||expiry_windup;
+                  (controller_air_policy&&(prior==NativeBorgMotionKind::GroundLossEntry||prior==NativeBorgMotionKind::GroundLossAir))||
+                  expiry_windup||timed_push_windup;
             if(ledger_frame){
                 //Normal G-Red, rank1/fixed60Hz, separately scoped ground loss.
                 //numeric validation; no original history/actor callback ACK.
@@ -1269,7 +1275,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryFirstContactSeam)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkLedgeDirectTimedAirDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
