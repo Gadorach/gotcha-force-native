@@ -176,6 +176,12 @@ two-push route with **W** on 30, then **Shift** on 36 to take a plain
 relaunch instead of active dash while the countdown remains positive.
 The wind-up charge stays paid; the active-entry charge never occurs.
 
+`--gred-walk-ledge-expiry-handoff-relaunch --practice-start` uses the
+expired walking-push fixture instead. Step with **Left Arrow** on
+6–25, **A** on 57, and **Shift** on 63. This handoff needs the accepted
+expiry-push history all the way through plain wind-up, not just a
+zero on the clock.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement

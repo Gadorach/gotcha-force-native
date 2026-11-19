@@ -19,7 +19,8 @@ enum class NormalGRedMovementMode {
     GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash,
     GroundSlopeTransitionDash,GroundInclinedDashLedge,GroundWalkLedgeFallPush,GroundWalkLedgeHighAnglePush,
     GroundWalkLedgeExpiryPush,GroundWalkLedgeExpiryAirDash,GroundRecoveryRecontact,GroundRecoveryRecontactDrift,
-    GroundRecoveryRecontactSeam,GroundRecoveryFirstContactSeam,GroundWalkLedgeDirectTimedAirDash,GroundTimedPlainWindupRelaunch
+    GroundRecoveryRecontactSeam,GroundRecoveryFirstContactSeam,GroundWalkLedgeDirectTimedAirDash,
+    GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch
 };
 
 struct NormalGRedMovementDefinition {
@@ -79,6 +80,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundRecoveryFirstContactSeam,Policy::GroundRecoveryFirstContactSeam,Behavior::RecoveryFirstContactSeam},
         CombinedRule{Mode::GroundWalkLedgeDirectTimedAirDash,Policy::GroundWalkLedgeDirectTimedAirDash,Behavior::WalkLedgeDirectTimedAirDash},
         CombinedRule{Mode::GroundTimedPlainWindupRelaunch,Policy::GroundTimedPlainWindupRelaunch,Behavior::TimedPlainWindupRelaunch},
+        CombinedRule{Mode::GroundExpiryPlainWindupRelaunch,Policy::GroundExpiryPlainWindupRelaunch,Behavior::ExpiryPlainWindupRelaunch},
     };
 
     static constexpr Policy native_policy(Mode mode){

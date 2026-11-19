@@ -327,13 +327,18 @@ public:
                 s.motion.speed44=s.motion.planar_change4c=0;
             }
         }
+        const bool expiry_relaunch=allows(mode_,Behavior::ExpiryPlainWindupRelaunch);
         if(s.jump.selector==8){
             const auto& previous_air=state_.air_motion;
             const bool plain_windup_handoff=allows(mode_,Behavior::TimedPlainWindupRelaunch)&&!s.relaunch.lower_stage&&
                 previous_air&&previous_air->phase==15&&previous_air->next_selector==16&&previous_air->next_stage==0&&
                 previous_air->timer568==0&&!state_.static_push&&!state_.air_dash_floor;
-            if(plain_windup_handoff&&(state_.ground_timer698<=1.f||s.ground_timer698!=state_.ground_timer698-1.f))
-                return fail(error,"plain wind-up relaunch needs a still-positive ledge countdown");
+            const bool timed_handoff=state_.ground_timer698>1.f&&s.ground_timer698==state_.ground_timer698-1.f;
+            const bool expiry_handoff=expiry_relaunch&&previous_air&&previous_air->walk_expiry_windup&&
+                state_.ground_timer698==0.f&&s.ground_timer698==0.f;
+            if(plain_windup_handoff&&!timed_handoff&&!expiry_handoff)
+                return fail(error,expiry_relaunch?"plain wind-up relaunch needs a still-positive countdown or an accepted expiry-push wind-up":
+                    "plain wind-up relaunch needs a still-positive ledge countdown");
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
@@ -353,6 +358,12 @@ public:
             if(push_windup&&kind!=NativeBorgMotionKind::AirDashWindupEntry)
                 return fail(error,timed?"timed push air dash requires plain wind-up without contact response":
                     "expiry air dash requires plain wind-up without contact response");
+            if(expiry_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
+                const auto& previous_air=state_.air_motion;
+                s.air_motion->walk_expiry_windup=s.air_motion->entry?
+                    (kind==NativeBorgMotionKind::AirDashWindupEntry&&push_windup&&state_.ground_timer698==0.f):
+                    (kind==NativeBorgMotionKind::AirDashWindup&&previous_air&&previous_air->phase==15&&previous_air->walk_expiry_windup);
+            }
         }else if(s.jump.selector&&!jump(s,held,frame,&kind,error)){
             const std::string detail=error?*error:"";fail(error,"source jump/landing handler refused");
             if(error&&!detail.empty())*error+=" / "+detail;

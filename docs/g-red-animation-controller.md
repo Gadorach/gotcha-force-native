@@ -345,6 +345,28 @@ direct timed dash and a longer Shift hold also completes this handoff.
 The neutral-keyboard recipe is available as a live, paused
 `--practice-start` guide.
 
+### Relaunch after plain wind-up from the accepted expiry push
+
+`--gred-walk-ledge-expiry-handoff-relaunch` adds one zero-timer
+handoff. It needs an uninterrupted **plain wind-up** that starts
+directly after the accepted walking expiry push and finishes before
+active entry. Source and native carry that history frame by frame.
+A zero timer by itself, a pending 1 → 0 timer, or an intervening
+wind-up contact response cannot supply that history.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiry-handoff-relaunch --headless --frames 200 --no-audio
+```
+
+On the expiry fixture, hold **Left Arrow** on 6–25, then neutral.
+The expiry push is accepted at 56. Flick **A** on 57, wait through
+the 450 wind-up charge at 62, then tap **Shift** on 63. Plain relaunch
+spends 150, leaving 9400 with no active-entry charge. Release on 64;
+touchdown is at 126 and landing at 127. A separately verified Up+Shift
+hold also completes. Neither route admits relaunch directly from the
+push. Use the live command with `--practice-start` to step either
+input yourself.
+
 ### Relaunch after the first ordinary fall
 
 Relaunch still cannot follow the push directly, even in the air-dash

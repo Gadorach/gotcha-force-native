@@ -47,10 +47,11 @@ int main(){
         check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
             source.bind(files,art,pack,world,seed,&error,mode),"fresh grounded placement on the original stage");
     };
-    auto prepare=[&](bool flick,NativeBorgMotionOffer* offer){
+    auto prepare=[&](bool flick,NativeBorgMotionOffer* offer,bool lift=false,bool up=false){
         GamePadState pad;
         if(world.tick()>=5&&!source.ground_departures())pad.dpad_left=true;
         if(flick)pad.stick_x=-127;
+        pad.b=lift;pad.dpad_up=up;
         const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);NativeGRedGroundInput input;
         return source.map_input(pad,&input,&error)&&source.prepare(world,view.source_binding(),frame,input.x,input.y,input.held,offer,&error);
     };
@@ -126,5 +127,77 @@ int main(){
     check(entry==57&&handoff==62&&active==63&&fall==123&&touchdown==150&&landing==151&&
         source.walk_ledge_pushes()==2&&source.air_dash_starts()==1&&!source.relaunches()&&
         source.resource()==10000&&world.actors()[0].grounded&&source.selector()==0,"complete accepted route returns to idle and refills normally");
+
+    auto expiry_windup_prefix=[&](Mode mode){
+        bind(mode);prefix(56);
+        const bool scoped=mode==Mode::GroundExpiryPlainWindupRelaunch;
+        while(world.tick()<62){
+            const unsigned tick=world.tick();
+            const auto before=world.actors()[0];
+            check(prepare(tick==56,&offer)&&offer.air_motion&&offer.air_motion->phase==15&&
+                offer.air_motion->walk_expiry_windup==scoped&&!offer.air_dash_floor&&!offer.static_push,
+                "only the new uninterrupted plain wind-up carries expiry lineage");
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            auto wrong=offer;wrong.air_motion->walk_expiry_windup=!scoped;
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick&&
+                world.actors()[0].position==before.position&&source.resource()==10000&&world.motion_receipt_current(pose.receipt),
+                "expiry history cannot be fabricated in the older mode or erased from a scoped frame");
+            accept(offer);
+        }
+        check(offer.kind==Kind::AirDashWindup&&offer.air_motion->next_selector==16&&offer.air_motion->next_stage==0&&
+            !offer.air_motion->timer568&&offer.controller_timer698==0&&source.resource()==9550&&
+            !source.air_dash_active_frames(),"plain expiry wind-up completed and paid its own charge");
+    };
+    expiry_windup_prefix(Mode::GroundTimedPlainWindupRelaunch);
+    check(!prepare(false,&offer,true)&&error.find("still-positive ledge countdown")!=std::string::npos&&
+        world.tick()==62&&source.resource()==9550&&!source.relaunches(),
+        "positive-timer handoff mode still refuses the completed zero-timer wind-up");
+
+    bind(Mode::GroundExpiryPlainWindupRelaunch);prefix(56);
+    if(prepare(false,&offer,true)){
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(!world.step({},false,&view,nullptr,&frame,&offer),"direct relaunch from the expiry push still refuses");
+        source.reject();
+    }
+    check(world.tick()==56&&source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
+        "expiry relaunch needs a completed wind-up and does not fall back");
+
+    for(const bool held:{false,true}){
+        expiry_windup_prefix(Mode::GroundExpiryPlainWindupRelaunch);
+        const auto before=world.actors()[0];const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(prepare(false,&offer,true,held)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+            offer.controller_timer698==0&&offer.entry_vertical_delta==15&&
+            offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&offer.relaunch_motion->vertical_before>0&&
+            offer.relaunch_motion->resource_before==9550&&offer.relaunch_motion->resource_after==9400&&
+            !offer.static_push&&!offer.relaunch_floor&&!offer.air_motion,"qualified expiry history admits plain rising relaunch");
+        auto refuses=[&](const NativeBorgMotionOffer& wrong,const char* why){
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==62&&world.actors()[0].position==before.position&&
+                source.resource()==9550&&!source.relaunches()&&world.motion_receipt_current(pose.receipt),why);
+        };
+        auto wrong=offer;wrong.controller_timer698=1;refuses(wrong,"expiry handoff cannot invent a positive timer");
+        wrong=offer;wrong.relaunch_motion->resource_before=10000;refuses(wrong,"expiry handoff cannot refund the wind-up");
+        wrong=offer;wrong.relaunch_motion->resource_after-=50;refuses(wrong,"expiry handoff cannot borrow the active-entry charge");
+        wrong=offer;wrong.kind=Kind::RelaunchEntryFloor;wrong.relaunch_floor=NativeBorgRelaunchFloor{};
+        refuses(wrong,"expiry lineage does not authorize a relaunch floor response at entry");
+        accept(offer);
+        check(source.movement_programs()==std::array<u16,2>{14,14}&&source.resource()==9400&&source.relaunches()==1&&
+            !source.air_dash_active_frames(),"accepted handoff runs relaunch, not active dash");
+        unsigned active_tick=0,fall_tick=0,hit=0,land=0;
+        while(world.tick()<210){
+            const unsigned tick=world.tick()+1;
+            const bool rise=held&&tick<=74;
+            check(prepare(false,&offer,rise,rise),"expiry handoff settles through ordinary fall and landing");
+            if(!active_tick&&native_borg_motion_relaunch_active(offer.kind))active_tick=tick;
+            if(!fall_tick&&offer.kind==Kind::JumpAir)fall_tick=tick;
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            if(tick==fall_tick||tick==hit||tick==land)check(source.resource()==(held?8300:9400),"release and landing do not refill early");
+        }
+        check((held?(active_tick==68&&fall_tick==75&&hit==146):(!active_tick&&fall_tick==64&&hit==126))&&
+            land==hit+1&&source.landings()==1&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector()&&
+            source.air_dash_starts()==1&&!source.air_dash_active_frames()&&source.relaunches()==1,
+            "tap and held expiry handoffs both reach idle without active dash");
+    }
     std::printf("Expiry air dash: %u checks PASS, qualified zero-timer handoff and separate costs/landing\n",checks);
 }

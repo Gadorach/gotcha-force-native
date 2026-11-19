@@ -386,7 +386,15 @@ int main(){
         while(world.tick()<handoff){
             GamePadState pad;
             if(world.tick()+1==flick){if(direct)pad.stick_x=127;else pad.stick_y=-127;}
-            check(prepare(complete,&offer,pad),"original-stage walk and plain wind-up prefix");accept(offer);
+            check(prepare(complete,&offer,pad),"original-stage walk and plain wind-up prefix");
+            if(mode==Mode::GroundExpiryPlainWindupRelaunch&&offer.kind==Kind::AirDashWindup&&offer.controller_timer698==0){
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);const auto tick=world.tick();
+                check(!offer.air_motion->walk_expiry_windup,"ordinary countdown expiry does not create walking-push lineage");
+                auto wrong=offer;wrong.air_motion->walk_expiry_windup=true;
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick&&
+                    world.motion_receipt_current(pose.receipt),"a newly zero timer cannot manufacture accepted expiry-push history");
+            }
+            accept(offer);
         }
         check(offer.kind==Kind::AirDashWindup&&offer.air_motion&&offer.air_motion->next_selector==16&&
             offer.air_motion->next_stage==0&&offer.air_motion->timer568==0&&offer.air_motion->resource_after==9550&&
@@ -408,6 +416,14 @@ int main(){
             error.find("still-positive ledge countdown")!=std::string::npos&&world.tick()==flick+5&&
             source.ground_loss_timer698()==timer&&source.resource()==9550&&!source.relaunches(),
             "neither pending expiry nor already-expired wind-up borrows the timed handoff");
+    }
+    for(const unsigned flick:{33u,36u}){
+        windup_prefix(Mode::GroundExpiryPlainWindupRelaunch,flick,flick+5);
+        const f32 timer=flick==33?1.f:0.f;
+        check(!offer.air_motion->walk_expiry_windup&&source.ground_loss_timer698()==timer&&
+            !prepare(complete,&offer,lift)&&error.find("accepted expiry-push wind-up")!=std::string::npos&&
+            world.tick()==flick+5&&source.ground_loss_timer698()==timer&&source.resource()==9550&&!source.relaunches(),
+            "the expiry opt-in still refuses pending or unrelated zero timers at the handoff");
     }
 
     for(const bool direct:{false,true}){
