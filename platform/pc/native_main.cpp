@@ -45,6 +45,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
+#include "platform/pc/borg_acquisition_load.hpp"
 #include "platform/pc/borg_effect_load.hpp"
 #include "platform/pc/borg_form_load.hpp"
 #include "platform/pc/borg_fusion_load.hpp"
@@ -60,7 +61,8 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
-    std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,preview_borg;
+    std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
+        check_borg_acquisition,preview_borg;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -184,6 +186,9 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--check-borg-fusions"){
             if(++i>=argc||!options->check_borg_fusions.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_fusions=argv[i];
+        }else if(arg=="--check-borg-acquisition"){
+            if(++i>=argc||!options->check_borg_acquisition.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_acquisition=argv[i];
         }else if(arg=="--preview-borg"){
             if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->preview_borg=argv[i];
@@ -378,6 +383,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-effects NAMESPACE:ID\n"
                          "       gf_native --check-borg-forms NAMESPACE:ID\n"
                          "       gf_native --check-borg-fusions NAMESPACE:ID\n"
+                         "       gf_native --check-borg-acquisition NAMESPACE:ID\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--headless] [--frames N]\n");
             return false;
         }
@@ -390,7 +396,7 @@ bool parse(int argc, char** argv, Options* options) {
        options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||options->list_borgs||
        !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
-       options->animation_page||options->animation_borg))return false;
+       !options->check_borg_acquisition.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1233,7 +1239,8 @@ int main(int argc, char** argv) {
     if (!parse(argc, argv, &options)) return 2;
     if(unsigned(options.list_borgs)+unsigned(!options.check_borg_catalog.empty())+unsigned(!options.check_borg_moves.empty())+
        unsigned(!options.check_borg_spawn.empty())+unsigned(!options.check_borg_effects.empty())+
-       unsigned(!options.check_borg_forms.empty())+unsigned(!options.check_borg_fusions.empty())>1)return 2;
+       unsigned(!options.check_borg_forms.empty())+unsigned(!options.check_borg_fusions.empty())+
+       unsigned(!options.check_borg_acquisition.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
@@ -1335,6 +1342,20 @@ int main(int argc, char** argv) {
             std::printf("%s\t%s + %s -> %s\tresult-use=%s\n",rule.id.c_str(),rule.first.package.c_str(),
                 rule.second.package.c_str(),rule.result.package.c_str(),usage[unsigned(rule.result_use)]);
         std::puts("Battle fusion declarations validated; no actors combined, state transferred, or units unlocked.");
+        return 0;
+    }
+    if(!options.check_borg_acquisition.empty()){
+        gf::pc::BorgAcquisitionInspection result;std::string error;
+        if(!gf::pc::load_borg_acquisition_inspection("borgs",borg_packages,options.check_borg_acquisition,&result,&error)){
+            std::fprintf(stderr,"Borg acquisition: %s\n",error.c_str());return 2;
+        }
+        std::printf("%s\t%s\troutes=%zu\tcrystal-recipes=%zu\n",result.identity.id.c_str(),result.identity.name.c_str(),
+            result.profile.routes.size(),result.profile.recipes.size());
+        constexpr const char* grants[]{"unresolved","owned","crystal-part","battle-only","loan"};
+        for(const auto& route:result.profile.routes)
+            std::printf("%s\tmode=%s\tvariant=%s\tgrant=%s\n",route.id.c_str(),route.mode.c_str(),route.variant.c_str(),
+                grants[unsigned(route.grant)]);
+        std::puts("Acquisition declarations validated; no rewards, inventory, trade, or save changes.");
         return 0;
     }
 

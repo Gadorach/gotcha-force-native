@@ -376,6 +376,49 @@ It does not reconcile duplicate relationship declarations across folders,
 bind cues, synchronize actors, transfer state, or admit the result to
 any mode.
 
+### Standalone acquisition check
+
+Set `acquisition=gameplay/acquisition.txt` in a version 2 catalogue. This
+declares how a mode may grant or lend a Borg or part; the mode still owns
+its missions, drop odds, progression checks and inventory changes.
+
+```text
+GFBORG-ACQUISITION 1
+route=founder|story|normal|start-grant
+source=story:new-run
+condition=campaign-start
+grant=owned
+component=none
+repeat=once-per-save
+trade=blocked
+discard=blocked
+retirement=unresolved
+```
+
+- The `route` header is `ID|mode|variant|method`. Mode and variant can
+  be local IDs, `*`, or `unresolved`. Methods are `start-grant`,
+  `encounter-drop`, `progress-reward`, `crystal-assembly`, `battle-fusion`,
+  `scripted-loan` and `unresolved`. All eight route fields are required.
+- `source`, `condition` and `retirement` are local or namespaced reference
+  IDs, `none` or `unresolved`. `repeat` is `once-per-save`,
+  `once-per-play`, `repeatable` or `unresolved`.
+- A `grant` is `owned`, `crystal-part`, `battle-only`, `loan` or
+  `unresolved`. An explicit part grant names a local `component` or
+  leaves it unresolved; it is not an owned Borg grant. A battle fusion
+  cannot itself grant ownership, and a scripted loan cannot silently
+  become permanent. `trade` and `discard` are `allowed`, `blocked` or
+  `unresolved`; nonowned battle results and loans cannot opt into either.
+- A `recipe=ID|variant|part-a|part-b` row names at least two distinct
+  local parts for one variant. More parts use additional `|` fields, up
+  to 16. A `crystal-assembly` route may leave its `source` unresolved
+  or link a local recipe of its own variant; it cannot use `*` for that
+  variant. This is separate from combat fusion.
+
+`gf_native --check-borg-acquisition example:clockwork-crane` checks up to
+64 routes and 32 recipes in 64 KiB, including known catalogue variant IDs.
+It does not resolve mission/rule references, award a Borg or crystals,
+retire ownership, or change any save.
+
 ## Standalone body preview
 
 For one default variant with compatible HSD assets, add `preview=preview.txt`

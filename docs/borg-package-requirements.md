@@ -76,9 +76,10 @@ duration and interruption policy each needs its own owner and tests.
 
 The catalogue reserves sidecars for moves, traits, forms, fusions, acquisition,
 effects and variant overrides. The [standalone moves check](borg-packages.md#standalone-moves-check)
-validates move/phase data and local fallbacks; the other sidecars and runtime
-consumers remain separate work. Prose-only requirements such as encounter/unlock
-conditions are not discarded just because an infobox lacks a field.
+validates move/phase data and local fallbacks. The [acquisition check](borg-packages.md#standalone-acquisition-check)
+keeps starting grants, progression, crystal assembly and battle-only results
+apart. Prose-only requirements such as encounter/unlock conditions are not
+discarded just because an infobox lacks a field; neither check executes them.
 
 ### Variants and progression
 
