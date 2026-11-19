@@ -1837,6 +1837,8 @@ bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice
         "--gred-movement","--gred-recovery-first-contact-seam","--gred-walk-ledge-timed-relaunch-floor","--gred-inclined-dash-jump",
         "--gred-timed-incline-landing-dash","--gred-walk-ledge-expiry-direct-relaunch",
         "--gred-walk-ledge-positive-snap-handoff","--gred-walk-ledge-timed-snap-handoff","--gred-walk-ledge-timed-snap-dash",
+        "--gred-walk-ledge-expiring-snap-handoff","--gred-walk-ledge-direct-timed-relaunch","--gred-walk-ledge-direct-timed-up-relaunch",
+        "--gred-walk-ledge-active-snap-relaunch",
         "--gred-slope-transition-dash",
         "--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
         "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push",

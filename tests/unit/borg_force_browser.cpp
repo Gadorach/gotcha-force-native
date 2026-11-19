@@ -86,6 +86,13 @@ int main(){
             cursor.step(next_route,true)==BorgForceBrowseChange::None&&cursor.force()==force_before&&cursor.slot()==slot_before,
             "sixth through eighth Right shoulder select floor-snap guides without moving the Force or slot");
     }
+    for(auto route:{GRedPickerPracticeRoute::ExpiryStepHandoff,GRedPickerPracticeRoute::DirectTimedRelaunch,
+        GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch}){
+        cursor.step({});
+        check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==route&&
+            cursor.step(next_route,true)==BorgForceBrowseChange::None&&cursor.force()==force_before&&cursor.slot()==slot_before,
+            "ninth through twelfth Right shoulder select the new guides without moving either cursor");
+    }
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

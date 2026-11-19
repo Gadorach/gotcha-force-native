@@ -236,15 +236,22 @@ then tap **Shift** on 33. The 450 wind-up and 50 active-entry
 charges stay spent. Tap **Up+Shift** instead on 33 to compare
 the directional speed cap with neutral damping.
 
-With `--practice-from-picker`, both browsers offer all three floor-snap
-guides. From **Standard**, press **Right** in the owned picker or **R** in
-the Force browser:
+With `--practice-from-picker`, both browsers offer the floor-snap and
+timed relaunch guides. From **Standard**, press **Right** in the owned
+picker or **R** in the Force browser:
 
 | Presses | Guide |
 | ---: | --- |
 | 6 | **Positive Floor Handoff** — choose with seven ledge ticks left |
 | 7 | **Expired Floor Handoff** — choose after the timer has expired |
 | 8 | **Timed Snap Dash** — follow the snap into active dash and landing |
+| 9 | **Expiry Step Handoff** — choose on the actual 1 → 0 update |
+| 10 | **Direct Timed Relaunch** — neutral Shift after the accepted walking push |
+| 11 | **Direct Timed Up Relaunch** — soft Up + Shift from the same push |
+| 12 | **Active Snap Relaunch** — relaunch after the active entry has already been paid |
+
+For **Active Snap Relaunch**, ten presses in the opposite direction
+(**Left** or **L**) are shorter.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
 **Esc** returns to the same copy or slot and route. These are read-only
