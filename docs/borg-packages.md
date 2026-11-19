@@ -126,12 +126,14 @@ Handoff**, **Expired Floor Handoff**, or **Timed Snap Dash**, respectively.
 The ninth through twelfth are **Expiry Step Handoff**, **Direct Timed
 Relaunch**, **Direct Timed Up Relaunch**, and **Active Snap Relaunch**.
 The thirteenth and fourteenth are **Relaunch on Expiry** and **Entry
-Push on Expiry**, both on the 1 → 0 timer step. The next six are
+Push on Expiry**, both on the 1 → 0 timer step. The fifteenth through
+seventeenth are
 **Adjacent Entry Push**, **Air Dash on Expiry**, **Expiry Wind-up
-Relaunch**, **Expiry Wind-up Snap**, **Expiry Snap Relaunch**, and
-**Diagonal Expiry Relaunch**. The two snap guides are also 14 and
-13 presses of **Left**. The diagonal guide still takes 12. The
-twenty-first and twenty-second are **Timed Release Push** and
+Relaunch**. The eighteenth and nineteenth are **Inclined Ledge
+Relaunch** and **Three Timed Release Pushes** (16 and 15 presses of
+**Left**). Next come **Expiry Wind-up Snap**, **Expiry Snap Relaunch**,
+and **Diagonal Expiry Relaunch**, still 14, 13 and 12 presses of **Left**.
+The twenty-third and twenty-fourth are **Timed Release Push** and
 **Two Timed Release Pushes**, reachable with 11 or 10 presses of **Left**.
 These routes start paused with a
 [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
@@ -786,12 +788,14 @@ The sixth, seventh, and eighth presses reach **Positive Floor Handoff**,
 The ninth through twelfth reach **Expiry Step Handoff**, **Direct Timed
 Relaunch**, **Direct Timed Up Relaunch**, and **Active Snap Relaunch**.
 The thirteenth and fourteenth reach **Relaunch on Expiry** and **Entry
-Push on Expiry**, both on the 1 → 0 timer step. The next six are
+Push on Expiry**, both on the 1 → 0 timer step. The fifteenth through
+seventeenth reach
 **Adjacent Entry Push**, **Air Dash on Expiry**, **Expiry Wind-up
-Relaunch**, **Expiry Wind-up Snap**, **Expiry Snap Relaunch**, and
-**Diagonal Expiry Relaunch**. The two snap guides are also 14 and
-13 presses of **L**. The diagonal guide still takes 12. The
-twenty-first and twenty-second reach **Timed Release Push** and
+Relaunch**. The eighteenth and nineteenth reach **Inclined Ledge
+Relaunch** and **Three Timed Release Pushes** (16 and 15 presses of
+**L**). Next come **Expiry Wind-up Snap**, **Expiry Snap Relaunch**,
+and **Diagonal Expiry Relaunch**, still 14, 13 and 12 presses of **L**.
+The twenty-third and twenty-fourth reach **Timed Release Push** and
 **Two Timed Release Pushes**, reachable with 11 or 10 presses of **L**.
 For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
 times, respectively.

@@ -110,13 +110,14 @@ int main(){
         GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch,
         GRedPickerPracticeRoute::ExpiringDirectRelaunch,GRedPickerPracticeRoute::ExpiringDirectRelaunchPush,
         GRedPickerPracticeRoute::ExpiringAdjacentRelaunchPush,GRedPickerPracticeRoute::ExpiringAirDash,GRedPickerPracticeRoute::ExpiringAirDashRelaunch,
+        GRedPickerPracticeRoute::InclinedLedgeRelaunch,GRedPickerPracticeRoute::TimedReleaseThreePushes,
         GRedPickerPracticeRoute::ExpiringAirDashSnap,GRedPickerPracticeRoute::ExpiringAirDashSnapRelaunch,
         GRedPickerPracticeRoute::ExpiringShortAirDashRelaunch,
         GRedPickerPracticeRoute::TimedReleasePush,GRedPickerPracticeRoute::TimedReleaseTwoPushes}){
         browser.step({},true);
         check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==route&&
             browser.step(right,true)==BorgBrowserChange::None&&browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
-            "ninth through twenty-second Right select the timed guides without replacing the copy or saved variant");
+            "ninth through twenty-fourth Right select guides without replacing the copy or saved variant");
     }
     check(browser.practice_route_name()=="TWO TIMED RELEASE PUSHES","two-push guide has its own route label");
     GamePadState left;left.dpad_left=true;
@@ -124,12 +125,13 @@ int main(){
     check(browser.step(left,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route_name()=="TIMED RELEASE PUSH"&&
         browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
         "previous selects the single-push guide without changing saved contents");
-    for(auto label:{"DIAGONAL EXPIRY RELAUNCH","EXPIRY SNAP RELAUNCH","EXPIRY WIND-UP SNAP","EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH",
+    for(auto label:{"DIAGONAL EXPIRY RELAUNCH","EXPIRY SNAP RELAUNCH","EXPIRY WIND-UP SNAP",
+        "THREE TIMED RELEASE PUSHES","INCLINED LEDGE RELAUNCH","EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH",
         "ENTRY PUSH ON EXPIRY","RELAUNCH ON EXPIRY"}){
         browser.step({},true);
         check(browser.step(left,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route_name()==label&&
             browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
-            "expiry-step guides are distinct from the timed-release routes and keep the exact copy");
+            "the relaunch and expiry guides keep the exact copy");
     }
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,

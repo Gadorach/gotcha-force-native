@@ -153,6 +153,7 @@ neutral **Shift** tap on 8. The relaunch follows the accepted
 fall, spends 150, and keeps the ledge countdown. Use
 `--demo-gred-inclined-dash-ledge-relaunch` for playback. This
 does not add dash-origin steep contact.
+In either picker, choose **Inclined Ledge Relaunch**.
 
 The [owned collection practice launcher](borg-packages.md#practice-an-owned-copy)
 offers the same live footholds through its **Left/Right** route selector.
@@ -261,16 +262,19 @@ picker or **R** in the Force browser:
 | 15 | **Adjacent Entry Push** — the neighboring face 1998 on 1 → 0 |
 | 16 | **Air Dash on Expiry** — stationary wind-up as the timer reaches zero |
 | 17 | **Expiry Wind-up Relaunch** — choose after the six-tick wind-up pays 450 |
-| 18 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
-| 19 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
-| 20 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
-| 21 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 22 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 18 | **Inclined Ledge Relaunch** — relaunch from the ordinary fall after a dash off the incline |
+| 19 | **Three Timed Release Pushes** — three consecutive airborne pushes on face 2021 |
+| 20 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
+| 21 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
+| 22 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
+| 23 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 24 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 32 routes in the loop. In the opposite direction (**Left** or
-**L**), **Expiry Wind-up Snap** takes 14 presses and **Expiry Snap Relaunch**
-takes 13. **Diagonal Expiry Relaunch**, **Timed Release Push**, and
-**Two Timed Release Pushes** still take 12, 11, and 10 respectively.
+There are 34 routes in the loop. In the opposite direction (**Left** or
+**L**), **Inclined Ledge Relaunch** and **Three Timed Release Pushes**
+take 16 and 15 presses. The two expiry snap guides still take 14 and
+13. **Diagonal Expiry Relaunch**, **Timed Release Push**, and **Two Timed
+Release Pushes** still take 12, 11, and 10 respectively.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
 **Esc** returns to the same copy or slot and route. These are read-only
@@ -413,7 +417,7 @@ uses **Up+Left Arrows** on 6–7, a **Shift** tap on 20, then neutral.
 The three same-face pushes occur on 34–36 with four, three and
 two ledge ticks left. This separate guide leaves the two-push
 mode unchanged. Use `--demo-gred-walk-ledge-timed-release-three-pushes`
-for playback.
+for playback, or choose **Three Timed Release Pushes** in either picker.
 
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
