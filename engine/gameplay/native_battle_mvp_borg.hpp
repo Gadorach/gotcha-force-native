@@ -4,9 +4,19 @@
 #include "engine/gameplay/character_model_scene.hpp"
 namespace gf {
 class NativeGRedGroundDashDemo;
+struct NativeBorgSourceMeter {s16 value=0,limit=0;};
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
-    NativeBorgSourcePoseScope()=default;
+    NativeBorgSourcePoseScope(const NativeBorgMotionReceipt& receipt,NativeBorgSourceMeter meter):receipt_(receipt),meter_(meter){}
+    NativeBorgSourcePoseScope(const NativeBorgSourcePoseScope&)=delete;
+    NativeBorgSourcePoseScope& operator=(const NativeBorgSourcePoseScope&)=delete;
+    NativeBorgMotionReceipt receipt_;
+    NativeBorgSourceMeter meter_;
+public:
+    std::optional<NativeBorgSourceMeter> meter(const NativeBattleMvp& world)const{
+        if(!world.motion_receipt_current(receipt_)||meter_.limit<=0||meter_.value<0||meter_.value>meter_.limit)return {};
+        return meter_;
+    }
 };
 struct NativeBorgAnimationSeed {
     CharacterPoseRig rig;CharacterLocalPose local;std::weak_ptr<const CharacterModelBinding> binding;

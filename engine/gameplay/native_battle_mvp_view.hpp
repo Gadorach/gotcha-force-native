@@ -39,9 +39,14 @@ public:
     void source_ground_relaunch_push_controls(){source_ground_relaunch_push_=true;}
     void source_ground_relaunch_entry_push_controls(){source_ground_relaunch_entry_push_=true;}
     void source_ground_windup_entry_push_controls(){source_ground_windup_entry_push_=true;}
+    void source_practice_controls(){source_practice_=true;}
+    std::optional<NativeBorgSourceMeter> practice_meter(const NativeBattleMvp& world)const{
+        const auto frame=source_practice_frame_.lock();
+        return source_practice_&&frame?frame->meter(world):std::nullopt;
+    }
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error){
-        ready_=false;std::vector<u8> stage,floor_bytes;
+        ready_=false;source_practice_frame_.reset();std::vector<u8> stage,floor_bytes;
         auto read=[&](const std::string& name,std::vector<u8>* out){u64 size=0;const auto path=directory+"/"+name;if(!files.file_size(path,&size)||!size||size>(32u<<20)||!files.read(path,*out)||out->size()!=size){if(error)*error="native MVP: missing/oversized asset "+path;return false;}return true;};
         if(!read("stage.hsd",&stage)||!read("floor.stih",&floor_bytes)||!floor_.load({floor_bytes.data(),floor_bytes.size()},error)||!stage_bank_.load({stage.data(),stage.size()},error,true))return false;
         floor_hash_=2166136261u;for(u8 byte:floor_bytes)floor_hash_=(floor_hash_^byte)*16777619u;
@@ -79,6 +84,7 @@ public:
         *out=below?selected:low;return true;
     }
     bool update(const NativeBattleMvp& world,std::string* error){
+        source_practice_frame_.reset();
         if(!ready_||!world.ready())return false;
         for(unsigned i=0;i<2;++i)if(!borgs_[i].update(world.actors()[i],world.tick(),error))return false;
         rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();
@@ -90,8 +96,10 @@ public:
     }
     std::weak_ptr<const CharacterModelBinding> source_binding()const{return borgs_[0].render_binding();}
     bool update_source(const NativeBattleMvp& world,const NativeBorgSourcePose& source,std::string* error){
+        source_practice_frame_.reset();
         if(!ready_||!world.motion_receipt_current(source.receipt)){borgs_[0].refuse_source_pose();if(error)*error="source view: stale/foreign native contact receipt";return false;}
         if(!borgs_[0].update_source_pose(world,source,error)||!borgs_[1].update(world.actors()[1],world.tick(),error))return false;
+        if(source_practice_)source_practice_frame_=source.frame_scope;
         rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();return true;
     }
     bool actor_bounds(unsigned actor,BattleMvpVec* low,BattleMvpVec* high)const{return actor<2&&borgs_[actor].bounds(low,high);}
@@ -146,8 +154,16 @@ public:
         if(!geometry_.empty()){const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;}
         render.state()={};render.state().depth_test=render.state().depth_write=false;render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;render.state().cull_backface=false;render.upload_matrix(0,identity.m);geometry_.clear();
         for(unsigned i=0;i<2;++i){const f32 x=i?f32(width)-310:24;ScreenDraw::textured_quad(geometry_,x,24,x+286,42,0,0,0,1,1,{35,35,45,230});ScreenDraw::textured_quad(geometry_,x,24,x+286*f32(world.actors()[i].health)/world.config().health,42,0,0,0,1,1,i?Tint{100,170,255,255}:Tint{255,100,70,255});}
+        const auto meter=practice_meter(world);
+        if(meter&&width>=200&&height>=190){
+            const f32 width_px=f32(std::min(286,width-48));
+            ScreenDraw::textured_quad(geometry_,24,52,24+width_px,62,0,0,0,1,1,{35,35,45,230});
+            if(meter->value)ScreenDraw::textured_quad(geometry_,24,52,24+width_px*f32(meter->value)/meter->limit,62,0,0,0,1,1,{255,210,80,255});
+        }
         const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;
         TextRenderer::Style style;style.scale=width>=1000?2:1;
+        if(meter&&width>=200&&height>=190)
+            draws+=text_.draw(render,"FLIGHT "+std::to_string(meter->value)+"/"+std::to_string(meter->limit),24,68,style);
         std::string status="G-RED VS SASUKE - NATIVE MVP / PROVISIONAL RULES\nWASD MOVE  L DASH  SHIFT JUMP  SPACE PRIMARY  E SECONDARY  Q RESTART  ENTER PAUSE";
         if(world.actors()[0].source_ground_motion)status="G-RED SOURCE GROUND-DASH LAB - SCRIPTED / NATIVE CONTACT PROXY\nENTER PAUSE  Q RESTART  ESC CLOSE - NO SOURCE WALK/JUMP/COMBAT";
         if(source_general_)status=std::string("G-RED SOURCE GROUND LAB - ")+(source_interactive_?"INTERACTIVE":"SCRIPTED")+" / NATIVE CONTACT PROXY\nARROWS WALK  WASD FLICK DASH  ENTER PAUSE  Q RESTART - NO JUMP/FLIGHT/COMBAT";
@@ -196,6 +212,7 @@ public:
         if(source_ground_relaunch_push_)status="G-RED CONTINUED RELAUNCH PUSH / NATIVE PROXY\nRELAUNCH14-15 / ZERO698 / .9 TAIL\nNO ENTRY REPLAY / SEPARATE RELEASE AND LANDING";
         if(source_ground_relaunch_entry_push_)status="G-RED RELAUNCH ENTRY PUSH / NATIVE PROXY\nDESCENDING AFTER +15 / ZERO698 / .9 TAIL\nONE ENTRY COST / SEPARATE RELEASE AND LANDING";
         if(source_ground_windup_entry_push_)status="G-RED WIND-UP ENTRY PUSH / NATIVE PROXY\nHALF-SPEED THEN .9 / NO PRE-CONTACT MOVE\nDEFERRED HANDOFF / SEPARATE ACTIVE ENTRY";
+        if(source_practice_)status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  Q RESTART  ESC CLOSE / NO COMBAT";
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
         draws+=text_.draw(render,status,24,f32(height)-80,style);render.state()=state;return draws;
@@ -247,6 +264,8 @@ private:
     bool source_ground_relaunch_push_=false;
     bool source_ground_relaunch_entry_push_=false;
     bool source_ground_windup_entry_push_=false;
+    bool source_practice_=false;
+    std::weak_ptr<const NativeBorgSourcePoseScope> source_practice_frame_;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };
 }

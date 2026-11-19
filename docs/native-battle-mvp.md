@@ -50,6 +50,29 @@ the first camera with the corrected shoulder view. CPU tests passed588 checks
 per native/sanitizer mode; asset preparation tests and overwrite/input-integrity
 checks passed. These are prototype checks, not original-game equivalence.
 
+## G-Red movement practice
+
+```sh
+build/direct/gf_native --gred-movement --no-audio
+```
+
+This opens the existing combined G-Red movement controller on the original
+stage using the ordinary practice spawn and arena bounds. Arrows walk or steer,
+WASD flicks dash, and Shift jumps or rises. Release and press Shift again to
+relaunch when eligible. Enter pauses, Q restarts, and Esc closes. The HUD's
+flight bar reads the last accepted source frame, not pending input or animation.
+
+`--demo-gred-movement --frames 600` runs the existing scripted wind-up-entry
+route with the same HUD. Both commands need the qualified local GFMM9 pack
+and native stage/model data. They do not change the duel, enable combat, or
+relax unsupported contact refusals.
+
+[Contact Sheet 59](../local/recomp-evidence/contact-sheets/gred-movement-practice-v1/contact-sheet-59.png)
+shows actual offscreen OpenGL captures. All four rendered bar widths matched
+the accepted meter within one pixel. Host tests covered both launch commands;
+the owner sanitizer covered pending frames, pause, foreign worlds and retired
+receipts. The ordinary duel smoke test was unchanged.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

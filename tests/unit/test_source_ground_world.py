@@ -11,6 +11,23 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90)
 
+    def test_practice_launch_uses_interactive_spawn_and_accepted_meter(self):
+        result = self.run_host(["--gred-movement", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("G-Red movement practice: arrows walk/steer, WASD flick dash", result.stdout)
+        self.assertIn("practice-meter=10000/10000 at accepted tick=10", result.stdout)
+        self.assertIn("G-Red-position=-240.00/10.00/300.00", result.stdout)
+        self.assertNotIn("demo only:", result.stdout)
+
+    def test_practice_demo_meter_tracks_existing_accepted_windup_route(self):
+        for tick, value in ((81, 8450), (86, 8000), (140, 6450), (600, 10000)):
+            result = self.run_host(["--demo-gred-movement", "--headless", "--frames", str(tick), "--no-audio"])
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn(f"practice-meter={value}/10000 at accepted tick={tick}", result.stdout)
+            self.assertIn(f"accepted native tick={tick}", result.stdout)
+            self.assertIn("controller-windup-pushes=", result.stdout)
+            self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
+
     def test_combined_windup_entry_push_defers_cost_and_keeps_active_entry_separate(self):
         for tick, pushes, entries, landings, meter, selector, program, cached in (
                 (80, 0, 0, 0, 8450, 6, 6, 1),

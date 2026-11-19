@@ -432,7 +432,8 @@ public:
             positive_windup_floor_contacts_+=pending_->offer.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             last_air_dash_floor_programs_=movement_programs();
         }
-        frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(new NativeBorgSourcePoseScope);
+        frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
+            new NativeBorgSourcePoseScope(receipt,{state_.resource.value736,input_.resource_limit}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

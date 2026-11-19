@@ -28,11 +28,12 @@ Game data is not included. Prepare local art from your existing qualified native
 bundles with `python3 -m tools.extract.native_battle_mvp --help`.
 See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
 and [G-Red controller recovery](docs/g-red-animation-controller.md).
-The latest opt-in lab is `--source-ground-windup-entry-push` (or
-`--demo-source-ground-windup-entry-push --headless --frames 600`), requiring
-GFMM9. It adds descending steep pushes on air-dash wind-up entry at zero698.
-Entry halves incoming speeds before contact without translating, applying
-gravity or spending meter. Active-entry and positive698 pushes remain refused.
+Run `build/direct/gf_native --gred-movement --no-audio` for movement practice
+with the combined G-Red controller, controls on screen, and a live flight
+meter. `--demo-gred-movement --frames 600` runs the existing wind-up-entry
+route with the same HUD. Both require GFMM9, use native contact proxies, and
+leave combat and unsupported contacts disabled. The focused wind-up entry
+lab is still available as `--source-ground-windup-entry-push`.
 Older modes retain their narrower permissions and native proxies stay labelled.
 Other Borgs do not inherit G-Red's recovered mappings.
 

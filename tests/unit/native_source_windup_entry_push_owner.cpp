@@ -101,8 +101,10 @@ int main(){
     }
     for(bool combined:{false,true}){
     if(combined&&!has_combined)continue;
+    if(combined)view.source_practice_controls();
     bind(combined?NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush:NativeGRedGroundDashDemo::Mode::WindupEntryPush,
          combined?combined_pack:inputs);
+    check(!view.practice_meter(world),"no practice meter without an accepted source pose");
     flick=0;u32 entry=0,handoff=0,active=0,touchdown=0;unsigned entries=0,continued=0;
     NativeBorgMotionOffer prior;
     for(unsigned t=0;t<600;++t){
@@ -110,6 +112,10 @@ int main(){
         const auto stages=source.air_dash_stages();const auto retained=pose;
         check(prepare(pad_at(t,combined),&offer)&&source.resource()==meter&&source.windup_entry_surface_pushes()==count&&
             source.air_dash_stages().timer568==stages.timer568,"entry half-speed, future50, timer and counters remain staged");
+        if(combined&&t){
+            const auto presented=view.practice_meter(world);
+            check(presented&&presented->value==meter&&presented->limit==10000,"staged motion cannot publish its pending practice meter");
+        }
         if(offer.kind==NativeBorgMotionKind::AirDashWindupEntryPush){
             const auto tick=world.tick();const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);auto wrong=offer;
             const auto position=world.actors()[0].position;
@@ -139,6 +145,20 @@ int main(){
             }
         }
         accept(offer);const auto tick=world.tick();
+        if(combined){
+            const auto presented=view.practice_meter(world);
+            check(presented&&presented->limit==10000&&presented->value==source.resource(),"accepted source pose publishes exact meter and limit");
+            if(tick==86){
+                const auto frame=pose.frame_scope.lock();NativeBattleMvp foreign;
+                check(frame&&!frame->meter(foreign)&&!view.practice_meter(foreign),"foreign world cannot borrow the practice meter");
+                GamePadState pause;pause.start=true;
+                check(world.step({pause,{}},false,&view)&&world.paused()&&world.tick()==tick&&
+                    view.practice_meter(world)&&view.practice_meter(world)->value==8000,
+                    "pausing preserves the last accepted practice meter");
+                check(world.step({},false,&view)&&world.step({pause,{}},false,&view)&&!world.paused()&&world.tick()==tick,
+                    "unpausing does not step or refill the practice meter");
+            }
+        }
         if(native_borg_motion_windup_entry(offer.kind))++entries;
         if(offer.kind==NativeBorgMotionKind::AirDashWindupEntryPush){
             entry=tick;
@@ -181,6 +201,7 @@ int main(){
         "600-frame original-stage route preserves distinct entry, continuation, recovery and lifetime boundaries");
     const auto retired=pose;source.reject();
     check(retired.frame_scope.expired()&&!world.motion_receipt_current(retired.receipt),"entry producer retirement revokes retained pose and receipt");
+    check(!view.practice_meter(world),"retired source scope cannot display a stale meter");
     std::printf("%s entry: entry=%u handoff=%u active=%u touchdown=%u\n",combined?"combined":"legacy",entry,handoff,active,touchdown);
     }
     if(has_combined){

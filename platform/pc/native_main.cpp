@@ -108,6 +108,7 @@ struct Options {
     bool source_ground_relaunch_push=false;
     bool source_ground_relaunch_entry_push=false;
     bool source_ground_windup_entry_push=false;
+    bool gred_practice=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -209,7 +210,8 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-ground-active-push" || arg == "--demo-source-ground-active-push" ||
                  arg == "--source-ground-relaunch-push" || arg == "--demo-source-ground-relaunch-push" ||
                  arg == "--source-ground-relaunch-entry-push" || arg == "--demo-source-ground-relaunch-entry-push" ||
-                 arg == "--source-ground-windup-entry-push" || arg == "--demo-source-ground-windup-entry-push"){
+                 arg == "--source-ground-windup-entry-push" || arg == "--demo-source-ground-windup-entry-push" ||
+                 arg == "--gred-movement" || arg == "--demo-gred-movement"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
             options->source_ground_walk=arg!="--demo-source-ground-dash";
@@ -238,7 +240,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_active_push=arg=="--source-ground-active-push"||arg=="--demo-source-ground-active-push";
             options->source_ground_relaunch_push=arg=="--source-ground-relaunch-push"||arg=="--demo-source-ground-relaunch-push";
             options->source_ground_relaunch_entry_push=arg=="--source-ground-relaunch-entry-push"||arg=="--demo-source-ground-relaunch-entry-push";
-            options->source_ground_windup_entry_push=arg=="--source-ground-windup-entry-push"||arg=="--demo-source-ground-windup-entry-push";
+            options->gred_practice=arg=="--gred-movement"||arg=="--demo-gred-movement";
+            options->source_ground_windup_entry_push=options->gred_practice||
+                arg=="--source-ground-windup-entry-push"||arg=="--demo-source-ground-windup-entry-push";
             options->source_ordered_ground=arg=="--source-ordered-ground"||arg=="--demo-source-ordered-ground"||options->source_dash_ledge||options->source_ground_ledge||options->source_ground_jump||options->source_ground_landing||options->source_ground_air||options->source_ground_air_floor||options->source_ground_relaunch||options->source_ground_relaunch_floor||options->source_ground_windup_entry_floor||options->source_ground_surface||options->source_ground_loss_surface||options->source_ground_loss_jump||options->source_ground_loss_landing||options->source_ground_loss_air||options->source_ground_loss_relaunch||options->source_ground_fall_push||options->source_ground_air_fall_push;
             if(options->source_ordered_ground)options->source_ground_interactive=arg=="--source-ordered-ground"||arg=="--source-dash-ledge"||arg=="--source-ground-ledge"||arg=="--source-ground-jump"||arg=="--source-ground-landing"||arg=="--source-ground-air"||arg=="--source-ground-air-floor"||arg=="--source-ground-relaunch"||arg=="--source-ground-relaunch-floor"||arg=="--source-ground-windup-entry-floor"||arg=="--source-ground-surface"||arg=="--source-ground-loss-surface"||arg=="--source-ground-loss-jump"||arg=="--source-ground-loss-landing"||arg=="--source-ground-loss-air"||arg=="--source-ground-loss-relaunch"||arg=="--source-ground-fall-push"||arg=="--source-ground-air-fall-push";
             options->source_windup_entry_push=arg=="--source-windup-entry-push"||arg=="--demo-source-windup-entry-push";
@@ -323,7 +327,9 @@ bool parse(int argc, char** argv, Options* options) {
         } else {
             std::fprintf(stderr,
                          "usage: gf_native [--headless] [--menu] [--frames N] [--seconds N] [--size W H] "
-                         "[--screenshot PATH.ppm]\n");
+                         "[--screenshot PATH.ppm]\n"
+                         "       gf_native --gred-movement [--no-audio]\n"
+                         "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n");
             return false;
         }
     }
@@ -589,6 +595,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.demo_source_ground)gf::log_info(context,"source-ground","original movement programs/motion; native body/terrain proxies and target-center approximation; %s; no original whole-frame equivalence",options.source_ground_fall_push?"one combined controller with ordinary zero698 falling push":options.source_ground_loss_relaunch?"one combined controller with owned698 ground-loss relaunch":options.source_ground_loss_air?"one combined controller with owned698 air dash/contact":options.source_ground_loss_landing?"one combined controller with retained-timer landing jump/dash":options.source_ground_loss_jump?"one combined controller with retained-timer landing jump":options.source_ground_loss_surface?"one combined controller with timer-bound ground-loss surface landing":options.source_ground_surface?"one combined controller with paired surface landing":options.source_ground_windup_entry_floor?"one ground/air/relaunch/entry-floor controller":options.source_ground_relaunch_floor?"one ground/air/relaunch-floor controller":options.source_ground_relaunch?"one ground/air/relaunch controller":options.source_ground_air_floor?"one ground/air controller with scoped floor response":options.source_ground_air?"one ground/ledge/jump/landing/air-dash controller":options.source_ground_landing?"one ground/ledge/jump/landing controller":options.source_ground_jump?"one ground/ledge/jump controller":options.source_walk_ledge?"walk-only ground loss and owned native frame history":options.source_moving_jump?"ground plus moving jump/air steering":options.source_vertical_jump?"ground plus neutral vertical jump":options.source_ground_walk?"ground walk/turn/stop/dash only":"scripted dash only, no source walk/jump/combat");
     if(options.source_ground_walk){
         view.source_ground_controls(options.source_ground_interactive);
+        if(options.gred_practice){
+            view.source_practice_controls();
+            gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, Q restart, Esc close; native proxies, no combat");
+        }
         if(options.source_ordered_ground){
             view.source_ordered_ground_controls();
             if(options.source_ground_windup_entry_push){
@@ -957,6 +967,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     gf::log_info(context,"battle-mvp","frames=%u ticks=%u projectiles-spawned=%u hits=%u health=%u/%u result=%u",frame,world.tick(),world.shots_spawned(),world.hits(),world.actors()[0].health,world.actors()[1].health,unsigned(world.result()));
     if(options.demo_source_ground)gf::log_info(context,"source-ground","accepted native tick=%u G-Red-position=%.2f/%.2f/%.2f; accepted-frames=%llu body-proxy-contacts=%llu; scoped movement, native proxy response",world.tick(),world.actors()[0].position[0],world.actors()[0].position[1],world.actors()[0].position[2],static_cast<unsigned long long>(source.accepted_frames()),static_cast<unsigned long long>(source.body_contacts()));
+    if(options.gred_practice){
+        if(const auto meter=view.practice_meter(world))
+            gf::log_info(context,"source-ground","practice-meter=%d/%d at accepted tick=%u",int(meter->value),int(meter->limit),world.tick());
+    }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");
     if(options.source_air_dash)gf::log_info(context,"source-ground","air-dash-starts=%llu active-frames=%llu; source policy1, no per-flight count substitution",static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.air_dash_active_frames()));
     if(options.source_relaunch)gf::log_info(context,"source-ground","relaunches=%llu lower-stage=%u upper-stage=%u; source predicate/meter, no fixed jump-count substitution",static_cast<unsigned long long>(source.relaunches()),unsigned(source.relaunch_stages().lower_stage),unsigned(source.relaunch_stages().upper_stage));
