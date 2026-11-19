@@ -463,9 +463,10 @@ int main(){
         !prepare(false,&offer,true,true)&&error.find("plain descending entry without contact response")!=std::string::npos&&
         world.tick()==55&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&!world.step({},false,&view),
         "a genuine adjacent face-1998 response cannot borrow the face-1999 permission");
-    for(unsigned route:{0u,1u,2u}){
+    for(bool adjacent:{false,true})for(unsigned route:{0u,1u,2u}){
         const bool held=route==2;
-        bind(Mode::GroundWalkExpiringDirectRelaunchPush);prefix(55);
+        bind(adjacent?Mode::GroundWalkExpiringAdjacentRelaunchPush:Mode::GroundWalkExpiringDirectRelaunchPush,
+            adjacent?-3315.80225f:-3313.80225f);prefix(55);
         const auto previous=offer;const auto old=world.actors()[0];const auto camera=NativeBattleMvpView::movement_frame(world,1152,648);
         check(previous.kind==Kind::GroundLossPush&&previous.walk_ledge->walk_origin&&previous.controller_timer698==1.f&&
             previous.static_push->surface.triangle==2009&&previous.static_push->angle==8192&&
@@ -475,7 +476,7 @@ int main(){
             "real timer-one walking push stages a separate projected soft-Up entry without publishing");
         const auto& move=*offer.relaunch_motion;const auto& contact=*offer.static_push;
         BattleMvpVec projected;
-        check(contact.surface.triangle==1999&&contact.angle==13653&&contact.relaunch_acceleration==move.vertical_accel&&
+        check(contact.surface.triangle==(adjacent?1998u:1999u)&&contact.angle==13653&&contact.relaunch_acceleration==move.vertical_accel&&
             offer.entry_vertical_delta==15.f&&move.vertical_before==f32(old.vertical_speed+15.f)&&move.vertical_before==-12.f&&
             contact.integrated_position[1]==f32(old.position[1]+move.vertical_before)&&
             contact.vertical_speed==std::fma(move.vertical_accel,1.f,move.vertical_before)&&
@@ -497,6 +498,10 @@ int main(){
             refuses(offer,nullptr,"a projected entry still needs independent soft-Up turn evidence");
             auto fake=offer;fake.controller_timer698=1.f;refuses(fake,&camera,"prior positive clock is not the entry clock");
             fake=offer;fake.static_push->surface.triangle=2009;refuses(fake,&camera,"cannot substitute the prior selected face");
+            if(adjacent){
+                fake=offer;fake.static_push->surface.triangle=1999;
+                refuses(fake,&camera,"the other qualified face does not replace the native query's actual selection");
+            }
             fake=offer;fake.static_push->angle=13652;refuses(fake,&camera,"cannot broaden the verified projection angle");
             fake=offer;fake.static_push->integrated_position[1]=f32(old.position[1]+old.vertical_speed);
             refuses(fake,&camera,"pre-response motion cannot omit the additive 15");

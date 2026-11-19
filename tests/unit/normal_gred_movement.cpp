@@ -89,9 +89,18 @@ int main(){
     static_assert(unsigned(Mode::GroundWalkExpiringDirectRelaunchPush)==72&&unsigned(Policy::GroundWalkExpiringDirectRelaunchPush)==68&&
         !Definition::allows(Mode::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiringDirectRelaunchPush)&&
         Definition::allows(Mode::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringDirectRelaunchPush)&&
-        Definition::expiry_relaunch_push_faces(2009,8192,1999,13653)&&
-        !Definition::expiry_relaunch_push_faces(1999,8192,2009,13653)&&
-        !Definition::expiry_relaunch_push_faces(2009,8192,1999,13652));
+        Definition::expiry_relaunch_push_faces(2009,8192,1999,13653,false)&&
+        !Definition::expiry_relaunch_push_faces(1999,8192,2009,13653,false)&&
+        !Definition::expiry_relaunch_push_faces(2009,8192,1999,13652,false));
+    static_assert(unsigned(Mode::GroundWalkExpiringAdjacentRelaunchPush)==73&&unsigned(Policy::GroundWalkExpiringAdjacentRelaunchPush)==69&&
+        !Definition::allows(Mode::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringAdjacentRelaunchPush)&&
+        Definition::allows(Mode::GroundWalkExpiringAdjacentRelaunchPush,Behavior::WalkExpiringAdjacentRelaunchPush)&&
+        Definition::expiry_relaunch_push_faces(2009,8192,1999,13653,true)&&
+        Definition::expiry_relaunch_push_faces(2009,8192,1998,13653,true)&&
+        !Definition::expiry_relaunch_push_faces(2009,8192,1998,13653,false)&&
+        !Definition::expiry_relaunch_push_faces(1998,8192,1999,13653,true)&&
+        !Definition::expiry_relaunch_push_faces(2009,8192,1997,13653,true)&&
+        !Definition::expiry_relaunch_push_faces(2009,8192,1998,13652,true));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));

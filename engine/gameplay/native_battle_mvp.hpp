@@ -959,7 +959,8 @@ public:
                const bool direct_expiring_entry_push=behaviors.has(Behavior::WalkExpiringDirectRelaunchPush)&&expiring_walking_push&&
                    controller_relaunch_push_frame&&relaunch_entry_push&&o.static_push&&descending_up_entry&&
                    NormalGRedMovementDefinition::expiry_relaunch_push_faces(last_offer_.static_push->surface.triangle,
-                       last_offer_.static_push->angle,o.static_push->surface.triangle,o.static_push->angle);
+                       last_offer_.static_push->angle,o.static_push->surface.triangle,o.static_push->angle,
+                       behaviors.has(Behavior::WalkExpiringAdjacentRelaunchPush));
               bool direct_timed_relaunch=false;
               if(behaviors.has(Behavior::WalkTimedDirectRelaunch)&&walking_push&&walking_push->timer698>1.f&&
                   o.controller_timer698&&*o.controller_timer698==walking_push->timer698-1.f&&
@@ -1394,7 +1395,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringDirectRelaunchPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringAdjacentRelaunchPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

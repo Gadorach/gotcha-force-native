@@ -381,7 +381,7 @@ public:
             const bool expiring_entry_push=expiring_direct&&allows(mode_,Behavior::WalkExpiringDirectRelaunchPush)&&
                 kind==NativeBorgMotionKind::RelaunchEntryPush&&s.static_push&&
                 NormalGRedMovementDefinition::expiry_relaunch_push_faces(state_.static_push->surface.triangle,state_.static_push->angle,
-                    s.static_push->surface.triangle,s.static_push->angle);
+                    s.static_push->surface.triangle,s.static_push->angle,allows(mode_,Behavior::WalkExpiringAdjacentRelaunchPush));
             if(direct_push&&!timed_direct&&((kind!=NativeBorgMotionKind::RelaunchEntry&&!expiring_entry_push)||!s.relaunch_motion||!s.relaunch_motion->direction||
                 s.relaunch_motion->vertical_before>=0.f||s.motion.vertical48>=0.f))
                 return fail(error,"direct expiry relaunch requires plain descending entry without contact response");

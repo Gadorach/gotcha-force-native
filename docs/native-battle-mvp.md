@@ -338,6 +338,12 @@ works after a tap on 56; releasing into neutral immediately
 does not pass the next travel check. Use
 `--demo-gred-walk-ledge-expiring-relaunch-push` for the held playback.
 
+`--gred-walk-ledge-expiring-adjacent-relaunch-push --practice-start`
+uses the same inputs from a foothold two units farther along Z to
+select adjacent face 1998. This separate opt-in does not change
+the **Entry Push on Expiry** picker guide, which still uses face
+1999 only.
+
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
 tap **Shift** on 23, then leave the controls neutral. Ordinary

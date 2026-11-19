@@ -22,7 +22,8 @@ enum class NormalGRedMovementMode {
     GroundRecoveryRecontactSeam,GroundRecoveryFirstContactSeam,GroundWalkLedgeDirectTimedAirDash,
     GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch,GroundWalkExpiryDirectRelaunch,GroundTimedSnapWindupRelaunch,
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
-    GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush
+    GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
+    GroundWalkExpiringAdjacentRelaunchPush
 };
 
 struct NormalGRedMovementDefinition {
@@ -93,6 +94,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundTimedWalkReleaseSecondPush,Policy::GroundTimedWalkReleaseSecondPush,Behavior::TimedWalkReleaseSecondPush},
         CombinedRule{Mode::GroundWalkExpiringDirectRelaunch,Policy::GroundWalkExpiringDirectRelaunch,Behavior::WalkExpiringDirectRelaunch},
         CombinedRule{Mode::GroundWalkExpiringDirectRelaunchPush,Policy::GroundWalkExpiringDirectRelaunchPush,Behavior::WalkExpiringDirectRelaunchPush},
+        CombinedRule{Mode::GroundWalkExpiringAdjacentRelaunchPush,Policy::GroundWalkExpiringAdjacentRelaunchPush,Behavior::WalkExpiringAdjacentRelaunchPush},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -137,10 +139,10 @@ struct NormalGRedMovementDefinition {
     static constexpr s16 walk_ledge_push_angle_cap(BorgMovementBehaviors flags){
         return flags.has(Behavior::WalkLedgeHighAnglePush)?13653:10240;
     }
-    // The expiry-entry projection is qualified only for this witnessed
-    // transition on the bound original stage, not arbitrary steep contacts.
-    static constexpr bool expiry_relaunch_push_faces(u32 prior,s16 prior_angle,u32 contact,s16 angle){
-        return prior==2009&&prior_angle==8192&&contact==1999&&angle==13653;
+    // Only these witnessed face/angle pairs on the bound original stage.
+    // A matching slope does not authorize another face.
+    static constexpr bool expiry_relaunch_push_faces(u32 prior,s16 prior_angle,u32 contact,s16 angle,bool adjacent){
+        return prior==2009&&prior_angle==8192&&angle==13653&&(contact==1999||(adjacent&&contact==1998));
     }
 private:
     static constexpr auto cumulative_=[]{

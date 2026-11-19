@@ -7,6 +7,7 @@
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
     RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,DirectExpiryRelaunch,ExpiringDirectRelaunch,ExpiringDirectRelaunchPush,
+    ExpiringAdjacentRelaunchPush,
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
@@ -197,10 +198,11 @@ public:
             break;
         }
         case Replay::ExpiringDirectRelaunch:
-        case Replay::ExpiringDirectRelaunchPush:{
+        case Replay::ExpiringDirectRelaunchPush:
+        case Replay::ExpiringAdjacentRelaunchPush:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
-            raw.buttons|=expiring_entry_inputs(tick,replay_==Replay::ExpiringDirectRelaunchPush);
+            raw.buttons|=expiring_entry_inputs(tick,replay_!=Replay::ExpiringDirectRelaunch);
             break;
         }
         case Replay::TimedReleasePush:
@@ -424,6 +426,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool direct_expiry=replay==Replay::DirectExpiryRelaunch;
     const bool direct_expiring=replay==Replay::ExpiringDirectRelaunch;
     const bool direct_expiring_push=replay==Replay::ExpiringDirectRelaunchPush;
+    const bool adjacent_expiring_push=replay==Replay::ExpiringAdjacentRelaunchPush;
     const bool snap_handoff=replay==Replay::FloorWindupRelaunch||replay==Replay::FloorWindupDash;
     const bool positive_handoff=replay==Replay::PositiveFloorHandoff;
     const bool expiring_handoff=replay==Replay::ExpiringFloorHandoff;
@@ -434,13 +437,14 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_two=replay==Replay::TimedReleaseTwoPushes;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||timed_incline||
-        direct_expiry||direct_expiring||direct_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
+        direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
         direct_timed||direct_timed_up||active_snap_relaunch||
         timed_release_push||timed_release_two;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
            incline_landing[]="--gred-timed-incline-landing-dash",expiry_direct[]="--gred-walk-ledge-expiry-direct-relaunch",
            expiring_direct[]="--gred-walk-ledge-expiring-direct-relaunch",expiring_push[]="--gred-walk-ledge-expiring-relaunch-push",
+           expiring_adjacent_push[]="--gred-walk-ledge-expiring-adjacent-relaunch-push",
           timed_snap_dash[]="--gred-walk-ledge-timed-snap-dash",floor_handoff[]="--gred-walk-ledge-timed-snap-handoff",
           positive_floor_handoff[]="--gred-walk-ledge-positive-snap-handoff",
           expiring_floor_handoff[]="--gred-walk-ledge-expiring-snap-handoff",
@@ -453,7 +457,8 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
         direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
         expiring_handoff?expiring_floor_handoff:positive_handoff?positive_floor_handoff:
         snap_handoff?floor_handoff:snap_dash?timed_snap_dash:
-         direct_expiry?expiry_direct:direct_expiring?expiring_direct:direct_expiring_push?expiring_push:timed_incline?incline_landing:
+         direct_expiry?expiry_direct:direct_expiring?expiring_direct:adjacent_expiring_push?expiring_adjacent_push:
+         direct_expiring_push?expiring_push:timed_incline?incline_landing:
         incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
     check(parse(fixture?4:3,args,&options),scenario,log.text);
     options.frames=frames;
@@ -1022,5 +1027,17 @@ int main(int argc,char** argv){
         has(expiry_push_idle,"accepted native tick=145 G-Red-position=-419.40/10.00/-3301.88")&&
         has(expiry_push_idle,"practice-meter=10000/10000 at accepted tick=145")&&!has(expiry_push_idle,"practice-direct-expiring-entry-push="),
         "the short hold and release finish normally after the projected entry",expiry_push_idle);
-    std::puts("G-Red practice replay: forty-one desktop-loop scenarios PASS without opening devices");
+    const auto adjacent_push=run(Replay::ExpiringAdjacentRelaunchPush,112,"live adjacent projected entry on expiry");
+    check(picker_guide_played(adjacent_push,"adjacent entry push on expiry",56)&&
+        has(adjacent_push,"accepted native tick=56 G-Red-position=-771.56/1404.49/-3368.72")&&
+        has(adjacent_push,"practice-meter=9850/10000 at accepted tick=56")&&
+        once(adjacent_push,"practice-direct-expiring-entry-push=AIRBORNE / RELAUNCH ENTRY PUSH ON EXPIRY")&&
+        has(adjacent_push,"direct-expiring-push-relaunches=1 air-dash-starts=0 floors=0 entry-pushes=1 relaunch-fall-pushes=0 timer698=0.0"),
+        "live input projects against the adjacent face instead of reusing the original route",adjacent_push);
+    const auto adjacent_idle=run(Replay::ExpiringAdjacentRelaunchPush,290,"live adjacent expiry entry to idle");
+    check(picker_guide_played(adjacent_idle,"adjacent entry push on expiry",145)&&
+        has(adjacent_idle,"accepted native tick=145 G-Red-position=-419.40/10.00/-3302.19")&&
+        has(adjacent_idle,"practice-meter=10000/10000 at accepted tick=145")&&!has(adjacent_idle,"practice-direct-expiring-entry-push="),
+        "adjacent contact still finishes via normal fall and landing",adjacent_idle);
+    std::puts("G-Red practice replay: forty-three desktop-loop scenarios PASS without opening devices");
 }

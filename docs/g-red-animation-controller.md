@@ -553,6 +553,29 @@ and landing at 110–111 with 9850. An immediate neutral release on
 57 still fails native travel; the accepted entry does not authorize
 that next push.
 
+### Adjacent expiry-entry face 1998
+
+`--gred-walk-ledge-expiring-adjacent-relaunch-push` is a separate
+opt-in for the **2009 → 1998** pair. Face 1998 has the same 13653
+angle as 1999, but native must select the actual triangle and check
+its projection and both travel paths again. The face-1999 mode
+still refuses this approach. An unrelated angle, face, floor snap
+or timer does not gain permission.
+
+The guide starts two units farther along Z, at
+`-1250.96863/-3315.80225`, with the same query and bounds. Use
+**Left Arrow** on 6–25 and **Up + Shift** on 56–59, then neutral.
+The timer-one walking push at 55 and projected relaunch at 56
+spend the same amounts as before. The held route releases at 60,
+touches down at 114, and lands at 115 with 9550 meter. A tap on
+56 with **Up** alone on 57 also completes, with 9850 at
+touchdown/landing on 110–111. Immediate neutral release still
+fails native travel on 57. The exact-start probe completed 16
+of 20 input variants; four failed after the accepted entry.
+Waiting instead of pressing on 56 does not reach an already-zero
+push on this start: the neutral walking fall hits the existing
+raised-side refusal and the last accepted timer remains one.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the
