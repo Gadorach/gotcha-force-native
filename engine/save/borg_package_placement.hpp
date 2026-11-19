@@ -1,7 +1,6 @@
 #pragma once
-#include "engine/save/account_save_repository.hpp"
 #include "engine/save/borg_package_save.hpp"
-#include "engine/save/force_inventory.hpp"
+#include "engine/save/scoped_retail_force_record.hpp"
 
 namespace gf {
 enum class BorgPlacementResult {
@@ -35,7 +34,7 @@ public:
         if(loaded==PackageBorgLoad::Missing)return BorgPlacementResult::OwnedUnavailable;
         if(loaded!=PackageBorgLoad::Loaded)return BorgPlacementResult::SaveUnavailable;
         ForceInventory retail;
-        if(!read_retail(retail_catalogue,&next.retail_record,&retail))return BorgPlacementResult::RetailUnverified;
+        if(!read_scoped_retail_force_record(backend_,retail_catalogue,&next.retail_record,&retail))return BorgPlacementResult::RetailUnverified;
         PackageBorgRoster candidate;
         const auto result=make_candidate(next.before,instance,force,slot,retail,packages,metadata,
             &next.offer,&next.package,&next.variant,&candidate);
@@ -48,7 +47,8 @@ public:
         if(!pending_)return BorgPlacementResult::NotConfirmed;
         const auto checked=std::move(*pending_);pending_.reset(); // one explicit confirmation, never retry
         ForceInventory retail;std::vector<u8> record;
-        if(!read_retail(retail_catalogue,&record,&retail)||record!=checked.retail_record)return BorgPlacementResult::Stale;
+        if(!read_scoped_retail_force_record(backend_,retail_catalogue,&record,&retail)||record!=checked.retail_record)
+            return BorgPlacementResult::Stale;
         PackageBorgRoster candidate;BorgPlacementOffer current;BorgPackageEntry package;BorgCatalogVariant variant;
         if(make_candidate(checked.before,checked.offer.owned.instance,checked.offer.force,checked.offer.slot,
             retail,packages,metadata,&current,&package,&variant,&candidate)!=BorgPlacementResult::Ready||
@@ -68,15 +68,6 @@ private:
         BorgPackageEntry package;
         BorgCatalogVariant variant;
     };
-    bool read_retail(const ForceCatalog* catalogue,std::vector<u8>* record,ForceInventory* out){
-        const auto state=backend_.read_slot(0,*record);
-        if(state==SaveReadStatus::Missing){record->clear();return true;}
-        if(state!=SaveReadStatus::Loaded||record->empty()||record->size()>kAccountObjectBytes||!catalogue)return false;
-        ForceInventoryStore reader(backend_);
-        if(reader.load(*catalogue,out)!=ForceInventoryLoad::Loaded)return false;
-        std::vector<u8> checked;
-        return backend_.read_slot(0,checked)==SaveReadStatus::Loaded&&checked==*record;
-    }
     static BorgPlacementResult make_candidate(const PackageBorgRoster& before,u64 instance,unsigned force,unsigned slot,
                                              const ForceInventory& retail,const BorgPackageCatalog& packages,
                                              std::span<const BorgCatalogSnapshot> metadata,BorgPlacementOffer* offer,

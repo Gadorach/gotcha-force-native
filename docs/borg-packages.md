@@ -128,6 +128,26 @@ and press it again to close the collection. Each view owns its renderer
 resources only while active. If the selected save has changed, reopen the
 collection rather than continuing with a stale selection.
 
+### Practice one saved Force slot
+
+```sh
+gf_native --gred-movement --practice-force-slot ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER SLOT_NUMBER \
+  [--retail-catalog FILE]
+```
+
+Force and slot numbers are one-based. This selects only the exact package
+copy in that position, not the whole Force. If the save contains a retail
+inventory record, supply the matching GFBC catalogue. A proved absent
+retail record does not need a catalogue; an unreadable or mismatched one
+does not count as absent.
+
+A retail-only, empty, or overlapping slot refuses. So does a disabled
+package copy or one that cannot pass the existing exact-variant practice
+checks. The host does not replace the slot, change the roster, or choose
+another member. Both saved records are rechecked before launch and on
+**Q** restart. Other slots and Force budgets are not checked for battle
+admission.
+
 ## Read-only installed Borg picker
 
 `gf_native --browse-borgs` opens the standalone installed-package picker.

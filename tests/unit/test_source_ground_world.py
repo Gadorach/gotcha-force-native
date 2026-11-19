@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -116,6 +117,10 @@ class SourceGroundWorldTests(unittest.TestCase):
             self.assertIn("bound fixture:gred variant=normal", good.stdout)
             self.assertIn("account=7 save=11 owned instance=8 (Saved G-Red / Saved Standard); save is read-only", good.stdout)
             self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0", good.stdout)
+            package_only = self.run_host(["--gred-movement", "--practice-force-slot", str(accounts), "7", "11", "1", "2",
+                                          "--headless", "--no-audio"], cwd=root)
+            self.assertEqual(package_only.returncode, 0, package_only.stdout)
+            self.assertIn("Force 1 slot 2 supplies owned instance=8", package_only.stdout)
             for save, instance, message in (
                 (11, 9, "owned copy is disabled"), (11, 10, "no exact saved variant"),
                 (11, 11, "explicitly selected normal variant"), (11, 12, "uniquely discovered package"),
@@ -143,6 +148,67 @@ class SourceGroundWorldTests(unittest.TestCase):
                                     text=True, timeout=90, cwd=root)
             self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
             self.assertIn("exact launch/return, live routes, disabled refusal, and held-key isolation PASS", replay.stdout)
+            self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
+
+    def test_mixed_force_slot_practice_verifies_both_records_and_never_substitutes(self):
+        seed = Path(os.environ["GF_SOURCE_WORLD_BINARY"]).resolve().with_name("gred_practice_replay")
+        if not seed.is_file():
+            self.skipTest("practice replay fixture seeder not built")
+
+        def gfbc(cost):
+            name, force, unnamed, owner = b"RETAIL FIXTURE", b"FIRST FORCE", b"FORCE A", b"PLAYER"
+            body = (struct.pack(">4H", 0x1001, 0, 0, len(name)) + struct.pack(">6h", *([cost] * 6)) +
+                    struct.pack(">6h", *([0] * 6)) + struct.pack(">9h", *range(100, 1000, 100)) + name +
+                    struct.pack(">H", 0x1001) + force + unnamed + owner)
+            header = bytearray(32)
+            struct.pack_into(">II8H", header, 0, 0x47464243, 1, 1, 1, 0, 0, len(force), len(unnamed), len(owner), len(unnamed) - 1)
+            struct.pack_into(">I", header, 28, len(body))
+            return bytes(header) + body
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.normal_practice_fixture(root)
+            catalogue, wrong = root / "retail.gfbc", root / "wrong.gfbc"
+            catalogue.write_bytes(gfbc(100))
+            wrong.write_bytes(gfbc(101))
+            accounts = root / "force-fixture"
+            subprocess.run([seed, "--seed-force-practice", accounts, catalogue], cwd=root, check=True, timeout=30)
+            before = {path.name: path.read_bytes() for path in accounts.iterdir()}
+            flags = ["--retail-catalog", str(catalogue)]
+
+            def start(force, slot, *extra, mode="--gred-movement"):
+                return self.run_host([mode, "--practice-force-slot", str(accounts), "7", "11", str(force), str(slot),
+                                      "--headless", "--no-audio", *extra], cwd=root)
+
+            good = start(1, 2, *flags, "--frames", "180", mode="--demo-gred-walk-ledge-expiry-push")
+            self.assertEqual(good.returncode, 0, good.stdout)
+            self.assertIn("Force 1 slot 2 supplies owned instance=8; one practice copy, not Force admission", good.stdout)
+            self.assertIn("bound fixture:gred variant=normal", good.stdout)
+            self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0", good.stdout)
+            for force, slot, extra, message in (
+                (1, 2, [], "retail Force record is unverified"),
+                (1, 2, ["--retail-catalog", str(wrong)], "retail Force record is unverified"),
+                (1, 2, ["--retail-catalog", str(root / "absent.gfbc")], "could not read the explicit retail catalogue"),
+                (1, 1, flags, "overlaps retail and package claims"),
+                (2, 1, flags, "retail-only"),
+                (2, 2, flags, "requested Force slot is empty"),
+                (1, 3, flags, "owned copy is disabled"),
+            ):
+                with self.subTest(force=force, slot=slot, catalogue=extra):
+                    refused = start(force, slot, *extra)
+                    self.assertEqual(refused.returncode, 2, refused.stdout)
+                    self.assertIn(message, refused.stdout)
+                    self.assertNotIn("backend=", refused.stdout)
+            for force, slot, extra, mode in (
+                (0, 2, flags, "--gred-movement"), (1, 0, flags, "--gred-movement"),
+                (999, 2, flags, "--gred-movement"), (1, 999, flags, "--gred-movement"),
+                (1, 2, [*flags, "--borg-variant", "normal"], "--gred-movement"),
+                (1, 2, [*flags, "--practice-owned-borg", str(accounts), "7", "11", "8"], "--gred-movement"),
+                (1, 2, flags, "--demo-battle-mvp"),
+            ):
+                refused = start(force, slot, *extra, mode=mode)
+                self.assertEqual(refused.returncode, 2, refused.stdout)
+                self.assertNotIn("backend=", refused.stdout)
             self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):

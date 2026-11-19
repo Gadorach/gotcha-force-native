@@ -78,6 +78,7 @@ struct Options {
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,practice_borg,borg_variant;
     std::optional<gf::pc::BorgOwnedPracticeRequest> owned_practice;
+    std::optional<gf::pc::BorgForcePracticeRequest> force_practice;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -261,6 +262,13 @@ bool parse(int argc, char** argv, Options* options) {
             request.root=argv[++i];
             if(request.root.empty()||!id(argv[++i],&request.key.account)||!id(argv[++i],&request.key.save)||
                !id(argv[++i],&request.instance))return false;
+        }else if(arg=="--practice-force-slot"){
+            if(argc-i<=5||options->force_practice)return false;
+            auto& request=options->force_practice.emplace();gf::u64 force=0,slot=0;
+            request.root=argv[++i];
+            if(request.root.empty()||!id(argv[++i],&request.key.account)||!id(argv[++i],&request.key.save)||
+               !id(argv[++i],&force)||force>gf::kForceCount||!id(argv[++i],&slot)||slot>gf::kForceSlots)return false;
+            request.force=unsigned(force-1);request.slot=unsigned(slot-1);
         }else if(arg=="--borg-variant"){
             if(++i>=argc||!options->borg_variant.empty()||!gf::borg_catalog_variant_id_valid(argv[i]))return false;
             options->borg_variant=argv[i];
@@ -465,6 +473,7 @@ bool parse(int argc, char** argv, Options* options) {
                           "       gf_native --gred-movement [--practice-start] [--no-audio]\n"
                           "       gf_native --gred-movement --practice-borg NAMESPACE:ID --borg-variant normal\n"
                           "       gf_native --gred-movement --practice-owned-borg ROOT ACCOUNT SAVE INSTANCE\n"
+                          "       gf_native --gred-movement --practice-force-slot ROOT ACCOUNT SAVE FORCE SLOT [--retail-catalog FILE]\n"
                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
                          "       gf_native --check-borg-moves NAMESPACE:ID\n"
                          "       gf_native --check-borg-spawn NAMESPACE:ID\n"
@@ -492,9 +501,11 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
        !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->borg_variant.empty()&&options->preview_borg.empty()&&options->practice_borg.empty())return false;
-    if((!options->practice_borg.empty()&&options->borg_variant.empty())||
-       (options->owned_practice&&(!options->practice_borg.empty()||!options->borg_variant.empty())))return false;
-    if((!options->practice_borg.empty()||options->owned_practice)&&(!options->gred_practice||
+    const unsigned practice_sources=unsigned(!options->practice_borg.empty())+unsigned(options->owned_practice.has_value())+
+        unsigned(options->force_practice.has_value());
+    if(practice_sources>1||(!options->practice_borg.empty()&&options->borg_variant.empty())||
+       ((options->owned_practice||options->force_practice)&&!options->borg_variant.empty()))return false;
+    if(practice_sources&&(!options->gred_practice||
        !options->preview_borg.empty()||!options->source_ground_assets.empty()||options->list_borgs||
        !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
@@ -508,7 +519,7 @@ bool parse(int argc, char** argv, Options* options) {
     if(options->recovery_notice&&(options->selected_save_root.empty()||options->inspect_force||options->browse_owned_borgs))return false;
     if(options->owned_instance&&!options->browse_owned_borgs)return false;
     if(options->practice_from_picker&&(!options->browse_owned_borgs||options->placement_force))return false;
-    if(!options->retail_force_catalogue.empty()&&!options->inspect_force&&!options->placement_force)return false;
+    if(!options->retail_force_catalogue.empty()&&!options->inspect_force&&!options->placement_force&&!options->force_practice)return false;
     if(!options->selected_save_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
        options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
        !options->preview_borg.empty()||options->browse_borgs||options->list_borgs||!options->check_borg_catalog.empty()||
@@ -698,10 +709,14 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                    const gf::pc::BorgPracticeFiles* package=nullptr,const gf::pc::BorgOwnedPractice* owned=nullptr,
                    PickerPracticeHandoff* picker=nullptr){
     gf::NativeBattleMvp world;gf::NativeBattleMvpView view;std::string error;
-    const bool wants_package=!options.practice_borg.empty()||options.owned_practice.has_value();
+    const bool wants_save=options.owned_practice.has_value()||options.force_practice.has_value();
+    const bool wants_package=!options.practice_borg.empty()||wants_save;
+    const bool matches_save=!owned||(options.owned_practice?owned->matches(*options.owned_practice):
+        options.force_practice&&owned->matches(*options.force_practice));
     if((picker&&(!owned||!options.source_ground_interactive))||
-       bool(package)!=wants_package||bool(owned)!=options.owned_practice.has_value()||(package&&!options.gred_practice)||
-       (owned&&(package!=&owned->files()||!owned->matches(*options.owned_practice)))||
+       (options.owned_practice&&options.force_practice)||bool(package)!=wants_package||
+       bool(owned)!=wants_save||(package&&!options.gred_practice)||
+       (owned&&(package!=&owned->files()||!matches_save))||
        (!owned&&package&&(package->identity.id!=options.practice_borg||package->variant!=options.borg_variant))){
         gf::log_error(context,"borg-practice","exact requested practice snapshot required; no fallback");
         render.shutdown();return 2;
@@ -818,6 +833,12 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         gf::log_info(context,"borg-practice","account=%llu save=%llu owned instance=%llu (%s / %s); save is read-only",
             static_cast<unsigned long long>(owned->save_key().account),static_cast<unsigned long long>(owned->save_key().save),
             static_cast<unsigned long long>(owned->saved().instance),owned->saved().identity.name.c_str(),owned->saved().variant->label.c_str());
+    }
+    if(options.force_practice){
+        const auto& force=*options.force_practice;
+        view.source_practice_force_slot(force.force+1,force.slot+1);
+        gf::log_info(context,"borg-practice","Force %u slot %u supplies owned instance=%llu; one practice copy, not Force admission",
+            force.force+1,force.slot+1,static_cast<unsigned long long>(owned->saved().instance));
     }
     if(picker)view.source_practice_returns_to_picker();
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
@@ -1888,7 +1909,19 @@ int main(int argc, char** argv) {
     gf::pc::BorgPracticeFiles practice_package;
     std::unique_ptr<gf::pc::BorgOwnedPractice> owned_practice;
     const gf::pc::BorgPracticeFiles* package=nullptr;
-    if(options.owned_practice){
+    if(options.force_practice){
+        std::string error;gf::ForceCatalog retail;
+        if(!options.retail_force_catalogue.empty()){
+            auto files=gf::sdl::create_file_system();
+            if(!files||!load_retail_force_catalogue(*files,options.retail_force_catalogue,&retail)){
+                std::fputs("Force slot practice: could not read the explicit retail catalogue\n",stderr);return 2;
+            }
+        }
+        owned_practice=gf::pc::BorgOwnedPractice::open_force_slot(*options.force_practice,"borgs",borg_packages,
+            retail.ready()?&retail:nullptr,&error);
+        if(!owned_practice){std::fprintf(stderr,"Force slot practice: %s\n",error.c_str());return 2;}
+        package=&owned_practice->files();
+    }else if(options.owned_practice){
         std::string error;
         owned_practice=gf::pc::BorgOwnedPractice::open(*options.owned_practice,"borgs",borg_packages,&error);
         if(!owned_practice){std::fprintf(stderr,"Owned Borg practice: %s\n",error.c_str());return 2;}

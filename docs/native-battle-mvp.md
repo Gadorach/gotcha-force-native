@@ -121,6 +121,10 @@ session. The same path can read the exact variant of an
 selected save without changing it. Stage and target assets stay in the
 existing harness.
 
+The [saved Force slot entry point](borg-packages.md#practice-one-saved-force-slot)
+uses the same practice session after checking both records for the exact
+requested position. It does not launch a Force battle.
+
 ### Try a demo route with your own inputs
 
 Add `--practice-start` to an interactive G-Red practice command to use its

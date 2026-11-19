@@ -116,7 +116,12 @@ std::string line(const std::string& log,const char* prefix){
 
 // Test-only entry point. Create a fresh isolated account store rather
 // than opening any existing data to manufacture a roster.
-int seed_owned_practice(const std::string& root){
+int seed_owned_practice(const std::string& root,const char* retail_path=nullptr){
+    gf::ForceCatalog catalogue;
+    if(retail_path){
+        const auto files=gf::sdl::create_file_system();
+        if(!files||!load_retail_force_catalogue(*files,retail_path,&catalogue))return 2;
+    }
     std::error_code ec;
     if(!std::filesystem::create_directory(root,ec)||ec)return 2;
     auto storage=gf::pc::create_account_save_storage(root,false,nullptr);
@@ -128,24 +133,34 @@ int seed_owned_practice(const std::string& root){
        repo.create_save(account,11,"Owned Practice",&save)!=R::Ok||
        repo.create_save(account,12,"Other Practice",&other)!=R::Ok||
        repo.create_save(account,13,"No Roster",&empty)!=R::Ok)return 1;
-    const gf::PackageBorgRoster roster{{
+    gf::PackageBorgRoster roster{{
         {8,{"fixture:gred","Saved G-Red"},false,gf::SavedPackageVariant{"normal","Saved Standard"}},
         {9,{"fixture:gred","Disabled G-Red"},true,gf::SavedPackageVariant{"normal","Disabled"}},
         {10,{"fixture:gred","Legacy G-Red"}},
         {11,{"fixture:gred","Shadow G-Red"},false,gf::SavedPackageVariant{"shadow","Shadow"}},
         {12,{"fixture:missing","Missing Borg"},false,gf::SavedPackageVariant{"normal","Missing"}},
     },{{8,0,1}}};
+    if(retail_path){
+        roster.owned.push_back({13,{"fixture:gred","Overlap G-Red"},false,gf::SavedPackageVariant{"normal","Normal"}});
+        roster.placements.insert(roster.placements.begin(),{13,0,0});
+        roster.placements.push_back({9,0,2});
+    }
     const gf::PackageBorgRoster other_roster{{
         {8,{"fixture:missing","Other instance eight"},false,gf::SavedPackageVariant{"normal","Missing"}},
     },{}};
-    auto write=[&](const gf::AccountSaveEntry& entry,const gf::PackageBorgRoster& value){
+    auto write=[&](const gf::AccountSaveEntry& entry,const gf::PackageBorgRoster& value,bool with_retail){
         std::unique_ptr<gf::AccountSaveBackend> backend;
         if(repo.open(entry,&backend)!=R::Ok)return false;
         gf::PackageBorgSaveStore store(*backend);gf::PackageBorgRoster unused;
-        const bool ok=store.load(&unused)==gf::PackageBorgLoad::Missing&&store.write(value);
+        bool ok=store.load(&unused)==gf::PackageBorgLoad::Missing&&store.write(value);
+        if(ok&&with_retail){
+            gf::ForceInventoryStore retail_store(*backend);gf::ForceInventory inventory;
+            ok=retail_store.load(catalogue,&inventory)==gf::ForceInventoryLoad::Missing&&inventory.create(catalogue)&&
+                inventory.place(1,0,0)==gf::ForceChange::Applied&&retail_store.write(inventory);
+        }
         repo.close();return ok;
     };
-    return write(save,roster)&&write(other,other_roster)?0:1;
+    return write(save,roster,retail_path!=nullptr)&&write(other,other_roster,false)?0:1;
 }
 
 int replay_owned_practice_picker(std::string root){
@@ -200,6 +215,7 @@ int replay_owned_practice_picker(std::string root){
 
 int main(int argc,char** argv){
     if(argc!=1){
+        if(argc==4&&std::string_view(argv[1])=="--seed-force-practice")return seed_owned_practice(argv[2],argv[3]);
         if(argc!=3)return 2;
         const std::string_view command=argv[1];
         if(command=="--seed-owned-practice")return seed_owned_practice(argv[2]);
