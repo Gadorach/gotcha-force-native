@@ -796,6 +796,31 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("Up Arrow+Shift 25-32", guide.stdout)
         self.assertNotIn("direct timed Up relaunch demo:", guide.stdout)
 
+    def test_timed_release_push_uses_the_ordinary_falling_role(self):
+        for tick, phase, meter, timer, pushes in (
+            (23, "RELAUNCH", 9850, 16, 0), (24, "FALLING", 9850, 15, 0),
+            (32, "FALLING", 9850, 7, 0), (33, "FALLING / PUSH", 9850, 6, 1),
+            (34, "FALLING", 9850, 5, 1), (39, "FALLING", 9850, 0, 1),
+            (90, "TOUCHDOWN", 9850, 0, 1), (91, "LANDING", 9850, 0, 1), (125, "IDLE", 10000, 0, 1),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-timed-release-push", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"relaunch-fall-pushes={pushes} relaunches=1 timer698={timer}.0 landings={int(tick>=90)}", result.stdout)
+                self.assertIn("walk-ledge-fall-pushes=0", result.stdout)
+                self.assertEqual("practice-timed-release-push=AIRBORNE / TIMED RELAUNCH-FALL PUSH" in result.stdout, tick == 33)
+                if tick == 125:
+                    self.assertIn("G-Red-position=752.13/10.00/-3156.15", result.stdout)
+        guide = self.run_host(["--gred-walk-ledge-timed-release-push", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("timed relaunch-fall push guide: paused at tick=0", guide.stdout)
+        self.assertIn("tap Shift on 23, then neutral", guide.stdout)
+        self.assertNotIn("timed relaunch-fall push demo:", guide.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),

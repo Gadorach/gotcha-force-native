@@ -364,6 +364,10 @@ public:
                     "floor wind-up relaunch needs uninterrupted timed snap history and a still-positive or previously expired countdown":
                     "floor wind-up relaunch needs uninterrupted timed snap history and an expired countdown");
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
+            if(allows(mode_,Behavior::TimedWalkReleasePush)&&kind==NativeBorgMotionKind::RelaunchEntry&&s.relaunch_motion&&
+                !s.relaunch_motion->direction&&s.ground_timer698>0.f&&state_.walk_loss_origin&&state_.jump_motion&&
+                state_.jump_motion->phase==6&&state_.jump_motion->ground_loss&&!state_.jump_motion->entry&&
+                !state_.static_push&&!state_.surface_landing)s.relaunch_motion->timed_walk_relaunch_tap=true;
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
             const bool timed_up_policy=allows(mode_,Behavior::WalkTimedDirectUpRelaunch);
@@ -659,7 +663,8 @@ public:
                 accepted.landing_target==12,pending_->direct_expiry_relaunch,direct_expiry_relaunch_ready,windup_from_relaunch_snap,
                 floor_windup_relaunch_ready,pending_->direct_timed_relaunch,
                 pending_->direct_timed_relaunch&&accepted.relaunch_motion&&accepted.relaunch_motion->direction,
-                relaunch_from_active_snap}));
+                relaunch_from_active_snap,accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&
+                accepted.jump_motion->timed_walk_relaunch_fall}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
@@ -858,7 +863,7 @@ private:
     }
     bool air_contact(State& s,const CharacterMovementStaticGround& ground,const CharacterMovementMotionState& before,
                       const CharacterMovementMotionState& proposed,CharacterMovementMotionState* out,bool* touchdown,std::string* error,bool moving,
-                      bool allow_push=false,bool recovery_push=false,bool walk_loss_push=false){
+                      bool allow_push=false,bool recovery_push=false,bool walk_loss_push=false,bool timed_release_push=false){
         const bool ground_loss_surface=controller_ground_loss_surface_mode(mode_)&&s.jump.falling_after_ground_loss;
         const bool controller_surface=controller_surface_mode(mode_)&&(!s.jump.falling_after_ground_loss||ground_loss_surface);
         if(!surface_mode(mode_)&&!controller_surface)return gred_vertical_jump_flat_contact(ground,before,proposed,out,touchdown,error,moving);
@@ -867,13 +872,17 @@ private:
         //loss path supplies its owned countdown. All declare7C9=0, not an
         //original actor constructor/hit/size-animation producer.
         const f32 timer=ground_loss_surface||controller_landing_jump_mode(mode_)?s.ground_timer698:0.f;
-        const bool fall_push=controller_fall_push_mode(mode_)&&allow_push&&before.vertical48<=0&&timer==0&&
+        const bool fall_push=controller_fall_push_mode(mode_)&&allow_push&&before.vertical48<=0&&(timer==0||timed_release_push)&&
             !s.jump.falling_after_ground_loss&&(!s.jump.falling_after_dash||controller_air_fall_push_mode(mode_))&&
             (!s.jump.falling_after_relaunch||controller_relaunch_fall_push_mode(mode_));
         const bool combined_recovery_push=recovery_push&&controller_recovery_push_mode(mode_)&&before.vertical48<=0&&timer==0;
         if(!gred_surface_contact(motion_,ground,before,proposed,{timer,0,(steep_mode(mode_)&&allow_push)||fall_push||
             combined_recovery_push||walk_loss_push},&result,error))return false;
         if(result.kind==GRedSurfaceContactKind::Pushed){
+            if(timed_release_push&&result.angle>motion_.landing_angles[0]){
+                if(error)*error="timed release push: above the verified inter-gate angle range";
+                return false;
+            }
             const auto flags=NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_));
             const bool high_angle=flags.has(Behavior::WalkLedgeHighAnglePush);
             const s16 cap=high_angle?NormalGRedMovementDefinition::walk_ledge_push_angle_cap(flags):motion_.landing_angles[0];
@@ -1226,6 +1235,10 @@ private:
             }
             if(!gred_jump_acceleration(motion_,plan.state.direction550,&s.motion))return false;
         }
+        const bool timed_walk_fall=allows(mode_,Behavior::TimedWalkReleasePush)&&plan.state.selector==6&&
+            plan.state.falling_after_relaunch&&s.ground_timer698>0.f&&!(held&0x100u)&&
+            (plan.request?(state_.relaunch_motion&&state_.relaunch_motion->timed_walk_relaunch_tap):
+                (state_.jump_motion&&state_.jump_motion->timed_walk_relaunch_fall&&!state_.static_push));
         bool touchdown=false;
         if(plan.air_move){
             const auto before=s.motion;const auto ground=ground_for(s);
@@ -1251,11 +1264,12 @@ private:
                 state_.ground_timer698==1&&state_.walk_loss_origin&&state_.static_push&&!s.ground_drift_heading;
             const bool walk_loss_push=allows(mode_,Behavior::WalkLedgeFallPush)&&s.walk_loss_origin&&(s.ground_timer698>0||on_expiry)&&
                 plan.state.selector==6&&plan.state.falling_after_ground_loss&&!plan.request&&before.vertical48<0&&!(held&0x100u);
+            const bool timed_release_push=timed_walk_fall&&!plan.request&&!evidence.drift_heading&&before.vertical48<0.f;
             if(!character_movement_air_step(motion_,s.motion,1,1,plan.clamp_wrapper,ceiling,&proposed,error)||
                 !air_contact(s,ground,before,proposed,&s.motion,&touchdown,error,moving,
                         plan.state.selector==6&&(history_surface_mode(mode_)||(!plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
                             (controller_air_fall_push_mode(mode_)&&plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
-                            (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)),false,walk_loss_push)||
+                             (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)),false,walk_loss_push,timed_release_push)||
                (touchdown&&plan.state.selector!=6))return false;
         }
         evidence.lower_done=s.vm.state().lanes[1].done;
@@ -1284,6 +1298,7 @@ private:
                 evidence.relaunch_coarse57d=evidence.relaunch_origin?plan.state.falling_coarse57d:0;
             }
             evidence.speed44=s.motion.speed44;
+            evidence.timed_walk_relaunch_fall=timed_walk_fall&&!evidence.drift_heading&&!touchdown;
             s.jump_motion=evidence;
         }
         return true;

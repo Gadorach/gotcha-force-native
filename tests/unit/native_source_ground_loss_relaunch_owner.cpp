@@ -567,6 +567,101 @@ int main(){
             source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
             "two genuine post-active choices finish in idle under existing permissions");
     }
+    auto released_push_fixture=[&](Mode mode,f32 z){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={1000.65021f,z};cfg.spawn_query_y[0]=1549.25293f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"declared grounded timed release fixture");
+    };
+    auto release_pad=[](unsigned tick,unsigned walk_end,unsigned tap){
+        GamePadState pad;pad.dpad_right=tick>=6&&tick<=walk_end;pad.b=tick==tap;return pad;
+    };
+    released_push_fixture(Mode::GroundWalkTimedDirectUpRelaunch,-3365.34546f);
+    for(unsigned tick=1;tick<=32;++tick){
+        NativeBorgMotionOffer offer;
+        check(prepare(release_pad(tick,8,23),&offer),"older policy accepts the same walking fall, relaunch tap and ordinary release");
+        if(offer.jump_motion)check(!offer.jump_motion->timed_walk_relaunch_fall,"older policy does not adopt new history");
+        accept(offer);
+    }
+    {
+        NativeBorgMotionOffer offer;const auto retained=pose;const auto before=world.actors()[0].position;
+        check(!prepare({},&offer)&&error.find("steep push/damping branch")!=std::string::npos&&world.tick()==32&&
+            source.ground_loss_timer698()==7.f&&source.resource()==9850&&world.actors()[0].position==before&&
+            retained.frame_scope.expired()&&!world.step({},false,&view),"older mode still refuses the same contact before publication");
+    }
+    released_push_fixture(Mode::GroundTimedWalkReleasePush,-3365.34546f);
+    unsigned timed_pushes=0,hit=0,land=0;
+    NativeBorgMotionOffer previous;
+    for(unsigned tick=1;tick<=125;++tick){
+        const auto before=world.actors()[0];const auto retained=pose;
+        const auto timer=source.ground_loss_timer698();const auto meter=source.resource();
+        NativeBorgMotionOffer offer;
+        check(prepare(release_pad(tick,8,23),&offer)&&source.ground_loss_timer698()==timer&&source.resource()==meter,
+            "relaunch, release and inter-gate response remain staged");
+        const f32 next=offer.kind==Kind::GroundLossEntry?30.f:std::max(0.f,timer-1.f);
+        check(offer.controller_timer698==next,"actual timer is preserved across every role");
+        check((offer.relaunch_motion&&offer.relaunch_motion->timed_walk_relaunch_tap)==(tick==23)&&
+            (offer.jump_motion&&offer.jump_motion->timed_walk_relaunch_fall)==(tick>=24&&tick<=33),
+            "only the exact timed tap and neutral ordinary fall earn history, which ends after the first push");
+        if(tick==23)check(previous.kind==Kind::GroundLossAir&&previous.walk_ledge&&previous.walk_ledge->walk_origin&&
+            offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion->resource_after==9850&&next==16.f,
+            "timed plain tap begins from an ordinary walking-ledge fall");
+        if(tick==24)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->entry&&
+            offer.jump_motion->relaunch_origin&&next==15.f,"release really enters ordinary falling before any new push");
+        auto refuses=[&](const NativeBorgMotionOffer& wrong,const char* why){
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick-1&&
+                world.actors()[0].position==before.position&&source.ground_loss_timer698()==timer&&source.resource()==meter&&
+                world.motion_receipt_current(retained.receipt)&&view.practice_readout(world)->timed_release_push==(tick==34),why);
+        };
+        if(tick==23){
+            auto wrong=offer;wrong.relaunch_motion->timed_walk_relaunch_tap=false;
+            refuses(wrong,"native verifies the initial role instead of trusting the producer bit");
+        }
+        if(tick==32||tick==34){
+            auto wrong=offer;wrong.jump_motion->timed_walk_relaunch_fall=tick==34;
+            refuses(wrong,"neutral history is required before, and cannot be carried on after, the accepted push");
+        }
+        if(offer.kind==Kind::StaticPush){
+            ++timed_pushes;
+            check(tick==33&&previous.kind==Kind::JumpAir&&next==6.f&&offer.static_push&&
+                offer.static_push->surface.triangle==1961&&offer.static_push->angle==8191&&before.vertical_speed<0.f&&
+                !offer.jump_motion->entry&&!offer.jump_motion->drift_heading&&
+                offer.vertical_speed==f32(offer.static_push->vertical_speed*.9f)&&!offer.surface_landing&&!offer.relaunch_motion,
+                "first neutral timed push uses the selected inter-gate plane, exact .9 tail and no contact callback");
+            auto wrong=offer;wrong.controller_timer698=0.f;refuses(wrong,"cannot borrow the ordinary expired contact gate");
+            wrong=offer;wrong.static_push->angle=10241;refuses(wrong,"cannot borrow a steeper inter-gate response");
+            wrong=offer;wrong.proposed_position[1]=offer.static_push->surface.height;refuses(wrong,"projected falling push is not a floor snap");
+        }
+        if(offer.kind==Kind::JumpTouchdown)hit=tick;
+        if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+        accept(offer);
+        const auto shown=view.practice_readout(world);
+        check(shown&&shown->timed_release_push==(tick==33),"only accepted timed contact publishes the push cue");
+        if(tick==33)check(!world.actors()[0].grounded&&source.cached_airborne87()==1&&source.resource()==9850&&!source.landings(),
+            "neither the new push nor the remaining countdown grounds or refills G-Red");
+        if(tick==hit||tick==land)check(source.resource()==9850,"touchdown and its separate landing preserve the entry cost");
+        previous=offer;
+    }
+    check(timed_pushes==1&&hit==90&&land==91&&source.relaunches()==1&&source.relaunch_fall_pushes()==1&&
+        !source.air_dash_starts()&&!source.walk_ledge_pushes()&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+        "one timed inter-gate response, separate landing, normal idle");
+    released_push_fixture(Mode::GroundTimedWalkReleasePush,-3371.34546f);
+    for(unsigned tick=1;tick<=35;++tick){
+        NativeBorgMotionOffer offer;check(prepare(release_pad(tick,9,24),&offer),"nearby approach reaches a genuine first push");
+        if(tick==35)check(offer.kind==Kind::StaticPush&&offer.static_push->surface.triangle==2008&&
+            offer.controller_timer698==5.f,"this adjacent route earns the push itself, not the next step");
+        accept(offer);
+    }
+    {
+        NativeBorgMotionOffer offer;const auto retained=pose;const auto before=world.actors()[0].position;
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(prepare({},&offer)&&offer.kind==Kind::JumpAir&&!offer.jump_motion->timed_walk_relaunch_fall&&
+            !world.step({},false,&view,nullptr,&frame,&offer)&&world.tick()==35&&world.actors()[0].position==before&&
+            source.ground_loss_timer698()==5.f&&source.resource()==9850&&world.motion_receipt_current(retained.receipt),
+            "a nearby accepted push still cannot bypass the next native travel check");
+        source.reject();
+        check(retained.frame_scope.expired()&&!world.step({},false,&view),"native failure does not grant a fallback");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

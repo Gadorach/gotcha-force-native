@@ -314,6 +314,14 @@ comes from that input, with the same 150 cost and 13-tick remainder.
 Only soft Up is added on entry; the neutral-only guide and contact
 checks are unchanged.
 
+`--gred-walk-ledge-timed-release-push --practice-start` shows the
+separate contact after release. Step with **Right Arrow** on 6–8,
+tap **Shift** on 23, then leave the controls neutral. Ordinary
+falling starts at 24. The one accepted push at 33 keeps six ledge
+ticks without grounding or refilling G-Red. Touchdown and landing
+come later. Use `--demo-gred-walk-ledge-timed-release-push` for
+the automatic replay.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,

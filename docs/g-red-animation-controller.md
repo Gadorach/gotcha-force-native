@@ -900,6 +900,39 @@ that has not yet touched the slope. Both new CLI tests and the preceding
 post-air push test passed. The ordinary 64-tick duel still produced 11 shots,
 4 hits, and health92/76.
 
+### One inter-gate push while the released relaunch still has time left
+
+`--gred-walk-ledge-timed-release-push` opts into one positive-timer
+response. It needs a plain neutral relaunch tap from an accepted
+ordinary **walking** ledge fall, then an accepted ordinary falling
+update after release. Source and native independently carry that
+history through neutral falling until the first contact. The push
+uses the actual timer and the inter-gate angle range (above 6144
+through 10240). It adds no active relaunch, repeated positive push,
+entry-contact or dash-origin permission.
+
+```sh
+gf_native --demo-gred-walk-ledge-timed-release-push --headless --frames 125 --no-audio
+gf_native --gred-walk-ledge-timed-release-push --practice-start --no-audio
+```
+
+From the grounded native start X/Z `1000.65021/-3365.34546`
+(floor query `1549.25293`, arena half-width `4500`), hold
+**Right Arrow** on 6–8 and tap **Shift** on 23. The plain entry
+costs 150 with 16 ticks left. Release into ordinary falling at 24.
+On 33, neutral falling pushes on triangle 1961, angle 8191, with
+six ticks left. It keeps the existing `.9` damping and costs
+nothing. **AIRBORNE / TIMED RELAUNCH-FALL PUSH** appears only on
+that accepted push. Touchdown and landing are separate at 90–91
+with 9850 meter; normal recovery takes over afterward.
+
+Both pre- and post-response travel checks are unchanged. The
+older zero-timer policy still refuses this same contact. In the
+bounded 4,872-route scan, 22 timed pushes were accepted and
+three routes completed. A nearby route at Z `-3371.34546`
+accepts face 2008 at 35, then still refuses native travel on 36.
+The accepted push does not grant that following step.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

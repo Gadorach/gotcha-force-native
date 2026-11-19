@@ -78,6 +78,12 @@ int main(){
     static_assert(unsigned(Mode::GroundWalkTimedDirectUpRelaunch)==68&&unsigned(Policy::GroundWalkTimedDirectUpRelaunch)==64&&
         !Definition::allows(Mode::GroundWalkTimedDirectRelaunch,Behavior::WalkTimedDirectUpRelaunch)&&
         Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::WalkTimedDirectUpRelaunch));
+    static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
+        !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
+        Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));
+    static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
+        !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
+        Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));
     static_assert(Definition::floor_windup_handoff_clock(expired_floor,0,0)&&
         !Definition::floor_windup_handoff_clock(expired_floor,7,6)&&
         Definition::floor_windup_handoff_clock(positive_floor,0,0)&&
