@@ -129,6 +129,10 @@ int main(){
     write(root/"Other/visual/ant.tpl",{reinterpret_cast<const char*>(bytes.data()),bytes.size()});
     check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&
         diagnostic=="editor icon is unresolved for variant tbd","unresolved artwork is not a deliberate placeholder");
+    BorgCatalogSnapshot snapshot;
+    check(pc::load_borg_catalog_snapshot(root,catalog,"test:ant",&snapshot,&diagnostic)&&
+        snapshot.package.manifest.identity.id=="test:ant"&&snapshot.profile.find("tbd"),
+        "metadata lookup for saved variants does not depend on artwork readiness");
     write(root/"Other/catalog.txt",profile);
     fs::remove(root/"Other/visual/ant.tpl");
     check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&catalog.find("test:ant"),

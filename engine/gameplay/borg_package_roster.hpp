@@ -1,12 +1,18 @@
 #pragma once
-#include "engine/assets/borg_package.hpp"
+#include <span>
+#include "engine/assets/borg_catalog_profile.hpp"
 #include "engine/gameplay/force_inventory.hpp"
 
 namespace gf {
+struct SavedPackageVariant {
+    std::string id,label;
+    bool operator==(const SavedPackageVariant&)const=default;
+};
 struct OwnedPackageBorg {
     u64 instance=0;
     BorgIdentity identity;
     bool disabled=false;
+    std::optional<SavedPackageVariant> variant{}; // empty in older saves; not a default choice
     bool operator==(const OwnedPackageBorg&)const=default;
 };
 struct PackageBorgPlacement {
@@ -31,7 +37,8 @@ inline bool package_borg_roster_valid(const PackageBorgRoster& roster){
     if(roster.owned.size()>kBoxBorgs+kWarehouseBorgs||roster.placements.size()>kForceCount*kForceSlots)return false;
     u64 previous_id=0;
     for(const auto& borg:roster.owned){
-        if(borg.instance<=previous_id||!borg_package_id_valid(borg.identity.id)||!display_name_valid(borg.identity.name,96))return false;
+        if(borg.instance<=previous_id||!borg_package_id_valid(borg.identity.id)||!display_name_valid(borg.identity.name,96)||
+           (borg.variant&&(!borg_catalog_variant_id_valid(borg.variant->id)||!display_name_valid(borg.variant->label,64))))return false;
         previous_id=borg.instance;
     }
     int previous_slot=-1;
@@ -49,7 +56,7 @@ inline bool package_borg_roster_valid(const PackageBorgRoster& roster){
     }
     return true;
 }
-enum class PackageBorgAvailability {Discovered,Missing,Incomplete,Conflict,ScanUnavailable};
+enum class PackageBorgAvailability {Discovered,Missing,Incomplete,Conflict,ScanUnavailable,MissingVariant};
 
 inline PackageBorgAvailability package_borg_availability(const BorgPackageCatalog& catalog,std::string_view id){
     using State=PackageBorgAvailability;
@@ -62,6 +69,23 @@ inline PackageBorgAvailability package_borg_availability(const BorgPackageCatalo
     }
     return State::Missing;
 }
+enum class SavedPackageVariantStatus {Unspecified,PackageUnavailable,CatalogueUnavailable,Present,Missing};
+inline SavedPackageVariantStatus package_borg_variant_status(const OwnedPackageBorg& borg,
+                                                              const BorgPackageCatalog& catalog,
+                                                              std::span<const BorgCatalogSnapshot> metadata){
+    using Status=SavedPackageVariantStatus;
+    if(!borg.variant)return Status::Unspecified;
+    if(package_borg_availability(catalog,borg.identity.id)!=PackageBorgAvailability::Discovered)return Status::PackageUnavailable;
+    const auto* entry=catalog.find(borg.identity.id);
+    const BorgCatalogSnapshot* current=nullptr;
+    for(const auto& snapshot:metadata)if(snapshot.package.manifest.identity.id==borg.identity.id){
+        if(current||snapshot.package.folder!=entry->folder||snapshot.package.manifest!=entry->manifest)
+            return Status::CatalogueUnavailable;
+        current=&snapshot;
+    }
+    if(!current||!current->profile.find(current->profile.default_variant))return Status::CatalogueUnavailable;
+    return current->profile.find(borg.variant->id)?Status::Present:Status::Missing;
+}
 struct MissingPackageBorg {
     OwnedPackageBorg saved;
     PackageBorgAvailability reason=PackageBorgAvailability::Missing;
@@ -69,13 +93,16 @@ struct MissingPackageBorg {
     bool operator==(const MissingPackageBorg&)const=default;
 };
 inline bool package_borg_missing(const PackageBorgRoster& roster,const BorgPackageCatalog& catalog,
-                                 std::vector<MissingPackageBorg>* out){
+                                 std::vector<MissingPackageBorg>* out,std::span<const BorgCatalogSnapshot> metadata={}){
     if(!out||!package_borg_roster_valid(roster)||
         (catalog.status!=BorgPackageScanStatus::Complete&&catalog.status!=BorgPackageScanStatus::NoDirectory))return false;
     std::vector<MissingPackageBorg> next;
     for(const auto& borg:roster.owned){
-        const auto reason=package_borg_availability(catalog,borg.identity.id);
-        if(reason==PackageBorgAvailability::Discovered)continue;
+        auto reason=package_borg_availability(catalog,borg.identity.id);
+        if(reason==PackageBorgAvailability::Discovered){
+            if(package_borg_variant_status(borg,catalog,metadata)!=SavedPackageVariantStatus::Missing)continue;
+            reason=PackageBorgAvailability::MissingVariant;
+        }
         MissingPackageBorg missing{borg,reason,{}};
         for(const auto& place:roster.placements)if(place.instance==borg.instance)missing.affected.push_back(place);
         next.push_back(std::move(missing));
@@ -87,10 +114,12 @@ enum class MissingPackageChoice {DisableInForces,DeleteFromSave};
 // Build a candidate only after an explicit choice on the still-current notice.
 // Neither this function nor generating a notice writes a save or package.
 inline bool package_borg_resolve_missing(const PackageBorgRoster& roster,const BorgPackageCatalog& catalog,
-                                         const MissingPackageBorg& notice,MissingPackageChoice choice,PackageBorgRoster* out){
-    if(!out||(notice.reason!=PackageBorgAvailability::Missing&&notice.reason!=PackageBorgAvailability::Incomplete))return false;
+                                         const MissingPackageBorg& notice,MissingPackageChoice choice,PackageBorgRoster* out,
+                                         std::span<const BorgCatalogSnapshot> metadata={}){
+    if(!out||(notice.reason!=PackageBorgAvailability::Missing&&notice.reason!=PackageBorgAvailability::Incomplete&&
+        notice.reason!=PackageBorgAvailability::MissingVariant))return false;
     std::vector<MissingPackageBorg> current;
-    if(!package_borg_missing(roster,catalog,&current)||std::find(current.begin(),current.end(),notice)==current.end())return false;
+    if(!package_borg_missing(roster,catalog,&current,metadata)||std::find(current.begin(),current.end(),notice)==current.end())return false;
     auto next=roster;const auto instance=notice.saved.instance;
     if(choice==MissingPackageChoice::DisableInForces){
         for(auto& borg:next.owned)if(borg.instance==instance)borg.disabled=true;
@@ -103,11 +132,13 @@ inline bool package_borg_resolve_missing(const PackageBorgRoster& roster,const B
 // Clearing the saved disable flag is not actor admission. Loaders and modes
 // still need to validate the discovered package before using it.
 inline bool package_borg_enable_restored(const PackageBorgRoster& roster,const BorgPackageCatalog& catalog,
-                                          const OwnedPackageBorg& expected,PackageBorgRoster* out){
+                                          const OwnedPackageBorg& expected,PackageBorgRoster* out,
+                                          std::span<const BorgCatalogSnapshot> metadata={}){
     if(!out||!expected.disabled||!package_borg_roster_valid(roster)||
         package_borg_availability(catalog,expected.identity.id)!=PackageBorgAvailability::Discovered)return false;
     const auto* saved=roster.find(expected.instance);
     if(!saved||*saved!=expected)return false;
+    if(saved->variant&&package_borg_variant_status(*saved,catalog,metadata)!=SavedPackageVariantStatus::Present)return false;
     auto next=roster;next.owned[std::size_t(saved-roster.owned.data())].disabled=false;
     *out=std::move(next);return true;
 }

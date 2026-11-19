@@ -48,6 +48,15 @@ inline bool read_variants(const std::filesystem::path& folder,const BorgCatalogP
     *out=std::move(next);if(error)error->clear();return true;
 }
 }
+inline bool load_borg_catalog_snapshot(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
+                                       std::string_view id,BorgCatalogSnapshot* out,std::string* error){
+    const auto* package=scanned.status==BorgPackageScanStatus::Complete?scanned.find(id):nullptr;
+    if(!out||!package){if(error)*error="a uniquely discovered Borg ID is required";return false;}
+    BorgCatalogSnapshot next;next.package=*package;
+    std::filesystem::path folder;
+    if(!borg_catalog_detail::read_profile(root,*package,&folder,&next.profile,error))return false;
+    *out=std::move(next);if(error)error->clear();return true;
+}
 // Load for inspection on demand, not for every package on startup. Broken
 // catalogue or artwork data does not retroactively make a package "missing".
 inline bool load_borg_catalog_card(const std::filesystem::path& root,const BorgPackageCatalog& scanned,

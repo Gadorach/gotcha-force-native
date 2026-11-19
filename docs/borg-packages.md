@@ -509,10 +509,21 @@ classifier, or grant battle capability.
 
 The native save extension now has a tested store for package-owned instances
 and their Force positions. It records the stable package ID, saved name, and
-disable flag independently of installed files. It can produce a missing-Borg
+disable flag independently of installed files. If explicitly selected, it
+also saves the variant ID and last known variant label. Older native roster
+records leave that choice unspecified; loading them never guesses the current
+default. It can produce a missing-Borg
 notice and stage a disable, delete, or re-enable candidate. A duplicate-ID
 conflict is reported separately and cannot authorize a missing-package action.
 Deletion affects only the selected owned instance and its Force references.
+
+An installed Borg with a missing saved variant is reported separately. A
+metadata-only catalogue check can recognize the exact variant even when
+its editor icon is unresolved. An unavailable or stale catalogue cannot
+prove removal. Disabling preserves that variant and the Force positions,
+and re-enabling a named variant requires the same ID to be present again.
+Neither changing a label nor changing the default substitutes another
+variant. This is still save and recovery data, not mode or actor admission.
 
 The extension uses a new optional per-save record; unchanged accounts and saves
 without it still use the existing format. The current game modes do not write

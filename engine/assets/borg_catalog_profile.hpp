@@ -30,6 +30,12 @@ struct BorgCatalogCard {
     // decode failure. A card is presentation data, not an actor or save entry.
     std::vector<std::optional<TplImage>> icons;
 };
+// A parsed metadata view of one discovered manifest, independent of whether
+// its editor icons or model can be loaded.
+struct BorgCatalogSnapshot {
+    BorgPackageEntry package;
+    BorgCatalogProfile profile;
+};
 inline bool borg_catalog_variant_id_valid(std::string_view id){
     auto letter=[](char c){return (c>='a'&&c<='z')||(c>='0'&&c<='9');};
     if(id.empty()||id.size()>32||!letter(id.front()))return false;
