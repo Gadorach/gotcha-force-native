@@ -329,6 +329,53 @@ move/spawn profiles. It does not parse inherited or overridden assets,
 resolve transition payloads, start timers, replace a model or transfer HP,
 movement, ammo or other state. Battle fusion remains a separate facet.
 
+### Standalone battle-fusion check
+
+Set `fusions=gameplay/fusions.txt` in a version 2 catalogue. This is battle
+combination, **not** collecting or assembling crystal parts.
+
+```text
+GFBORG-FUSIONS 1
+fusion=example:twin-join
+first=example:left|base|*
+second=example:right|base|normal
+result=example:joined|combined|normal
+result-use=fusion-only
+trigger=hyper-request
+guard=both-ready-same-team
+synchronize=join-window
+commit=combine-complete
+interrupt=unresolved
+separation=unresolved
+duration=unresolved
+entry=combine-left|combine-right|join-idle
+exit=left-return|right-return|unresolved
+transfer=unresolved|unresolved
+```
+
+- `fusion` starts a record with a namespaced relationship ID. Declare
+  `first`, `second` and `result` as `package ID|form ID|variant ID`.
+  Participant forms/variants can be `*` or `unresolved`; result selectors
+  can be concrete or `unresolved`, not `*`. A wholly unresolved package
+  needs unresolved form and variant as well. This version requires a
+  separate package for a known result. Two roles can reference the same
+  Borg type; a future runtime must still require distinct actor instances.
+- `result-use` records `fusion-only`, `independent` or `unresolved`. It
+  describes intent and does not unlock the result or change any picker.
+- `trigger`, `guard`, `synchronize`, `commit`, `interrupt`, `separation`
+  and `duration` are local reference IDs, `none` or `unresolved`.
+  `entry` and `exit` give three cue references in first/second/result order.
+  `transfer` gives the combine and separate policy references. Each slot
+  can remain unresolved without inferring a runtime rule.
+
+`gf_native --check-borg-fusions example:left` accepts up to 32 records
+within 64 KiB. It checks that the declaring package is a participant or
+result, that named packages resolve uniquely, and that referenced forms
+and catalogue variants exist. It reports unresolved parties separately.
+It does not reconcile duplicate relationship declarations across folders,
+bind cues, synchronize actors, transfer state, or admit the result to
+any mode.
+
 ## Standalone body preview
 
 For one default variant with compatible HSD assets, add `preview=preview.txt`

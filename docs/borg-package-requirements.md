@@ -188,6 +188,8 @@ participants return or retire. Track ownership, health, ammo, resources, timers
 and position across both joins. Missing partners, result packages, event
 bindings or unresolved transfer rules must not consume either actor or produce
 a partially initialized result.
+The [standalone fusion check](borg-packages.md#standalone-battle-fusion-check)
+validates the declared roles and dependencies without fusing or selecting units.
 
 **Transformations** also need explicit form IDs, including a default form and
 the model/rig/animation map, moveset, collision, movement policy and effects each
