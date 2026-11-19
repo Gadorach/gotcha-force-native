@@ -151,6 +151,11 @@ callbacks, certify collision, or grant renderer/frame receipts.
   floor data must independently certify that travel crosses the shared segment,
   not its extension; the previous slope mode
   and all crease, gap, and departure refusals stay unchanged.
+- `GroundSlopeCreaseDash` additionally allows inclined faces at an exact
+  shared edge with continuous height and at most a 10° change in normal.
+  The grounded dash uses the starting face's tangent and the selected
+  destination height. This is a bounded native policy; it does not change
+  the previous modes or admit sharp creases, gaps, and departures.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and

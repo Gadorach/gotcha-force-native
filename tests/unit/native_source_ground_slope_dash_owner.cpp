@@ -27,6 +27,15 @@ public:
     bool write(const std::string&,const gf::u8*,std::size_t)override{return false;}
     bool erase(const std::string&)override{return false;}
 };
+class WithoutCreaseProof final:public gf::IBattleMvpTerrain {
+    const gf::NativeBattleMvpView& view_;
+public:
+    explicit WithoutCreaseProof(const gf::NativeBattleMvpView& view):view_(view){}
+    bool height(gf::f32 x,gf::f32 z,gf::f32 y,gf::f32* out)const override{return view_.height(x,z,y,out);}
+    bool static_surface(gf::f32 x,gf::f32 z,gf::f32 y,gf::NativeBorgStaticSurface* out)const override{
+        return view_.static_surface(x,z,y,out);
+    }
+};
 }
 
 int main(){
@@ -37,7 +46,7 @@ int main(){
     headless::Render backend;RenderEngine render(backend);NativeBattleMvp world;NativeBattleMvpView view;
     NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;NativeBorgSourcePose pose;
     check(render.initialize({1152,648,false,true,"slope dash"},nullptr,&error)&&view.load(files,art,render,&error),"original stage and models");
-    struct Route {f32 x,z,reference;int stick;};
+    struct Route {f32 x,z,reference;int stick;bool lateral=false;};
     const Route down{-1443.46997f,-703.674011f,94.339f,127},up{-2377.44727f,528.269836f,591.9127f,-127};
     auto bind=[&](const Route& r,Mode mode){
         BattleMvpConfig config;config.arena_half=4500;config.spawn[0]={r.x,r.z};config.spawn_query_y[0]=r.reference;
@@ -45,7 +54,7 @@ int main(){
             source.bind(files,art,pack,world,seed,&error,mode),"grounded original-stage placement");
     };
     auto prepare=[&](const Route& r,NativeBorgMotionOffer* offer){
-        GamePadState pad;if(world.tick()==5)pad.stick_y=r.stick;
+        GamePadState pad;if(world.tick()==5){if(r.lateral)pad.stick_x=r.stick;else pad.stick_y=r.stick;}
         NativeGRedGroundInput input;const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
         return source.map_input(pad,&input,&error)&&source.prepare(world,view.source_binding(),frame,input.x,input.y,input.held,offer,&error);
     };
@@ -131,5 +140,40 @@ int main(){
     while(world.tick()<6){NativeBorgMotionOffer offer;check(prepare(seam,&offer),"noncoplanar seam prefix");accept(offer);}
     check(!prepare(seam,&refused)&&world.tick()==6&&pose.frame_scope.expired()&&!world.step({},false,&view),
         "a noncoplanar seam still refuses with the new policy");
-    std::printf("slope dash: %u checks PASS, two complete original-stage routes and older/seam refusals\n",checks);
+
+    const Route crease{3589.76465f,-2425.93408f,192.512665f,127,true};
+    bind(crease,Mode::GroundSlopeSeamDash);
+    while(world.tick()<11){NativeBorgMotionOffer offer;check(prepare(crease,&offer),"crease approach");accept(offer);}
+    check(!prepare(crease,&refused)&&world.tick()==11&&pose.frame_scope.expired()&&!world.step({},false,&view),
+        "the exact-plane policy still refuses a shallow crease");
+    bind(crease,Mode::GroundSlopeCreaseDash);crossed=0;
+    while(world.tick()<100){
+        NativeBorgMotionOffer offer;check(prepare(crease,&offer),"prepare shallow crease dash and recovery");
+        if(offer.ordered_ground&&offer.walk_ledge){
+            const auto& p=offer.observed.position;const auto& end=offer.walk_ledge->surface;NativeBorgStaticSurface start;
+            check(view.static_surface(p[0],p[2],p[1],&start),"select the starting face");
+            if(start.normal!=end.normal){
+                ++crossed;
+                check(world.tick()==11&&start.triangle==295&&end.triangle==508&&
+                    !view.coplanar_crossing(start.triangle,end.triangle,p,offer.proposed_position)&&
+                    view.gentle_slope_crossing(start.triangle,end.triangle,p,offer.proposed_position),
+                    "the immutable stage certifies one actual shallow crease");
+                const auto& e=*offer.ordered_ground;BattleMvpVec tangent;
+                check(native_gred_ground_position(p,e.move_speed,e.travel5ae,start.normal,&tangent)&&
+                    tangent[0]==offer.proposed_position[0]&&tangent[2]==offer.proposed_position[2]&&end.height==offer.proposed_position[1],
+                    "crossing uses start-face tangent and the selected destination height");
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                const auto retained=pose;WithoutCreaseProof unverified(view);
+                check(!world.step({},false,&unverified,nullptr,&frame,&offer)&&world.tick()==11&&
+                    world.actors()[0].position==p&&world.motion_receipt_current(retained.receipt)&&!retained.frame_scope.expired(),
+                    "native terrain must independently certify the edge before accepting the source offer");
+            }
+        }
+        accept(offer);
+        check(world.actors()[0].grounded&&world.actors()[0].vertical_speed==0&&source.resource()==10000,
+            "crease traversal does not depart or spend flight meter");
+    }
+    check(crossed==1&&source.selector()==0&&std::abs(world.actors()[0].position[1]-150.908f)<.01f,
+        "dash completes across the original crease and returns to idle");
+    std::printf("slope dash: %u checks PASS, original-stage routes and older/seam refusals\n",checks);
 }

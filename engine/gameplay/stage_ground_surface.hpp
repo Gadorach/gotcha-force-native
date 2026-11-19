@@ -6,13 +6,24 @@ struct StageGroundSurfaceResult {
     bool inside=false,selected=false;
     bool operator==(const StageGroundSurfaceResult&)const=default;
 };
-// A narrowly certified static seam, not a tolerance for creases or gaps.
-inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
-                                          const std::array<f32,3>& start,const std::array<f32,3>& end){
+// Exact shared vertices and a path through the edge interior are mandatory.
+// The gentle mode is a native admission limit, not an original angle rule.
+inline bool stage_ground_slope_crossing(const StihGrid& grid,u32 from,u32 to,
+                                       const std::array<f32,3>& start,const std::array<f32,3>& end,bool gentle=false){
     const auto triangles=grid.triangles();
     if(from==to||from>=triangles.size()||to>=triangles.size())return false;
     const auto& a=triangles[from];const auto& b=triangles[to];
-    if(a.plane!=b.plane||a.plane[1]<=0)return false;
+    if(a.plane[1]<=0||b.plane[1]<=0)return false;
+    const bool coplanar=a.plane==b.plane;
+    if(!coplanar){
+        if(!gentle||a.plane[1]<.8f||b.plane[1]<.8f)return false;
+        f64 dot=0,la=0,lb=0;
+        for(unsigned i=0;i<3;++i){
+            dot+=f64(a.plane[i])*b.plane[i];la+=f64(a.plane[i])*a.plane[i];lb+=f64(b.plane[i])*b.plane[i];
+        }
+        constexpr f64 cos_ten_degrees=.984807753012208;
+        if(dot<=0||dot*dot<cos_ten_degrees*cos_ten_degrees*la*lb)return false;
+    }
     std::array<unsigned,2> common{};
     unsigned matches=0,other_a=0,other_b=0;
     for(unsigned i=0;i<3;++i){
@@ -28,6 +39,14 @@ inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
     }
     if(unmatched!=1)return false;
     const auto& p=a.vertices[common[0]];const auto& q=a.vertices[common[1]];
+    if(!coplanar)for(const auto& edge_vertex:{p,q}){
+        const auto height=[&](const StihTriangle& t,f32* y){
+            return stage_ground_detail::height(t,{f32(t.vertices[0][0]-edge_vertex[0]),f32(t.vertices[0][2]-edge_vertex[2])},y);
+        };
+        f32 y_a=0,y_b=0;
+        if(!height(a,&y_a)||!height(b,&y_b)||std::abs(y_a-y_b)>.01f||
+           std::abs(y_a-edge_vertex[1])>.01f||std::abs(y_b-edge_vertex[1])>.01f)return false;
+    }
     const auto side=[](const auto& u,const auto& v,const auto& point){
         return (f64(v[0])-u[0])*(f64(point[2])-u[2])-(f64(v[2])-u[2])*(f64(point[0])-u[0]);
     };
@@ -40,6 +59,10 @@ inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
     // the edge, where the union of two triangles can contain a gap.
     const f64 near=side(start,end,p),far=side(start,end,q);
     return (near<0&&far>0)||(near>0&&far<0);
+}
+inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
+                                          const std::array<f32,3>& start,const std::array<f32,3>& end){
+    return stage_ground_slope_crossing(grid,from,to,start,end);
 }
 //3E0A8's STATIC height+normal sibling. Reuses shared cell/projection/plane and
 //ceiling kernels; its outside return is the source constant-5000, NOT pointY.

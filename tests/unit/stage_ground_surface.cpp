@@ -43,5 +43,14 @@ int main(){
     load(floor,{narrow_left,narrow_right});
     check(stage_ground_coplanar_crossing(floor,0,1,{-1,9.75f,5},{1,10.25f,5}));
     check(!stage_ground_coplanar_crossing(floor,0,1,{-6,8.5f,20},{6,11.5f,20}));
+    auto gentle=adjacent;gentle.plane={-.27f,1,-.02f,-10};gentle.vertices[1][1]=300;
+    auto sharp=adjacent;sharp.plane={-.65f,1,-.4f,-10};sharp.vertices[1][1]=1060;
+    // Exact shared vertices alone do not make independently stored planes
+    // agree when the height evaluator is anchored at vertex zero.
+    auto discontinuous=gentle;discontinuous.plane[2]=0.f;
+    load(floor,{a,gentle,sharp,discontinuous,gap,overlap});
+    check(!stage_ground_coplanar_crossing(floor,0,1,a_point,b_point));
+    check(stage_ground_slope_crossing(floor,0,1,a_point,b_point,true));
+    for(u32 index:{2u,3u,4u,5u})check(!stage_ground_slope_crossing(floor,0,index,a_point,b_point,true));
     std::printf("static surface selected normals, ties, strict gates, span, empty and bounds: %u checks PASS\n",checks);
 }

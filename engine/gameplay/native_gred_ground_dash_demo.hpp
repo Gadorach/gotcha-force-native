@@ -45,7 +45,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash};
+    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash};
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -104,7 +104,8 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
-        if(mode_==Mode::GroundSlopeSeamDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeSeamDash);
+        if(mode_==Mode::GroundSlopeCreaseDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeCreaseDash);
+        else if(mode_==Mode::GroundSlopeSeamDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeSeamDash);
         else if(mode_==Mode::GroundSlopeDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeDash);
         else if(mode_==Mode::GroundWindupEntryPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundWindupEntryPush);
         else if(mode_==Mode::GroundRelaunchEntryPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundRelaunchEntryPush);
@@ -585,7 +586,7 @@ public:
     }
 private:
     static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
-    static bool slope_dash_mode(Mode mode){return mode==Mode::GroundSlopeDash||mode==Mode::GroundSlopeSeamDash;}
+    static bool slope_dash_mode(Mode mode){return mode==Mode::GroundSlopeDash||mode==Mode::GroundSlopeSeamDash||mode==Mode::GroundSlopeCreaseDash;}
     static bool controller_windup_entry_push_mode(Mode mode){return mode==Mode::GroundWindupEntryPush||slope_dash_mode(mode);}
     static bool controller_relaunch_entry_push_mode(Mode mode){return mode==Mode::GroundRelaunchEntryPush||controller_windup_entry_push_mode(mode);}
     static bool controller_relaunch_push_mode(Mode mode){return mode==Mode::GroundRelaunchPush||controller_relaunch_entry_push_mode(mode);}
@@ -734,9 +735,11 @@ private:
            !character_movement_ground_step(motion_,s.motion,1,ground,&moved,error))return refuse("ground motion");
         if(!ground.surface(moved.position,&end,error)||!end.selected)return refuse("unresolved dash destination");
         const bool same_slope=slope_dash_mode(mode_)&&!(s.motion.flags5e0&0x40u)&&
-            start.normal!=CharacterMotionVector{0,1,0}&&start.normal==end.normal&&
-            (start.triangle==end.triangle||(mode_==Mode::GroundSlopeSeamDash&&
-                stage_ground_coplanar_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position)))&&
+            start.normal!=CharacterMotionVector{0,1,0}&&
+            ((start.normal==end.normal&&(start.triangle==end.triangle||(mode_!=Mode::GroundSlopeDash&&
+                stage_ground_coplanar_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position))))||
+             (mode_==Mode::GroundSlopeCreaseDash&&end.normal!=CharacterMotionVector{0,1,0}&&
+                stage_ground_slope_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position,true)))&&
             start.height==before.position[1]&&moved.position[1]==end.height&&
             std::abs(end.height-start.height)<=std::min(ground.step674,world.config().step_height);
         if(!same_slope&&(start.normal!=CharacterMotionVector{0,1,0}||end.normal!=CharacterMotionVector{0,1,0}))

@@ -103,6 +103,9 @@ public:
     bool coplanar_crossing(u32 from,u32 to,const BattleMvpVec& start,const BattleMvpVec& end)const override{
         return ready_&&stage_ground_coplanar_crossing(floor_,from,to,start,end);
     }
+    bool gentle_slope_crossing(u32 from,u32 to,const BattleMvpVec& start,const BattleMvpVec& end)const override{
+        return ready_&&stage_ground_slope_crossing(floor_,from,to,start,end,true);
+    }
     bool static_surface(f32 x,f32 z,f32 current_y,NativeBorgStaticSurface* out)const override{
         if(!ready_||!out)return false;
         const StageGroundParameters p{-100000,100000,500,0,-.5f,20000,-20000,true};std::span<const u32> refs;

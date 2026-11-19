@@ -141,6 +141,13 @@ ledge departures, and obstructed travel still refuse. The original
 `--gred-slope-dash` mode remains single-triangle. Try the verified crossing
 from triangle 254 to 255 with `--demo-gred-slope-seam-dash --frames 100`.
 
+`--gred-slope-crease-dash` also allows shallow joins between two inclined
+faces, up to a 10° change in normal. Both sides must share an exact edge and
+agree on its height within 0.01 native units. The existing step, body, and
+bounds limits still apply. The 10° cutoff is a native safeguard, not a recovered
+game constant. Try `--demo-gred-slope-crease-dash --frames 100` for the
+verified crossing from triangle 295 to 508, a turn in the slope of about 6.2°.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/
