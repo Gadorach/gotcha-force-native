@@ -126,9 +126,11 @@ Handoff**, **Expired Floor Handoff**, or **Timed Snap Dash**, respectively.
 The ninth through twelfth are **Expiry Step Handoff**, **Direct Timed
 Relaunch**, **Direct Timed Up Relaunch**, and **Active Snap Relaunch**.
 The thirteenth and fourteenth are **Relaunch on Expiry** and **Entry
-Push on Expiry**, both on the 1 → 0 timer step. The fifteenth and
-sixteenth are **Timed Release Push** and **Two Timed Release Pushes**,
-still reachable with 11 or 10 presses of **Left**.
+Push on Expiry**, both on the 1 → 0 timer step. The next three are
+**Adjacent Entry Push**, **Air Dash on Expiry**, and **Expiry Wind-up
+Relaunch**. The eighteenth and nineteenth are **Timed Release Push**
+and **Two Timed Release Pushes**, still reachable with 11 or 10 presses
+of **Left**.
 These routes start paused with a
 [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
 Press **Left** three times for **Expiry Handoff**, or four times for
@@ -782,9 +784,11 @@ The sixth, seventh, and eighth presses reach **Positive Floor Handoff**,
 The ninth through twelfth reach **Expiry Step Handoff**, **Direct Timed
 Relaunch**, **Direct Timed Up Relaunch**, and **Active Snap Relaunch**.
 The thirteenth and fourteenth reach **Relaunch on Expiry** and **Entry
-Push on Expiry**, both on the 1 → 0 timer step. The fifteenth and
-sixteenth reach **Timed Release Push** and **Two Timed Release Pushes**.
-Those two shortcuts still take 11 or 10 presses of **L**, respectively.
+Push on Expiry**, both on the 1 → 0 timer step. The next three are
+**Adjacent Entry Push**, **Air Dash on Expiry**, and **Expiry Wind-up
+Relaunch**. The eighteenth and nineteenth reach **Timed Release Push**
+and **Two Timed Release Pushes**, still reachable with 11 or 10 presses
+of **L**.
 For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
 times, respectively.
 **Q/Y** rechecks the highlighted position and opens that route

@@ -1965,6 +1965,7 @@ bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice
         "--gred-walk-ledge-expiring-snap-handoff","--gred-walk-ledge-direct-timed-relaunch","--gred-walk-ledge-direct-timed-up-relaunch",
         "--gred-walk-ledge-active-snap-relaunch",
         "--gred-walk-ledge-expiring-direct-relaunch","--gred-walk-ledge-expiring-relaunch-push",
+        "--gred-walk-ledge-expiring-adjacent-relaunch-push","--gred-walk-ledge-expiring-air-dash","--gred-walk-ledge-expiring-air-dash-handoff",
         "--gred-walk-ledge-timed-release-push","--gred-walk-ledge-timed-release-two-pushes",
         "--gred-slope-transition-dash",
         "--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",

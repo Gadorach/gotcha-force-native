@@ -251,13 +251,16 @@ picker or **R** in the Force browser:
 | 12 | **Active Snap Relaunch** — relaunch after the active entry has already been paid |
 | 13 | **Relaunch on Expiry** — plain Up + Shift entry on the timer’s 1 → 0 step |
 | 14 | **Entry Push on Expiry** — steep entry push on that same timer step |
-| 15 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 16 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 15 | **Adjacent Entry Push** — the neighboring face 1998 on 1 → 0 |
+| 16 | **Air Dash on Expiry** — stationary wind-up as the timer reaches zero |
+| 17 | **Expiry Wind-up Relaunch** — choose after the six-tick wind-up pays 450 |
+| 18 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 19 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 26 routes in the loop. In the opposite direction (**Left** or
-**L**), **Relaunch on Expiry** takes 13 presses and **Entry Push on Expiry**
-takes 12. **Timed Release Push** still takes 11 and **Two Timed Release
-Pushes** still takes 10.
+There are 29 routes in the loop. In the opposite direction (**Left** or
+**L**), **Adjacent Entry Push**, **Air Dash on Expiry**, and **Expiry
+Wind-up Relaunch** take 14, 13, and 12 presses respectively. **Timed
+Release Push** still takes 11 and **Two Timed Release Pushes** still takes 10.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
 **Esc** returns to the same copy or slot and route. These are read-only
@@ -340,9 +343,8 @@ does not pass the next travel check. Use
 
 `--gred-walk-ledge-expiring-adjacent-relaunch-push --practice-start`
 uses the same inputs from a foothold two units farther along Z to
-select adjacent face 1998. This separate opt-in does not change
-the **Entry Push on Expiry** picker guide, which still uses face
-1999 only.
+select adjacent face 1998. The **Adjacent Entry Push** picker guide
+uses this opt-in; **Entry Push on Expiry** still uses face 1999 only.
 
 `--gred-walk-ledge-expiring-air-dash --practice-start` opens the
 air-dash version of the 1 → 0 timing. Step with **Left Arrow**

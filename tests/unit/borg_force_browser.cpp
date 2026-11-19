@@ -89,22 +89,23 @@ int main(){
     for(auto route:{GRedPickerPracticeRoute::ExpiryStepHandoff,GRedPickerPracticeRoute::DirectTimedRelaunch,
         GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch,
         GRedPickerPracticeRoute::ExpiringDirectRelaunch,GRedPickerPracticeRoute::ExpiringDirectRelaunchPush,
+        GRedPickerPracticeRoute::ExpiringAdjacentRelaunchPush,GRedPickerPracticeRoute::ExpiringAirDash,GRedPickerPracticeRoute::ExpiringAirDashRelaunch,
         GRedPickerPracticeRoute::TimedReleasePush,GRedPickerPracticeRoute::TimedReleaseTwoPushes}){
         cursor.step({});
         check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==route&&
             cursor.step(next_route,true)==BorgForceBrowseChange::None&&cursor.force()==force_before&&cursor.slot()==slot_before,
-            "ninth through sixteenth Right shoulder select the timed guides without moving either cursor");
+            "ninth through nineteenth Right shoulder select the timed guides without moving either cursor");
     }
     check(cursor.practice_route_name()=="TWO TIMED RELEASE PUSHES","two-push guide has its own route label");
     lane.y=false;
     cursor.step({});
     check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route_name()=="TIMED RELEASE PUSH"&&
         cursor.force()==force_before&&cursor.slot()==slot_before,"previous selects the single-push guide without moving either cursor");
-    for(auto label:{"ENTRY PUSH ON EXPIRY","RELAUNCH ON EXPIRY"}){
+    for(auto label:{"EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH","ENTRY PUSH ON EXPIRY","RELAUNCH ON EXPIRY"}){
         cursor.step({});
         check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route_name()==label&&
             cursor.force()==force_before&&cursor.slot()==slot_before,
-            "the two expiry-step labels are distinct and neither changes the Force or slot");
+            "the expiry-step labels are distinct and none changes the Force or slot");
     }
 
     headless::Render device;RenderEngine render(device);std::string error;
