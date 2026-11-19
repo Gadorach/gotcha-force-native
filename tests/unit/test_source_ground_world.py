@@ -51,6 +51,35 @@ class SourceGroundWorldTests(unittest.TestCase):
                 else:
                     self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
 
+    def test_practice_start_uses_grounded_demo_placement_without_scripted_input(self):
+        for mode, expected_x, expected_z in (
+            ("--gred-walk-ledge-expiry-push", "-1250.97", "-3313.80"),
+            ("--gred-inclined-walk-ledge", "2599.01", "-2758.12"),
+            ("--gred-movement", "-2760.08", "-3528.05"),
+        ):
+            with self.subTest(mode=mode):
+                result = self.run_host([mode, "--practice-start", "--headless", "--frames", "80", "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn("practice start: demo placement, live input, no scripted replay", result.stdout)
+                self.assertRegex(result.stdout, rf"accepted native tick=80 G-Red-position={expected_x}/[^/]+/{expected_z};")
+                self.assertIn("practice-phase=IDLE", result.stdout)
+                self.assertIn("practice-meter=10000/10000 at accepted tick=80", result.stdout)
+                self.assertNotIn("ground-departures=1", result.stdout)
+        ordinary = self.run_host(["--gred-walk-ledge-expiry-push", "--headless", "--frames", "10", "--no-audio"])
+        self.assertEqual(ordinary.returncode, 0, ordinary.stdout)
+        self.assertIn("G-Red-position=-240.00/10.00/300.00", ordinary.stdout)
+        self.assertNotIn("practice start: demo placement", ordinary.stdout)
+
+    def test_practice_start_refuses_incompatible_and_repeated_options(self):
+        for prefix in (
+            [], ["--demo-battle-mvp"], ["--demo-gred-movement"], ["--source-walk-ledge"],
+            ["--demo-gred-walk-ledge-expiry-push"], ["--gred-movement", "--practice-start"],
+        ):
+            with self.subTest(prefix=prefix):
+                result = self.run_host([*prefix, "--practice-start", "--headless", "--frames", "1"])
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertNotIn("backend=", result.stdout)
+
     def test_walk_ledge_fall_push_demo_accepts_projection_then_separate_landing(self):
         for tick, phase, pushes, landings, cue in (
             (24, "LEDGE FALL / PUSH", 1, 0, "15 cue=DRIFT LOCKED 15 TICKS"),

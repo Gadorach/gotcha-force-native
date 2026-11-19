@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -40,6 +40,11 @@ public:
             if(f>=132&&f<136)raw.buttons|=1u<<3;
             if(f==132)raw.buttons|=1u;
             break;
+        case Replay::FixtureWalk:
+        case Replay::FixtureRestart:
+            if(f>=5&&f<25)raw.buttons|=1u<<7; // Actual D-pad left from the verified foothold.
+            if(replay_==Replay::FixtureRestart&&f>=75&&f<79)raw.buttons|=1u<<3;
+            break;
         }
     }
     const gf::InputSnapshot& snapshot()const override{return snapshot_;}
@@ -73,11 +78,13 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     auto backends=headless.get();
     backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
     Options options;
-    char program[]="gf_native",practice[]="--gred-movement",audio[]="--no-audio";
-    char* args[]={program,practice,audio};
-    check(parse(3,args,&options),scenario,log.text);
+    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart;
+    char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push";
+    char audio[]="--no-audio",start[]="--practice-start";
+    char* args[]={program,fixture?expiry:practice,audio,start};
+    check(parse(fixture?4:3,args,&options),scenario,log.text);
     options.frames=frames;
-    options.headless=replay==Replay::RaisedFace; //Exactly one scheduled tick per frame before the stop.
+    options.headless=replay==Replay::RaisedFace||fixture; // Exactly one scheduled tick per frame.
     gf::Context context(backends,60);gf::RenderEngine render(*backends.render);std::string error;
     check(render.initialize({640,480,false,true,"Practice replay"},nullptr,&error),scenario,error);
     check(run_battle_mvp(context,render,options)==0,scenario,log.text);
@@ -143,5 +150,18 @@ int main(){
     check(once(restarted,"practice stopped at tick=104")&&once(restarted,"practice restarted at tick=0")&&
         has(restarted,"frames=141 ticks=8")&&has(restarted,"practice-meter=10000/10000 at accepted tick=8"),
         "held Q restarts once and the meter returns on a fresh source frame",restarted);
-    std::puts("G-Red practice replay: nine desktop-loop scenarios PASS without opening devices");
+    const auto walked=run(Replay::FixtureWalk,180,"live expiry fixture");
+    check(once(walked,"practice start: demo placement, live input, no scripted replay")&&
+        !has(walked,"walk ledge expiry demo:")&&has(walked,"frames=180 ticks=180")&&
+        has(walked,"ground-departures=1 loss-entries=1 loss-landings=1")&&
+        has(walked,"walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0"),
+        "real input follows the verified route from the shared demo placement, with no replay injected",walked);
+    const auto fixture_restart=run(Replay::FixtureRestart,86,"restart from the fixture mid-fall");
+    check(once(fixture_restart,"practice restarted at tick=0")&&has(fixture_restart,"frames=86 ticks=10")&&
+        has(fixture_restart,"ground-departures=0 loss-entries=0 loss-landings=0")&&
+        has(fixture_restart,"walk-ledge-fall-pushes=0 last-angle-s16=0 landings=0 resource=10000")&&
+        has(fixture_restart,"accepted native tick=10 G-Red-position=-1250.97/")&&
+        has(fixture_restart,"/-3313.80; accepted-frames=10")&&has(fixture_restart,"practice-phase=IDLE"),
+        "held Q returns to the same grounded fixture once, clearing old motion and counters",fixture_restart);
+    std::puts("G-Red practice replay: eleven desktop-loop scenarios PASS without opening devices");
 }

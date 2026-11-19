@@ -42,6 +42,10 @@ public:
     void source_ground_windup_entry_push_controls(){source_ground_windup_entry_push_=true;}
     void source_practice_controls(){source_practice_=true;}
     void source_practice_close_camera(bool close){source_practice_close_camera_=close;}
+    void source_practice_start(std::string_view hint){
+        source_practice_start_label_="DEMO START / LIVE INPUT";
+        if(!hint.empty()){source_practice_start_label_+=" - ";source_practice_start_label_+=hint;}
+    }
     std::optional<NativeBorgSourceReadout> practice_readout(const NativeBattleMvp& world)const{
         const auto frame=source_practice_frame_.lock();
         return source_practice_&&frame?frame->readout(world):std::nullopt;
@@ -299,6 +303,7 @@ public:
         if(source_practice_){
             status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  P STEP WHILE PAUSED\nQ RESTART  ESC CLOSE / NO COMBAT";
             if(source_interactive_)status+=source_practice_close_camera_?"\nC CAMERA: CLOSE":"\nC CAMERA: STANDARD";
+            if(!source_practice_start_label_.empty())status+="\n"+source_practice_start_label_;
         }
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
@@ -356,6 +361,7 @@ private:
     bool source_practice_=false;
     bool source_practice_close_camera_=false;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_practice_frame_;
+    std::string source_practice_start_label_;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };
 }

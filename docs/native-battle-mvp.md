@@ -114,6 +114,25 @@ route with the same HUD. Both commands need the qualified local GFMM9 pack
 and native stage/model data. They do not change the duel, enable combat, or
 relax unsupported contact refusals.
 
+### Try a demo route with your own inputs
+
+Add `--practice-start` to an interactive G-Red practice command to use its
+demo's grounded placement and arena bounds. The simulation waits for live
+input; it does not inject any of the demo's movements. **Q** returns to the
+same start with a fresh controller. Omit the flag for the ordinary practice
+spawn. Scripted demos and unrelated host modes do not accept the flag.
+
+```sh
+gf_native --gred-walk-ledge-expiry-push --practice-start --no-audio
+gf_native --gred-inclined-walk-ledge --practice-start --no-audio
+gf_native --gred-inclined-dash-ledge --practice-start --no-audio
+```
+
+For the expiry route, hold **Left Arrow** until G-Red walks off, then
+release. The incline walk uses **Up Arrow**; the incline dash uses a
+right flick (**D** on keyboard). These are native practice starts, not
+original game spawns or new movement permissions.
+
 To check the actual practice loop without opening a window or audio device:
 
 ```sh
@@ -122,7 +141,8 @@ python3 -B tools/build_native.py --practice-replay --jobs 1
 
 The replay links the desktop host but uses a fake clock and scripted input. It
 checks session controls between movement ticks, short taps, separately sampled
-jump and dash, resuming after a refused input, and restart after a terrain stop.
+jump and dash, resuming after a refused input, restart after a terrain stop, and
+live input and restart at the expiry fixture.
 It skips if the qualified local stage or movement pack is absent.
 
 [Contact Sheet 59](../local/recomp-evidence/contact-sheets/gred-movement-practice-v1/contact-sheet-59.png)

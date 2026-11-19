@@ -106,6 +106,12 @@ push in 274 routes, but none completed a clean fall and landing. These are
 partial witnesses, not a reason to grant dash-origin permission or relax
 collision checks.
 
+A wider follow-up kept the same positive-timer projection and travel
+checks. It found first pushes in 37 of 384 approaches with alternate
+grounded target placements, and four of 2,720 stage-wide approaches with
+the usual target placement. Neither scan reached a later touchdown after
+a push. There is still no complete dash-origin push route for admission.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the
