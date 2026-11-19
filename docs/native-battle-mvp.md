@@ -254,15 +254,16 @@ picker or **R** in the Force browser:
 | 15 | **Adjacent Entry Push** — the neighboring face 1998 on 1 → 0 |
 | 16 | **Air Dash on Expiry** — stationary wind-up as the timer reaches zero |
 | 17 | **Expiry Wind-up Relaunch** — choose after the six-tick wind-up pays 450 |
-| 18 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
-| 19 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 20 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 18 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
+| 19 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
+| 20 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
+| 21 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 22 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 30 routes in the loop. In the opposite direction (**Left** or
-**L**), **Adjacent Entry Push**, **Air Dash on Expiry**, and **Expiry
-Wind-up Relaunch** take 15, 14, and 13 presses respectively. **Diagonal
-Expiry Relaunch** takes 12, **Timed Release Push** still takes 11, and
-**Two Timed Release Pushes** still takes 10.
+There are 32 routes in the loop. In the opposite direction (**Left** or
+**L**), **Expiry Wind-up Snap** takes 14 presses and **Expiry Snap Relaunch**
+takes 13. **Diagonal Expiry Relaunch**, **Timed Release Push**, and
+**Two Timed Release Pushes** still take 12, 11, and 10 respectively.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
 **Esc** returns to the same copy or slot and route. These are read-only
@@ -361,13 +362,14 @@ on 6–9, tap **A** on 40, then stay neutral. The entry snap clears
 vertical speed without moving, grounding, or charging G-Red.
 The handoff and active entry still cost 450 and 50 on 46–47.
 Use `--demo-gred-walk-ledge-expiring-air-dash-snap` for playback.
+In either picker, this is **Expiry Wind-up Snap**.
 
 `--gred-walk-ledge-expiring-air-dash-snap-handoff --practice-start`
 uses the same start and inputs. After the wind-up pays 450 on
 46, tap neutral **Shift** on 47 to relaunch for 150, or stay
 neutral to dash for the usual active-entry cost. Use
 `--demo-gred-walk-ledge-expiring-air-dash-snap-handoff` for the
-relaunch playback.
+relaunch playback. In either picker, choose **Expiry Snap Relaunch**.
 
 `--gred-walk-ledge-expiring-air-dash-handoff --practice-start`
 uses that same start and inputs, then shows the choice when the
