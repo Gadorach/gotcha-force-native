@@ -121,6 +121,10 @@ class SourceGroundWorldTests(unittest.TestCase):
                                           "--headless", "--no-audio"], cwd=root)
             self.assertEqual(package_only.returncode, 0, package_only.stdout)
             self.assertIn("Force 1 slot 2 supplies owned instance=8", package_only.stdout)
+            browse_absent = self.run_host(["--browse-borg-force", str(accounts), "7", "11", "1", "--force-slot", "2",
+                                          "--headless", "--no-audio"], cwd=root)
+            self.assertEqual(browse_absent.returncode, 0, browse_absent.stdout)
+            self.assertIn("force=1 slot=2 claims=package owned-instance=8 retail-record=absent overlaps=0", browse_absent.stdout)
             for save, instance, message in (
                 (11, 9, "owned copy is disabled"), (11, 10, "no exact saved variant"),
                 (11, 11, "explicitly selected normal variant"), (11, 12, "uniquely discovered package"),
@@ -209,6 +213,26 @@ class SourceGroundWorldTests(unittest.TestCase):
                 refused = start(force, slot, *extra, mode=mode)
                 self.assertEqual(refused.returncode, 2, refused.stdout)
                 self.assertNotIn("backend=", refused.stdout)
+            for force, slot, claim, instance in ((1, 1, "overlap", 13), (1, 2, "package", 8),
+                                                  (2, 1, "retail", 0), (2, 2, "empty", 0)):
+                viewed = self.run_host(["--browse-borg-force", str(accounts), "7", "11", str(force),
+                                        "--force-slot", str(slot), *flags, "--headless", "--no-audio"], cwd=root)
+                self.assertEqual(viewed.returncode, 0, viewed.stdout)
+                self.assertIn(f"force={force} slot={slot} claims={claim} owned-instance={instance} retail-record=present", viewed.stdout)
+            for extra in ([], ["--retail-catalog", str(wrong)]):
+                refused_view = self.run_host(["--browse-borg-force", str(accounts), "7", "11", "1",
+                                              *extra, "--headless"], cwd=root)
+                self.assertEqual(refused_view.returncode, 2, refused_view.stdout)
+                self.assertIn("retail Force record is unverified", refused_view.stdout)
+                self.assertNotIn("backend=", refused_view.stdout)
+            for browser_flags in (
+                ["--inspect-borg-force", str(accounts), "7", "11", "1", "--force-slot", "2"],
+                ["--browse-borg-force", str(accounts), "7", "11", "1", "--force-slot", "0"],
+                ["--browse-borg-force", str(accounts), "7", "11", "1", "--practice-from-picker"],
+            ):
+                bad_args = self.run_host([*browser_flags, *flags, "--headless"], cwd=root)
+                self.assertEqual(bad_args.returncode, 2, bad_args.stdout)
+                self.assertNotIn("backend=", bad_args.stdout)
             self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):

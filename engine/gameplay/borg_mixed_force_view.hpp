@@ -20,6 +20,10 @@ struct MixedBorgForceView {
     std::vector<MixedBorgForceSlotView> slots;
     // Inspection only. Not a cost checked against any mode's rules.
     std::optional<u32> declared_cost;
+    const MixedBorgForceSlotView* find_slot(unsigned slot)const{
+        const auto it=std::lower_bound(slots.begin(),slots.end(),slot,[](const auto& row,unsigned index){return row.slot<index;});
+        return it!=slots.end()&&it->slot==slot?&*it:nullptr;
+    }
 };
 
 // Combine two already-read views of one selected save. Null retail is for

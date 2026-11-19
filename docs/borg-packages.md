@@ -739,6 +739,28 @@ retail record fails rather than appearing as an empty Force. A known
 absent retail record is reported separately. Even a complete declared
 total is not a mode budget or admission receipt.
 
+### Browse a saved Force
+
+```sh
+gf_native --browse-borg-force ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER \
+  [--force-slot SLOT_NUMBER] [--retail-catalog FILE]
+```
+
+**Up/Down** moves through the exact saved positions, including empty
+slots. **Left/Right** switches Forces and starts at slot one; **Esc** closes.
+Both claims are shown for an overlap, without choosing a winner or
+reporting a combined cost. A resolved package status describes metadata,
+not battle readiness. Cached copy and variant names are retained, with ID
+fallbacks for names the current font cannot display.
+
+A present retail record must match the explicit catalogue. A verified
+absent record is shown separately; an unverified one refuses the view.
+The browser takes a read-only snapshot and checks the selected save again
+on navigation. If either saved record has changed, reopen the browser
+instead of inspecting stale claims. No input in this view edits or launches
+a Force. To practice one copy, use the separate
+[Force-slot practice command](#practice-one-saved-force-slot).
+
 ### Place an owned Borg in an empty Force slot
 
 ```sh
