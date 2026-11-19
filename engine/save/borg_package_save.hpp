@@ -49,11 +49,15 @@ public:
         if(!reader.consumed()||(version==2&&!has_variants)||!package_borg_roster_valid(next))return PackageBorgLoad::Invalid;
         *out=std::move(next);loaded_record_=std::move(bytes);writable_=true;return PackageBorgLoad::Loaded;
     }
-    bool write(const PackageBorgRoster& roster){
-        if(!writable_||!package_borg_roster_valid(roster))return false;
+    bool current(){
+        if(!writable_)return false;
         std::vector<u8> current;const auto status=backend_.read_slot(kBorgPackageSaveSlot,current);
         if(loaded_record_.empty()?status!=SaveReadStatus::Missing:
             (status!=SaveReadStatus::Loaded||current!=loaded_record_)){writable_=false;return false;}
+        return true;
+    }
+    bool write(const PackageBorgRoster& roster){
+        if(!package_borg_roster_valid(roster)||!current())return false;
         const bool has_variants=std::any_of(roster.owned.begin(),roster.owned.end(),[](const auto& borg){return borg.variant.has_value();});
         SaveWriter writer;writer.u32_field(magic_);writer.u32_field(has_variants?2:1);
         writer.u32_field(u32(roster.owned.size()));writer.u32_field(u32(roster.placements.size()));

@@ -551,3 +551,12 @@ The extension uses a new optional per-save record; unchanged accounts and saves
 without it still use the existing format. The current game modes do not write
 this record yet. Joining package and retail Force slots, loading package assets,
 and connecting the missing-Borg prompt to the menus remain separate work.
+
+The native recovery session now owns the confirmation flow for an
+explicitly selected save. Opening and cancelling only inspect the roster;
+disable and delete require their own confirmation state. On confirmation it
+rechecks the notice against current catalogue data and the save against the
+loaded record. It publishes a new view only after the storage write is
+acknowledged. An unavailable scan, stale notice or unconfirmed write cannot
+be replayed as a destructive action. The desktop menus do not use this
+session yet.
