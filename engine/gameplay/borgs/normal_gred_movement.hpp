@@ -1,0 +1,96 @@
+#pragma once
+#include <array>
+#include "engine/gameplay/borg_movement_behaviors.hpp"
+#include "engine/gameplay/native_borg_motion_policy.hpp"
+
+namespace gf {
+// G-Red's existing source harness modes. Their ordering predates the native
+// policy IDs, so the mapping below is explicit.
+enum class NormalGRedMovementMode {
+    DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,
+    RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,
+    WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,
+    GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,
+    GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,
+    GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,
+    GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash
+};
+
+struct NormalGRedMovementDefinition {
+    static constexpr u16 model=0x615;
+    using Mode=NormalGRedMovementMode;
+    using Policy=NativeBorgMotionPolicy;
+    using Behavior=BorgMovementBehavior;
+    struct CombinedRule {Mode mode;Policy policy;Behavior adds;};
+
+    // Each opt-in combined lab inherits the preceding behaviors plus its own
+    // explicitly added permission. Legacy labs never inherit this list.
+    static constexpr std::array combined{
+        CombinedRule{Mode::OrderedGround,Policy::OrderedGround,Behavior::OrderedGround},
+        CombinedRule{Mode::DashLedge,Policy::DashLedge,Behavior::DashLedge},
+        CombinedRule{Mode::GroundLedge,Policy::GroundLedge,Behavior::WalkLedge},
+        CombinedRule{Mode::GroundJump,Policy::GroundJump,Behavior::Jump},
+        CombinedRule{Mode::GroundLanding,Policy::GroundLanding,Behavior::LandingInterrupt},
+        CombinedRule{Mode::GroundAir,Policy::GroundAir,Behavior::AirDash},
+        CombinedRule{Mode::GroundAirFloor,Policy::GroundAirFloor,Behavior::AirDashFloor},
+        CombinedRule{Mode::GroundRelaunch,Policy::GroundRelaunch,Behavior::Relaunch},
+        CombinedRule{Mode::GroundRelaunchFloor,Policy::GroundRelaunchFloor,Behavior::RelaunchFloor},
+        CombinedRule{Mode::GroundWindupEntryFloor,Policy::GroundWindupEntryFloor,Behavior::WindupEntryFloor},
+        CombinedRule{Mode::GroundSurface,Policy::GroundSurface,Behavior::PairedSurfaceLanding},
+        CombinedRule{Mode::GroundLossSurface,Policy::GroundLossSurface,Behavior::GroundLossSurface},
+        CombinedRule{Mode::GroundLossJump,Policy::GroundLossJump,Behavior::RetainedTimerLandingJump},
+        CombinedRule{Mode::GroundLossLanding,Policy::GroundLossLanding,Behavior::RetainedTimerLandingDash},
+        CombinedRule{Mode::GroundLossAir,Policy::GroundLossAir,Behavior::RetainedTimerAirDash},
+        CombinedRule{Mode::GroundLossRelaunch,Policy::GroundLossRelaunch,Behavior::RetainedTimerRelaunch},
+        CombinedRule{Mode::GroundFallPush,Policy::GroundFallPush,Behavior::FallPush},
+        CombinedRule{Mode::GroundAirFallPush,Policy::GroundAirFallPush,Behavior::PostAirFallPush},
+        CombinedRule{Mode::GroundRelaunchFallPush,Policy::GroundRelaunchFallPush,Behavior::ReleasedRelaunchPush},
+        CombinedRule{Mode::GroundRecoveryPush,Policy::GroundRecoveryPush,Behavior::RecoveryPush},
+        CombinedRule{Mode::GroundWindupPush,Policy::GroundWindupPush,Behavior::WindupPush},
+        CombinedRule{Mode::GroundActivePush,Policy::GroundActivePush,Behavior::ActivePush},
+        CombinedRule{Mode::GroundRelaunchPush,Policy::GroundRelaunchPush,Behavior::RelaunchPush},
+        CombinedRule{Mode::GroundRelaunchEntryPush,Policy::GroundRelaunchEntryPush,Behavior::RelaunchEntryPush},
+        CombinedRule{Mode::GroundWindupEntryPush,Policy::GroundWindupEntryPush,Behavior::WindupEntryPush},
+        CombinedRule{Mode::GroundSlopeDash,Policy::GroundSlopeDash,Behavior::SlopeDash},
+        CombinedRule{Mode::GroundSlopeSeamDash,Policy::GroundSlopeSeamDash,Behavior::CoplanarSlopeDash},
+        CombinedRule{Mode::GroundSlopeCreaseDash,Policy::GroundSlopeCreaseDash,Behavior::ShallowCreaseDash},
+    };
+
+    static constexpr Policy native_policy(Mode mode){
+        const auto index=unsigned(mode)-unsigned(Mode::OrderedGround);
+        if(index<combined.size()&&combined[index].mode==mode)return combined[index].policy;
+        switch(mode){
+        case Mode::VerticalJump:return Policy::VerticalJump;
+        case Mode::Jump:return Policy::Jump;
+        case Mode::AirDash:return Policy::AirDash;
+        case Mode::Relaunch:case Mode::DashJump:case Mode::LandingInterrupt:case Mode::Surface:return Policy::Relaunch;
+        case Mode::Steep:return Policy::StaticPush;
+        case Mode::FallingSurface:return Policy::FallHistoryPush;
+        case Mode::RecoverySurface:return Policy::RecoveryPush;
+        case Mode::WindupSurface:return Policy::WindupPush;
+        case Mode::ActiveSurface:return Policy::ActivePush;
+        case Mode::RelaunchSurface:return Policy::RelaunchPush;
+        case Mode::RelaunchEntrySurface:return Policy::RelaunchEntryPush;
+        case Mode::RelaunchFloor:return Policy::RelaunchFloor;
+        case Mode::AirDashFloor:return Policy::AirDashFloor;
+        case Mode::WindupEntryFloor:return Policy::WindupEntryFloor;
+        case Mode::WindupPositiveFloor:return Policy::WindupPositiveFloor;
+        case Mode::WindupEntryPush:return Policy::WindupEntryPush;
+        case Mode::WalkLedge:return Policy::WalkLedge;
+        default:return Policy::GroundOnly;
+        }
+    }
+    static constexpr BorgMovementBehaviors behaviors(Policy policy){
+        const auto index=unsigned(policy)-unsigned(Policy::OrderedGround);
+        return index<combined.size()&&combined[index].policy==policy?cumulative_[index]:BorgMovementBehaviors{};
+    }
+    static constexpr bool allows(Mode mode,Behavior behavior){return behaviors(native_policy(mode)).has(behavior);}
+private:
+    static constexpr auto cumulative_=[]{
+        std::array<BorgMovementBehaviors,combined.size()> table{};
+        BorgMovementBehaviors result;
+        for(unsigned i=0;i<combined.size();++i){result.add(combined[i].adds);table[i]=result;}
+        return table;
+    }();
+};
+}

@@ -11,6 +11,7 @@
 #include "engine/gameplay/battle_swept_circle.hpp"
 #include "engine/gameplay/native_borg_movement.hpp"
 #include "engine/gameplay/native_borg_contact.hpp"
+#include "engine/gameplay/borgs/normal_gred_movement.hpp"
 #include "engine/core/source_surface_push.hpp"
 namespace gf {
 using BattleMvpVec=std::array<f32,3>;
@@ -46,7 +47,6 @@ struct BattleMvpConfig {
     std::array<f32,2> spawn_query_y{};
 };
 class NativeBattleMvp;
-enum class NativeBorgMotionPolicy:u8 {GroundOnly,VerticalJump,Jump,AirDash,Relaunch,StaticPush,FallHistoryPush,RecoveryPush,WindupPush,ActivePush,RelaunchPush,RelaunchEntryPush,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash};
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
     explicit NativeBorgMotionScope(const NativeBattleMvp* owner):owner_(owner){}
@@ -267,28 +267,30 @@ public:
             const bool positive_windup_entry=o.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             const bool windup_entry_floor=native_borg_motion_windup_floor_entry(o.kind);
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
-            const bool slope_crease_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundSlopeCreaseDash;
-            const bool slope_seam_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundSlopeSeamDash||slope_crease_dash_policy;
-            const bool slope_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundSlopeDash||slope_seam_dash_policy;
-            const bool controller_windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupEntryPush||slope_dash_policy;
-            const bool controller_relaunch_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchEntryPush||controller_windup_entry_push_policy;
-            const bool controller_relaunch_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchPush||controller_relaunch_entry_push_policy;
-            const bool controller_active_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundActivePush||controller_relaunch_push_policy;
-            const bool controller_windup_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupPush||controller_active_push_policy;
-            const bool controller_recovery_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRecoveryPush||controller_windup_push_policy;
-            const bool controller_relaunch_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchFallPush||controller_recovery_push_policy;
-            const bool controller_air_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundAirFallPush||controller_relaunch_fall_push_policy;
-            const bool controller_fall_push_policy=producer->policy_==NativeBorgMotionPolicy::GroundFallPush||controller_air_fall_push_policy;
-            const bool controller_ground_loss_relaunch_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossRelaunch||controller_fall_push_policy;
-            const bool controller_ground_loss_air_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossAir||controller_ground_loss_relaunch_policy;
-            const bool controller_landing_dash_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossLanding||controller_ground_loss_air_policy;
-            const bool controller_landing_jump_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossJump||controller_landing_dash_policy;
-            const bool controller_ground_loss_surface_policy=producer->policy_==NativeBorgMotionPolicy::GroundLossSurface||controller_landing_jump_policy;
-            const bool controller_surface_policy=producer->policy_==NativeBorgMotionPolicy::GroundSurface||controller_ground_loss_surface_policy;
-            const bool controller_windup_entry_floor_policy=producer->policy_==NativeBorgMotionPolicy::GroundWindupEntryFloor||controller_surface_policy;
-            const bool controller_relaunch_floor_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunchFloor||controller_windup_entry_floor_policy;
-            const bool controller_relaunch_policy=producer->policy_==NativeBorgMotionPolicy::GroundRelaunch||controller_relaunch_floor_policy;
-            const bool controller_floor_policy=producer->policy_==NativeBorgMotionPolicy::GroundAirFloor||controller_relaunch_policy;
+            using Behavior=BorgMovementBehavior;
+            const auto behaviors=NormalGRedMovementDefinition::behaviors(producer->policy_);
+            const bool slope_crease_dash_policy=behaviors.has(Behavior::ShallowCreaseDash);
+            const bool slope_seam_dash_policy=behaviors.has(Behavior::CoplanarSlopeDash);
+            const bool slope_dash_policy=behaviors.has(Behavior::SlopeDash);
+            const bool controller_windup_entry_push_policy=behaviors.has(Behavior::WindupEntryPush);
+            const bool controller_relaunch_entry_push_policy=behaviors.has(Behavior::RelaunchEntryPush);
+            const bool controller_relaunch_push_policy=behaviors.has(Behavior::RelaunchPush);
+            const bool controller_active_push_policy=behaviors.has(Behavior::ActivePush);
+            const bool controller_windup_push_policy=behaviors.has(Behavior::WindupPush);
+            const bool controller_recovery_push_policy=behaviors.has(Behavior::RecoveryPush);
+            const bool controller_relaunch_fall_push_policy=behaviors.has(Behavior::ReleasedRelaunchPush);
+            const bool controller_air_fall_push_policy=behaviors.has(Behavior::PostAirFallPush);
+            const bool controller_fall_push_policy=behaviors.has(Behavior::FallPush);
+            const bool controller_ground_loss_relaunch_policy=behaviors.has(Behavior::RetainedTimerRelaunch);
+            const bool controller_ground_loss_air_policy=behaviors.has(Behavior::RetainedTimerAirDash);
+            const bool controller_landing_dash_policy=behaviors.has(Behavior::RetainedTimerLandingDash);
+            const bool controller_landing_jump_policy=behaviors.has(Behavior::RetainedTimerLandingJump);
+            const bool controller_ground_loss_surface_policy=behaviors.has(Behavior::GroundLossSurface);
+            const bool controller_surface_policy=behaviors.has(Behavior::PairedSurfaceLanding);
+            const bool controller_windup_entry_floor_policy=behaviors.has(Behavior::WindupEntryFloor);
+            const bool controller_relaunch_floor_policy=behaviors.has(Behavior::RelaunchFloor);
+            const bool controller_relaunch_policy=behaviors.has(Behavior::Relaunch);
+            const bool controller_floor_policy=behaviors.has(Behavior::AirDashFloor);
             const bool positive_windup_policy=producer->policy_==NativeBorgMotionPolicy::WindupPositiveFloor||windup_entry_push_policy;
             const bool windup_entry_floor_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryFloor||positive_windup_policy;
             const bool air_floor_policy=producer->policy_==NativeBorgMotionPolicy::AirDashFloor||windup_entry_floor_policy;
@@ -300,13 +302,13 @@ public:
             const bool recovery_push_policy=producer->policy_==NativeBorgMotionPolicy::RecoveryPush||windup_push_policy;
             const bool history_push_policy=producer->policy_==NativeBorgMotionPolicy::FallHistoryPush||recovery_push_policy;
             const bool push_policy=producer->policy_==NativeBorgMotionPolicy::StaticPush||history_push_policy;
-            const bool controller_air_policy=producer->policy_==NativeBorgMotionPolicy::GroundAir||controller_floor_policy;
-            const bool landing_policy=producer->policy_==NativeBorgMotionPolicy::GroundLanding||controller_air_policy;
-            const bool jump_policy=producer->policy_==NativeBorgMotionPolicy::GroundJump||landing_policy;
-            const bool combined_ledge_policy=producer->policy_==NativeBorgMotionPolicy::GroundLedge||jump_policy;
-            const bool dash_ledge_policy=producer->policy_==NativeBorgMotionPolicy::DashLedge||combined_ledge_policy;
+            const bool controller_air_policy=behaviors.has(Behavior::AirDash);
+            const bool landing_policy=behaviors.has(Behavior::LandingInterrupt);
+            const bool jump_policy=behaviors.has(Behavior::Jump);
+            const bool combined_ledge_policy=behaviors.has(Behavior::WalkLedge);
+            const bool dash_ledge_policy=behaviors.has(Behavior::DashLedge);
             const bool ledge_policy=producer->policy_==NativeBorgMotionPolicy::WalkLedge||dash_ledge_policy;
-            const bool ordered_policy=producer->policy_==NativeBorgMotionPolicy::OrderedGround||dash_ledge_policy;
+            const bool ordered_policy=behaviors.has(Behavior::OrderedGround);
             const bool departure=o.kind==NativeBorgMotionKind::GroundDeparture;
             const bool ground_loss=native_borg_motion_ground_loss(o.kind);
             const bool controller_fall_push_frame=controller_fall_push_policy&&o.kind==NativeBorgMotionKind::StaticPush;
@@ -1150,7 +1152,8 @@ public:
     const BattleMvpConfig& config()const{return config_;}BattleMvpResult result()const{return result_;}
     u32 shots_spawned()const{return shots_;}u32 hits()const{return hits_;}
     bool observe_motion(NativeBorgMotionObservation* out)const{
-        if(!out||!ready_||paused_||result_!=BattleMvpResult::Fighting||!motion_scope_||motion_scope_->owner_!=this||actors_[0].model!=0x615||!actors_[0].health)return false;
+        if(!out||!ready_||paused_||result_!=BattleMvpResult::Fighting||!motion_scope_||motion_scope_->owner_!=this||
+           actors_[0].model!=NormalGRedMovementDefinition::model||!actors_[0].health)return false;
         *out={motion_scope_,tick_,actors_[0].model,actors_[0].position,actors_[0].facing,actors_[0].grounded,actors_[0].vertical_speed};return true;
     }
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(bool vertical_jump=false)const{

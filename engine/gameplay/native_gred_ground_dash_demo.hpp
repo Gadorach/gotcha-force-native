@@ -45,7 +45,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;};
 public:
-    enum class Mode {DashOnly,Ground,VerticalJump,Jump,AirDash,Relaunch,DashJump,LandingInterrupt,Surface,Steep,FallingSurface,RecoverySurface,WindupSurface,ActiveSurface,RelaunchSurface,RelaunchEntrySurface,RelaunchFloor,AirDashFloor,WindupEntryFloor,WindupPositiveFloor,WindupEntryPush,WalkLedge,OrderedGround,DashLedge,GroundLedge,GroundJump,GroundLanding,GroundAir,GroundAirFloor,GroundRelaunch,GroundRelaunchFloor,GroundWindupEntryFloor,GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash};
+    using Mode=NormalGRedMovementMode;
     NativeGRedGroundDashDemo()=default;
     NativeGRedGroundDashDemo(const NativeGRedGroundDashDemo&)=delete;
     NativeGRedGroundDashDemo& operator=(const NativeGRedGroundDashDemo&)=delete;
@@ -104,20 +104,7 @@ public:
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
-        if(mode_==Mode::GroundSlopeCreaseDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeCreaseDash);
-        else if(mode_==Mode::GroundSlopeSeamDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeSeamDash);
-        else if(mode_==Mode::GroundSlopeDash)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundSlopeDash);
-        else if(mode_==Mode::GroundWindupEntryPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundWindupEntryPush);
-        else if(mode_==Mode::GroundRelaunchEntryPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundRelaunchEntryPush);
-        else if(mode_==Mode::GroundRelaunchPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundRelaunchPush);
-        else if(mode_==Mode::GroundActivePush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundActivePush);
-        else if(mode_==Mode::GroundWindupPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundWindupPush);
-        else if(mode_==Mode::GroundRecoveryPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundRecoveryPush);
-        else if(mode_==Mode::GroundRelaunchFallPush)producer_=world.new_motion_producer(NativeBorgMotionPolicy::GroundRelaunchFallPush);
-        else if(ordered_mode(mode_))producer_=world.new_motion_producer(mode_==Mode::GroundAirFallPush?NativeBorgMotionPolicy::GroundAirFallPush:mode_==Mode::GroundFallPush?NativeBorgMotionPolicy::GroundFallPush:mode_==Mode::GroundLossRelaunch?NativeBorgMotionPolicy::GroundLossRelaunch:mode_==Mode::GroundLossAir?NativeBorgMotionPolicy::GroundLossAir:mode_==Mode::GroundLossLanding?NativeBorgMotionPolicy::GroundLossLanding:mode_==Mode::GroundLossJump?NativeBorgMotionPolicy::GroundLossJump:mode_==Mode::GroundLossSurface?NativeBorgMotionPolicy::GroundLossSurface:mode_==Mode::GroundSurface?NativeBorgMotionPolicy::GroundSurface:mode_==Mode::GroundWindupEntryFloor?NativeBorgMotionPolicy::GroundWindupEntryFloor:mode_==Mode::GroundRelaunchFloor?NativeBorgMotionPolicy::GroundRelaunchFloor:mode_==Mode::GroundRelaunch?NativeBorgMotionPolicy::GroundRelaunch:mode_==Mode::GroundAirFloor?NativeBorgMotionPolicy::GroundAirFloor:mode_==Mode::GroundAir?NativeBorgMotionPolicy::GroundAir:mode_==Mode::GroundLanding?NativeBorgMotionPolicy::GroundLanding:mode_==Mode::GroundJump?NativeBorgMotionPolicy::GroundJump:mode_==Mode::GroundLedge?NativeBorgMotionPolicy::GroundLedge:mode_==Mode::DashLedge?NativeBorgMotionPolicy::DashLedge:NativeBorgMotionPolicy::OrderedGround);
-        else
-        producer_=world.new_motion_producer(mode_==Mode::WalkLedge?NativeBorgMotionPolicy::WalkLedge:mode_==Mode::WindupEntryPush?NativeBorgMotionPolicy::WindupEntryPush:mode_==Mode::WindupPositiveFloor?NativeBorgMotionPolicy::WindupPositiveFloor:mode_==Mode::WindupEntryFloor?NativeBorgMotionPolicy::WindupEntryFloor:mode_==Mode::AirDashFloor?NativeBorgMotionPolicy::AirDashFloor:mode_==Mode::RelaunchFloor?NativeBorgMotionPolicy::RelaunchFloor:mode_==Mode::RelaunchEntrySurface?NativeBorgMotionPolicy::RelaunchEntryPush:mode_==Mode::RelaunchSurface?NativeBorgMotionPolicy::RelaunchPush:mode_==Mode::ActiveSurface?NativeBorgMotionPolicy::ActivePush:mode_==Mode::WindupSurface?NativeBorgMotionPolicy::WindupPush:mode_==Mode::RecoverySurface?NativeBorgMotionPolicy::RecoveryPush:mode_==Mode::FallingSurface?NativeBorgMotionPolicy::FallHistoryPush:mode_==Mode::Steep?NativeBorgMotionPolicy::StaticPush:relaunch_mode(mode_)?NativeBorgMotionPolicy::Relaunch:mode_==Mode::AirDash?NativeBorgMotionPolicy::AirDash:mode_==Mode::Jump?NativeBorgMotionPolicy::Jump:
-            mode_==Mode::VerticalJump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
+        producer_=world.new_motion_producer(NormalGRedMovementDefinition::native_policy(mode_));
         if(!producer_)return fail(error,"native movement producer lease refused");
         dash_fall_pushes_=relaunch_fall_pushes_=recovery_pushes_=windup_pushes_=active_pushes_=relaunch_surface_pushes_=0;
         relaunch_entry_surface_pushes_=0;
@@ -585,33 +572,35 @@ public:
         *out=mapped;return true;
     }
 private:
+    using Behavior=BorgMovementBehavior;
+    static bool allows(Mode mode,Behavior behavior){return NormalGRedMovementDefinition::allows(mode,behavior);}
     static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
-    static bool slope_dash_mode(Mode mode){return mode==Mode::GroundSlopeDash||mode==Mode::GroundSlopeSeamDash||mode==Mode::GroundSlopeCreaseDash;}
-    static bool controller_windup_entry_push_mode(Mode mode){return mode==Mode::GroundWindupEntryPush||slope_dash_mode(mode);}
-    static bool controller_relaunch_entry_push_mode(Mode mode){return mode==Mode::GroundRelaunchEntryPush||controller_windup_entry_push_mode(mode);}
-    static bool controller_relaunch_push_mode(Mode mode){return mode==Mode::GroundRelaunchPush||controller_relaunch_entry_push_mode(mode);}
-    static bool controller_active_push_mode(Mode mode){return mode==Mode::GroundActivePush||controller_relaunch_push_mode(mode);}
-    static bool controller_windup_push_mode(Mode mode){return mode==Mode::GroundWindupPush||controller_active_push_mode(mode);}
-    static bool controller_recovery_push_mode(Mode mode){return mode==Mode::GroundRecoveryPush||controller_windup_push_mode(mode);}
-    static bool controller_relaunch_fall_push_mode(Mode mode){return mode==Mode::GroundRelaunchFallPush||controller_recovery_push_mode(mode);}
-    static bool controller_air_fall_push_mode(Mode mode){return mode==Mode::GroundAirFallPush||controller_relaunch_fall_push_mode(mode);}
-    static bool controller_fall_push_mode(Mode mode){return mode==Mode::GroundFallPush||controller_air_fall_push_mode(mode);}
-    static bool controller_ground_loss_relaunch_mode(Mode mode){return mode==Mode::GroundLossRelaunch||controller_fall_push_mode(mode);}
-    static bool controller_ground_loss_air_mode(Mode mode){return mode==Mode::GroundLossAir||controller_ground_loss_relaunch_mode(mode);}
-    static bool controller_landing_dash_mode(Mode mode){return mode==Mode::GroundLossLanding||controller_ground_loss_air_mode(mode);}
-    static bool controller_landing_jump_mode(Mode mode){return mode==Mode::GroundLossJump||controller_landing_dash_mode(mode);}
-    static bool controller_ground_loss_surface_mode(Mode mode){return mode==Mode::GroundLossSurface||controller_landing_jump_mode(mode);}
-    static bool controller_surface_mode(Mode mode){return mode==Mode::GroundSurface||controller_ground_loss_surface_mode(mode);}
-    static bool controller_windup_entry_floor_mode(Mode mode){return mode==Mode::GroundWindupEntryFloor||controller_surface_mode(mode);}
-    static bool controller_relaunch_floor_mode(Mode mode){return mode==Mode::GroundRelaunchFloor||controller_windup_entry_floor_mode(mode);}
-    static bool controller_relaunch_mode(Mode mode){return mode==Mode::GroundRelaunch||controller_relaunch_floor_mode(mode);}
-    static bool controller_floor_mode(Mode mode){return mode==Mode::GroundAirFloor||controller_relaunch_mode(mode);}
-    static bool ground_air_mode(Mode mode){return mode==Mode::GroundAir||controller_floor_mode(mode);}
-    static bool ground_landing_mode(Mode mode){return mode==Mode::GroundLanding||ground_air_mode(mode);}
-    static bool ground_jump_mode(Mode mode){return mode==Mode::GroundJump||ground_landing_mode(mode);}
-    static bool dash_ledge_mode(Mode mode){return mode==Mode::DashLedge||mode==Mode::GroundLedge||ground_jump_mode(mode);}
-    static bool walking_ledge_mode(Mode mode){return mode==Mode::WalkLedge||mode==Mode::GroundLedge||ground_jump_mode(mode);}
-    static bool ordered_mode(Mode mode){return mode==Mode::OrderedGround||dash_ledge_mode(mode);}
+    static bool slope_dash_mode(Mode mode){return allows(mode,Behavior::SlopeDash);}
+    static bool controller_windup_entry_push_mode(Mode mode){return allows(mode,Behavior::WindupEntryPush);}
+    static bool controller_relaunch_entry_push_mode(Mode mode){return allows(mode,Behavior::RelaunchEntryPush);}
+    static bool controller_relaunch_push_mode(Mode mode){return allows(mode,Behavior::RelaunchPush);}
+    static bool controller_active_push_mode(Mode mode){return allows(mode,Behavior::ActivePush);}
+    static bool controller_windup_push_mode(Mode mode){return allows(mode,Behavior::WindupPush);}
+    static bool controller_recovery_push_mode(Mode mode){return allows(mode,Behavior::RecoveryPush);}
+    static bool controller_relaunch_fall_push_mode(Mode mode){return allows(mode,Behavior::ReleasedRelaunchPush);}
+    static bool controller_air_fall_push_mode(Mode mode){return allows(mode,Behavior::PostAirFallPush);}
+    static bool controller_fall_push_mode(Mode mode){return allows(mode,Behavior::FallPush);}
+    static bool controller_ground_loss_relaunch_mode(Mode mode){return allows(mode,Behavior::RetainedTimerRelaunch);}
+    static bool controller_ground_loss_air_mode(Mode mode){return allows(mode,Behavior::RetainedTimerAirDash);}
+    static bool controller_landing_dash_mode(Mode mode){return allows(mode,Behavior::RetainedTimerLandingDash);}
+    static bool controller_landing_jump_mode(Mode mode){return allows(mode,Behavior::RetainedTimerLandingJump);}
+    static bool controller_ground_loss_surface_mode(Mode mode){return allows(mode,Behavior::GroundLossSurface);}
+    static bool controller_surface_mode(Mode mode){return allows(mode,Behavior::PairedSurfaceLanding);}
+    static bool controller_windup_entry_floor_mode(Mode mode){return allows(mode,Behavior::WindupEntryFloor);}
+    static bool controller_relaunch_floor_mode(Mode mode){return allows(mode,Behavior::RelaunchFloor);}
+    static bool controller_relaunch_mode(Mode mode){return allows(mode,Behavior::Relaunch);}
+    static bool controller_floor_mode(Mode mode){return allows(mode,Behavior::AirDashFloor);}
+    static bool ground_air_mode(Mode mode){return allows(mode,Behavior::AirDash);}
+    static bool ground_landing_mode(Mode mode){return allows(mode,Behavior::LandingInterrupt);}
+    static bool ground_jump_mode(Mode mode){return allows(mode,Behavior::Jump);}
+    static bool dash_ledge_mode(Mode mode){return allows(mode,Behavior::DashLedge);}
+    static bool walking_ledge_mode(Mode mode){return mode==Mode::WalkLedge||allows(mode,Behavior::WalkLedge);}
+    static bool ordered_mode(Mode mode){return allows(mode,Behavior::OrderedGround);}
     static bool ledge_mode(Mode mode){return walking_ledge_mode(mode)||dash_ledge_mode(mode);}
     static bool positive_windup_floor_mode(Mode mode){return mode==Mode::WindupPositiveFloor||mode==Mode::WindupEntryPush;}
     static bool windup_entry_floor_mode(Mode mode){return mode==Mode::WindupEntryFloor||positive_windup_floor_mode(mode);}
@@ -736,9 +725,9 @@ private:
         if(!ground.surface(moved.position,&end,error)||!end.selected)return refuse("unresolved dash destination");
         const bool same_slope=slope_dash_mode(mode_)&&!(s.motion.flags5e0&0x40u)&&
             start.normal!=CharacterMotionVector{0,1,0}&&
-            ((start.normal==end.normal&&(start.triangle==end.triangle||(mode_!=Mode::GroundSlopeDash&&
+            ((start.normal==end.normal&&(start.triangle==end.triangle||(allows(mode_,Behavior::CoplanarSlopeDash)&&
                 stage_ground_coplanar_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position))))||
-             (mode_==Mode::GroundSlopeCreaseDash&&end.normal!=CharacterMotionVector{0,1,0}&&
+             (allows(mode_,Behavior::ShallowCreaseDash)&&end.normal!=CharacterMotionVector{0,1,0}&&
                 stage_ground_slope_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position,true)))&&
             start.height==before.position[1]&&moved.position[1]==end.height&&
             std::abs(end.height-start.height)<=std::min(ground.step674,world.config().step_height);

@@ -22,6 +22,21 @@ addresses, source callback layouts or a source-exact startup sequence.
 
 The current fixed two-Borg MVP is a prototype, not the final Borg registry.
 
+### First per-Borg movement definition
+
+Normal G-Red's combined movement labs now select their reviewed capabilities
+from [`normal_gred_movement.hpp`](../engine/gameplay/borgs/normal_gred_movement.hpp).
+The source controller and native verifier consume the same list. Earlier lab
+permissions and legacy policy IDs are preserved.
+
+This is the first part of a self-contained definition, not a content format or
+a completed registry. Stage queries, tangent movement, shared-edge checks,
+body collision and frame receipts remain engine services. Meter policy, action
+admission, program selection and qualified numeric operands still have
+G-Red-specific code/data owners. They should move behind the per-Borg definition
+as those boundaries become explicit, without copying terrain or renderer code
+or applying G-Red's rules to Sasuke.
+
 ## Future content packaging
 
 A self-contained Borg package could contain a manifest, models, animations,
