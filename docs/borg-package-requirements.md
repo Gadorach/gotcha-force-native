@@ -57,9 +57,27 @@ attack definitions, keep these identifiers independent:
   passive damage. These attach to authored action or trait IDs, not to rarity
   or model graphics.
 
+The action record separates **button**, **activation**, **guard/priority**
+and **action kind** (melee, projectile, special, no action). Ammo stock,
+refill pattern and replenishment timer are separate values. This allows
+range-dependent melee versus shot, charge and release branches, and an
+explicit no-op when no action is eligible. It does not infer an input priority.
+
+Reserve **mechanical outcomes** as their own event bindings, not VFX/SFX.
+User examples guide the slots: Witch charge shots may buff allies, debuff
+enemies, invert controls or temporarily replace a target's form and moves;
+Hero transformations may have an expiry; Teleportation Ninja needs an
+explicit target-position exchange; Acceleration Ninja may combine a form
+change with an ongoing contact hit. The Death ICBM example needs impact-area
+and actor-interruption conditions: its landing outcome is distinct from being
+destroyed before contact. None of these examples supplies validated durations,
+radius, damage, priority or carry-over values. A guard, outcome payload,
+duration and interruption policy each needs its own owner and tests.
+
 The catalogue reserves sidecars for moves, traits, forms, fusions, acquisition,
-effects and variant overrides. Those files' contents and runtime consumers
-remain separate work. Prose-only requirements such as encounter/unlock
+effects and variant overrides. The [standalone moves check](borg-packages.md#standalone-moves-check)
+validates move/phase data and local fallbacks; the other sidecars and runtime
+consumers remain separate work. Prose-only requirements such as encounter/unlock
 conditions are not discarded just because an infobox lacks a field.
 
 ### Variants and progression
@@ -105,6 +123,7 @@ uses that data, not that every Borg or variant is supported.
 | Executable moveset and collision | For each move: semantic input and availability (ground/air, direction, held/charged, combo context), priority/cancel gates, timings and resource/ammo costs, animation phases/events, damage and reactions, and the hit/shot/attachment producer. Declare hurt boxes, active hit shapes/windows, hit rules, and muzzle/weapon offsets, projectile or melee parameters and effects where used. | Battle readiness. The [native duel](native-battle-mvp.md) has actor-slot weapon choices, provisional damage, cooldowns and body proxies. Source [body/attack collision data](../engine/assets/character_collision_bank.hpp) exists in a bounded format, but a parsed shape, animation, or sound cue does not imply a working actor-side callback or combat move. |
 | Displayed moveset | Localized move names/descriptions, input hints, activation presentation, icons and optional demo binding. Link to executable move IDs where supported and visibly separate entries that are only documented. | Specification/unit info. The current [display catalog](../engine/assets/force_specification.hpp) reads up to five source move rows with icon, button, activation and text index. Its [page access gate](../engine/gameplay/force_specification.hpp) reads collection state; text/readout does not authorize the move in battle. |
 | Actor lifecycle | Spawn/init defaults, semantic hooks for spawn/land/hit/defeat, optional alternate part/attachment dependencies and the resource owners each hook needs. | Required where invoked by a declared behavior; missing mandatory nodes/resources must block that capability. The [legacy binding](../engine/gameplay/battle_character_binding.hpp) ties class data, rig, model, materials and motion hashes before publishing an actor pose. |
+| Spawn placement | A separate policy for initial vertical placement and contact/movement state. Reserve relative-to-floor, relative-to-arena-top, absolute height, and mode-selected placement, with the units, invalid-placement policy and applicable forms/modes explicit. | Actor admission. The stage and encounter resolve legal spawn points; the Borg can request a policy but cannot publish an actor or bypass bounds. A special spawn-height flag remains a source-recovery question. |
 | Effects and sound | Per-Borg effect and sound banks, with stable IDs and event bindings. Include or explicitly reference bullet/beam/missile graphics and materials, charge/muzzle/trail/impact effects, and firing, impact or other action sounds. See the reserved groups below. | Any declared visual/audio behavior. [Motion sound events](../engine/gameplay/character_program_sound_events.hpp) provide some source inputs, not full allocation/playback receipts. [The native duel](native-battle-mvp.md) has provisional shot/impact presentation, not a generic Borg effects loader. |
 | AI and mode participation | Optional compatible AI behavior choice/hints tied to real moves (range, mobility, resource use) and authored capability metadata. Mode admission references the validated Borg/variant rather than a self-granted “Story allowed” flag. | Challenge and Story owners decide roster/encounter eligibility, budget, rewards and scripted availability. [Challenge party assembly](../engine/gameplay/challenge_initial_party.hpp) consumes model/variant/level and instance provenance, and [AI pool selection](../engine/gameplay/challenge_ai_force.hpp) is difficulty/wave/cost data. A different model or rewritten record cannot borrow those source receipts. |
 
@@ -114,6 +133,33 @@ Package-owned portraits/icons/nameplates are their inputs, not a duplicate UI.
 Keep cockpit layout and other display-mode resources shared. Likewise stage collision,
 cameras, targeting/damage resolution, input-device bindings, RNG, account/save
 storage, encounter scripts and inventory ownership stay outside the Borg folder.
+
+### Reserve a spawn policy independent of flight
+
+Reserve a `spawn` definition group. Its data needs a placement anchor
+(mode-selected, selected floor, verified arena top, absolute height, or
+`unresolved`), an offset/clearance in documented units where applicable,
+whether the placement is required or preferred, the initial vertical speed
+and contact/movement role, and explicit behavior when a stage cannot satisfy
+the request. Placement alone must not set a flight meter, treat hover as
+ordinary grounding, or grant an impact action. Different forms and modes may
+need distinct spawn bindings.
+
+The native simulation's vertical axis is **Y**; X/Z form the ground plane.
+Keep source-axis conversion in its adapter. The current
+[duel's `spawn_query_y`](../engine/gameplay/native_battle_mvp.hpp) selects a
+floor layer for a grounded spawn; it is **not** a forced altitude. A future
+admission path needs an actual stage upper bound and clearance/body checks.
+Do not interpret a generic ceiling query reference as a playable top.
+
+The reported candidates are Death ICBM's airborne entry, the Fortress Borgs'
+fixed aerial stance, and airplane Borgs' flight entry. These motivate
+separate initial roles such as descending/impact, fixed airborne and flight.
+The archived Death ICBM entry supplies an aircraft/contact-explosion lead;
+it does not establish this spawn flag, a height formula, or which Borgs share
+it. Leave the exact flag, per-Borg mapping, and heights `unresolved` until
+verified independently. The move and catalogue readers do not implement this
+spawn group yet.
 
 ### Reserve battle fusion and transformation relationships
 

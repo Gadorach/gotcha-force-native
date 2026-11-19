@@ -118,6 +118,81 @@ editor icons and Force costs; version 2 does not assume all the retail colours
 are supported by the package. See the [requirements map](borg-package-requirements.md)
 for what the reserved move and relationship sidecars need to represent.
 
+### Standalone moves check
+
+Set `moves=gameplay/moves.txt` in a version 2 catalogue. `GFBORG-MOVES 1`
+records declared move data without executing it:
+
+```text
+GFBORG-MOVES 1
+move=bolt|base|b|projectile|Training Bolt
+contexts=grounded|airborne
+fallback=none
+ammo=finite:5|unresolved
+refill=all-at-once
+activation=press
+guard=has-ammo
+priority=30
+replenishment=magazine-refresh
+interrupt=unresolved
+phase=flight|shot-spawn|fire|bolt-trail|bolt-sound|non-solid|borgs|none
+phase=impact|shot-contact|none|bolt-flash|unresolved|not-applicable|not-applicable|on-contact
+outcome=hit-buff|shot-contact|stat-modifier|ally-hit|buff-life|power-bonus
+```
+
+A `move` starts a record and supplies its unique local ID, gameplay form ID,
+button, action kind and readable name. The same button and form can have
+multiple records with different conditions. Declare all nine scalar fields
+and at least one phase, except for an explicit `no-action` branch. The first
+version caps a file at 64 KiB, 64 moves and 8 phases and 8 outcomes per move.
+
+- Buttons: `b`, `x`, `none` (e.g. passive contact), or `unresolved`. Action
+  kind: `melee`, `projectile`, `special`, `no-action` or `unresolved`.
+  These are independent. An X charge can be a projectile or a special
+  action, and a B press can resolve to melee, a shot, or no action.
+- Activation: `press`, `hold`, `release`, `charge`, `automatic`, or
+  `unresolved`. `guard` and `interrupt` name condition references;
+  `priority` records a nonnegative ordinal or `unresolved`. The validator
+  does not evaluate conditions or choose a branch.
+- Contexts: `any`, `unresolved`, or a `|`-separated set of `grounded`,
+  `airborne`, `ground-dash`, `air-dash`, `flying`, `above-target`, `jumping`,
+  `landing` or `contact`. These labels are not a compiled predicate.
+- Fallback: `none`, `unresolved` or another move ID in the same form and
+  button. Missing IDs and cycles refuse. An unresolved button is not assumed
+  to match a known one at runtime.
+- Ammo: `none`, `unlimited`, `unresolved` or `finite:level-1|level-10`.
+  Each finite endpoint can be `unresolved`. Refill is independently
+  `none`, `unresolved`, `all-at-once`, `gradual` or `fragmented`.
+  `replenishment` names the refill timer reference, or `none`/`unresolved`.
+  A refill pattern does not specify a duration.
+- Phase fields: `id|trigger|animation role|effect cue|sound cue|solidity|penetration|explosion`.
+  Trigger and cue slots accept a local identifier, `none` or `unresolved`.
+  Solidity is `solid`, `non-solid`, `not-applicable` or `unresolved`.
+  Penetration is `none`, `borgs`, `objects`, `borgs-and-objects`, `all`,
+  `partial`, `not-applicable` or `unresolved`. Explosion is `none`, `present`
+  (known effect, trigger unspecified), `on-contact`, `on-expiry`,
+  `not-applicable` or `unresolved`.
+- Outcome fields: `id|event|kind|target|duration|payload`. Outcome kinds are
+  `damage`, `stat-modifier`, `behavior-modifier`, `control-modifier`,
+  `transform`, `swap-positions`, `passive-contact`, `area-impact`, and
+  `unresolved`. Targets are `self`, `selected-target`, `ally-hit`,
+  `enemy-hit`, `contact-target`, `impact-area`, or `unresolved`. Event,
+  duration and payload are local reference IDs, `none`, or `unresolved`.
+  These are **gameplay outcome slots**, separate from the phase's effect
+  and sound cues. A projectile can have several outcomes with different
+  targets. No outcome rows means none have been declared yet; it is not proof
+  that a move has no effect. Unsupported effects are not approximated.
+- A `no-action` branch has no phases or outcomes and has `none` for ammo,
+  refill, replenishment and fallback. This is an explicit terminal result,
+  not missing work.
+
+Run `gf_native --check-borg-moves example:clockwork-crane` to check the
+sidecar without opening a window. It does not require valid editor icons.
+The validator does not resolve forms, timers, guards, outcome payloads or
+animation/effect/sound assets. It runs no triggers, physics, resource spending
+or actor logic. `moves=none` and `moves=unresolved`
+remain valid catalogue declarations without a move file.
+
 ## Standalone body preview
 
 For one default variant with compatible HSD assets, add `preview=preview.txt`

@@ -18,6 +18,18 @@ inline bool current_folder(const std::filesystem::path& root,const BorgPackageEn
     if(!borg_package_scan_detail::read(folder,&live)||live!=package.manifest)return fail("package manifest changed; rescan required");
     *out=folder;return true;
 }
+inline bool read_profile(const std::filesystem::path& root,const BorgPackageEntry& package,
+                         std::filesystem::path* folder,BorgCatalogProfile* out,std::string* error){
+    if(package.manifest.catalog.empty()){if(error)*error="no catalogue profile declared";return false;}
+    if(!current_folder(root,package,folder,error))return false;
+    std::string bytes;
+    if(!borg_package_scan_detail::read_local(*folder,package.manifest.catalog,kBorgCatalogProfileBytes,&bytes)||
+       !borg_catalog_read_profile(bytes,out)){
+        if(error)*error="missing or invalid catalogue profile";
+        return false;
+    }
+    return true;
+}
 }
 // Load for inspection on demand, not for every package on startup. Broken
 // catalogue or artwork data does not retroactively make a package "missing".
@@ -26,13 +38,10 @@ inline bool load_borg_catalog_card(const std::filesystem::path& root,const BorgP
     auto fail=[&](const char* why){if(error)*error=why;return false;};
     const auto* package=scanned.status==BorgPackageScanStatus::Complete?scanned.find(id):nullptr;
     if(!out||!package)return fail("a uniquely discovered Borg ID is required");
-    if(package->manifest.catalog.empty())return fail("no catalogue profile declared");
     std::filesystem::path folder;
-    if(!borg_catalog_detail::current_folder(root,*package,&folder,error))return false;
     BorgCatalogCard next;next.identity=package->manifest.identity;
+    if(!borg_catalog_detail::read_profile(root,*package,&folder,&next.profile,error))return false;
     std::string bytes;
-    if(!borg_package_scan_detail::read_local(folder,package->manifest.catalog,kBorgCatalogProfileBytes,&bytes)||
-        !borg_catalog_read_profile(bytes,&next.profile))return fail("missing or invalid catalogue profile");
     for(const auto& variant:next.profile.variants){
         if(variant.placeholder_icon()){next.icons.emplace_back();continue;}
         if(variant.unresolved_icon()){

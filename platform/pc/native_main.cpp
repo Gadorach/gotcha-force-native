@@ -45,7 +45,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
-#include "platform/pc/borg_catalog_load.hpp"
+#include "platform/pc/borg_move_load.hpp"
 #include "platform/pc/gred_practice_input.hpp"
 #include "platform/pc/sdl_platform.hpp"
 
@@ -56,7 +56,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
-    std::string check_borg_catalog,preview_borg;
+    std::string check_borg_catalog,check_borg_moves,preview_borg;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -165,6 +165,9 @@ bool parse(int argc, char** argv, Options* options) {
         else if (arg=="--check-borg-catalog"){
             if(++i>=argc||!options->check_borg_catalog.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_catalog=argv[i];
+        }else if(arg=="--check-borg-moves"){
+            if(++i>=argc||!options->check_borg_moves.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_moves=argv[i];
         }else if(arg=="--preview-borg"){
             if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->preview_borg=argv[i];
@@ -354,6 +357,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "[--screenshot PATH.ppm]\n"
                          "       gf_native --gred-movement [--no-audio]\n"
                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
+                         "       gf_native --check-borg-moves NAMESPACE:ID\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--headless] [--frames N]\n");
             return false;
         }
@@ -364,7 +368,7 @@ bool parse(int argc, char** argv, Options* options) {
     if(options->animation_mosaic&&(options->battle_mvp||options->test_battle||options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
     if(!options->preview_borg.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||options->menu||
        options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||options->list_borgs||
-       !options->check_borg_catalog.empty()||options->animation_page||options->animation_borg))return false;
+       !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1205,7 +1209,7 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
 int main(int argc, char** argv) {
     Options options;
     if (!parse(argc, argv, &options)) return 2;
-    if(options.list_borgs&&!options.check_borg_catalog.empty())return 2;
+    if(unsigned(options.list_borgs)+unsigned(!options.check_borg_catalog.empty())+unsigned(!options.check_borg_moves.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
@@ -1237,6 +1241,18 @@ int main(int argc, char** argv) {
             std::puts("Extended catalogue fields validated; facet references not loaded.");
         }
         std::puts("Catalogue profile validated; model, animation, and gameplay not loaded.");
+        return 0;
+    }
+    if(!options.check_borg_moves.empty()){
+        gf::pc::BorgMoveInspection moves;std::string error;
+        if(!gf::pc::load_borg_move_inspection("borgs",borg_packages,options.check_borg_moves,&moves,&error)){
+            std::fprintf(stderr,"Borg moves: %s\n",error.c_str());return 2;
+        }
+        std::printf("%s\t%s\tmoves=%zu\n",moves.identity.id.c_str(),moves.identity.name.c_str(),moves.profile.moves.size());
+        for(const auto& move:moves.profile.moves)
+            std::printf("%s\t%s\tform=%s\tphases=%zu\toutcomes=%zu\n",move.id.c_str(),move.label.c_str(),
+                move.form.c_str(),move.phases.size(),move.outcomes.size());
+        std::puts("Move definitions validated; gameplay, effects, and audio not loaded.");
         return 0;
     }
 
