@@ -419,6 +419,13 @@ two ledge ticks left. This separate guide leaves the two-push
 mode unchanged. Use `--demo-gred-walk-ledge-timed-release-three-pushes`
 for playback, or choose **Three Timed Release Pushes** in either picker.
 
+`--gred-walk-ledge-timed-release-four-pushes --practice-start`
+uses that same route through tick 36. Press **Down Arrow** on
+37 only, then stay neutral. The fourth response moves onto
+face 2011 with one tick left and no extra meter cost; it still
+refuses in the three-push guide. Use
+`--demo-gred-walk-ledge-timed-release-four-pushes` for playback.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,

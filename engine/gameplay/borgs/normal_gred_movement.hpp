@@ -24,7 +24,8 @@ enum class NormalGRedMovementMode {
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
     GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
-    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap,GroundWalkExpiringAirDashSnapRelaunch,GroundTimedWalkReleaseThirdPush
+    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap,GroundWalkExpiringAirDashSnapRelaunch,GroundTimedWalkReleaseThirdPush,
+    GroundTimedWalkReleaseDownPush
 };
 
 struct NormalGRedMovementDefinition {
@@ -102,6 +103,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiringAirDashSnap,Policy::GroundWalkExpiringAirDashSnap,Behavior::WalkExpiringAirDashSnap},
         CombinedRule{Mode::GroundWalkExpiringAirDashSnapRelaunch,Policy::GroundWalkExpiringAirDashSnapRelaunch,Behavior::WalkExpiringAirDashSnapRelaunch},
         CombinedRule{Mode::GroundTimedWalkReleaseThirdPush,Policy::GroundTimedWalkReleaseThirdPush,Behavior::TimedWalkReleaseThirdPush},
+        CombinedRule{Mode::GroundTimedWalkReleaseDownPush,Policy::GroundTimedWalkReleaseDownPush,Behavior::TimedWalkReleaseDownPush},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -159,6 +161,9 @@ struct NormalGRedMovementDefinition {
     }
     static constexpr bool third_timed_release_face(u32 face,s16 angle){
         return face==2021&&angle==8192;
+    }
+    static constexpr bool down_timed_release_face(u32 face,s16 angle){
+        return face==2011&&angle==13653;
     }
     static constexpr u8 expiring_walk_windup_complete=7; // entry, two pushes, four ordinary updates
     static constexpr u8 expiring_walk_windup_end(bool short_windup){

@@ -840,6 +840,82 @@ int main(){
     check(timed_pushes==3&&hit==101&&land==102&&source.relaunches()==1&&source.relaunch_fall_pushes()==3&&
         !source.air_dash_starts()&&!source.walk_ledge_pushes()&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
         "the third verified response still reaches ordinary landing and full idle");
+    auto third_prefix=[&](Mode mode){
+        two_push_fixture(mode,-4080.66113f,-3463.83618f);
+        for(unsigned tick=1;tick<=36;++tick){
+            GamePadState pad;pad.dpad_up=pad.dpad_left=tick==6||tick==7;pad.b=tick==20;
+            NativeBorgMotionOffer offer;
+            check(prepare(pad,&offer),"actual neutral prefix through the third push");
+            if(tick==36)check(offer.kind==Kind::StaticPush&&offer.jump_motion->third_timed_release_push&&
+                offer.static_push->surface.triangle==2021&&offer.controller_timer698==2.f,"authentic third contact, not an expired frame");
+            accept(offer);
+        }
+    };
+    GamePadState down;down.dpad_down=true;
+    third_prefix(Mode::GroundTimedWalkReleaseThirdPush);
+    {
+        NativeBorgMotionOffer offer;const auto retained=pose;const auto before=world.actors()[0].position;
+        check(!prepare(down,&offer)&&error.find("steep push/damping branch")!=std::string::npos&&world.tick()==36&&
+            source.ground_loss_timer698()==2.f&&source.resource()==9850&&world.actors()[0].position==before&&
+            retained.frame_scope.expired()&&!world.step({},false,&view),"the three-push mode still refuses the exact Down request");
+    }
+    third_prefix(Mode::GroundTimedWalkReleaseDownPush);
+    const auto drift_before=world.actors()[0];const auto drift_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    CharacterMovementHeadingFrame source_heading;
+    check(native_borg_source_heading_frame(drift_frame,drift_before.facing,&source_heading),"current movement-camera proof");
+    NativeGRedGroundInput mapped;
+    check(source.map_input(down,&mapped,&error)&&mapped.x==0&&mapped.y==-32,"soft Down is the exact input");
+    NativeBorgMotionOffer steered;
+    check(prepare(down,&steered)&&steered.kind==Kind::StaticPush&&steered.jump_motion&&steered.jump_motion->down_timed_release_push&&
+        !steered.jump_motion->third_timed_release_push&&!steered.jump_motion->second_timed_release_push&&
+        steered.jump_motion->drift_heading==source_heading.camera5b0&&steered.static_push&&steered.static_push->surface.triangle==2011&&
+        steered.static_push->angle==13653&&steered.controller_timer698==1.f&&steered.facing==drift_before.facing&&
+        source.ground_loss_timer698()==2.f&&source.resource()==9850&&source.relaunch_fall_pushes()==3,
+        "the staged Down contact is a separate selected plane and does not turn, ground, spend or publish");
+    auto integrated=drift_before.position;f32 x=0,z=0;
+    source_heading_xz(source_heading.camera5b0,&x,&z);
+    integrated[0]=std::fma(4.f,x,integrated[0]);integrated[2]=std::fma(4.f,z,integrated[2]);
+    const auto& fall=*steered.jump_motion;
+    source_heading_xz(fall.travel5ae,&x,&z);
+    integrated[0]=std::fma(1.f,f32(fall.move_speed*x),integrated[0]);
+    integrated[1]=std::fma(drift_before.vertical_speed,1.f,integrated[1]);
+    integrated[2]=std::fma(1.f,f32(fall.move_speed*z),integrated[2]);
+    BattleMvpVec projected;
+    check(steered.static_push->integrated_position==integrated&&steered.vertical_speed==f32(steered.static_push->vertical_speed*.9f)&&
+        source_surface_push_position(integrated,steered.static_push->surface.normal,steered.static_push->surface.height,13653,&projected)&&
+        projected==steered.proposed_position&&!steered.surface_landing,
+        "four-unit drift precedes retained motion and projection; the .9 tail is not a snap");
+    auto refuses_down=[&](const NativeBorgMotionOffer& wrong,const NativeBorgMovementFrame* frame,const char* why){
+        const bool refused=!world.step({},false,&view,nullptr,frame,&wrong);const auto shown=view.practice_readout(world);
+        check(refused&&world.tick()==36&&world.actors()[0].position==drift_before.position&&world.motion_receipt_current(pose.receipt)&&
+            source.ground_loss_timer698()==2.f&&source.resource()==9850&&shown&&shown->third_timed_release_push&&!shown->down_timed_release_push,why);
+    };
+    refuses_down(steered,nullptr,"a fourth push needs a current camera proof");
+    NativeBorgMovementFrame opposite;
+    check(native_borg_movement_frame({-drift_frame.forward.x,-drift_frame.forward.z},&opposite),"opposite valid camera");
+    refuses_down(steered,&opposite,"another valid camera does not prove this Down input");
+    auto wrong=steered;wrong.jump_motion->drift_heading.reset();refuses_down(wrong,&drift_frame,"neutral is not the witnessed contact");
+    wrong=steered;wrong.static_push->surface.triangle=2021;refuses_down(wrong,&drift_frame,"the old shallow face cannot be substituted");
+    wrong=steered;wrong.static_push->angle=10240;refuses_down(wrong,&drift_frame,"the earlier inter-gate angle cannot substitute");
+    wrong=steered;wrong.controller_timer698=0.f;refuses_down(wrong,&drift_frame,"cannot borrow the expiry gate");
+    wrong=steered;wrong.proposed_position[1]+=.5f;refuses_down(wrong,&drift_frame,"post-response displacement is independently checked");
+    accept(steered);
+    check(view.practice_readout(world)->down_timed_release_push&&!view.practice_readout(world)->third_timed_release_push&&
+        source.ground_loss_timer698()==1.f&&source.resource()==9850&&source.relaunch_fall_pushes()==4&&
+        !world.actors()[0].grounded&&source.cached_airborne87()==1,"the matching accepted receipt publishes only the Down-contact cue");
+    hit=land=0;
+    while(world.tick()<145){
+        const auto tick=world.tick()+1;NativeBorgMotionOffer offer;
+        check(prepare({},&offer)&&offer.controller_timer698==0.f,"following neutral fall uses only existing rules at expiry");
+        if(tick==38)check(offer.kind==Kind::JumpAir&&!offer.jump_motion->timed_walk_relaunch_fall,"no further timed push is inherited");
+        if(offer.kind==Kind::JumpTouchdown)hit=tick;
+        if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+        accept(offer);
+        check(!view.practice_readout(world)->down_timed_release_push,"the steered cue clears after the one accepted contact");
+        if(tick==hit||tick==land)check(source.resource()==9850,"landing remains separate from meter recovery");
+    }
+    check(hit==102&&land==103&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
+        source.relaunch_fall_pushes()==4&&!source.air_dash_starts()&&source.relaunches()==1,"fourth steered push leads to normal landing and idle");
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

@@ -1258,8 +1258,33 @@ and idle recovers normally. Eight nearby routes completed in
 the initial 126-trial sweep; the accepted third was not used
 on its own as proof of landing.
 On this start, **Down** on 37 instead of neutral produces
-another steep-contact request. It still refuses, leaving 36 as
-the last accepted frame with two ticks and 9850 meter.
+another steep-contact request. The three-push mode still refuses
+it, leaving 36 as the last accepted frame with two ticks and 9850 meter.
+
+### Down-drift push onto face 2011 with one tick left
+
+`--gred-walk-ledge-timed-release-four-pushes` is a separate
+opt-in. After the accepted third push on face 2021 with two
+ticks left, it allows soft **Down** on the exact 2 → 1 update
+to select face 2011 at angle 13653. Source verifies the mapped
+input; native derives the Down heading from the current movement
+camera and rechecks the selected plane and both travel paths.
+The four-unit drift comes before retained motion and projection,
+without turning the body. This does not change the inter-gate
+cap of the first three pushes or authorize other directions,
+faces, expiry steps, or active relaunch contacts.
+
+Use the same **Up+Left** on 6–7 and **Shift** tap on 20.
+Stay neutral through 36, press **Down Arrow** on 37 only, then
+stay neutral. The response keeps 9850 meter and one timer tick.
+Tick 38 returns to ordinary falling as time expires; touchdown
+at 102 and landing at 103 keep the spent meter until idle.
+
+The inter-gate-only probe reached 312 three-push prefixes but
+staged no fourth. After testing the separate steeper face in
+isolation, eight nearby routes reached idle in 117 attempts.
+The checked-in rule uses exactly the verified face pair and
+Down heading, not a general high-angle continuation.
 
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 

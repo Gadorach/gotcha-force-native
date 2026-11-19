@@ -133,6 +133,11 @@ int main(){
         Definition::allows(Mode::GroundTimedWalkReleaseThirdPush,Behavior::TimedWalkReleaseThirdPush)&&
         Definition::third_timed_release_face(2021,8192)&&!Definition::third_timed_release_face(1993,8192)&&
         !Definition::third_timed_release_face(2021,8191));
+    static_assert(unsigned(Mode::GroundTimedWalkReleaseDownPush)==80&&unsigned(Policy::GroundTimedWalkReleaseDownPush)==76&&
+        !Definition::allows(Mode::GroundTimedWalkReleaseThirdPush,Behavior::TimedWalkReleaseDownPush)&&
+        Definition::allows(Mode::GroundTimedWalkReleaseDownPush,Behavior::TimedWalkReleaseDownPush)&&
+        Definition::down_timed_release_face(2011,13653)&&!Definition::down_timed_release_face(2021,13653)&&
+        !Definition::down_timed_release_face(2011,8192));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));

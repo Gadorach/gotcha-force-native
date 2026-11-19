@@ -480,7 +480,7 @@ public:
                         (selected==start||stage_ground_coplanar_crossing(grids_[0],start.triangle,selected.triangle,observed.position,s.motion.position));
                 }
             }
-        }else if(s.jump.selector&&!jump(s,held,frame,&kind,error)){
+        }else if(s.jump.selector&&!jump(s,held,frame,&kind,error,stick_x==0&&stick_y==-32)){
             const std::string detail=error?*error:"";fail(error,"source jump/landing handler refused");
             if(error&&!detail.empty())*error+=" / "+detail;
             return false;
@@ -726,7 +726,8 @@ public:
                 accepted.jump_motion&&accepted.jump_motion->second_timed_release_push,pending_->direct_expiring_relaunch,
                 direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push,pending_->expiring_walk_air_dash,
                 pending_->expiring_walk_air_dash_relaunch,pending_->expiring_walk_air_dash_snap,
-                accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->third_timed_release_push}));
+                accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->third_timed_release_push,
+                accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->down_timed_release_push}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
@@ -925,7 +926,7 @@ private:
     }
     bool air_contact(State& s,const CharacterMovementStaticGround& ground,const CharacterMovementMotionState& before,
                       const CharacterMovementMotionState& proposed,CharacterMovementMotionState* out,bool* touchdown,std::string* error,bool moving,
-                      bool allow_push=false,bool recovery_push=false,bool walk_loss_push=false,bool timed_release_push=false){
+                      bool allow_push=false,bool recovery_push=false,bool walk_loss_push=false,bool timed_release_push=false,bool timed_down_push=false){
         const bool ground_loss_surface=controller_ground_loss_surface_mode(mode_)&&s.jump.falling_after_ground_loss;
         const bool controller_surface=controller_surface_mode(mode_)&&(!s.jump.falling_after_ground_loss||ground_loss_surface);
         if(!surface_mode(mode_)&&!controller_surface)return gred_vertical_jump_flat_contact(ground,before,proposed,out,touchdown,error,moving);
@@ -934,13 +935,17 @@ private:
         //loss path supplies its owned countdown. All declare7C9=0, not an
         //original actor constructor/hit/size-animation producer.
         const f32 timer=ground_loss_surface||controller_landing_jump_mode(mode_)?s.ground_timer698:0.f;
-        const bool fall_push=controller_fall_push_mode(mode_)&&allow_push&&before.vertical48<=0&&(timer==0||timed_release_push)&&
+        const bool fall_push=controller_fall_push_mode(mode_)&&allow_push&&before.vertical48<=0&&(timer==0||timed_release_push||timed_down_push)&&
             !s.jump.falling_after_ground_loss&&(!s.jump.falling_after_dash||controller_air_fall_push_mode(mode_))&&
             (!s.jump.falling_after_relaunch||controller_relaunch_fall_push_mode(mode_));
         const bool combined_recovery_push=recovery_push&&controller_recovery_push_mode(mode_)&&before.vertical48<=0&&timer==0;
         if(!gred_surface_contact(motion_,ground,before,proposed,{timer,0,(steep_mode(mode_)&&allow_push)||fall_push||
             combined_recovery_push||walk_loss_push},&result,error))return false;
         if(result.kind==GRedSurfaceContactKind::Pushed){
+            if(timed_down_push&&!NormalGRedMovementDefinition::down_timed_release_face(result.surface.triangle,result.angle)){
+                if(error)*error="Down-drift timed push needs the verified face 2011";
+                return false;
+            }
             if(timed_release_push&&result.angle>motion_.landing_angles[0]){
                 if(error)*error="timed release push: above the verified inter-gate angle range";
                 return false;
@@ -1256,7 +1261,7 @@ private:
         }
         return true;
     }
-    bool jump(State& s,u32 held,CharacterMovementHeadingFrame frame,NativeBorgMotionKind* kind,std::string* error){
+    bool jump(State& s,u32 held,CharacterMovementHeadingFrame frame,NativeBorgMotionKind* kind,std::string* error,bool soft_down){
         const bool moving=moving_mode(mode_);
         NativeBorgJumpMotion evidence;evidence.speed_before=s.motion.speed44;evidence.resource_before=s.resource.value736;evidence.held_jump=(held&0x100u)!=0;
         GRedVerticalJumpPlan plan;
@@ -1300,13 +1305,19 @@ private:
         //Only the immediate positive-clock successor may carry a first push's history.
         const bool timed_repeat_candidate=state_.ground_timer698>1.f&&
             state_.static_push&&state_.jump_motion&&
-            state_.jump_motion->timed_walk_relaunch_fall&&!state_.jump_motion->third_timed_release_push;
+            state_.jump_motion->timed_walk_relaunch_fall&&!state_.jump_motion->third_timed_release_push&&
+            !state_.jump_motion->down_timed_release_push;
         const bool timed_release_second=timed_repeat_candidate&&allows(mode_,Behavior::TimedWalkReleaseSecondPush)&&
             !state_.jump_motion->second_timed_release_push;
         const bool timed_release_third=timed_repeat_candidate&&allows(mode_,Behavior::TimedWalkReleaseThirdPush)&&
             state_.jump_motion->second_timed_release_push&&
             NormalGRedMovementDefinition::third_timed_release_face(state_.static_push->surface.triangle,state_.static_push->angle);
         const bool timed_repeat=timed_release_second||timed_release_third;
+        const bool timed_release_down=allows(mode_,Behavior::TimedWalkReleaseDownPush)&&soft_down&&state_.ground_timer698==2.f&&
+            s.ground_timer698==1.f&&state_.static_push&&state_.jump_motion&&state_.jump_motion->third_timed_release_push&&
+            state_.jump_motion->timed_walk_relaunch_fall&&plan.state.selector==6&&plan.state.falling_after_relaunch&&
+            !plan.request&&!(held&0x100u)&&
+            NormalGRedMovementDefinition::third_timed_release_face(state_.static_push->surface.triangle,state_.static_push->angle);
         const bool timed_walk_fall=allows(mode_,Behavior::TimedWalkReleasePush)&&plan.state.selector==6&&
             plan.state.falling_after_relaunch&&s.ground_timer698>0.f&&!(held&0x100u)&&
             (plan.request?(state_.relaunch_motion&&state_.relaunch_motion->timed_walk_relaunch_tap):
@@ -1337,11 +1348,12 @@ private:
             const bool walk_loss_push=allows(mode_,Behavior::WalkLedgeFallPush)&&s.walk_loss_origin&&(s.ground_timer698>0||on_expiry)&&
                 plan.state.selector==6&&plan.state.falling_after_ground_loss&&!plan.request&&before.vertical48<0&&!(held&0x100u);
             const bool timed_release_push=timed_walk_fall&&!plan.request&&!evidence.drift_heading&&before.vertical48<0.f;
+            const bool timed_down_push=timed_release_down&&evidence.drift_heading==frame.camera5b0&&before.vertical48<0.f;
             if(!character_movement_air_step(motion_,s.motion,1,1,plan.clamp_wrapper,ceiling,&proposed,error)||
                 !air_contact(s,ground,before,proposed,&s.motion,&touchdown,error,moving,
                         plan.state.selector==6&&(history_surface_mode(mode_)||(!plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
                             (controller_air_fall_push_mode(mode_)&&plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
-                             (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)),false,walk_loss_push,timed_release_push)||
+                              (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)),false,walk_loss_push,timed_release_push,timed_down_push)||
                 (touchdown&&plan.state.selector!=6))return false;
             if(timed_release_push&&timed_repeat&&s.static_push&&
                 (s.static_push->surface.triangle!=state_.static_push->surface.triangle||
@@ -1350,6 +1362,7 @@ private:
                     "second timed release push needs the same selected face";
                 return false;
             }
+            evidence.down_timed_release_push=timed_down_push&&s.static_push;
         }
         evidence.lower_done=s.vm.state().lanes[1].done;
         if(!gred_vertical_jump_finish(plan,evidence.lower_done,touchdown,&s.jump))return false;
@@ -1377,7 +1390,8 @@ private:
                 evidence.relaunch_coarse57d=evidence.relaunch_origin?plan.state.falling_coarse57d:0;
             }
             evidence.speed44=s.motion.speed44;
-            evidence.timed_walk_relaunch_fall=timed_walk_fall&&!evidence.drift_heading&&!touchdown&&(!timed_repeat||s.static_push);
+            evidence.timed_walk_relaunch_fall=(timed_walk_fall&&!evidence.drift_heading&&!touchdown&&(!timed_repeat||s.static_push))||
+                evidence.down_timed_release_push;
             evidence.second_timed_release_push=evidence.timed_walk_relaunch_fall&&timed_release_second;
             evidence.third_timed_release_push=evidence.timed_walk_relaunch_fall&&timed_release_third;
             s.jump_motion=evidence;

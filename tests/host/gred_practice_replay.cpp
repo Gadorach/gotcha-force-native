@@ -11,7 +11,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     ExpiringAirDashSnapRelaunch,
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
-    TimedReleaseThreePushes,
+    TimedReleaseThreePushes,TimedReleaseFourPushes,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -297,10 +297,12 @@ public:
             raw.buttons|=timed_release_inputs(tick,two);
             break;
         }
-        case Replay::TimedReleaseThreePushes:{
+        case Replay::TimedReleaseThreePushes:
+        case Replay::TimedReleaseFourPushes:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             raw.buttons|=timed_release_inputs(tick,false,true);
+            if(replay_==Replay::TimedReleaseFourPushes&&tick==37)raw.buttons|=1u<<6;
             break;
         }
         case Replay::PickerPractice:
@@ -564,11 +566,12 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_push=replay==Replay::TimedReleasePush;
     const bool timed_release_two=replay==Replay::TimedReleaseTwoPushes;
     const bool timed_release_three=replay==Replay::TimedReleaseThreePushes;
+    const bool timed_release_four=replay==Replay::TimedReleaseFourPushes;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||incline_ledge_relaunch||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
         direct_timed||direct_timed_up||active_snap_relaunch||expiring_air_dash||expiring_air_relaunch||expiring_short_relaunch||
-        timed_release_push||timed_release_two||timed_release_three||expiring_air_snap||expiring_snap_relaunch;
+        timed_release_push||timed_release_two||timed_release_three||timed_release_four||expiring_air_snap||expiring_snap_relaunch;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
            incline_dash_ledge_relaunch[]="--gred-inclined-dash-ledge-relaunch",
@@ -587,10 +590,12 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
           direct_timed_up_relaunch[]="--gred-walk-ledge-direct-timed-up-relaunch",
            after_active_snap[]="--gred-walk-ledge-active-snap-relaunch",release_push[]="--gred-walk-ledge-timed-release-push",
             release_two[]="--gred-walk-ledge-timed-release-two-pushes",release_three[]="--gred-walk-ledge-timed-release-three-pushes";
+     char release_four[]="--gred-walk-ledge-timed-release-four-pushes";
     char audio[]="--no-audio",start[]="--practice-start";
      char* args[]={program,expiring_snap_relaunch?expiring_dash_snap_handoff:expiring_air_snap?expiring_dash_snap:
          expiring_short_relaunch?expiring_short_dash_relaunch:expiring_air_relaunch?expiring_dash_relaunch:expiring_air_dash?expiring_dash:
-         timed_release_three?release_three:timed_release_two?release_two:timed_release_push?release_push:active_snap_relaunch?after_active_snap:
+         timed_release_four?release_four:timed_release_three?release_three:timed_release_two?release_two:
+         timed_release_push?release_push:active_snap_relaunch?after_active_snap:
         direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
         expiring_handoff?expiring_floor_handoff:positive_handoff?positive_floor_handoff:
         snap_handoff?floor_handoff:snap_dash?timed_snap_dash:
@@ -1292,5 +1297,16 @@ int main(int argc,char** argv){
         has(third_idle,"accepted native tick=145 G-Red-position=-3681.14/10.00/-3240.03")&&
         has(third_idle,"practice-meter=10000/10000 at accepted tick=145")&&!has(third_idle,"practice-timed-release-push="),
         "the final response clears before ordinary landing and idle",third_idle);
-    std::puts("G-Red practice replay: fifty-seven desktop-loop scenarios PASS without opening devices");
+    const auto down_contact=run(Replay::TimedReleaseFourPushes,74,"live Down-drift timed push");
+    check(picker_guide_played(down_contact,"timed Down-drift push",37)&&
+        has(down_contact,"practice-meter=9850/10000 at accepted tick=37")&&has(down_contact,"practice-ledge-timer-ticks=1")&&
+        once(down_contact,"practice-timed-release-push=AIRBORNE / TIMED DOWN-DRIFT PUSH")&&
+        has(down_contact,"relaunch-fall-pushes=4 relaunches=1 timer698=1.0 landings=0"),
+        "the live fourth input keeps one timer tick, four-unit drift and no charge",down_contact);
+    const auto down_idle=run(Replay::TimedReleaseFourPushes,290,"live fourth timed push to idle");
+    check(picker_guide_played(down_idle,"timed Down-drift push",145)&&
+        has(down_idle,"accepted native tick=145 G-Red-position=-3700.26/10.00/-3253.91")&&
+        has(down_idle,"practice-meter=10000/10000 at accepted tick=145")&&!has(down_idle,"practice-timed-release-push="),
+        "the Down response leads to existing ordinary falling and landing",down_idle);
+    std::puts("G-Red practice replay: fifty-nine desktop-loop scenarios PASS without opening devices");
 }
