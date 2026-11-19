@@ -147,6 +147,13 @@ release. The incline walk uses **Up Arrow**; the incline dash uses a
 right flick (**D** on keyboard). These are native practice starts, not
 original game spawns or new movement permissions.
 
+`--gred-inclined-dash-ledge-relaunch --practice-start` opens a
+paused guide on that same incline. Step with **D** on 6 and a
+neutral **Shift** tap on 8. The relaunch follows the accepted
+fall, spends 150, and keeps the ledge countdown. Use
+`--demo-gred-inclined-dash-ledge-relaunch` for playback. This
+does not add dash-origin steep contact.
+
 The [owned collection practice launcher](borg-packages.md#practice-an-owned-copy)
 offers the same live footholds through its **Left/Right** route selector.
 In the [Force browser](borg-packages.md#browse-a-saved-force), use **L/R**

@@ -159,6 +159,7 @@ struct Options {
     bool gred_inclined_dash_jump=false;
     bool gred_timed_incline_landing_dash=false;
     bool gred_inclined_dash_ledge=false;
+    bool gred_inclined_dash_ledge_relaunch=false;
     bool gred_inclined_walk_ledge=false;
     bool gred_practice_start=false;
     bool gred_walk_ledge_fall_push=false;
@@ -379,6 +380,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-inclined-dash-jump" || arg == "--demo-gred-inclined-dash-jump" ||
                  arg == "--gred-timed-incline-landing-dash" || arg == "--demo-gred-timed-incline-landing-dash" ||
                  arg == "--gred-inclined-dash-ledge" || arg == "--demo-gred-inclined-dash-ledge" ||
+                 arg == "--gred-inclined-dash-ledge-relaunch" || arg == "--demo-gred-inclined-dash-ledge-relaunch" ||
                  arg == "--gred-inclined-walk-ledge" || arg == "--demo-gred-inclined-walk-ledge" ||
                  arg == "--gred-walk-ledge-fall-push" || arg == "--demo-gred-walk-ledge-fall-push" ||
                  arg == "--gred-walk-ledge-high-angle-push" || arg == "--demo-gred-walk-ledge-high-angle-push" ||
@@ -488,7 +490,9 @@ bool parse(int argc, char** argv, Options* options) {
             }
             options->gred_walk_ledge_fall_push=options->gred_walk_ledge_high_angle_push||options->timed_ledge_followup!=TimedLedgeFollowup::None||
                 arg=="--gred-walk-ledge-fall-push"||arg=="--demo-gred-walk-ledge-fall-push";
-            options->gred_inclined_dash_ledge=options->gred_walk_ledge_fall_push||
+             options->gred_inclined_dash_ledge_relaunch=arg=="--gred-inclined-dash-ledge-relaunch"||
+                 arg=="--demo-gred-inclined-dash-ledge-relaunch";
+             options->gred_inclined_dash_ledge=options->gred_walk_ledge_fall_push||options->gred_inclined_dash_ledge_relaunch||
                 arg=="--gred-inclined-dash-ledge"||arg=="--demo-gred-inclined-dash-ledge";
             options->gred_inclined_walk_ledge=arg=="--gred-inclined-walk-ledge"||arg=="--demo-gred-inclined-walk-ledge";
             options->gred_inclined_dash_jump=arg=="--gred-inclined-dash-jump"||arg=="--demo-gred-inclined-dash-jump";
@@ -927,6 +931,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "expiring floor wind-up relaunch","Up Arrow 6-25, Shift 46-47 with A on 47, then Shift 55"};
     constexpr PracticeTimingGuide incline_jump_guide{"INCLINE DASH JUMP\nS 6 / SHIFT 14-37",
         "incline dash jump","S 6, Shift 14-37"};
+    constexpr PracticeTimingGuide incline_ledge_relaunch_guide{"INCLINED DASH LEDGE RELAUNCH\nD 6 / SHIFT 8 / NEUTRAL AFTER",
+        "inclined dash ledge relaunch","Tap D on 6, tap neutral Shift on 8, then stay neutral"};
     constexpr PracticeTimingGuide incline_landing_guide{"TIMED INCLINE LANDING DASH\nLEFT ARROW 6-9 / A 34",
         "timed incline landing dash","Left Arrow 6-9, A 34"};
     const PracticeTimingGuide* guide=nullptr;
@@ -956,6 +962,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         else if(options.gred_timed_relaunch_snap_dash)guide=&ledge_snap_dash_guide;
         else if(options.gred_timed_relaunch_floor)guide=&ledge_floor_guide;
         else if(options.gred_inclined_dash_jump)guide=&incline_jump_guide;
+        else if(options.gred_inclined_dash_ledge_relaunch)guide=&incline_ledge_relaunch_guide;
         else if(options.gred_timed_incline_landing_dash)guide=&incline_landing_guide;
         else if(options.gred_recovery_completion_exit)guide=&exit_guide;
         else if(options.gred_recovery_completion_push)guide=&push_guide;
@@ -1160,7 +1167,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
      else if(options.gred_inclined_walk_ledge)gf::log_info(context,"source-ground","%s",use_demo_start?
          "ordinary walk across the verified inclined ledge fixture; no new movement policy or steep push":
          "inclined walk practice uses the ordinary start; add --practice-start for the verified foothold");
-     else if(options.gred_inclined_dash_ledge)gf::log_info(context,"source-ground","ordered inclined dash departure requires a verified descending cliff strip over one flat floor; existing falling and landing path; no steep push");
+      else if(options.gred_inclined_dash_ledge_relaunch)gf::log_info(context,"source-ground",
+          "after an ordered incline departure, relaunch from the accepted ordinary fall using the existing timer and meter rules; no steep push permission");
+      else if(options.gred_inclined_dash_ledge)gf::log_info(context,"source-ground","ordered inclined dash departure requires a verified descending cliff strip over one flat floor; existing falling and landing path; no steep push");
      else if(options.gred_slope_transition_dash)gf::log_info(context,"source-ground","ordered dash between flat ground and shallow inclines; exact shared edge, continuous height and native step/contact limits");
     else if(options.gred_slope_crease_dash)gf::log_info(context,"source-ground","ordered slope dash across verified shallow creases; exact shared edge, continuous height and native step/contact limits");
     else if(options.gred_slope_seam_dash)gf::log_info(context,"source-ground","ordered slope dash across exact coplanar edges; native step/contact limits; creases, gaps and nonflat ledges remain refused");
@@ -1252,7 +1261,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                          "walk ledge expiry demo: D-pad left, then neutral; faces2009/1999 and a separate later landing":options.gred_walk_ledge_high_angle_push?
                          "walk ledge high-angle demo: D-pad right, then neutral; faces1953/1949 and separate later landing":options.gred_walk_ledge_fall_push?
                          "walk ledge-fall push demo: D-pad right to depart, then neutral; selected face1953 and separate later landing":options.gred_inclined_walk_ledge?
-                         "inclined walk ledge demo: D-pad up to depart triangle827 toward flat floor2060, then neutral":options.gred_inclined_dash_ledge?
+                          "inclined walk ledge demo: D-pad up to depart triangle827 toward flat floor2060, then neutral":
+                          options.gred_inclined_dash_ledge_relaunch?
+                          "inclined dash ledge relaunch demo: tap D on 6, tap Shift on 8 after ordinary falling starts":
+                          options.gred_inclined_dash_ledge?
                          "inclined dash ledge demo: one right flick from triangle827 over the cliff toward flat floor2060":options.gred_slope_transition_dash?
                          "slope transition demo: one backward flick from flat triangle249 onto incline1052":options.gred_slope_crease_dash?
                         "slope crease demo: one right flick across original triangles295/508":options.gred_slope_seam_dash?
@@ -1568,7 +1580,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                                     if(options.gred_inclined_dash_ledge||(options.gred_slope_crease_dash&&!options.gred_slope_transition_dash))device.stick_x=127;
                                   else device.stick_y=127;
                               }
-                              if(options.gred_inclined_dash_jump)device.b=world.tick()>=13&&world.tick()<37;
+                               if(options.gred_inclined_dash_jump)device.b=world.tick()>=13&&world.tick()<37;
+                               if(options.gred_inclined_dash_ledge_relaunch)device.b=world.tick()==7;
                           }else if(options.source_ground_windup_entry_push){
                              const auto tick=world.tick();device.b=tick>=5&&tick<32;
                              if(source.surface_pushes()&&!windup_entry_push_flick_tick)windup_entry_push_flick_tick=tick;
@@ -1898,6 +1911,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
          static_cast<unsigned long long>(source.windup_floor_contacts()-source.windup_entry_floor_contacts()),
          static_cast<unsigned long long>(source.active_floor_contacts()),
          static_cast<unsigned long long>(source.windup_entry_surface_pushes()));
+     if(options.gred_inclined_dash_ledge_relaunch)gf::log_info(context,"source-ground",
+         "inclined-dash-ledge-relaunches=%llu air-dash-starts=%llu surface-pushes=%llu timer698=%.1f",
+         static_cast<unsigned long long>(source.relaunches()),static_cast<unsigned long long>(source.air_dash_starts()),
+         static_cast<unsigned long long>(source.surface_pushes()),double(source.ground_loss_timer698()));
      if(timed_release_push)gf::log_info(context,"source-ground","relaunch-fall-pushes=%llu relaunches=%llu timer698=%.1f landings=%llu",
          static_cast<unsigned long long>(source.relaunch_fall_pushes()),static_cast<unsigned long long>(source.relaunches()),
          double(source.ground_loss_timer698()),static_cast<unsigned long long>(source.landings()));

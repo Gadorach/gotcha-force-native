@@ -248,6 +248,25 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("practice-meter=10000/10000 at accepted tick=100", result.stdout)
         self.assertIn("practice-phase=IDLE", result.stdout)
 
+    def test_inclined_dash_ledge_relaunch_uses_the_existing_ordinary_fall(self):
+        for tick, phase, meter, timer in (
+            (6, "LEDGE DEPARTURE", 10000, 0), (7, "LEDGE FALL ENTRY", 10000, 30),
+            (8, "RELAUNCH", 9850, 29), (9, "FALLING", 9850, 28),
+            (45, "TOUCHDOWN", 9850, 0), (46, "LANDING", 9850, 0), (80, "IDLE", 10000, 0),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-inclined-dash-ledge-relaunch",
+                                        "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn("ordered-entries=1 ", result.stdout)
+                self.assertIn("root-updates=1", result.stdout)
+                self.assertIn(f"inclined-dash-ledge-relaunches={int(tick>=8)} air-dash-starts=0 surface-pushes=0 timer698={timer}.0",
+                              result.stdout)
+                if tick == 80:
+                    self.assertIn("G-Red-position=2082.15/10.00/-2260.40", result.stdout)
+
     def test_inclined_walk_ledge_demo_does_not_dispatch_a_dash(self):
         result = self.run_host(["--demo-gred-inclined-walk-ledge", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

@@ -250,6 +250,17 @@ All eight refused the following contact before an ordinary fall could
 be accepted, so there was no valid predecessor for a relaunch recovery.
 Dash-origin push permissions remain unchanged.
 
+A later 13,000-route search varied octant flicks, walking lead-in,
+offsets around newer grounded footholds, and grounded target placement.
+It found 4,819 ordered departures and 1,099 accepted first pushes
+in isolation, but none reached a second push or returned to ordinary
+falling. In one traced route, the first push was on face 1130 at
+14, with 23 ticks left. On 15, the pre-projection endpoint still
+selected face 1130 at Y `459.49591`, above the actor's starting Y
+`455.19708`, even though the projected endpoint cleared its floor.
+The blocked approach remains a refusal. This search did not change
+the runtime contact gates.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
@@ -754,6 +765,25 @@ or steep ledge-fall pushes are claimed.
 ```sh
 gf_native --demo-gred-inclined-dash-ledge --headless --frames 100 --no-audio
 ```
+
+### Ordinary relaunch after the inclined dash departure
+
+`--gred-inclined-dash-ledge-relaunch --practice-start` uses the
+same grounded start and movement mode. Tap **D** on 6 and
+neutral **Shift** on 8, then stay neutral. The ordered dash
+departs on 6; on 7 the accepted ordinary fall starts the timer at
+30 and retires the ordered root lease. The plain relaunch at 8
+carries the falling speed, not an active dash root. It spends
+150 as the clock reaches 29, with no air-dash charge or steep
+response. Falling resumes on 9; touchdown and landing on 45–46
+keep 9850 until idle recovery.
+
+```sh
+gf_native --demo-gred-inclined-dash-ledge-relaunch --headless --frames 80 --no-audio
+```
+
+This is a guided replay of an existing admitted route, not a
+permission to relaunch directly from a steep push.
 
 ### Ordinary walk off the same inclined ledge
 

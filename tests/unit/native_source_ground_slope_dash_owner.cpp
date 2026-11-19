@@ -260,6 +260,54 @@ int main(){
         world.actors()[0].grounded&&source.selector()==0&&source.ground_loss_timer698()==0,
         "full authored route goes from ordered departure through distinct touchdown and landing to idle");
 
+    bind(cliff,Mode::GroundInclinedDashLedge);
+    touchdown=landing=0;
+    std::weak_ptr<const NativeBorgOrderedRootScope> ledge_root;
+    NativeBorgMotionOffer previous;
+    for(unsigned tick=1;tick<=80;++tick){
+        using Kind=NativeBorgMotionKind;
+        const auto before=world.actors()[0];const auto retained=pose;
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        GamePadState pad;if(tick==6)pad.stick_x=127;pad.b=tick==8;
+        NativeGRedGroundInput input;NativeBorgMotionOffer offer;
+        check(source.map_input(pad,&input,&error)&&source.prepare(world,view.source_binding(),frame,input.x,input.y,input.held,&offer,&error),
+            "the ordinary dash-origin relaunch needs no new contact policy");
+        const f32 clock=tick<7?0.f:f32(std::max(0,37-int(tick)));
+        check(offer.controller_timer698==clock,"ledge clock starts only on accepted fall and naturally counts down");
+        if(tick==6){
+            check(offer.kind==Kind::GroundDeparture&&offer.ordered_ground&&offer.walk_ledge&&!offer.walk_ledge->walk_origin&&
+                offer.walk_ledge->surface.triangle==2060&&!offer.ordered_ground->root_scope.expired(),
+                "the first flick is a real ordered-dash departure, not walking");
+            ledge_root=offer.ordered_ground->root_scope;
+        }
+        if(tick==7)check(offer.kind==Kind::GroundLossEntry&&!offer.ordered_ground&&offer.jump_motion&&offer.jump_motion->ground_loss&&
+            !ledge_root.expired(),"fall is staged while the previously accepted root still belongs to the departure");
+        if(tick==8){
+            check(previous.kind==Kind::GroundLossEntry&&ledge_root.expired()&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+                !offer.ordered_ground&&!offer.relaunch_floor&&!offer.static_push&&!offer.surface_landing&&
+                offer.facing==before.facing&&offer.entry_vertical_delta==15.f&&offer.relaunch_motion->vertical_before==14.f&&
+                offer.relaunch_motion->speed_before==previous.jump_motion->speed44&&
+                offer.relaunch_motion->move_speed==f32(previous.jump_motion->speed44*.98f)&&
+                offer.relaunch_motion->resource_before==10000&&offer.relaunch_motion->resource_after==9850&&source.resource()==10000,
+                "only the accepted fall carries speed into ordinary neutral lift, not the old ordered root");
+            auto wrong=offer;wrong.controller_timer698=0.f;
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==7&&world.actors()[0].position==before.position&&
+                world.motion_receipt_current(retained.receipt)&&source.resource()==10000&&source.ground_loss_timer698()==30.f,
+                "a fabricated clock cannot publish the lift, meter spend or pose");
+        }
+        if(tick==9)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->entry&&offer.jump_motion->relaunch_origin,
+            "one Shift tap releases into ordinary falling");
+        if(offer.kind==Kind::JumpTouchdown)touchdown=tick;
+        if(touchdown&&!landing&&offer.kind==Kind::JumpLanding)landing=tick;
+        accept(offer);
+        if(tick==7)check(ledge_root.expired(),"accepted falling retires the ordered root lease");
+        if(tick==8||tick==9||tick==touchdown||tick==landing)check(source.resource()==9850,"release and landing preserve the single charge");
+        previous=offer;
+    }
+    check(touchdown==45&&landing==46&&source.ground_departures()==1&&source.relaunches()==1&&!source.air_dash_starts()&&
+        !source.surface_pushes()&&source.ordered_root().updates==1&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000,
+        "the old policy completes dash, fall, relaunch, touchdown and landing without a steep push");
+
     const Route approach{2599.00806f,-2758.12109f,125.757187f,0};
     // Both policies already had the ordinary walk handler. Certify a walking
     // route through the cliff without borrowing the ordered-dash permission.

@@ -6,7 +6,7 @@
 
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
-    RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,DirectExpiryRelaunch,ExpiringDirectRelaunch,ExpiringDirectRelaunchPush,
+    RecoverySeamRestart,InclineDashJump,InclineDashLedgeRelaunch,TimedInclineLandingDash,DirectExpiryRelaunch,ExpiringDirectRelaunch,ExpiringDirectRelaunchPush,
     ExpiringAdjacentRelaunchPush,ExpiringAirDash,ExpiringAirDashRelaunch,ExpiringShortAirDashRelaunch,ExpiringAirDashSnap,
     ExpiringAirDashSnapRelaunch,
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
@@ -269,6 +269,13 @@ public:
             expiring_snap_inputs(raw,tick,replay_==Replay::ExpiringAirDashSnapRelaunch);
             break;
         }
+        case Replay::InclineDashLedgeRelaunch:{
+            const unsigned tick=1+f/2;
+            snapshot_.frame_step=f%2==0;
+            if(tick==6)raw.axis[0]=20000;
+            if(tick==8)raw.buttons|=1u<<1;
+            break;
+        }
         case Replay::TimedReleasePush:
         case Replay::TimedReleaseTwoPushes:{
             const unsigned tick=1+f/2;
@@ -509,6 +516,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     Options options;
     const bool seam=replay==Replay::RecoverySeamRestart;
     const bool incline=replay==Replay::InclineDashJump;
+    const bool incline_ledge_relaunch=replay==Replay::InclineDashLedgeRelaunch;
     const bool timed_incline=replay==Replay::TimedInclineLandingDash;
     const bool direct_expiry=replay==Replay::DirectExpiryRelaunch;
     const bool direct_expiring=replay==Replay::ExpiringDirectRelaunch;
@@ -528,12 +536,13 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_push=replay==Replay::TimedReleasePush;
     const bool timed_release_two=replay==Replay::TimedReleaseTwoPushes;
     const bool snap_dash=replay==Replay::TimedSnapDash;
-    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||timed_incline||
+    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||incline_ledge_relaunch||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
         direct_timed||direct_timed_up||active_snap_relaunch||expiring_air_dash||expiring_air_relaunch||expiring_short_relaunch||
         timed_release_push||timed_release_two||expiring_air_snap||expiring_snap_relaunch;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
+           incline_dash_ledge_relaunch[]="--gred-inclined-dash-ledge-relaunch",
            incline_landing[]="--gred-timed-incline-landing-dash",expiry_direct[]="--gred-walk-ledge-expiry-direct-relaunch",
            expiring_direct[]="--gred-walk-ledge-expiring-direct-relaunch",expiring_push[]="--gred-walk-ledge-expiring-relaunch-push",
            expiring_adjacent_push[]="--gred-walk-ledge-expiring-adjacent-relaunch-push",
@@ -558,7 +567,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
         snap_handoff?floor_handoff:snap_dash?timed_snap_dash:
          direct_expiry?expiry_direct:direct_expiring?expiring_direct:adjacent_expiring_push?expiring_adjacent_push:
          direct_expiring_push?expiring_push:timed_incline?incline_landing:
-        incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
+         incline_ledge_relaunch?incline_dash_ledge_relaunch:incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
     check(parse(fixture?4:3,args,&options),scenario,log.text);
     options.frames=frames;
     options.headless=replay==Replay::RaisedFace||fixture; // Exactly one scheduled tick per frame.
@@ -1223,5 +1232,16 @@ int main(int argc,char** argv){
         has(snap_choice_idle,"accepted native tick=175 G-Red-position=-691.88/10.00/-3444.54")&&
         has(snap_choice_idle,"practice-meter=10000/10000 at accepted tick=175")&&
         !has(snap_choice_idle,"practice-expiring-walk-air-dash-relaunch="),"the one-tap handoff finishes ordinary release and landing",snap_choice_idle);
-    std::puts("G-Red practice replay: fifty-three desktop-loop scenarios PASS without opening devices");
+    const auto ledge_lift=run(Replay::InclineDashLedgeRelaunch,16,"live ordinary relaunch off an inclined dash");
+    check(picker_guide_played(ledge_lift,"inclined dash ledge relaunch",8)&&has(ledge_lift,"practice-phase=RELAUNCH")&&
+        has(ledge_lift,"practice-meter=9850/10000 at accepted tick=8")&&has(ledge_lift,"practice-ledge-timer-ticks=29")&&
+        has(ledge_lift,"inclined-dash-ledge-relaunches=1 air-dash-starts=0 surface-pushes=0 timer698=29.0"),
+        "live D then Shift conserves the real dash-origin countdown without a steep response",ledge_lift);
+    const auto ledge_lift_idle=run(Replay::InclineDashLedgeRelaunch,160,"live inclined dash ledge relaunch to idle");
+    check(picker_guide_played(ledge_lift_idle,"inclined dash ledge relaunch",80)&&
+        has(ledge_lift_idle,"accepted native tick=80 G-Red-position=2082.15/10.00/-2260.40")&&
+        has(ledge_lift_idle,"practice-meter=10000/10000 at accepted tick=80")&&
+        has(ledge_lift_idle,"inclined-dash-ledge-relaunches=1 air-dash-starts=0 surface-pushes=0 timer698=0.0"),
+        "the same live route clears the cliff and recovers after ordinary landing",ledge_lift_idle);
+    std::puts("G-Red practice replay: fifty-five desktop-loop scenarios PASS without opening devices");
 }
