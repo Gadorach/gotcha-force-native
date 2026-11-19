@@ -328,7 +328,15 @@ public:
             }
         }
         if(s.jump.selector==8){
+            const auto& previous_air=state_.air_motion;
+            const bool plain_windup_handoff=allows(mode_,Behavior::TimedPlainWindupRelaunch)&&!s.relaunch.lower_stage&&
+                previous_air&&previous_air->phase==15&&previous_air->next_selector==16&&previous_air->next_stage==0&&
+                previous_air->timer568==0&&!state_.static_push&&!state_.air_dash_floor;
+            if(plain_windup_handoff&&(state_.ground_timer698<=1.f||s.ground_timer698!=state_.ground_timer698-1.f))
+                return fail(error,"plain wind-up relaunch needs a still-positive ledge countdown");
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
+            if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
+                return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
             const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
                 state_.static_push&&s.jump.selector==15&&!s.air_dash.entered;

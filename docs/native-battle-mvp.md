@@ -171,6 +171,11 @@ then flick **A+W** together on 28 after the fifth push. Only this
 opt-in allows plain wind-up directly from the still-positive walking
 push. Direct relaunch and entry contact responses still refuse.
 
+`--gred-walk-ledge-timed-handoff-relaunch --practice-start` shows the
+two-push route with **W** on 30, then **Shift** on 36 to take a plain
+relaunch instead of active dash while the countdown remains positive.
+The wind-up charge stays paid; the active-entry charge never occurs.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement

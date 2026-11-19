@@ -609,13 +609,17 @@ public:
                 if(!std::isfinite(e.speed_before)||e.speed_before<0||e.speed_before>30||e.speed_before!=speed||
                    e.resource_before!=resource||resource<=0||e.coarse57d>3||e.lower_before>3||e.upper_before>3||
                    e.upper_before>e.lower_before||e.entry!=(e.lower_before==0))return false;
-                 if(e.entry){
-                     const bool windup_push_handoff=controller_windup_push_policy&&air&&
-                         prior==NativeBorgMotionKind::AirDashWindupPush&&air->phase==15&&
-                         air->next_selector==16&&air->next_stage==0&&air->timer568==0;
-                      const auto entry_kind=relaunch_entry_push?NativeBorgMotionKind::RelaunchEntryPush:
-                          relaunch_floor?NativeBorgMotionKind::RelaunchEntryFloor:NativeBorgMotionKind::RelaunchEntry;
-                      if(previous||(!air&&!jump)||(air&&air->phase!=16&&air->phase!=17&&!windup_push_handoff)||
+                  if(e.entry){
+                      const bool completed_windup=air&&air->phase==15&&air->next_selector==16&&air->next_stage==0&&air->timer568==0;
+                      const bool windup_push_handoff=completed_windup&&controller_windup_push_policy&&
+                          prior==NativeBorgMotionKind::AirDashWindupPush;
+                      const bool timed_plain_handoff=completed_windup&&behaviors.has(Behavior::TimedPlainWindupRelaunch)&&
+                          prior==NativeBorgMotionKind::AirDashWindup&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
+                          last_offer_.controller_timer698&&*last_offer_.controller_timer698>1.f&&o.controller_timer698&&
+                          *o.controller_timer698==*last_offer_.controller_timer698-1.f;
+                       const auto entry_kind=relaunch_entry_push?NativeBorgMotionKind::RelaunchEntryPush:
+                           relaunch_floor?NativeBorgMotionKind::RelaunchEntryFloor:NativeBorgMotionKind::RelaunchEntry;
+                       if(previous||(!air&&!jump)||(air&&air->phase!=16&&air->phase!=17&&!windup_push_handoff&&!timed_plain_handoff)||
                         (jump&&(jump->phase!=6||(jump->ground_loss&&!controller_ground_loss_relaunch_policy)))||e.upper_before||
                         o.kind!=entry_kind||o.entry_vertical_delta!=15)return false;
                 }else if(!previous||e.lower_before!=previous->lower_after||e.upper_before!=previous->upper_after||
@@ -1275,7 +1279,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkLedgeDirectTimedAirDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedPlainWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

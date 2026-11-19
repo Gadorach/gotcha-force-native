@@ -381,6 +381,79 @@ int main(){
         !source.landings()&&!world.step({},false,&view),
         "plain entry does not let the next active update cross a raised face or spend another 50");
 
+    auto windup_prefix=[&](Mode mode,unsigned flick,unsigned handoff,bool direct=false){
+        bind(complete,mode);
+        while(world.tick()<handoff){
+            GamePadState pad;
+            if(world.tick()+1==flick){if(direct)pad.stick_x=127;else pad.stick_y=-127;}
+            check(prepare(complete,&offer,pad),"original-stage walk and plain wind-up prefix");accept(offer);
+        }
+        check(offer.kind==Kind::AirDashWindup&&offer.air_motion&&offer.air_motion->next_selector==16&&
+            offer.air_motion->next_stage==0&&offer.air_motion->timer568==0&&offer.air_motion->resource_after==9550&&
+            !offer.air_dash_floor&&!offer.static_push&&source.air_dash_active_frames()==0,
+            "only the completed plain wind-up and its 450 charge are published");
+    };
+    windup_prefix(Mode::GroundWalkLedgeFallPush,30,35);
+    check(prepare(complete,&offer,lift)&&offer.kind==Kind::RelaunchEntry,"older policy stages the real plain handoff proposal");
+    const auto old_handoff=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(!world.step({},false,&view,nullptr,&old_handoff,&offer)&&world.tick()==35&&source.ground_loss_timer698()==4&&
+        source.resource()==9550&&!source.relaunches()&&world.motion_receipt_current(pose.receipt),
+        "older policy does not admit relaunch from completed plain wind-up");
+    source.reject();
+
+    for(const unsigned flick:{33u,36u}){
+        windup_prefix(Mode::GroundTimedPlainWindupRelaunch,flick,flick+5);
+        const f32 timer=flick==33?1.f:0.f;
+        check(source.ground_loss_timer698()==timer&&!prepare(complete,&offer,lift)&&
+            error.find("still-positive ledge countdown")!=std::string::npos&&world.tick()==flick+5&&
+            source.ground_loss_timer698()==timer&&source.resource()==9550&&!source.relaunches(),
+            "neither pending expiry nor already-expired wind-up borrows the timed handoff");
+    }
+
+    for(const bool direct:{false,true}){
+        const unsigned handoff=direct?33:35,touch_tick=direct?115:103;
+        windup_prefix(Mode::GroundTimedPlainWindupRelaunch,direct?26:30,handoff,direct);
+        const auto before=world.actors()[0];
+        const unsigned timer=direct?6:4;
+        check(prepare(complete,&offer,lift)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+            offer.controller_timer698==timer-1&&offer.entry_vertical_delta==15&&
+            offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&offer.relaunch_motion->vertical_before>0&&
+            offer.relaunch_motion->resource_before==9550&&offer.relaunch_motion->resource_after==9400&&
+            !offer.relaunch_floor&&!offer.static_push&&!offer.air_motion&&offer.facing==before.facing,
+            "plain rising relaunch replaces active dash, with no contact response or 50-cost active entry");
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        auto rejects=[&](const NativeBorgMotionOffer& wrong,const char* why){
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==handoff&&
+                world.actors()[0].position==before.position&&source.resource()==9550&&!source.relaunches()&&
+                source.ground_loss_timer698()==f32(timer)&&world.motion_receipt_current(pose.receipt),why);
+        };
+        auto wrong=offer;wrong.controller_timer698=0;rejects(wrong,"handoff cannot clear the timer");
+        wrong=offer;wrong.relaunch_motion->resource_before=10000;rejects(wrong,"handoff cannot refund the accepted wind-up charge");
+        wrong=offer;wrong.relaunch_motion->resource_after-=50;rejects(wrong,"handoff cannot also charge active entry");
+        wrong=offer;wrong.kind=Kind::RelaunchEntryFloor;wrong.relaunch_floor=NativeBorgRelaunchFloor{};
+        rejects(wrong,"a contact response cannot borrow the plain handoff");
+        accept(offer);
+        check(source.relaunches()==1&&source.air_dash_active_frames()==0&&source.resource()==9400&&
+            source.movement_programs()==std::array<u16,2>{14,14}&&view.practice_readout(world)->ledge_timer_ticks==timer-1,
+            "accepted handoff keeps countdown and independently publishes relaunch program and cost");
+        unsigned fall_tick=0,touch=0,land=0;
+        while(world.tick()<180){
+            const auto tick=world.tick()+1;
+            GamePadState pad;pad.b=direct&&tick<=38;
+            check(prepare(complete,&offer,pad),"handoff route completes its fall and landing");
+            if(offer.kind==Kind::JumpAir&&!fall_tick)fall_tick=tick;
+            if(offer.kind==Kind::JumpTouchdown)touch=tick;
+            if(touch&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            if(tick==fall_tick||tick==touch||tick==land)
+                check(source.resource()==(direct?9000:9400),"release, touchdown and landing preserve their own relaunch costs");
+        }
+        check(fall_tick==(direct?39:37)&&touch==touch_tick&&land==touch+1&&source.walk_ledge_pushes()==2&&
+            source.air_dash_starts()==1&&!source.air_dash_active_frames()&&source.relaunches()==1&&source.landings()==1&&
+            source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+            "both timed wind-up handoffs complete without running an active dash frame");
+    }
+
     const Route dash{2582.89014f,-2846.36206f,116.592773f,0};
     bind(dash,Mode::GroundWalkLedgeFallPush);
     while(world.tick()<7){

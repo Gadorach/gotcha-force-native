@@ -320,6 +320,31 @@ then touchdown at 123 and landing at 124; idle refills normally.
 **W** alone on this same start does enter the dash, but the next travel
 after active entry still refuses a raised-side contact at 35.
 
+### Relaunch instead of active dash after a timed plain wind-up
+
+`--gred-walk-ledge-timed-handoff-relaunch` accepts a plain relaunch
+after a completed plain wind-up while the ledge countdown remains
+positive. The preceding receipt must already have paid the wind-up
+charge and selected active entry without running it. A floor snap,
+steep response on relaunch entry, pending expiry, or already-expired
+countdown cannot borrow this handoff. Direct relaunch from the
+walking push is still closed: four entries in the 4,500 directional
+trials never produced a complete route.
+
+```sh
+gf_native --demo-gred-walk-ledge-timed-handoff-relaunch --headless --frames 180 --no-audio
+```
+
+Use the two-push fixture: Right Arrow on 6–8, neutral, then **W** on 30.
+The wind-up pays 450 at 35, with 4 ticks left. Tap **Shift** on 36
+instead of entering active dash. That plain relaunch adds 15 to
+vertical speed, spends 150, and leaves 9400 meter and timer 3.
+It never charges the active-entry 50. Falling starts at 37, touchdown
+at 103, and landing at 104; idle refills normally. A separate route with
+direct timed dash and a longer Shift hold also completes this handoff.
+The neutral-keyboard recipe is available as a live, paused
+`--practice-start` guide.
+
 ### Relaunch after the first ordinary fall
 
 Relaunch still cannot follow the push directly, even in the air-dash
