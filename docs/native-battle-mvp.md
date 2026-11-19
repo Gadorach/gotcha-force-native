@@ -71,6 +71,9 @@ tick is due. Resuming does not catch up elapsed pause time.
 While paused, press P to attempt one movement tick with the current controls.
 Practice stays paused afterward, and holding P does not repeat. A refused
 input does not advance the tick.
+Press C to switch between the standard view and a close view of G-Red.
+This changes framing only; it does not change the target-relative movement
+basis, body heading, or controller permissions.
 One sampled Shift tap can carry to the next movement tick if released before
 then. It is still subject to the source jump and relaunch rules. Pending taps
 do not survive pause, restart, or a stopped practice session.

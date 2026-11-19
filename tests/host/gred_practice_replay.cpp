@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Separate,RefusedInput,RaisedFace};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -25,8 +25,10 @@ public:
             if(f==7)raw.buttons|=1u; //A refused step leaves the tick and pause intact.
             break;
         case Replay::Jump:
+        case Replay::Camera:
         case Replay::Separate:
             if(f==3)raw.buttons|=1u<<1;
+            if(replay_==Replay::Camera)snapshot_.camera_toggle=(f>=3&&f<=5)||f==24;
             if(replay_==Replay::Separate&&f==5)raw.axis[0]=32767;
             break;
         case Replay::RefusedInput:
@@ -88,6 +90,10 @@ bool once(const std::string& log,const char* text){
     const auto first=log.find(text);
     return first!=std::string::npos&&log.find(text,first+1)==std::string::npos;
 }
+std::string line(const std::string& log,const char* prefix){
+    const auto start=log.find(prefix);
+    return start==std::string::npos?std::string{}:log.substr(start,log.find('\n',start)-start);
+}
 }
 
 int main(){
@@ -106,6 +112,13 @@ int main(){
     check(has(jump,"frames=12 ticks=6")&&has(jump,"practice-phase=TAKEOFF")&&has(jump,"ordered-entries=0"),
         "between-tick jump reaches its next movement tick",jump);
 
+    const auto standard=run(Replay::Jump,26,"standard practice camera");
+    const auto close=run(Replay::Camera,26,"toggle practice camera");
+    check(once(close,"practice camera=close")&&once(close,"practice camera=standard")&&
+        has(close,"frames=26 ticks=21")&&has(close,"practice-phase=FALLING")&&
+        line(standard,"accepted native tick=")==line(close,"accepted native tick=")&&
+        line(standard,"practice-meter=")==line(close,"practice-meter="),
+        "camera toggles neither consume nor change an accepted movement tick",close);
     const auto stepped=run(Replay::SingleStep,12,"paused single step");
     check(once(stepped,"practice paused at tick=2")&&once(stepped,"practice stepped to tick=3")&&
         once(stepped,"no simulation advanced")&&once(stepped,"practice stepped to tick=4")&&
@@ -130,5 +143,5 @@ int main(){
     check(once(restarted,"practice stopped at tick=104")&&once(restarted,"practice restarted at tick=0")&&
         has(restarted,"frames=141 ticks=8")&&has(restarted,"practice-meter=10000/10000 at accepted tick=8"),
         "held Q restarts once and the meter returns on a fresh source frame",restarted);
-    std::puts("G-Red practice replay: seven desktop-loop scenarios PASS without opening devices");
+    std::puts("G-Red practice replay: nine desktop-loop scenarios PASS without opening devices");
 }

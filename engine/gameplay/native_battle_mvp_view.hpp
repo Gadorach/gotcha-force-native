@@ -40,6 +40,7 @@ public:
     void source_ground_relaunch_entry_push_controls(){source_ground_relaunch_entry_push_=true;}
     void source_ground_windup_entry_push_controls(){source_ground_windup_entry_push_=true;}
     void source_practice_controls(){source_practice_=true;}
+    void source_practice_close_camera(bool close){source_practice_close_camera_=close;}
     std::optional<NativeBorgSourceReadout> practice_readout(const NativeBattleMvp& world)const{
         const auto frame=source_practice_frame_.lock();
         return source_practice_&&frame?frame->readout(world):std::nullopt;
@@ -159,12 +160,26 @@ public:
         return camera;
     }
     static Camera camera_for(const NativeBattleMvp& world,s32 width,s32 height){return camera_for_actors(world.actors()[0],world.actors()[1],width,height);}
+    static Camera close_practice_camera(const NativeBattleMvp& world,s32 width,s32 height){
+        auto camera=camera_for(world,width,height);
+        //Keep the existing target-relative azimuth. Reframe G-Red for
+        //inspection without changing the separate movement-frame calculation.
+        const auto forward=native_borg_direction({camera.eye[0],camera.eye[2]},{camera.target[0],camera.target[2]});
+        const auto& player=world.actors()[0].position;
+        for(unsigned i=0;i<3;++i)camera.target[i]=player[i];
+        camera.target[1]+=95;
+        camera.eye[0]=camera.target[0]-forward.x*430;
+        camera.eye[1]=camera.target[1]+170;
+        camera.eye[2]=camera.target[2]-forward.z*430;
+        return camera;
+    }
     static NativeBorgMovementFrame movement_frame(const NativeBattleMvp& world,s32 width,s32 height){
         const auto camera=camera_for(world,width,height);NativeBorgMovementFrame frame;native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);return frame;
     }
     unsigned draw(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,std::string* error,bool practice_input_refused=false){
         if(!ready_||!world.ready()||width<=0||height<=0)return 0;
-        const auto camera=camera_for(world,width,height);unsigned draws=0;
+        const auto camera=source_practice_&&source_practice_close_camera_?close_practice_camera(world,width,height):camera_for(world,width,height);
+        unsigned draws=0;
         const SceneLighting* old=render.scene_lighting();const bool had=old!=nullptr;const SceneLighting saved=had?*old:SceneLighting{};
         SceneLighting light;light.declared=true;SceneLight ambient;ambient.colour[0]=ambient.colour[1]=ambient.colour[2]=180;ambient.colour[3]=255;light.lights.push_back(ambient);
         SceneLight sun;sun.flags=5;sun.colour[0]=sun.colour[1]=sun.colour[2]=190;sun.colour[3]=255;sun.position[0]=-1;sun.position[1]=2;sun.position[2]=1;light.lights.push_back(sun);
@@ -258,7 +273,10 @@ public:
         if(source_ground_relaunch_push_)status="G-RED CONTINUED RELAUNCH PUSH / NATIVE PROXY\nRELAUNCH14-15 / ZERO698 / .9 TAIL\nNO ENTRY REPLAY / SEPARATE RELEASE AND LANDING";
         if(source_ground_relaunch_entry_push_)status="G-RED RELAUNCH ENTRY PUSH / NATIVE PROXY\nDESCENDING AFTER +15 / ZERO698 / .9 TAIL\nONE ENTRY COST / SEPARATE RELEASE AND LANDING";
         if(source_ground_windup_entry_push_)status="G-RED WIND-UP ENTRY PUSH / NATIVE PROXY\nHALF-SPEED THEN .9 / NO PRE-CONTACT MOVE\nDEFERRED HANDOFF / SEPARATE ACTIVE ENTRY";
-        if(source_practice_)status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  P STEP WHILE PAUSED\nQ RESTART  ESC CLOSE / NO COMBAT";
+        if(source_practice_){
+            status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  P STEP WHILE PAUSED\nQ RESTART  ESC CLOSE / NO COMBAT";
+            if(source_interactive_)status+=source_practice_close_camera_?"\nC CAMERA: CLOSE":"\nC CAMERA: STANDARD";
+        }
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
         const s32 status_y=source_practice_?std::max(0,height-16-
@@ -313,6 +331,7 @@ private:
     bool source_ground_relaunch_entry_push_=false;
     bool source_ground_windup_entry_push_=false;
     bool source_practice_=false;
+    bool source_practice_close_camera_=false;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_practice_frame_;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
 };

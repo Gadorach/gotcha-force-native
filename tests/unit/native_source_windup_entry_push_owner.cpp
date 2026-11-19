@@ -159,6 +159,18 @@ int main(){
             if(tick==86){
                 const auto frame=pose.frame_scope.lock();NativeBattleMvp foreign;
                 check(frame&&!frame->meter(foreign)&&!view.practice_meter(foreign),"foreign world cannot borrow the practice meter");
+                const auto standard=NativeBattleMvpView::camera_for(world,1152,648);
+                const auto close=NativeBattleMvpView::close_practice_camera(world,1152,648);
+                const auto heading=[](const Camera& camera){
+                    return native_borg_direction({camera.eye[0],camera.eye[2]},{camera.target[0],camera.target[2]});
+                };
+                const auto wide_heading=heading(standard),close_heading=heading(close);
+                const auto& player=world.actors()[0].position;
+                check(close.target[0]==player[0]&&close.target[2]==player[2]&&
+                    std::abs(wide_heading.x-close_heading.x)<.00001f&&std::abs(wide_heading.z-close_heading.z)<.00001f&&
+                    std::hypot(close.eye[0]-player[0],close.eye[2]-player[2])<
+                    std::hypot(standard.eye[0]-player[0],standard.eye[2]-player[2]),
+                    "close practice camera reframes the airborne player without changing azimuth");
                 const auto draw_count=[&](bool refused){
                     render.begin_frame({0,.15f,.21f,.3f});render.reset_arena();
                     const auto draws=view.draw(render,world,1152,648,&error,refused);render.end_frame();

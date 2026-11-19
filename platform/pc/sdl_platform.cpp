@@ -141,6 +141,7 @@ public:
         if (keys) {
             if (keys[SDL_SCANCODE_RETURN]) keyboard.buttons |= kButtonStart;
             snapshot_.frame_step = keys[SDL_SCANCODE_P] != 0;
+            snapshot_.camera_toggle = keys[SDL_SCANCODE_C] != 0;
             if (keys[SDL_SCANCODE_ESCAPE]) keyboard.quit = true;
             if (keys[SDL_SCANCODE_SPACE]) keyboard.buttons |= kButtonA;
             if (keys[SDL_SCANCODE_LSHIFT]) keyboard.buttons |= kButtonB;

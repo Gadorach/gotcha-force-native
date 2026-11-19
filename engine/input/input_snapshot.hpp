@@ -59,6 +59,7 @@ struct InputSnapshot {
     TouchPoint touches[kMaxTouches]{};
     bool quit = false;
     bool frame_step = false; // Host session control, not a routed game button.
+    bool camera_toggle = false;
 
     // Convenience for backends and tests.
     RawInputState& pad(unsigned index) {

@@ -598,7 +598,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         view.source_ground_controls(options.source_ground_interactive);
         if(options.gred_practice){
             view.source_practice_controls();
-            gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, Q restart, Esc close; native proxies, no combat");
+            gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, C camera, Q restart, Esc close; native proxies, no combat");
         }
         if(options.source_ordered_ground){
             view.source_ordered_ground_controls();
@@ -753,7 +753,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     bool input_refused=false,practice_stopped=false;
     const bool practice_restartable=options.gred_practice&&options.source_ground_interactive;
-    bool practice_restart_held=false,practice_pause_held=false,practice_step_held=false;
+    bool practice_restart_held=false,practice_pause_held=false,practice_step_held=false,practice_camera_held=false;
+    bool practice_close_camera=false;
     gf::pc::GRedPracticeInput practice_input;
     gf::u32 landing_jump_script_tick=0,landing_dash_script_tick=0;
     gf::u32 windup_entry_push_flick_tick=0;
@@ -773,8 +774,15 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             const bool restart=pad.y&&!practice_restart_held;
             const bool pause=pad.start&&!practice_pause_held;
             const bool step=snapshot.frame_step&&!practice_step_held;
+            const bool camera=snapshot.camera_toggle&&!practice_camera_held;
             practice_restart_held=pad.y;practice_pause_held=pad.start;
             practice_step_held=snapshot.frame_step;
+            practice_camera_held=snapshot.camera_toggle;
+            if(camera){
+                practice_close_camera=!practice_close_camera;
+                view.source_practice_close_camera(practice_close_camera);
+                gf::log_info(context,"source-ground","practice camera=%s",practice_close_camera?"close":"standard");
+            }
             const bool practicing=!restart&&!pause&&!practice_stopped&&!world.paused();
             practice_input.sample(pad,source.practice_flick_direction(pad),practicing);
             if(restart){
