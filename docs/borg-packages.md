@@ -558,5 +558,26 @@ disable and delete require their own confirmation state. On confirmation it
 rechecks the notice against current catalogue data and the save against the
 loaded record. It publishes a new view only after the storage write is
 acknowledged. An unavailable scan, stale notice or unconfirmed write cannot
-be replayed as a destructive action. The desktop menus do not use this
-session yet.
+be replayed as a destructive action.
+
+### Standalone save recovery
+
+On the Linux desktop host, open an existing explicit account-store root
+and decimal account and save IDs:
+
+```sh
+gf_native --recover-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID
+```
+
+The recovery menu displays the saved Borg and variant names and affected
+Force numbers. **Up/Down** moves the cursor, **Space/A** accepts, and
+**Shift/B** cancels or closes. The default is **Cancel** on both the action
+page and the confirmation page. Disable preserves ownership and slots;
+delete removes only the selected owned instance and its slots from that
+save. Neither operation touches package files.
+
+To inspect a particular notice directly, add `--recovery-notice INSTANCE`.
+`--headless` is inspection-only and cannot write, even if confirmation input
+is supplied. A failed scan never authorizes a write. The menu does not create
+accounts or saves, migrate legacy files, or join the retail and package
+inventories. Retail menu integration remains separate.

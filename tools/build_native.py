@@ -39,12 +39,13 @@ def main():
     jobs = []
     if args.host or args.practice_replay:
         platform = shlex.split(subprocess.check_output(["pkg-config", "--cflags", "--libs", "sdl2", "gl"], text=True))
-        platform_sources = [str(ROOT / "platform/pc/sdl_platform.cpp"), str(ROOT / "platform/gl/gl_renderer.cpp")]
+        platform_sources = [str(ROOT / "platform/pc/sdl_platform.cpp"), str(ROOT / "platform/gl/gl_renderer.cpp"),
+                            str(ROOT / "platform/pc/account_save_storage.cpp")]
         for enabled, name, path, execute in (
                 (args.host, "gf_native", "platform/pc/native_main.cpp", False),
                 (args.practice_replay, "gred_practice_replay", "tests/host/gred_practice_replay.cpp", True)):
             if enabled:
-                jobs.append((name, [*compiler, *flags, str(ROOT / path), *platform_sources,
+                jobs.append((name, [*compiler, *flags, "-pthread", str(ROOT / path), *platform_sources,
                                     "-o", str(output / name), *platform], execute))
     if args.headers:
         headers = sorted((ROOT / "engine").rglob("*.hpp"))

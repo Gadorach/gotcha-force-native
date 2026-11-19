@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <charconv>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -41,11 +42,14 @@
 #include "engine/gameplay/native_gred_ground_dash_demo.hpp"
 #include "engine/gameplay/native_animation_mosaic.hpp"
 #include "engine/gameplay/borg_installed_browser_view.hpp"
+#include "engine/gameplay/borg_recovery_menu_view.hpp"
+#include "engine/save/account_save_repository.hpp"
 #include "engine/graphics/render_engine.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
+#include "platform/pc/account_save_storage.hpp"
 #include "platform/pc/borg_acquisition_load.hpp"
 #include "platform/pc/borg_effect_load.hpp"
 #include "platform/pc/borg_form_load.hpp"
@@ -63,6 +67,8 @@ struct Options {
     bool headless = false;
     bool list_borgs = false;
     bool browse_borgs=false,demo_borg_browser=false;
+    std::string recovery_root;
+    gf::u64 recovery_account=0,recovery_save=0,recovery_notice=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,preview_variant;
     bool menu = false;
@@ -166,6 +172,12 @@ struct Options {
 };
 
 bool parse(int argc, char** argv, Options* options) {
+    auto id=[](std::string_view text,gf::u64* out){
+        if(text.empty())return false;
+        const auto end=text.data()+text.size();
+        const auto value=std::from_chars(text.data(),end,*out);
+        return value.ec==std::errc{}&&value.ptr==end&&*out!=0;
+    };
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--headless") options->headless = true;
@@ -173,6 +185,13 @@ bool parse(int argc, char** argv, Options* options) {
         else if (arg=="--browse-borgs"||arg=="--demo-borg-browser"){
             if(options->browse_borgs)return false;
             options->browse_borgs=true;options->demo_borg_browser=arg=="--demo-borg-browser";
+        }
+        else if(arg=="--recover-borgs"){
+            if(i+3>=argc||!options->recovery_root.empty())return false;
+            options->recovery_root=argv[++i];
+            if(options->recovery_root.empty()||!id(argv[++i],&options->recovery_account)||!id(argv[++i],&options->recovery_save))return false;
+        }else if(arg=="--recovery-notice"){
+            if(++i>=argc||options->recovery_notice||!id(argv[i],&options->recovery_notice))return false;
         }
         else if (arg=="--check-borg-catalog"){
             if(++i>=argc||!options->check_borg_catalog.empty()||!gf::borg_package_id_valid(argv[i]))return false;
@@ -398,6 +417,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-acquisition NAMESPACE:ID\n"
                          "       gf_native --check-borg-variants NAMESPACE:ID\n"
                          "       gf_native --browse-borgs [--headless] [--frames N]\n"
+                         "       gf_native --recover-borgs ROOT ACCOUNT SAVE [--recovery-notice INSTANCE] [--headless]\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
             return false;
         }
@@ -418,6 +438,13 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
        !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
        !options->check_borg_variants.empty()||options->width<440||options->height<320||options->width>4096||options->height>4096))return false;
+    if(options->recovery_notice&&options->recovery_root.empty())return false;
+    if(!options->recovery_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
+       options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
+       !options->preview_borg.empty()||options->browse_borgs||options->list_borgs||!options->check_borg_catalog.empty()||
+       !options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||!options->check_borg_effects.empty()||
+       !options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||!options->check_borg_acquisition.empty()||
+       !options->check_borg_variants.empty()||options->width<520||options->height<360||options->width>4096||options->height>4096))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1190,6 +1217,99 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     render.shutdown();return 0;
 }
 
+int run_borg_recovery(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
+    std::string error;
+    auto fail=[&](const std::string& why){gf::log_error(context,"borg-recovery","%s",why.c_str());render.shutdown();return 2;};
+    auto storage=gf::pc::create_account_save_storage(options.recovery_root,false,&error);
+    if(!storage)return fail(error);
+    gf::AccountSaveRepository repository(*storage);gf::AccountSavePage page;
+    if(repository.accounts(options.recovery_account-1,1,&page)!=gf::AccountResult::Ok||
+       page.entries.empty()||page.entries.front().key!=gf::AccountSaveKey{options.recovery_account,0})
+        return fail("requested account unavailable");
+    const auto account=page.entries.front();
+    if(repository.saves(account,options.recovery_save-1,1,&page)!=gf::AccountResult::Ok||
+       page.entries.empty()||page.entries.front().key!=gf::AccountSaveKey{options.recovery_account,options.recovery_save})
+        return fail("requested save unavailable");
+    const auto save=page.entries.front();
+    std::unique_ptr<gf::AccountSaveBackend> selected;
+    if(repository.open(save,&selected)!=gf::AccountResult::Ok)return fail("could not open the requested save");
+    auto metadata_for=[](const gf::BorgPackageCatalog& catalog,const gf::PackageBorgRoster& roster,unsigned* unavailable){
+        std::vector<std::string> ids;
+        for(const auto& owned:roster.owned)
+            if(owned.variant&&catalog.find(owned.identity.id))ids.push_back(owned.identity.id);
+        std::sort(ids.begin(),ids.end());ids.erase(std::unique(ids.begin(),ids.end()),ids.end());
+        std::vector<gf::BorgCatalogSnapshot> snapshots;
+        *unavailable=0;
+        for(const auto& id:ids){
+            gf::BorgCatalogSnapshot snapshot;
+            if(gf::pc::load_borg_catalog_snapshot("borgs",catalog,id,&snapshot,nullptr))snapshots.push_back(std::move(snapshot));
+            else ++*unavailable;
+        }
+        return snapshots;
+    };
+    unsigned unavailable=0;
+    std::vector<gf::BorgCatalogSnapshot> metadata;
+    if(packages.status==gf::BorgPackageScanStatus::Complete){
+        // Read only to find which variant catalogues are needed. The recovery
+        // session takes its own checked roster snapshot before any confirmation.
+        gf::PackageBorgSaveStore inspector(*selected);gf::PackageBorgRoster roster;
+        if(inspector.load(&roster)==gf::PackageBorgLoad::Loaded)metadata=metadata_for(packages,roster,&unavailable);
+    }
+    gf::BorgPackageRecoverySession session(*selected);gf::BorgRecoveryMenu menu;
+    gf::BorgRecoveryMenuView view;gf::InputRouter router;
+    std::string notice_status;
+    const auto opened=session.open(packages,metadata);
+    switch(opened){
+    case gf::BorgRecoveryOpen::Ready:
+        if(unavailable)notice_status="SOME VARIANT CATALOGUES COULD NOT BE CHECKED";
+        break;
+    case gf::BorgRecoveryOpen::NoRoster:notice_status="THIS SAVE HAS NO PACKAGE ROSTER";break;
+    case gf::BorgRecoveryOpen::ScanUnavailable:notice_status="PACKAGE SCAN UNAVAILABLE - NO RECOVERY AUTHORIZED";break;
+    case gf::BorgRecoveryOpen::SaveUnavailable:notice_status="PACKAGE ROSTER COULD NOT BE READ";break;
+    case gf::BorgRecoveryOpen::InvalidSave:notice_status="PACKAGE ROSTER INVALID - NO RECOVERY AUTHORIZED";break;
+    }
+    if(options.recovery_notice&&opened==gf::BorgRecoveryOpen::Ready&&!session.inspect(options.recovery_notice))
+        notice_status="REQUESTED NOTICE UNAVAILABLE";
+    gf::log_info(context,"borg-recovery","account=%llu save=%llu notices=%zu headless-read-only=%u",
+        static_cast<unsigned long long>(save.key.account),static_cast<unsigned long long>(save.key.save),
+        session.notices().size(),unsigned(options.headless));
+    if(const auto* notice=session.selected())gf::log_info(context,"borg-recovery","notice=%llu name=%s affected-forces=%zu",
+        static_cast<unsigned long long>(notice->saved.instance),notice->saved.identity.name.c_str(),notice->affected.size());
+    if(!notice_status.empty())gf::log_info(context,"borg-recovery","%s",notice_status.c_str());
+    unsigned frame=0;bool captured=false;const auto start=context.clock().monotonic_ns();
+    while(context.window().pump_events()&&!context.window().should_close()){
+        const auto now=context.clock().monotonic_ns();
+        if(options.seconds&&now-start>=gf::u64(options.seconds)*1000000000ull)break;
+        context.input().pump();const auto& input=context.input().snapshot();
+        const auto pad=router.route(input,0);if(input.quit||pad.quit_requested)break;
+        const auto request=menu.step(pad,session);
+        if(request==gf::BorgRecoveryMenuRequest::Exit)break;
+        if(request==gf::BorgRecoveryMenuRequest::Confirm){
+            if(options.headless){session.cancel();notice_status="HEADLESS INSPECTION DOES NOT WRITE";}
+            else{
+                const auto current=gf::pc::scan_borg_packages("borgs");
+                const auto snapshots=metadata_for(current,*session.roster(),&unavailable);
+                switch(session.confirm(current,snapshots)){
+                case gf::BorgRecoveryApply::Saved:notice_status="CHANGE SAVED";break;
+                case gf::BorgRecoveryApply::Unchanged:notice_status="NO CHANGE NEEDED";break;
+                case gf::BorgRecoveryApply::StaleNotice:notice_status="NOTICE CHANGED - NO WRITE ATTEMPTED";break;
+                case gf::BorgRecoveryApply::SaveUnconfirmed:notice_status="SAVE RESULT UNCONFIRMED - REOPEN TO REVIEW";break;
+                case gf::BorgRecoveryApply::NotConfirmed:notice_status="NO ACTION CONFIRMED";break;
+                }
+            }
+        }
+        render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();
+        const auto draws=view.draw(render,options.width,options.height,session,menu,
+            "SAVE: "+save.name,notice_status,options.headless);
+        render.end_frame();
+        if(!captured)captured=capture_if_requested(context,options,frame);
+        render.present();context.advance_frame();++frame;
+        if(!draws)return fail("recovery viewport unavailable");
+        if(options.frames&&frame>=options.frames)break;
+    }
+    render.shutdown();return 0;
+}
+
 int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
     gf::BorgInstalledBrowser browser;browser.open(packages);
     gf::BorgInstalledBrowserView view;gf::BorgBrowserTile tile;gf::InputRouter router;
@@ -1497,7 +1617,8 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::IFileSystem> headless_files;
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
-    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty()||options.browse_borgs)){
+    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty()||
+       options.browse_borgs||!options.recovery_root.empty())){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
     }
@@ -1513,7 +1634,9 @@ int main(int argc, char** argv) {
         }
         std::string error;
         gf::Backends backends =
-            platform->create({options.width, options.height, options.browse_borgs?"Installed Borg Picker":!options.preview_borg.empty()?"Borg Package Preview":options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
+            platform->create({options.width, options.height, !options.recovery_root.empty()?"Borg Save Recovery":
+                              options.browse_borgs?"Installed Borg Picker":!options.preview_borg.empty()?"Borg Package Preview":
+                              options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
                              renderer.get(), &error);
         if (!backends.complete()) {
             std::fprintf(stderr, "platform initialization failed: %s\n",
@@ -1538,6 +1661,7 @@ int main(int argc, char** argv) {
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
     if(options.battle_mvp)return run_battle_mvp(context,render,options);
+    if(!options.recovery_root.empty())return run_borg_recovery(context,render,options,borg_packages);
     if(options.browse_borgs)return run_borg_browser(context,render,options,borg_packages);
     if(options.animation_mosaic||!options.preview_borg.empty())return run_animation_mosaic(context,render,options,borg_packages);
 
