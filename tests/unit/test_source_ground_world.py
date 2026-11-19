@@ -446,6 +446,23 @@ class SourceGroundWorldTests(unittest.TestCase):
                 self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
                 self.assertIn(f"recovery-recontact landings={landings} resource={meter} selector={selector} programs={program}/{program}", run.stdout)
 
+    def test_gred_recovery_recontact_drift_stays_with_the_two_contact_updates(self):
+        for tick, phase, meter, drift in (
+            (107, "DASH RECOVERY", 5750, False),
+            (108, "DASH RECOVERY / FLOOR CONTACT", 5750, True),
+            (109, "TOUCHDOWN", 5750, True),
+            (110, "LANDING", 5750, False),
+            (200, "IDLE", 10000, False),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-recovery-recontact-drift", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertEqual("practice-recovery-drift=DRIFT ACTIVE" in run.stdout, drift)
+                if tick==200:
+                    self.assertIn("G-Red-position=1129.93/10.00/-590.36", run.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

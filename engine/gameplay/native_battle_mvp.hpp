@@ -168,8 +168,8 @@ struct NativeBorgSurfaceLanding {
     NativeBorgStaticSurface surface{};s16 angle=0;f32 timer698=0;
     bool operator==(const NativeBorgSurfaceLanding&)const=default;
 };
-// The qualified producer seals the actual lower-lane result. Native contact
-// validation must not infer completion from proximity to the floor.
+// The qualified producer seals the actual lower-lane result and, in the
+// drift opt-in, any soft cardinal input used on either contact update.
 class NativeBorgRecoveryCompletionScope {
     friend class NativeGRedGroundDashDemo;
     friend class NativeBattleMvp;
@@ -180,6 +180,7 @@ class NativeBorgRecoveryCompletionScope {
     std::weak_ptr<const NativeBorgMotionProducer> producer;
     u32 tick=0;u64 serial=0;bool lower_done=false;
     NativeBorgMotionKind kind=NativeBorgMotionKind::Ground;
+    std::optional<s16> drift_offset;
 };
 inline bool native_gred_walk_speed(f32 speed){return speed==0||speed==5||speed==7||speed==8||speed==9||speed==10||speed==12;}
 inline bool native_borg_flat_surface(const NativeBorgStaticSurface& s){return std::isfinite(s.height)&&s.normal==BattleMvpVec{0,1,0};}
@@ -288,6 +289,7 @@ public:
             using Behavior=BorgMovementBehavior;
              const auto behaviors=NormalGRedMovementDefinition::behaviors(producer->policy_);
              const bool recovery_recontact_policy=behaviors.has(Behavior::RecoveryFloorRecontact);
+             const bool recovery_drift_policy=behaviors.has(Behavior::RecoveryRecontactDrift);
             constexpr const auto& meter=NormalGRedMovementDefinition::air_meter;
             const bool slope_seam_dash_policy=behaviors.has(Behavior::CoplanarSlopeDash);
             const bool slope_dash_policy=behaviors.has(Behavior::SlopeDash);
@@ -394,18 +396,29 @@ public:
              const auto prior=actor.source_ground_motion?last_offer_.kind:NativeBorgMotionKind::Ground;
              const unsigned prior_phase=native_borg_motion_phase(prior);
              const bool recovery_recontact=prior==NativeBorgMotionKind::AirDashRecoveryFloorComplete;
-             const auto completion=o.recovery_completion.lock();
-             if(recovery_recontact_policy&&controller_air_frame&&o.air_motion->phase==17){
-                 if(!completion||completion->world.lock()!=motion_scope_||completion->producer.lock()!=producer||
-                    completion->tick!=tick_||completion->serial!=o.serial||completion->kind!=o.kind||
-                    completion->lower_done!=o.air_motion->lower_done)return false;
-             }else if(completion)return false;
              // Only the next ordinary program13 update can confirm touchdown
-             // at rest. Neither buffered movement nor another callback borrows it.
+             // at rest. A new action cannot borrow this contact.
              if(recovery_recontact&&(!recovery_recontact_policy||o.kind!=NativeBorgMotionKind::JumpTouchdown||
                 !jump_path||!o.jump_motion||!o.jump_motion->entry||o.jump_motion->phase!=6||!o.jump_motion->air_dash_origin||
-                o.jump_motion->held_jump||o.jump_motion->drift_heading||!last_offer_.air_motion||
+                o.jump_motion->held_jump||(!recovery_drift_policy&&o.jump_motion->drift_heading)||!last_offer_.air_motion||
                 o.jump_motion->resource_before!=last_offer_.air_motion->resource_after||*o.controller_timer698!=0.f))return false;
+             const bool recovery_program=recovery_recontact_policy&&controller_air_frame&&o.air_motion->phase==17;
+             const auto completion=o.recovery_completion.lock();
+             if(recovery_program||(recovery_drift_policy&&recovery_recontact)){
+                 const bool contact_update=recovery_floor_complete||recovery_recontact;
+                 const auto drift=recovery_recontact?o.jump_motion->drift_heading:o.air_motion->drift_heading;
+                 if(!completion||completion->world.lock()!=motion_scope_||completion->producer.lock()!=producer||
+                    completion->tick!=tick_||completion->serial!=o.serial||completion->kind!=o.kind||
+                    completion->lower_done!=(recovery_recontact?o.jump_motion->lower_done:o.air_motion->lower_done)||
+                    bool(completion->drift_offset)!=(contact_update&&bool(drift)))return false;
+                 if(completion->drift_offset){
+                     CharacterMovementHeadingFrame frame;
+                     const s16 offset=*completion->drift_offset;
+                     if(!recovery_drift_policy||offset%0x4000||!player_frame||
+                        !native_borg_source_heading_frame(*player_frame,actor.facing,&frame)||
+                        *drift!=source_heading_wrap(s32(frame.camera5b0)+offset-0x8000))return false;
+                 }
+             }else if(completion)return false;
             if(controller_landing_jump_policy){
                 const f32 previous=actor.source_ground_motion?last_offer_.controller_timer698.value_or(-1.f):0.f;
                 const f32 expected=o.kind==NativeBorgMotionKind::GroundLossEntry?30.f:std::max(0.f,previous-1.f);
@@ -545,7 +558,7 @@ public:
                     expected[2]=std::fma(1.f,f32(speed*z),expected[2]);}
                 if(touchdown){
                     if(!callback||recovery_floor_complete!=(e.phase==17&&e.lower_done)||
-                       (recovery_floor_complete&&(e.entry||e.drift_heading||prior!=NativeBorgMotionKind::AirDashRecovery||
+                       (recovery_floor_complete&&(e.entry||prior!=NativeBorgMotionKind::AirDashRecovery||
                           !previous||e.travel5ae!=previous->travel5ae||o.facing!=actor.facing)))return false;
                     if(controller_surface_policy){
                         if(!surface_landing_height(expected,std::max(-30.f,std::fma(acceleration,1.f,vertical)),acceleration,&expected[1]))return false;
@@ -1242,7 +1255,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryRecontact)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryRecontactDrift)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

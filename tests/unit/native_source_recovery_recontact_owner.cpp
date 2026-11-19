@@ -91,7 +91,8 @@ int main(){
         check(shown&&!world.step({},false,&terrain,nullptr,&frame,&wrong)&&world.tick()==tick&&
             world.actors()[0].position==before.position&&world.actors()[0].vertical_speed==before.vertical_speed&&
             world.motion_receipt_current(pose.receipt)&&source.resource()==5750&&!source.landings()&&
-            view.practice_readout(world)->kind==shown->kind,why);
+            view.practice_readout(world)->kind==shown->kind&&
+            view.practice_readout(world)->recovery_drift_active==shown->recovery_drift_active,why);
     };
     check(prepare()&&offer.kind==Kind::AirDashRecoveryFloorComplete&&offer.air_motion&&offer.surface_landing,
         "staged completion with physical contact but not touchdown");
@@ -133,10 +134,67 @@ int main(){
         "landing8 and subsequent meter refill are separate");
     prefix(200);
     check(source.selector()==0&&source.landings()==1&&source.resource()==10000&&world.actors()[0].grounded,"route settles and refills");
+    const auto neutral=world.actors()[0].position;
 
     bind(Mode::GroundRecoveryRecontact);prefix(108);
     GamePadState drift;drift.dpad_right=true;
     check(!prepare(drift)&&error.find("requires a neutral recontact")!=std::string::npos&&world.tick()==108&&
         source.resource()==5750&&!source.landings()&&!world.step({},false,&view),"live steering is outside the verified recontact");
+
+    bind(Mode::GroundRecoveryRecontactDrift);prefix(107);
+    GamePadState up;up.dpad_up=true;
+    for(const unsigned tick:{108u,109u}){
+        const auto before=world.actors()[0];const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(prepare(up)&&offer.kind==(tick==108?Kind::AirDashRecoveryFloorComplete:Kind::JumpTouchdown)&&
+            offer.surface_landing&&offer.surface_landing->surface.triangle==1631&&offer.controller_timer698==0&&
+            offer.facing==before.facing,"Up steers both scoped updates without changing plane, timer or body");
+        const auto direction=tick==108?offer.air_motion->drift_heading:offer.jump_motion->drift_heading;
+        const auto travel=tick==108?offer.air_motion->travel5ae:offer.jump_motion->travel5ae;
+        const auto speed=tick==108?offer.air_motion->move_speed:offer.jump_motion->move_speed;
+        s16 forward=0;f32 dx=0,dz=0,tx=0,tz=0;
+        check(source_heading_s16(frame.forward.x,frame.forward.z,&forward)&&direction==forward,"Up follows the observed camera");
+        source_heading_xz(*direction,&dx,&dz);source_heading_xz(travel,&tx,&tz);
+        check(offer.proposed_position[0]==std::fma(1.f,f32(speed*tx),std::fma(4.f,dx,before.position[0]))&&
+            offer.proposed_position[2]==std::fma(1.f,f32(speed*tz),std::fma(4.f,dz,before.position[2])),
+            "exact four-unit drift runs before the retained planar momentum");
+        auto absent=offer;absent.recovery_completion.reset();rejects(absent,view,"each scoped update needs its own proof");
+        auto erased=offer;
+        if(tick==108)erased.air_motion->drift_heading.reset();else erased.jump_motion->drift_heading.reset();
+        rejects(erased,view,"an issued drift proof cannot be relabelled as neutral");
+        NativeBorgMovementFrame turned;
+        check(native_borg_movement_frame(frame.right,&turned)&&!world.step({},false,&view,nullptr,&turned,&offer)&&
+            world.tick()==tick-1&&world.actors()[0].position==before.position&&world.motion_receipt_current(pose.receipt)&&
+            view.practice_readout(world)->recovery_drift_active==(tick==109),
+            "native refuses the same offered displacement against a different camera without publishing the cue");
+        accept();
+        check(view.practice_readout(world)->recovery_drift_active&&source.resource()==5750&&
+            world.actors()[0].grounded==(tick==109),"drift cue, stable meter and touchdown publish only on acceptance");
+    }
+    prefix(110);
+    check(offer.kind==Kind::JumpLanding&&!view.practice_readout(world)->recovery_drift_active&&source.resource()==5750,
+        "drift does not leak into landing");
+    prefix(200);
+    const auto& steered=world.actors()[0].position;
+    check(steered[0]<neutral[0]-7&&steered[2]>neutral[2]+1&&steered[1]==10&&
+        world.actors()[0].grounded&&source.landings()==1&&source.resource()==10000&&!source.selector(),
+        "steered route lands and refills normally at a distinct position");
+
+    bind(Mode::GroundRecoveryRecontactDrift);prefix(107);
+    check(prepare(drift)&&offer.kind==Kind::AirDashRecoveryFloorComplete,"Right is accepted at the first contact");
+    accept();
+    const auto at_floor=world.actors()[0].position;
+    check(!prepare(drift)&&error.find("same flat floor")!=std::string::npos&&world.tick()==108&&
+        world.actors()[0].position==at_floor&&!source.landings()&&source.resource()==5750&&!world.step({},false,&view),
+        "a later change of triangle still does not authorize the recontact");
+
+    GamePadState diagonal;diagonal.dpad_up=diagonal.dpad_right=true;
+    GamePadState flick;flick.stick_x=127;
+    GamePadState jump;jump.b=true;
+    for(const auto pad:{diagonal,flick,jump}){
+        bind(Mode::GroundRecoveryRecontactDrift);prefix(108);
+        check(!prepare(pad)&&error.find("neutral or soft cardinal drift")!=std::string::npos&&
+            world.tick()==108&&!source.landings()&&source.resource()==5750&&!world.step({},false,&view),
+            "recontact still refuses diagonal, flick and lift inputs");
+    }
     std::printf("Recovery recontact: %u checks PASS, scoped completion, floor contact and landing\n",checks);
 }

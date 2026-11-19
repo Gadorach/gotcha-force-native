@@ -170,8 +170,13 @@ public:
            !(controller_relaunch_mode(mode_)&&relaunch_input_phase(state_))&&
            (!(state_.input.previous_held&0x100u)||state_.jump.falling_after_ground_loss))
             return fail(error,"jump controller refuses takeoff/airborne/landing cancellation");
-        if(state_.recovery_floor_complete&&(stick_x||stick_y||held))
-            return fail(error,"recovery floor completion requires a neutral recontact update");
+        const bool recovery_drift_policy=allows(mode_,Behavior::RecoveryRecontactDrift);
+        const bool soft_cardinal=native_gred_soft_cardinal(stick_x,stick_y);
+        if(state_.recovery_floor_complete&&(stick_x||stick_y||held)){
+            if(!recovery_drift_policy)return fail(error,"recovery floor completion requires a neutral recontact update");
+            if(!soft_cardinal||(held&0x100u))
+                return fail(error,"recovery recontact accepts only neutral or soft cardinal drift");
+        }
         auto candidate=std::make_unique<Pending>();candidate->state=state_;auto& s=candidate->state;
         s.motion.position=observed.position;s.motion.flags5e0=s.vm.state().actor.behaviour;s.contact_angle=-1;s.static_push.reset();s.relaunch_floor.reset();s.air_dash_floor.reset();
         s.ordered_ground.reset();
@@ -343,6 +348,22 @@ public:
             !s.jump_motion->entry||!s.jump_motion->air_dash_origin||s.ground_timer698!=0.f||!s.surface_landing||
             !state_.surface_landing||s.surface_landing->surface!=state_.surface_landing->surface))
             return fail(error,"recovery recontact needs the same flat floor and ordinary falling entry");
+        const auto contact_drift=s.recovery_floor_complete?s.air_motion->drift_heading:
+            state_.recovery_floor_complete?s.jump_motion->drift_heading:std::optional<s16>{};
+        std::optional<s16> recovery_drift_offset;
+        if(contact_drift){
+            u8 nibble=0;
+            if(!recovery_drift_policy||!soft_cardinal||(held&0x100u)||
+                !character_movement_stick_nibble(input_,stick_x,stick_y,input_.low_threshold,&nibble)||
+                !nibble||(held>>16)!=nibble)
+                return fail(error,"recovery floor contact requires matching soft camera-relative cardinal drift");
+            // The qualified input tables and common heading planner already
+            // selected this direction; don't re-map left/right here.
+            recovery_drift_offset=source_heading_wrap(s32(*contact_drift)-frame.camera5b0+0x8000);
+            if(*recovery_drift_offset%0x4000)return fail(error,"recovery floor contact requires cardinal drift");
+        }
+        if(state_.recovery_floor_complete&&!contact_drift&&(stick_x||stick_y||held))
+            return fail(error,"recovery recontact refused unmatched drift input");
         bool moving=s.dash.selector!=0;
         if(moving&&ordered_mode(mode_)){
             std::string detail;
@@ -411,10 +432,12 @@ public:
         if(native_borg_motion_air_dash(kind))candidate->offer.action=BattleMvpAction::AirDash;
         if(native_borg_motion_relaunch_entry(kind))candidate->offer.entry_vertical_delta=f32(motion_.air[2]*motion_.rank[2]);
         if(!serial_)return fail(error,"source serial exhausted");
-        if(allows(mode_,Behavior::RecoveryFloorRecontact)&&s.air_motion&&s.air_motion->phase==17){
+        const bool recovery_program=allows(mode_,Behavior::RecoveryFloorRecontact)&&s.air_motion&&s.air_motion->phase==17;
+        if(recovery_program||(recovery_drift_policy&&state_.recovery_floor_complete)){
             auto proof=std::shared_ptr<NativeBorgRecoveryCompletionScope>(new NativeBorgRecoveryCompletionScope);
             proof->world=observed.scope;proof->producer=producer_;proof->tick=observed.tick;proof->serial=serial_;
-            proof->lower_done=s.air_motion->lower_done;proof->kind=kind;
+            proof->lower_done=recovery_program?s.air_motion->lower_done:s.jump_motion->lower_done;proof->kind=kind;
+            proof->drift_offset=recovery_drift_offset;
             candidate->offer.recovery_completion=proof;candidate->recovery_completion=std::move(proof);
         }
         *out=candidate->offer;pending_=std::move(candidate);return true;
@@ -486,9 +509,11 @@ public:
         if(timer&&(*timer>0||ledge_fall_or_landing))ledge_timer_ticks=u8(*timer);
         const bool ledge_drift_active=accepted.kind==NativeBorgMotionKind::GroundLossAir&&accepted.walk_ledge&&
             accepted.walk_ledge->drift_heading.has_value();
+        const bool recovery_drift_active=pending_->recovery_completion&&pending_->recovery_completion->drift_offset.has_value();
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
-                accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active}));
+                accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active,
+                recovery_drift_active}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
@@ -969,7 +994,8 @@ private:
         evidence.lower_done=done;evidence.callback=s.air_dash.contact_callback;
         GRedAirDashContactTail tail;
         if(allows(mode_,Behavior::RecoveryFloorRecontact)&&selector==17&&done&&touchdown&&
-           s.air_dash.contact_callback&&!entry&&!evidence.drift_heading&&!state_.static_push&&s.ground_timer698==0.f&&
+           s.air_dash.contact_callback&&!entry&&!state_.static_push&&s.ground_timer698==0.f&&
+           (!evidence.drift_heading||allows(mode_,Behavior::RecoveryRecontactDrift))&&
            s.surface_landing&&native_borg_flat_surface(s.surface_landing->surface)){
             StageGroundSurfaceResult start;
             if(!ground.surface(before.position,&start,error)||!start.selected||

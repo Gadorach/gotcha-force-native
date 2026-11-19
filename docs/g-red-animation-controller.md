@@ -51,6 +51,28 @@ first frame shows **DASH RECOVERY / FLOOR CONTACT**, not **TOUCHDOWN**.
 Slopes, changed planes, positive timers and other overlapping transitions
 are not covered.
 
+### Soft drift through both contact updates
+
+`--gred-recovery-recontact-drift` additionally accepts soft cardinal
+input on either of the two contact updates, only if each path stays on
+the same verified flat triangle. The source planner uses the existing
+four-unit camera-relative drift before retained planar momentum; the
+native check pairs the sealed input with its own camera observation. It
+does not change body heading, timer, meter, or the program 12 → 13 → 8 order.
+The earlier neutral mode still refuses drift at these contacts.
+
+```sh
+gf_native --demo-gred-recovery-recontact-drift --headless --frames 200 --no-audio
+```
+
+The replay holds **Up** on ticks 108–109 of the same grounded setup. It
+lands and refills at the same times, about eight units from the neutral
+landing. The HUD shows **DRIFT ACTIVE** only on the two accepted updates.
+Fifteen of twenty bounded timing/direction combinations completed. Holding
+**Right** at the replay's timing accepts the first contact but refuses
+recontact when the selected triangle changes. Diagonal input, a full flick,
+and relaunch input do not qualify for the recontact update.
+
 ## Continued walking ledge-fall push (GFMM9)
 
 `--gred-walk-ledge-fall-push` opts into a descending, continued program 13

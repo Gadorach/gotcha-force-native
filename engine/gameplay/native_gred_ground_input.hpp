@@ -4,6 +4,9 @@
 #include "engine/gameplay/character_movement_input.hpp"
 namespace gf {
 struct NativeGRedGroundInput {s16 x=0,y=0;u32 held=0;};
+inline bool native_gred_soft_cardinal(s16 x,s16 y){
+    return (x==0&&(y==32||y==-32))||(y==0&&(x==32||x==-32));
+}
 //Native convenience mapping, not recovered GameCube device calibration.
 //Routed stick/WASD gives source-unit deflection; D-pad/arrows use32 units
 //to request walking without crossing the source flick threshold52.

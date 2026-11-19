@@ -165,6 +165,10 @@ the verified flat-floor recovery overlap. Try
 `--demo-gred-recovery-recontact --headless --frames 200 --no-audio` to see
 the difference between **Dash Recovery / Floor Contact**, **Touchdown**,
 and **Landing**. Keep controls neutral for the update after floor contact.
+The separate `--gred-recovery-recontact-drift` mode lets you hold a single
+arrow through both contact updates if G-Red stays on the same flat
+triangle. The scripted `--demo-gred-recovery-recontact-drift` holds Up on
+updates 108–109 and shows **Drift Active** on those accepted frames only.
 
 To check the actual practice loop without opening a window or audio device:
 
