@@ -353,7 +353,7 @@ public:
             const bool expiry_handoff=expiry_relaunch&&previous_air&&previous_air->walk_expiry_windup&&
                 state_.ground_timer698==0.f&&s.ground_timer698==0.f;
             const bool expiring_walk_handoff=expiring_air_dash_relaunch&&plain_windup_handoff&&
-                previous_air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_complete&&
+                previous_air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_end(previous_air->expiring_walk_windup_short)&&
                 state_.ground_timer698==0.f&&s.ground_timer698==0.f;
             if(plain_windup_handoff&&!timed_handoff&&!expiry_handoff&&!expiring_walk_handoff)
                 return fail(error,expiry_relaunch?"plain wind-up relaunch needs a still-positive countdown or an accepted expiry-push wind-up":
@@ -435,11 +435,15 @@ public:
             candidate->expiring_walk_air_dash=expiring;
             if(expiring_air_dash_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
                 const auto& previous_air=state_.air_motion;
-                if(s.air_motion->entry)s.air_motion->expiring_walk_windup_step=expiring&&s.air_motion->timer568==6.f?1:0;
-                else if(previous_air&&(kind==NativeBorgMotionKind::AirDashWindup||kind==NativeBorgMotionKind::AirDashWindupPush))
+                if(s.air_motion->entry){
+                    s.air_motion->expiring_walk_windup_short=expiring&&s.air_motion->timer568==5.f&&allows(mode_,Behavior::WalkExpiringShortAirDashRelaunch);
+                    s.air_motion->expiring_walk_windup_step=expiring&&(s.air_motion->timer568==6.f||s.air_motion->expiring_walk_windup_short)?1:0;
+                }else if(previous_air&&(kind==NativeBorgMotionKind::AirDashWindup||kind==NativeBorgMotionKind::AirDashWindupPush)){
                     s.air_motion->expiring_walk_windup_step=NormalGRedMovementDefinition::expiring_walk_windup_next(
                         previous_air->expiring_walk_windup_step,kind==NativeBorgMotionKind::AirDashWindupPush,
-                        s.static_push?s.static_push->surface.triangle:0,s.static_push?s.static_push->angle:0);
+                        s.static_push?s.static_push->surface.triangle:0,s.static_push?s.static_push->angle:0,previous_air->expiring_walk_windup_short);
+                    s.air_motion->expiring_walk_windup_short=s.air_motion->expiring_walk_windup_step&&previous_air->expiring_walk_windup_short;
+                }
             }
             if(expiry_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
                 const auto& previous_air=state_.air_motion;
@@ -671,7 +675,7 @@ public:
             ((allows(mode_,Behavior::TimedPlainWindupRelaunch)&&*accepted.controller_timer698>1.f)||
              (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup)||
              (allows(mode_,Behavior::WalkExpiringAirDashRelaunch)&&*accepted.controller_timer698==0.f&&
-                air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_complete));
+                air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_end(air->expiring_walk_windup_short)));
         const bool floor_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindupFloor&&windup_relaunch_ready&&
             state_.jump.cached87&&air->timed_relaunch_floor_windup&&NormalGRedMovementDefinition::floor_windup_handoff_clock(
                 NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),

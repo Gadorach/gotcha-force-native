@@ -23,7 +23,8 @@ enum class NormalGRedMovementMode {
     GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch,GroundWalkExpiryDirectRelaunch,GroundTimedSnapWindupRelaunch,
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
-    GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch
+    GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
+    GroundWalkExpiringShortAirDashRelaunch
 };
 
 struct NormalGRedMovementDefinition {
@@ -97,6 +98,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiringAdjacentRelaunchPush,Policy::GroundWalkExpiringAdjacentRelaunchPush,Behavior::WalkExpiringAdjacentRelaunchPush},
         CombinedRule{Mode::GroundWalkExpiringAirDash,Policy::GroundWalkExpiringAirDash,Behavior::WalkExpiringAirDash},
         CombinedRule{Mode::GroundWalkExpiringAirDashRelaunch,Policy::GroundWalkExpiringAirDashRelaunch,Behavior::WalkExpiringAirDashRelaunch},
+        CombinedRule{Mode::GroundWalkExpiringShortAirDashRelaunch,Policy::GroundWalkExpiringShortAirDashRelaunch,Behavior::WalkExpiringShortAirDashRelaunch},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -150,8 +152,11 @@ struct NormalGRedMovementDefinition {
         return prior==2001&&angle==8192; // Only this grounded approach completed the subsequent wind-up.
     }
     static constexpr u8 expiring_walk_windup_complete=7; // entry, two pushes, four ordinary updates
-    static constexpr u8 expiring_walk_windup_next(u8 previous,bool push,u32 face,s16 angle){
-        if(!previous||previous>=expiring_walk_windup_complete)return 0;
+    static constexpr u8 expiring_walk_windup_end(bool short_windup){
+        return short_windup?6:expiring_walk_windup_complete; // The short sequence has three ordinary updates.
+    }
+    static constexpr u8 expiring_walk_windup_next(u8 previous,bool push,u32 face,s16 angle,bool short_windup=false){
+        if(!previous||previous>=expiring_walk_windup_end(short_windup))return 0;
         const bool matched=previous<=2?push&&face==2007&&angle==13653:!push;
         return matched?u8(previous+1):0;
     }

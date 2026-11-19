@@ -360,6 +360,13 @@ to relaunch for 150 instead of entering active dash, or leave
 the controls neutral for the usual dash. Use
 `--demo-gred-walk-ledge-expiring-air-dash-handoff` for the relaunch replay.
 
+`--gred-walk-ledge-expiring-diagonal-dash-handoff --practice-start`
+uses **A+W** on 38 after the same **Left Arrow** 6–7 start. This
+shorter wind-up pays on 43. Tap neutral **Shift** on 44, release
+Shift, and hold **Down Arrow** on 45–50, then stay neutral.
+Use `--demo-gred-walk-ledge-expiring-diagonal-dash-handoff` for
+playback. The existing six-tick picker guide is unchanged.
+
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
 tap **Shift** on 23, then leave the controls neutral. Ordinary

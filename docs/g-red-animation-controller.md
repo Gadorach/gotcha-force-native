@@ -390,6 +390,29 @@ reached landing and idle. The checked-in permission uses only
 the complete six-tick sequence; accepting entry alone was not
 treated as proof of a complete route.
 
+### Five-tick diagonal wind-up with release drift
+
+`--gred-walk-ledge-expiring-diagonal-dash-handoff` is a separate
+opt-in. It verifies the same expiry entry and two face-2007 pushes,
+but requires an actual five-tick wind-up and three ordinary updates
+after the pushes. Both source and native distinguish the two
+wind-up lengths; the six-tick mode still refuses this handoff.
+
+From the same grounded start, use **Left Arrow** on 6–7, **A+W**
+on 38, and a neutral **Shift** tap on 44. The wind-up pays 450
+at 43; relaunch pays 150 instead of active dash's 50, leaving
+9400. Release Shift and hold **Down Arrow** on 45–50, then
+stay neutral. The six ordinary falling updates drift without
+turning the body or spending meter. Touchdown at 110 and landing
+at 111 keep 9400; normal idle restores full meter. Immediate
+neutral release refuses at 45. One tick of Down is not enough
+on this start; it refuses at 48.
+
+The four-start probe found 12 complete routes in 272 trials, all
+with a tap and sustained drift. The nearby-position sweep found
+16 more with only one drift update, but from different starts.
+No terrain, bounds or body check was relaxed for either sweep.
+
 ### Relaunch instead of active dash after a timed plain wind-up
 
 `--gred-walk-ledge-timed-handoff-relaunch` accepts a plain relaunch
