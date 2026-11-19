@@ -368,6 +368,28 @@ class SourceGroundWorldTests(unittest.TestCase):
                 else:
                     self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
 
+    def test_walk_ledge_expiry_drift_displays_only_accepted_steering(self):
+        for tick, phase, cue in (
+            (56, "LEDGE FALL / PUSH", "LEDGE TIMER 0 TICKS"),
+            (57, "LEDGE FALL", "DRIFT ACTIVE"),
+            (92, "LEDGE FALL", "DRIFT ACTIVE"),
+            (93, "LEDGE FALL", "DRIFT UNLOCKED"),
+            (103, "TOUCHDOWN", "LEDGE TIMER 0 TICKS"),
+            (104, "LANDING", "LEDGE TIMER 0 TICKS"),
+            (180, "IDLE", None),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-walk-ledge-expiry-drift", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter=10000/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn("walk-ledge-fall-pushes=2", run.stdout)
+                if cue:
+                    self.assertIn(f"practice-ledge-timer-ticks=0 cue={cue}\n", run.stdout)
+                else:
+                    self.assertIn("G-Red-position=-513.07/10.00/-3255.60", run.stdout)
+                    self.assertNotIn("practice-ledge-timer-ticks=", run.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

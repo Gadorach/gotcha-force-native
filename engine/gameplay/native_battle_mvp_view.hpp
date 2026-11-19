@@ -82,7 +82,8 @@ public:
         const auto ticks=*frame.ledge_timer_ticks;
         if(frame.kind==NativeBorgMotionKind::GroundLossEntry||frame.kind==NativeBorgMotionKind::GroundLossAir||
             (frame.kind==NativeBorgMotionKind::GroundLossPush&&ticks))
-            return ticks?"DRIFT LOCKED "+std::to_string(ticks)+" TICKS":"DRIFT UNLOCKED";
+            return ticks?"DRIFT LOCKED "+std::to_string(ticks)+" TICKS":
+                frame.ledge_drift_active?"DRIFT ACTIVE":"DRIFT UNLOCKED";
         return "LEDGE TIMER "+std::to_string(ticks)+" TICKS";
     }
     unsigned draw_practice_stop(RenderEngine& render,s32 width,s32 height,u32 tick)const{

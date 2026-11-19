@@ -112,6 +112,28 @@ grounded target placements, and four of 2,720 stage-wide approaches with
 the usual target placement. Neither scan reached a later touchdown after
 a push. There is still no complete dash-origin push route for admission.
 
+### Direct drift after the expiry push
+
+The existing zero-timer fall can steer **after**, not during, the neutral
+expiry push. On the same grounded expiry fixture, D-pad Up adds the
+four-unit camera-relative drift before retained momentum on accepted ticks
+57–92, without turning the body. The final position is about 144 units
+farther in Z than the neutral replay, with the same touchdown at 103,
+landing at 104, and full meter. The HUD shows `DRIFT ACTIVE` only on
+accepted falling updates that include that drift. The opposite input on
+this fixture reaches an unsupported new steep contact and still refuses.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiry-drift --headless --frames 180 --no-audio
+```
+
+This replay adds no movement permission. Immediate relaunch after a
+walking push remains refused: an isolated 72-case replay yielded no
+complete, settled route after that handoff, and 372 offered positive-timer relaunches
+across 1,176 nearby trials yielded no accepted entry. The owner regression
+retains a real staged relaunch candidate and checks that it publishes
+neither a motion frame nor a meter spend.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the

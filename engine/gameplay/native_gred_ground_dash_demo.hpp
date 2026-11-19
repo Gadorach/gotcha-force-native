@@ -461,9 +461,11 @@ public:
             (accepted.kind==NativeBorgMotionKind::JumpLanding&&accepted.walk_ledge);
         std::optional<u8> ledge_timer_ticks;
         if(timer&&(*timer>0||ledge_fall_or_landing))ledge_timer_ticks=u8(*timer);
+        const bool ledge_drift_active=accepted.kind==NativeBorgMotionKind::GroundLossAir&&accepted.walk_ledge&&
+            accepted.walk_ledge->drift_heading.has_value();
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
-                accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks}));
+                accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

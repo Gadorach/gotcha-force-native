@@ -69,8 +69,7 @@ int main(){
         check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
             source.bind(files,art,pack,world,seed,&error,mode),"fresh grounded original-stage fixture");
     };
-    auto prepare=[&](const Route& r,NativeBorgMotionOffer* offer){
-        GamePadState pad;
+    auto prepare=[&](const Route& r,NativeBorgMotionOffer* offer,GamePadState pad={}){
         if(world.tick()>=5&&!source.ground_departures()){
             pad.dpad_up=r.direction&1u;pad.dpad_down=r.direction&2u;pad.dpad_left=r.direction&4u;pad.dpad_right=r.direction&8u;
         }
@@ -268,6 +267,63 @@ int main(){
         source.walk_departures()==1&&!source.dash_departures()&&world.actors()[0].grounded&&
         world.actors()[0].position[1]==10&&source.selector()==0,
         "real timer expiry route lands independently and reaches idle with no meter spend");
+    const auto neutral=world.actors()[0].position;
+
+    bind(expires,Mode::GroundWalkLedgeExpiryPush);
+    unsigned drifted=0;touchdown=landing=0;
+    while(world.tick()<180){
+        const auto tick=world.tick()+1;const auto before=world.actors()[0];
+        GamePadState pad;pad.dpad_up=tick>=57&&tick<=92;
+        check(prepare(expires,&offer,pad),"complete expiry route with live directional drift");
+        if(pad.dpad_up){
+            const auto& ledge=*offer.walk_ledge;const auto& jump=*offer.jump_motion;
+            check(offer.kind==Kind::GroundLossAir&&ledge.timer698==0&&ledge.drift_heading&&
+                jump.drift_heading==ledge.drift_heading&&offer.facing==before.facing&&!offer.static_push,
+                "zero-timer drift changes travel without turning the body or pushing");
+            f32 dx=0,dz=0,tx=0,tz=0;
+            source_heading_xz(*ledge.drift_heading,&dx,&dz);source_heading_xz(ledge.travel5ae,&tx,&tz);
+            check(offer.proposed_position[0]==std::fma(1.f,f32(ledge.speed44*tx),std::fma(4.f,dx,before.position[0]))&&
+                offer.proposed_position[2]==std::fma(1.f,f32(ledge.speed44*tz),std::fma(4.f,dz,before.position[2])),
+                "actual four-unit direct drift precedes the exact retained momentum");
+            if(!drifted){
+                auto wrong=offer;wrong.walk_ledge->drift_heading.reset();wrong.jump_motion->drift_heading.reset();
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                const auto prior=view.practice_readout(world);
+                check(prior&&!prior->ledge_drift_active&&!world.step({},false,&view,nullptr,&frame,&wrong)&&
+                    world.tick()==56&&world.motion_receipt_current(pose.receipt)&&!view.practice_readout(world)->ledge_drift_active,
+                    "staging or erasing the first drift proof cannot publish a drift cue");
+            }
+            ++drifted;
+        }
+        if(offer.kind==Kind::GroundLossTouchdown)touchdown=tick;
+        if(touchdown&&!landing&&offer.kind==Kind::JumpLanding)landing=tick;
+        accept(offer);
+        const auto shown=view.practice_readout(world);
+        check(shown&&shown->ledge_drift_active==pad.dpad_up&&source.resource()==10000,"only committed drift is visible; meter stays unchanged");
+        if(pad.dpad_up)check(NativeBattleMvpView::practice_ledge_cue(*shown)=="DRIFT ACTIVE","steering cue");
+    }
+    check(drifted==36&&touchdown==103&&landing==104&&world.actors()[0].position[2]>neutral[2]+140&&
+        source.walk_ledge_pushes()==2&&world.actors()[0].grounded&&source.selector()==0,
+        "drift shifts the landing on the original stage and recovers normally without another push");
+
+    bind(expires,Mode::GroundWalkLedgeExpiryPush);
+    while(world.tick()<56){check(prepare(expires,&offer),"accepted prefix near the restricted opposite drift");accept(offer);}
+    const auto before_down=world.actors()[0].position;
+    GamePadState down;down.dpad_down=true;
+    check(!prepare(expires,&offer,down)&&error.find("steep push")!=std::string::npos&&world.tick()==56&&
+        world.actors()[0].position==before_down&&source.walk_ledge_pushes()==2&&!view.practice_readout(world)&&!world.step({},false,&view),
+        "opposite input into a new steep contact does not inherit expiry-push permission or show drift");
+
+    bind(inter_gate,Mode::GroundWalkLedgeExpiryPush);
+    while(world.tick()<23){check(prepare(inter_gate,&offer),"accepted prefix of the attempted post-push relaunch");accept(offer);}
+    GamePadState relaunch;relaunch.b=true;
+    check(prepare(inter_gate,&offer,relaunch)&&offer.kind==Kind::RelaunchEntry&&source.walk_ledge_pushes()==1,
+        "a staged relaunch candidate can exist without a post-push admission");
+    const auto relaunch_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(!world.step({},false,&view,nullptr,&relaunch_frame,&offer)&&world.tick()==23&&
+        source.resource()==10000&&source.relaunches()==0&&world.motion_receipt_current(pose.receipt),
+        "native refuses the post-push handoff without launch, meter or pose publication");
+    source.reject();check(!world.step({},false,&view),"unsupported launch does not fall back");
 
     const Route dash_push_candidate{726.917969f,3344.20435f,487.747589f,0};
     bind(dash_push_candidate,Mode::GroundWalkLedgeExpiryPush);

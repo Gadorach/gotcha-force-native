@@ -70,8 +70,9 @@ a dash already transitioning to recovery shows the cue.
 For a ledge drop, `LEDGE DEPARTURE` precedes `LEDGE FALL ENTRY` and
 `LEDGE FALL`. The fall entry starts the accepted drift-lock countdown;
 `DRIFT LOCKED` shows its remaining ticks and `DRIFT UNLOCKED` appears if it
-expires while still falling. After touchdown the HUD can show the retained
-ledge timer, but no longer shows a drift cue. These labels report the
+expires while still falling without steering. `DRIFT ACTIVE` reports an
+accepted direct drift update, not just an arrow press. After touchdown the
+HUD can show the retained ledge timer, but no longer shows a drift cue. These labels report the
 accepted controller state; they do not change what inputs or contacts are
 allowed.
 
@@ -233,6 +234,10 @@ with no steering drift and only after an accepted timer-one walking push.
 `--demo-gred-walk-ledge-expiry-push --frames 180` shows the two pushes,
 the ordinary fall that follows, and a separate landing. It does not enable
 general zero-timer or dash-origin pushes.
+
+`--demo-gred-walk-ledge-expiry-drift --frames 180` uses the same mode and
+holds Up for 36 updates after the neutral expiry push. It moves the
+landing location without another push, body turn, or meter spend.
 
 ## Current priority: Borg movement controller
 
