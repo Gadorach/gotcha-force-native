@@ -821,6 +821,32 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("tap Shift on 23, then neutral", guide.stdout)
         self.assertNotIn("timed relaunch-fall push demo:", guide.stdout)
 
+    def test_two_timed_release_pushes_share_the_face_and_end_before_landing(self):
+        first = "AIRBORNE / TIMED RELAUNCH-FALL PUSH"
+        second = "AIRBORNE / SECOND TIMED RELAUNCH-FALL PUSH"
+        for tick, phase, meter, timer, pushes, cue in (
+            (21, "FALLING", 9850, 17, 0, None),
+            (33, "FALLING / PUSH", 9850, 5, 1, first),
+            (34, "FALLING / PUSH", 9850, 4, 2, second),
+            (35, "FALLING", 9850, 3, 2, None),
+            (38, "FALLING", 9850, 0, 2, None),
+            (101, "TOUCHDOWN", 9850, 0, 2, None),
+            (102, "LANDING", 9850, 0, 2, None),
+            (125, "IDLE", 10000, 0, 2, None),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-timed-release-two-pushes", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"relaunch-fall-pushes={pushes} relaunches=1 timer698={timer}.0 landings={int(tick>=101)}", result.stdout)
+                self.assertIn("walk-ledge-fall-pushes=0", result.stdout)
+                if cue:
+                    self.assertIn(f"practice-timed-release-push={cue}\n", result.stdout)
+                else:
+                    self.assertNotIn("practice-timed-release-push=", result.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),

@@ -32,6 +32,16 @@ struct NoCoplanarProof final:gf::IBattleMvpTerrain{
     bool height(gf::f32 x,gf::f32 z,gf::f32 y,gf::f32* out)const override{return view.height(x,z,y,out);}
     bool static_surface(gf::f32 x,gf::f32 z,gf::f32 y,gf::NativeBorgStaticSurface* out)const override{return view.static_surface(x,z,y,out);}
 };
+struct RelabeledPlane final:gf::IBattleMvpTerrain{
+    const gf::NativeBattleMvpView& view;
+    explicit RelabeledPlane(const gf::NativeBattleMvpView& v):view(v){}
+    bool height(gf::f32 x,gf::f32 z,gf::f32 y,gf::f32* out)const override{return view.height(x,z,y,out);}
+    bool static_surface(gf::f32 x,gf::f32 z,gf::f32 y,gf::NativeBorgStaticSurface* out)const override{
+        if(!view.static_surface(x,z,y,out))return false;
+        if(out->triangle==1993)out->triangle=2008;
+        return true;
+    }
+};
 }
 int main(){
     using namespace gf;Files files;const std::string art="local/content/native-battle-mvp-v1",pack="local/content/source-gred-ground-v9";
@@ -661,6 +671,113 @@ int main(){
             "a nearby accepted push still cannot bypass the next native travel check");
         source.reject();
         check(retained.frame_scope.expired()&&!world.step({},false,&view),"native failure does not grant a fallback");
+    }
+    auto two_push_fixture=[&](Mode mode,f32 x=-1298.54333f,f32 z=-3395.96802f){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={x,z};cfg.spawn_query_y[0]=1846.01367f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"declared grounded same-face timed release fixture");
+    };
+    auto two_push_pad=[](unsigned tick){
+        GamePadState pad;pad.dpad_down=pad.dpad_right=tick==6||tick==7;pad.b=tick==20;return pad;
+    };
+    two_push_fixture(Mode::GroundTimedWalkReleasePush);
+    for(unsigned tick=1;tick<=33;++tick){
+        NativeBorgMotionOffer offer;
+        check(prepare(two_push_pad(tick),&offer),"the single-push policy accepts the full prefix");
+        if(tick==33)check(offer.kind==Kind::StaticPush&&offer.controller_timer698==5.f&&
+            offer.jump_motion->timed_walk_relaunch_fall,"single-push policy accepts the first contact on this route");
+        accept(offer);
+    }
+    {
+        NativeBorgMotionOffer offer;const auto before=world.actors()[0].position;
+        check(!prepare({},&offer)&&error.find("steep push/damping branch")!=std::string::npos&&world.tick()==33&&
+            source.ground_loss_timer698()==5.f&&source.resource()==9850&&world.actors()[0].position==before&&
+            !world.step({},false,&view),"the old scope refuses this genuine second timed contact without a fallback");
+    }
+    two_push_fixture(Mode::GroundTimedWalkReleaseSecondPush);
+    previous={};hit=land=timed_pushes=0;
+    for(unsigned tick=1;tick<=125;++tick){
+        const auto before=world.actors()[0];const auto retained=pose;
+        const auto timer=source.ground_loss_timer698();const auto meter=source.resource();
+        NativeBorgMotionOffer offer;
+        check(prepare(two_push_pad(tick),&offer)&&source.ground_loss_timer698()==timer&&source.resource()==meter,
+            "staging either contact cannot publish native state or spend resource");
+        const auto next=offer.kind==Kind::GroundLossEntry?30.f:std::max(0.f,timer-1.f);
+        check(offer.controller_timer698==next,"both pushes use the same actual countdown");
+        const bool first=tick==33,second=tick==34;
+        check((offer.jump_motion&&offer.jump_motion->second_timed_release_push)==second,
+            "only the immediate same-face successor carries the second-contact tag");
+        if(tick==21)check(offer.kind==Kind::JumpAir&&offer.jump_motion->entry&&offer.jump_motion->timed_walk_relaunch_fall&&
+            next==17.f,"tap release starts ordinary falling at a positive clock");
+        if(tick==35)check(offer.kind==Kind::JumpAir&&!offer.jump_motion->timed_walk_relaunch_fall&&next==3.f,
+            "the permission is exhausted while the timer is still positive");
+        auto refuses=[&](const NativeBorgMotionOffer& wrong,const char* why,const IBattleMvpTerrain* terrain=nullptr){
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(!world.step({},false,terrain?terrain:&view,nullptr,&frame,&wrong)&&world.tick()==tick-1&&
+                world.actors()[0].position==before.position&&source.ground_loss_timer698()==timer&&source.resource()==meter&&
+                world.motion_receipt_current(retained.receipt)&&view.practice_readout(world)->timed_release_push==(tick==34||tick==35)&&
+                view.practice_readout(world)->second_timed_release_push==(tick==35),why);
+        };
+        if(offer.kind==Kind::StaticPush){
+            ++timed_pushes;
+            const auto& surface=offer.static_push->surface;
+            check((first||second)&&next==(second?4.f:5.f)&&surface.triangle==1993&&offer.static_push->angle==8192&&
+                (second?(previous.kind==Kind::StaticPush&&previous.static_push->surface.triangle==surface.triangle&&
+                    previous.static_push->surface.normal==surface.normal):previous.kind==Kind::JumpAir)&&
+                offer.jump_motion->timed_walk_relaunch_fall&&!offer.jump_motion->entry&&!offer.jump_motion->drift_heading&&
+                before.vertical_speed<0.f&&offer.vertical_speed==f32(offer.static_push->vertical_speed*.9f)&&!offer.surface_landing,
+                "successive descending responses retain one selected plane with existing damping, not a snap");
+            auto wrong=offer;wrong.jump_motion->second_timed_release_push=!second;
+            refuses(wrong,"native requires the second-contact tag exactly when the accepted predecessor qualifies");
+            if(second){
+                wrong=offer;wrong.controller_timer698=0.f;
+                refuses(wrong,"a timed successor cannot borrow a zero timer");
+                wrong=offer;wrong.static_push->surface.triangle=2008;
+                refuses(wrong,"native reselects the actual triangle instead of accepting a substituted face");
+                const RelabeledPlane relabeled(view);
+                refuses(wrong,"even an independently selected face with identical geometry cannot replace the accepted first face",&relabeled);
+                wrong=offer;wrong.proposed_position[1]+=1.f;
+                refuses(wrong,"native checks the post-response projection independently of the matching face");
+            }
+        }
+        if(tick==35){
+            auto wrong=offer;wrong.jump_motion->timed_walk_relaunch_fall=true;wrong.jump_motion->second_timed_release_push=true;
+            refuses(wrong,"fabricated history cannot extend the second-contact permission");
+        }
+        if(offer.kind==Kind::JumpTouchdown)hit=tick;
+        if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+        accept(offer);
+        const auto shown=view.practice_readout(world);
+        check(shown&&shown->timed_release_push==(first||second)&&shown->second_timed_release_push==second,
+            "both cues describe only the current accepted frame");
+        if(first||second)check(!world.actors()[0].grounded&&source.cached_airborne87()==1&&source.resource()==9850&&!source.landings(),
+            "neither response grounds, charges, or refills G-Red");
+        if(tick==hit||tick==land)check(source.resource()==9850,"touchdown and landing still preserve the tap cost");
+        previous=offer;
+    }
+    check(timed_pushes==2&&hit==101&&land==102&&source.relaunches()==1&&source.relaunch_fall_pushes()==2&&
+        !source.air_dash_starts()&&!source.walk_ledge_pushes()&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+        "the two contacts lead to distinct touchdown, landing and full-meter idle");
+    for(bool third:{false,true}){
+        two_push_fixture(Mode::GroundTimedWalkReleaseSecondPush,third?-4080.66113f:-1298.54333f,
+            third?-3463.83618f:-3398.46802f);
+        const unsigned last=third?35:32;
+        for(unsigned tick=1;tick<=last;++tick){
+            auto pad=two_push_pad(tick);
+            if(third){pad.dpad_down=false;pad.dpad_right=false;pad.dpad_up=pad.dpad_left=tick==6||tick==7;}
+            NativeBorgMotionOffer offer;
+            check(prepare(pad,&offer),"boundary route must reach its accepted contact prefix");
+            if(tick==last)check(offer.kind==Kind::StaticPush&&offer.jump_motion->second_timed_release_push==third&&
+                offer.static_push->surface.triangle==(third?2021u:1992u)&&offer.controller_timer698==(third?3.f:6.f),
+                "last accepted contact is real, with a positive clock still available");
+            accept(offer);
+        }
+        const auto before=world.actors()[0].position;const auto retained=pose;
+        NativeBorgMotionOffer offer;
+        check(!prepare({},&offer)&&error.find(third?"steep push/damping branch":"same selected face")!=std::string::npos&&
+            world.tick()==last&&world.actors()[0].position==before&&source.resource()==9850&&
+            source.ground_loss_timer698()==(third?3.f:6.f)&&retained.frame_scope.expired()&&!world.step({},false,&view),
+            "actual different-face or third positive response refuses with no fallback or publication");
     }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");

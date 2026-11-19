@@ -933,6 +933,30 @@ three routes completed. A nearby route at Z `-3371.34546`
 accepts face 2008 at 35, then still refuses native travel on 36.
 The accepted push does not grant that following step.
 
+### Two consecutive positive-timer pushes on one face
+
+`--gred-walk-ledge-timed-release-two-pushes` adds one successor to
+the contact above without changing the single-push policy. The very
+next update must still be a descending, neutral selector-6 push
+with a positive clock. It must select the same triangle and normal
+and independently pass the same angle, projection, pre-response and
+post-response travel, body and bounds checks. A different face, a
+nonconsecutive contact or a third positive-timer push does not qualify.
+This does not add an expiry-step or active-relaunch permission.
+
+From grounded X/Z `-1298.54333/-3395.96802` (query `1846.01367`,
+arena half-width `4500`), hold **Down+Right Arrows** on 6–7, tap
+**Shift** on 20, and stay neutral. The plain entry costs 150;
+ordinary falling starts at 21. Pushes on triangle 1993 (angle
+8192) occur at 33 and 34, with five and four ticks left. The
+second cue appears only at 34. Neither push grounds G-Red or
+changes meter. Touchdown at 101 and the separate landing at 102
+keep 9850 meter; normal idle returns to 10000. The old one-push
+policy accepts the prefix through 33 but refuses 34.
+The scoped 274-route replay found 22 accepted pairs and eight
+completed routes. Nearby replays also verified that a real
+different-face successor and a third positive contact still refuse.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

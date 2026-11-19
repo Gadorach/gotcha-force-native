@@ -165,7 +165,8 @@ struct NativeBorgJumpMotion {
     u8 relaunch_coarse57d=0;
     f32 speed_before=0,move_speed=0,speed44=0,vertical_before=0,planar_accel=0,vertical_accel=0;
     s16 travel5ae=0,resource_before=0;std::optional<s16> drift_heading;
-    bool timed_walk_relaunch_fall=false; //Neutral timed fall from a qualified tap, until its first contact.
+    bool timed_walk_relaunch_fall=false; //Neutral timed fall from a qualified tap, through its scoped contact.
+    bool second_timed_release_push=false; //One same-face successor to the accepted positive-timer push.
     bool operator==(const NativeBorgJumpMotion&)const=default;
 };
 struct NativeBorgAirMotion {
@@ -421,6 +422,10 @@ public:
             if(std::hypot(delta.x,delta.z)>config_.actor_radius)return false; //native endpoint-terrain budget
              const auto prior=actor.source_ground_motion?last_offer_.kind:NativeBorgMotionKind::Ground;
              const unsigned prior_phase=native_borg_motion_phase(prior);
+             const bool timed_release_second=behaviors.has(Behavior::TimedWalkReleaseSecondPush)&&controller_fall_push_frame&&
+                 o.controller_timer698>0.f&&last_offer_.controller_timer698>1.f&&
+                 prior==NativeBorgMotionKind::StaticPush&&last_offer_.static_push&&last_offer_.jump_motion&&
+                 last_offer_.jump_motion->timed_walk_relaunch_fall&&!last_offer_.jump_motion->second_timed_release_push;
              const bool timed_release_push=behaviors.has(Behavior::TimedWalkReleasePush)&&controller_fall_push_frame&&
                  o.controller_timer698>0.f&&o.jump_motion&&o.jump_motion->timed_walk_relaunch_fall&&
                  !o.jump_motion->entry&&actor.vertical_speed<0.f;
@@ -746,8 +751,10 @@ public:
                          (o.kind==NativeBorgMotionKind::JumpAir||controller_fall_push_frame)&&
                          (e.entry?(prior==NativeBorgMotionKind::RelaunchEntry&&last_offer_.relaunch_motion&&
                              last_offer_.relaunch_motion->timed_walk_relaunch_tap):
-                             (prior==NativeBorgMotionKind::JumpAir&&previous&&previous->timed_walk_relaunch_fall));
-                     if(e.timed_walk_relaunch_fall!=timed_walk_fall)return false;
+                             ((prior==NativeBorgMotionKind::JumpAir&&previous&&previous->timed_walk_relaunch_fall)||
+                              timed_release_second));
+                     if(e.timed_walk_relaunch_fall!=timed_walk_fall||
+                         e.second_timed_release_push!=(timed_walk_fall&&timed_release_second))return false;
                     if(controller_fall_push_frame&&(e.phase!=6||e.ground_loss||(e.air_dash_origin&&!controller_air_fall_push_policy)||
                         (e.relaunch_origin&&!controller_relaunch_fall_push_policy)||(*o.controller_timer698>0&&!timed_release_push)))return false;
                     const f32 speed_limit=e.air_dash_origin||(controller_ground_loss_relaunch_policy&&e.relaunch_origin)?30.f:25.f;
@@ -1180,7 +1187,9 @@ public:
                    std::abs(e.integrated_position[1]-actor.position[1])>50||
                    !terrain->static_surface(e.integrated_position[0],e.integrated_position[2],actor.position[1],&surface)||
                    surface!=e.surface||!std::isfinite(surface.height)||e.integrated_position[1]>surface.height)return false;
-                s16 angle=0;BattleMvpVec projected;
+                 if(timed_release_second&&(surface.triangle!=last_offer_.static_push->surface.triangle||
+                    surface.normal!=last_offer_.static_push->surface.normal))return false;
+                 s16 angle=0;BattleMvpVec projected;
                  if(!source_surface_angle(surface.normal,&angle)||angle!=e.angle||
                     (ground_loss_push?(angle<=(o.walk_ledge->timer698>0?6144:10240)||
                          angle>NormalGRedMovementDefinition::walk_ledge_push_angle_cap(behaviors)):
@@ -1379,7 +1388,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedWalkReleasePush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedWalkReleaseSecondPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

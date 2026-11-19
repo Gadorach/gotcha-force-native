@@ -322,6 +322,13 @@ ticks without grounding or refilling G-Red. Touchdown and landing
 come later. Use `--demo-gred-walk-ledge-timed-release-push` for
 the automatic replay.
 
+`--gred-walk-ledge-timed-release-two-pushes --practice-start`
+uses a separate start. Step with **Down+Right Arrows** on 6–7,
+tap **Shift** on 20, then stay neutral. On 33–34, G-Red pushes
+twice on the same face, staying airborne with five and then four
+ledge ticks. Use `--demo-gred-walk-ledge-timed-release-two-pushes`
+for automatic playback.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,

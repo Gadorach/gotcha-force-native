@@ -78,9 +78,10 @@ int main(){
     static_assert(unsigned(Mode::GroundWalkTimedDirectUpRelaunch)==68&&unsigned(Policy::GroundWalkTimedDirectUpRelaunch)==64&&
         !Definition::allows(Mode::GroundWalkTimedDirectRelaunch,Behavior::WalkTimedDirectUpRelaunch)&&
         Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::WalkTimedDirectUpRelaunch));
-    static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
-        !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
-        Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));
+    static_assert(unsigned(Mode::GroundTimedWalkReleaseSecondPush)==70&&unsigned(Policy::GroundTimedWalkReleaseSecondPush)==66&&
+        !Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleaseSecondPush)&&
+        Definition::allows(Mode::GroundTimedWalkReleaseSecondPush,Behavior::TimedWalkReleasePush)&&
+        Definition::allows(Mode::GroundTimedWalkReleaseSecondPush,Behavior::TimedWalkReleaseSecondPush));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));

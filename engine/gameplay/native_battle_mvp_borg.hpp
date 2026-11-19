@@ -29,6 +29,7 @@ struct NativeBorgSourceReadout {
     bool direct_timed_relaunch_up=false; //The same timed handoff with the accepted soft Up turn.
     bool relaunch_from_active_snap=false; //Accepted plain relaunch from an already paid active-dash floor snap.
     bool timed_release_push=false; //Accepted inter-gate push in ordinary falling after a timed walking-ledge relaunch tap.
+    bool second_timed_release_push=false; //Accepted same-face successor to that timed push.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
