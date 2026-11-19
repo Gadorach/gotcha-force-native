@@ -249,12 +249,15 @@ picker or **R** in the Force browser:
 | 10 | **Direct Timed Relaunch** — neutral Shift after the accepted walking push |
 | 11 | **Direct Timed Up Relaunch** — soft Up + Shift from the same push |
 | 12 | **Active Snap Relaunch** — relaunch after the active entry has already been paid |
-| 13 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 14 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 13 | **Relaunch on Expiry** — plain Up + Shift entry on the timer’s 1 → 0 step |
+| 14 | **Entry Push on Expiry** — steep entry push on that same timer step |
+| 15 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 16 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 24 routes in the loop. In the opposite direction (**Left** or
-**L**), **Timed Release Push** takes 11 presses and **Two Timed Release
-Pushes** takes 10. **Active Snap Relaunch** takes 12 either way.
+There are 26 routes in the loop. In the opposite direction (**Left** or
+**L**), **Relaunch on Expiry** takes 13 presses and **Entry Push on Expiry**
+takes 12. **Timed Release Push** still takes 11 and **Two Timed Release
+Pushes** still takes 10.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
 **Esc** returns to the same copy or slot and route. These are read-only
