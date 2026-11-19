@@ -14,16 +14,20 @@ inline bool local_file(const std::filesystem::path& folder,const std::filesystem
     }
     return true;
 }
-inline bool read(const std::filesystem::path& folder,BorgPackageManifest* out){
-    constexpr auto filename="borg.manifest";
-    if(!local_file(folder,filename))return false;
-    std::ifstream file(folder/filename,std::ios::binary|std::ios::ate);
+inline bool read_local(const std::filesystem::path& folder,std::string_view path,std::size_t limit,std::string* out){
+    if(!out||!borg_package_asset_path_valid(path)||!local_file(folder,path))return false;
+    std::ifstream file(folder/path,std::ios::binary|std::ios::ate);
     if(!file)return false;
     const auto size=file.tellg();
-    if(size<=0||size>std::streamoff(kBorgManifestBytes))return false;
+    if(size<=0||size>std::streamoff(limit))return false;
     std::string contents(static_cast<std::size_t>(size),'\0');
     file.seekg(0,std::ios::beg);
-    return bool(file.read(contents.data(),std::streamsize(size)))&&borg_package_read_manifest(contents,out);
+    if(!file.read(contents.data(),std::streamsize(size)))return false;
+    *out=std::move(contents);return true;
+}
+inline bool read(const std::filesystem::path& folder,BorgPackageManifest* out){
+    std::string contents;
+    return read_local(folder,"borg.manifest",kBorgManifestBytes,&contents)&&borg_package_read_manifest(contents,out);
 }
 }
 

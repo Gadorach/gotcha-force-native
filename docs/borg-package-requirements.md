@@ -69,6 +69,7 @@ uses that data, not that every Borg or variant is supported.
 | Animation assets | Compatible clip bank with stable clip references, skeleton binding, duration/timebase, and channel/track data. Declare shared banks explicitly; no need to copy identical clips. | Clip inspection, preview and action playback. [`CharacterMotionBank`](../engine/assets/character_motion.hpp) binds source group/entry to archives, including aliases, and the bone sampler validates logical bone binding. Unsupported tracks or references are not a new package's idle fallback. |
 | Animation bindings and programs | Map each declared action/phase to clip(s) or a supported program: idle, travel/directions, dash phases, takeoff/ascent/apex/fall/landing as applicable; attacks, hit reactions, defeat, spawn, transitions, transforms or fusion as declared. Specify lanes, mirroring, blend/hold/loop/completion, root-motion ownership, and event timing where required. | A clip label is for inspection; a binding drives playback; a controller chooses when to play it. Names in a compatible bank may supply explicit unambiguous mappings; otherwise include an animation map. The [MVP clip map](../engine/gameplay/native_borg_motion_map.hpp) is distinct from recovered [GFMP programs](../engine/assets/character_program.hpp) and the [G-Red program-ID table](../engine/gameplay/borgs/normal_gred_movement_programs.hpp). Do not treat program IDs as clip IDs or give a package authority to run arbitrary code. |
 | Movement and contact rules | Name supported behavior primitives and provide selected walk/turn/stop/dash/jump/flight constants, directional/input interpretation, state priorities and legal cancels. Declare resource type/capacity/charges/refill, contact semantics (standing, hover floor, free flight), dimensions/feet and movement/landing limits. Defaults and no-action states must be explicit. | Movement lab and battle. [G-Red's definition](../engine/gameplay/borgs/normal_gred_movement.hpp), [admission table](../engine/gameplay/borgs/normal_gred_movement_admission.hpp) and [GFMM operands](../engine/assets/character_movement.hpp) are the reviewed example, not a generic rules loader. Terrain queries, sweeps, tangent math and accepted-frame sequencing remain engine services. See [observed movement families](borg-movement-families.md) for hypotheses that still need separate proof. |
+| Battle fusion and transformations | Explicit relationship IDs, compatible partner IDs and form/variant restrictions for fusion, and source/target forms, triggers, timing and return rules for transformations. Own the transition maps and reference the result's model, rig, moves, effects and behavior. | Conditional battle capabilities, not inventory recipes or cosmetic variants. Reserve the groups below; these runtime paths are not established by the recovered normal G-Red controller. |
 | Executable moveset and collision | For each move: semantic input and availability (ground/air, direction, held/charged, combo context), priority/cancel gates, timings and resource/ammo costs, animation phases/events, damage and reactions, and the hit/shot/attachment producer. Declare hurt boxes, active hit shapes/windows, hit rules, and muzzle/weapon offsets, projectile or melee parameters and effects where used. | Battle readiness. The [native duel](native-battle-mvp.md) has actor-slot weapon choices, provisional damage, cooldowns and body proxies. Source [body/attack collision data](../engine/assets/character_collision_bank.hpp) exists in a bounded format, but a parsed shape, animation, or sound cue does not imply a working actor-side callback or combat move. |
 | Displayed moveset | Localized move names/descriptions, input hints, activation presentation, icons and optional demo binding. Link to executable move IDs where supported and visibly separate entries that are only documented. | Specification/unit info. The current [display catalog](../engine/assets/force_specification.hpp) reads up to five source move rows with icon, button, activation and text index. Its [page access gate](../engine/gameplay/force_specification.hpp) reads collection state; text/readout does not authorize the move in battle. |
 | Actor lifecycle | Spawn/init defaults, semantic hooks for spawn/land/hit/defeat, optional alternate part/attachment dependencies and the resource owners each hook needs. | Required where invoked by a declared behavior; missing mandatory nodes/resources must block that capability. The [legacy binding](../engine/gameplay/battle_character_binding.hpp) ties class data, rig, model, materials and motion hashes before publishing an actor pose. |
@@ -81,6 +82,43 @@ Package-owned portraits/icons/nameplates are their inputs, not a duplicate UI.
 Keep cockpit layout and other display-mode resources shared. Likewise stage collision,
 cameras, targeting/damage resolution, input-device bindings, RNG, account/save
 storage, encounter scripts and inventory ownership stay outside the Borg folder.
+
+### Reserve battle fusion and transformation relationships
+
+**Battle fusion** is different from collecting parts and combining them in the
+inventory. Reserve a stable fusion relationship ID with both input Borg IDs and
+their permitted forms/variants, each participant's role, and the resulting
+definition ID. The result can be its own package with its own model, textures,
+rig, animations, moves, effects, and movement policy. A *fusion-result-only*
+definition would resolve as a dependency without becoming an independently
+selectable or randomly granted unit. An unrelated installed Borg with the same
+name is not a partner.
+
+Reserve eligibility and synchronization rules: how the players request fusion,
+team/range/state requirements, per-participant approach/combine/fail/separate
+animation roles and anchors, when the result takes control, and how both
+participants return or retire. Track ownership, health, ammo, resources, timers
+and position across both joins. Missing partners, result packages, event
+bindings or unresolved transfer rules must not consume either actor or produce
+a partially initialized result.
+
+**Transformations** also need explicit form IDs, including a default form and
+the model/rig/animation map, moveset, collision, movement policy and effects each
+form inherits or replaces. Reserve both kinds:
+
+| Kind | Transition data to reserve |
+| --- | --- |
+| Selected or cyclic form (e.g. Victory King) | Permitted source and target forms, selection or cycle order, semantic input, admission/cancel gates, enter and exit animations/events, and what keeps or changes the selected form. |
+| Temporary form (e.g. Metal Hero's X-charge transformation) | Start event (including hold/charge/release semantics), eligibility and resource cost, owner and timebase for duration/expiry, warning and forced reversion events, return form, and what interruption, repeated activation or defeat does. |
+
+These are user-identified examples, not verified mode order, charge thresholds,
+timers or state-transfer values. For either kind, reserve rules for HP/resource
+and ammo carryover, velocity and ground/air contact, active effects and
+attachments, facing, and actor identity. In particular, changing form may
+change movement family; it must not silently retain or refill the wrong meter.
+Bind form changes through the world/controller owner and publish them only
+after matching model/rig and gameplay resources are ready. Unknown transitions
+remain explicit `unresolved` placeholders.
 
 ### Reserve effect and sound slots now
 
@@ -132,6 +170,7 @@ borgs/<package-folder>/
   visual/                meshes, rig/bind pose, parts, materials, textures
   animation/             clip bank, optional role map, transitions/events
   gameplay/              movement and resource rules, moveset, body/contact shapes
+  relationships/         fusion partners/results, cyclic and timed form transitions
   effects/               per-Borg projectile/weapon/impact/actor visuals
   audio/                 SFX/voice cues, local files or shared references
   events/                effect/SFX bindings and declared unresolved slots

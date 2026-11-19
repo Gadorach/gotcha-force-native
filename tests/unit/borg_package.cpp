@@ -1,7 +1,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include "platform/pc/borg_package_scan.hpp"
+#include "platform/pc/borg_catalog_load.hpp"
 
 namespace {
 namespace fs=std::filesystem;
@@ -31,6 +31,20 @@ void package(const fs::path& folder,std::string_view id,std::string_view name,bo
     if(with_map){text+="animation-map=rules/movement.map\n";write(folder/"rules/movement.map","test");}
     write(folder/"borg.manifest",text);
     for(auto name:{"visual/model.glb","visual/animations.glb","rules/borg.rules"})write(folder/name,"test");
+}
+std::vector<gf::u8> editor_icon(gf::u16 width){
+    using namespace gf;
+    std::vector<u8> bytes(56+(width/4)*64,0);
+    store_be32(bytes.data(),kTplMagic);store_be32(bytes.data()+4,1);store_be32(bytes.data()+8,12);
+    store_be32(bytes.data()+12,20);store_be16(bytes.data()+20,4);store_be16(bytes.data()+22,width);
+    store_be32(bytes.data()+24,6);store_be32(bytes.data()+28,56);
+    for(std::size_t block=56;block<bytes.size();block+=64){
+        for(unsigned i=0;i<16;++i){
+            bytes[block+2*i]=255;bytes[block+2*i+1]=210;
+            bytes[block+32+2*i]=80;bytes[block+33+2*i]=32;
+        }
+    }
+    return bytes;
 }
 }
 
@@ -88,5 +102,48 @@ int main(){
     }
     check(pc::scan_borg_packages(root/"Other/borg.manifest").status==BorgPackageScanStatus::Unavailable,
         "non-directory root is distinct from missing");
-    std::puts("Borg package: manifest, startup discovery, duplicate refusal and stable identity PASS");
+
+    BorgCatalogCard card;std::string diagnostic;catalog=pc::scan_borg_packages(root);
+    check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&
+        diagnostic=="no catalogue profile declared"&&catalog.find("test:ant"),"old manifest is discoverable but not catalogue-ready");
+    const std::string profile="GFBORG-CATALOG 1\ndescription=A clockwork ant.\ntribe=test:machine\ndefault-variant=normal\n"
+        "variant=normal|Standard|240|visual/ant.tpl\nvariant=bronze|Bronze|250|placeholder\n";
+    BorgCatalogProfile metadata;
+    check(borg_catalog_read_profile(profile,&metadata)&&metadata.find("bronze")&&metadata.find("bronze")->placeholder_icon(),
+        "variant metadata retains explicit placeholder");
+    for(std::string_view row:{"variant=normal|Duplicate|10|placeholder","variant=m|No cost|-1|placeholder",
+          "variant=m|Large cost|65536|placeholder","variant=m|Bad path|5|../ant.tpl","variant=m|Wrong codec|0|ant.png",
+          "description=Duplicate","unknown=value"}){
+        check(!borg_catalog_read_profile(profile+std::string(row),&metadata)&&metadata.variants.size()==2,
+            "unreviewed or duplicate catalogue data cannot replace the previously validated view");
+    }
+    auto broken_default=profile;broken_default.replace(broken_default.find("default-variant=normal"),22,"default-variant=absent");
+    check(!borg_catalog_read_profile(broken_default,&metadata),"default variant must be a live row");
+    write(root/"Other/borg.manifest",manifest("test:ant","Ant")+"catalog=catalog.txt\n");
+    catalog=pc::scan_borg_packages(root);
+    const auto unresolved=profile+"variant=tbd|Unknown art|100|unresolved\n";
+    write(root/"Other/catalog.txt",unresolved);
+    check(borg_catalog_read_profile(unresolved,&metadata)&&metadata.find("tbd")->unresolved_icon(),
+        "an unresolved icon has a structural slot");
+    auto bytes=editor_icon(4);
+    write(root/"Other/visual/ant.tpl",{reinterpret_cast<const char*>(bytes.data()),bytes.size()});
+    check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&
+        diagnostic=="editor icon is unresolved for variant tbd","unresolved artwork is not a deliberate placeholder");
+    write(root/"Other/catalog.txt",profile);
+    fs::remove(root/"Other/visual/ant.tpl");
+    check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&catalog.find("test:ant"),
+        "missing icon blocks the catalogue view only");
+    write(root/"Other/visual/ant.tpl",{reinterpret_cast<const char*>(bytes.data()),bytes.size()});
+    check(pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&card.profile.default_variant=="normal"&&
+        card.identity.id=="test:ant"&&card.icons.size()==2&&card.icons[0]&&card.icons[0]->width==4&&
+        card.icons[0]->rgba[0]==210&&card.icons[0]->rgba[1]==80&&card.icons[0]->rgba[3]==255&&!card.icons[1],
+        "actual editor tile decodes through shared texture code and one explicit placeholder remains");
+    bytes=editor_icon(132);
+    write(root/"Other/visual/ant.tpl",{reinterpret_cast<const char*>(bytes.data()),bytes.size()});
+    check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&card.icons[0]->width==4,
+        "oversize tile refuses atomically instead of replacing a prior catalogue card");
+    write(root/"Other/borg.manifest",manifest("test:other-ant","Not Ant")+"catalog=catalog.txt\n");
+    check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&diagnostic=="package manifest changed; rescan required",
+        "stale directory cannot load a card on behalf of a different ID");
+    std::puts("Borg package: discovery, identity, catalogue variants and real editor icon PASS");
 }

@@ -44,6 +44,35 @@ files, **not their contents**. The listed extensions are examples, not a claim
 that the host can import those formats or use those rules today. The packages
 do not grant ownership, enter any picker, or create battle actors yet.
 
+## Catalogue and editor-icon check
+
+Add `catalog=catalog.txt` to the manifest for this optional first slice. The
+profile supplies a readable description, a namespaced tribe key (or `none`),
+a default variant ID, and one or more named variant rows:
+
+```text
+GFBORG-CATALOG 1
+description=A small clockwork scout.
+tribe=example:machine
+default-variant=normal
+variant=normal|Standard|240|ui/crane.tpl
+variant=bronze|Bronze|250|placeholder
+```
+
+Variant fields are `id|label|Force cost|editor icon`, with stable local IDs,
+at most 16 rows, and integer costs from 0 through 32767. The editor icon
+is a package-relative single-image `.tpl` (up to 128×128), decoded by the
+existing texture system. `placeholder` intentionally allows a labelled generic
+tile; `unresolved` records missing work and blocks the catalogue-ready view
+instead of substituting art. No variant inherits another variant's icon unless
+it explicitly names the same asset.
+
+Run `gf_native --check-borg-catalog example:clockwork-crane` to validate and
+list one discovered package's variant rows without opening a window. A missing
+or invalid catalogue or icon does not remove its discovery entry or count as a
+missing Borg in a save. This check validates neither 3D assets nor move logic,
+effects, battle fusion or transformations, and does not change the menus.
+
 ## Connecting discovery to gameplay and saves
 
 - Use one catalog in the collection, Borg picker, Challenge and Story. Keep

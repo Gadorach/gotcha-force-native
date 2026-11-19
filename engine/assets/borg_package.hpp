@@ -16,6 +16,8 @@ struct BorgIdentity {
 struct BorgPackageManifest {
     BorgIdentity identity;
     std::string model,animations,rules,animation_map;
+    std::string catalog{};
+    bool operator==(const BorgPackageManifest&)const=default;
 };
 struct BorgPackageEntry {
     std::string folder;
@@ -59,27 +61,30 @@ inline bool borg_package_asset_path_valid(std::string_view path){
         path.remove_prefix(slash+1);
     }
 }
+namespace borg_package_detail {
+inline std::string_view line(std::string_view& text){
+    const auto newline=text.find('\n');
+    auto value=text.substr(0,newline);
+    text.remove_prefix(newline==std::string_view::npos?text.size():newline+1);
+    if(value.ends_with('\r'))value.remove_suffix(1);
+    return value;
+}
+}
 // Passing the manifest parser is not model, animation, behavior, actor or
 // mode validation.
 inline bool borg_package_read_manifest(std::string_view text,BorgPackageManifest* out){
     if(!out||text.size()>kBorgManifestBytes)return false;
-    auto line=[&]{
-        const auto newline=text.find('\n');
-        auto value=text.substr(0,newline);
-        text.remove_prefix(newline==std::string_view::npos?text.size():newline+1);
-        if(value.ends_with('\r'))value.remove_suffix(1);
-        return value;
-    };
-    if(line()!="GFBORG 1")return false;
+    if(borg_package_detail::line(text)!="GFBORG 1")return false;
     BorgPackageManifest next;
     while(!text.empty()){
-        const auto row=line();
+        const auto row=borg_package_detail::line(text);
         if(row.empty()||row.starts_with('#'))continue;
         const auto equals=row.find('=');
         if(equals==std::string_view::npos)return false;
         const auto key=row.substr(0,equals),value=row.substr(equals+1);
         auto* target=key=="id"?&next.identity.id:key=="name"?&next.identity.name:key=="model"?&next.model:
-            key=="animations"?&next.animations:key=="rules"?&next.rules:key=="animation-map"?&next.animation_map:nullptr;
+            key=="animations"?&next.animations:key=="rules"?&next.rules:key=="animation-map"?&next.animation_map:
+            key=="catalog"?&next.catalog:nullptr;
         if(!target||!target->empty()||value.empty())return false;
         if(!(key=="id"?borg_package_id_valid(value):key=="name"?display_name_valid(value,96):borg_package_asset_path_valid(value)))return false;
         *target=value;

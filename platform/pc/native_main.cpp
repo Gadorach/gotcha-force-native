@@ -45,7 +45,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
-#include "platform/pc/borg_package_scan.hpp"
+#include "platform/pc/borg_catalog_load.hpp"
 #include "platform/pc/gred_practice_input.hpp"
 #include "platform/pc/sdl_platform.hpp"
 
@@ -56,6 +56,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
+    std::string check_borg_catalog;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -161,6 +162,10 @@ bool parse(int argc, char** argv, Options* options) {
         const std::string arg = argv[i];
         if (arg == "--headless") options->headless = true;
         else if (arg == "--list-borgs") options->list_borgs = true;
+        else if (arg=="--check-borg-catalog"){
+            if(++i>=argc||!options->check_borg_catalog.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_catalog=argv[i];
+        }
         else if (arg == "--menu") options->menu = true;
         else if (arg == "--demo-input") options->demo_input = true;
         else if (arg == "--demo-option") options->demo_option = true;
@@ -1183,6 +1188,7 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
 int main(int argc, char** argv) {
     Options options;
     if (!parse(argc, argv, &options)) return 2;
+    if(options.list_borgs&&!options.check_borg_catalog.empty())return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
@@ -1193,6 +1199,21 @@ int main(int argc, char** argv) {
             std::printf("%s\t%s\n",identity.id.c_str(),identity.name.c_str());
         }
         if(!borg_packages.issues.empty())std::fprintf(stderr,"%zu Borg package directories were rejected\n",borg_packages.issues.size());
+        return 0;
+    }
+    if(!options.check_borg_catalog.empty()){
+        gf::BorgCatalogCard card;std::string error;
+        if(!gf::pc::load_borg_catalog_card("borgs",borg_packages,options.check_borg_catalog,&card,&error)){
+            std::fprintf(stderr,"Borg catalogue: %s\n",error.c_str());return 2;
+        }
+        std::printf("%s\t%s\tdefault=%s\n",card.identity.id.c_str(),card.identity.name.c_str(),card.profile.default_variant.c_str());
+        for(std::size_t i=0;i<card.profile.variants.size();++i){
+            const auto& variant=card.profile.variants[i];
+            std::printf("%s\t%s\tcost=%u\ticon=",variant.id.c_str(),variant.label.c_str(),unsigned(variant.force_cost));
+            if(const auto& icon=card.icons[i])std::printf("%ux%u\n",icon->width,icon->height);
+            else std::puts("placeholder");
+        }
+        std::puts("Catalogue profile validated; model, animation, and gameplay not loaded.");
         return 0;
     }
 
