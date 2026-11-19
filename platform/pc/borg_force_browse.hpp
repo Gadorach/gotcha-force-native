@@ -10,6 +10,7 @@ namespace gf::pc {
 class BorgForceBrowseSnapshot {
 public:
     const AccountSaveEntry& save()const{return selected_->entry;}
+    const ForceCatalog* retail_catalogue()const{return catalogue_.ready()?&catalogue_:nullptr;}
     bool current(){
         return package_record_.current()&&scoped_retail_force_record_current(*selected_->backend,retail_record_);
     }

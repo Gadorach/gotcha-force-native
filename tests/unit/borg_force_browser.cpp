@@ -27,7 +27,7 @@ int main(){
     BorgForceBrowser cursor;
     check(cursor.open(0,0)&&!cursor.open(kForceCount,0)&&!cursor.open(0,kForceSlots)&&cursor.force()==0&&cursor.slot()==0,
         "out of range requests do not change the cursor");
-    GamePadState up,down,left,back;up.dpad_up=down.dpad_down=left.dpad_left=back.b=true;
+    GamePadState up,down,left,back,practice;up.dpad_up=down.dpad_down=left.dpad_left=back.b=practice.y=true;
     check(cursor.step(up)==BorgForceBrowseChange::Slot&&cursor.slot()==kForceSlots-1&&
         cursor.step(up)==BorgForceBrowseChange::None,"slot navigation wraps without held repetition");
     check(cursor.step(down)==BorgForceBrowseChange::Slot&&cursor.slot()==0,"opposite move wraps to the first slot");
@@ -35,6 +35,14 @@ int main(){
     check(cursor.step(together)==BorgForceBrowseChange::Force&&cursor.force()==kForceCount-1&&cursor.slot()==0,
         "Force move takes precedence and starts at slot one");
     check(cursor.step(back)==BorgForceBrowseChange::Close,"close is an edge");
+    check(cursor.step(practice)==BorgForceBrowseChange::None,"practice is opt-in");
+    cursor.step({});
+    auto move_and_practice=practice;move_and_practice.dpad_down=true;
+    check(cursor.step(move_and_practice,true)==BorgForceBrowseChange::Slot&&
+        cursor.step(move_and_practice,true)==BorgForceBrowseChange::None,"a movement edge wins over practice");
+    cursor.step({});
+    check(cursor.step(practice,true)==BorgForceBrowseChange::Practice&&cursor.step(practice,true)==BorgForceBrowseChange::None,
+        "practice requests are single edges and cannot modify positions");
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

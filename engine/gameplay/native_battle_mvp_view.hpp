@@ -8,6 +8,7 @@
 #include "engine/graphics/text.hpp"
 #include "engine/core/backends.hpp"
 namespace gf {
+enum class PracticeBackScreen {Close,OwnedCollection,ForceBrowser};
 class NativeBattleMvpView final:public IBattleMvpTerrain {
 public:
     void source_ground_controls(bool interactive){source_general_=true;source_interactive_=interactive;}
@@ -42,7 +43,7 @@ public:
     void source_ground_relaunch_entry_push_controls(){source_ground_relaunch_entry_push_=true;}
     void source_ground_windup_entry_push_controls(){source_ground_windup_entry_push_=true;}
     void source_practice_controls(){source_practice_=true;}
-    void source_practice_returns_to_picker(){source_practice_return_=true;}
+    void source_practice_back(PracticeBackScreen screen){source_practice_back_=screen;}
     void source_practice_close_camera(bool close){source_practice_close_camera_=close;}
     void source_practice_owned_copy(u64 instance){source_practice_owned_instance_=instance;}
     void source_practice_force_slot(unsigned force,unsigned slot){source_practice_force_slot_={force,slot};}
@@ -92,8 +93,7 @@ public:
         TextRenderer::Style body;body.scale=width>=640?2:1;
         const s32 y=std::max(0,height/2-42);
         auto draws=text_.draw_centered(render,"MOVEMENT PRACTICE STOPPED",width/2,y,title);
-        const auto detail="MOTION REFUSED / LAST TICK "+std::to_string(tick)+
-            (source_practice_return_?"\nQ RESTART   ESC COLLECTION":"\nQ RESTART   ESC CLOSE");
+        const auto detail="MOTION REFUSED / LAST TICK "+std::to_string(tick)+"\nQ RESTART   "+practice_exit_hint();
         draws+=text_.draw_centered(render,detail,width/2,y+text_.line_height(title)+12,body);
         render.state()=saved;
         return draws;
@@ -315,7 +315,7 @@ public:
         if(source_ground_windup_entry_push_)status="G-RED WIND-UP ENTRY PUSH / NATIVE PROXY\nHALF-SPEED THEN .9 / NO PRE-CONTACT MOVE\nDEFERRED HANDOFF / SEPARATE ACTIVE ENTRY";
         if(source_practice_){
             status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  P STEP WHILE PAUSED\n";
-            status+=source_practice_return_?"Q RESTART  ESC COLLECTION / NO COMBAT":"Q RESTART  ESC CLOSE / NO COMBAT";
+            status+=std::string("Q RESTART  ")+practice_exit_hint()+" / NO COMBAT";
             if(source_interactive_)status+=source_practice_close_camera_?"\nC CAMERA: CLOSE":"\nC CAMERA: STANDARD";
             if(source_practice_package_)status+=source_practice_owned_instance_?
                 "\nOWNED PACKAGE COPY "+std::to_string(source_practice_owned_instance_)+" / NORMAL":
@@ -331,6 +331,13 @@ public:
         draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;
     }
 private:
+    const char* practice_exit_hint()const{
+        switch(source_practice_back_){
+        case PracticeBackScreen::OwnedCollection:return "ESC COLLECTION";
+        case PracticeBackScreen::ForceBrowser:return "ESC FORCE BROWSER";
+        default:return "ESC CLOSE";
+        }
+    }
     bool ready_=false,source_general_=false,source_interactive_=false,source_vertical_jump_=false;u32 floor_hash_=0,rendered_tick_=0;std::weak_ptr<const NativeBorgMotionScope> rendered_scope_;
     s16 source_resource_=0;
     bool source_moving_jump_=false;
@@ -380,7 +387,7 @@ private:
     bool source_practice_=false;
     bool source_practice_close_camera_=false;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_practice_frame_;
-    bool source_practice_return_=false;
+    PracticeBackScreen source_practice_back_=PracticeBackScreen::Close;
     bool source_practice_package_=false;
     u64 source_practice_owned_instance_=0;
     std::array<unsigned,2> source_practice_force_slot_{};

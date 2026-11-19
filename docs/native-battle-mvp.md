@@ -124,8 +124,8 @@ existing harness.
 The [saved Force slot entry point](borg-packages.md#practice-one-saved-force-slot)
 uses the same practice session after checking both records for the exact
 requested position. The [saved Force browser](borg-packages.md#browse-a-saved-force)
-shows those positions without launching or editing them. Neither launches
-a Force battle.
+shows those positions and can opt into one-copy practice without editing
+them. Neither launches a Force battle.
 
 ### Try a demo route with your own inputs
 

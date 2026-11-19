@@ -529,7 +529,7 @@ bool parse(int argc, char** argv, Options* options) {
     if(options->recovery_notice&&(options->selected_save_root.empty()||options->inspect_force||options->browse_owned_borgs))return false;
     if(options->owned_instance&&!options->browse_owned_borgs)return false;
     if(options->browse_force_slot&&!options->browse_force)return false;
-    if(options->practice_from_picker&&(!options->browse_owned_borgs||options->placement_force))return false;
+    if(options->practice_from_picker&&((!options->browse_owned_borgs&&!options->browse_force)||options->placement_force))return false;
     if(!options->retail_force_catalogue.empty()&&!options->inspect_force&&!options->placement_force&&!options->force_practice)return false;
     if(!options->selected_save_root.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||
        options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
@@ -851,7 +851,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         gf::log_info(context,"borg-practice","Force %u slot %u supplies owned instance=%llu; one practice copy, not Force admission",
             force.force+1,force.slot+1,static_cast<unsigned long long>(owned->saved().instance));
     }
-    if(picker)view.source_practice_returns_to_picker();
+    if(picker)view.source_practice_back(options.force_practice?gf::PracticeBackScreen::ForceBrowser:gf::PracticeBackScreen::OwnedCollection);
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
      if(options.gred_walk_ledge_expiry_push)gf::log_info(context,"source-ground","walking ledge push at timer698 1 to 0 only after an accepted push, without drift; expired landing gate 10240 and native cap 13653; both travel checks");
@@ -1317,7 +1317,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                         if(!practice_restartable||world.tick()!=last_tick){render.shutdown();return 2;}
                         practice_stopped=true;
                         gf::log_info(context,"source-ground","practice stopped at tick=%u; Q restarts, Esc %s",world.tick(),
-                            picker?"returns to collection":"closes");
+                            picker?(options.force_practice?"returns to Force browser":"returns to collection"):"closes");
                         break;
                     }
                 }
@@ -1483,6 +1483,64 @@ int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& pack
     return 0;
 }
 
+bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice){
+    constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
+        "--gred-movement","--gred-slope-transition-dash","--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
+        "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push","--gred-walk-ledge-expiry-push"
+    };
+    if(unsigned(route)>=modes.size())return false;
+    std::string mode(modes[unsigned(route)]);
+    char program[]="gf_native",start_option[]="--practice-start";char* args[]={program,mode.data(),start_option};
+    return parse(route==gf::GRedPickerPracticeRoute::Standard?2:3,args,practice);
+}
+
+enum class BrowserPracticeReturn {Returned,Unavailable,Closed,RendererError};
+struct BrowserPracticeBudget {
+    gf::u64 started;
+    unsigned& frame;
+    bool& captured;
+    bool& renderer_active;
+};
+BrowserPracticeReturn run_practice_from_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,
+    Options practice,const gf::pc::BorgOwnedPractice& qualified,BrowserPracticeBudget budget,const char* return_title,
+    const char* component,std::string_view launch_message,std::string* error){
+    practice.headless=options.headless;practice.width=options.width;practice.height=options.height;
+    practice.battle_mvp_assets=options.battle_mvp_assets;
+    practice.frames=options.frames?options.frames-budget.frame:0;practice.seconds=options.seconds;
+    if(!budget.captured){
+        practice.screenshot=options.screenshot;
+        practice.capture_frame=options.capture_frame>budget.frame?options.capture_frame-budget.frame:0;
+    }
+    // One active renderer lifecycle at a time. Both browser types rebuild
+    // from their CPU snapshot; no GL handles cross this transition.
+    render.shutdown();budget.renderer_active=false;
+    const auto starting_frame=context.frame_index();
+    PickerPracticeHandoff handoff{budget.started};
+    int outcome=2;
+    {
+        gf::RenderEngine session_render(context.render());
+        context.window().set_title("Owned Borg Practice");
+        if(session_render.initialize({options.width,options.height,!options.headless,true,"Owned Borg Practice"},
+            context.backends().window,error)){
+            gf::log_info(context,component,"%.*s",int(launch_message.size()),launch_message.data());
+            outcome=run_battle_mvp(context,session_render,practice,&qualified.files(),&qualified,&handoff);
+        }else{
+            session_render.shutdown();
+            gf::log_warn(context,component,"practice renderer unavailable: %s",error->c_str());
+        }
+    }
+    budget.frame+=context.frame_index()-starting_frame;budget.captured=budget.captured||handoff.captured;
+    if(context.window().should_close()||(options.frames&&budget.frame>=options.frames)||
+       (options.seconds&&context.clock().monotonic_ns()-budget.started>=gf::u64(options.seconds)*1000000000ull))
+        return BrowserPracticeReturn::Closed;
+    context.window().set_title(return_title);
+    render.clear_shared_texture_upload_error();render.state()={};
+    if(!render.initialize({options.width,options.height,!options.headless,true,return_title},context.backends().window,error))
+        return BrowserPracticeReturn::RendererError;
+    budget.renderer_active=true;
+    return outcome?BrowserPracticeReturn::Unavailable:BrowserPracticeReturn::Returned;
+}
+
 int run_borg_force_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,
                            const gf::BorgPackageCatalog& packages,gf::pc::BorgForceBrowseSnapshot& snapshot){
     gf::BorgForceBrowser cursor;
@@ -1500,27 +1558,72 @@ int run_borg_force_browser(gf::Context& context,gf::RenderEngine& render,const O
             force.retail_record_present?"present":"absent",force.overlaps);
     };
     report();
-    unsigned frame=0;bool captured=false;const auto start=context.clock().monotonic_ns();
+    std::string error;std::string_view practice_status;
+    unsigned frame=0;bool captured=false,renderer_active=true,wait_for_exit_release=false;
+    const auto start=context.clock().monotonic_ns();
     while(context.window().pump_events()&&!context.window().should_close()){
         const auto now=context.clock().monotonic_ns();
         if(options.seconds&&now-start>=gf::u64(options.seconds)*1000000000ull)break;
         context.input().pump();const auto& input=context.input().snapshot();const auto pad=router.route(input,0);
-        if(input.quit||pad.quit_requested)break;
-        const auto changed=cursor.step(pad);
+        const bool quit=input.quit||pad.quit_requested;
+        if(quit&&!wait_for_exit_release)break;
+        auto changed=gf::BorgForceBrowseChange::None;
+        if(wait_for_exit_release){cursor.sync_input(pad);wait_for_exit_release=quit;}
+        else changed=cursor.step(pad,options.practice_from_picker&&live);
         if(changed==gf::BorgForceBrowseChange::Close)break;
-        if(live&&changed!=gf::BorgForceBrowseChange::None){
+        if(live&&changed==gf::BorgForceBrowseChange::Practice){
+            if(!(live=snapshot.current()))report();
+            else{
+                const auto* row=force.find_slot(cursor.slot());
+                const gf::pc::BorgForcePracticeRequest request{options.selected_save_root,snapshot.save().key,cursor.force(),cursor.slot()};
+                const auto current=gf::pc::scan_borg_packages("borgs");
+                auto qualified=gf::pc::BorgOwnedPractice::open_force_slot(request,"borgs",current,snapshot.retail_catalogue(),&error);
+                live=snapshot.current()&&(!qualified||(row&&row->packaged&&!row->overlap()&&qualified->saved()==row->packaged->saved));
+                if(!live)report();
+                else if(!qualified){
+                    practice_status="PRACTICE UNAVAILABLE";
+                    gf::log_warn(context,"force-browser","practice unavailable for Force %u slot %u: %s",
+                        cursor.force()+1,cursor.slot()+1,error.c_str());
+                }else{
+                    Options practice;
+                    if(!picker_practice_options(gf::GRedPickerPracticeRoute::Standard,&practice)){
+                        gf::log_error(context,"force-browser","could not select the existing practice mode");render.shutdown();return 2;
+                    }
+                    practice.force_practice=request;
+                    const auto launch="launched practice for Force "+std::to_string(cursor.force()+1)+
+                        " slot "+std::to_string(cursor.slot()+1)+" instance="+std::to_string(qualified->saved().instance);
+                    const auto outcome=run_practice_from_browser(context,render,options,std::move(practice),*qualified,
+                        {start,frame,captured,renderer_active},"Saved Force Browser","force-browser",launch,&error);
+                    if(outcome==BrowserPracticeReturn::Closed)break;
+                    if(outcome==BrowserPracticeReturn::RendererError){
+                        gf::log_error(context,"force-browser","could not restore Force browser: %s",error.c_str());return 2;
+                    }
+                    live=snapshot.current();wait_for_exit_release=true;
+                    if(!live)report();
+                    else{
+                        practice_status=outcome==BrowserPracticeReturn::Returned?"RETURNED FROM PRACTICE":"PRACTICE UNAVAILABLE";
+                        if(outcome==BrowserPracticeReturn::Returned)
+                            gf::log_info(context,"force-browser","returned to Force %u slot %u after practice",cursor.force()+1,cursor.slot()+1);
+                    }
+                    continue;
+                }
+            }
+        }else if(live&&changed!=gf::BorgForceBrowseChange::None){
+            practice_status={};
             live=changed==gf::BorgForceBrowseChange::Force?snapshot.project(packages,cursor.force(),&force):snapshot.current();
             report();
         }
         render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();
-        const auto draws=view.draw(render,options.width,options.height,cursor,live?&force:nullptr,snapshot.save().name);
+        const auto draws=view.draw(render,options.width,options.height,cursor,live?&force:nullptr,snapshot.save().name,
+            options.practice_from_picker?std::optional{practice_status}:std::nullopt);
         render.end_frame();
         if(!draws){gf::log_error(context,"force-browser","could not draw read-only Force view");render.shutdown();return 2;}
         if(!captured)captured=capture_if_requested(context,options,frame);
         render.present();context.advance_frame();++frame;
         if(options.frames&&frame>=options.frames)break;
     }
-    render.shutdown();return 0;
+    if(renderer_active)render.shutdown();
+    return 0;
 }
 
 int run_borg_recovery(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
@@ -1790,57 +1893,22 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
                  break;
              }
              Options practice;
-             constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
-                 "--gred-movement","--gred-slope-transition-dash","--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
-                 "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push","--gred-walk-ledge-expiry-push"
-             };
-             const auto route=browser.practice_route();
              const auto route_name=browser.practice_route_name();
-             std::string mode(modes[unsigned(route)]);
-             char program[]="gf_native",start_option[]="--practice-start";char* args[]={program,mode.data(),start_option};
-             if(!parse(route==gf::GRedPickerPracticeRoute::Standard?2:3,args,&practice))
+             if(!picker_practice_options(browser.practice_route(),&practice))
                  return fail("could not select the existing practice route");
              practice.owned_practice=request;
-             practice.headless=options.headless;practice.width=options.width;practice.height=options.height;
-             practice.battle_mvp_assets=options.battle_mvp_assets;
-             practice.frames=options.frames?options.frames-frame:0;practice.seconds=options.seconds;
-             if(!captured){
-                 practice.screenshot=options.screenshot;practice.capture_frame=options.capture_frame>frame?options.capture_frame-frame:0;
-             }
-             // One active renderer lifecycle at a time. The preview's
-             // private textures are closed, and no picker or practice GL
-             // handles survive the context transition.
              if(!preview.close_package_preview(render))return fail("could not release preview textures before practice");
-             render.shutdown();renderer_active=false;tile={};
-             const auto starting_frame=context.frame_index();
-             PickerPracticeHandoff handoff{start};
-             int outcome=2;
-             {
-                 gf::RenderEngine session_render(context.render());
-                 context.window().set_title("Owned Borg Practice");
-                 if(session_render.initialize({options.width,options.height,!options.headless,true,"Owned Borg Practice"},
-                     context.backends().window,&error)){
-                     gf::log_info(context,"borg-picker","launched practice for owned instance=%llu route=%.*s",
-                         static_cast<unsigned long long>(saved.instance),int(route_name.size()),route_name.data());
-                     outcome=run_battle_mvp(context,session_render,practice,&qualified->files(),qualified.get(),&handoff);
-                 }else{
-                     session_render.shutdown();
-                     gf::log_warn(context,"borg-picker","practice renderer unavailable: %s",error.c_str());
-                 }
-             }
-             frame+=context.frame_index()-starting_frame;captured=captured||handoff.captured;
-             if(context.window().should_close()||(options.frames&&frame>=options.frames))break;
+             tile={};
+             const auto launch="launched practice for owned instance="+std::to_string(saved.instance)+" route="+std::string(route_name);
+             const auto outcome=run_practice_from_browser(context,render,options,std::move(practice),*qualified,
+                 {start,frame,captured,renderer_active},"Owned Borg Collection","borg-picker",launch,&error);
+             if(outcome==BrowserPracticeReturn::Closed)break;
+             if(outcome==BrowserPracticeReturn::RendererError)return fail(error);
              previous=context.clock().monotonic_ns();
-             if(options.seconds&&previous-start>=gf::u64(options.seconds)*1000000000ull)break;
              if(!owned_save->backend->current())return fail("selected save changed during practice; reopen the collection");
-             context.window().set_title("Owned Borg Collection");
-             render.clear_shared_texture_upload_error();render.state()={};
-             if(!render.initialize({options.width,options.height,!options.headless,true,"Owned Borg Collection"},
-                 context.backends().window,&error))return fail(error);
-             renderer_active=true;
              refresh_tile();wait_for_exit_release=true;
-             practice_panel.status=outcome?"PRACTICE UNAVAILABLE":"RETURNED FROM PRACTICE";
-             if(!outcome)gf::log_info(context,"borg-picker","returned to owned instance=%llu after practice route=%.*s",
+             practice_panel.status=outcome==BrowserPracticeReturn::Returned?"RETURNED FROM PRACTICE":"PRACTICE UNAVAILABLE";
+             if(outcome==BrowserPracticeReturn::Returned)gf::log_info(context,"borg-picker","returned to owned instance=%llu after practice route=%.*s",
                  static_cast<unsigned long long>(saved.instance),int(route_name.size()),route_name.data());
              continue;
          }

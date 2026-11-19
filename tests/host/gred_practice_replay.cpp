@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice,PickerExpiry};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice,PickerExpiry,ForcePicker};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -56,6 +56,12 @@ public:
             if(f==0||(f>=7&&f<27))raw.buttons|=1u<<7; // First choose the route, then walk with live input.
             if(f>=1&&f<=4)raw.buttons|=1u<<3;
             if(f>=190&&f<=192)raw.quit=true;
+            break;
+        case Replay::ForcePicker:
+            if(f<=3||f==18||(f>=22&&f<=24))raw.buttons|=1u<<3;
+            if((f>=11&&f<=13)||(f>=30&&f<=32))raw.quit=true;
+            if(f==14||f==16)raw.buttons|=1u<<5; // First edge is consumed by return; second selects overlap.
+            if(f==20)raw.buttons|=1u<<6;
             break;
         }
     }
@@ -108,6 +114,11 @@ bool has(const std::string& log,const char* text){return log.find(text)!=std::st
 bool once(const std::string& log,const char* text){
     const auto first=log.find(text);
     return first!=std::string::npos&&log.find(text,first+1)==std::string::npos;
+}
+std::size_t occurrences(std::string_view text,std::string_view part){
+    std::size_t found=0;
+    for(std::size_t at=0;(at=text.find(part,at))!=std::string_view::npos;at+=part.size())++found;
+    return found;
 }
 std::string line(const std::string& log,const char* prefix){
     const auto start=log.find(prefix);
@@ -179,15 +190,10 @@ int replay_owned_practice_picker(std::string root){
         check(run_borg_browser(context,render,options,packages)==0,"owned picker practice",log.text);
         return context.frame_index();
     };
-    auto count=[](std::string_view text,std::string_view part){
-        std::size_t found=0;
-        for(std::size_t at=0;(at=text.find(part,at))!=std::string_view::npos;at+=part.size())++found;
-        return found;
-    };
     char enabled[]="8",short_limit[]="32",long_limit[]="205";
-    check(run_picker(enabled,short_limit)==32&&count(log.text,"launched practice for owned instance=8")==2&&
-        count(log.text,"returned to owned instance=8 after practice")==2&&
-        count(log.text,"owned instance=8 (Saved G-Red / Saved Standard); save is read-only")==2&&
+    check(run_picker(enabled,short_limit)==32&&occurrences(log.text,"launched practice for owned instance=8")==2&&
+        occurrences(log.text,"returned to owned instance=8 after practice")==2&&
+        occurrences(log.text,"owned instance=8 (Saved G-Red / Saved Standard); save is read-only")==2&&
         has(log.text,"launched practice for owned instance=8 route=STANDARD")&&
         has(log.text,"launched practice for owned instance=8 route=LEDGE TIMER EXPIRY")&&
         has(log.text,"returned to owned instance=8 after practice route=LEDGE TIMER EXPIRY")&&
@@ -211,11 +217,44 @@ int replay_owned_practice_picker(std::string root){
     std::puts("Owned picker practice: exact launch/return, live routes, disabled refusal, and held-key isolation PASS");
     return 0;
 }
+
+int replay_force_practice_picker(std::string root,std::string retail_path){
+    auto files=gf::sdl::create_file_system();gf::ForceCatalog retail;
+    check(files&&load_retail_force_catalogue(*files,retail_path,&retail),"fixture catalogue","");
+    gf::headless::Bundle headless;ReplayInput input(Replay::ForcePicker);ReplayLog log;
+    auto backends=headless.get();backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
+    Options options;
+    char program[]="gf_native",mode[]="--browse-borg-force",account[]="7",save[]="11",force[]="1",slot[]="2";
+    char select[]="--force-slot",practice[]="--practice-from-picker",catalogue[]="--retail-catalog",
+         off[]="--headless",frames[]="--frames",count[]="44";
+    char* args[]={program,mode,root.data(),account,save,force,select,slot,practice,catalogue,retail_path.data(),off,frames,count};
+    check(parse(int(std::size(args)),args,&options),"Force browser options",log.text);
+    const auto packages=gf::pc::scan_borg_packages("borgs");std::string error;
+    auto snapshot=gf::pc::BorgForceBrowseSnapshot::open(root,{7,11},"borgs",packages,std::move(retail),&error);
+    check(bool(snapshot),"verified mixed fixture",error);
+    gf::Context context(backends,60);gf::RenderEngine render(context.render());
+    check(render.initialize({640,480,false,true,"Force picker replay"},nullptr,&error),"Force browser renderer",error);
+    check(run_borg_force_browser(context,render,options,packages,*snapshot)==0&&context.frame_index()==44,
+        "Force browser has a single frame budget across both handoffs",log.text);
+    check(occurrences(log.text,"launched practice for Force 1 slot 2 instance=8")==2&&
+        occurrences(log.text,"returned to Force 1 slot 2 after practice")==2&&
+        occurrences(log.text,"Force 1 slot 2 supplies owned instance=8; one practice copy, not Force admission")==2&&
+        once(log.text,"practice unavailable for Force 1 slot 1: the requested Force slot overlaps retail and package claims")&&
+        !has(log.text,"practice restarted at tick=0")&&snapshot->current(),
+        "exact Force slot launch and return, held input isolation, overlap refusal, and unchanged scope",log.text);
+    std::puts("Force browser practice: exact slot launch/return and overlap refusal PASS");
+    return 0;
+}
 }
 
 int main(int argc,char** argv){
     if(argc!=1){
-        if(argc==4&&std::string_view(argv[1])=="--seed-force-practice")return seed_owned_practice(argv[2],argv[3]);
+        if(argc==4){
+            const std::string_view command=argv[1];
+            if(command=="--seed-force-practice")return seed_owned_practice(argv[2],argv[3]);
+            if(command=="--replay-force-practice-picker")return replay_force_practice_picker(argv[2],argv[3]);
+            return 2;
+        }
         if(argc!=3)return 2;
         const std::string_view command=argv[1];
         if(command=="--seed-owned-practice")return seed_owned_practice(argv[2]);

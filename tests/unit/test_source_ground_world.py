@@ -228,11 +228,15 @@ class SourceGroundWorldTests(unittest.TestCase):
             for browser_flags in (
                 ["--inspect-borg-force", str(accounts), "7", "11", "1", "--force-slot", "2"],
                 ["--browse-borg-force", str(accounts), "7", "11", "1", "--force-slot", "0"],
-                ["--browse-borg-force", str(accounts), "7", "11", "1", "--practice-from-picker"],
+                ["--inspect-borg-force", str(accounts), "7", "11", "1", "--practice-from-picker"],
             ):
                 bad_args = self.run_host([*browser_flags, *flags, "--headless"], cwd=root)
                 self.assertEqual(bad_args.returncode, 2, bad_args.stdout)
                 self.assertNotIn("backend=", bad_args.stdout)
+            replay = subprocess.run([seed, "--replay-force-practice-picker", accounts, catalogue],
+                                    cwd=root, capture_output=True, text=True, timeout=90)
+            self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
+            self.assertIn("Force browser practice: exact slot launch/return and overlap refusal PASS", replay.stdout)
             self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):

@@ -743,7 +743,7 @@ total is not a mode budget or admission receipt.
 
 ```sh
 gf_native --browse-borg-force ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER \
-  [--force-slot SLOT_NUMBER] [--retail-catalog FILE]
+  [--force-slot SLOT_NUMBER] [--retail-catalog FILE] [--practice-from-picker]
 ```
 
 **Up/Down** moves through the exact saved positions, including empty
@@ -757,9 +757,14 @@ A present retail record must match the explicit catalogue. A verified
 absent record is shown separately; an unverified one refuses the view.
 The browser takes a read-only snapshot and checks the selected save again
 on navigation. If either saved record has changed, reopen the browser
-instead of inspecting stale claims. No input in this view edits or launches
-a Force. To practice one copy, use the separate
-[Force-slot practice command](#practice-one-saved-force-slot).
+instead of inspecting stale claims.
+
+With `--practice-from-picker`, **Q/Y** rechecks the highlighted position
+and opens ordinary practice for the exact qualified package copy. Retail-only,
+overlapping, disabled and empty slots do not launch. **Esc** returns to the
+same Force and slot; release and press it again to close the browser. This
+uses the same checks as the [Force-slot practice command](#practice-one-saved-force-slot).
+Nothing here edits a save or launches a Force battle.
 
 ### Place an owned Borg in an empty Force slot
 

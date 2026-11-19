@@ -9,7 +9,7 @@ namespace gf {
 class BorgForceBrowserView {
 public:
     unsigned draw(RenderEngine& render,s32 width,s32 height,const BorgForceBrowser& cursor,
-                  const MixedBorgForceView* force,std::string_view save_name){
+                  const MixedBorgForceView* force,std::string_view save_name,std::optional<std::string_view> practice={}){
         if(width<520||height<360)return 0;
         const auto saved=render.state();
         render.state()={};render.state().depth_test=render.state().depth_write=false;
@@ -87,7 +87,9 @@ public:
             text(std::string(slot_status(p.status))+(p.saved.disabled?" / DISABLED":""),
                 right,274,right_room,p.selectable_metadata()?muted:warning);
         }else text("NONE",right,226,right_room,small);
-        text("UP/DOWN SLOT  LEFT/RIGHT FORCE  ESC CLOSE",16,height-24,width-32,small);
+        if(practice&&!practice->empty())text(*practice,right,height-61,right_room,muted);
+        text(practice?"UP/DOWN SLOT  LEFT/RIGHT FORCE  Q/Y PRACTICE  ESC CLOSE":
+            "UP/DOWN SLOT  LEFT/RIGHT FORCE  ESC CLOSE",16,height-24,width-32,small);
         render.state()=saved;return draws;
     }
 private:

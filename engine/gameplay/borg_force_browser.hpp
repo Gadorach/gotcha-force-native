@@ -3,7 +3,7 @@
 #include "engine/input/input_map.hpp"
 
 namespace gf {
-enum class BorgForceBrowseChange {None,Force,Slot,Close};
+enum class BorgForceBrowseChange {None,Force,Slot,Close,Practice};
 // Cursor over one read-only scope; blank slots are still exact positions.
 class BorgForceBrowser {
 public:
@@ -13,10 +13,12 @@ public:
     }
     unsigned force()const{return force_;}
     unsigned slot()const{return slot_;}
-    BorgForceBrowseChange step(const GamePadState& pad){
+    void sync_input(const GamePadState& pad){previous_=pad;}
+    BorgForceBrowseChange step(const GamePadState& pad,bool allow_practice=false){
         const bool back=pad.b&&!previous_.b;
         const bool left=pad.dpad_left&&!previous_.dpad_left,right=pad.dpad_right&&!previous_.dpad_right;
         const bool up=pad.dpad_up&&!previous_.dpad_up,down=pad.dpad_down&&!previous_.dpad_down;
+        const bool practice=allow_practice&&pad.y&&!previous_.y&&!pad.b&&!pad.start;
         previous_=pad;
         if(back)return BorgForceBrowseChange::Close;
         if(left!=right){
@@ -27,6 +29,7 @@ public:
             slot_=(slot_+(up?kForceSlots-1:1))%kForceSlots;
             return BorgForceBrowseChange::Slot;
         }
+        if(practice)return BorgForceBrowseChange::Practice;
         return BorgForceBrowseChange::None;
     }
 private:
