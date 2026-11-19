@@ -110,11 +110,12 @@ int main(){
         GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch,
         GRedPickerPracticeRoute::ExpiringDirectRelaunch,GRedPickerPracticeRoute::ExpiringDirectRelaunchPush,
         GRedPickerPracticeRoute::ExpiringAdjacentRelaunchPush,GRedPickerPracticeRoute::ExpiringAirDash,GRedPickerPracticeRoute::ExpiringAirDashRelaunch,
+        GRedPickerPracticeRoute::ExpiringShortAirDashRelaunch,
         GRedPickerPracticeRoute::TimedReleasePush,GRedPickerPracticeRoute::TimedReleaseTwoPushes}){
         browser.step({},true);
         check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==route&&
             browser.step(right,true)==BorgBrowserChange::None&&browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
-            "ninth through nineteenth Right select the timed guides without replacing the copy or saved variant");
+            "ninth through twentieth Right select the timed guides without replacing the copy or saved variant");
     }
     check(browser.practice_route_name()=="TWO TIMED RELEASE PUSHES","two-push guide has its own route label");
     GamePadState left;left.dpad_left=true;
@@ -122,7 +123,8 @@ int main(){
     check(browser.step(left,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route_name()=="TIMED RELEASE PUSH"&&
         browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
         "previous selects the single-push guide without changing saved contents");
-    for(auto label:{"EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH","ENTRY PUSH ON EXPIRY","RELAUNCH ON EXPIRY"}){
+    for(auto label:{"DIAGONAL EXPIRY RELAUNCH","EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH",
+        "ENTRY PUSH ON EXPIRY","RELAUNCH ON EXPIRY"}){
         browser.step({},true);
         check(browser.step(left,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route_name()==label&&
             browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",

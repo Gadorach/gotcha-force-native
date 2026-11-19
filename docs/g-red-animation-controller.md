@@ -359,6 +359,35 @@ even when the projected endpoint clears the floor. That refusal
 is not relaxed. The stage sweep found 20 complete routes in 1,002
 attempts, all from face 2001.
 
+#### Contact on the expiry wind-up entry remains closed
+
+The stationary guide does not grant a steep push or snap on entry.
+In the steep-entry probe, 40 offers were staged in 3,888 local
+trials and 16 entered. All 16 refused a later wind-up push.
+A tighter 1,782-trial sweep around the two accepted starts
+staged 189 and accepted 106; none reached the paid handoff.
+Another 2,756 stage-sweep attempts staged no projected entries.
+
+One partial route starts at X/Z `-1242.96863/-3307.80225`
+(query `1846.01367`, arena half-width `4500`). The scratch
+gate accepts a face-1999 entry on 55. On 56, the pre-projection
+endpoint still selects face 1999 at Y `1408.39746`, above the
+actor's starting Y `1406.63159`. The post-projection endpoint
+selects face 2185 at Y `10` and clears its floor, but that does
+not make the approach valid.
+
+The separate snap-only probe found two complete routes in its
+2,756 stage-sweep attempts. One starts at X/Z
+`-1078.91504/-3407.48291` with the same query and bounds:
+**Left Arrow** on 6–9, **A** on 40. The scratch entry snaps
+against face 2000 at angle 8192, at the same Y (`1416.95068`).
+Its pre-snap half-speed is −13.5; the snap zeroes it without
+grounding G-Red or spending meter. The route pays for handoff at
+46 and active entry at 47, then reaches touchdown and landing
+at 137–138. This is a candidate for a separate verified snap
+permission, not part of the shipped guide. No runtime contact
+gate was changed by either probe.
+
 ### Relaunch instead of active dash after that expiry-step wind-up
 
 `--gred-walk-ledge-expiring-air-dash-handoff` adds a separate

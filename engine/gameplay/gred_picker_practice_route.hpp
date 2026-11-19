@@ -12,6 +12,7 @@ enum class GRedPickerPracticeRoute : u8 {
     ExpiryStepHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,
     ExpiringDirectRelaunch,ExpiringDirectRelaunchPush,
     ExpiringAdjacentRelaunchPush,ExpiringAirDash,ExpiringAirDashRelaunch,
+    ExpiringShortAirDashRelaunch,
     TimedReleasePush,TimedReleaseTwoPushes,
     SlopeJoin,InclinedWalk,InclinedDash,LedgePush,HighAnglePush,
     TimedHandoff,ExpiryHandoff,ExpiryAirDash,ExpiryPush,Count
@@ -22,6 +23,7 @@ inline constexpr std::array<std::string_view,unsigned(GRedPickerPracticeRoute::C
     "EXPIRY STEP HANDOFF","DIRECT TIMED RELAUNCH","DIRECT TIMED UP RELAUNCH","ACTIVE SNAP RELAUNCH",
     "RELAUNCH ON EXPIRY","ENTRY PUSH ON EXPIRY",
     "ADJACENT ENTRY PUSH","AIR DASH ON EXPIRY","EXPIRY WIND-UP RELAUNCH",
+    "DIAGONAL EXPIRY RELAUNCH",
     "TIMED RELEASE PUSH","TWO TIMED RELEASE PUSHES",
     "SLOPE JOIN","INCLINED WALK","INCLINED DASH","WALK LEDGE PUSH","STEEPER LEDGE PUSH",
     "TIMED HANDOFF","EXPIRY HANDOFF","EXPIRY AIR DASH","LEDGE TIMER EXPIRY"

@@ -254,13 +254,15 @@ picker or **R** in the Force browser:
 | 15 | **Adjacent Entry Push** — the neighboring face 1998 on 1 → 0 |
 | 16 | **Air Dash on Expiry** — stationary wind-up as the timer reaches zero |
 | 17 | **Expiry Wind-up Relaunch** — choose after the six-tick wind-up pays 450 |
-| 18 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 19 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 18 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
+| 19 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 20 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 29 routes in the loop. In the opposite direction (**Left** or
+There are 30 routes in the loop. In the opposite direction (**Left** or
 **L**), **Adjacent Entry Push**, **Air Dash on Expiry**, and **Expiry
-Wind-up Relaunch** take 14, 13, and 12 presses respectively. **Timed
-Release Push** still takes 11 and **Two Timed Release Pushes** still takes 10.
+Wind-up Relaunch** take 15, 14, and 13 presses respectively. **Diagonal
+Expiry Relaunch** takes 12, **Timed Release Push** still takes 11, and
+**Two Timed Release Pushes** still takes 10.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
 **Esc** returns to the same copy or slot and route. These are read-only
@@ -365,7 +367,8 @@ uses **A+W** on 38 after the same **Left Arrow** 6–7 start. This
 shorter wind-up pays on 43. Tap neutral **Shift** on 44, release
 Shift, and hold **Down Arrow** on 45–50, then stay neutral.
 Use `--demo-gred-walk-ledge-expiring-diagonal-dash-handoff` for
-playback. The existing six-tick picker guide is unchanged.
+playback. In either picker, choose **Diagonal Expiry Relaunch** for
+this route. The existing six-tick guide is unchanged.
 
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
