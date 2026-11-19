@@ -752,6 +752,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     bool input_refused=false,practice_stopped=false;
     const bool practice_restartable=options.gred_practice&&options.source_ground_interactive;
+    bool practice_restart_held=false,practice_pause_held=false;
     gf::u32 landing_jump_script_tick=0,landing_dash_script_tick=0;
     gf::u32 windup_entry_push_flick_tick=0;
     for(unsigned i=0;i<2;++i){gf::BattleMvpVec low,high;if(view.actor_bounds(i,&low,&high))gf::log_info(context,"battle-mvp","actor=%u ground-y=%.1f model-y=%.1f..%.1f",i,world.actors()[i].position[1],low[1],high[1]);}
@@ -762,6 +763,26 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         if(!options.headless&&!((options.demo_battle_mvp||options.demo_locomotion||(options.demo_source_ground&&!options.source_ground_interactive))&&options.frames)){
             const auto elapsed=now>=previous?std::min<gf::u64>(now-previous,250000000):0;phase+=elapsed*60;steps=unsigned(std::min<gf::u64>(phase/1000000000ull,8));phase%=1000000000ull;}
         previous=now;
+        if(practice_restartable){
+            //These are session controls, not source movement inputs. Observe
+            //their edges even when this render frame has no scheduled tick.
+            const bool restart=pad.y&&!practice_restart_held;
+            const bool pause=pad.start&&!practice_pause_held;
+            practice_restart_held=pad.y;practice_pause_held=pad.start;
+            if(restart){
+                if(!world.start(config,&view)||!view.update(world,&error)||!bind_source()){
+                    gf::log_error(context,"source-ground","practice restart refused: %s",error.c_str());
+                    render.shutdown();return 2;
+                }
+                practice_stopped=false;input_refused=false;steps=0;phase=0;
+                gf::log_info(context,"source-ground","practice restarted at tick=%u",world.tick());
+            }else if(pause&&!practice_stopped){
+                if(!world.set_paused(!world.paused())){render.shutdown();return 2;}
+                steps=0;phase=0;
+                gf::log_info(context,"source-ground","practice %s at tick=%u",world.paused()?"paused":"resumed",world.tick());
+            }
+            if(practice_stopped||world.paused())steps=0;
+        }
         for(unsigned i=0;i<steps;++i){
             auto input=pad;
             if(options.demo_battle_mvp){input={};const auto t=commands%600;input.a=t%90<30;input.x=t==120;input.b=t==180;input.y=t==599;input.stick_x=t>=60&&t<160?80:t>=220&&t<280?-80:0;}
@@ -775,20 +796,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             }
             const auto movement=gf::NativeBattleMvpView::movement_frame(world,options.width,options.height);
             if(options.demo_source_ground){
-                gf::GamePadState controls;controls.start=pad.start;controls.y=pad.y;
+                gf::GamePadState controls;
+                if(!practice_restartable){controls.start=pad.start;controls.y=pad.y;}
                 const bool restart=controls.y&&!source_previous.y;
-                if(practice_restartable&&(practice_stopped||restart)){
-                    if(restart){
-                        if(!world.start(config,&view)||!view.update(world,&error)||!bind_source()){
-                            gf::log_error(context,"source-ground","practice restart refused: %s",error.c_str());
-                            render.shutdown();return 2;
-                        }
-                        practice_stopped=false;input_refused=false;phase=0;
-                        gf::log_info(context,"source-ground","practice restarted at tick=%u",world.tick());
-                    }
-                    source_previous=controls;
-                    break; //No simulation while stopped, or until the next frame after a restart.
-                }
                 gf::NativeGRedGroundInput mapped;
                 if(options.source_ground_walk){
                     auto device=pad;
@@ -946,12 +956,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                         input_refused=true;continue;
                     }
                     input_refused=false;
-                 }
-                 const bool pause=controls.start&&!source_previous.start;
-                 auto world_controls=controls;
-                 if(practice_restartable){world_controls.y=false;world_controls.start=pause;}
-                 if(restart||pause||world.paused()){
-                     if(!world.step({world_controls,{}},false,&view)){render.shutdown();return 2;}
+                }
+                const bool pause=controls.start&&!source_previous.start;
+                if(restart||pause||world.paused()){
+                    if(!world.step({controls,{}},false,&view)){render.shutdown();return 2;}
                     if(restart&&(!view.update(world,&error)||!bind_source())){gf::log_error(context,"source-ground","restart bind refused: %s",error.c_str());render.shutdown();return 2;}
                     if(restart)windup_entry_push_flick_tick=0;
                 }else{
@@ -960,34 +968,34 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                         const std::array<gf::s16,4> xs={0,-60,0,60},ys={60,0,-60,0};
                         const std::array<gf::u32,4> bits={8,1,4,2};x=xs[part];y=ys[part];held=bits[part]<<16;
                     }
-                     if(options.source_ground_walk){x=mapped.x;y=mapped.y;held=mapped.held;}
-                     gf::NativeBorgMotionOffer offer;
-                     const auto last_tick=world.tick();error.clear();
-                     if(!source.prepare(world,view.source_binding(),movement,x,y,held,&offer,&error)||
-                        !world.step({world_controls,{}},false,&view,nullptr,&movement,&offer)||!source.commit(world,view.source_binding(),&error)){
-                         source.reject();
-                         gf::log_error(context,"source-ground","motion acceptance refused: tick=%u kind=%u from-y=%.3f proposed-y=%.3f old-v=%.3f; %s",world.tick(),unsigned(offer.kind),offer.observed.position[1],offer.proposed_position[1],offer.observed.vertical_speed,error.c_str());
-                         if(!practice_restartable||world.tick()!=last_tick){render.shutdown();return 2;}
-                         practice_stopped=true;source_previous=controls;
-                         gf::log_info(context,"source-ground","practice stopped at tick=%u; Q restarts, Esc closes",world.tick());
-                         break;
-                     }
+                    if(options.source_ground_walk){x=mapped.x;y=mapped.y;held=mapped.held;}
+                    gf::NativeBorgMotionOffer offer;
+                    const auto last_tick=world.tick();error.clear();
+                    if(!source.prepare(world,view.source_binding(),movement,x,y,held,&offer,&error)||
+                       !world.step({controls,{}},false,&view,nullptr,&movement,&offer)||!source.commit(world,view.source_binding(),&error)){
+                        source.reject();
+                        gf::log_error(context,"source-ground","motion acceptance refused: tick=%u kind=%u from-y=%.3f proposed-y=%.3f old-v=%.3f; %s",world.tick(),unsigned(offer.kind),offer.observed.position[1],offer.proposed_position[1],offer.observed.vertical_speed,error.c_str());
+                        if(!practice_restartable||world.tick()!=last_tick){render.shutdown();return 2;}
+                        practice_stopped=true;
+                        gf::log_info(context,"source-ground","practice stopped at tick=%u; Q restarts, Esc closes",world.tick());
+                        break;
+                    }
                 }
                 source_previous=controls;++commands;continue;
             }
             if(!world.step({input,{}},!options.demo_locomotion,&view,nullptr,&movement)){gf::log_error(context,"battle-mvp","gameplay/terrain step failed");render.shutdown();return 2;}++commands;
         }
-         if(!practice_stopped){
-             bool posed=false;
-             if(options.demo_source_ground&&world.actors()[0].source_ground_motion){gf::NativeBorgSourcePose pose;posed=source.pose(world,&pose)&&view.update_source(world,pose,&error);}
-             else posed=view.update(world,&error);
-             if(!posed){gf::log_error(context,"battle-mvp","animation failed: %s",error.c_str());render.shutdown();return 2;}
-         }
+        if(!practice_stopped){
+            bool posed=false;
+            if(options.demo_source_ground&&world.actors()[0].source_ground_motion){gf::NativeBorgSourcePose pose;posed=source.pose(world,&pose)&&view.update_source(world,pose,&error);}
+            else posed=view.update(world,&error);
+            if(!posed){gf::log_error(context,"battle-mvp","animation failed: %s",error.c_str());render.shutdown();return 2;}
+        }
         if(options.source_vertical_jump)view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
-         render.begin_frame({frame,.15f,.21f,.3f});render.reset_arena();
-         const auto draws=practice_stopped?view.draw_practice_stop(render,options.width,options.height,world.tick()):
-             view.draw(render,world,options.width,options.height,&error);
-         render.end_frame();
+        render.begin_frame({frame,.15f,.21f,.3f});render.reset_arena();
+        const auto draws=practice_stopped?view.draw_practice_stop(render,options.width,options.height,world.tick()):
+            view.draw(render,world,options.width,options.height,&error);
+        render.end_frame();
         if(!draws){gf::log_error(context,"battle-mvp","draw failed: %s",error.c_str());render.shutdown();return 2;}
         if(!captured)captured=capture_if_requested(context,options,frame);
         render.present();context.advance_frame();++frame;if(options.frames&&frame>=options.frames)break;

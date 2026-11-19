@@ -1127,6 +1127,10 @@ public:
         previous_=pads;return true;
     }
     bool ready()const{return ready_;}bool paused()const{return paused_;}u32 tick()const{return tick_;}
+    bool set_paused(bool paused){
+        if(!ready_)return false;
+        paused_=paused;return true;
+    }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
     const BattleMvpConfig& config()const{return config_;}BattleMvpResult result()const{return result_;}
     u32 shots_spawned()const{return shots_;}u32 hits()const{return hits_;}

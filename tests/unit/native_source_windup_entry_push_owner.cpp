@@ -151,12 +151,12 @@ int main(){
             if(tick==86){
                 const auto frame=pose.frame_scope.lock();NativeBattleMvp foreign;
                 check(frame&&!frame->meter(foreign)&&!view.practice_meter(foreign),"foreign world cannot borrow the practice meter");
-                GamePadState pause;pause.start=true;
-                check(world.step({pause,{}},false,&view)&&world.paused()&&world.tick()==tick&&
+                check(world.set_paused(true)&&world.set_paused(true)&&world.paused()&&world.tick()==tick&&
                     view.practice_meter(world)&&view.practice_meter(world)->value==8000,
-                    "pausing preserves the last accepted practice meter");
-                check(world.step({},false,&view)&&world.step({pause,{}},false,&view)&&!world.paused()&&world.tick()==tick,
-                    "unpausing does not step or refill the practice meter");
+                    "session pause requires no input tick and preserves the last accepted practice meter");
+                check(world.set_paused(false)&&!world.paused()&&world.tick()==tick&&world.motion_receipt_current(pose.receipt)&&
+                    view.practice_meter(world)&&view.practice_meter(world)->value==8000,
+                    "session resume does not step, refill the meter or revoke its accepted receipt");
             }
         }
         if(native_borg_motion_windup_entry(offer.kind))++entries;

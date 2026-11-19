@@ -61,6 +61,11 @@ stage using the ordinary practice spawn and arena bounds. Arrows walk or steer,
 WASD flicks dash, and Shift jumps or rises. Release and press Shift again to
 relaunch when eligible. Enter pauses, Q restarts, and Esc closes. The HUD's
 flight bar reads the last accepted source frame, not pending input or animation.
+Pause and restart are sampled each rendered frame, even if no 60 Hz movement
+tick is due. Resuming does not catch up elapsed pause time.
+[Contact Sheet 61](../local/recomp-evidence/contact-sheets/gred-practice-clock-v1/contact-sheet-61.png)
+shows an offscreen replay of pause and resume at tick 2, then one restart
+while Q remains held.
 
 If interactive practice refuses a motion, it stops at the last accepted tick
 and shows a restart screen instead of closing. The stopped scene does not draw a
