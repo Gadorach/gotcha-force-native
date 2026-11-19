@@ -233,8 +233,16 @@ Without `--practice-start`, that mode begins unpaused.
 To relaunch instead, use **Ledge Timer Expiry**. Wait for **Drift Unlocked**
 after the zero-timer push, then press **Shift**. In single-step practice,
 tick 57 is the neutral fall; hold Shift while stepping ticks 58–77 to
-match `--demo-gred-walk-ledge-expiry-relaunch`. Pressing Shift directly
-after the push still refuses.
+match `--demo-gred-walk-ledge-expiry-relaunch`. In that route, pressing
+Shift directly after the push still refuses.
+
+`--gred-walk-ledge-expiry-direct-relaunch --practice-start` is a separate
+opt-in guide for **Left Arrow** on 6–25, then **Up Arrow + Shift** on
+57–76. The relaunch starts directly after the accepted zero-timer push,
+spends 150 without an air-dash charge, and initially slows descent.
+Use `--demo-gred-walk-ledge-expiry-direct-relaunch` for the automatic
+replay. A positive timer or any contact response on entry remains
+unsupported in this route.
 
 `--gred-recovery-recontact` uses the ordinary practice start and opts into
 the verified flat-floor recovery overlap. Try

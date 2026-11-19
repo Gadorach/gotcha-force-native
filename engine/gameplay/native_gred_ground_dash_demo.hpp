@@ -49,6 +49,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {
         State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;
+        bool direct_expiry_relaunch=false;
         std::shared_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion;
     };
 public:
@@ -330,6 +331,12 @@ public:
         const bool expiry_relaunch=allows(mode_,Behavior::ExpiryPlainWindupRelaunch);
         if(s.jump.selector==8){
             const auto& previous_air=state_.air_motion;
+            const bool direct_push=allows(mode_,Behavior::WalkExpiryDirectRelaunch)&&!s.relaunch.lower_stage&&
+                state_.walk_loss_origin&&state_.static_push;
+            if(direct_push&&(state_.ground_timer698!=0.f||s.ground_timer698!=0.f))
+                return fail(error,"direct relaunch needs the accepted zero-timer walking push");
+            if(direct_push&&(stick_x!=0||stick_y!=32))
+                return fail(error,"direct expiry relaunch needs soft Up");
             const bool plain_windup_handoff=allows(mode_,Behavior::TimedPlainWindupRelaunch)&&!s.relaunch.lower_stage&&
                 previous_air&&previous_air->phase==15&&previous_air->next_selector==16&&previous_air->next_stage==0&&
                 previous_air->timer568==0&&!state_.static_push&&!state_.air_dash_floor;
@@ -342,6 +349,10 @@ public:
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
+            if(direct_push&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||!s.relaunch_motion->direction||
+                s.relaunch_motion->vertical_before>=0.f||s.motion.vertical48>=0.f))
+                return fail(error,"direct expiry relaunch requires plain descending entry without contact response");
+            candidate->direct_expiry_relaunch=direct_push;
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
             const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
                 state_.static_push&&s.jump.selector==15&&!s.air_dash.entered;
@@ -575,7 +586,7 @@ public:
                 recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift,plain_windup_relaunch_ready,
                 accepted.relaunch_floor?std::optional{accepted.relaunch_floor->response_factor<1.f}:std::nullopt,
                 pending_->interrupted_dash&&accepted.kind==NativeBorgMotionKind::JumpTakeoff,
-                accepted.landing_target==12}));
+                accepted.landing_target==12,pending_->direct_expiry_relaunch}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

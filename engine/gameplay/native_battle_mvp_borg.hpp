@@ -21,6 +21,7 @@ struct NativeBorgSourceReadout {
     std::optional<bool> relaunch_floor_damped; //Accepted airborne snap; true only for the negative-speed tail.
     bool dash_interrupted_takeoff=false; //First accepted takeoff after interrupting an existing dash.
     bool landing_dash_started=false; //Accepted phase-12 dash replacing an entered landing.
+    bool direct_expiry_relaunch=false; //Accepted plain relaunch directly from a zero-timer walking push.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

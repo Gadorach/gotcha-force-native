@@ -369,8 +369,8 @@ input yourself.
 
 ### Relaunch after the first ordinary fall
 
-Relaunch still cannot follow the push directly, even in the air-dash
-mode. On this fixture, one neutral update after the zero-timer push is
+In the earlier expiry and air-dash modes, relaunch cannot follow the
+push directly. On this fixture, one neutral update after the zero-timer push is
 enough: tick 57 accepts ordinary falling, and Shift on tick 58 enters
 relaunch under the existing rules. No movement permissions changed.
 
@@ -386,6 +386,36 @@ with 7950 meter. Touchdown at 141 and landing at 142 don't refill it; idle
 eventually does. A one-tick tap also works: it skips active relaunch,
 returns to falling at 59 with 9850, and touches down at 110 before
 landing at 111.
+
+### Direct soft-Up relaunch after the accepted expiry push
+
+`--gred-walk-ledge-expiry-direct-relaunch` opts into one new predecessor
+for a plain descending relaunch: the immediately preceding accepted
+**zero-timer walking push**. It does not borrow a completed wind-up or an
+ordinary falling update. The source entry requires soft Up; native
+acceptance independently checks the camera-relative turn from the old
+body heading, then applies the existing body, bounds, and travel checks.
+A still-positive timer, a pending 1 → 0 update, neutral input, floor snaps,
+and steep responses at entry cannot use this permission.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiry-direct-relaunch --headless --frames 170 --no-audio
+gf_native --gred-walk-ledge-expiry-direct-relaunch --practice-start --no-audio
+```
+
+**Left Arrow** on 6–25 reaches the accepted expiry push at 56. Hold
+**Up Arrow + Shift** on 57–76. Entry adds 15 to the projected downward
+speed, so G-Red still descends. It spends only 150 and shows **DIRECT
+EXPIRY RELAUNCH** on that accepted frame. Continued relaunch first moves
+up on 76. Release at 77 with 7950 meter; touchdown at 136 and separate
+landing at 137 preserve it until normal recovery. A single Up+Shift tap
+on 57 also finishes: falling resumes at 58 with 9850, touchdown at 110,
+and landing at 111. Neither route pays an air-dash charge.
+
+The isolated scan completed 17 of 63 expired-push attempts. The new mode
+qualifies just the soft-Up entry. None of the candidates from 4,800
+positive-timer trials passed native entry, so that permission stays
+closed. Prior modes and other Borgs are unchanged.
 
 ## Ordered dash off an inclined ledge (GFMM9)
 

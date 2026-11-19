@@ -86,6 +86,24 @@ inline bool native_gred_relaunch_acceleration_valid(f32 value){
     f32 cosine=0;source_heading_xz(8192,nullptr,&cosine);const f32 neutral=bits_to_f32(0x3f4ccccdu);
     return value==neutral||value==std::fma(neutral,cosine,0.f);
 }
+// Exact soft-Up branch of the qualified normal G-Red ascent turn (gain1).
+// Recover the stored body angle without accepting a tolerance on travel:
+// bounded atan2 can truncate one unit away from the exact forward vector.
+inline bool native_gred_expiry_up_turn(const NativeBorgMovementFrame& camera,BattlePoint before,s16 travel,BattlePoint after){
+    CharacterMovementHeadingFrame frame;
+    if(!native_borg_source_heading_frame(camera,before,&frame))return false;
+    const auto desired=source_heading_wrap(s32(frame.camera5b0)-0x8000);
+    for(int d=-1;d<=1;++d){
+        const auto body=source_heading_wrap(s32(frame.body72)+d);
+        BattlePoint facing;source_heading_xz(body,&facing.x,&facing.z);
+        if(facing!=before)continue;
+        const auto delta=source_heading_wrap(s32(desired)-body);
+        const auto turned=source_heading_wrap(s32(body)+s32(f32(f32(delta)*bits_to_f32(0x3d4ccccdu))));
+        source_heading_xz(turned,&facing.x,&facing.z);
+        if(turned==travel&&facing==after)return true;
+    }
+    return false;
+}
 inline unsigned native_borg_motion_phase(NativeBorgMotionKind kind){
     const unsigned value=unsigned(kind);
     return value<=4?value:value<=8?value-4:(value<=35||kind==NativeBorgMotionKind::GroundLossPush||
@@ -873,7 +891,12 @@ public:
                      if(o.proposed_position!=expected)return false;
                 }
             }
-             const bool relaunch_entry_prior=prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
+              const bool direct_expiry_relaunch=behaviors.has(Behavior::WalkExpiryDirectRelaunch)&&walking_push&&
+                  walking_push->timer698==0.f&&o.controller_timer698==0.f&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
+                  o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
+                  o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
+                  native_gred_expiry_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
+              const bool relaunch_entry_prior=direct_expiry_relaunch||prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                 native_borg_motion_windup_update(prior)||native_borg_motion_active_entry(prior)||
                 native_borg_motion_active_update(prior)||native_borg_motion_recovery(prior)||
                  (controller_ground_loss_relaunch_policy&&(prior==NativeBorgMotionKind::GroundLossEntry||prior==NativeBorgMotionKind::GroundLossAir));
@@ -1290,7 +1313,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundExpiryPlainWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiryDirectRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

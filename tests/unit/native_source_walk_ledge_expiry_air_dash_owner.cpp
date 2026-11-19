@@ -157,11 +157,12 @@ int main(){
         "positive-timer handoff mode still refuses the completed zero-timer wind-up");
 
     bind(Mode::GroundExpiryPlainWindupRelaunch);prefix(56);
-    if(prepare(false,&offer,true)){
-        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
-        check(!world.step({},false,&view,nullptr,&frame,&offer),"direct relaunch from the expiry push still refuses");
-        source.reject();
-    }
+    check(prepare(false,&offer,true,true)&&offer.kind==Kind::RelaunchEntry,
+        "older mode stages the same soft-Up candidate but cannot authorize it");
+    const auto direct_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(!world.step({},false,&view,nullptr,&direct_frame,&offer)&&world.motion_receipt_current(pose.receipt)&&
+        !view.practice_readout(world)->direct_expiry_relaunch,"older policy still rejects the verified direct relaunch");
+    source.reject();
     check(world.tick()==56&&source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
         "expiry relaunch needs a completed wind-up and does not fall back");
 
@@ -203,5 +204,70 @@ int main(){
             source.air_dash_starts()==1&&!source.air_dash_active_frames()&&source.relaunches()==1,
             "tap and held expiry handoffs both reach idle without active dash");
     }
-    std::printf("Expiry air dash: %u checks PASS, qualified zero-timer handoff and separate costs/landing\n",checks);
+    bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(55);
+    check(offer.kind==Kind::GroundLossPush&&source.ground_loss_timer698()==1.f&&
+        !prepare(false,&offer,true,true)&&world.tick()==55&&error.find("accepted zero-timer walking push")!=std::string::npos&&
+        source.ground_loss_timer698()==1.f&&source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
+        "one-tick-early Shift cannot substitute a pending decrement for the accepted expiry push");
+    bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(56);
+    check(!prepare(false,&offer,true)&&world.tick()==56&&error.find("needs soft Up")!=std::string::npos&&
+        source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
+        "neutral direct relaunch is not the verified directional route");
+
+    for(const bool held:{false,true}){
+        bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(56);
+        const auto previous=offer;const auto before=world.actors()[0];const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(previous.kind==Kind::GroundLossPush&&previous.walk_ledge&&previous.walk_ledge->walk_origin&&
+            previous.walk_ledge->timer698==0.f&&previous.static_push&&previous.static_push->surface.triangle==1999&&
+            previous.controller_timer698==0.f&&!before.grounded&&before.vertical_speed<0.f&&
+            prepare(false,&offer,true,true)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+            offer.controller_timer698==0.f&&offer.entry_vertical_delta==15.f&&
+            offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&offer.vertical_speed<0.f&&
+            offer.relaunch_motion->speed_before==previous.jump_motion->speed44&&
+            offer.relaunch_motion->resource_before==10000&&offer.relaunch_motion->resource_after==9850&&
+            !offer.static_push&&!offer.relaunch_floor&&!offer.air_motion,
+            "direct soft-Up entry starts from the accepted projected speed and spends just 150 while still descending");
+        auto refuses=[&](const NativeBorgMotionOffer& wrong,const NativeBorgMovementFrame* camera,const char* why){
+            check(!world.step({},false,&view,nullptr,camera,&wrong)&&world.tick()==56&&world.actors()[0].position==before.position&&
+                source.resource()==10000&&!source.relaunches()&&world.motion_receipt_current(pose.receipt)&&
+                !view.practice_readout(world)->direct_expiry_relaunch,why);
+        };
+        refuses(offer,nullptr,"native requires a current camera-frame turn proof");
+        NativeBorgMovementFrame backwards;
+        check(native_borg_movement_frame({-frame.forward.x,-frame.forward.z},&backwards),"valid opposite camera frame");
+        refuses(offer,&backwards,"a different valid camera does not prove the accepted Up turn");
+        auto wrong=offer;wrong.facing=before.facing;refuses(wrong,&frame,"entry cannot keep a fabricated unturned body");
+        wrong=offer;wrong.controller_timer698=1;refuses(wrong,&frame,"direct expiry cannot invent a positive countdown");
+        wrong=offer;wrong.relaunch_motion->resource_before=9550;refuses(wrong,&frame,"direct relaunch did not pay a wind-up cost");
+        wrong=offer;wrong.kind=Kind::RelaunchEntryFloor;wrong.relaunch_floor=NativeBorgRelaunchFloor{};
+        refuses(wrong,&frame,"direct expiry cannot authorize a floor response on entry");
+        wrong=offer;wrong.kind=Kind::RelaunchEntryPush;wrong.static_push=previous.static_push;
+        refuses(wrong,&frame,"direct expiry cannot borrow an old steep response");
+        accept(offer);
+        check(!world.actors()[0].grounded&&source.movement_programs()==std::array<u16,2>{14,14}&&source.resource()==9850&&
+            source.relaunches()==1&&view.practice_readout(world)->direct_expiry_relaunch,
+            "matching acceptance publishes relaunch and the cue, not touchdown or wind-up");
+        unsigned active_tick=0,fall_tick=0,hit=0,land=0,lift_tick=0;
+        while(world.tick()<170){
+            const unsigned tick=world.tick()+1;
+            const bool rise=held&&tick<=76;
+            const auto y=world.actors()[0].position[1];
+            check(prepare(false,&offer,rise,rise),"tap or held direct relaunch through ordinary fall and landing");
+            if(!active_tick&&native_borg_motion_relaunch_active(offer.kind))active_tick=tick;
+            if(!lift_tick&&rise&&offer.proposed_position[1]>y)lift_tick=tick;
+            if(!fall_tick&&offer.kind==Kind::JumpAir)fall_tick=tick;
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            check(!view.practice_readout(world)->direct_expiry_relaunch&&source.ground_loss_timer698()==0.f,
+                "entry cue does not persist, and the timer does not restart");
+            if(tick==fall_tick||tick==hit||tick==land)check(source.resource()==(held?7950:9850),
+                "release, touchdown and landing retain the spent meter");
+        }
+        check((held?(active_tick==62&&lift_tick==76&&fall_tick==77&&hit==136):(!active_tick&&!lift_tick&&fall_tick==58&&hit==110))&&
+            land==hit+1&&source.landings()==1&&source.walk_ledge_pushes()==2&&!source.air_dash_starts()&&!source.relaunch_floor_contacts()&&
+            source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+            "both complete routes use no paid dash or further contact response and return to idle");
+    }
+    std::printf("Expiry air dash and relaunch: %u checks PASS, scoped zero-timer entries and separate costs/landing\n",checks);
 }
