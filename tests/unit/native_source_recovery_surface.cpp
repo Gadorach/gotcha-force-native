@@ -125,6 +125,9 @@ int main(){
             wrong=offer;wrong.static_push.reset();rejects(wrong,"recovery push requires the plane record");
             wrong=offer;wrong.controller_timer698=1;rejects(wrong,"positive698 does not grant recovery push");
             wrong=offer;wrong.air_motion->next_selector=6;rejects(wrong,"contact cannot advance unfinished lower recovery");
+            wrong=offer;wrong.air_motion->lower_done=true;wrong.air_motion->next_selector=6;
+            rejects(wrong,"a forged done flag cannot promote unfinished captured recovery");
+            wrong=offer;wrong.recovery_completion.reset();rejects(wrong,"combined recovery push requires its actual lower-lane proof");
             wrong=offer;wrong.air_motion->resource_after=10000;rejects(wrong,"projection cannot refill in air");
             wrong=offer;wrong.air_motion->speed44=motion.move_speed;rejects(wrong,"projection must damp retained scalar");
             wrong=offer;wrong.air_motion->control=1;rejects(wrong,"grounded recovery control is unsupported");
@@ -168,7 +171,91 @@ int main(){
     std::printf("%s recovery surface: push tick=%u touchdown=%u resource=%d\n",combined?"combined":"legacy",push_tick,touchdown_tick,push_resource);
     }
     check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
-        !source.bind(files,art,"local/content/source-gred-ground-v5",world,seed,&error,NativeGRedGroundDashDemo::Mode::RecoverySurface)&&world.tick()==0,
-        "older contact pack cannot fabricate recovery projection operands");
+         !source.bind(files,art,"local/content/source-gred-ground-v5",world,seed,&error,NativeGRedGroundDashDemo::Mode::RecoverySurface)&&world.tick()==0,
+         "older contact pack cannot fabricate recovery projection operands");
+    if(files.exists(combined_pack+"/motion.gfmm")){
+        struct Route {f32 x,z;unsigned drift;u32 triangle;s16 angle;};
+        const Route right_of_seam{-575,-2990,110,1321,12972};
+        auto scheduled=[](unsigned t,const Route& r){
+            GamePadState pad;pad.b=t>=5&&t<38;
+            if(t>=45&&t<72)pad.stick_y=-127;
+            pad.dpad_left=t>=r.drift&&t<112;
+            return pad;
+        };
+        using Kind=NativeBorgMotionKind;
+        using Mode=NativeGRedGroundDashDemo::Mode;
+        view.source_practice_controls();
+        config={};config.arena_half=4500;config.spawn[0]={right_of_seam.x,right_of_seam.z};
+        bind(Mode::GroundRelaunchFallPush,combined_pack);
+        NativeBorgMotionOffer offer;
+        while(world.tick()<110){check(prepare(scheduled(world.tick(),right_of_seam),&offer),"narrower mode reaches the completion approach");accept(offer);}
+        check(!prepare(scheduled(110,right_of_seam),&offer)&&world.tick()==110&&source.resource()==5850&&
+            !source.recovery_pushes()&&!source.landings()&&!world.step({},false,&view),
+            "finishing animation does not let the older mode borrow steep recovery contact");
+
+        for(const Route r:{right_of_seam,Route{-595,-2986,108,1320,11582}}){
+            config.spawn[0]={r.x,r.z};bind(Mode::GroundRecoveryPush,combined_pack);
+            NativeBorgMotionOffer prior;
+            while(world.tick()<180){
+                const auto prior_pose=pose;const auto before=world.actors()[0];const auto tick=world.tick()+1;
+                check(prepare(scheduled(tick-1,r),&offer),"real grounded approach through completion push and landing");
+                if(tick==111){
+                    check(offer.kind==Kind::AirDashRecoveryPush&&offer.air_motion&&offer.static_push&&
+                        offer.controller_timer698==0&&!offer.recovery_completion.expired()&&prior.kind==Kind::AirDashRecovery,
+                        "owned contact proposal and sealed lower recovery completion");
+                    const auto& air=*offer.air_motion;const auto& push=*offer.static_push;
+                    check(air.phase==17&&!air.entry&&air.lower_done&&air.next_selector==6&&air.callback&&air.drift_heading&&
+                        air.resource_before==5850&&air.resource_after==5850&&air.vertical_accel==-1&&
+                        push.surface.triangle==r.triangle&&push.angle==r.angle&&push.vertical_speed==-30&&
+                        offer.vertical_speed==-27&&air.speed44==f32(air.move_speed*bits_to_f32(0x3f666666u))&&
+                        !offer.surface_landing&&offer.facing==before.facing,
+                        "projection dampens motion without landing or spending; program 12 can finish after the push");
+                    const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                    auto refuse=[&](const NativeBorgMotionOffer& wrong,const char* why){
+                        check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==110&&
+                            world.actors()[0].position==before.position&&source.resource()==5850&&!source.recovery_pushes()&&
+                            world.motion_receipt_current(prior_pose.receipt)&&!view.practice_readout(world)->recovery_push_complete,why);
+                    };
+                    auto wrong=offer;wrong.air_motion->lower_done=false;wrong.air_motion->next_selector=17;
+                    refuse(wrong,"a finished recovery cannot be falsely kept alive despite identical contact");
+                    wrong=offer;wrong.recovery_completion.reset();refuse(wrong,"matching projection without lower-lane proof is insufficient");
+                    wrong=offer;++wrong.static_push->surface.triangle;refuse(wrong,"matching completion without selected-plane proof is insufficient");
+                }
+                if(tick==112)check(offer.kind==Kind::JumpTouchdown&&offer.jump_motion&&offer.jump_motion->entry&&
+                    offer.jump_motion->air_dash_origin&&offer.jump_motion->vertical_before==-27&&
+                    offer.jump_motion->speed_before==prior.air_motion->speed44&&!offer.air_motion,
+                    "the first program 13 update inherits damped recovery momentum and performs the real touchdown");
+                accept(offer);
+                const auto shown=view.practice_readout(world);
+                check(shown&&shown->recovery_push_complete==(tick==111),"only the accepted completing push shows the cue");
+                if(tick==111)check(!world.actors()[0].grounded&&source.selector()==6&&source.cached_airborne87()&&
+                    !source.landings()&&source.resource()==5850&&source.movement_programs()==std::array<u16,2>{12,12},
+                    "the completing push retains the recovery pose and airborne cache; it is not touchdown");
+                if(tick==112)check(world.actors()[0].grounded&&source.landings()==1&&source.resource()==5850&&
+                    source.movement_programs()==std::array<u16,2>{13,13},"touchdown still uses the falling program");
+                if(tick==113)check(offer.kind==Kind::JumpLanding&&source.resource()==5850&&
+                    source.movement_programs()==std::array<u16,2>{8,8},"separate landing entry has not yet refilled");
+                if(tick==114)check(source.resource()==7850,"refill begins after the accepted landing entry");
+                prior=offer;
+            }
+            check(source.recovery_pushes()==1&&source.surface_pushes()==1&&!source.dash_fall_pushes()&&source.landings()==1&&
+                source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+                "owned completion route finishes idle with one steep push and one landing");
+        }
+        const Route partial{-585,-2990,110,1320,11582};
+        config.spawn[0]={partial.x,partial.z};bind(Mode::GroundRecoveryPush,combined_pack);
+        while(world.tick()<111){
+            check(prepare(scheduled(world.tick(),partial),&offer),"nearby route reaches an accepted completion push");
+            accept(offer);
+        }
+        check(offer.kind==Kind::AirDashRecoveryPush&&offer.static_push&&offer.static_push->surface.triangle==partial.triangle&&
+            view.practice_readout(world)->recovery_push_complete&&source.recovery_pushes()==1,
+            "a valid push and completion alone do not prove the next contact");
+        const auto last_position=world.actors()[0].position;const auto last_pose=pose;
+        check(!prepare(scheduled(111,partial),&offer)&&error.find("raised-surface/side-entry")!=std::string::npos&&
+            world.tick()==111&&world.actors()[0].position==last_position&&source.resource()==5850&&
+            source.recovery_pushes()==1&&!source.landings()&&last_pose.frame_scope.expired()&&
+            !world.step({},false,&view),"the nearby raised-side route still stops before touchdown without fallback");
+    }
     std::printf("source recovery surface/VM/completion/resource/pose: %u checks PASS; native proxies, no whole-frame equivalence\n",checks);
 }

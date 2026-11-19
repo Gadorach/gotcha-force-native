@@ -517,6 +517,32 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertNotIn("recovery seam guide:", ordinary.stdout)
         self.assertIn("accepted native tick=8 G-Red-position=-240.00/10.00/300.00; accepted-frames=8", ordinary.stdout)
 
+    def test_gred_recovery_completion_push_keeps_touchdown_and_landing_separate(self):
+        for tick, phase, meter, pushes, landings, selector, program in (
+            (110, "DASH RECOVERY", 5850, 0, 0, 17, 12),
+            (111, "DASH RECOVERY / PUSH", 5850, 1, 0, 6, 12),
+            (112, "TOUCHDOWN", 5850, 1, 1, 7, 13),
+            (113, "LANDING", 5850, 1, 1, 7, 8),
+            (114, "LANDING", 7850, 1, 1, 7, 8),
+            (180, "IDLE", 10000, 1, 1, 0, 0),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-recovery-completion-push", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn(f"controller-recovery-pushes={pushes} total-pushes={pushes} starts=1 ", run.stdout)
+                self.assertIn(f"landings={landings} resource={meter} selector={selector} programs={program}/{program}", run.stdout)
+                self.assertEqual("practice-recovery-push=RECOVERY COMPLETE" in run.stdout, tick==111)
+                if tick==180:
+                    self.assertIn("G-Red-position=-596.39/10.78/-1355.65", run.stdout)
+        guide = self.run_host(["--gred-recovery-completion-push", "--practice-start", "--headless", "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("recovery completion push guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-575.00/", guide.stdout)
+        self.assertNotIn("recovery completion push demo:", guide.stdout)
+        self.assertNotIn("practice-recovery-push=", guide.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

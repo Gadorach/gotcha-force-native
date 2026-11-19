@@ -547,6 +547,37 @@ The isolated host and all-header builds, three targeted host tests, and the
 across the legacy and combined routes, including refusal of mismatched motion,
 contact, completion and meter records without advancing the world.
 
+### Steep push on the recovery completion update
+
+`--demo-gred-recovery-completion-push` verifies the existing combined
+recovery-push policy when lower program 12 finishes on the same update.
+The first 2,520 nearby routes did not offer that coincidence. Releasing
+jump before the dash and approaching the toe from a different grounded
+start produced 21 accepted completion pushes in 2,240 variants, of
+which two completed and settled. The other 19 refused a raised-side
+contact on the next update. The regression keeps one such route
+(`-585/-2990`) closed at tick 112 despite its accepted push at 111.
+
+```sh
+gf_native --demo-gred-recovery-completion-push --headless --frames 180 --no-audio
+```
+
+On the original stage, the native start at X/Z `-575/-2990` reaches
+triangle 1321 at tick 111. The steep push applies the existing `.9` tail
+(`-30 → -27` vertical speed) and keeps both program 12 lanes for that
+frame. The lower completion selects falling for the next update.
+`RECOVERY COMPLETE` appears only on that accepted push, not on an
+unfinished push or on touchdown. Falling program 13 inherits the damped
+motion and touches down at 112. Landing program 8 starts at 113 with
+5850 meter; refill starts at 114. The second full route uses triangle
+1320 and the same program timing.
+
+Combined recovery push offers now carry the producer's actual lower-lane
+completion proof. Native still checks the motion, selected plane, and
+pre/post travel separately. Neither a forged completion flag nor a
+plausible projection can advance the world without its matching proof.
+Older contact policies still refuse recovery pushes where they did before.
+
 ## Released-relaunch zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-fall-push` adds downward selector6 steep contact after

@@ -406,7 +406,8 @@ public:
                 !jump_path||!o.jump_motion||!o.jump_motion->entry||o.jump_motion->phase!=6||!o.jump_motion->air_dash_origin||
                 o.jump_motion->held_jump||(!recovery_drift_policy&&o.jump_motion->drift_heading)||!last_offer_.air_motion||
                 o.jump_motion->resource_before!=last_offer_.air_motion->resource_after||*o.controller_timer698!=0.f))return false;
-             const bool recovery_program=recovery_recontact_policy&&controller_air_frame&&o.air_motion->phase==17;
+             const bool recovery_program=(recovery_recontact_policy||controller_recovery_push_frame)&&
+                 controller_air_frame&&o.air_motion->phase==17;
              const auto completion=o.recovery_completion.lock();
              if(recovery_program||(recovery_drift_policy&&recovery_recontact)){
                  const bool contact_update=recovery_floor_complete||recovery_recontact;

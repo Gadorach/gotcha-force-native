@@ -448,7 +448,9 @@ public:
         if(native_borg_motion_air_dash(kind))candidate->offer.action=BattleMvpAction::AirDash;
         if(native_borg_motion_relaunch_entry(kind))candidate->offer.entry_vertical_delta=f32(motion_.air[2]*motion_.rank[2]);
         if(!serial_)return fail(error,"source serial exhausted");
-        const bool recovery_program=allows(mode_,Behavior::RecoveryFloorRecontact)&&s.air_motion&&s.air_motion->phase==17;
+        const bool recovery_program=s.air_motion&&s.air_motion->phase==17&&
+            (allows(mode_,Behavior::RecoveryFloorRecontact)||
+                (kind==NativeBorgMotionKind::AirDashRecoveryPush&&allows(mode_,Behavior::RecoveryPush)));
         if(recovery_program||(recovery_drift_policy&&state_.recovery_floor_complete)){
             auto proof=std::shared_ptr<NativeBorgRecoveryCompletionScope>(new NativeBorgRecoveryCompletionScope);
             proof->world=observed.scope;proof->producer=producer_;proof->tick=observed.tick;proof->serial=serial_;
@@ -533,10 +535,12 @@ public:
         const bool ledge_drift_active=accepted.kind==NativeBorgMotionKind::GroundLossAir&&accepted.walk_ledge&&
             accepted.walk_ledge->drift_heading.has_value();
         const bool recovery_drift_active=pending_->recovery_completion&&pending_->recovery_completion->drift_offset.has_value();
+        const bool recovery_push_complete=accepted.kind==NativeBorgMotionKind::AirDashRecoveryPush&&
+            accepted.air_motion&&accepted.air_motion->lower_done&&accepted.air_motion->next_selector==6;
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
                 accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active,
-                recovery_drift_active,recovery_seam}));
+                recovery_drift_active,recovery_seam,recovery_push_complete}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

@@ -133,6 +133,7 @@ struct Options {
     bool source_ground_air_fall_push=false;
     bool source_ground_relaunch_fall_push=false;
     bool source_ground_recovery_push=false;
+    bool gred_recovery_completion_push=false;
     bool source_ground_windup_push=false;
     bool source_ground_active_push=false;
     bool source_ground_relaunch_push=false;
@@ -342,6 +343,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-ground-air-fall-push" || arg == "--demo-source-ground-air-fall-push" ||
                  arg == "--source-ground-relaunch-fall-push" || arg == "--demo-source-ground-relaunch-fall-push" ||
                  arg == "--source-ground-recovery-push" || arg == "--demo-source-ground-recovery-push" ||
+                 arg == "--gred-recovery-completion-push" || arg == "--demo-gred-recovery-completion-push" ||
                  arg == "--source-ground-windup-push" || arg == "--demo-source-ground-windup-push" ||
                  arg == "--source-ground-active-push" || arg == "--demo-source-ground-active-push" ||
                  arg == "--source-ground-relaunch-push" || arg == "--demo-source-ground-relaunch-push" ||
@@ -386,7 +388,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_fall_push=arg=="--source-ground-fall-push"||arg=="--demo-source-ground-fall-push";
             options->source_ground_air_fall_push=arg=="--source-ground-air-fall-push"||arg=="--demo-source-ground-air-fall-push";
             options->source_ground_relaunch_fall_push=arg=="--source-ground-relaunch-fall-push"||arg=="--demo-source-ground-relaunch-fall-push";
-            options->source_ground_recovery_push=arg=="--source-ground-recovery-push"||arg=="--demo-source-ground-recovery-push";
+            options->gred_recovery_completion_push=arg=="--gred-recovery-completion-push"||arg=="--demo-gred-recovery-completion-push";
+            options->source_ground_recovery_push=options->gred_recovery_completion_push||
+                arg=="--source-ground-recovery-push"||arg=="--demo-source-ground-recovery-push";
             options->source_ground_windup_push=arg=="--source-ground-windup-push"||arg=="--demo-source-ground-windup-push";
             options->source_ground_active_push=arg=="--source-ground-active-push"||arg=="--demo-source-ground-active-push";
             options->source_ground_relaunch_push=arg=="--source-ground-relaunch-push"||arg=="--demo-source-ground-relaunch-push";
@@ -416,8 +420,10 @@ bool parse(int argc, char** argv, Options* options) {
                 arg=="--gred-recovery-recontact-drift"||arg=="--demo-gred-recovery-recontact-drift";
             options->gred_recovery_recontact=options->gred_recovery_recontact_drift||
                 arg=="--gred-recovery-recontact"||arg=="--demo-gred-recovery-recontact";
-            options->gred_practice=options->gred_recovery_recontact||options->gred_slope_dash||arg=="--gred-movement"||arg=="--demo-gred-movement";
-            options->source_ground_windup_entry_push=(options->gred_practice&&!options->gred_slope_dash&&!options->gred_recovery_recontact)||
+            options->gred_practice=options->gred_recovery_recontact||options->gred_recovery_completion_push||
+                options->gred_slope_dash||arg=="--gred-movement"||arg=="--demo-gred-movement";
+            options->source_ground_windup_entry_push=(options->gred_practice&&!options->gred_slope_dash&&
+                !options->gred_recovery_recontact&&!options->gred_recovery_completion_push)||
                 arg=="--source-ground-windup-entry-push"||arg=="--demo-source-ground-windup-entry-push";
             options->source_ordered_ground=arg=="--source-ordered-ground"||arg=="--demo-source-ordered-ground"||options->source_dash_ledge||options->source_ground_ledge||options->source_ground_jump||options->source_ground_landing||options->source_ground_air||options->source_ground_air_floor||options->source_ground_relaunch||options->source_ground_relaunch_floor||options->source_ground_windup_entry_floor||options->source_ground_surface||options->source_ground_loss_surface||options->source_ground_loss_jump||options->source_ground_loss_landing||options->source_ground_loss_air||options->source_ground_loss_relaunch||options->source_ground_fall_push||options->source_ground_air_fall_push;
             if(options->source_ordered_ground)options->source_ground_interactive=arg=="--source-ordered-ground"||arg=="--source-dash-ledge"||arg=="--source-ground-ledge"||arg=="--source-ground-jump"||arg=="--source-ground-landing"||arg=="--source-ground-air"||arg=="--source-ground-air-floor"||arg=="--source-ground-relaunch"||arg=="--source-ground-relaunch-floor"||arg=="--source-ground-windup-entry-floor"||arg=="--source-ground-surface"||arg=="--source-ground-loss-surface"||arg=="--source-ground-loss-jump"||arg=="--source-ground-loss-landing"||arg=="--source-ground-loss-air"||arg=="--source-ground-loss-relaunch"||arg=="--source-ground-fall-push"||arg=="--source-ground-air-fall-push";
@@ -765,7 +771,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     const auto* practice=package?&practice_bytes:nullptr;
     gf::BattleMvpConfig config;
     const bool use_demo_start=!options.source_ground_interactive||options.gred_practice_start;
-    const bool guided_recovery=options.gred_recovery_first_contact_seam&&options.gred_practice_start&&options.source_ground_interactive;
+    const bool guided_recovery=options.gred_practice_start&&options.source_ground_interactive&&
+        (options.gred_recovery_first_contact_seam||options.gred_recovery_completion_push);
     //Explicit native demo placement at original stage473 floor triangle1297's
     //interior, not a recovered actor constructor/spawn or edited stage asset.
     if(options.source_surface&&!options.source_ground_interactive)config.spawn[0]={-619.2617f,169.4453f};
@@ -773,7 +780,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.source_fall_surface&&!options.source_ground_interactive)config.spawn[0]={-606.4511719f,-1373.5872803f}; //native interior point on the same original steep face
     //Bounded original-stage recovery route; BOTH placements are native demo
     //assumptions, not recovered actor constructor/spawn or edited stage data.
-    if((options.source_recovery_surface||options.source_ground_recovery_push)&&!options.source_ground_interactive){
+    if(options.gred_recovery_completion_push&&use_demo_start){
+        config.arena_half=4500;config.spawn[0]={-575,-2990};
+    }else if((options.source_recovery_surface||options.source_ground_recovery_push)&&!options.source_ground_interactive){
         config.spawn[0]={44.928558350f,-332.878112793f};config.spawn[1]={1200,1200};
     }
     //Unchanged original mountain triangle2536. Wider bounds and a static-floor
@@ -917,7 +926,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_practice_controls();
             gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, C camera, Q restart, Esc close; native proxies, no combat");
             if(options.gred_practice_start){
-                const char* hint=guided_recovery?"RECOVERY SEAM\nSHIFT 6-39 / W 43 / RIGHT ARROW 105-109":
+                const char* hint=guided_recovery?(options.gred_recovery_completion_push?
+                    "RECOVERY COMPLETION PUSH\nSHIFT 6-38 / W 46-72 / LEFT ARROW 111-112":
+                    "RECOVERY SEAM\nSHIFT 6-39 / W 43 / RIGHT ARROW 105-109"):
                     options.gred_walk_ledge_expiry_air_dash?"WALK LEFT / FLICK LEFT AFTER EXPIRY PUSH":
                     options.gred_walk_ledge_expiry_push?"LEFT ARROW THEN RELEASE":
                     options.gred_walk_ledge_fall_push?"RIGHT ARROW THEN RELEASE":
@@ -974,10 +985,12 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 view.source_ground_windup_push_controls();
                 gf::log_info(context,"source-ground","continued wind-up15/program10 push at zero698 only; retains damped velocity, exact timer and handoff cost; no wind-up entry, active dash, active relaunch, ground-loss or positive698 push authority");
                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","ground-windup-push demo only: grounded native mountain placement, original stage, wider native bounds; jump5-32, left flick79-128");
-            }else if(options.source_ground_recovery_push){
-                view.source_ground_recovery_push_controls();
+             }else if(options.source_ground_recovery_push){
+                 view.source_ground_recovery_push_controls();
                 gf::log_info(context,"source-ground","airborne recovery17/program12 push at zero698 only; .9 damping before lower completion, separate landing; no active/wind-up dash, active relaunch, ground-loss or positive698 push authority");
-                if(!options.source_ground_interactive)gf::log_info(context,"source-ground","ground-recovery-push demo only: native grounded placements 44.9286/-332.8781 and 1200/1200, original stage and bounds; jump5-21, backward flick20-60");
+                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_recovery_completion_push?
+                     "recovery completion push demo: native grounded start -575/-2990; Shift on ticks 6-38, W on 46-72, Left on 111-112":
+                     "ground-recovery-push demo only: native grounded placements 44.9286/-332.8781 and 1200/1200, original stage and bounds; jump5-21, backward flick20-60");
             }else if(options.source_ground_relaunch_fall_push){
                 view.source_ground_relaunch_fall_push_controls();
                 gf::log_info(context,"source-ground","released-relaunch falling6/program21-24 push at zero698 only; exact inherited scalar, selected plane, .9 tail and separate landing; no active relaunch, air-dash callback, ground-loss or positive698 push authority");
@@ -1108,7 +1121,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     auto pause_guided_recovery=[&](){
         if(!guided_recovery)return true;
         if(!world.set_paused(true))return false;
-        gf::log_info(context,"source-ground","recovery seam guide: paused at tick=%u; P steps; Shift 6-39, W 43, Right Arrow 105-109",world.tick());
+        gf::log_info(context,"source-ground",options.gred_recovery_completion_push?
+            "recovery completion push guide: paused at tick=%u; P steps; Shift 6-38, W 46-72, Left Arrow 111-112":
+            "recovery seam guide: paused at tick=%u; P steps; Shift 6-39, W 43, Right Arrow 105-109",world.tick());
         return true;
     };
     if(!pause_guided_recovery()){render.shutdown();return 2;}
@@ -1225,9 +1240,16 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                          }else if(options.source_ground_windup_push){
                              const auto tick=world.tick();device.b=tick>=5&&tick<33;
                              if(tick>=79&&tick<129)device.stick_x=-127;
-                         }else if(options.source_ground_recovery_push){
-                             const auto tick=world.tick();device.b=tick>=5&&tick<22;
-                             if(tick>=20&&tick<61)device.stick_y=127;
+                          }else if(options.source_ground_recovery_push){
+                              const auto tick=world.tick();
+                              if(options.gred_recovery_completion_push){
+                                  device.b=tick>=5&&tick<38;
+                                  if(tick>=45&&tick<72)device.stick_y=-127;
+                                  device.dpad_left=tick>=110&&tick<112;
+                              }else{
+                                  device.b=tick>=5&&tick<22;
+                                  if(tick>=20&&tick<61)device.stick_y=127;
+                              }
                          }else if(options.source_ground_relaunch_fall_push){
                              const auto tick=world.tick();device.b=(tick>=5&&tick<33)||(tick>=45&&tick<60);
                          }else if(options.source_ground_air_fall_push){
@@ -1429,6 +1451,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
              if(practice->recovery_drift_active)gf::log_info(context,"source-ground","practice-recovery-drift=DRIFT ACTIVE");
              if(const auto& seam=practice->recovery_seam)
                  gf::log_info(context,"source-ground","practice-recovery-seam=%u->%u cue=FLAT SEAM",(*seam)[0],(*seam)[1]);
+             if(practice->recovery_push_complete)gf::log_info(context,"source-ground","practice-recovery-push=RECOVERY COMPLETE");
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");

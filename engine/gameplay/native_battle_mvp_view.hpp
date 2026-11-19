@@ -262,6 +262,7 @@ public:
             if(const auto cue=practice_ledge_cue(*practice);!cue.empty())text+="\n"+cue;
             if(practice->recovery_drift_active)text+="\nDRIFT ACTIVE";
             if(practice->recovery_seam)text+="\nFLAT SEAM";
+            if(practice->recovery_push_complete)text+="\nRECOVERY COMPLETE";
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }

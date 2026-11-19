@@ -189,6 +189,14 @@ replay holds Right instead of Up and shows **Flat Seam** at touchdown.
 the descending first contact. In its demo, Right starts three updates
 earlier and **Flat Seam** appears one update before touchdown.
 
+For a steep push on the completion update, use
+`gf_native --gred-recovery-completion-push --practice-start --no-audio`.
+The guide starts paused. Step with **Shift** on 6–38, **W** on 46–72,
+and **Left Arrow** on 111–112, neutral otherwise. The
+`--demo-gred-recovery-completion-push` replay shows **Recovery Complete**
+on the push, then separate touchdown and landing. It uses the existing
+combined recovery-push policy, not a new contact allowance.
+
 To check the actual practice loop without opening a window or audio device:
 
 ```sh
