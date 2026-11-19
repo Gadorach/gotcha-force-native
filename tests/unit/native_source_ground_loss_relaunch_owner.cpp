@@ -1040,6 +1040,59 @@ int main(){
             world.actors()[0].grounded&&!source.selector()&&source.resource()==10000,
             "unbuffered early input, a fresh tap, and held ascent each reach their own complete landing and idle");
     }
+    enum class LiftDashInput { HeldFlick,ReleaseFlick,SoftUp };
+    for(auto input:{LiftDashInput::HeldFlick,LiftDashInput::ReleaseFlick,LiftDashInput::SoftUp}){
+        third_prefix(Mode::GroundTimedWalkReleaseDownPush);
+        NativeBorgMotionOffer offer,previous;
+        check(prepare(down,&offer)&&offer.jump_motion->down_timed_release_push,"air dash handoff starts with the genuine fourth push");
+        accept(offer);
+        const bool released=input==LiftDashInput::ReleaseFlick,soft=input==LiftDashInput::SoftUp;
+        const unsigned entry=47+released,handoff=entry+5,dash=handoff+1,recovery=dash+31,fall=recovery+29;
+        hit=land=0;
+        for(unsigned tick=38;tick<=190;++tick){
+            GamePadState pad;pad.b=tick>=41&&tick<=(released?46u:47u);
+            pad.dpad_down=pad.dpad_right=tick==38;
+            if(tick==47){pad.dpad_up=soft;if(!soft)pad.stick_y=-80;}
+            const auto before=world.actors()[0];
+            check(prepare(pad,&offer)&&offer.controller_timer698==0.f,"lift or dash takes only its existing route with the timer at zero");
+            if(tick==46)check(offer.kind==Kind::RelaunchActive&&offer.relaunch_motion&&offer.relaunch_motion->resource_after==9200,
+                "the second relaunch reaches accepted powered ascent before the flick");
+            if(tick==47&&released)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->entry&&
+                offer.jump_motion->relaunch_origin&&!offer.air_motion&&source.resource()==9200,
+                "same-frame Shift release takes ordinary falling before the buffered flick");
+            if(tick==47&&soft)check(offer.kind==Kind::RelaunchActive&&!offer.air_motion&&offer.relaunch_motion&&
+                offer.relaunch_motion->direction&&offer.relaunch_motion->resource_after==9100,
+                "soft Up steers and pays active lift, not air dash");
+            if(!soft){
+                if(tick==entry){
+                    const auto* air=offer.air_motion?&*offer.air_motion:nullptr;
+                    const f32 speed=released?previous.jump_motion->speed44:previous.relaunch_motion->speed44;
+                    check(offer.kind==Kind::AirDashWindupEntry&&air&&air->phase==15&&air->entry&&air->timer568==5.f&&
+                        !offer.static_push&&!offer.air_dash_floor&&offer.proposed_position==before.position&&
+                        air->speed_before==speed&&air->speed44==.5f*speed&&offer.vertical_speed==.5f*before.vertical_speed&&
+                        air->resource_before==9200&&air->resource_after==9200&&source.resource()==9200&&!source.air_dash_starts(),
+                        "direct or buffered entry is stationary and free, with half of the last accepted velocities");
+                }
+                if(tick==handoff)check(offer.kind==Kind::AirDashWindup&&offer.air_motion&&offer.air_motion->next_selector==16&&
+                    offer.air_motion->timer568==0.f&&offer.air_motion->resource_after==8750,"the last wind-up update pays 450");
+                if(tick==dash)check(offer.kind==Kind::AirDashActiveEntry&&offer.air_motion&&offer.air_motion->resource_after==8700,
+                    "separate active entry pays 50 and starts the dash");
+                if(tick==recovery)check(offer.kind==Kind::AirDashRecovery&&offer.air_motion&&offer.air_motion->entry&&
+                    offer.air_motion->resource_after==7200&&source.air_dash_active_frames()==31,"neutral input recovers after the minimum active run");
+                if(tick==fall)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->entry&&offer.jump_motion->air_dash_origin,
+                    "completed recovery gives ordinary post-dash falling");
+            }
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);previous=offer;
+            if(!soft&&tick==entry)check(source.air_dash_starts()==1&&source.resource()==9200,
+                "the matching entry receipt publishes one free wind-up, not another relaunch update");
+        }
+        check(hit==(soft?131u:154u+released)&&land==hit+1&&source.relaunches()==2&&source.relaunch_fall_pushes()==5&&
+            source.air_dash_starts()==(soft?0u:1u)&&source.air_dash_active_frames()==(soft?0u:31u)&&
+            world.actors()[0].grounded&&!source.selector()&&source.resource()==10000,
+            "the direct, buffered and non-dash controls have distinct landing ticks and restore the meter normally");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

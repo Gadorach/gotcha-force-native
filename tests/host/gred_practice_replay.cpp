@@ -11,7 +11,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     ExpiringAirDashSnapRelaunch,
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
-    TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,TimedReleaseExpiryRelaunch,
+    TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,TimedReleaseExpiryRelaunch,TimedReleaseExpiryDash,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -313,12 +313,17 @@ public:
         case Replay::TimedReleaseThreePushes:
         case Replay::TimedReleaseFourPushes:
         case Replay::TimedReleaseExpiryDrift:
-        case Replay::TimedReleaseExpiryRelaunch:{
+        case Replay::TimedReleaseExpiryRelaunch:
+        case Replay::TimedReleaseExpiryDash:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             raw.buttons|=replay_==Replay::TimedReleaseThreePushes?timed_release_inputs(tick,false,true):
                 timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes);
             if(replay_==Replay::TimedReleaseExpiryRelaunch&&tick>=41&&tick<=50)raw.buttons|=1u<<1;
+            if(replay_==Replay::TimedReleaseExpiryDash){
+                if(tick>=41&&tick<=47)raw.buttons|=1u<<1;
+                if(tick==47)raw.axis[1]=-20000; // W while Shift is still held.
+            }
             break;
         }
         case Replay::PickerPractice:
@@ -591,7 +596,8 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_two=replay==Replay::TimedReleaseTwoPushes;
     const bool timed_release_three=replay==Replay::TimedReleaseThreePushes;
     const bool timed_release_four=replay==Replay::TimedReleaseFourPushes;
-    const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift||replay==Replay::TimedReleaseExpiryRelaunch;
+    const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift||replay==Replay::TimedReleaseExpiryRelaunch||
+        replay==Replay::TimedReleaseExpiryDash;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||incline_ledge_relaunch||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
@@ -1361,5 +1367,16 @@ int main(int argc,char** argv){
         has(second_lift_idle,"practice-meter=10000/10000 at accepted tick=175")&&
         has(second_lift_idle,"relaunch-fall-pushes=5 relaunches=2 timer698=0.0 landings=1"),
         "releasing the second lift completes the same five-push route through landing and refill",second_lift_idle);
-    std::puts("G-Red practice replay: sixty-three desktop-loop scenarios PASS without opening devices");
+    const auto lift_dash=run(Replay::TimedReleaseExpiryDash,106,"live air dash out of second relaunch");
+    check(picker_guide_played(lift_dash,"expiry drift push",53)&&has(lift_dash,"Shift on 41-47 with a W tap on 47")&&
+        has(lift_dash,"practice-phase=AIR DASH\n")&&has(lift_dash,"practice-meter=8700/10000 at accepted tick=53")&&
+        has(lift_dash,"relaunch-fall-pushes=5 relaunches=2 timer698=0.0 landings=0"),
+        "the direct flick takes the existing dash and only its costs",lift_dash);
+    const auto lift_dash_idle=run(Replay::TimedReleaseExpiryDash,380,"live air dash after second relaunch to idle");
+    check(picker_guide_played(lift_dash_idle,"expiry drift push",190)&&has(lift_dash_idle,"practice-phase=IDLE\n")&&
+        has(lift_dash_idle,"accepted native tick=190 G-Red-position=-2499.58/10.00/-1420.30")&&
+        has(lift_dash_idle,"practice-meter=10000/10000 at accepted tick=190")&&
+        has(lift_dash_idle,"relaunch-fall-pushes=5 relaunches=2 timer698=0.0 landings=1"),
+        "the direct dash reaches recovery, ordinary fall, landing and refill without extra pushes",lift_dash_idle);
+    std::puts("G-Red practice replay: sixty-five desktop-loop scenarios PASS without opening devices");
 }

@@ -439,8 +439,10 @@ approach. Choose **Expiry Drift Push** in either picker or use
 `--demo-gred-walk-ledge-timed-release-expiry-drift` for playback.
 In the live guide, you can also stay neutral on **39–40** and hold
 a fresh **Shift** on **41–50** for a second relaunch, then release
-to land. An earlier held press does not queue the move. The
-scripted playback still takes the neutral route.
+to land. Or hold **Shift** on **41–47**, tap **W** while Shift
+is still held on **47**, then release both on **48** to air dash.
+An earlier held Shift does not queue the relaunch. The scripted
+playback still takes the neutral route.
 
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned

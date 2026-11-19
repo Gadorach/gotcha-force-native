@@ -1337,6 +1337,23 @@ Powered ascent starts on 46. Releasing on 51 leads to touchdown
 A tap on 41 instead releases into falling on 42 and lands
 on 118–119. Both routes reach full idle without a sixth push.
 
+### Air dash out of the second relaunch
+
+For the direct dash branch, hold **Shift** on **41–47** and tap
+**W** while Shift is still held on **47**. Release both on 48.
+The five-tick wind-up starts on 47, stationary and free at 9200
+meter. Its last update on 52 spends 450; active entry on 53
+spends 50. Recovery starts on 84 after 31 active updates, with
+ordinary falling from 113, touchdown on 154, and landing on 155.
+The route reaches idle with five pushes, two relaunches and
+one air dash; no new contact permission is needed.
+
+Releasing Shift while flicking W on 47 instead takes the
+existing falling callback first: the buffered flick starts
+wind-up on 48, one tick later. A soft **Up Arrow** on 47
+with Shift held only steers the relaunch. The practice guide
+shows the direct branch; scripted playback is unchanged.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

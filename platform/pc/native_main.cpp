@@ -930,8 +930,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "three timed relaunch-fall pushes","Up+Left Arrows 6-7, tap Shift on 20, then neutral"};
     constexpr PracticeTimingGuide ledge_timed_release_four_guide{"TIMED DOWN-DRIFT PUSH\nUP+LEFT ARROWS 6-7 / SHIFT 20 / NEUTRAL THROUGH 36\nDOWN ARROW 37 / NEUTRAL AFTER",
         "timed Down-drift push","Up+Left Arrows 6-7, tap Shift on 20, neutral through 36, Down Arrow on 37 only"};
-    constexpr PracticeTimingGuide ledge_timed_release_expiry_guide{"EXPIRY DRIFT PUSH\nUP+LEFT 6-7 / TAP SHIFT 20 / NEUTRAL 21-36\nDOWN 37 / DOWN+RIGHT 38 / NEUTRAL 39-40\nOPTION: SHIFT 41-50 ONLY",
-        "expiry drift push","Up+Left Arrows 6-7, tap Shift on 20, neutral through 36, Down on 37, Down+Right on 38, neutral on 39-40, optional fresh Shift on 41-50"};
+    constexpr PracticeTimingGuide ledge_timed_release_expiry_guide{"EXPIRY DRIFT PUSH\nUP+LEFT 6-7 / TAP SHIFT 20 / DOWN 37\nDOWN+RIGHT 38 / ELSE NEUTRAL\nOPT: SHIFT 41-50 OR SHIFT 41-47 + W ON 47",
+        "expiry drift push","Up+Left Arrows 6-7, tap Shift on 20, neutral through 36, Down on 37, Down+Right on 38, neutral on 39-40, "
+        "optional fresh Shift on 41-50 or Shift on 41-47 with a W tap on 47"};
     constexpr PracticeTimingGuide ledge_floor_guide{"TIMED RELAUNCH FLOOR\nDOWN+RIGHT ARROWS 6-122 / SHIFT 147-157",
         "timed relaunch floor","Down+Right Arrows 6-122, Shift 147-157"};
     constexpr PracticeTimingGuide ledge_snap_dash_guide{"TIMED SNAP TO AIR DASH\nDOWN+RIGHT ARROWS 6-122 / SHIFT 148-150 / D+S 150",
