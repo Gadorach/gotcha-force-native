@@ -536,6 +536,41 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("accepted native tick=0 G-Red-position=-1250.97/", guide.stdout)
         self.assertNotIn("expiry wind-up relaunch demo:", guide.stdout)
 
+    def test_walk_ledge_timed_relaunch_floor_separates_snap_liftoff_and_landing(self):
+        for tick, phase, meter, timer, floor_cue in (
+            (147, "RELAUNCH", 9850, 5, None),
+            (151, "RELAUNCH / FLOOR SNAP", 9450, 1, "AIRBORNE / DESCENT DAMPED"),
+            (152, "RELAUNCH / FLOOR SNAP", 9350, None, "AIRBORNE / DESCENT DAMPED"),
+            (156, "RELAUNCH / FLOOR SNAP", 8950, None, "AIRBORNE / VERTICAL SPEED RETAINED"),
+            (157, "RELAUNCH", 8850, None, None),
+            (158, "FALLING", 8850, None, None),
+            (162, "TOUCHDOWN", 8850, None, None),
+            (163, "LANDING", 8850, None, None),
+            (200, "IDLE", 10000, None, None),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-walk-ledge-timed-relaunch-floor", "--headless",
+                                     "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                if timer:
+                    self.assertIn(f"practice-ledge-timer-ticks={timer} cue=LEDGE TIMER {timer} TICKS", run.stdout)
+                else:
+                    self.assertNotIn("practice-ledge-timer-ticks=", run.stdout)
+                if floor_cue:
+                    self.assertIn(f"practice-relaunch-floor={floor_cue}\n", run.stdout)
+                else:
+                    self.assertNotIn("practice-relaunch-floor=", run.stdout)
+                if tick==200:
+                    self.assertIn("G-Red-position=-2656.36/10.00/537.58", run.stdout)
+        guide = self.run_host(["--gred-walk-ledge-timed-relaunch-floor", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("timed relaunch floor guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-1368.47/", guide.stdout)
+        self.assertNotIn("timed relaunch floor demo:", guide.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),

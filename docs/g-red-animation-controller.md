@@ -962,6 +962,30 @@ and paired plane gates, negative-only tail, independent latch receipt data,
 both callback/landing boundaries, stable idle and old-policy refusal.
 Numeric inter-gate tests distinguish positive698 from declared-zero contact.
 
+### Short relaunch floor-snap guide
+
+A narrower input script on the same grounded `-1368.47/-466.667`
+fixture shows the floor response without waiting for depletion.
+The continued positive-timer **push** stays closed: two bounded
+1,800-route scans of the walking-push and floor-snap approaches
+offered no qualifying continued projection.
+
+```sh
+gf_native --demo-gred-walk-ledge-timed-relaunch-floor --headless --frames 200 --no-audio
+gf_native --gred-walk-ledge-timed-relaunch-floor --practice-start --no-audio
+```
+
+Use **Down+Right Arrow** on ticks 6–122, then neutral, then hold
+**Shift** on 147–157. Tick 151 snaps while timer698 is 1 and damps
+descending speed. At 152 the timer expires and the snap is still
+airborne. The last snap at 156 retains newly positive vertical
+speed; tick 157 lifts above the floor. The cue distinguishes the
+two accepted snap responses. Release on 158, touch down at 162,
+and start landing at 163 with 8850 meter; idle refills normally.
+Releasing immediately after the first snap also works: 152 is
+then real touchdown, with landing at 153. Neither snap itself
+counts as landing.
+
 Native placement/input/clocks/libm/camera/target/body/terrain approximations
 remain explicit, not original-hardware or whole-game equivalence. Push,
 nonflat ordered dash, raised-side/clipped/unknown contacts and combat remain

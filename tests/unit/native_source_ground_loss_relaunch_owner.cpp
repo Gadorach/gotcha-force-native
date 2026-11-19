@@ -33,12 +33,14 @@ int main(){
     headless::Render backend;RenderEngine render(backend);NativeBattleMvp world;NativeBattleMvpView view;
     NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;NativeBorgSourcePose pose;
     check(render.initialize({1152,648,false,true,"actual698 relaunch"},nullptr,&error)&&view.load(files,art,render,&error),"shared original stage/models/renderer");
+    view.source_practice_controls();
     std::vector<u8> bytes;CharacterMovementInputProfile input;
     check(files.read(pack+"/movement.gfmi",bytes)&&character_movement_input_load({bytes.data(),bytes.size()},&input,&error),"same qualified shared resource model");
     struct Route {unsigned press,hold,fixture,entry,fall,touchdown,floors;s16 meter;bool air=false,direction=false;};
     const Route routes[]={{122,20,0,123,143,199,0,7950},{122,450,0,123,223,327,0,0},
         {137,2,0,138,140,148,0,9750},{146,450,1,147,247,333,6,0},
-        {143,2,0,144,146,187,0,8600,true},{122,20,0,123,143,180,0,7950,false,true}};
+        {143,2,0,144,146,187,0,8600,true},{122,20,0,123,143,180,0,7950,false,true},
+        {146,11,1,147,158,162,6,8850},{146,5,1,147,152,152,1,9450}};
     auto bind=[&](unsigned fixture,NativeGRedGroundDashDemo::Mode mode){
         BattleMvpConfig config;config.arena_half=4500;config.spawn[0]={-1368.47f,fixture?-466.667f:-628.674f};config.spawn_query_y[0]=94.339f;
         check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,pack,world,seed,&error,mode),
@@ -77,7 +79,8 @@ int main(){
         CharacterAirResourceState model;model.value736=input.resource_limit;
         std::weak_ptr<const NativeBorgMotionProducer> producer;unsigned entry=0,fall=0,touchdown=0,floors=0,positive_floor=0;
         bool neutral_over8=false,neutral_over25=false,directional_clamp=false;BattleMvpVec landed{};
-        for(unsigned t=0;t<600;++t){
+        const unsigned frames=r.fixture&&r.hold<=11?200:600;
+        for(unsigned t=0;t<frames;++t){
             const auto before=world.actors()[0];const auto retained=pose;const auto timer=source.ground_loss_timer698();const auto meter=source.resource();
             const auto latches=source.relaunch_stages();CharacterAirResourceState expected;
             check(character_air_resource_recover(model,0,source.movement_flags(),source.cached_airborne87(),input.resource_limit,input.recovery_increment,&expected),
@@ -128,7 +131,9 @@ int main(){
                 check(e.timer698==current&&e.angle<=(current>0?6144:10240)&&
                     offer.vertical_speed==f32(e.vertical_speed*(e.vertical_speed<0?bits_to_f32(0x3f4ccccdu):1.f))&&
                     !offer.static_push&&!offer.surface_landing,"null754 snap retains history/50/latches with negative-only .8 tail");
-                auto wrong=offer;wrong.relaunch_floor->timer698=current>0?0:1;rejects(wrong,"relaunch floor proof cannot choose another timer gate");
+                 auto wrong=offer;wrong.relaunch_floor->timer698=current>0?0:1;rejects(wrong,"relaunch floor proof cannot choose another timer gate");
+                wrong=offer;wrong.relaunch_floor->response_factor=e.response_factor<1.f?1.f:.8f;
+                rejects(wrong,"the accepted vertical-speed sign decides damping, not the cue");
                 if(current>0){
                     ++positive_floor;AnglePlane angled(view);wrong=offer;wrong.relaunch_floor->surface.normal=angled.normal;
                     check(source_surface_angle(angled.normal,&wrong.relaunch_floor->angle)&&wrong.relaunch_floor->angle>6144&&wrong.relaunch_floor->angle<=10240,
@@ -145,6 +150,16 @@ int main(){
             const bool hit=offer.kind==NativeBorgMotionKind::JumpTouchdown;
             if(hit){touchdown=t+1;landed=offer.proposed_position;}
             accept(offer);model=expected;
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->relaunch_floor_damped==(offer.relaunch_floor?
+                std::optional{offer.relaunch_floor->response_factor<1.f}:std::nullopt),
+                "the snap response cue is present only on its accepted floor frame");
+            if(r.hold==11&&t+1==156)check(offer.relaunch_floor&&offer.relaunch_floor->vertical_speed>0&&
+                offer.relaunch_floor->response_factor==1.f&&shown->relaunch_floor_damped==false,
+                "last snap keeps the newly positive vertical speed");
+            if(r.hold==11&&t+1==157)check(offer.kind==NativeBorgMotionKind::RelaunchActive&&!offer.relaunch_floor&&
+                !world.actors()[0].grounded&&!shown->relaunch_floor_damped&&source.resource()==8850,
+                "brief held route lifts off without a snap cue or grounded refill");
             check(source.resource()==model.value736&&source.ground_loss_timer698()==current&&!source.surface_pushes(),"same shared resource/timer kernels; no push/refill shortcut");
             if(offer.relaunch_floor)check(!world.actors()[0].grounded&&source.cached_airborne87()==1&&!source.landings(),"relaunch snap is not landing or cached-ground history");
             if(offer.relaunch_motion){
@@ -160,7 +175,7 @@ int main(){
         check(entry==r.entry&&fall==r.fall&&touchdown==r.touchdown&&floors==r.floors&&source.relaunches()==1&&!source.ground_loss_landings()&&
             source.landings()==1&&source.resource()==10000&&source.ground_loss_timer698()==0&&source.selector()==0&&
             source.movement_programs()==std::array<u16,2>{0,0}&&!world.shots_spawned()&&world.actors()[0].health==100&&world.actors()[1].health==100,
-            "six600-update genuine lift/release/depletion/floor/high-scalar/directional routes return idle");
+             "eight genuine lift/release/depletion/floor/high-scalar/directional routes return idle");
         if(!r.direction)check(neutral_over8,"new neutral inherited scalar variant really exceeds8");
         if(r.air)check(neutral_over25,"air-to-neutral-relaunch and released lineage genuinely retain scalar above25");
         if(r.direction)check(directional_clamp,"directional source clamp branch exercised");
@@ -169,5 +184,5 @@ int main(){
     }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
-    std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; six600-update genuine routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);
+    std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; eight genuine routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);
 }

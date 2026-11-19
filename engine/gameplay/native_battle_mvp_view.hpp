@@ -60,6 +60,15 @@ public:
         return frame?std::optional{frame->meter}:std::nullopt;
     }
     static constexpr const char* windup_handoff_hint="SHIFT/B RELAUNCH / NEUTRAL DASH";
+    static const char* practice_relaunch_floor_cue(const NativeBorgSourceReadout& frame){
+        return frame.relaunch_floor_damped?
+            (*frame.relaunch_floor_damped?"AIRBORNE / DESCENT DAMPED":"AIRBORNE / VERTICAL SPEED RETAINED"):nullptr;
+    }
+    static const char* practice_contact_suffix(NativeBorgMotionKind kind){
+        if(native_borg_motion_push(kind))return " / PUSH";
+        if(native_borg_motion_air_dash_floor(kind)||native_borg_motion_relaunch_floor(kind))return " / FLOOR SNAP";
+        return "";
+    }
     static const char* practice_phase(const NativeBorgSourceReadout& frame){
         const auto kind=frame.kind;
         if(kind==NativeBorgMotionKind::Ground){
@@ -256,8 +265,7 @@ public:
             const auto meter=practice->meter;
             std::string text="FLIGHT "+std::to_string(meter.value)+"/"+std::to_string(meter.limit);
             text+="\n";text+=practice_phase(*practice);
-            if(native_borg_motion_push(practice->kind))text+=" / PUSH";
-            else if(native_borg_motion_air_dash_floor(practice->kind)||native_borg_motion_relaunch_floor(practice->kind))text+=" / FLOOR SNAP";
+            text+=practice_contact_suffix(practice->kind);
             if(const auto ticks=practice->dash_release_ticks)
                 text+=*ticks?"\nRELEASE IN "+std::to_string(*ticks)+" TICKS":"\nCENTER TO RECOVER";
             if(const auto cue=practice_ledge_cue(*practice);!cue.empty())text+="\n"+cue;
@@ -266,6 +274,7 @@ public:
             if(practice->recovery_push_complete)text+="\nRECOVERY COMPLETE";
             if(practice->recovery_push_exit_drift)text+="\nEXIT DRIFT";
             if(practice->plain_windup_relaunch_ready){text+="\n";text+=windup_handoff_hint;}
+            if(const char* cue=practice_relaunch_floor_cue(*practice)){text+="\n";text+=cue;}
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }

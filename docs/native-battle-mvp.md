@@ -192,6 +192,14 @@ relaunch or leave the controls neutral to continue the dash. The prompt
 doesn't override contact checks. Esc returns to the same copy or slot
 and route without editing the save.
 
+`--gred-walk-ledge-timed-relaunch-floor --practice-start` opens the
+short floor-snap guide. Step with **Down+Right Arrow** on 6–122,
+then **Shift** on 147–157, neutral otherwise. The HUD distinguishes
+an airborne snap that damps descent from one that retains vertical
+speed. Releasing after liftoff gives the separate touchdown and
+landing. `--demo-gred-walk-ledge-timed-relaunch-floor` replays it
+under the existing contact rules.
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement
