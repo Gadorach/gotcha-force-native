@@ -259,5 +259,46 @@ int main(){
     check(departure==6&&fall==7&&touchdown==21&&landing==22&&source.ground_departures()==1&&
         world.actors()[0].grounded&&source.selector()==0&&source.ground_loss_timer698()==0,
         "full authored route goes from ordered departure through distinct touchdown and landing to idle");
-    std::printf("slope dash: %u checks PASS, original-stage seams and inclined cliff departure, older refusals\n",checks);
+
+    const Route approach{2599.00806f,-2758.12109f,125.757187f,0};
+    // Both policies already had the ordinary walk handler. Certify a walking
+    // route through the cliff without borrowing the ordered-dash permission.
+    for(const auto mode:{Mode::GroundSlopeTransitionDash,Mode::GroundInclinedDashLedge}){
+        bind(approach,mode);
+        departure=fall=touchdown=landing=0;unsigned grounded_walk_steps=0;
+        while(world.tick()<100){
+            const auto tick=world.tick();
+            GamePadState pad;pad.dpad_up=tick>=5&&tick<20&&!departure;
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            NativeGRedGroundInput input;NativeBorgMotionOffer offer;
+            check(source.map_input(pad,&input,&error)&&
+                source.prepare(world,view.source_binding(),frame,input.x,input.y,input.held,&offer,&error),"prepare ordinary authored walking route");
+            const auto& p=offer.observed.position;const auto& end=offer.proposed_position;
+            using Kind=NativeBorgMotionKind;
+            check(!offer.ordered_ground,"walking never borrows ordered dash root evidence");
+            if(offer.kind==Kind::Ground&&offer.action==BattleMvpAction::Move&&p!=end)++grounded_walk_steps;
+            if(offer.kind==Kind::GroundDeparture){
+                departure=tick+1;
+                NativeBorgStaticSurface start;
+                check(departure==8&&grounded_walk_steps==1&&offer.walk_ledge&&offer.walk_ledge->speed44==10&&
+                    view.static_surface(p[0],p[2],p[1],&start)&&start.triangle==827&&offer.walk_ledge->surface.triangle==2060&&
+                    view.inclined_ledge_crossing(827,2060,p,end,60)&&p[1]==end[1]&&!offer.vertical_speed&&
+                    source.movement_programs()==std::array<u16,2>{1,1},
+                    "accepted walk handler approaches the authored strip and stages the departure without a vertical snap");
+            }
+            if(offer.kind==Kind::GroundLossEntry)fall=tick+1;
+            if(offer.kind==Kind::GroundLossTouchdown){touchdown=tick+1;check(end[1]==10,"walking route touches down on the lower flat floor");}
+            if(touchdown&&!landing&&offer.kind==Kind::JumpLanding)landing=tick+1;
+            accept(offer);
+            if(tick+1==fall)check(source.ground_loss_timer698()==30&&
+                source.movement_programs()==std::array<u16,2>{13,13},"ordinary momentum fall owns its own timer and both program lanes");
+            if(tick+1==landing)check(source.movement_programs()==std::array<u16,2>{8,8},"separate walking-route landing program");
+            check(source.resource()==10000&&!source.ordered_root().updates&&!source.surface_pushes(),
+                "walking, falling, and landing don't charge meter or dispatch dash/push");
+        }
+        check(departure==8&&fall==9&&touchdown==23&&landing==24&&source.walk_departures()==1&&!source.dash_departures()&&
+            world.actors()[0].grounded&&source.selector()==0&&source.ground_loss_timer698()==0,
+            "walk and dash permission are independent and the older walking path recovers to idle");
+    }
+    std::printf("slope dash: %u checks PASS, original-stage seams, separate walk/dash cliff routes, older refusals\n",checks);
 }

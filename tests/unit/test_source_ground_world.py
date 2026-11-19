@@ -20,6 +20,17 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("practice-meter=10000/10000 at accepted tick=100", result.stdout)
         self.assertIn("practice-phase=IDLE", result.stdout)
 
+    def test_inclined_walk_ledge_demo_does_not_dispatch_a_dash(self):
+        result = self.run_host(["--demo-gred-inclined-walk-ledge", "--headless", "--frames", "100", "--no-audio"])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("D-pad up to depart triangle827 toward flat floor2060, then neutral", result.stdout)
+        self.assertIn("walk-departures=1 dash-departures=0", result.stdout)
+        self.assertIn("ground-departures=1 loss-entries=1 loss-landings=1", result.stdout)
+        self.assertIn("root-updates=0", result.stdout)
+        self.assertRegex(result.stdout, r"G-Red-position=[^/]+/10\.00/")
+        self.assertIn("practice-meter=10000/10000 at accepted tick=100", result.stdout)
+        self.assertIn("practice-phase=IDLE", result.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

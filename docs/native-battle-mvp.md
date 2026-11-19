@@ -164,6 +164,11 @@ keeps its height and the existing fall and landing own subsequent frames.
 Older modes do not gain this permission. Try
 `--demo-gred-inclined-dash-ledge --headless --frames 100 --no-audio`.
 
+`--demo-gred-inclined-walk-ledge` replays the existing ordinary walk
+handler across the same authored cliff band from a separate grounded
+placement. It leaves on tick 8 with no ordered-dash root update, touches
+down at 23, and returns to idle without spending flight meter.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

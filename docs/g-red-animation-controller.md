@@ -33,12 +33,34 @@ at 7 (timer698 = 30), touches down at 21, then enters landing at 22. The
 departure retains its Y; the fall does not spend meter. The previous
 flat/incline transition mode still refuses this trajectory, and removing the
 native edge proof or substituting an instant floor snap retains the prior
-accepted motion, timer, meter, root, and pose. No source-frame equivalence,
-walking off nonflat ledges, or steep ledge-fall pushes are claimed.
+accepted motion, timer, meter, root, and pose. No source-frame equivalence
+or steep ledge-fall pushes are claimed.
 
 ```sh
 gf_native --demo-gred-inclined-dash-ledge --headless --frames 100 --no-audio
 ```
+
+### Ordinary walk off the same inclined ledge
+
+The ordinary walk handler already produced a separate ground-loss offer on
+this geometry. This demo verifies it without changing runtime admission or
+using the ordered-dash proof as a substitute for the walk path. A bounded
+original-stage scan found eight full walking replays; the regression
+independently checks the authored cliff strip for the replay below.
+
+```sh
+gf_native --demo-gred-inclined-walk-ledge --headless --frames 100 --no-audio
+```
+
+From the demo's grounded native placement at X/Z
+`2599.00806/-2758.12109` (initial floor query `125.757187`), **D-pad Up**
+starts after five idle ticks. Ordinary walk program 1 advances on the
+incline before the departure at tick 8. Neutral input then replays the
+existing fall entry at 9 (program 13, timer698 = 30), flat touchdown
+at 23, and separate landing at 24 (program 8). The previous slope-transition
+policy and the newer inclined-dash policy both pass this walk replay.
+There is no dash root update, flight-meter spend, or steep push. This is one
+verified route, not a claim about arbitrary slopes or original spawns.
 
 ## Descending air-dash wind-up entry push in the combined controller (GFMM9)
 

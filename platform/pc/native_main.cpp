@@ -136,6 +136,7 @@ struct Options {
     bool gred_slope_crease_dash=false;
     bool gred_slope_transition_dash=false;
     bool gred_inclined_dash_ledge=false;
+    bool demo_gred_inclined_walk_ledge=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -303,7 +304,8 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-slope-seam-dash" || arg == "--demo-gred-slope-seam-dash" ||
                  arg == "--gred-slope-crease-dash" || arg == "--demo-gred-slope-crease-dash" ||
                  arg == "--gred-slope-transition-dash" || arg == "--demo-gred-slope-transition-dash" ||
-                 arg == "--gred-inclined-dash-ledge" || arg == "--demo-gred-inclined-dash-ledge"){
+                 arg == "--gred-inclined-dash-ledge" || arg == "--demo-gred-inclined-dash-ledge" ||
+                 arg == "--demo-gred-inclined-walk-ledge"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
             options->source_ground_walk=arg!="--demo-source-ground-dash";
@@ -333,7 +335,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_relaunch_push=arg=="--source-ground-relaunch-push"||arg=="--demo-source-ground-relaunch-push";
             options->source_ground_relaunch_entry_push=arg=="--source-ground-relaunch-entry-push"||arg=="--demo-source-ground-relaunch-entry-push";
             options->gred_inclined_dash_ledge=arg=="--gred-inclined-dash-ledge"||arg=="--demo-gred-inclined-dash-ledge";
-            options->gred_slope_transition_dash=options->gred_inclined_dash_ledge||arg=="--gred-slope-transition-dash"||arg=="--demo-gred-slope-transition-dash";
+            options->demo_gred_inclined_walk_ledge=arg=="--demo-gred-inclined-walk-ledge";
+            options->gred_slope_transition_dash=options->gred_inclined_dash_ledge||options->demo_gred_inclined_walk_ledge||
+                arg=="--gred-slope-transition-dash"||arg=="--demo-gred-slope-transition-dash";
             options->gred_slope_crease_dash=options->gred_slope_transition_dash||arg=="--gred-slope-crease-dash"||arg=="--demo-gred-slope-crease-dash";
             options->gred_slope_seam_dash=options->gred_slope_crease_dash||arg=="--gred-slope-seam-dash"||arg=="--demo-gred-slope-seam-dash";
             options->gred_slope_dash=options->gred_slope_seam_dash||arg=="--gred-slope-dash"||arg=="--demo-gred-slope-dash";
@@ -703,6 +707,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         if(options.gred_slope_crease_dash){config.spawn[0]={3589.76465f,-2425.93408f};config.spawn_query_y[0]=192.512665f;}
          if(options.gred_slope_transition_dash){config.spawn[0]={830.733398f,2191.48145f};config.spawn_query_y[0]=487.747528f;}
          if(options.gred_inclined_dash_ledge){config.spawn[0]={2582.89014f,-2846.36206f};config.spawn_query_y[0]=116.592773f;}
+         if(options.demo_gred_inclined_walk_ledge){config.spawn[0]={2599.00806f,-2758.12109f};config.spawn_query_y[0]=125.757187f;}
     }
     if(!view.load(context.files(),options.battle_mvp_assets,render,&error)||!world.start(config,&view)||!view.update(world,&error)){
         gf::log_error(context,"battle-mvp","initialization failed: %s",error.c_str());render.shutdown();return 2;}
@@ -727,7 +732,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.demo_source_ground&&!bind_source()){gf::log_error(context,"source-ground","bind failed: %s",error.c_str());render.shutdown();return 2;}
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-     if(options.gred_inclined_dash_ledge)gf::log_info(context,"source-ground","ordered inclined dash departure requires a verified descending cliff strip over one flat floor; existing falling and landing path; no steep push");
+     if(options.demo_gred_inclined_walk_ledge)gf::log_info(context,"source-ground","ordinary walk across the verified inclined ledge fixture; no new movement policy or steep push");
+     else if(options.gred_inclined_dash_ledge)gf::log_info(context,"source-ground","ordered inclined dash departure requires a verified descending cliff strip over one flat floor; existing falling and landing path; no steep push");
      else if(options.gred_slope_transition_dash)gf::log_info(context,"source-ground","ordered dash between flat ground and shallow inclines; exact shared edge, continuous height and native step/contact limits");
     else if(options.gred_slope_crease_dash)gf::log_info(context,"source-ground","ordered slope dash across verified shallow creases; exact shared edge, continuous height and native step/contact limits");
     else if(options.gred_slope_seam_dash)gf::log_info(context,"source-ground","ordered slope dash across exact coplanar edges; native step/contact limits; creases, gaps and nonflat ledges remain refused");
@@ -752,7 +758,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_ordered_ground_controls();
             if(options.gred_slope_dash){
                 if(!options.source_ground_interactive)
-                     gf::log_info(context,"source-ground","%s",options.gred_inclined_dash_ledge?
+                     gf::log_info(context,"source-ground","%s",options.demo_gred_inclined_walk_ledge?
+                         "inclined walk ledge demo: D-pad up to depart triangle827 toward flat floor2060, then neutral":options.gred_inclined_dash_ledge?
                          "inclined dash ledge demo: one right flick from triangle827 over the cliff toward flat floor2060":options.gred_slope_transition_dash?
                          "slope transition demo: one backward flick from flat triangle249 onto incline1052":options.gred_slope_crease_dash?
                         "slope crease demo: one right flick across original triangles295/508":options.gred_slope_seam_dash?
@@ -982,7 +989,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                     if(practice_restartable)practice_input.take(device);
                     if(!options.source_ground_interactive){
                         device={};const unsigned t=world.tick()%(options.source_air_dash?480:options.source_moving_jump?480:options.source_vertical_jump?600:360);
-                          if(options.gred_slope_dash){
+                          if(options.demo_gred_inclined_walk_ledge){
+                              device.dpad_up=world.tick()>=5&&world.tick()<20&&!source.ground_departures();
+                          }else if(options.gred_slope_dash){
                               if(world.tick()==5){
                                    if(options.gred_inclined_dash_ledge||(options.gred_slope_crease_dash&&!options.gred_slope_transition_dash))device.stick_x=127;
                                   else device.stick_y=127;
@@ -1218,10 +1227,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(options.source_windup_entry_floor)gf::log_info(context,"source-ground","windup-entry-floor-contacts=%llu; distinct no-motion half-speed entry receipts, not repeated continuation or grounded refill",static_cast<unsigned long long>(source.windup_entry_floor_contacts()));
     if(options.source_windup_positive_floor)gf::log_info(context,"source-ground","windup-positive-floor-contacts=%llu; exact positive half-speed then zero48 at unchanged position, not rising integration or grounded refill",static_cast<unsigned long long>(source.positive_windup_floor_contacts()));
     if(options.source_windup_entry_push)gf::log_info(context,"source-ground","windup-entry-surface-pushes=%llu; half-speed before .9 ret0 response, no translated entry or floor-zero/refill shortcut",static_cast<unsigned long long>(source.windup_entry_surface_pushes()));
-    if(options.source_walk_ledge||options.source_dash_ledge||options.source_ground_ledge||options.gred_inclined_dash_ledge)gf::log_info(context,"source-ground","ground-departures=%llu loss-entries=%llu loss-landings=%llu suppressed-drift=%llu timer698=%.1f cached87=%u flags=%x; owned native history, no original actor-frame equivalence",static_cast<unsigned long long>(source.ground_departures()),static_cast<unsigned long long>(source.ground_loss_entries()),static_cast<unsigned long long>(source.ground_loss_landings()),static_cast<unsigned long long>(source.suppressed_ground_drifts()),source.ground_loss_timer698(),unsigned(source.cached_airborne87()),source.movement_flags());
+    if(options.source_walk_ledge||options.source_dash_ledge||options.source_ground_ledge||options.gred_inclined_dash_ledge||options.demo_gred_inclined_walk_ledge)gf::log_info(context,"source-ground","ground-departures=%llu loss-entries=%llu loss-landings=%llu suppressed-drift=%llu timer698=%.1f cached87=%u flags=%x; owned native history, no original actor-frame equivalence",static_cast<unsigned long long>(source.ground_departures()),static_cast<unsigned long long>(source.ground_loss_entries()),static_cast<unsigned long long>(source.ground_loss_landings()),static_cast<unsigned long long>(source.suppressed_ground_drifts()),source.ground_loss_timer698(),unsigned(source.cached_airborne87()),source.movement_flags());
     if(options.source_ordered_ground)gf::log_info(context,"source-ground","ordered-entries=%llu active=%llu recovery=%llu resets=%llu root-updates=%llu root-speed=%.6f selector=%u flags=%x; scoped post-VM samples, not original actor/frame equivalence",static_cast<unsigned long long>(source.ordered_entries()),static_cast<unsigned long long>(source.ordered_active_frames()),static_cast<unsigned long long>(source.ordered_recovery_frames()),static_cast<unsigned long long>(source.ordered_resets()),static_cast<unsigned long long>(source.ordered_root().updates),source.ordered_root().speed1dac,unsigned(source.selector()),source.movement_flags());
     if(options.source_dash_ledge)gf::log_info(context,"source-ground","dash-loss-air-frames=%llu landings=%llu resource=%d selector=%u; last ordered root sample is historical data after priority handoff, not a fresh airborne root lease",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
-    if(options.source_ground_ledge)gf::log_info(context,"source-ground","walk-departures=%llu dash-departures=%llu landings=%llu resource=%d selector=%u; one scoped controller/producer, distinct walking and ordered-dash evidence",static_cast<unsigned long long>(source.walk_departures()),static_cast<unsigned long long>(source.dash_departures()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
+    if(options.source_ground_ledge||options.demo_gred_inclined_walk_ledge)gf::log_info(context,"source-ground","walk-departures=%llu dash-departures=%llu landings=%llu resource=%d selector=%u; one scoped controller/producer, distinct walking and ordered-dash evidence",static_cast<unsigned long long>(source.walk_departures()),static_cast<unsigned long long>(source.dash_departures()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
     if(options.source_ground_jump)gf::log_info(context,"source-ground","ground-jump-air-frames=%llu landings=%llu resource=%d dash-jumps=%llu last-interrupted-selector=%u programs=%u/%u cached87=%u; source subset, no extra ordered root advance on takeoff",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),static_cast<unsigned long long>(source.dash_jumps()),unsigned(source.last_dash_jump_selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_landing)gf::log_info(context,"source-ground","landing-jumps=%llu landing-dashes=%llu landings=%llu resource=%d programs=%u/%u cached87=%u; accepted landing entry before interruption, no touchdown skip or forced refill",static_cast<unsigned long long>(source.landing_jumps()),static_cast<unsigned long long>(source.landing_dashes()),static_cast<unsigned long long>(source.landings()),int(source.resource()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_air)gf::log_info(context,"source-ground","controller-air-starts=%llu active=%llu landings=%llu relaunches=%llu resource=%d selector=%u programs=%u/%u cached87=%u; no floor/push/relaunch authority",static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.air_dash_active_frames()),static_cast<unsigned long long>(source.landings()),static_cast<unsigned long long>(source.relaunches()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
