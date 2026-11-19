@@ -355,6 +355,13 @@ and free; the existing two wind-up pushes come afterward. The
 450 handoff and 50 active-entry charges are separate. Use
 `--demo-gred-walk-ledge-expiring-air-dash` for playback.
 
+`--gred-walk-ledge-expiring-air-dash-snap --practice-start` is
+the separate same-height contact version. Step with **Left Arrow**
+on 6–9, tap **A** on 40, then stay neutral. The entry snap clears
+vertical speed without moving, grounding, or charging G-Red.
+The handoff and active entry still cost 450 and 50 on 46–47.
+Use `--demo-gred-walk-ledge-expiring-air-dash-snap` for playback.
+
 `--gred-walk-ledge-expiring-air-dash-handoff --practice-start`
 uses that same start and inputs, then shows the choice when the
 wind-up pays 450 on 44. Tap **Shift** without a direction on 45

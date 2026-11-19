@@ -433,11 +433,15 @@ public:
                  !o.jump_motion->entry&&actor.vertical_speed<0.f;
               const auto* walking_push=prior==NativeBorgMotionKind::GroundLossPush&&last_offer_.static_push&&
                   last_offer_.walk_ledge&&last_offer_.walk_ledge->walk_origin?&*last_offer_.walk_ledge:nullptr;
-              const bool expiring_push_windup=behaviors.has(Behavior::WalkExpiringAirDash)&&walking_push&&
-                  o.kind==NativeBorgMotionKind::AirDashWindupEntry&&actor.vertical_speed<0.f&&
-                  walking_push->timer698==1.f&&last_offer_.controller_timer698==1.f&&o.controller_timer698==0.f&&
-                  NormalGRedMovementDefinition::walk_expiring_air_dash_face(last_offer_.static_push->surface.triangle,
-                      last_offer_.static_push->angle);
+               const bool expiring_windup_origin=behaviors.has(Behavior::WalkExpiringAirDash)&&walking_push&&actor.vertical_speed<0.f&&
+                   walking_push->timer698==1.f&&last_offer_.controller_timer698==1.f&&o.controller_timer698==0.f&&
+                   NormalGRedMovementDefinition::walk_expiring_air_dash_face(last_offer_.static_push->surface.triangle,
+                       last_offer_.static_push->angle);
+               const bool expiring_push_windup=expiring_windup_origin&&o.kind==NativeBorgMotionKind::AirDashWindupEntry;
+               const bool expiring_floor_windup=expiring_windup_origin&&behaviors.has(Behavior::WalkExpiringAirDashSnap)&&
+                   o.kind==NativeBorgMotionKind::AirDashWindupEntryFloor&&o.air_dash_floor&&o.air_motion&&o.air_motion->timer568==6.f&&
+                   o.proposed_position==actor.position&&o.air_dash_floor->surface.height==actor.position[1]&&
+                   NormalGRedMovementDefinition::walk_expiring_air_dash_snap_face(o.air_dash_floor->surface.triangle,o.air_dash_floor->angle);
              const bool recovery_recontact=prior==NativeBorgMotionKind::AirDashRecoveryFloorComplete;
              // Only the next ordinary program13 update can confirm touchdown
              // at rest. A new action cannot borrow this contact.
@@ -1017,7 +1021,7 @@ public:
              const bool windup_entry_prior=prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                  native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior)||
                   (controller_air_policy&&(prior==NativeBorgMotionKind::GroundLossEntry||prior==NativeBorgMotionKind::GroundLossAir))||
-                   expiry_windup||timed_push_windup||expiring_push_windup;
+                   expiry_windup||timed_push_windup||expiring_push_windup||expiring_floor_windup;
             if(ledger_frame){
                 //Normal G-Red, rank1/fixed60Hz, separately scoped ground loss.
                 //numeric validation; no original history/actor callback ACK.
@@ -1422,7 +1426,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringShortAirDashRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringAirDashSnap)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

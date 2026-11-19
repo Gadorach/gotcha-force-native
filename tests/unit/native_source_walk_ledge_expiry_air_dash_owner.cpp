@@ -766,5 +766,85 @@ int main(){
             source.air_dash_starts()==1&&source.windup_pushes()==2&&!source.air_dash_active_frames()&&source.relaunches()==1,
             "the release-drift route reaches separate touchdown and landing before fully recovering");
     }
+    auto snap_expiry_prefix=[&](Mode mode){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={-1078.91504f,-3407.48291f};cfg.spawn_query_y[0]=1846.01367f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"grounded same-height snap fixture");
+        prefix(39);
+        check(offer.kind==Kind::GroundLossPush&&offer.walk_ledge->walk_origin&&offer.controller_timer698==1.f&&
+            offer.static_push->surface.triangle==2001&&offer.static_push->angle==8192&&offer.vertical_speed==-27.f,
+            "same authorized walking-push face, distinct entry contact");
+    };
+    snap_expiry_prefix(Mode::GroundWalkExpiringShortAirDashRelaunch);
+    {
+        const auto before=world.actors()[0].position;const auto retained=pose;
+        check(!prepare(true,&offer)&&error.find("plain wind-up without contact response")!=std::string::npos&&
+            world.tick()==39&&world.actors()[0].position==before&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&
+            !source.air_dash_starts()&&retained.frame_scope.expired()&&!world.step({},false,&view),
+            "the actual snap does not borrow the earlier stationary-entry permission");
+    }
+    snap_expiry_prefix(Mode::GroundWalkExpiringAirDashSnap);
+    const auto before_snap=world.actors()[0];const auto snap_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(prepare(true,&offer)&&offer.kind==Kind::AirDashWindupEntryFloor&&offer.air_dash_floor&&offer.air_motion&&
+        offer.controller_timer698==0.f&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&
+        !source.air_dash_starts()&&!source.windup_entry_floor_contacts(),"snap and clock are staged, not published");
+    const auto& snap=*offer.air_dash_floor;const auto& snap_motion=*offer.air_motion;
+    check(snap.integrated_position==before_snap.position&&offer.proposed_position==before_snap.position&&
+        snap.surface.height==before_snap.position[1]&&snap.surface.triangle==2000&&snap.angle==8192&&snap.timer698==0.f&&
+        snap_motion.timer568==6.f&&snap_motion.entry&&snap_motion.phase==15&&snap_motion.vertical_before==-13.5f&&
+        snap.vertical_speed==-13.5f&&offer.vertical_speed==0.f&&offer.facing==before_snap.facing&&
+        snap_motion.resource_before==10000&&snap_motion.resource_after==10000&&!offer.static_push&&!offer.surface_landing&&
+        !snap_motion.expiring_walk_windup_step&&!snap_motion.walk_expiry_windup&&!snap_motion.timed_relaunch_floor_windup,
+        "descending entry halves speed before zeroing it; equal-height snap grants no charge, landing or relaunch lineage");
+    auto refuses_snap=[&](const NativeBorgMotionOffer& wrong,const char* why){
+        const bool refused=!world.step({},false,&view,nullptr,&snap_frame,&wrong);
+        const auto shown=view.practice_readout(world);
+        check(refused&&world.tick()==39&&world.actors()[0].position==before_snap.position&&world.motion_receipt_current(pose.receipt)&&
+            source.resource()==10000&&source.ground_loss_timer698()==1.f&&!source.windup_entry_floor_contacts()&&
+            shown&&!shown->expiring_walk_air_dash_snap,why);
+    };
+    fake=offer;fake.air_dash_floor->surface.triangle=2001;refuses_snap(fake,"the previous face is not the selected snap face");
+    fake=offer;fake.air_dash_floor->angle=8191;refuses_snap(fake,"an unqualified face angle cannot substitute");
+    fake=offer;fake.air_dash_floor->surface.height+=.005f;fake.proposed_position[1]+=.005f;
+    refuses_snap(fake,"the entry does not admit a height correction");
+    fake=offer;fake.air_motion->timer_before=fake.air_motion->timer568=5.f;refuses_snap(fake,"a different wind-up length cannot borrow the snap");
+    fake=offer;fake.air_dash_floor->vertical_speed=0.f;refuses_snap(fake,"cannot erase the half-speed operand before contact");
+    fake=offer;fake.vertical_speed=-13.5f;refuses_snap(fake,"the snap tail must clear vertical speed");
+    fake=offer;fake.controller_timer698=1.f;refuses_snap(fake,"cannot carry the live timer through the snap");
+    fake=offer;fake.air_motion->expiring_walk_windup_step=1;refuses_snap(fake,"the snap cannot claim a stationary plain entry's history");
+    accept(offer);
+    check(view.practice_readout(world)->expiring_walk_air_dash_snap&&!view.practice_readout(world)->expiring_walk_air_dash&&
+        source.ground_loss_timer698()==0.f&&source.resource()==10000&&source.windup_entry_floor_contacts()==1&&
+        !world.actors()[0].grounded&&source.cached_airborne87()==1,"accepted snap is not stationary plain entry or grounded landing");
+    touched=landed=fall=active=handoff=0;
+    while(world.tick()<175){
+        const auto tick=world.tick()+1;
+        check(prepare(false,&offer)&&offer.controller_timer698==0.f,"existing post-snap motion advances without a timer reset");
+        if(offer.air_motion&&offer.air_motion->phase==15&&offer.air_motion->next_selector==16){
+            handoff=tick;check(offer.air_motion->resource_after==9550,"wind-up costs 450 only at handoff");
+        }
+        if(native_borg_motion_active_entry(offer.kind)){
+            active=tick;check(offer.air_motion->resource_after==9500,"active entry then costs 50");
+        }
+        if(!fall&&offer.kind==Kind::JumpAir)fall=tick;
+        if(offer.kind==Kind::JumpTouchdown)touched=tick;
+        if(touched&&!landed&&offer.kind==Kind::JumpLanding)landed=tick;
+        accept(offer);
+        const auto shown=view.practice_readout(world);
+        check(shown&&!shown->expiring_walk_air_dash_snap&&!shown->plain_windup_relaunch_ready&&!shown->floor_windup_relaunch_ready,
+            "the snap cue is entry-only and never creates a relaunch prompt");
+        if(tick==fall||tick==touched||tick==landed)check(source.resource()==8000,"touchdown and landing keep the spent meter");
+    }
+    check(handoff==46&&active==47&&fall==107&&touched==137&&landed==138&&source.air_dash_starts()==1&&
+        source.windup_entry_floor_contacts()==1&&source.windup_floor_contacts()==1&&!source.active_floor_contacts()&&
+        !source.windup_pushes()&&!source.relaunches()&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+        "one snap leads to the existing paid phases, separate landing and full idle");
+    snap_expiry_prefix(Mode::GroundWalkExpiringAirDashSnap);
+    while(world.tick()<46){
+        check(prepare(world.tick()==39,&offer),"accepted snap prefix through the paid wind-up");accept(offer);
+    }
+    check(!prepare(false,&offer,true)&&error.find("accepted expiry-push wind-up")!=std::string::npos&&world.tick()==46&&
+        source.resource()==9550&&!source.relaunches()&&!source.air_dash_active_frames()&&!world.step({},false,&view),
+        "same-height snap history cannot authorize relaunch or charge the active entry early");
     std::printf("Walking push air followups: %u checks PASS, timed and expiry entries with separate costs and landing\n",checks);
 }

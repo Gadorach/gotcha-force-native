@@ -466,6 +466,28 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick == 175:
                     self.assertIn("G-Red-position=1296.58/10.00/-3473.49", result.stdout)
 
+    def test_expiring_air_dash_snap_keeps_position_and_clears_vertical_speed(self):
+        cue = "practice-expiring-walk-air-dash-snap=AIRBORNE / WIND-UP ENTRY SNAP ON EXPIRY"
+        for tick, phase, meter in (
+            (39, "LEDGE FALL / PUSH", 10000), (40, "DASH WIND-UP / FLOOR SNAP", 10000),
+            (46, "DASH WIND-UP", 9550), (47, "AIR DASH", 9500), (107, "FALLING", 8000),
+            (137, "TOUCHDOWN", 8000), (138, "LANDING", 8000), (175, "IDLE", 10000),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-expiring-air-dash-snap",
+                                        "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"expiring-dash-entry-snaps={int(tick>=40)} continued-windup-snaps=0 active-snaps=0 entry-pushes=0",
+                              result.stdout)
+                self.assertEqual(cue in result.stdout, tick == 40)
+                self.assertNotIn("practice-expiring-walk-air-dash=", result.stdout)
+                self.assertNotIn("practice-windup-handoff=", result.stdout)
+                self.assertNotIn("practice-floor-windup-handoff=", result.stdout)
+                if tick == 175:
+                    self.assertIn("G-Red-position=1349.75/10.00/-3466.02", result.stdout)
+
     def test_expiring_air_dash_handoff_keeps_windup_cost_and_skips_active(self):
         prompt = "practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH"
         cue = "practice-expiring-walk-air-dash-relaunch=AIRBORNE / EXPIRY WIND-UP TO RELAUNCH"

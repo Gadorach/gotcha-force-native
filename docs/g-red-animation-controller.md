@@ -359,7 +359,7 @@ even when the projected endpoint clears the floor. That refusal
 is not relaxed. The stage sweep found 20 complete routes in 1,002
 attempts, all from face 2001.
 
-#### Contact on the expiry wind-up entry remains closed
+#### Steep contact on expiry-step wind-up entry remains closed
 
 The stationary guide does not grant a steep push or snap on entry.
 In the steep-entry probe, 40 offers were staged in 3,888 local
@@ -376,17 +376,30 @@ actor's starting Y `1406.63159`. The post-projection endpoint
 selects face 2185 at Y `10` and clears its floor, but that does
 not make the approach valid.
 
-The separate snap-only probe found two complete routes in its
-2,756 stage-sweep attempts. One starts at X/Z
-`-1078.91504/-3407.48291` with the same query and bounds:
-**Left Arrow** on 6–9, **A** on 40. The scratch entry snaps
-against face 2000 at angle 8192, at the same Y (`1416.95068`).
-Its pre-snap half-speed is −13.5; the snap zeroes it without
-grounding G-Red or spending meter. The route pays for handoff at
-46 and active entry at 47, then reaches touchdown and landing
-at 137–138. This is a candidate for a separate verified snap
-permission, not part of the shipped guide. No runtime contact
-gate was changed by either probe.
+#### Same-height snap on expiry-step wind-up entry
+
+`--gred-walk-ledge-expiring-air-dash-snap` is a separate opt-in.
+It adds the six-tick snap after the accepted 1-tick walking push
+on face 2001. Both faces use angle 8192, but the snap must select
+face 2000 with the exact same height and no displacement. Native
+reselects the plane and checks the staged half-speed, zero-speed
+tail, body and travel independently. Other faces, height changes,
+steep pushes and relaunch handoffs are not added.
+
+```sh
+gf_native --gred-walk-ledge-expiring-air-dash-snap --practice-start --no-audio
+gf_native --demo-gred-walk-ledge-expiring-air-dash-snap --headless --frames 175 --no-audio
+```
+
+The snap-only probe found two complete routes in 2,756
+stage-sweep attempts. This guide starts at X/Z
+`-1078.91504/-3407.48291` (query `1846.01367`, arena half-width
+`4500`). Use **Left Arrow** on 6–9 and **A** on 40, then neutral.
+The wind-up entry halves −27 to −13.5 before the contact tail
+clears it to zero, at unchanged Y `1416.95068`. G-Red stays
+airborne with full meter. The route pays for handoff at 46 and
+active entry at 47. Falling resumes at 107, touchdown and
+landing remain separate at 137–138, and idle refills normally.
 
 ### Relaunch instead of active dash after that expiry-step wind-up
 

@@ -73,6 +73,7 @@ public:
     static constexpr const char* direct_expiring_entry_push_hint="AIRBORNE / RELAUNCH ENTRY PUSH ON EXPIRY";
     static constexpr const char* expiring_walk_air_dash_hint="AIRBORNE / DASH WIND-UP ON EXPIRY";
     static constexpr const char* expiring_walk_air_dash_relaunch_hint="AIRBORNE / EXPIRY WIND-UP TO RELAUNCH";
+    static constexpr const char* expiring_walk_air_dash_snap_hint="AIRBORNE / WIND-UP ENTRY SNAP ON EXPIRY";
     static constexpr const char* windup_from_relaunch_snap_hint="AIRBORNE / RELAUNCH TO WIND-UP";
     static constexpr const char* relaunch_from_active_snap_hint="AIRBORNE / ACTIVE DASH TO RELAUNCH";
     static const char* practice_timed_release_push_cue(const NativeBorgSourceReadout& frame){
@@ -304,6 +305,7 @@ public:
             if(practice->direct_expiring_entry_push){text+="\n";text+=direct_expiring_entry_push_hint;}
             if(practice->expiring_walk_air_dash){text+="\n";text+=expiring_walk_air_dash_hint;}
             if(practice->expiring_walk_air_dash_relaunch){text+="\n";text+=expiring_walk_air_dash_relaunch_hint;}
+            if(practice->expiring_walk_air_dash_snap){text+="\n";text+=expiring_walk_air_dash_snap_hint;}
             if(practice->windup_from_relaunch_snap){text+="\n";text+=windup_from_relaunch_snap_hint;}
             if(practice->relaunch_from_active_snap){text+="\n";text+=relaunch_from_active_snap_hint;}
             if(const char* cue=practice_timed_release_push_cue(*practice)){text+="\n";text+=cue;}

@@ -24,7 +24,7 @@ enum class NormalGRedMovementMode {
     GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch,GroundWalkTimedDirectRelaunch,GroundWalkTimedDirectUpRelaunch,
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
     GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
-    GroundWalkExpiringShortAirDashRelaunch
+    GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap
 };
 
 struct NormalGRedMovementDefinition {
@@ -99,6 +99,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiringAirDash,Policy::GroundWalkExpiringAirDash,Behavior::WalkExpiringAirDash},
         CombinedRule{Mode::GroundWalkExpiringAirDashRelaunch,Policy::GroundWalkExpiringAirDashRelaunch,Behavior::WalkExpiringAirDashRelaunch},
         CombinedRule{Mode::GroundWalkExpiringShortAirDashRelaunch,Policy::GroundWalkExpiringShortAirDashRelaunch,Behavior::WalkExpiringShortAirDashRelaunch},
+        CombinedRule{Mode::GroundWalkExpiringAirDashSnap,Policy::GroundWalkExpiringAirDashSnap,Behavior::WalkExpiringAirDashSnap},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -149,7 +150,10 @@ struct NormalGRedMovementDefinition {
         return prior==2009&&prior_angle==8192&&angle==13653&&(contact==1999||(adjacent&&contact==1998));
     }
     static constexpr bool walk_expiring_air_dash_face(u32 prior,s16 angle){
-        return prior==2001&&angle==8192; // Only this grounded approach completed the subsequent wind-up.
+        return prior==2001&&angle==8192; // Verified timer-one walking push, not a general angle permission.
+    }
+    static constexpr bool walk_expiring_air_dash_snap_face(u32 face,s16 angle){
+        return face==2000&&angle==8192;
     }
     static constexpr u8 expiring_walk_windup_complete=7; // entry, two pushes, four ordinary updates
     static constexpr u8 expiring_walk_windup_end(bool short_windup){

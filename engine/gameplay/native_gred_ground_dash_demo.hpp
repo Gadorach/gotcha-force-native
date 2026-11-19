@@ -50,7 +50,7 @@ class NativeGRedGroundDashDemo {
     struct Pending {
         State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;
         bool direct_expiry_relaunch=false,direct_timed_relaunch=false,direct_expiring_relaunch=false,direct_expiring_entry_push=false;
-        bool expiring_walk_air_dash=false,expiring_walk_air_dash_relaunch=false;
+        bool expiring_walk_air_dash=false,expiring_walk_air_dash_relaunch=false,expiring_walk_air_dash_snap=false;
         std::shared_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion;
     };
 public:
@@ -429,15 +429,21 @@ public:
                 if(error&&!detail.empty())*error+=" / "+detail;
                 return false;
             }
-            if(push_windup&&kind!=NativeBorgMotionKind::AirDashWindupEntry)
+            const bool expiring_snap=expiring&&allows(mode_,Behavior::WalkExpiringAirDashSnap)&&kind==NativeBorgMotionKind::AirDashWindupEntryFloor&&
+                s.air_dash_floor&&s.air_motion&&s.air_motion->timer568==6.f&&s.motion.position==observed.position&&
+                s.air_dash_floor->surface.height==observed.position[1]&&
+                NormalGRedMovementDefinition::walk_expiring_air_dash_snap_face(s.air_dash_floor->surface.triangle,s.air_dash_floor->angle);
+            if(push_windup&&kind!=NativeBorgMotionKind::AirDashWindupEntry&&!expiring_snap)
                 return fail(error,timed?"timed push air dash requires plain wind-up without contact response":
                     "expiry air dash requires plain wind-up without contact response");
-            candidate->expiring_walk_air_dash=expiring;
+            const bool expiring_plain=expiring&&kind==NativeBorgMotionKind::AirDashWindupEntry;
+            candidate->expiring_walk_air_dash=expiring_plain;
+            candidate->expiring_walk_air_dash_snap=expiring_snap;
             if(expiring_air_dash_relaunch&&s.air_motion&&s.air_motion->phase==15&&s.ground_timer698==0.f){
                 const auto& previous_air=state_.air_motion;
                 if(s.air_motion->entry){
-                    s.air_motion->expiring_walk_windup_short=expiring&&s.air_motion->timer568==5.f&&allows(mode_,Behavior::WalkExpiringShortAirDashRelaunch);
-                    s.air_motion->expiring_walk_windup_step=expiring&&(s.air_motion->timer568==6.f||s.air_motion->expiring_walk_windup_short)?1:0;
+                    s.air_motion->expiring_walk_windup_short=expiring_plain&&s.air_motion->timer568==5.f&&allows(mode_,Behavior::WalkExpiringShortAirDashRelaunch);
+                    s.air_motion->expiring_walk_windup_step=expiring_plain&&(s.air_motion->timer568==6.f||s.air_motion->expiring_walk_windup_short)?1:0;
                 }else if(previous_air&&(kind==NativeBorgMotionKind::AirDashWindup||kind==NativeBorgMotionKind::AirDashWindupPush)){
                     s.air_motion->expiring_walk_windup_step=NormalGRedMovementDefinition::expiring_walk_windup_next(
                         previous_air->expiring_walk_windup_step,kind==NativeBorgMotionKind::AirDashWindupPush,
@@ -709,7 +715,7 @@ public:
                 accepted.jump_motion->timed_walk_relaunch_fall,accepted.kind==NativeBorgMotionKind::StaticPush&&
                 accepted.jump_motion&&accepted.jump_motion->second_timed_release_push,pending_->direct_expiring_relaunch,
                 direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push,pending_->expiring_walk_air_dash,
-                pending_->expiring_walk_air_dash_relaunch}));
+                pending_->expiring_walk_air_dash_relaunch,pending_->expiring_walk_air_dash_snap}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
