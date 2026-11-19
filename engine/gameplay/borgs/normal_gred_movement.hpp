@@ -17,7 +17,7 @@ enum class NormalGRedMovementMode {
     GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,
     GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,
     GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash,
-    GroundSlopeTransitionDash
+    GroundSlopeTransitionDash,GroundInclinedDashLedge
 };
 
 struct NormalGRedMovementDefinition {
@@ -66,6 +66,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundSlopeSeamDash,Policy::GroundSlopeSeamDash,Behavior::CoplanarSlopeDash},
         CombinedRule{Mode::GroundSlopeCreaseDash,Policy::GroundSlopeCreaseDash,Behavior::ShallowCreaseDash},
         CombinedRule{Mode::GroundSlopeTransitionDash,Policy::GroundSlopeTransitionDash,Behavior::FlatInclineDash},
+        CombinedRule{Mode::GroundInclinedDashLedge,Policy::GroundInclinedDashLedge,Behavior::InclinedDashLedge},
     };
 
     static constexpr Policy native_policy(Mode mode){

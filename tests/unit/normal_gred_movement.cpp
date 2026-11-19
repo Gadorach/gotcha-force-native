@@ -24,6 +24,7 @@ int main(){
     static_assert(unsigned(Mode::OrderedGround)==22&&unsigned(Mode::GroundSlopeCreaseDash)==49);
     static_assert(unsigned(Policy::OrderedGround)==18&&unsigned(Policy::GroundSlopeCreaseDash)==45);
     static_assert(unsigned(Mode::GroundSlopeTransitionDash)==50&&unsigned(Policy::GroundSlopeTransitionDash)==46);
+    static_assert(unsigned(Mode::GroundInclinedDashLedge)==51&&unsigned(Policy::GroundInclinedDashLedge)==47);
     constexpr Policy legacy[]{
         Policy::GroundOnly,Policy::GroundOnly,Policy::VerticalJump,Policy::Jump,Policy::AirDash,Policy::Relaunch,
         Policy::Relaunch,Policy::Relaunch,Policy::Relaunch,Policy::StaticPush,Policy::FallHistoryPush,
@@ -53,6 +54,8 @@ int main(){
     check(mixed.allows_shallow_dash_join(false,false)&&mixed.allows_shallow_dash_join(true,false)&&
         mixed.allows_shallow_dash_join(false,true)&&!mixed.allows_shallow_dash_join(true,true),
         "the opt-in transition allows either mixed direction but cannot use slope proof on two flat faces");
+    check(!mixed.has(Behavior::InclinedDashLedge)&&Definition::allows(Mode::GroundInclinedDashLedge,Behavior::InclinedDashLedge),
+        "the new departure permission is independent of continuous slope joins");
     check(!Definition::allows(Mode::GroundLossRelaunch,Behavior::FallPush),"positive timer coverage does not grant generic push");
     check(!Definition::allows(Mode::GroundSlopeCreaseDash,Behavior(255))&&
         !Definition::behaviors(Policy(255)).has(Behavior::OrderedGround),"unknown IDs cannot grant behavior");

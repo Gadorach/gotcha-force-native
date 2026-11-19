@@ -695,7 +695,8 @@ public:
                     }
                 }
             }
-            if(ordered_policy&&(o.kind==NativeBorgMotionKind::Ground||departure)){
+             bool inclined_departure=false;
+             if(ordered_policy&&(o.kind==NativeBorgMotionKind::Ground||departure)){
                 const auto* previous=actor.source_ground_motion&&last_offer_.ordered_ground?&*last_offer_.ordered_ground:nullptr;
                 if(!o.ordered_ground){
                     if(o.action==BattleMvpAction::GroundDash||(previous&&previous->next_selector))return false;
@@ -754,6 +755,11 @@ public:
                         !terrain->static_surface(o.proposed_position[0],o.proposed_position[2],actor.position[1],&selected)||
                         current.height!=actor.position[1])return false;
                       const bool start_flat=native_borg_flat_surface(current),end_flat=native_borg_flat_surface(selected);
+                      if(departure&&dash_ledge_policy&&behaviors.has(Behavior::InclinedDashLedge)&&
+                         !start_flat&&end_flat&&e.move_speed&&native_borg_static_surface_valid(current)&&native_borg_static_surface_valid(selected)&&
+                         selected.height<f32(current.height-std::max(60.f,config_.step_height)))
+                          inclined_departure=terrain->inclined_ledge_crossing(current.triangle,selected.triangle,actor.position,
+                              o.proposed_position,std::max(60.f,config_.step_height));
                       const bool supported_slope=slope_dash_policy&&!departure&&
                           native_borg_static_surface_valid(current)&&native_borg_static_surface_valid(selected)&&
                           ((!start_flat&&current.normal==selected.normal&&(current.triangle==selected.triangle||
@@ -764,7 +770,7 @@ public:
                           std::abs(selected.height-current.height)<=std::min(60.f,config_.step_height);
                       if(supported_slope){
                           if(o.proposed_position[1]!=selected.height)return false;
-                      }else if(!start_flat||!end_flat||
+                       }else if((!inclined_departure&&(!start_flat||!end_flat))||
                          o.proposed_position[1]!=current.height||
                          (departure?(!dash_ledge_policy||selected.height>=f32(current.height-60.f)||!e.move_speed):
                           selected.height!=current.height))return false;
@@ -804,7 +810,8 @@ public:
                     const bool walking_contract=!dash_ledge_policy||(combined_ledge_policy&&!o.ordered_ground);
                     if(!walking_contract){
                         if(o.ordered_ground&&(e.speed44!=o.ordered_ground->retained_speed||e.travel5ae!=o.ordered_ground->travel5ae))return false;
-                        if(departure&&(!o.ordered_ground||!native_borg_flat_surface(current)||!native_borg_flat_surface(selected)))return false;
+                         if(departure&&(!o.ordered_ground||(!inclined_departure&&
+                             (!native_borg_flat_surface(current)||!native_borg_flat_surface(selected)))))return false;
                     }else if(!native_gred_walk_speed(e.speed44)||o.action==BattleMvpAction::GroundDash)return false;
                     if(walking_contract&&delta!=BattlePoint{}){
                         BattleMvpVec expected;
@@ -1165,7 +1172,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-         if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundSlopeTransitionDash)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundInclinedDashLedge)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

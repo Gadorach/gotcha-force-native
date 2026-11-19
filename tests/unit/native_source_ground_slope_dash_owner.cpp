@@ -221,5 +221,43 @@ int main(){
         check(crossed==1&&resets==1&&source.selector()==0&&std::abs(world.actors()[0].position[1]-t.final_height)<.01f,
             "one mixed join and one ordered recovery reach the original-stage endpoint");
     }
-    std::printf("slope dash: %u checks PASS, original-stage routes including flat/incline joins and older refusals\n",checks);
+    const Route cliff{2582.89014f,-2846.36206f,116.592773f,127,true};
+    bind(cliff,Mode::GroundSlopeTransitionDash);
+    while(world.tick()<5){
+        NativeBorgMotionOffer offer;check(prepare(cliff,&offer),"cliff approach in previous mode");accept(offer);
+    }
+    check(!prepare(cliff,&refused)&&world.tick()==5&&pose.frame_scope.expired()&&!world.step({},false,&view),
+        "the flat/incline seam mode still refuses the cliff without fallback");
+    bind(cliff,Mode::GroundInclinedDashLedge);
+    unsigned departure=0,fall=0,touchdown=0,landing=0;
+    while(world.tick()<100){
+        const auto tick=world.tick();NativeBorgMotionOffer offer;
+        check(prepare(cliff,&offer),"prepare inclined cliff dash, fall and ordinary recovery");
+        using Kind=NativeBorgMotionKind;
+        if(offer.kind==Kind::GroundDeparture){
+            departure=tick+1;
+            const auto& p=offer.observed.position;const auto& end=offer.proposed_position;
+            check(departure==6&&offer.ordered_ground&&offer.walk_ledge&&offer.walk_ledge->surface.triangle==2060&&
+                p[1]==end[1]&&!offer.vertical_speed&&view.inclined_ledge_crossing(827,2060,p,end,60),
+                "depart from the incline through the real cliff strip, at unchanged height");
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            const auto retained=pose;WithoutCreaseProof unverified(view);
+            const auto root=source.ordered_root().updates;
+            auto wrong=offer;wrong.proposed_position[1]=offer.walk_ledge->surface.height;
+            check(!world.step({},false,&unverified,nullptr,&frame,&offer)&&
+                !world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==tick&&world.actors()[0].position==p&&
+                world.motion_receipt_current(retained.receipt)&&!retained.frame_scope.expired()&&
+                source.ordered_root().updates==root&&source.ground_loss_timer698()==0&&source.resource()==10000,
+                "missing proof or snap cannot advance root, timer, meter, motion, or pose");
+        }
+        if(offer.kind==Kind::GroundLossEntry){fall=tick+1;check(offer.walk_ledge->timer698==30,"timer begins on fall entry");}
+        if(offer.kind==Kind::GroundLossTouchdown){touchdown=tick+1;check(offer.proposed_position[1]==10,"accepted flat floor touchdown");}
+        if(touchdown&&!landing&&offer.kind==Kind::JumpLanding)landing=tick+1;
+        accept(offer);
+        check(source.resource()==10000&&!source.surface_pushes(),"no meter spend or steep push in the cliff sequence");
+    }
+    check(departure==6&&fall==7&&touchdown==21&&landing==22&&source.ground_departures()==1&&
+        world.actors()[0].grounded&&source.selector()==0&&source.ground_loss_timer698()==0,
+        "full authored route goes from ordered departure through distinct touchdown and landing to idle");
+    std::printf("slope dash: %u checks PASS, original-stage seams and inclined cliff departure, older refusals\n",checks);
 }

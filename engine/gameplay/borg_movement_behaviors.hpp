@@ -10,7 +10,7 @@ enum class BorgMovementBehavior:u8 {
     GroundLossSurface, RetainedTimerLandingJump, RetainedTimerLandingDash,
     RetainedTimerAirDash, RetainedTimerRelaunch, FallPush, PostAirFallPush,
     ReleasedRelaunchPush, RecoveryPush, WindupPush, ActivePush, RelaunchPush,
-    RelaunchEntryPush, WindupEntryPush, SlopeDash, CoplanarSlopeDash, ShallowCreaseDash, FlatInclineDash, Count
+    RelaunchEntryPush, WindupEntryPush, SlopeDash, CoplanarSlopeDash, ShallowCreaseDash, FlatInclineDash, InclinedDashLedge, Count
 };
 static_assert(unsigned(BorgMovementBehavior::Count)<=32);
 

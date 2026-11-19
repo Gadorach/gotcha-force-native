@@ -13,6 +13,33 @@ permission to copy G-Red's timings, resource policy or motion map to Sasuke.
 Additional user observations about hover contact and perpetual-flight boost
 recovery are recorded in [candidate movement families](borg-movement-families.md).
 
+## Ordered dash off an inclined ledge (GFMM9)
+
+`--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the
+existing `670DC` ground tangent and step result, ordered dash root, and
+ground-loss/landing handlers. It is not a new slope-snap or steep-push
+response. Source planning and native acceptance each check their own selected
+faces and the authored strip. The segment must leave the incline through
+an edge interior, cross descending steep faces joined by exact 3D edges,
+then end above a single flat face that underlies the full segment. Gaps,
+overlapping elevated faces, corner exits, and drops no larger than the step
+limit refuse. These geometry limits are native safeguards, not original
+game constants. Native body, bounds and terrain checks still run.
+
+The demo uses a native grounded fixture on original triangle 827, crosses
+the narrow cliff band (826, 825), and falls toward flat floor 2060. A single
+right flick after five idle ticks departs at accepted tick 6, enters falling
+at 7 (timer698 = 30), touches down at 21, then enters landing at 22. The
+departure retains its Y; the fall does not spend meter. The previous
+flat/incline transition mode still refuses this trajectory, and removing the
+native edge proof or substituting an instant floor snap retains the prior
+accepted motion, timer, meter, root, and pose. No source-frame equivalence,
+walking off nonflat ledges, or steep ledge-fall pushes are claimed.
+
+```sh
+gf_native --demo-gred-inclined-dash-ledge --headless --frames 100 --no-audio
+```
+
 ## Descending air-dash wind-up entry push in the combined controller (GFMM9)
 
 `--source-ground-windup-entry-push` adds steep projection during wind-up entry

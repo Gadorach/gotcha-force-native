@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/stage_inclined_ledge.hpp"
 #include "engine/gameplay/native_battle_mvp_borg.hpp"
 #include "engine/gameplay/attachment_model_scene.hpp"
 #include "engine/gameplay/stage_ground_surface.hpp"
@@ -105,6 +106,9 @@ public:
     }
     bool gentle_slope_crossing(u32 from,u32 to,const BattleMvpVec& start,const BattleMvpVec& end)const override{
         return ready_&&stage_ground_slope_crossing(floor_,from,to,start,end,true);
+    }
+    bool inclined_ledge_crossing(u32 from,u32 to,const BattleMvpVec& start,const BattleMvpVec& end,f32 step)const override{
+        return ready_&&stage_inclined_ledge_crossing(floor_.triangles(),from,to,start,end,step);
     }
     bool static_surface(f32 x,f32 z,f32 current_y,NativeBorgStaticSurface* out)const override{
         if(!ready_||!out)return false;

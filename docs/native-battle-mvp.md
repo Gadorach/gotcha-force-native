@@ -157,6 +157,13 @@ the flat-to-incline route from triangle 249 to 1052. The owner test also
 replays the incline-to-flat route from triangle 245 to 890. Both joins are
 about 9.5°; neither spends flight meter or leaves the ground.
 
+`--gred-inclined-dash-ledge` additionally enables one narrowly verified
+departure topology for normal G-Red. An ordered downhill dash can leave the
+incline over a connected steep strip onto a lower flat floor; the departure
+keeps its height and the existing fall and landing own subsequent frames.
+Older modes do not gain this permission. Try
+`--demo-gred-inclined-dash-ledge --headless --frames 100 --no-audio`.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

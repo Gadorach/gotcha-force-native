@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/stage_inclined_ledge.hpp"
 //Movement-only native harness around recovered G-Red ground components.
 //Native collider/target proxies are explicit approximations, NOT original
 //actor construction, weapon/auxiliary callbacks or whole-frame admission.
@@ -735,8 +736,13 @@ private:
                 stage_ground_slope_crossing(grids_[0],start.triangle,end.triangle,before.position,moved.position,true)))&&
             start.height==before.position[1]&&moved.position[1]==end.height&&
             std::abs(end.height-start.height)<=std::min(ground.step674,world.config().step_height);
-        if(!supported_slope&&(!start_flat||!end_flat))
-            return refuse("unresolved/nonflat destination");
+         const bool inclined_departure=behaviors.has(Behavior::InclinedDashLedge)&&!start_flat&&end_flat&&
+             !(s.motion.flags5e0&0x40u)&&start.height==before.position[1]&&moved.position[1]==before.position[1]&&
+             !before.vertical48&&!moved.vertical48&&
+             stage_inclined_ledge_crossing(grids_[0].triangles(),start.triangle,end.triangle,before.position,moved.position,
+                 std::max(ground.step674,world.config().step_height));
+         if(!supported_slope&&!inclined_departure&&(!start_flat||!end_flat))
+             return refuse("unresolved/nonflat destination");
         if(!supported_slope&&(end.height!=start.height||moved.position[1]!=end.height)){
             if(!dash_ledge_mode(mode_)||end.height>=f32(start.height-ground.step674)||moved.position[1]!=before.position[1]||
                before.vertical48||moved.vertical48)return refuse("ledge/height change remains disabled");
