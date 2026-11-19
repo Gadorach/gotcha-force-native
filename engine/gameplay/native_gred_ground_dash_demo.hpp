@@ -349,9 +349,14 @@ public:
                     "plain wind-up relaunch needs a still-positive ledge countdown");
             const bool floor_windup_handoff=timed_snap_handoff&&!s.relaunch.lower_stage&&state_.air_dash_floor&&
                 previous_air&&previous_air->phase==15&&previous_air->next_selector==16&&previous_air->next_stage==0&&previous_air->timer568==0.f;
-            if(floor_windup_handoff&&(!previous_air->timed_relaunch_floor_windup||
-                state_.ground_timer698!=0.f||s.ground_timer698!=0.f))
-                return fail(error,"floor wind-up relaunch needs uninterrupted timed snap history and an expired countdown");
+            const bool positive_floor_handoff=allows(mode_,Behavior::PositiveSnapWindupRelaunch);
+            const bool floor_handoff_clock=NormalGRedMovementDefinition::floor_windup_handoff_clock(
+                NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),
+                state_.ground_timer698,s.ground_timer698);
+            if(floor_windup_handoff&&(!previous_air->timed_relaunch_floor_windup||!floor_handoff_clock))
+                return fail(error,positive_floor_handoff?
+                    "floor wind-up relaunch needs uninterrupted timed snap history and a still-positive or previously expired countdown":
+                    "floor wind-up relaunch needs uninterrupted timed snap history and an expired countdown");
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
@@ -615,7 +620,9 @@ public:
             ((allows(mode_,Behavior::TimedPlainWindupRelaunch)&&*accepted.controller_timer698>1.f)||
              (allows(mode_,Behavior::ExpiryPlainWindupRelaunch)&&*accepted.controller_timer698==0.f&&air->walk_expiry_windup));
         const bool floor_windup_relaunch_ready=accepted.kind==NativeBorgMotionKind::AirDashWindupFloor&&windup_relaunch_ready&&
-            state_.jump.cached87&&air->timed_relaunch_floor_windup&&*accepted.controller_timer698==0.f;
+            state_.jump.cached87&&air->timed_relaunch_floor_windup&&NormalGRedMovementDefinition::floor_windup_handoff_clock(
+                NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),
+                *accepted.controller_timer698,std::max(0.f,*accepted.controller_timer698-1.f));
         bool direct_expiry_relaunch_ready=false;
         if(allows(mode_,Behavior::WalkExpiryDirectRelaunch)&&accepted.kind==NativeBorgMotionKind::GroundLossPush&&
             accepted.static_push&&accepted.walk_ledge&&accepted.walk_ledge->walk_origin&&

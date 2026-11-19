@@ -215,6 +215,13 @@ Tap **Shift** without a direction on 156 to relaunch, or leave the
 controls neutral to dash. Both keep the 450 cost already paid.
 Use `--demo-gred-walk-ledge-timed-snap-handoff` for the relaunch replay.
 
+`--gred-walk-ledge-positive-snap-handoff --practice-start` is the
+shorter route with time still left. Step with **Up Arrow** on 6–8,
+**Shift** on 25–26 and **W** on 26. At 31 the paid wind-up has seven
+ticks left. Tap neutral-direction **Shift** on 32 to relaunch with
+six ticks remaining, or leave the controls neutral for active dash.
+`--demo-gred-walk-ledge-positive-snap-handoff` replays the relaunch.
+
 `--gred-inclined-dash-jump --practice-start` opens the flat-to-incline
 dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
 **DASH CANCELED** appears on accepted takeoff. The old dash does not

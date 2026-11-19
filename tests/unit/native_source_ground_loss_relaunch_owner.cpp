@@ -404,6 +404,81 @@ int main(){
             (source.air_dash_active_frames()==0)==bool(hold)&&source.resource()==10000&&source.landings()==1&&!source.selector(),
             "both the ordinary dash and neutral relaunch choices reach separate landing and idle");
     }
+    auto positive_fixture=[&](Mode mode){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={2892.57739f,-2198.41479f};cfg.spawn_query_y[0]=151.148178f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"declared grounded positive fixture on the original stage");
+    };
+    auto positive_pad=[](unsigned tick,unsigned hold){
+        GamePadState pad;pad.dpad_up=tick>=6&&tick<=8;
+        pad.b=tick==25||tick==26||(tick>=32&&tick<32+hold);
+        if(tick==26)pad.stick_y=-127;
+        return pad;
+    };
+    positive_fixture(Mode::GroundTimedSnapWindupRelaunch);
+    for(unsigned tick=1;tick<=31;++tick){
+        NativeBorgMotionOffer offer;check(prepare(positive_pad(tick,0),&offer),"expiry-only mode admits unchanged early positive wind-up");
+        if(tick==31)check(offer.air_motion&&offer.air_motion->timed_relaunch_floor_windup&&offer.controller_timer698==7.f,
+            "the older policy has the correct wind-up lineage but not the positive clock permission");
+        accept(offer);
+    }
+    {
+        NativeBorgMotionOffer refused;const auto retained=pose;const auto previous=world.actors()[0].position;
+        check(!view.practice_readout(world)->floor_windup_relaunch_ready&&!prepare(positive_pad(32,1),&refused)&&
+            error.find("an expired countdown")!=std::string::npos&&world.tick()==31&&source.resource()==9400&&
+            source.ground_loss_timer698()==7.f&&world.actors()[0].position==previous&&source.relaunches()==1&&
+            retained.frame_scope.expired()&&!world.step({},false,&view),
+            "expiry-only mode still refuses the same fresh Shift without consuming timer, meter or fallback");
+    }
+    for(unsigned hold:{0u,1u,4u}){
+        positive_fixture(Mode::GroundPositiveSnapWindupRelaunch);
+        unsigned hit=0,land=0,fall=0;
+        for(unsigned tick=1;tick<=110;++tick){
+            const auto before=world.actors()[0];const auto retained=pose;
+            const auto timer=source.ground_loss_timer698();const auto meter=source.resource();
+            NativeBorgMotionOffer offer;
+            check(prepare(positive_pad(tick,hold),&offer)&&source.ground_loss_timer698()==timer&&source.resource()==meter,
+                "positive expiry-independent motion and cost are staged");
+            const f32 next=offer.kind==Kind::GroundLossEntry?30.f:std::max(0.f,timer-1.f);
+            check(offer.controller_timer698==next,"both handoff choices carry naturally decremented 698 on every role");
+            if(tick==25)check(offer.kind==Kind::RelaunchEntryFloor&&offer.relaunch_floor&&
+                offer.relaunch_floor->surface.triangle==1543&&next==13.f&&!before.grounded,
+                "first real snap is a positive-timer relaunch entry, not touchdown");
+            if(tick>=26&&tick<=31)check(offer.air_dash_floor&&offer.air_dash_floor->surface.triangle==1543&&
+                offer.air_motion&&offer.air_motion->timed_relaunch_floor_windup&&next==38.f-f32(tick)&&
+                offer.air_motion->resource_after==(tick==31?9400:9850)&&!before.grounded,
+                "the entire live positive wind-up stays on its certified flat floor and pays 450 only at completion");
+            if(tick==32&&hold){
+                check(offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&offer.relaunch_motion->entry&&!offer.relaunch_motion->direction&&
+                    !before.grounded&&!before.vertical_speed&&next==6.f&&offer.proposed_position[1]==before.position[1]+15.f&&
+                    offer.relaunch_motion->resource_before==9400&&offer.relaunch_motion->resource_after==9250&&
+                    !offer.air_dash_floor&&!offer.relaunch_floor&&offer.facing==before.facing,
+                    "plain neutral lift spends 150 and keeps six actual timer ticks without snapping again");
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                for(f32 wrong_timer:{0.f,7.f}){
+                    auto wrong=offer;wrong.controller_timer698=wrong_timer;
+                    check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==31&&source.resource()==9400&&
+                        source.ground_loss_timer698()==7.f&&world.motion_receipt_current(retained.receipt)&&
+                        view.practice_readout(world)->floor_windup_relaunch_ready,
+                        "native must match the real 7-to-6 transition rather than revive or erase the clock");
+                }
+            }else if(tick==32)check(native_borg_motion_active_entry(offer.kind)&&offer.air_motion->resource_after==9350&&next==6.f,
+                "neutral retains the ordinary active-entry cost and clock");
+            if(hold&&tick>32&&!fall&&offer.kind==Kind::JumpAir)fall=tick;
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->floor_windup_relaunch_ready==(tick==31)&&!shown->plain_windup_relaunch_ready,
+                "the choice is published only on accepted completion with time still left");
+            if(tick==fall||tick==hit||tick==land)check(source.resource()==(hold?9250-100*int(hold-1):7850),
+                "grounded recovery waits for the original callback and landing, not an airborne snap");
+        }
+        check(hit==(hold==1?66u:hold==4?76u:62u)&&land==hit+1&&fall==(hold?32+hold:0)&&
+            source.relaunches()==(hold?2u:1u)&&(source.air_dash_active_frames()==0)==bool(hold)&&
+            world.actors()[0].grounded&&source.ground_loss_timer698()==0.f&&source.resource()==10000&&!source.selector(),
+            "both positive-timer branch choices reach separate landing and normal idle");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

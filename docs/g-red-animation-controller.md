@@ -1142,6 +1142,39 @@ A wind-up that enters at zero, a relaunch request before expiry,
 directional entry, and entry contact responses remain unsupported
 under this new permission. This does not change landing or refill.
 
+### The same floor handoff while the countdown is still positive
+
+`--gred-walk-ledge-positive-snap-handoff` is a separate opt-in.
+The same certified wind-up history and neutral, same-triangle
+relaunch checks still apply. After the paid wind-up, the previous
+timer must exceed 1 and the next accepted value must be exactly
+one lower and still positive. A pending 1 → 0 is neither this route
+nor the previously accepted expiry case.
+
+```sh
+gf_native --demo-gred-walk-ledge-positive-snap-handoff --headless --frames 110 --no-audio
+gf_native --gred-walk-ledge-positive-snap-handoff --practice-start --no-audio
+```
+
+The new grounded native start is X/Z `2892.57739/-2198.41479`
+(floor query `151.148178`, arena half-width `4500`). Step with
+**Up Arrow** on 6–8, **Shift** on 25–26 with **W** on 26, then
+release. The first relaunch snaps at 25 (timer 13), then the
+wind-up starts at 26 with timer 12 and 9850 meter. All six
+wind-up snaps stay airborne on original flat triangle 1543.
+
+Tick 31 pays 450 (9400 meter, timer 7) and offers the choice.
+Tap **Shift** without direction on 32 to rise (9250 meter, timer 6).
+The countdown continues through release and expires at 38.
+Touchdown and landing occur separately at 66–67 before normal
+recovery. Neutral on 32 instead pays 50 for active entry
+(9350 meter, timer 6) and lands separately at 62–63.
+
+A bounded original-stage scan found 140 early flat snap candidates
+in 6066 approaches, then verified 16 full positive handoffs.
+The expiry-only mode still refuses this same relaunch. No floor,
+steep-contact, body or landing checks were relaxed.
+
 Native placement/input/clocks/libm/camera/target/body/terrain approximations
 remain explicit, not original-hardware or whole-game equivalence. Push,
 nonflat ordered dash, raised-side/clipped/unknown contacts and combat remain

@@ -666,9 +666,11 @@ public:
                           *o.controller_timer698==*last_offer_.controller_timer698-1.f;
                       const bool expiry_plain_handoff=plain_handoff&&behaviors.has(Behavior::ExpiryPlainWindupRelaunch)&&
                           air->walk_expiry_windup&&*last_offer_.controller_timer698==0.f&&*o.controller_timer698==0.f;
+                      const bool floor_handoff_clock=last_offer_.controller_timer698&&o.controller_timer698&&
+                          NormalGRedMovementDefinition::floor_windup_handoff_clock(behaviors,*last_offer_.controller_timer698,*o.controller_timer698);
                       const bool timed_floor_handoff=completed_windup&&behaviors.has(Behavior::TimedSnapWindupRelaunch)&&
                           prior==NativeBorgMotionKind::AirDashWindupFloor&&air->timed_relaunch_floor_windup&&
-                          last_offer_.air_dash_floor&&last_offer_.controller_timer698==0.f&&o.controller_timer698==0.f&&
+                          last_offer_.air_dash_floor&&floor_handoff_clock&&
                           o.kind==NativeBorgMotionKind::RelaunchEntry;
                       if(timed_floor_handoff){
                           const auto& floor=last_offer_.air_dash_floor->surface;
@@ -1346,7 +1348,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedSnapWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundPositiveSnapWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
