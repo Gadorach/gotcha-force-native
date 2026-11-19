@@ -134,6 +134,33 @@ across 1,176 nearby trials yielded no accepted entry. The owner regression
 retains a real staged relaunch candidate and checks that it publishes
 neither a motion frame nor a meter spend.
 
+### Air-dash wind-up after the expiry push
+
+`--gred-walk-ledge-expiry-air-dash` opts into a **plain** wind-up directly
+after an accepted walking expiry push. The preceding push and the new
+entry must both carry zero timer698. A timer-one push followed by a
+prospective decrement does not qualify. Neither a floor snap, steep
+response, nor relaunch can borrow this entry permission. Earlier modes
+still refuse this immediate handoff, and all existing contact checks run.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiry-air-dash --headless --frames 300 --no-audio
+```
+
+On the same expiry fixture, D-pad Left starts the walk; neutral input
+keeps the two pushes. A single left stick flick after accepted tick 56
+produces wind-up at 57. It halves the incoming vertical speed without
+moving or spending meter. The handoff spends 450 at 62; the separate
+active entry spends 50 at 63. Ordinary falling resumes at 123 with meter
+8000, then touchdown at 150 and landing at 151 are separate. Idle reaches
+full meter. Six complete probe routes supported the handoff; the demo
+uses the one-sample left flick.
+
+Relaunch is different: a short neutral gap can already permit relaunch
+through the ordinary falling path. For example, two held Shift updates
+from tick 59 on the same fixture enter at 60 and land at 111 under the
+existing rules. This does not grant an immediate relaunch from the push.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the

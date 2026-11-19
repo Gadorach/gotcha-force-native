@@ -239,6 +239,12 @@ general zero-timer or dash-origin pushes.
 holds Up for 36 updates after the neutral expiry push. It moves the
 landing location without another push, body turn, or meter spend.
 
+`--gred-walk-ledge-expiry-air-dash` adds a plain air-dash wind-up directly
+after the accepted neutral expiry push. Try
+`--demo-gred-walk-ledge-expiry-air-dash --headless --frames 300 --no-audio`
+for the separate wind-up, costs, touchdown and idle. A positive-timer
+push still cannot use this handoff.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

@@ -390,6 +390,24 @@ class SourceGroundWorldTests(unittest.TestCase):
                     self.assertIn("G-Red-position=-513.07/10.00/-3255.60", run.stdout)
                     self.assertNotIn("practice-ledge-timer-ticks=", run.stdout)
 
+    def test_walk_ledge_expiry_air_dash_keeps_entry_and_cost_handoff_distinct(self):
+        for tick, phase, meter in (
+            (56, "LEDGE FALL / PUSH", 10000),
+            (57, "DASH WIND-UP", 10000),
+            (62, "DASH WIND-UP", 9550),
+            (63, "AIR DASH", 9500),
+            (123, "FALLING", 8000),
+            (150, "TOUCHDOWN", 8000),
+            (151, "LANDING", 8000),
+            (300, "IDLE", 10000),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-walk-ledge-expiry-air-dash", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn("walk-ledge-fall-pushes=2", run.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

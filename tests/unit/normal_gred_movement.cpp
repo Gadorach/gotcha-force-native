@@ -28,6 +28,9 @@ int main(){
     static_assert(unsigned(Mode::GroundWalkLedgeFallPush)==52&&unsigned(Policy::GroundWalkLedgeFallPush)==48);
     static_assert(unsigned(Mode::GroundWalkLedgeHighAnglePush)==53&&unsigned(Policy::GroundWalkLedgeHighAnglePush)==49);
     static_assert(unsigned(Mode::GroundWalkLedgeExpiryPush)==54&&unsigned(Policy::GroundWalkLedgeExpiryPush)==50);
+    static_assert(unsigned(Mode::GroundWalkLedgeExpiryAirDash)==55&&unsigned(Policy::GroundWalkLedgeExpiryAirDash)==51&&
+        !Definition::allows(Mode::GroundWalkLedgeExpiryPush,Behavior::WalkLedgeExpiryAirDash)&&
+        Definition::allows(Mode::GroundWalkLedgeExpiryAirDash,Behavior::WalkLedgeExpiryAirDash));
     static_assert(unsigned(Behavior::WalkLedgeExpiryPush)==32&&
         !Definition::allows(Mode::GroundWalkLedgeHighAnglePush,Behavior::WalkLedgeExpiryPush)&&
         Definition::allows(Mode::GroundWalkLedgeExpiryPush,Behavior::WalkLedgeExpiryPush));

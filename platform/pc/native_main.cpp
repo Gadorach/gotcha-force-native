@@ -149,6 +149,7 @@ struct Options {
     bool gred_walk_ledge_fall_push=false;
     bool gred_walk_ledge_high_angle_push=false;
     bool gred_walk_ledge_expiry_push=false;
+    bool gred_walk_ledge_expiry_air_dash=false;
     bool demo_gred_walk_ledge_expiry_drift=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
@@ -351,6 +352,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-walk-ledge-fall-push" || arg == "--demo-gred-walk-ledge-fall-push" ||
                  arg == "--gred-walk-ledge-high-angle-push" || arg == "--demo-gred-walk-ledge-high-angle-push" ||
                  arg == "--gred-walk-ledge-expiry-push" || arg == "--demo-gred-walk-ledge-expiry-push" ||
+                 arg == "--gred-walk-ledge-expiry-air-dash" || arg == "--demo-gred-walk-ledge-expiry-air-dash" ||
                  arg == "--demo-gred-walk-ledge-expiry-drift"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
@@ -381,7 +383,8 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_relaunch_push=arg=="--source-ground-relaunch-push"||arg=="--demo-source-ground-relaunch-push";
             options->source_ground_relaunch_entry_push=arg=="--source-ground-relaunch-entry-push"||arg=="--demo-source-ground-relaunch-entry-push";
             options->demo_gred_walk_ledge_expiry_drift=arg=="--demo-gred-walk-ledge-expiry-drift";
-            options->gred_walk_ledge_expiry_push=options->demo_gred_walk_ledge_expiry_drift||
+            options->gred_walk_ledge_expiry_air_dash=arg=="--gred-walk-ledge-expiry-air-dash"||arg=="--demo-gred-walk-ledge-expiry-air-dash";
+            options->gred_walk_ledge_expiry_push=options->demo_gred_walk_ledge_expiry_drift||options->gred_walk_ledge_expiry_air_dash||
                 arg=="--gred-walk-ledge-expiry-push"||arg=="--demo-gred-walk-ledge-expiry-push";
             options->gred_walk_ledge_high_angle_push=options->gred_walk_ledge_expiry_push||
                 arg=="--gred-walk-ledge-high-angle-push"||arg=="--demo-gred-walk-ledge-high-angle-push";
@@ -816,7 +819,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ordered_ground?"local/content/source-gred-ground-v9":options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
-    const auto source_mode=options.gred_walk_ledge_expiry_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryPush:
+    const auto source_mode=options.gred_walk_ledge_expiry_air_dash?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryAirDash:
+         options.gred_walk_ledge_expiry_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryPush:
          options.gred_walk_ledge_high_angle_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeHighAnglePush:
          options.gred_walk_ledge_fall_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeFallPush:
          options.gred_inclined_dash_ledge?gf::NativeGRedGroundDashDemo::Mode::GroundInclinedDashLedge:
@@ -858,7 +862,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(picker)view.source_practice_back(options.force_practice?gf::PracticeBackScreen::ForceBrowser:gf::PracticeBackScreen::OwnedCollection);
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-     if(options.gred_walk_ledge_expiry_push)gf::log_info(context,"source-ground","walking ledge push at timer698 1 to 0 only after an accepted push, without drift; expired landing gate 10240 and native cap 13653; both travel checks");
+     if(options.gred_walk_ledge_expiry_air_dash)gf::log_info(context,"source-ground","plain air-dash wind-up after the accepted zero-timer walking expiry push only; no entry contact response, later costs and travel unchanged");
+     else if(options.gred_walk_ledge_expiry_push)gf::log_info(context,"source-ground","walking ledge push at timer698 1 to 0 only after an accepted push, without drift; expired landing gate 10240 and native cap 13653; both travel checks");
      else if(options.gred_walk_ledge_high_angle_push)gf::log_info(context,"source-ground","continued descending walk-ledge push with positive owned timer698; native cap 13653, same selected-plane and pre/post-travel checks");
      else if(options.gred_walk_ledge_fall_push)gf::log_info(context,"source-ground","continued descending walk-ledge push with positive owned timer698 and angle above 6144 through 10240; separate native travel on both sides of projection");
      else if(options.gred_inclined_walk_ledge)gf::log_info(context,"source-ground","%s",use_demo_start?
@@ -885,7 +890,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_practice_controls();
             gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, C camera, Q restart, Esc close; native proxies, no combat");
             if(options.gred_practice_start){
-                const char* hint=options.gred_walk_ledge_expiry_push?"LEFT ARROW THEN RELEASE":
+                const char* hint=options.gred_walk_ledge_expiry_air_dash?"WALK LEFT / FLICK LEFT AFTER EXPIRY PUSH":
+                    options.gred_walk_ledge_expiry_push?"LEFT ARROW THEN RELEASE":
                     options.gred_walk_ledge_fall_push?"RIGHT ARROW THEN RELEASE":
                     options.gred_inclined_walk_ledge?"UP ARROW THEN RELEASE":
                     options.gred_inclined_dash_ledge||(options.gred_slope_crease_dash&&!options.gred_slope_transition_dash)?"FLICK RIGHT":
@@ -898,7 +904,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_ordered_ground_controls();
             if(options.gred_slope_dash){
                 if(!options.source_ground_interactive)
-                     gf::log_info(context,"source-ground","%s",options.demo_gred_walk_ledge_expiry_drift?
+                     gf::log_info(context,"source-ground","%s",options.gred_walk_ledge_expiry_air_dash?
+                         "walk ledge expiry air-dash demo: D-pad left then neutral, one left flick after accepted tick56":options.demo_gred_walk_ledge_expiry_drift?
                          "walk ledge expiry drift demo: neutral on the expiry push, then 36 accepted D-pad up updates":options.gred_walk_ledge_expiry_push?
                          "walk ledge expiry demo: D-pad left, then neutral; faces2009/1999 and a separate later landing":options.gred_walk_ledge_high_angle_push?
                          "walk ledge high-angle demo: D-pad right, then neutral; faces1953/1949 and separate later landing":options.gred_walk_ledge_fall_push?
@@ -1140,7 +1147,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                               if(world.tick()>=5&&world.tick()<30&&!source.ground_departures()){
                                   device.dpad_right=!options.gred_walk_ledge_expiry_push;
                                   device.dpad_left=options.gred_walk_ledge_expiry_push;
-                              }else if(options.demo_gred_walk_ledge_expiry_drift&&world.tick()>=56&&world.tick()<92)device.dpad_up=true;
+                              }else if(options.gred_walk_ledge_expiry_air_dash&&world.tick()==56)device.stick_x=-127;
+                              else if(options.demo_gred_walk_ledge_expiry_drift&&world.tick()>=56&&world.tick()<92)device.dpad_up=true;
                           }else if(options.gred_inclined_walk_ledge){
                               device.dpad_up=world.tick()>=5&&world.tick()<20&&!source.ground_departures();
                           }else if(options.gred_slope_dash){
