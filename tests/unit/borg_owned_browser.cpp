@@ -107,12 +107,19 @@ int main(){
     }
     check(browser.practice_route_name()=="TIMED SNAP DASH","snap-dash route is distinct from the two handoff guides");
     for(auto route:{GRedPickerPracticeRoute::ExpiryStepHandoff,GRedPickerPracticeRoute::DirectTimedRelaunch,
-        GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch}){
+        GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch,
+        GRedPickerPracticeRoute::TimedReleasePush,GRedPickerPracticeRoute::TimedReleaseTwoPushes}){
         browser.step({},true);
         check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==route&&
             browser.step(right,true)==BorgBrowserChange::None&&browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
-            "ninth through twelfth Right select the new guides without replacing the copy or saved variant");
+            "ninth through fourteenth Right select the timed guides without replacing the copy or saved variant");
     }
+    check(browser.practice_route_name()=="TWO TIMED RELEASE PUSHES","two-push guide has its own route label");
+    GamePadState left;left.dpad_left=true;
+    browser.step({},true);
+    check(browser.step(left,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route_name()=="TIMED RELEASE PUSH"&&
+        browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
+        "previous selects the single-push guide without changing saved contents");
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,
         "disabled copy stays visible but cannot request preview");

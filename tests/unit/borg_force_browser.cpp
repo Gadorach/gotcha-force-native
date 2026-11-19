@@ -87,12 +87,18 @@ int main(){
             "sixth through eighth Right shoulder select floor-snap guides without moving the Force or slot");
     }
     for(auto route:{GRedPickerPracticeRoute::ExpiryStepHandoff,GRedPickerPracticeRoute::DirectTimedRelaunch,
-        GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch}){
+        GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch,
+        GRedPickerPracticeRoute::TimedReleasePush,GRedPickerPracticeRoute::TimedReleaseTwoPushes}){
         cursor.step({});
         check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==route&&
             cursor.step(next_route,true)==BorgForceBrowseChange::None&&cursor.force()==force_before&&cursor.slot()==slot_before,
-            "ninth through twelfth Right shoulder select the new guides without moving either cursor");
+            "ninth through fourteenth Right shoulder select the timed guides without moving either cursor");
     }
+    check(cursor.practice_route_name()=="TWO TIMED RELEASE PUSHES","two-push guide has its own route label");
+    lane.y=false;
+    cursor.step({});
+    check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route_name()=="TIMED RELEASE PUSH"&&
+        cursor.force()==force_before&&cursor.slot()==slot_before,"previous selects the single-push guide without moving either cursor");
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

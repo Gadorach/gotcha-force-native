@@ -13,9 +13,9 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
     OwnedPositiveFloor,ForcePositiveFloor,OwnedExpiredFloor,ForceExpiredFloor,OwnedSnapDash,ForceSnapDash,
     OwnedExpiryStep,ForceExpiryStep,OwnedDirectTimed,ForceDirectTimed,OwnedDirectTimedUp,ForceDirectTimedUp,
-    OwnedActiveSnap,ForceActiveSnap};
+    OwnedActiveSnap,ForceActiveSnap,OwnedTimedReleasePush,ForceTimedReleasePush,OwnedTimedReleaseTwoPushes,ForceTimedReleaseTwoPushes};
 
-enum class TimedPickerInputs {PositiveFloor,ExpiredFloor,SnapDash,ExpiryStep,DirectTimed,DirectTimedUp,ActiveSnap};
+enum class TimedPickerInputs {PositiveFloor,ExpiredFloor,SnapDash,ExpiryStep,DirectTimed,DirectTimedUp,ActiveSnap,ReleasePush,ReleaseTwoPushes};
 struct TimedPickerReplay {
     Replay sequence;
     TimedPickerInputs inputs;
@@ -57,9 +57,23 @@ constexpr TimedPickerReplay timed_picker_replays[]{
         "accepted native tick=150 G-Red-position=-3539.49/10.00/-3042.58","direct-timed-relaunches=1 air-dash-starts=0 floors=0 timer698=0.0"},
     {Replay::OwnedActiveSnap,TimedPickerInputs::ActiveSnap,true,12,33,"ACTIVE SNAP RELAUNCH","active snap relaunch",
         "practice-meter=9200/10000 at accepted tick=33","practice-active-snap-relaunch=AIRBORNE / ACTIVE DASH TO RELAUNCH"},
-    {Replay::ForceActiveSnap,TimedPickerInputs::ActiveSnap,false,10,110,"ACTIVE SNAP RELAUNCH","active snap relaunch",
-        "accepted native tick=110 G-Red-position=2490.76/10.00/-1941.56","active-floors=1",true},
+    {Replay::ForceActiveSnap,TimedPickerInputs::ActiveSnap,false,12,110,"ACTIVE SNAP RELAUNCH","active snap relaunch",
+         "accepted native tick=110 G-Red-position=2490.76/10.00/-1941.56","active-floors=1",true},
+    {Replay::OwnedTimedReleasePush,TimedPickerInputs::ReleasePush,true,13,33,"TIMED RELEASE PUSH","timed relaunch-fall push",
+         "practice-meter=9850/10000 at accepted tick=33","practice-timed-release-push=AIRBORNE / TIMED RELAUNCH-FALL PUSH"},
+    {Replay::ForceTimedReleasePush,TimedPickerInputs::ReleasePush,false,11,125,"TIMED RELEASE PUSH","timed relaunch-fall push",
+         "accepted native tick=125 G-Red-position=752.13/10.00/-3156.15","relaunch-fall-pushes=1 relaunches=1 timer698=0.0 landings=1",true},
+    {Replay::OwnedTimedReleaseTwoPushes,TimedPickerInputs::ReleaseTwoPushes,true,10,34,"TWO TIMED RELEASE PUSHES","two timed relaunch-fall pushes",
+         "practice-meter=9850/10000 at accepted tick=34","practice-timed-release-push=AIRBORNE / SECOND TIMED RELAUNCH-FALL PUSH",true},
+    {Replay::ForceTimedReleaseTwoPushes,TimedPickerInputs::ReleaseTwoPushes,false,14,125,"TWO TIMED RELEASE PUSHES","two timed relaunch-fall pushes",
+         "accepted native tick=125 G-Red-position=-1279.39/10.00/-3166.36","relaunch-fall-pushes=2 relaunches=1 timer698=0.0 landings=1"},
 };
+constexpr gf::u32 timed_release_inputs(unsigned tick,bool two){
+    gf::u32 buttons=0;
+    if(tick>=6&&tick<=(two?7u:8u))buttons|=(1u<<8)|(two?1u<<6:0u);
+    if(tick==(two?20u:23u))buttons|=1u<<1;
+    return buttons;
+}
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -168,8 +182,7 @@ public:
             const unsigned tick=1+f/2;
             const bool two=replay_==Replay::TimedReleaseTwoPushes;
             snapshot_.frame_step=f%2==0;
-            if(tick>=6&&tick<=(two?7u:8u))raw.buttons|=(1u<<8)|(two?1u<<6:0u);
-            if(tick==(two?20u:23u))raw.buttons|=1u<<1;
+            raw.buttons|=timed_release_inputs(tick,two);
             break;
         }
         case Replay::PickerPractice:
@@ -286,7 +299,11 @@ public:
         case Replay::OwnedDirectTimedUp:
         case Replay::ForceDirectTimedUp:
         case Replay::OwnedActiveSnap:
-        case Replay::ForceActiveSnap:{
+        case Replay::ForceActiveSnap:
+        case Replay::OwnedTimedReleasePush:
+        case Replay::ForceTimedReleasePush:
+        case Replay::OwnedTimedReleaseTwoPushes:
+        case Replay::ForceTimedReleaseTwoPushes:{
             const auto* spec=std::find_if(std::begin(timed_picker_replays),std::end(timed_picker_replays),
                 [&](const auto& route){return route.sequence==replay_;});
             if(spec==std::end(timed_picker_replays))break;
@@ -324,6 +341,10 @@ public:
                         raw.buttons|=1u<<1;
                         if(spec->inputs==TimedPickerInputs::DirectTimedUp)raw.buttons|=1u<<5;
                     }
+                    break;
+                case TimedPickerInputs::ReleasePush:
+                case TimedPickerInputs::ReleaseTwoPushes:
+                    raw.buttons|=timed_release_inputs(tick,spec->inputs==TimedPickerInputs::ReleaseTwoPushes);
                     break;
                 }
             }
@@ -427,8 +448,13 @@ bool timed_picker_played(const std::string& log,const TimedPickerReplay& spec){
         "launched practice for Force 1 slot 2 instance=8 route=")+spec.route;
     const auto returned=std::string(spec.owned?"returned to owned instance=8 after practice route=":
         "returned to Force 1 slot 2 after practice route=")+spec.route;
+    const bool two=spec.inputs==TimedPickerInputs::ReleaseTwoPushes;
+    const bool release=two||spec.inputs==TimedPickerInputs::ReleasePush;
+    const bool ending=spec.owned?has(log,two?"practice-ledge-timer-ticks=4":"practice-ledge-timer-ticks=6"):
+        has(log,"practice-meter=10000/10000 at accepted tick=125")&&has(log,"practice-phase=IDLE")&&
+        !has(log,"practice-timed-release-push=");
     return once(log,launch.c_str())&&once(log,returned.c_str())&&picker_guide_played(log,spec.guide,spec.ticks)&&
-        has(log,spec.expected)&&has(log,spec.receipt)&&
+        has(log,spec.expected)&&has(log,spec.receipt)&&(!release||ending)&&
         (has(log,"practice-floor-windup-handoff=")==(spec.sequence==Replay::OwnedExpiredFloor));
 }
 std::size_t occurrences(std::string_view text,std::string_view part){
@@ -692,6 +718,24 @@ int main(int argc,char** argv){
         if(command=="--seed-owned-practice")return seed_owned_practice(argv[2]);
         if(command=="--replay-owned-practice-picker")return replay_owned_practice_picker(argv[2]);
         return 2;
+    }
+    using Route=gf::GRedPickerPracticeRoute;
+    static_assert(unsigned(Route::Count)==24);
+    for(bool previous:{false,true}){
+        auto route=Route::Standard;
+        std::array<bool,unsigned(Route::Count)> seen{};
+        for(unsigned i=0;i<seen.size();++i){
+            Options guide;
+            check(!seen[unsigned(route)]&&!gf::gred_picker_practice_route_name(route).empty()&&
+                picker_practice_options(route,&guide)&&guide.gred_practice&&guide.source_ground_interactive&&
+                guide.gred_practice_start==(route!=Route::Standard),"one interactive guide per route before wrap","");
+            if(route==Route::TimedReleasePush||route==Route::TimedReleaseTwoPushes)
+                check(guide.timed_ledge_followup==(route==Route::TimedReleasePush?TimedLedgeFollowup::TimedReleasePush:
+                    TimedLedgeFollowup::TimedReleaseTwoPushes),"release guides keep their distinct scopes","");
+            seen[unsigned(route)]=true;
+            route=gf::cycle_gred_picker_practice_route(route,previous);
+        }
+        check(route==Route::Standard,"all 24 choices wrap in both directions","");
     }
     const auto files=gf::sdl::create_file_system();
     if(!files->exists("local/content/source-gred-ground-v9/motion.gfmm")||

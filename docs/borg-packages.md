@@ -125,6 +125,8 @@ Continue to the sixth, seventh, or eighth route for **Positive Floor
 Handoff**, **Expired Floor Handoff**, or **Timed Snap Dash**, respectively.
 The ninth through twelfth are **Expiry Step Handoff**, **Direct Timed
 Relaunch**, **Direct Timed Up Relaunch**, and **Active Snap Relaunch**.
+The thirteenth and fourteenth are **Timed Release Push** and **Two
+Timed Release Pushes**, also reachable with 11 or 10 presses of **Left**.
 These routes start paused with a
 [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
 Press **Left** three times for **Expiry Handoff**, or four times for
@@ -777,6 +779,9 @@ The sixth, seventh, and eighth presses reach **Positive Floor Handoff**,
 **Expired Floor Handoff**, and **Timed Snap Dash**.
 The ninth through twelfth reach **Expiry Step Handoff**, **Direct Timed
 Relaunch**, **Direct Timed Up Relaunch**, and **Active Snap Relaunch**.
+The thirteenth and fourteenth reach **Timed Release Push** and **Two
+Timed Release Pushes**. The shorter shortcuts are 11 or 10 presses of
+**L**, respectively.
 For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
 times, respectively.
 **Q/Y** rechecks the highlighted position and opens that route
