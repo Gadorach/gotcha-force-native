@@ -269,6 +269,7 @@ public:
             const bool windup_entry_push_policy=producer->policy_==NativeBorgMotionPolicy::WindupEntryPush;
             using Behavior=BorgMovementBehavior;
             const auto behaviors=NormalGRedMovementDefinition::behaviors(producer->policy_);
+            constexpr const auto& meter=NormalGRedMovementDefinition::air_meter;
             const bool slope_crease_dash_policy=behaviors.has(Behavior::ShallowCreaseDash);
             const bool slope_seam_dash_policy=behaviors.has(Behavior::CoplanarSlopeDash);
             const bool slope_dash_policy=behaviors.has(Behavior::SlopeDash);
@@ -435,8 +436,8 @@ public:
                 const auto* relaunched=controller_relaunch_policy&&last_offer_.relaunch_motion?&*last_offer_.relaunch_motion:nullptr;
                 const f32 prior_speed=previous?previous->speed44:jump?jump->speed44:relaunched?relaunched->speed44:0;
                 s16 prior_resource=previous?previous->resource_after:jump?jump->resource_before:relaunched?relaunched->resource_after:0;
-                if(jump&&jump->phase==5)prior_resource=s16(std::max(0,int(prior_resource)-(jump->entry?150:100)));
-                if(e.phase<15||e.phase>17||e.stage_before>2||e.next_stage>2||e.resource_before<0||e.resource_before>10000||
+                if(jump&&jump->phase==5)prior_resource=s16(std::max(0,int(prior_resource)-meter.lift_cost(jump->entry)));
+                if(e.phase<15||e.phase>17||e.stage_before>2||e.next_stage>2||e.resource_before<0||e.resource_before>meter.limit||
                    e.resource_after<0||e.resource_before!=prior_resource||e.speed_before!=prior_speed||
                    !std::isfinite(e.timer_before)||!std::isfinite(e.timer568)||std::abs(e.timer_before)>1e5f||std::abs(e.timer568)>1e5f)return false;
                 for(f32 value:{e.speed_before,e.move_speed,e.speed44})if(!std::isfinite(value)||value<0||value>30)return false;
@@ -462,7 +463,7 @@ public:
                             (!air_floor&&!controller_windup_entry_push_frame&&o.proposed_position!=actor.position))return false;
                     }else{
                         if(!previous||previous->next_selector!=15||e.stage_before!=1||timer!=previous->timer568)return false;
-                        timer=f32(timer-1);if(timer<=0){next=16;stage=0;cost=450;}
+                        timer=f32(timer-1);if(timer<=0){next=16;stage=0;cost=meter.cost(AirMeterCharge::DashHandoff);}
                          if(o.kind!=NativeBorgMotionKind::AirDashWindup&&o.kind!=NativeBorgMotionKind::AirDashWindupFloor&&!controller_windup_push_frame)return false;
                     }
                 }else if(e.phase==16){
@@ -477,7 +478,7 @@ public:
                          if(o.kind!=NativeBorgMotionKind::AirDashActive&&o.kind!=NativeBorgMotionKind::AirDashActiveFloor&&
                             !touchdown&&!controller_active_push_frame)return false;
                     }
-                    cost=50;callback=stage==2;
+                    cost=meter.cost(AirMeterCharge::DashActive);callback=stage==2;
                     if(e.resource_before<=cost){next=17;stage=0;callback=false;}
                 }else{
                     if(!previous||(e.entry?(previous->next_selector!=17&&!(previous->phase==16&&previous->next_stage==2)):
@@ -567,7 +568,7 @@ public:
                 const f32 accelerated=std::max(0.f,std::fma(change,1.f,moving));
                 const f32 retained=change>0||!controller_ground_loss_relaunch_policy?std::min(8.f,accelerated):accelerated;
                  if(e.move_speed!=moving||e.speed44!=(controller_relaunch_push_frame?f32(retained*push_damping):retained)||e.vertical_before!=vertical||e.planar_accel!=change||
-                   e.vertical_accel!=acceleration||e.resource_after!=std::max(0,int(resource)-(e.entry?150:100)))return false;
+                   e.vertical_accel!=acceleration||e.resource_after!=std::max(0,int(resource)-meter.lift_cost(e.entry)))return false;
                 auto expected=actor.position;f32 x=0,z=0;source_heading_xz(e.travel5ae,&x,&z);
                 expected[0]=std::fma(1.f,f32(moving*x),expected[0]);expected[1]=std::fma(vertical,1.f,expected[1]);
                 expected[2]=std::fma(1.f,f32(moving*z),expected[2]);
@@ -591,7 +592,7 @@ public:
                     if(controller_fall_push_frame&&(e.phase!=6||e.ground_loss||(e.air_dash_origin&&!controller_air_fall_push_policy)||
                        (e.relaunch_origin&&!controller_relaunch_fall_push_policy)||*o.controller_timer698>0))return false;
                     const f32 speed_limit=e.air_dash_origin||(controller_ground_loss_relaunch_policy&&e.relaunch_origin)?30.f:25.f;
-                    if(e.phase<4||e.phase>7||e.resource_before<0||e.resource_before>10000||
+                    if(e.phase<4||e.phase>7||e.resource_before<0||e.resource_before>meter.limit||
                        e.ground_loss!=(!jump_path)||!std::isfinite(e.speed_before)||e.speed_before<0||e.speed_before>speed_limit||
                        !std::isfinite(e.move_speed)||e.move_speed<0||e.move_speed>speed_limit||!std::isfinite(e.speed44)||e.speed44<0||e.speed44>speed_limit||
                        !std::isfinite(e.vertical_before)||!std::isfinite(e.planar_accel)||!std::isfinite(e.vertical_accel))return false;

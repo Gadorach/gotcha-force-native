@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/character_movement_motion.hpp"
 namespace gf {
 //Normal G-Red resource policy1 only. Pure handler planning, not an original
@@ -33,10 +34,10 @@ inline bool gred_air_dash_plan(const CharacterMovementProfile& p,const GRedAirDa
             plan.motion.planar_change4c=0;plan.motion.vertical_change50=p.air[11];
         }else{
             plan.turn_windup=true;plan.state.timer568=f32(input.timer568-1);
-            if(plan.state.timer568<=0){plan.state.selector=16;plan.state.entered=false;plan.state.stage=0;plan.state.air_ready588=0;plan.state.contact_callback=false;plan.cost_index=2;plan.cost_after_move=true;}
+            if(plan.state.timer568<=0){plan.state.selector=16;plan.state.entered=false;plan.state.stage=0;plan.state.air_ready588=0;plan.state.contact_callback=false;plan.cost_index=u8(AirMeterCharge::DashHandoff);plan.cost_after_move=true;}
         }
     }else if(input.selector==16){
-        plan.program=11;plan.steer_active=true;plan.cost_index=3;
+        plan.program=11;plan.steer_active=true;plan.cost_index=u8(AirMeterCharge::DashActive);
         if(entry){
             plan.state.stage=1;plan.state.timer568=p.air[8];plan.state.air_ready588=0;plan.state.contact_callback=false;
             plan.motion.speed44=p.air[5];plan.motion.planar_change4c=p.air[6];

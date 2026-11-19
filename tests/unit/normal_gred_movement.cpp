@@ -40,5 +40,27 @@ int main(){
     check(!Definition::allows(Mode::GroundLossRelaunch,Behavior::FallPush),"positive timer coverage does not grant generic push");
     check(!Definition::allows(Mode::GroundSlopeCreaseDash,Behavior(255))&&
         !Definition::behaviors(Policy(255)).has(Behavior::OrderedGround),"unknown IDs cannot grant behavior");
-    std::puts("normal G-Red movement: stable legacy/combined capability boundaries PASS");
+    constexpr auto& meter=Definition::air_meter;
+    static_assert(meter.matches_operands(10000,0,2000,{150,100,450,50}));
+    static_assert(meter.lift_cost(true)==150&&meter.lift_cost(false)==100);
+    static_assert(meter.cost(gf::AirMeterCharge::DashHandoff)==450&&meter.cost(gf::AirMeterCharge::DashActive)==50);
+    static_assert(!meter.matches_operands(10000,0,2000,{150,100,50,450}));
+    static_assert(!meter.matches_operands(10000,1,2000,{150,100,450,50}));
+    gf::CharacterAirResourceState state{9850,0,1},next;
+    check(gf::character_air_resource_recover(state,meter,0,1,&next)&&next.value736==9850&&next.air_actions747==1,
+        "airborne cache prevents refill");
+    check(gf::character_air_resource_recover(state,meter,0x80,0,&next)&&next.value736==10000&&next.air_actions747==0,
+        "previous grounded cache refills to the cap independently of behavior80");
+    check(gf::character_air_resource_consume(state,meter,gf::u8(gf::AirMeterCharge::DashHandoff),1,&next)&&next.value736==9400,
+        "shared spend uses the defined handoff amount");
+    check(gf::character_air_resource_consume({25,0,1},meter,gf::u8(gf::AirMeterCharge::DashActive),1,&next)&&next.value736==0,
+        "shared spend saturates on depletion");
+    check(!gf::character_air_resource_consume(state,meter,255,1,&next),"an unknown cost slot cannot spend");
+    for(gf::u8 movement_type:{2,3,6}){
+        check(gf::character_air_resource_recover(state,movement_type,0x80,0,meter.limit,meter.increment,&next)&&
+            next.value736==9850&&next.air_actions747==1,"legacy special gate refuses refill with bit 0x80 set");
+        check(gf::character_air_resource_recover(state,movement_type,0,1,meter.limit,meter.increment,&next)&&
+            next.value736==10000&&next.air_actions747==1,"legacy special gate ignores ground cache and preserves action count");
+    }
+    std::puts("normal G-Red movement: stable legacy/combined capability and meter boundaries PASS");
 }

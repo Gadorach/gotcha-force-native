@@ -41,7 +41,8 @@ inline bool gred_vertical_jump_plan(const CharacterMovementProfile& p,const GRed
         if(entry)plan.motion.speed44=plan.motion.planar_change4c=0; //normal class12, not class flag1 momentum preservation
         plan.motion.vertical48=plan.motion.vertical_change50=0;break;
     case 5:
-        plan.program=4;plan.state.cached87=1;plan.air_move=plan.clamp_wrapper=true;plan.cost_index=entry?0:1;
+        plan.program=4;plan.state.cached87=1;plan.air_move=plan.clamp_wrapper=true;
+        plan.cost_index=u8(entry?AirMeterCharge::LiftEntry:AirMeterCharge::LiftUpdate);
         if(entry){plan.motion.vertical48=p.air[1];plan.state.ascent_stage=1;plan.state.timer690=p.air_ready_delay;plan.state.air_ready588=1;}
         //Even neutral ascent evaluates cos(0), rather than using data68 alone.
         plan.motion.vertical_change50=std::fma(p.air[0],1.f,p.air[9]);

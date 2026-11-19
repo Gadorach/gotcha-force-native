@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include "engine/gameplay/borg_movement_behaviors.hpp"
+#include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/native_borg_motion_policy.hpp"
 
 namespace gf {
@@ -18,6 +19,11 @@ enum class NormalGRedMovementMode {
 
 struct NormalGRedMovementDefinition {
     static constexpr u16 model=0x615;
+    // GFMI1 normal G-Red operands, checked again against the qualified pack
+    // at source bind. Cached ground state controls refill, not physical Y.
+    static constexpr AirMeterRules air_meter{
+        AirMeterRecoveryGate::PreviousGroundedCache,10000,0,2000,{150,100,450,50}
+    };
     using Mode=NormalGRedMovementMode;
     using Policy=NativeBorgMotionPolicy;
     using Behavior=BorgMovementBehavior;

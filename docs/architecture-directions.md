@@ -29,13 +29,17 @@ from [`normal_gred_movement.hpp`](../engine/gameplay/borgs/normal_gred_movement.
 The source controller and native verifier consume the same list. Earlier lab
 permissions and legacy policy IDs are preserved.
 
-This is the first part of a self-contained definition, not a content format or
-a completed registry. Stage queries, tangent movement, shared-edge checks,
-body collision and frame receipts remain engine services. Meter policy, action
-admission, program selection and qualified numeric operands still have
-G-Red-specific code/data owners. They should move behind the per-Borg definition
-as those boundaries become explicit, without copying terrain or renderer code
-or applying G-Red's rules to Sasuke.
+The same definition owns the normal G-Red meter's 10,000 capacity, refill
+based on the previously accepted grounded cache, and named lift, handoff,
+and active-dash costs. The source binding checks those operands against the
+qualified GFMI pack. Spending and recovery arithmetic remain shared.
+
+This is part of a self-contained definition, not a content format or completed
+registry. Stage queries, tangent movement, shared-edge checks, body collision
+and frame receipts remain engine services. Action admission, program selection,
+and other qualified operands still have G-Red-specific code/data owners. Move
+them behind the definition as those boundaries become explicit, without
+copying terrain code or applying G-Red's rules to Sasuke.
 
 ## Future content packaging
 

@@ -68,6 +68,8 @@ public:
            !character_program_load_control_flow(view(encoded),0xe2b4439au,&programs_,error)||
            !character_pose_height_profile_load(view(height),&height_,error)||!character_movement_input_load(view(movement),&input_,error)||
            !character_movement_load(view(motion),&motion_,error))return fail(error,"qualified normal source profiles required");
+        if(!air_meter_.matches_operands(input_.resource_limit,input_.recovery_delay,input_.recovery_increment,input_.costs))
+            return fail(error,"qualified movement meter operands must match normal G-Red's definition");
         if(mode_!=Mode::DashOnly&&!motion_.walk_operands)return fail(error,"general ground movement requires GFMM2 walk operands");
         if(moving_mode(mode_)&&!motion_.air_operands)return fail(error,"moving jump requires GFMM3 air operands");
         if(air_dash_mode(mode_)&&!motion_.air_dash_operands)return fail(error,"air dash/relaunch mode requires GFMM4 operands");
@@ -100,7 +102,7 @@ public:
         const std::array<const char*,3> names={"floor.stih","secondary.stih","tertiary.stih"};
         for(unsigned i=0;i<3;++i){std::vector<u8> bytes;if(!read(files,inputs+"/"+names[i],16u<<20,&bytes,error)||
             character_program_model_hash(view(bytes))!=hashes[i]||!grids_[i].load(view(bytes),error))return fail(error,"qualified static stage473 grids required");}
-        state_={};state_.dash.selector=0;state_.motion.position=observed.position;state_.previous_y=observed.position[1];state_.resource.value736=input_.resource_limit;
+        state_={};state_.dash.selector=0;state_.motion.position=observed.position;state_.previous_y=observed.position[1];state_.resource.value736=air_meter_.limit;
         if(!source_heading_s16(observed.facing.x,observed.facing.z,&state_.body)||!state_.vm.load_fresh_actor_height_controls(programs_,{},error))return false;
         CharacterPoseHeightFields fields;fields.model_group3e8=6;
         if(!state_.height.bind(state_.vm,height_,fields,{},CharacterProgramHeightControlMode::DeclaredFields,error)||!request(state_,0,error))return false;
@@ -165,7 +167,7 @@ public:
         f32 start_floor=0;
         if(!ground.valid_for(s.motion)||!ground.height(s.motion.position,&start_floor,error)||
            (observed.grounded&&std::abs(start_floor-observed.position[1])>.01f))return fail(error,"source/native current-ground disagreement");
-        if(!character_air_resource_recover(s.resource,0,s.motion.flags5e0,s.jump.cached87,input_.resource_limit,input_.recovery_increment,&s.resource))return fail(error,"resource recovery refused");
+        if(!character_air_resource_recover(s.resource,air_meter_,s.motion.flags5e0,s.jump.cached87,&s.resource))return fail(error,"resource recovery refused");
         if(!character_movement_input_step(input_,s.input,{stick_x,stick_y,held,s.motion.flags5e0},&s.input,error))return fail(error,"unsupported movement input");
         if(moving_mode(mode_)){
             if(s.jump.timer690>0)s.jump.timer690=std::max(0.f,s.jump.timer690-1); //declared native timer768=1
@@ -429,7 +431,7 @@ public:
             else if(air->next_stage==1&&air->timer568>=1&&air->timer568<=30)dash_release_ticks=u8(air->timer568);
         }
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
-            new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,input_.resource_limit},pending_->offer.kind,
+            new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},pending_->offer.kind,
                 pending_->offer.action,pending_->offer.jump_motion&&pending_->offer.jump_motion->phase==5,dash_release_ticks}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
@@ -572,6 +574,7 @@ public:
         *out=mapped;return true;
     }
 private:
+    static constexpr const auto& air_meter_=NormalGRedMovementDefinition::air_meter;
     using Behavior=BorgMovementBehavior;
     static bool allows(Mode mode,Behavior behavior){return NormalGRedMovementDefinition::allows(mode,behavior);}
     static bool relaunch_input_phase(const State& s){return s.jump.selector==6||s.jump.selector==16||s.jump.selector==17;}
@@ -764,7 +767,7 @@ private:
             s.jump.cached87=1;s.jump.air_ready588=1;s.jump.timer690=motion_.air_ready_delay;
             s.jump.falling_after_dash=false;s.jump.falling_after_relaunch=true;s.jump.falling_coarse57d=s.dash.coarse57d;
         }
-        if(!character_air_resource_consume(s.resource,input_.costs[plan.cost_index],input_.recovery_delay,1,&s.resource))return false;
+        if(!character_air_resource_consume(s.resource,air_meter_,plan.cost_index,1,&s.resource))return false;
         std::vector<CharacterProgramOperation> operations;
         auto select=[&](u8 program,u8 mask){return s.vm.request_with_actor_controls(1,program,mask,-1,1,driver_,s.height,&operations,error);};
         auto update=[&](u8 mask){return s.vm.update_with_actor_controls(mask,1,driver_,s.height,&operations,error);};
@@ -834,7 +837,7 @@ private:
         evidence.control=s.vm.state().actor.control1[0];
         if(plan.turn_windup){bool complete=false;if(!character_movement_turn_step(s.turn,1,&s.turn,&complete))return false;s.body=s.turn.body72;}
         if(plan.cost_index!=255&&!plan.cost_after_move&&
-           !character_air_resource_consume(s.resource,input_.costs[plan.cost_index],input_.recovery_delay,1,&s.resource))return false;
+           !character_air_resource_consume(s.resource,air_meter_,plan.cost_index,1,&s.resource))return false;
         if(!gred_air_dash_spent(plan,s.resource.value736,&s.air_dash))return false;
         CharacterMovementHeading heading;frame.body72=s.body;
         if(plan.steer_active){
@@ -858,7 +861,7 @@ private:
             if(!character_movement_air_step(motion_,s.motion,1,1,selector==17,ceiling,&moved,error))return false;
             s.motion=moved;
         }
-        if(plan.cost_after_move&&!character_air_resource_consume(s.resource,input_.costs[plan.cost_index],input_.recovery_delay,1,&s.resource))return false;
+        if(plan.cost_after_move&&!character_air_resource_consume(s.resource,air_meter_,plan.cost_index,1,&s.resource))return false;
         bool touchdown=false;CharacterMovementMotionState contacted;
         const bool push_enabled=(recovery_surface_mode(mode_)&&selector==17)||(windup_surface_mode(mode_)&&selector==15&&!entry)||
             (active_surface_mode(mode_)&&selector==16&&!entry)||(mode_==Mode::WindupEntryPush&&selector==15&&entry);
@@ -937,7 +940,7 @@ private:
                 s.body=s.turn.body72;s.motion.travel5ae=s.body;
             }
         }
-        if(plan.cost_index!=255&&!character_air_resource_consume(s.resource,input_.costs[plan.cost_index],input_.recovery_delay,1,&s.resource))return false;
+        if(plan.cost_index!=255&&!character_air_resource_consume(s.resource,air_meter_,plan.cost_index,1,&s.resource))return false;
         std::vector<CharacterProgramOperation> operations;
         auto select=[&](u8 program,u8 mask){return s.vm.request_with_actor_controls(1,program,mask,-1,1,driver_,s.height,&operations,error);};
         auto update=[&](u8 mask){return s.vm.update_with_actor_controls(mask,1,driver_,s.height,&operations,error);};

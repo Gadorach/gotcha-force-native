@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/character_movement_motion.hpp"
 #include "engine/gameplay/gred_surface_contact.hpp"
 namespace gf {
@@ -8,14 +9,15 @@ namespace gf {
 struct GRedRelaunchState {u8 lower_stage=0,upper_stage=0;};
 struct GRedRelaunchPlan {
     GRedRelaunchState state;CharacterMovementMotionState motion;
-    bool request=false;u8 program=14,cost_index=0;bool entry=false;
+    bool request=false;u8 program=14,cost_index=u8(AirMeterCharge::LiftEntry);bool entry=false;
 };
 inline bool gred_relaunch_plan(const CharacterMovementProfile& p,const GRedRelaunchState& input,
                               const CharacterMovementMotionState& motion,GRedRelaunchPlan* out){
     if(!out||!character_movement_profile_valid(p)||!p.air_operands||p.model!=0x615||p.class_flags!=12||p.movement_type||
        !character_movement_motion_valid(motion)||(motion.flags5e0&0x2000u)||motion.field741||motion.field6cb||motion.vertical_only598||
        input.lower_stage>3||input.upper_stage>3||input.upper_stage>input.lower_stage)return false;
-    GRedRelaunchPlan plan;plan.state=input;plan.motion=motion;plan.entry=input.lower_stage==0;plan.cost_index=plan.entry?0:1;
+    GRedRelaunchPlan plan;plan.state=input;plan.motion=motion;plan.entry=input.lower_stage==0;
+    plan.cost_index=u8(plan.entry?AirMeterCharge::LiftEntry:AirMeterCharge::LiftUpdate);
     if(plan.entry){
         plan.state.lower_stage=1;plan.request=true;
         plan.motion.vertical48=f32(motion.vertical48+p.air[2]);
