@@ -543,6 +543,30 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertNotIn("recovery completion push demo:", guide.stdout)
         self.assertNotIn("practice-recovery-push=", guide.stdout)
 
+    def test_gred_recovery_completion_exit_uses_drift_only_on_the_next_contact(self):
+        for tick, phase, meter, pushes, landings in (
+            (111, "DASH RECOVERY / PUSH", 5850, 1, 0),
+            (112, "TOUCHDOWN", 5850, 1, 1),
+            (113, "LANDING", 5850, 1, 1),
+            (180, "IDLE", 10000, 1, 1),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-recovery-completion-exit", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn(f"controller-recovery-pushes={pushes} total-pushes={pushes} starts=1 ", run.stdout)
+                self.assertIn(f"landings={landings} resource={meter}", run.stdout)
+                self.assertEqual("practice-recovery-push=RECOVERY COMPLETE" in run.stdout, tick == 111)
+                self.assertEqual("practice-recovery-exit=EXIT DRIFT" in run.stdout, tick == 112)
+                if tick == 180:
+                    self.assertIn("G-Red-position=-597.05/11.74/-1353.67", run.stdout)
+        guide = self.run_host(["--gred-recovery-completion-exit", "--practice-start", "--headless", "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("recovery completion exit guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-580.00/", guide.stdout)
+        self.assertNotIn("recovery completion exit demo:", guide.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

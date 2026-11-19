@@ -256,6 +256,68 @@ int main(){
             world.tick()==111&&world.actors()[0].position==last_position&&source.resource()==5850&&
             source.recovery_pushes()==1&&!source.landings()&&last_pose.frame_scope.expired()&&
             !world.step({},false,&view),"the nearby raised-side route still stops before touchdown without fallback");
+
+        const Route fork{-580,-2990,110,1320,11582};
+        auto completion_prefix=[&](const Route& r){
+            config.spawn[0]={r.x,r.z};bind(Mode::GroundRecoveryPush,combined_pack);
+            while(world.tick()<111){
+                check(prepare(scheduled(world.tick(),r),&offer),"common deterministic approach to completing push");
+                accept(offer);
+            }
+            check(offer.kind==Kind::AirDashRecoveryPush&&offer.static_push&&offer.static_push->surface.triangle==r.triangle&&
+                offer.air_motion&&offer.air_motion->lower_done&&offer.air_motion->next_selector==6&&
+                source.resource()==5850&&!source.landings()&&!view.practice_readout(world)->recovery_push_exit_drift,
+                "the shared prefix ends in one accepted push, not its follow-up");
+        };
+        completion_prefix(fork);
+        const auto same_push=offer;
+        check(!prepare(scheduled(111,fork),&offer)&&error.find("raised-surface/side-entry")!=std::string::npos&&
+            world.tick()==111&&world.actors()[0].position==same_push.proposed_position&&source.resource()==5850&&
+            !source.landings()&&!world.step({},false,&view),"Left alone still stops the comparison route");
+
+        completion_prefix(fork);
+        check(offer.static_push==same_push.static_push&&offer.air_motion==same_push.air_motion&&
+            offer.proposed_position==same_push.proposed_position&&offer.vertical_speed==same_push.vertical_speed,
+            "changing the following input does not change the accepted push");
+        const auto from=world.actors()[0];const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        auto diagonal=scheduled(111,fork);diagonal.dpad_up=true;
+        check(prepare(diagonal,&offer)&&offer.kind==Kind::JumpTouchdown&&offer.jump_motion&&offer.surface_landing&&
+            offer.jump_motion->entry&&offer.jump_motion->phase==6&&offer.jump_motion->air_dash_origin&&
+            offer.jump_motion->speed_before==same_push.air_motion->speed44&&offer.jump_motion->vertical_before==-27&&
+            offer.facing==from.facing&&!view.practice_readout(world)->recovery_push_exit_drift,
+            "Up+Left offers ordinary falling touchdown with the same prior damping and no staged cue");
+        const auto& jump=*offer.jump_motion;
+        s16 forward=0;f32 dx=0,dz=0,tx=0,tz=0;
+        check(source_heading_s16(frame.forward.x,frame.forward.z,&forward)&&
+            jump.drift_heading==source_heading_wrap(s32(forward)+0x2000),"diagonal drift is relative to the camera, not body heading");
+        source_heading_xz(*jump.drift_heading,&dx,&dz);source_heading_xz(jump.travel5ae,&tx,&tz);
+        check(offer.proposed_position[0]==std::fma(1.f,f32(jump.move_speed*tx),std::fma(4.f,dx,from.position[0]))&&
+            offer.proposed_position[2]==std::fma(1.f,f32(jump.move_speed*tz),std::fma(4.f,dz,from.position[2])),
+            "the existing four-unit drift runs before retained falling momentum");
+        auto wrong=offer;wrong.jump_motion->drift_heading.reset();
+        check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==111&&
+            world.actors()[0].position==from.position&&source.resource()==5850&&!source.landings()&&
+            world.motion_receipt_current(pose.receipt)&&!view.practice_readout(world)->recovery_push_exit_drift,
+            "erasing the drift from the offered endpoint cannot publish touchdown or the cue");
+        accept(offer);
+        check(view.practice_readout(world)->recovery_push_exit_drift&&world.actors()[0].grounded&&source.landings()==1&&
+            source.resource()==5850&&source.movement_programs()==std::array<u16,2>{13,13},
+            "accepted diagonal touchdown shows the exit cue without an early refill");
+        while(world.tick()<180){
+            check(prepare({},&offer),"separate landing and idle after the diagonal exit");accept(offer);
+            check(!view.practice_readout(world)->recovery_push_exit_drift,"no exit cue carries into landing");
+        }
+        check(source.resource()==10000&&!source.selector()&&source.recovery_pushes()==1&&source.landings()==1&&
+            !source.relaunches()&&source.air_dash_starts()==1,"diagonal exit completes without a new action");
+
+        completion_prefix(partial);
+        GamePadState flick;flick.stick_x=-127;
+        check(prepare(flick,&offer)&&offer.kind==Kind::AirDashWindupEntry&&offer.proposed_position==world.actors()[0].position,
+            "a plain flick entry can be staged after the completing push");
+        accept(offer);
+        check(!prepare({},&offer)&&world.tick()==112&&source.air_dash_starts()==2&&source.resource()==5850&&
+            !source.landings()&&!world.step({},false,&view),
+            "one accepted wind-up entry does not bypass the raised travel on the next update");
     }
     std::printf("source recovery surface/VM/completion/resource/pose: %u checks PASS; native proxies, no whole-frame equivalence\n",checks);
 }

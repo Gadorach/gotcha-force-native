@@ -16,6 +16,7 @@ struct NativeBorgSourceReadout {
     bool recovery_drift_active=false; //Only either accepted recovery floor-contact update with sealed drift.
     std::optional<std::array<u32,2>> recovery_seam; //Only an accepted recovery contact that changes triangle.
     bool recovery_push_complete=false; //Accepted steep push that finishes the lower recovery lane.
+    bool recovery_push_exit_drift=false; //Accepted first falling update with drift after that completing push.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

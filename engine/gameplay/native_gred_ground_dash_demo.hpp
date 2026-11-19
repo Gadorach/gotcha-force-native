@@ -464,6 +464,10 @@ public:
         NativeBorgMotionReceipt receipt;
         if(!ready_||!pending_||current_binding.lock()!=binding_.lock()||binding_.expired()||!world.motion_receipt(pending_->offer,&receipt))return fail(error,"source frame has no matching native contact receipt");
         const f32 previous_y=pending_->offer.observed.position[1];
+        const auto& falling=pending_->offer.jump_motion;
+        const bool recovery_push_exit_drift=state_.static_push&&state_.air_motion&&state_.air_motion->phase==17&&
+            state_.air_motion->lower_done&&state_.air_motion->next_selector==6&&falling&&falling->phase==6&&
+            falling->entry&&falling->air_dash_origin&&falling->drift_heading;
         std::optional<std::array<u32,2>> recovery_seam;
         if(pending_->offer.recovery_first_seam_start&&pending_->offer.surface_landing){
             recovery_seam=std::array{pending_->offer.recovery_first_seam_start->triangle,pending_->offer.surface_landing->surface.triangle};
@@ -540,7 +544,7 @@ public:
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
                 accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active,
-                recovery_drift_active,recovery_seam,recovery_push_complete}));
+                recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

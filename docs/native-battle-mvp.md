@@ -197,6 +197,14 @@ and **Left Arrow** on 111–112, neutral otherwise. The
 on the push, then separate touchdown and landing. It uses the existing
 combined recovery-push policy, not a new contact allowance.
 
+`gf_native --gred-recovery-completion-exit --practice-start --no-audio`
+opens the nearby diagonal-exit guide. Use the same Shift and W timing,
+then **Left** on 111 and **Up+Left** on 112. Left alone on 112 still
+refuses the raised-side contact on this start. The scripted
+`--demo-gred-recovery-completion-exit` shows the accepted **Exit Drift**
+cue at touchdown. Use **Q** to restart a refused route, not to retry
+from the stopped contact.
+
 To check the actual practice loop without opening a window or audio device:
 
 ```sh

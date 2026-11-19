@@ -134,6 +134,7 @@ struct Options {
     bool source_ground_relaunch_fall_push=false;
     bool source_ground_recovery_push=false;
     bool gred_recovery_completion_push=false;
+    bool gred_recovery_completion_exit=false;
     bool source_ground_windup_push=false;
     bool source_ground_active_push=false;
     bool source_ground_relaunch_push=false;
@@ -344,6 +345,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-ground-relaunch-fall-push" || arg == "--demo-source-ground-relaunch-fall-push" ||
                  arg == "--source-ground-recovery-push" || arg == "--demo-source-ground-recovery-push" ||
                  arg == "--gred-recovery-completion-push" || arg == "--demo-gred-recovery-completion-push" ||
+                 arg == "--gred-recovery-completion-exit" || arg == "--demo-gred-recovery-completion-exit" ||
                  arg == "--source-ground-windup-push" || arg == "--demo-source-ground-windup-push" ||
                  arg == "--source-ground-active-push" || arg == "--demo-source-ground-active-push" ||
                  arg == "--source-ground-relaunch-push" || arg == "--demo-source-ground-relaunch-push" ||
@@ -388,7 +390,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_fall_push=arg=="--source-ground-fall-push"||arg=="--demo-source-ground-fall-push";
             options->source_ground_air_fall_push=arg=="--source-ground-air-fall-push"||arg=="--demo-source-ground-air-fall-push";
             options->source_ground_relaunch_fall_push=arg=="--source-ground-relaunch-fall-push"||arg=="--demo-source-ground-relaunch-fall-push";
-            options->gred_recovery_completion_push=arg=="--gred-recovery-completion-push"||arg=="--demo-gred-recovery-completion-push";
+            options->gred_recovery_completion_exit=arg=="--gred-recovery-completion-exit"||arg=="--demo-gred-recovery-completion-exit";
+            options->gred_recovery_completion_push=options->gred_recovery_completion_exit||
+                arg=="--gred-recovery-completion-push"||arg=="--demo-gred-recovery-completion-push";
             options->source_ground_recovery_push=options->gred_recovery_completion_push||
                 arg=="--source-ground-recovery-push"||arg=="--demo-source-ground-recovery-push";
             options->source_ground_windup_push=arg=="--source-ground-windup-push"||arg=="--demo-source-ground-windup-push";
@@ -781,7 +785,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     //Bounded original-stage recovery route; BOTH placements are native demo
     //assumptions, not recovered actor constructor/spawn or edited stage data.
     if(options.gred_recovery_completion_push&&use_demo_start){
-        config.arena_half=4500;config.spawn[0]={-575,-2990};
+        config.arena_half=4500;config.spawn[0]={options.gred_recovery_completion_exit?-580.f:-575.f,-2990};
     }else if((options.source_recovery_surface||options.source_ground_recovery_push)&&!options.source_ground_interactive){
         config.spawn[0]={44.928558350f,-332.878112793f};config.spawn[1]={1200,1200};
     }
@@ -926,7 +930,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_practice_controls();
             gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, C camera, Q restart, Esc close; native proxies, no combat");
             if(options.gred_practice_start){
-                const char* hint=guided_recovery?(options.gred_recovery_completion_push?
+                const char* hint=guided_recovery?(options.gred_recovery_completion_exit?
+                    "RECOVERY EXIT\nSHIFT 6-38 / W 46-72\nLEFT 111 / UP+LEFT 112":
+                    options.gred_recovery_completion_push?
                     "RECOVERY COMPLETION PUSH\nSHIFT 6-38 / W 46-72 / LEFT ARROW 111-112":
                     "RECOVERY SEAM\nSHIFT 6-39 / W 43 / RIGHT ARROW 105-109"):
                     options.gred_walk_ledge_expiry_air_dash?"WALK LEFT / FLICK LEFT AFTER EXPIRY PUSH":
@@ -988,7 +994,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
              }else if(options.source_ground_recovery_push){
                  view.source_ground_recovery_push_controls();
                 gf::log_info(context,"source-ground","airborne recovery17/program12 push at zero698 only; .9 damping before lower completion, separate landing; no active/wind-up dash, active relaunch, ground-loss or positive698 push authority");
-                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_recovery_completion_push?
+                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_recovery_completion_exit?
+                     "recovery completion exit demo: native grounded start -580/-2990; Shift 6-38, W 46-72, Left 111, Up+Left 112":
+                     options.gred_recovery_completion_push?
                      "recovery completion push demo: native grounded start -575/-2990; Shift on ticks 6-38, W on 46-72, Left on 111-112":
                      "ground-recovery-push demo only: native grounded placements 44.9286/-332.8781 and 1200/1200, original stage and bounds; jump5-21, backward flick20-60");
             }else if(options.source_ground_relaunch_fall_push){
@@ -1121,7 +1129,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     auto pause_guided_recovery=[&](){
         if(!guided_recovery)return true;
         if(!world.set_paused(true))return false;
-        gf::log_info(context,"source-ground",options.gred_recovery_completion_push?
+        gf::log_info(context,"source-ground",options.gred_recovery_completion_exit?
+            "recovery completion exit guide: paused at tick=%u; P steps; Shift 6-38, W 46-72, Left 111, Up+Left 112":
+            options.gred_recovery_completion_push?
             "recovery completion push guide: paused at tick=%u; P steps; Shift 6-38, W 46-72, Left Arrow 111-112":
             "recovery seam guide: paused at tick=%u; P steps; Shift 6-39, W 43, Right Arrow 105-109",world.tick());
         return true;
@@ -1246,6 +1256,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                                   device.b=tick>=5&&tick<38;
                                   if(tick>=45&&tick<72)device.stick_y=-127;
                                   device.dpad_left=tick>=110&&tick<112;
+                                  device.dpad_up=options.gred_recovery_completion_exit&&tick==111;
                               }else{
                                   device.b=tick>=5&&tick<22;
                                   if(tick>=20&&tick<61)device.stick_y=127;
@@ -1452,6 +1463,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
              if(const auto& seam=practice->recovery_seam)
                  gf::log_info(context,"source-ground","practice-recovery-seam=%u->%u cue=FLAT SEAM",(*seam)[0],(*seam)[1]);
              if(practice->recovery_push_complete)gf::log_info(context,"source-ground","practice-recovery-push=RECOVERY COMPLETE");
+             if(practice->recovery_push_exit_drift)gf::log_info(context,"source-ground","practice-recovery-exit=EXIT DRIFT");
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");

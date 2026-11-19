@@ -578,6 +578,27 @@ pre/post travel separately. Neither a forged completion flag nor a
 plausible projection can advance the world without its matching proof.
 Older contact policies still refuse recovery pushes where they did before.
 
+### Diagonal exit on the following update
+
+At X/Z `-580/-2990`, Left on tick 111 produces a valid completion push
+on triangle 1320. Keeping Left on 112 hits the unsupported raised-side
+contact. Holding **Up+Left** instead sends the existing four-unit drift
+along a different camera-relative heading before retained momentum.
+That route touches down on 112 and starts landing at 113, still at
+5850 meter. The push itself is identical in both cases. The body does
+not turn, and **EXIT DRIFT** is shown only on the accepted follow-up.
+
+```sh
+gf_native --demo-gred-recovery-completion-exit --headless --frames 180 --no-audio
+```
+
+The nearby `-585/-2990` route remains closed for the tested inputs. In
+294 follow-up trials, only one previously stalled approach completed;
+33 first action updates were accepted, but none led to a complete
+action route. In particular, a plain wind-up can be accepted at 112
+and still hit the raised-side refusal at 113. Neither the diagonal
+route nor the partial wind-up adds a contact allowance.
+
 ## Released-relaunch zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-relaunch-fall-push` adds downward selector6 steep contact after
