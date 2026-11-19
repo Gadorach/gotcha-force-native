@@ -112,6 +112,7 @@ missing information. `source-reference-code` (four hex digits) and
 | `display-jump` | `air:N`, `air:unresolved`, `boost`, `none` or `unresolved`. This is the displayed classification, not a controller or a resource implementation. |
 | `hp`, `ratings` | HP endpoints at levels 1 and 10; DEF, SHT, ATK, SPD readout ratings. Separate values with `\|`. Each value can be `unresolved`; neither endpoints nor ratings imply live combat stats or a level curve. |
 | `moves`, `traits`, `forms`, `fusions`, `acquisition`, `effects`, `variant-overrides` | Each reserves a package-relative sidecar, `none` for intentional absence, or `unresolved`. The catalogue validator checks the path syntax only; it does not load these sidecars or admit a move, form, reward or actor. |
+| `spawn` (optional) | A package-relative spawn sidecar, `none` or `unresolved`. If omitted it remains unresolved; existing version 2 profiles do not require this field. |
 
 Version 1 remains readable. Both catalogue versions use explicit per-variant
 editor icons and Force costs; version 2 does not assume all the retail colours
@@ -192,6 +193,54 @@ The validator does not resolve forms, timers, guards, outcome payloads or
 animation/effect/sound assets. It runs no triggers, physics, resource spending
 or actor logic. `moves=none` and `moves=unresolved`
 remain valid catalogue declarations without a move file.
+
+### Standalone spawn-policy check
+
+Set `spawn=gameplay/spawn.txt` in a version 2 catalogue. This example reserves
+a near-top entry without inventing an altitude or velocity:
+
+```text
+GFBORG-SPAWN 1
+spawn=top-entry|base|challenge|normal
+anchor=arena-top-clearance
+height=unresolved
+horizontal-anchor=mode-selected
+horizontal=none
+initial-state=falling
+initial-vy=unresolved
+requirement=required
+on-obstruction=refuse
+```
+
+- `spawn` starts a rule and gives its local ID, form, mode, and variant.
+  Use `*` in any of the three selector positions to match all values.
+  Overlapping scopes refuse; no precedence or fallback order is guessed.
+- Vertical `anchor` is `mode-selected` (`height=none`), `floor-offset`,
+  `arena-top-clearance`, `absolute-y`, and `unresolved`. Floor offsets and
+  clearance **below** the arena top are nonnegative. Absolute Y is signed.
+  Any unresolved custom height can be recorded as `unresolved`.
+- `horizontal-anchor` is independently `mode-selected`, `stage-center`,
+  `absolute-xz` or `unresolved`. `horizontal=none` is required for
+  mode-selected or stage-center placement; the stage supplies the position.
+  For `absolute-xz`, use signed `X|Z` coordinates or `unresolved`.
+  An unresolved anchor also requires `horizontal=unresolved`. The actual
+  stage center is not assumed to be world `(0, 0)`.
+- Initial state is independently `grounded`, `falling`, `fixed-airborne`,
+  `flying`, `hovering` or `unresolved`. Initial vertical speed (`initial-vy`)
+  is signed or `unresolved`. Y is vertical in the native world; none of
+  these declarations sets a movement policy or reserves a legal stage position.
+- `requirement` is `required`, `preferred` or `unresolved`.
+  `on-obstruction` is `refuse`, `mode-selected` or `unresolved`; a required
+  placement cannot also opt into mode-selected fallback.
+
+`gf_native --check-borg-spawn example:clockwork-crane` checks the file and
+any named catalogue variants, not the form/mode bindings or stage limits.
+A file may contain up to 32 rules within 8 KiB. The parser bounds numbers for
+storage, not to source-game height limits. The diagnostic does not load a
+stage or spawn a Borg. This example does not specify Death ICBM's actual
+height. A boss can instead describe `horizontal-anchor=stage-center` with a
+separate absolute Y, without assuming that any stage or large body can fit
+there. See the [spawn requirements](borg-package-requirements.md#reserve-a-spawn-policy-independent-of-flight).
 
 ## Standalone body preview
 

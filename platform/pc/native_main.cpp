@@ -46,6 +46,7 @@
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
 #include "platform/pc/borg_move_load.hpp"
+#include "platform/pc/borg_spawn_load.hpp"
 #include "platform/pc/gred_practice_input.hpp"
 #include "platform/pc/sdl_platform.hpp"
 
@@ -56,7 +57,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
-    std::string check_borg_catalog,check_borg_moves,preview_borg;
+    std::string check_borg_catalog,check_borg_moves,check_borg_spawn,preview_borg;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -168,6 +169,9 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--check-borg-moves"){
             if(++i>=argc||!options->check_borg_moves.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_moves=argv[i];
+        }else if(arg=="--check-borg-spawn"){
+            if(++i>=argc||!options->check_borg_spawn.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_spawn=argv[i];
         }else if(arg=="--preview-borg"){
             if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->preview_borg=argv[i];
@@ -358,6 +362,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --gred-movement [--no-audio]\n"
                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
                          "       gf_native --check-borg-moves NAMESPACE:ID\n"
+                         "       gf_native --check-borg-spawn NAMESPACE:ID\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--headless] [--frames N]\n");
             return false;
         }
@@ -368,7 +373,8 @@ bool parse(int argc, char** argv, Options* options) {
     if(options->animation_mosaic&&(options->battle_mvp||options->test_battle||options->menu||options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0))return false;
     if(!options->preview_borg.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||options->menu||
        options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||options->list_borgs||
-       !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||options->animation_page||options->animation_borg))return false;
+       !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
+       options->animation_page||options->animation_borg))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1209,7 +1215,8 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
 int main(int argc, char** argv) {
     Options options;
     if (!parse(argc, argv, &options)) return 2;
-    if(unsigned(options.list_borgs)+unsigned(!options.check_borg_catalog.empty())+unsigned(!options.check_borg_moves.empty())>1)return 2;
+    if(unsigned(options.list_borgs)+unsigned(!options.check_borg_catalog.empty())+unsigned(!options.check_borg_moves.empty())+
+       unsigned(!options.check_borg_spawn.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
@@ -1253,6 +1260,27 @@ int main(int argc, char** argv) {
             std::printf("%s\t%s\tform=%s\tphases=%zu\toutcomes=%zu\n",move.id.c_str(),move.label.c_str(),
                 move.form.c_str(),move.phases.size(),move.outcomes.size());
         std::puts("Move definitions validated; gameplay, effects, and audio not loaded.");
+        return 0;
+    }
+    if(!options.check_borg_spawn.empty()){
+        gf::pc::BorgSpawnInspection spawn;std::string error;
+        if(!gf::pc::load_borg_spawn_inspection("borgs",borg_packages,options.check_borg_spawn,&spawn,&error)){
+            std::fprintf(stderr,"Borg spawn: %s\n",error.c_str());return 2;
+        }
+        constexpr const char* anchors[]{"unresolved","mode-selected","floor-offset","arena-top-clearance","absolute-y"};
+        constexpr const char* horizontal[]{"unresolved","mode-selected","stage-center","absolute-xz"};
+        constexpr const char* states[]{"unresolved","grounded","falling","fixed-airborne","flying","hovering"};
+        std::printf("%s\t%s\tspawn-rules=%zu\n",spawn.identity.id.c_str(),spawn.identity.name.c_str(),spawn.profile.rules.size());
+        for(const auto& rule:spawn.profile.rules){
+            std::printf("%s\tform=%s\tmode=%s\tvariant=%s\tanchor=%s\tstate=%s\theight=",rule.id.c_str(),rule.form.c_str(),
+                rule.mode.c_str(),rule.variant.c_str(),anchors[unsigned(rule.anchor)],states[unsigned(rule.initial_state)]);
+            if(rule.height_kind==gf::BorgSpawnValue::Number)std::printf("%g",double(rule.height));
+            else std::fputs(rule.height_kind==gf::BorgSpawnValue::None?"none":"unresolved",stdout);
+            std::printf("\thorizontal-anchor=%s\txz=",horizontal[unsigned(rule.horizontal_anchor)]);
+            if(rule.horizontal_kind==gf::BorgSpawnValue::Number)std::printf("%g|%g\n",double(rule.xz[0]),double(rule.xz[1]));
+            else std::puts(rule.horizontal_kind==gf::BorgSpawnValue::None?"none":"unresolved");
+        }
+        std::puts("Spawn declarations validated; no stage, placement, or actor loaded.");
         return 0;
     }
 

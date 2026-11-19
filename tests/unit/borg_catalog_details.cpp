@@ -39,7 +39,9 @@ int main(){
     check(facet(BorgDefinitionFacet::Moves).kind==BorgDefinitionReferenceKind::LocalFile&&
         facet(BorgDefinitionFacet::Moves).file=="actions/moves.txt"&&
         facet(BorgDefinitionFacet::Traits).kind==BorgDefinitionReferenceKind::Unresolved&&
-        facet(BorgDefinitionFacet::Forms).kind==BorgDefinitionReferenceKind::None,"facet files, unresolved and deliberate absence stay distinct");
+        facet(BorgDefinitionFacet::Forms).kind==BorgDefinitionReferenceKind::None&&
+        facet(BorgDefinitionFacet::Spawn).kind==BorgDefinitionReferenceKind::Unresolved,
+        "facet files, unresolved and deliberate absence stay distinct");
     for(const auto& bad:{
         replace(full,"GFBORG-CATALOG 2","GFBORG-CATALOG 1"),full+"hp=100|100\n",
         replace(full,"collection-number=33","collection-number=0"),
@@ -59,5 +61,8 @@ int main(){
     check(borg_catalog_read_profile(known,&profile)&&!profile.details->collection_number&&profile.details->display_air_jumps==3&&
         profile.details->crystal_count==4&&profile.details->crystal_rule==BorgCrystalRule::Count,
         "known counts and intentionally unresolved collection number round-trip");
+    check(borg_catalog_read_profile(known+"spawn=gameplay/spawn.txt\n",&profile)&&
+        profile.details->references[unsigned(BorgDefinitionFacet::Spawn)].file=="gameplay/spawn.txt",
+        "an additive spawn sidecar does not change older catalogue requirements");
     std::puts("Borg catalogue details: versioned identity, variants, stats and unresolved facets PASS");
 }
