@@ -90,6 +90,7 @@ int main(){
         GRedPickerPracticeRoute::DirectTimedUpRelaunch,GRedPickerPracticeRoute::ActiveSnapRelaunch,
         GRedPickerPracticeRoute::ExpiringDirectRelaunch,GRedPickerPracticeRoute::ExpiringDirectRelaunchPush,
         GRedPickerPracticeRoute::ExpiringAdjacentRelaunchPush,GRedPickerPracticeRoute::ExpiringAirDash,GRedPickerPracticeRoute::ExpiringAirDashRelaunch,
+        GRedPickerPracticeRoute::TimedReleaseFourPushes,GRedPickerPracticeRoute::TimedReleaseExpiryDrift,
         GRedPickerPracticeRoute::InclinedLedgeRelaunch,GRedPickerPracticeRoute::TimedReleaseThreePushes,
         GRedPickerPracticeRoute::ExpiringAirDashSnap,GRedPickerPracticeRoute::ExpiringAirDashSnapRelaunch,
         GRedPickerPracticeRoute::ExpiringShortAirDashRelaunch,
@@ -97,7 +98,7 @@ int main(){
         cursor.step({});
         check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==route&&
             cursor.step(next_route,true)==BorgForceBrowseChange::None&&cursor.force()==force_before&&cursor.slot()==slot_before,
-            "ninth through twenty-fourth Right shoulder select guides without moving either cursor");
+            "ninth through twenty-sixth Right shoulder select guides without moving either cursor");
     }
     check(cursor.practice_route_name()=="TWO TIMED RELEASE PUSHES","two-push guide has its own route label");
     lane.y=false;
@@ -105,7 +106,8 @@ int main(){
     check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route_name()=="TIMED RELEASE PUSH"&&
         cursor.force()==force_before&&cursor.slot()==slot_before,"previous selects the single-push guide without moving either cursor");
     for(auto label:{"DIAGONAL EXPIRY RELAUNCH","EXPIRY SNAP RELAUNCH","EXPIRY WIND-UP SNAP",
-        "THREE TIMED RELEASE PUSHES","INCLINED LEDGE RELAUNCH","EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH",
+        "THREE TIMED RELEASE PUSHES","INCLINED LEDGE RELAUNCH","EXPIRY DRIFT PUSH","TIMED DOWN-DRIFT PUSH",
+        "EXPIRY WIND-UP RELAUNCH","AIR DASH ON EXPIRY","ADJACENT ENTRY PUSH",
         "ENTRY PUSH ON EXPIRY","RELAUNCH ON EXPIRY"}){
         cursor.step({});
         check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route_name()==label&&

@@ -1286,6 +1286,24 @@ isolation, eight nearby routes reached idle in 117 attempts.
 The checked-in rule uses exactly the verified face pair and
 Down heading, not a general high-angle continuation.
 
+### Diagonal drift at expiry uses an existing response
+
+`--gred-walk-ledge-timed-release-expiry-drift` uses the same
+start and movement mode. Follow the Down-drift guide through the
+accepted fourth push on 37, then press **Down+Right** on 38
+only. The fifth push selects face 2011 with the timer now zero;
+it uses the existing released-fall response, not the timed
+proof or cue. Meter stays at 9850. Neutral falling resumes on
+39, touchdown and landing occur separately on 103–104, and
+idle refills normally.
+
+Holding **Down** alone on 38 produces a real projection offer,
+but the approach selects face 2011 at Y `1726.0116`, above the
+actor's Y `1722.6906`. The post-projection path clears its floor,
+which does not excuse the pre-projection refusal. Tick 37 and its
+one remaining timer tick stay accepted. Both paths pass with
+Down+Right. The guide adds no runtime contact permission.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

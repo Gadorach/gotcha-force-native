@@ -916,6 +916,57 @@ int main(){
     }
     check(hit==102&&land==103&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
         source.relaunch_fall_pushes()==4&&!source.air_dash_starts()&&source.relaunches()==1,"fourth steered push leads to normal landing and idle");
+    for(bool diagonal:{false,true}){
+        third_prefix(Mode::GroundTimedWalkReleaseDownPush);
+        NativeBorgMotionOffer offer;
+        check(prepare(down,&offer)&&offer.jump_motion->down_timed_release_push,"repeat the actual Down response");
+        accept(offer);
+        const auto before=world.actors()[0];const auto other=world.actors()[1];const auto retained=pose;
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        auto steer=down;steer.dpad_right=diagonal;
+        check(prepare(steer,&offer)&&offer.kind==Kind::StaticPush&&offer.static_push&&offer.jump_motion&&
+            offer.static_push->surface.triangle==2011&&offer.static_push->angle==13653&&offer.controller_timer698==0.f&&
+            !offer.jump_motion->timed_walk_relaunch_fall&&!offer.jump_motion->down_timed_release_push&&
+            offer.jump_motion->drift_heading&&offer.facing==before.facing&&source.ground_loss_timer698()==1.f&&source.resource()==9850,
+            "both inputs stage a zero-timer high-angle response, not an extra timed permission");
+        auto travel=[&](const BattleMvpVec& end){
+            const auto& cfg=world.config();NativeBorgContactResult result;
+            NativeBorgContactRequest request{before.position,other.position,{end[0]-before.position[0],end[2]-before.position[2]},
+                cfg.arena_half,cfg.actor_radius,cfg.actor_height,cfg.step_height,false,other.health!=0};
+            request.vertical_end_y=end[1];
+            check(native_borg_resolve_contact(request,&view,&result),"query the two native paths independently");
+            return result;
+        };
+        const auto pre=travel(offer.static_push->integrated_position);const auto post=travel(offer.proposed_position);
+        check(pre.terrain_blocked==!diagonal&&!post.terrain_blocked&&!pre.body_hit&&!post.body_hit&&!pre.bounds_hit&&!post.bounds_hit,
+            "holding Down blocks only the approach; Down+Right passes both paths");
+        if(!diagonal){
+            check(!world.step({},false,&view,nullptr,&frame,&offer)&&world.tick()==37&&world.actors()[0].position==before.position&&
+                world.motion_receipt_current(retained.receipt)&&source.ground_loss_timer698()==1.f&&source.resource()==9850&&
+                view.practice_readout(world)->down_timed_release_push,
+                "a clear projected endpoint cannot publish a blocked approach at expiry");
+            source.reject();
+            check(retained.frame_scope.expired()&&!world.step({},false,&view),"refusal cannot fall back or advance the clock");
+            continue;
+        }
+        accept(offer);
+        check(source.ground_loss_timer698()==0.f&&source.resource()==9850&&source.relaunch_fall_pushes()==5&&
+            !view.practice_readout(world)->timed_release_push&&!view.practice_readout(world)->down_timed_release_push,
+            "the accepted fifth response uses the existing zero-timer rule, not the timed cue");
+        hit=land=0;
+        while(world.tick()<145){
+            const auto tick=world.tick()+1;
+            check(prepare({},&offer),"existing neutral falling leaves the face and reaches ordinary landing");
+            if(tick==39)check(offer.kind==Kind::JumpAir&&!offer.static_push,"no extra contact after the expiry response");
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            if(tick==hit||tick==land)check(source.resource()==9850,"expiry response is not grounding or meter recovery");
+        }
+        check(hit==103&&land==104&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector()&&
+            source.relaunch_fall_pushes()==5&&source.relaunches()==1&&!source.air_dash_starts(),
+            "the Down+Right continuation reaches distinct landing and full idle");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

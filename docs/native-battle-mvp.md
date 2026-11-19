@@ -262,18 +262,21 @@ picker or **R** in the Force browser:
 | 15 | **Adjacent Entry Push** — the neighboring face 1998 on 1 → 0 |
 | 16 | **Air Dash on Expiry** — stationary wind-up as the timer reaches zero |
 | 17 | **Expiry Wind-up Relaunch** — choose after the six-tick wind-up pays 450 |
-| 18 | **Inclined Ledge Relaunch** — relaunch from the ordinary fall after a dash off the incline |
-| 19 | **Three Timed Release Pushes** — three consecutive airborne pushes on face 2021 |
-| 20 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
-| 21 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
-| 22 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
-| 23 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 24 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 18 | **Timed Down-Drift Push** — the fourth contact moves onto face 2011 |
+| 19 | **Expiry Drift Push** — Down+Right takes the existing zero-timer push |
+| 20 | **Inclined Ledge Relaunch** — relaunch from the ordinary fall after a dash off the incline |
+| 21 | **Three Timed Release Pushes** — three consecutive airborne pushes on face 2021 |
+| 22 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
+| 23 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
+| 24 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
+| 25 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 26 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 34 routes in the loop. In the opposite direction (**Left** or
-**L**), **Inclined Ledge Relaunch** and **Three Timed Release Pushes**
-take 16 and 15 presses. The two expiry snap guides still take 14 and
-13. **Diagonal Expiry Relaunch**, **Timed Release Push**, and **Two Timed
+There are 36 routes in the loop. In the opposite direction (**Left** or
+**L**), the two new drift guides take 18 and 17 presses. **Inclined
+Ledge Relaunch** and **Three Timed Release Pushes** still take 16 and 15.
+The two expiry snap guides still take 14 and 13. **Diagonal Expiry
+Relaunch**, **Timed Release Push**, and **Two Timed
 Release Pushes** still take 12, 11, and 10 respectively.
 
 **Q/Y** opens the paused guide. **P** steps with live input, and
@@ -425,6 +428,15 @@ uses that same route through tick 36. Press **Down Arrow** on
 face 2011 with one tick left and no extra meter cost; it still
 refuses in the three-push guide. Use
 `--demo-gred-walk-ledge-timed-release-four-pushes` for playback.
+In either picker, choose **Timed Down-Drift Push**.
+
+`--gred-walk-ledge-timed-release-expiry-drift --practice-start`
+runs the same guide through **Down on 37**, then takes
+**Down+Right on 38** before returning to neutral. The fifth push
+uses the existing zero-timer response, not another timed
+permission. Holding Down alone into 38 still refuses at the
+approach. Choose **Expiry Drift Push** in either picker or use
+`--demo-gred-walk-ledge-timed-release-expiry-drift` for playback.
 
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned

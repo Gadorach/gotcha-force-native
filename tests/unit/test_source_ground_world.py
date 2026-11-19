@@ -1082,6 +1082,26 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick == 145:
                     self.assertIn("G-Red-position=-3700.26/10.00/-3253.91", result.stdout)
 
+    def test_expiry_drift_push_uses_existing_zero_timer_response(self):
+        cue = "practice-timed-release-push=AIRBORNE / TIMED DOWN-DRIFT PUSH"
+        for tick, phase, meter, timer, pushes in (
+            (37, "FALLING / PUSH", 9850, 1, 4), (38, "FALLING / PUSH", 9850, 0, 5),
+            (39, "FALLING", 9850, 0, 5), (103, "TOUCHDOWN", 9850, 0, 5),
+            (104, "LANDING", 9850, 0, 5), (145, "IDLE", 10000, 0, 5),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-timed-release-expiry-drift",
+                                        "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"relaunch-fall-pushes={pushes} relaunches=1 timer698={timer}.0 landings={int(tick>=103)}", result.stdout)
+                self.assertEqual(cue in result.stdout, tick == 37)
+                if tick >= 38:
+                    self.assertNotIn("practice-timed-release-push=", result.stdout)
+                if tick == 145:
+                    self.assertIn("G-Red-position=-3719.20/10.00/-3264.03", result.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),
