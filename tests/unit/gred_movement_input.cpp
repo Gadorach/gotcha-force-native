@@ -62,6 +62,17 @@ int main(){
     check(gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==8,"active dash relaunch has distinct readiness predicate");
     fields.air_ready588=1;s.commands5d4=0;s.previous_held=0;
     check(gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==17,"active dash release admits recovery when source readiness permits");
+    for(unsigned selector=0;selector<256;++selector){
+        GRedMovementAdmissionFields neutral{u8(selector),0,0,true};
+        GRedMovementAdmission candidate;candidate.selector=255;
+        const bool supported=selector<=8||(selector>=12&&selector<=17);
+        check(gred_movement_admit(p,{},resource,neutral,&candidate,&error)==supported,"only recovered selectors admit input arbitration");
+        if(!supported){check(candidate.selector==255,"unsupported selector leaves the output untouched");continue;}
+        const bool stop=selector==1||selector==2;
+        const bool contact=selector==6||selector==8||selector==16||selector==17;
+        check(candidate.selector==(stop?3:selector)&&candidate.changed==stop&&candidate.contact_tail_required==contact&&
+            !candidate.consume_direction&&!candidate.reset_direction57c,"each neutral selector retains its original continuation");
+    }
     fields.selector=4;check(gred_movement_admit(p,s,resource,fields,&result,&error)&&!result.changed,"input kernel cannot replace source takeoff completion");
     fields.prior_handlers_declined=false;result.selector=99;
     check(!gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==99,"unknown higher-priority handlers refuse atomically");

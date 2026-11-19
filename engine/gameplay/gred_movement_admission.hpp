@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/borgs/normal_gred_movement_admission.hpp"
 #include "engine/gameplay/character_movement_input.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 namespace gf {
@@ -21,7 +22,9 @@ inline bool gred_movement_admit(const CharacterMovementInputProfile& p,const Cha
     if(!out||!character_movement_input_profile_valid(p)||p.model!=0x615||p.movement_type||p.resource_policy!=1||
        !character_movement_input_state_valid(input)||!fields.prior_handlers_declined||fields.air_ready588>1||
        (input.commands5d4&~3u)||resource.value736<0||resource.value736>p.resource_limit)return fail();
-    switch(fields.selector){case 0:case 1:case 2:case 3:case 4:case 5:case 6:case 7:case 8:case 12:case 13:case 14:case 15:case 16:case 17:break;default:return fail();}
+    using Rules=NormalGRedMovementAdmissionRules;
+    const auto* rule=Rules::for_selector(fields.selector);
+    if(!rule)return fail();
     GRedMovementAdmission result;result.selector=fields.selector;result.remaining_directions=input.directions5d8;
     auto select=[&](u8 selector){result.selector=selector;result.changed=true;return true;};
     auto jump=[&](){if(!(fields.flags5e0&2u)&&(input.commands5d4&1u)&&(input.previous_held&0x100u)){result.reset_direction57c=true;return select(4);}return false;};
@@ -36,23 +39,24 @@ inline bool gred_movement_admit(const CharacterMovementInputProfile& p,const Cha
     auto release_flight=[&](){
         return (fields.flags5e0&0x40u)&&fields.air_ready588&&(resource.value736<1||!(input.previous_held&0x100u))&&select(6);
     };
-    auto walk=[&](){return !(fields.flags5e0&2u)&&(input.previous_held&0xf0000u)&&select(1);};
-    switch(fields.selector){
-    case 0:case 3:if(!jump()&&!dash(false))walk();break;
-    case 1:case 2:if(!jump()&&!dash(false)&&!(input.previous_held&0xf0000u))select(3);break;
-    case 4:case 15:break; //source animation/motion handlers, not input, own continuation
-    case 5:if(!release_flight())dash(true);break;
-    case 6:case 17:if(!relaunch(true)&&!dash(true))result.contact_tail_required=true;break;
-    case 7:if(!jump())dash(false);break;
-    case 8:if(!release_flight()&&!dash(true))result.contact_tail_required=true;break;
-    case 12:case 13:case 14:jump();break;
-    case 16:
-        if(!relaunch(false)){
-            if(!(input.previous_held&0xf0000u)&&fields.air_ready588)select(17);
-            else result.contact_tail_required=true;
+    auto try_intent=[&](Rules::Intent intent){
+        using Intent=Rules::Intent;
+        switch(intent){
+        case Intent::Jump:return jump();
+        case Intent::GroundDash:return dash(false);
+        case Intent::AirDash:return dash(true);
+        case Intent::Walk:return !(fields.flags5e0&2u)&&(input.previous_held&0xf0000u)&&select(1);
+        case Intent::Stop:return !(input.previous_held&0xf0000u)&&select(3);
+        case Intent::ReleaseLift:return release_flight();
+        case Intent::ReadyRelaunch:return relaunch(true);
+        case Intent::Relaunch:return relaunch(false);
+        case Intent::ReleaseDash:return !(input.previous_held&0xf0000u)&&fields.air_ready588&&select(17);
+        case Intent::ContactTail:result.contact_tail_required=true;return true;
+        case Intent::None:break;
         }
-        break;
-    }
+        return false;
+    };
+    for(auto intent:rule->order)if(intent==Rules::Intent::None||try_intent(intent))break;
     *out=result;if(error)error->clear();return true;
 }
 }

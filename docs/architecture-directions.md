@@ -40,10 +40,15 @@ refer to normal G-Red's qualified movement programs, not to universal clips
 or movement selectors. VM dispatch, lane ordering and completion still use
 the existing engine services.
 
+The admission table lists the order in which each reviewed G-Red selector
+tries its possible movement inputs. It does not authorize a frame, bypass a
+mode restriction, or run contact: the source controller and native world
+still own those decisions.
+
 This is part of a self-contained definition, not a content format or completed
 registry. Stage queries, tangent movement, shared-edge checks, body collision
-and frame receipts remain engine services. Action admission, transition timing,
-and other qualified operands still have G-Red-specific code/data owners. Move
+and frame receipts remain engine services. Action predicate details, transition
+timing, and other qualified operands still have G-Red-specific code/data owners. Move
 them behind the definition as those boundaries become explicit, without
 copying terrain code or applying G-Red's rules to Sasuke.
 
