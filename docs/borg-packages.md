@@ -117,9 +117,11 @@ gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID --practice-
 
 **Left/Right** chooses a practice route without changing the copy or its
 saved variant. **Standard** starts in the ordinary arena. The other choices
-start live practice at the verified slope join, inclined walk, inclined
-dash, walking ledge push, steeper push, timer-expiry push, or expiry air-dash
-foothold. They do not inject demo input.
+start live practice at the verified recovery seam, slope join, inclined
+walk, inclined dash, walking ledge push, steeper push, timer-expiry push,
+or expiry air-dash foothold. They do not inject demo input. From
+**Standard**, press **Right** once for **Recovery Seam**. It starts
+paused with a [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
 
 **Q/Y** checks the highlighted copy and opens the selected route if it
 qualifies. The check can still refuse a disabled copy, unsupported variant,
@@ -761,7 +763,8 @@ instead of inspecting stale claims.
 
 With `--practice-from-picker`, **L/R** (keys or shoulder buttons) selects
 the same live G-Red routes as the owned picker without moving the Force
-cursor. **Q/Y** rechecks the highlighted position and opens that route
+cursor. From **Standard**, press **R** once for **Recovery Seam**.
+**Q/Y** rechecks the highlighted position and opens that route
 for the exact qualified package copy. Retail-only,
 overlapping, disabled and empty slots do not launch. **Esc** returns to the
 same Force, slot and route; release and press it again to close the browser. This

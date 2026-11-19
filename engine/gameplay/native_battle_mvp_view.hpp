@@ -329,7 +329,7 @@ public:
             if(!source_practice_start_label_.empty())status+="\n"+source_practice_start_label_;
         }
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
-        else if(world.paused())status+="\nPAUSED";
+        else if(world.paused())status+=source_practice_?"\nPAUSED AT TICK "+std::to_string(world.tick()):"\nPAUSED";
         const s32 status_y=source_practice_?std::max(0,height-16-
             s32(1+std::count(status.begin(),status.end(),'\n'))*text_.line_height(style)):height-80;
         draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;

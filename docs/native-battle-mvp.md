@@ -154,6 +154,19 @@ instead so the directional controls can still browse the saved roster.
 From Standard, select the previous route twice for **Expiry Air Dash**;
 after the zero-timer push, flick left (**A** on keyboard).
 
+Select the next route once from Standard (**Right** in the owned picker,
+**R** in the Force browser) for **Recovery Seam**. It starts paused at
+tick 0. Press **P** to step once while holding the indicated movement
+key. The HUD shows the last accepted tick; the guide lists the ticks
+you're stepping into: **Shift** on 6–39, **W** on 43, and **Right Arrow**
+on 105–109. Leave the controls neutral between those ranges. **Enter**
+resumes real-time play, **Q** restarts paused, and **Esc** returns to the
+same picker selection and route. Input is never injected.
+
+The same guide is available with
+`gf_native --gred-recovery-first-contact-seam --practice-start --no-audio`.
+Without `--practice-start`, that mode begins unpaused.
+
 To relaunch instead, use **Ledge Timer Expiry**. Wait for **Drift Unlocked**
 after the zero-timer push, then press **Shift**. In single-step practice,
 tick 57 is the neutral fall; hold Shift while stepping ticks 58–77 to
@@ -186,6 +199,8 @@ The replay links the desktop host but uses a fake clock and scripted input. It
 checks session controls between movement ticks, short taps, separately sampled
 jump and dash, resuming after a refused input, restart after a terrain stop, and
 live input and restart at the expiry fixture.
+It also tests the paused Recovery Seam guide and the unmodified timing
+from live inputs in each picker.
 It skips if the qualified local stage or movement pack is absent.
 
 [Contact Sheet 59](../local/recomp-evidence/contact-sheets/gred-movement-practice-v1/contact-sheet-59.png)

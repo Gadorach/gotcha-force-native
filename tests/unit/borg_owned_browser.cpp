@@ -59,6 +59,13 @@ int main(){
     check(browser.step(down)==BorgBrowserChange::None&&browser.owned_entry()->instance==3&&
         browser.practice_route()==GRedPickerPracticeRoute::ExpiryPush,
         "held navigation after preview cannot change the owned copy or its route");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::Standard,
+        "Right wraps expiry push back to Standard");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&browser.practice_route()==GRedPickerPracticeRoute::RecoverySeam&&
+        browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
+        "Recovery Seam selects a route, not a different copy or a different variant");
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,
         "disabled copy stays visible but cannot request preview");

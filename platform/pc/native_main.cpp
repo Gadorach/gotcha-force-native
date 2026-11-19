@@ -765,6 +765,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     const auto* practice=package?&practice_bytes:nullptr;
     gf::BattleMvpConfig config;
     const bool use_demo_start=!options.source_ground_interactive||options.gred_practice_start;
+    const bool guided_recovery=options.gred_recovery_first_contact_seam&&options.gred_practice_start&&options.source_ground_interactive;
     //Explicit native demo placement at original stage473 floor triangle1297's
     //interior, not a recovered actor constructor/spawn or edited stage asset.
     if(options.source_surface&&!options.source_ground_interactive)config.spawn[0]={-619.2617f,169.4453f};
@@ -916,7 +917,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_practice_controls();
             gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, C camera, Q restart, Esc close; native proxies, no combat");
             if(options.gred_practice_start){
-                const char* hint=options.gred_walk_ledge_expiry_air_dash?"WALK LEFT / FLICK LEFT AFTER EXPIRY PUSH":
+                const char* hint=guided_recovery?"RECOVERY SEAM\nSHIFT 6-39 / W 43 / RIGHT ARROW 105-109":
+                    options.gred_walk_ledge_expiry_air_dash?"WALK LEFT / FLICK LEFT AFTER EXPIRY PUSH":
                     options.gred_walk_ledge_expiry_push?"LEFT ARROW THEN RELEASE":
                     options.gred_walk_ledge_fall_push?"RIGHT ARROW THEN RELEASE":
                     options.gred_inclined_walk_ledge?"UP ARROW THEN RELEASE":
@@ -1103,6 +1105,13 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     bool input_refused=false,practice_stopped=false;
     const bool practice_restartable=options.gred_practice&&options.source_ground_interactive;
+    auto pause_guided_recovery=[&](){
+        if(!guided_recovery)return true;
+        if(!world.set_paused(true))return false;
+        gf::log_info(context,"source-ground","recovery seam guide: paused at tick=%u; P steps; Shift 6-39, W 43, Right Arrow 105-109",world.tick());
+        return true;
+    };
+    if(!pause_guided_recovery()){render.shutdown();return 2;}
     // Y launched from the picker. Its held key is not a second action in the
     // new session; an actual release and re-press still requests restart.
     bool practice_restart_held=picker!=nullptr,practice_pause_held=false,practice_step_held=false,practice_camera_held=false;
@@ -1139,7 +1148,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             const bool practicing=!restart&&!pause&&!practice_stopped&&!world.paused();
             practice_input.sample(pad,source.practice_flick_direction(pad),practicing);
             if(restart){
-                if(!owned_current()||!world.start(config,&view)||!view.update(world,&error)||!bind_source()){
+                if(!owned_current()||!world.start(config,&view)||!view.update(world,&error)||!bind_source()||!pause_guided_recovery()){
                     gf::log_error(context,"source-ground","practice restart refused: %s",error.c_str());
                     render.shutdown();return 2;
                 }
@@ -1549,7 +1558,8 @@ int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& pack
 
 bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice){
     constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
-        "--gred-movement","--gred-slope-transition-dash","--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
+        "--gred-movement","--gred-recovery-first-contact-seam","--gred-slope-transition-dash",
+        "--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
         "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push","--gred-walk-ledge-expiry-air-dash",
         "--gred-walk-ledge-expiry-push"
     };

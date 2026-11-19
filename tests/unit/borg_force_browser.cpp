@@ -53,6 +53,10 @@ int main(){
     cursor.step({});
     check(cursor.step(lane,true)==BorgForceBrowseChange::PracticeRoute&&cursor.practice_route()==GRedPickerPracticeRoute::ExpiryAirDash&&
         cursor.force()==force_before&&cursor.slot()==slot_before,"expiry air dash selection does not change the slot");
+    GamePadState next_route;next_route.r=true;
+    check(cursor.open(force_before,slot_before)&&cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
+        cursor.practice_route()==GRedPickerPracticeRoute::RecoverySeam&&cursor.force()==force_before&&cursor.slot()==slot_before,
+        "one Right shoulder from Standard selects Recovery Seam without moving either cursor");
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

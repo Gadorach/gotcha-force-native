@@ -7,10 +7,10 @@ namespace gf {
 // Read-only training choices for the qualified normal G-Red lab, not
 // variants or readiness/admission receipts.
 enum class GRedPickerPracticeRoute : u8 {
-    Standard,SlopeJoin,InclinedWalk,InclinedDash,LedgePush,HighAnglePush,ExpiryAirDash,ExpiryPush,Count
+    Standard,RecoverySeam,SlopeJoin,InclinedWalk,InclinedDash,LedgePush,HighAnglePush,ExpiryAirDash,ExpiryPush,Count
 };
 inline constexpr std::array<std::string_view,unsigned(GRedPickerPracticeRoute::Count)> kGRedPickerPracticeRouteNames{
-    "STANDARD","SLOPE JOIN","INCLINED WALK","INCLINED DASH","WALK LEDGE PUSH","STEEPER LEDGE PUSH",
+    "STANDARD","RECOVERY SEAM","SLOPE JOIN","INCLINED WALK","INCLINED DASH","WALK LEDGE PUSH","STEEPER LEDGE PUSH",
     "EXPIRY AIR DASH","LEDGE TIMER EXPIRY"
 };
 inline constexpr std::string_view gred_picker_practice_route_name(GRedPickerPracticeRoute route){

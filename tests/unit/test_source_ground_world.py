@@ -504,6 +504,19 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick==200:
                     self.assertIn("G-Red-position=1134.61/10.00/-611.42", run.stdout)
 
+    def test_recovery_seam_practice_guide_stays_at_tick_zero_until_live_input(self):
+        mode = ["--gred-recovery-first-contact-seam", "--headless", "--frames", "8", "--no-audio"]
+        guided = self.run_host([*mode, "--practice-start"])
+        self.assertEqual(guided.returncode, 0, guided.stdout)
+        self.assertIn("recovery seam guide: paused at tick=0; P steps; Shift 6-39, W 43, Right Arrow 105-109", guided.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-240.00/10.00/300.00; accepted-frames=0", guided.stdout)
+        self.assertNotIn("recovery first-contact seam demo:", guided.stdout)
+        self.assertNotIn("practice-recovery-seam=", guided.stdout)
+        ordinary = self.run_host(mode)
+        self.assertEqual(ordinary.returncode, 0, ordinary.stdout)
+        self.assertNotIn("recovery seam guide:", ordinary.stdout)
+        self.assertIn("accepted native tick=8 G-Red-position=-240.00/10.00/300.00; accepted-frames=8", ordinary.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

@@ -5,7 +5,8 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
+    RecoverySeamRestart,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -45,6 +46,10 @@ public:
             if(f>=5&&f<25)raw.buttons|=1u<<7; // Actual D-pad left from the verified foothold.
             if(replay_==Replay::FixtureRestart&&f>=75&&f<79)raw.buttons|=1u<<3;
             break;
+        case Replay::RecoverySeamRestart:
+            snapshot_.frame_step=f==0||f==2||f==4||f==7||f==8;
+            if(f>=4&&f<=6)raw.buttons|=1u<<3; // Restart wins over a simultaneous step.
+            break;
         case Replay::PickerPractice:
             // Hold both launch and exit across the renderer/session handoff.
             if(f<=3||(f>=16&&f<=18))raw.buttons|=1u<<3;
@@ -70,6 +75,22 @@ public:
             if(f>=10&&f<30)raw.buttons|=1u<<7;
             if(f==61)raw.axis[0]=-32768; // The live step immediately after accepted tick 56.
             if(f>=306&&f<=308)raw.quit=true;
+            break;
+        case Replay::OwnedRecoverySeam:
+        case Replay::ForceRecoverySeam:
+            if(f==0)raw.buttons|=1u<<(replay_==Replay::OwnedRecoverySeam?8:10);
+            if(f>=2&&f<=4)raw.buttons|=1u<<3;
+            if(f>=7&&f<407){
+                const unsigned tick=1+(f-7)/2;
+                snapshot_.frame_step=(f-7)%2==0;
+                if(tick>=6&&tick<=39)raw.buttons|=1u<<1;
+                if(tick==43)raw.axis[1]=-32768;
+                if(tick>=105&&tick<=109)raw.buttons|=1u<<8;
+            }
+            if(f>=408&&f<=410)raw.quit=true;
+            if(f==413)raw.buttons|=1u<<(replay_==Replay::OwnedRecoverySeam?6:5); // Disabled copy or overlapping slot.
+            if(f==415)raw.buttons|=1u<<3;
+            if(f==418)raw.buttons|=1u<<(replay_==Replay::OwnedRecoverySeam?5:6); // Back to the original selection.
             break;
         }
     }
@@ -104,10 +125,12 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     auto backends=headless.get();
     backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
     Options options;
-    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart;
-    char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push";
+    const bool seam=replay==Replay::RecoverySeamRestart;
+    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam;
+    char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
+         recovery[]="--gred-recovery-first-contact-seam";
     char audio[]="--no-audio",start[]="--practice-start";
-    char* args[]={program,fixture?expiry:practice,audio,start};
+    char* args[]={program,seam?recovery:fixture?expiry:practice,audio,start};
     check(parse(fixture?4:3,args,&options),scenario,log.text);
     options.frames=frames;
     options.headless=replay==Replay::RaisedFace||fixture; // Exactly one scheduled tick per frame.
@@ -122,6 +145,12 @@ bool has(const std::string& log,const char* text){return log.find(text)!=std::st
 bool once(const std::string& log,const char* text){
     const auto first=log.find(text);
     return first!=std::string::npos&&log.find(text,first+1)==std::string::npos;
+}
+bool recovery_seam_completed(const std::string& log){
+    return once(log,"recovery seam guide: paused at tick=0")&&once(log,"practice stepped to tick=200")&&
+        !has(log,"recovery first-contact seam demo:")&&!has(log,"motion acceptance refused")&&
+        !has(log,"practice restarted")&&has(log,"accepted native tick=200 G-Red-position=1134.61/10.00/-611.42")&&
+        has(log,"recovery-recontact landings=1 resource=10000 selector=0");
 }
 std::size_t occurrences(std::string_view text,std::string_view part){
     std::size_t found=0;
@@ -198,7 +227,7 @@ int replay_owned_practice_picker(std::string root){
         check(run_borg_browser(context,render,options,packages)==0,"owned picker practice",log.text);
         return context.frame_index();
     };
-    char enabled[]="8",short_limit[]="32",long_limit[]="205";
+    char enabled[]="8",short_limit[]="32",long_limit[]="205",seam_limit[]="426";
     check(run_picker(enabled,short_limit)==32&&occurrences(log.text,"launched practice for owned instance=8")==2&&
         occurrences(log.text,"returned to owned instance=8 after practice")==2&&
         occurrences(log.text,"owned instance=8 (Saved G-Red / Saved Standard); save is read-only")==2&&
@@ -216,6 +245,12 @@ int replay_owned_practice_picker(std::string root){
         has(log.text,"walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0")&&
         once(log.text,"returned to owned instance=8 after practice route=LEDGE TIMER EXPIRY"),
         "selected foothold runs the full route from live input and returns with the route retained",log.text);
+    log.text.clear();input=ReplayInput(Replay::OwnedRecoverySeam);
+    check(run_picker(enabled,seam_limit)==426&&recovery_seam_completed(log.text)&&
+        once(log.text,"launched practice for owned instance=8 route=RECOVERY SEAM")&&
+        once(log.text,"returned to owned instance=8 after practice route=RECOVERY SEAM")&&
+        once(log.text,"practice unavailable for instance=9: the requested owned copy is disabled"),
+        "owned recovery seam guide runs on live step input and returns to the exact copy and route",log.text);
     log.text.clear();input=ReplayInput(Replay::PickerPractice);
     char disabled[]="9";
     check(run_picker(disabled,short_limit)>0&&!has(log.text,"launched practice for")&&
@@ -246,7 +281,7 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         check(run_borg_force_browser(context,render,options,packages,*snapshot)==0&&context.frame_index()==options.frames,
             "Force browser has a single frame budget across handoffs",log.text);
     };
-    char short_limit[]="44",long_limit[]="325";
+    char short_limit[]="44",long_limit[]="325",seam_limit[]="426";
     run(Replay::ForcePicker,short_limit);
     check(occurrences(log.text,"launched practice for Force 1 slot 2 instance=8")==2&&
         occurrences(log.text,"returned to Force 1 slot 2 after practice")==2&&
@@ -265,6 +300,13 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         has(log.text,"walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0")&&
         once(log.text,"returned to Force 1 slot 2 after practice route=EXPIRY AIR DASH")&&snapshot->current(),
         "live input follows the expiry air dash and returns to the same exact slot and route",log.text);
+    run(Replay::ForceRecoverySeam,seam_limit);
+    check(recovery_seam_completed(log.text)&&
+        once(log.text,"launched practice for Force 1 slot 2 instance=8 route=RECOVERY SEAM")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=RECOVERY SEAM")&&
+        once(log.text,"practice unavailable for Force 1 slot 1: the requested Force slot overlaps retail and package claims")&&
+        snapshot->current(),
+        "Force recovery seam guide runs on live step input and returns to the exact slot and route",log.text);
     std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }
@@ -343,5 +385,11 @@ int main(int argc,char** argv){
         has(fixture_restart,"accepted native tick=10 G-Red-position=-1250.97/")&&
         has(fixture_restart,"/-3313.80; accepted-frames=10")&&has(fixture_restart,"practice-phase=IDLE"),
         "held Q returns to the same grounded fixture once, clearing old motion and counters",fixture_restart);
-    std::puts("G-Red practice replay: eleven desktop-loop scenarios PASS without opening devices");
+    const auto guide=run(Replay::RecoverySeamRestart,10,"paused recovery seam restart");
+    check(occurrences(guide,"recovery seam guide: paused at tick=0")==2&&
+        occurrences(guide,"practice stepped to tick=1")==2&&once(guide,"practice stepped to tick=2")&&
+        once(guide,"practice restarted at tick=0")&&has(guide,"frames=10 ticks=1")&&
+        has(guide,"accepted native tick=1 G-Red-position=-240.00/10.00/300.00"),
+        "guide starts and restarts paused without injecting movement; held step does not repeat",guide);
+    std::puts("G-Red practice replay: twelve desktop-loop scenarios PASS without opening devices");
 }
