@@ -152,6 +152,10 @@ int main(){
                 presented->kind==offer.kind&&presented->action==offer.action&&
                 presented->ascent==bool(offer.jump_motion&&offer.jump_motion->phase==5),
                 "accepted source pose publishes exact meter and movement role");
+            if(tick>=87&&tick<=117)
+                check(presented->dash_release_ticks==117-tick,"accepted active timer counts down to the real release gate");
+            else
+                check(!presented->dash_release_ticks,"only continuing active air dash shows its release cue");
             if(tick==86){
                 const auto frame=pose.frame_scope.lock();NativeBattleMvp foreign;
                 check(frame&&!frame->meter(foreign)&&!view.practice_meter(foreign),"foreign world cannot borrow the practice meter");

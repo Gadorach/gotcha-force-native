@@ -1019,6 +1019,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             gf::log_info(context,"source-ground","practice-meter=%d/%d at accepted tick=%u",int(meter.value),int(meter.limit),world.tick());
             gf::log_info(context,"source-ground","practice-phase=%s%s",view.practice_phase(*practice),
                 gf::native_borg_motion_push(practice->kind)?" / PUSH":"");
+            if(const auto ticks=practice->dash_release_ticks)
+                gf::log_info(context,"source-ground","practice-dash-release-ticks=%u",unsigned(*ticks));
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");

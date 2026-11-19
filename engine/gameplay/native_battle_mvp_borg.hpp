@@ -10,6 +10,7 @@ struct NativeBorgSourceReadout {
     NativeBorgMotionKind kind=NativeBorgMotionKind::Ground;
     BattleMvpAction action=BattleMvpAction::Idle;
     bool ascent=false;
+    std::optional<u8> dash_release_ticks; //0 means ready, absent outside continuing active dash
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

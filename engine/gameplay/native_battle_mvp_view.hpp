@@ -202,6 +202,8 @@ public:
             text+="\n";text+=practice_phase(*practice);
             if(native_borg_motion_push(practice->kind))text+=" / PUSH";
             else if(native_borg_motion_air_dash_floor(practice->kind)||native_borg_motion_relaunch_floor(practice->kind))text+=" / FLOOR SNAP";
+            if(const auto ticks=practice->dash_release_ticks)
+                text+=*ticks?"\nRELEASE IN "+std::to_string(*ticks)+" TICKS":"\nCENTER TO RECOVER";
             draws+=text_.draw(render,text,24,68,style);
         }
         std::string status="G-RED VS SASUKE - NATIVE MVP / PROVISIONAL RULES\nWASD MOVE  L DASH  SHIFT JUMP  SPACE PRIMARY  E SECONDARY  Q RESTART  ENTER PAUSE";

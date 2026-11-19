@@ -21,13 +21,24 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertNotIn("demo only:", result.stdout)
 
     def test_practice_demo_meter_tracks_existing_accepted_windup_route(self):
-        phases=((81,8450,"DASH WIND-UP / PUSH"),(86,8000,"DASH WIND-UP / PUSH"),
-                (87,7950,"AIR DASH"),(140,6450,"TOUCHDOWN"),(141,6450,"LANDING"),(600,10000,"IDLE"))
-        for tick, value, phase in phases:
+        phases = ((81, 8450, "DASH WIND-UP / PUSH", None),
+                  (86, 8000, "DASH WIND-UP / PUSH", None),
+                  (87, 7950, "AIR DASH", 30),
+                  (116, 6500, "AIR DASH", 1),
+                  (117, 6450, "AIR DASH", 0),
+                  (118, 6450, "DASH RECOVERY", None),
+                  (140, 6450, "TOUCHDOWN", None),
+                  (141, 6450, "LANDING", None),
+                  (600, 10000, "IDLE", None))
+        for tick, value, phase, release_ticks in phases:
             result = self.run_host(["--demo-gred-movement", "--headless", "--frames", str(tick), "--no-audio"])
             self.assertEqual(result.returncode, 0, result.stdout)
             self.assertIn(f"practice-meter={value}/10000 at accepted tick={tick}", result.stdout)
             self.assertIn(f"practice-phase={phase}\n", result.stdout)
+            if release_ticks is None:
+                self.assertNotIn("practice-dash-release-ticks=", result.stdout)
+            else:
+                self.assertIn(f"practice-dash-release-ticks={release_ticks}\n", result.stdout)
             self.assertIn(f"accepted native tick={tick}", result.stdout)
             self.assertIn("controller-windup-pushes=", result.stdout)
             self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)

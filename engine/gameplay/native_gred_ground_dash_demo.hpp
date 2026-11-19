@@ -432,9 +432,15 @@ public:
             positive_windup_floor_contacts_+=pending_->offer.kind==NativeBorgMotionKind::AirDashWindupPositiveEntryFloor;
             last_air_dash_floor_programs_=movement_programs();
         }
+        std::optional<u8> dash_release_ticks;
+        const auto& air=pending_->offer.air_motion;
+        if(air&&air->phase==16&&air->next_selector==16){
+            if(air->next_stage==2&&air->callback)dash_release_ticks=0;
+            else if(air->next_stage==1&&air->timer568>=1&&air->timer568<=30)dash_release_ticks=u8(air->timer568);
+        }
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,input_.resource_limit},pending_->offer.kind,
-                pending_->offer.action,pending_->offer.jump_motion&&pending_->offer.jump_motion->phase==5}));
+                pending_->offer.action,pending_->offer.jump_motion&&pending_->offer.jump_motion->phase==5,dash_release_ticks}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

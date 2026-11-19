@@ -63,6 +63,9 @@ relaunch when eligible. Enter pauses, Q restarts, and Esc closes. The HUD's
 flight bar and movement label read the last accepted source frame, not pending
 input or a guessed animation phase. For example, wind-up still displays
 `DASH WIND-UP` on the handoff tick, and `TOUCHDOWN` precedes `LANDING`.
+During a continuing air dash, the HUD counts down to directional release and
+shows `CENTER TO RECOVER` once that release is eligible. Neither a landing nor
+a dash already transitioning to recovery shows the cue.
 Pause and restart are sampled each rendered frame, even if no 60 Hz movement
 tick is due. Resuming does not catch up elapsed pause time.
 One sampled Shift tap can carry to the next movement tick if released before
