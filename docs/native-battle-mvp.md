@@ -154,6 +154,12 @@ instead so the directional controls can still browse the saved roster.
 From Standard, select the previous route twice for **Expiry Air Dash**;
 after the zero-timer push, flick left (**A** on keyboard).
 
+To relaunch instead, use **Ledge Timer Expiry**. Wait for **Drift Unlocked**
+after the zero-timer push, then press **Shift**. In single-step practice,
+tick 57 is the neutral fall; hold Shift while stepping ticks 58–77 to
+match `--demo-gred-walk-ledge-expiry-relaunch`. Pressing Shift directly
+after the push still refuses.
+
 To check the actual practice loop without opening a window or audio device:
 
 ```sh

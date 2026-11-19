@@ -151,6 +151,7 @@ struct Options {
     bool gred_walk_ledge_expiry_push=false;
     bool gred_walk_ledge_expiry_air_dash=false;
     bool demo_gred_walk_ledge_expiry_drift=false;
+    bool demo_gred_walk_ledge_expiry_relaunch=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -353,7 +354,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-walk-ledge-high-angle-push" || arg == "--demo-gred-walk-ledge-high-angle-push" ||
                  arg == "--gred-walk-ledge-expiry-push" || arg == "--demo-gred-walk-ledge-expiry-push" ||
                  arg == "--gred-walk-ledge-expiry-air-dash" || arg == "--demo-gred-walk-ledge-expiry-air-dash" ||
-                 arg == "--demo-gred-walk-ledge-expiry-drift"){
+                 arg == "--demo-gred-walk-ledge-expiry-drift" || arg == "--demo-gred-walk-ledge-expiry-relaunch"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
             options->source_ground_walk=arg!="--demo-source-ground-dash";
@@ -382,9 +383,11 @@ bool parse(int argc, char** argv, Options* options) {
             options->source_ground_active_push=arg=="--source-ground-active-push"||arg=="--demo-source-ground-active-push";
             options->source_ground_relaunch_push=arg=="--source-ground-relaunch-push"||arg=="--demo-source-ground-relaunch-push";
             options->source_ground_relaunch_entry_push=arg=="--source-ground-relaunch-entry-push"||arg=="--demo-source-ground-relaunch-entry-push";
-            options->demo_gred_walk_ledge_expiry_drift=arg=="--demo-gred-walk-ledge-expiry-drift";
-            options->gred_walk_ledge_expiry_air_dash=arg=="--gred-walk-ledge-expiry-air-dash"||arg=="--demo-gred-walk-ledge-expiry-air-dash";
-            options->gred_walk_ledge_expiry_push=options->demo_gred_walk_ledge_expiry_drift||options->gred_walk_ledge_expiry_air_dash||
+             options->demo_gred_walk_ledge_expiry_drift=arg=="--demo-gred-walk-ledge-expiry-drift";
+             options->demo_gred_walk_ledge_expiry_relaunch=arg=="--demo-gred-walk-ledge-expiry-relaunch";
+             options->gred_walk_ledge_expiry_air_dash=arg=="--gred-walk-ledge-expiry-air-dash"||arg=="--demo-gred-walk-ledge-expiry-air-dash";
+             options->gred_walk_ledge_expiry_push=options->demo_gred_walk_ledge_expiry_drift||options->demo_gred_walk_ledge_expiry_relaunch||
+                 options->gred_walk_ledge_expiry_air_dash||
                 arg=="--gred-walk-ledge-expiry-push"||arg=="--demo-gred-walk-ledge-expiry-push";
             options->gred_walk_ledge_high_angle_push=options->gred_walk_ledge_expiry_push||
                 arg=="--gred-walk-ledge-high-angle-push"||arg=="--demo-gred-walk-ledge-high-angle-push";
@@ -905,8 +908,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             if(options.gred_slope_dash){
                 if(!options.source_ground_interactive)
                      gf::log_info(context,"source-ground","%s",options.gred_walk_ledge_expiry_air_dash?
-                         "walk ledge expiry air-dash demo: D-pad left then neutral, one left flick after accepted tick56":options.demo_gred_walk_ledge_expiry_drift?
-                         "walk ledge expiry drift demo: neutral on the expiry push, then 36 accepted D-pad up updates":options.gred_walk_ledge_expiry_push?
+                          "walk ledge expiry air-dash demo: D-pad left then neutral, one left flick after accepted tick56":options.demo_gred_walk_ledge_expiry_drift?
+                          "walk ledge expiry drift demo: neutral on the expiry push, then 36 accepted D-pad up updates":options.demo_gred_walk_ledge_expiry_relaunch?
+                          "walk ledge expiry relaunch demo: neutral fall at tick57, hold jump on ticks58-77, then release":options.gred_walk_ledge_expiry_push?
                          "walk ledge expiry demo: D-pad left, then neutral; faces2009/1999 and a separate later landing":options.gred_walk_ledge_high_angle_push?
                          "walk ledge high-angle demo: D-pad right, then neutral; faces1953/1949 and separate later landing":options.gred_walk_ledge_fall_push?
                          "walk ledge-fall push demo: D-pad right to depart, then neutral; selected face1953 and separate later landing":options.gred_inclined_walk_ledge?
@@ -1147,8 +1151,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                               if(world.tick()>=5&&world.tick()<30&&!source.ground_departures()){
                                   device.dpad_right=!options.gred_walk_ledge_expiry_push;
                                   device.dpad_left=options.gred_walk_ledge_expiry_push;
-                              }else if(options.gred_walk_ledge_expiry_air_dash&&world.tick()==56)device.stick_x=-127;
-                              else if(options.demo_gred_walk_ledge_expiry_drift&&world.tick()>=56&&world.tick()<92)device.dpad_up=true;
+                               }else if(options.gred_walk_ledge_expiry_air_dash&&world.tick()==56)device.stick_x=-127;
+                               else if(options.demo_gred_walk_ledge_expiry_drift&&world.tick()>=56&&world.tick()<92)device.dpad_up=true;
+                               else if(options.demo_gred_walk_ledge_expiry_relaunch&&world.tick()>=57&&world.tick()<77)device.b=true;
                           }else if(options.gred_inclined_walk_ledge){
                               device.dpad_up=world.tick()>=5&&world.tick()<20&&!source.ground_departures();
                           }else if(options.gred_slope_dash){

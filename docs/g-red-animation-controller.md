@@ -161,10 +161,25 @@ immediate flicks after positive-timer walking pushes across 1,800 trials.
 It reached 712 wind-ups and 176 active entries without relaxing travel
 checks, but no route completed. Partial entries do not grant permission.
 
-Relaunch is different: a short neutral gap can already permit relaunch
-through the ordinary falling path. For example, two held Shift updates
-from tick 59 on the same fixture enter at 60 and land at 111 under the
-existing rules. This does not grant an immediate relaunch from the push.
+### Relaunch after the first ordinary fall
+
+Relaunch still cannot follow the push directly, even in the air-dash
+mode. On this fixture, one neutral update after the zero-timer push is
+enough: tick 57 accepts ordinary falling, and Shift on tick 58 enters
+relaunch under the existing rules. No movement permissions changed.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiry-relaunch --headless --frames 200 --no-audio
+```
+
+Entry adds 15 to vertical speed before displacement, slowing the fall
+without immediately reversing it. It spends 150 once. The replay holds
+Shift on ticks 58–77, spends 100 per continued update, and first runs
+active program 15 at tick 63. Release at 78 returns to ordinary falling
+with 7950 meter. Touchdown at 141 and landing at 142 don't refill it; idle
+eventually does. A one-tick tap also works: it skips active relaunch,
+returns to falling at 59 with 9850, and touches down at 110 before
+landing at 111.
 
 ## Ordered dash off an inclined ledge (GFMM9)
 

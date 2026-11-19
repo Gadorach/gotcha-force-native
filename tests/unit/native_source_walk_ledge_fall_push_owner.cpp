@@ -306,6 +306,68 @@ int main(){
         source.walk_ledge_pushes()==2&&world.actors()[0].grounded&&source.selector()==0,
         "drift shifts the landing on the original stage and recovers normally without another push");
 
+    bind(expires,Mode::GroundWalkLedgeExpiryAirDash);
+    while(world.tick()<56){check(prepare(expires,&offer),"accepted prefix before the immediate expiry relaunch refusal");accept(offer);}
+    const auto before_relaunch=world.actors()[0].position;
+    GamePadState relaunch;relaunch.b=true;
+    check(offer.kind==Kind::GroundLossPush&&prepare(expires,&offer,relaunch)&&offer.kind==Kind::RelaunchEntry&&
+        offer.relaunch_motion&&offer.relaunch_motion->resource_after==9850,"expiry push can stage a candidate but not launch");
+    const auto expiry_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(!world.step({},false,&view,nullptr,&expiry_frame,&offer)&&world.tick()==56&&world.actors()[0].position==before_relaunch&&
+        source.resource()==10000&&!source.relaunches()&&world.motion_receipt_current(pose.receipt)&&
+        view.practice_readout(world)->kind==Kind::GroundLossPush,"expiry air-dash permission does not admit relaunch or publish its cost/pose");
+    source.reject();check(!world.step({},false,&view),"unsupported expiry launch does not fall back");
+
+    for(const unsigned held_ticks:{1u,20u}){
+        bind(expires,Mode::GroundWalkLedgeExpiryPush);
+        unsigned entries=0,active_tick=0;fall=touchdown=landing=0;
+        const s16 release_meter=held_ticks==1?9850:7950;
+        while(world.tick()<200){
+            const auto tick=world.tick()+1;const auto before=world.actors()[0];
+            check(prepare(expires,&offer,tick>=58&&tick<58+held_ticks?relaunch:GamePadState{}),
+                "accepted expiry route with a one-frame neutral gap before relaunch");
+            if(tick==57)check(offer.kind==Kind::GroundLossAir&&offer.walk_ledge->timer698==0&&
+                !offer.static_push&&!offer.walk_ledge->drift_heading&&source.resource()==10000,
+                "neutral fall, not a push or a spend, supplies the relaunch predecessor");
+            if(native_borg_motion_relaunch_entry(offer.kind)){
+                ++entries;const auto& e=*offer.relaunch_motion;
+                check(tick==58&&offer.kind==Kind::RelaunchEntry&&offer.controller_timer698==0&&offer.entry_vertical_delta==15&&
+                    e.vertical_before==f32(before.vertical_speed+15.f)&&e.vertical_before<0&&
+                    offer.proposed_position[1]==std::fma(1.f,e.vertical_before,before.position[1])&&
+                    offer.vertical_speed>e.vertical_before&&offer.facing==before.facing&&e.lower_program==14&&e.upper_program==14&&
+                    e.resource_before==10000&&e.resource_after==9850&&!offer.static_push&&!offer.relaunch_floor,
+                    "one lift slows descent before acceleration, with two program14 requests and no floor response");
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                auto rejects=[&](const NativeBorgMotionOffer& wrong,const char* why){
+                    check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==57&&
+                        world.actors()[0].position==before.position&&source.resource()==10000&&!source.relaunches()&&
+                        world.motion_receipt_current(pose.receipt)&&view.practice_readout(world)->kind==Kind::GroundLossAir,why);
+                };
+                auto wrong=offer;wrong.entry_vertical_delta=0;rejects(wrong,"entry cannot omit its additive lift");
+                wrong=offer;wrong.relaunch_motion->resource_after=9900;rejects(wrong,"entry cannot pay the continued cost");
+            }else if(native_borg_motion_relaunch(offer.kind)){
+                const auto& e=*offer.relaunch_motion;
+                check(!e.entry&&!offer.entry_vertical_delta&&e.resource_before==source.resource()&&e.resource_after==e.resource_before-100,
+                    "continued relaunch charges per tick without repeating its entry lift");
+                if(!active_tick&&native_borg_motion_relaunch_active(offer.kind)){
+                    active_tick=tick;
+                    check(e.lower_program==15&&e.upper_program==15&&e.resource_after==9350,"the held route enters active program15");
+                }
+            }
+            if(offer.kind==Kind::JumpAir&&!fall)fall=tick;
+            if(offer.kind==Kind::JumpTouchdown)touchdown=tick;
+            if(touchdown&&offer.kind==Kind::JumpLanding&&!landing)landing=tick;
+            accept(offer);
+            if(tick==fall||tick==touchdown||tick==landing)check(source.resource()==release_meter,
+                "release, touchdown and landing entry neither spend nor refill");
+        }
+        check(entries==1&&source.relaunches()==1&&!source.air_dash_starts()&&
+            (held_ticks==1?(active_tick==0&&fall==59&&touchdown==110&&landing==111):
+                (active_tick==63&&fall==78&&touchdown==141&&landing==142))&&
+            source.landings()==1&&source.walk_ledge_pushes()==2&&world.actors()[0].grounded&&
+            source.resource()==10000&&!source.selector(),"tap and held relaunch both settle and refill normally");
+    }
+
     bind(expires,Mode::GroundWalkLedgeExpiryPush);
     while(world.tick()<56){check(prepare(expires,&offer),"accepted prefix near the restricted opposite drift");accept(offer);}
     const auto before_down=world.actors()[0].position;
@@ -316,7 +378,6 @@ int main(){
 
     bind(inter_gate,Mode::GroundWalkLedgeExpiryPush);
     while(world.tick()<23){check(prepare(inter_gate,&offer),"accepted prefix of the attempted post-push relaunch");accept(offer);}
-    GamePadState relaunch;relaunch.b=true;
     check(prepare(inter_gate,&offer,relaunch)&&offer.kind==Kind::RelaunchEntry&&source.walk_ledge_pushes()==1,
         "a staged relaunch candidate can exist without a post-push admission");
     const auto relaunch_frame=NativeBattleMvpView::movement_frame(world,1152,648);
