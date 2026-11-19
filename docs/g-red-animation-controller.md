@@ -417,8 +417,40 @@ and landing at 111. Neither route pays an air-dash charge.
 
 The isolated scan completed 17 of 63 expired-push attempts. The new mode
 qualifies just the soft-Up entry. None of the candidates from 4,800
-positive-timer trials passed native entry, so that permission stays
-closed. Prior modes and other Borgs are unchanged.
+positive-timer trials on the earlier footholds passed native entry.
+The expiry-only mode keeps that boundary.
+
+### Direct rising relaunch from a still-positive walking push
+
+`--gred-walk-ledge-direct-timed-relaunch` opts into a different
+predecessor and velocity range: an immediately preceding accepted
+walking push with time still positive after the next decrement, whose
+projected descent is slow enough for the plain additive relaunch to
+lift. Entry takes **neutral direction**, preserves body heading, and
+must pass the unchanged travel checks without a floor snap or push.
+The mode does not admit a pending 1 → 0, directional entry, or a
+descending direct entry on the positive timer.
+
+```sh
+gf_native --demo-gred-walk-ledge-direct-timed-relaunch --headless --frames 150 --no-audio
+gf_native --gred-walk-ledge-direct-timed-relaunch --practice-start --no-audio
+```
+
+The declared grounded native start is X/Z `-4066.18164/-3400.83032`
+(floor query `1846.01367`, arena half-width `4500`). **Up+Left Arrow**
+on 6–7 walks off the rim. No input is needed through the three
+descending pushes on 22–24, first on face 2021, then on face 2011.
+Hold **Shift** on 25–32. Entry adds 15 to the projected speed,
+lifts immediately, and spends 150, with timer 14 → 13. Active
+relaunch starts at 30. Release at 33 with 9150 meter and five ticks
+left. The timer reaches zero during the fall at 38; touchdown and
+landing are separate at 117–118 before full-meter idle. A one-tick
+tap instead lands at 101–102 with 9850 meter.
+
+A wider original-stage scan found 61 accepted walking-push witnesses
+in 912 approaches and completed ten direct relaunch routes in
+172 follow-up attempts. The new permission uses only the neutral
+rising branch. Older policies, other Borgs, and contact rules are unchanged.
 
 ## Ordered dash off an inclined ledge (GFMM9)
 

@@ -287,6 +287,13 @@ Use `--demo-gred-walk-ledge-expiry-direct-relaunch` for the automatic
 replay. A positive timer or any contact response on entry remains
 unsupported in this route.
 
+`--gred-walk-ledge-direct-timed-relaunch --practice-start` instead
+uses **Up+Left Arrow** on 6–7, then **Shift** on 25–32. The neutral
+relaunch directly follows the third accepted walking push and
+lifts with 13 ledge ticks left. Use
+`--demo-gred-walk-ledge-direct-timed-relaunch` for the replay.
+No direction or contact response is admitted on this entry.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,

@@ -931,7 +931,17 @@ public:
                   o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
                   o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
                   native_gred_expiry_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
-              const bool relaunch_entry_prior=direct_expiry_relaunch||prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
+              bool direct_timed_relaunch=false;
+              if(behaviors.has(Behavior::WalkTimedDirectRelaunch)&&walking_push&&walking_push->timer698>1.f&&
+                  o.controller_timer698&&*o.controller_timer698==walking_push->timer698-1.f&&
+                  o.kind==NativeBorgMotionKind::RelaunchEntry&&o.relaunch_motion&&o.relaunch_motion->entry&&
+                  !o.relaunch_motion->direction&&actor.vertical_speed<0.f&&o.relaunch_motion->vertical_before>0.f&&
+                  o.vertical_speed>0.f&&o.facing==actor.facing){
+                  BattlePoint travel;source_heading_xz(o.relaunch_motion->travel5ae,&travel.x,&travel.z);
+                  direct_timed_relaunch=travel==actor.facing;
+              }
+              const bool relaunch_entry_prior=direct_expiry_relaunch||direct_timed_relaunch||
+                 prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
                 native_borg_motion_windup_update(prior)||native_borg_motion_active_entry(prior)||
                 native_borg_motion_active_update(prior)||native_borg_motion_recovery(prior)||
                  (controller_ground_loss_relaunch_policy&&(prior==NativeBorgMotionKind::GroundLossEntry||prior==NativeBorgMotionKind::GroundLossAir));
@@ -1348,7 +1358,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundExpiringSnapWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkTimedDirectRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

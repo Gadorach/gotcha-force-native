@@ -7,7 +7,7 @@
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
     RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,DirectExpiryRelaunch,TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
-    PositiveFloorHandoff,ExpiringFloorHandoff,
+    PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -128,6 +128,13 @@ public:
             if(tick>=6&&tick<=25)raw.buttons|=1u<<5;
             if(tick==46||tick==47||tick==55)raw.buttons|=1u<<1;
             if(tick==47)raw.axis[0]=-20000; // A.
+            break;
+        }
+        case Replay::DirectTimedRelaunch:{
+            const unsigned tick=1+f/2;
+            snapshot_.frame_step=f%2==0;
+            if(tick>=6&&tick<=7)raw.buttons|=(1u<<5)|(1u<<7);
+            if(tick>=25&&tick<=32)raw.buttons|=1u<<1;
             break;
         }
         case Replay::PickerPractice:
@@ -299,17 +306,19 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool snap_handoff=replay==Replay::FloorWindupRelaunch||replay==Replay::FloorWindupDash;
     const bool positive_handoff=replay==Replay::PositiveFloorHandoff;
     const bool expiring_handoff=replay==Replay::ExpiringFloorHandoff;
+    const bool direct_timed=replay==Replay::DirectTimedRelaunch;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||timed_incline||
-        direct_expiry||snap_dash||snap_handoff||positive_handoff||expiring_handoff;
+        direct_expiry||snap_dash||snap_handoff||positive_handoff||expiring_handoff||direct_timed;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
           incline_landing[]="--gred-timed-incline-landing-dash",expiry_direct[]="--gred-walk-ledge-expiry-direct-relaunch",
           timed_snap_dash[]="--gred-walk-ledge-timed-snap-dash",floor_handoff[]="--gred-walk-ledge-timed-snap-handoff",
           positive_floor_handoff[]="--gred-walk-ledge-positive-snap-handoff",
-          expiring_floor_handoff[]="--gred-walk-ledge-expiring-snap-handoff";
+          expiring_floor_handoff[]="--gred-walk-ledge-expiring-snap-handoff",
+          direct_timed_relaunch[]="--gred-walk-ledge-direct-timed-relaunch";
     char audio[]="--no-audio",start[]="--practice-start";
-    char* args[]={program,expiring_handoff?expiring_floor_handoff:positive_handoff?positive_floor_handoff:
+    char* args[]={program,direct_timed?direct_timed_relaunch:expiring_handoff?expiring_floor_handoff:positive_handoff?positive_floor_handoff:
         snap_handoff?floor_handoff:snap_dash?timed_snap_dash:
         direct_expiry?expiry_direct:timed_incline?incline_landing:
         incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
@@ -762,5 +771,18 @@ int main(int argc,char** argv){
         has(last_tick_idle,"controller-loss-relaunches=2 timer698=0.0")&&has(last_tick_idle,"active-floors=0")&&
         !has(last_tick_idle,"practice-floor-windup-handoff="),
         "live Shift enters on the expiry step, skips active dash and finishes the route",last_tick_idle);
-    std::puts("G-Red practice replay: twenty-seven desktop-loop scenarios PASS without opening devices");
+    const auto timed_direct=run(Replay::DirectTimedRelaunch,50,"live immediate timed relaunch");
+    check(picker_guide_played(timed_direct,"direct timed relaunch",25)&&
+        has(timed_direct,"practice-meter=9850/10000 at accepted tick=25")&&
+        has(timed_direct,"practice-ledge-timer-ticks=13 cue=LEDGE TIMER 13 TICKS")&&
+        once(timed_direct,"practice-direct-timed-relaunch=AIRBORNE / DIRECT TIMED RELAUNCH"),
+        "live neutral Shift lifts straight out of the third walking push without any intermediate fall",timed_direct);
+    const auto timed_direct_idle=run(Replay::DirectTimedRelaunch,300,"live timed direct entry through landing");
+    check(picker_guide_played(timed_direct_idle,"direct timed relaunch",150)&&
+        has(timed_direct_idle,"accepted native tick=150 G-Red-position=-3665.00/10.00/-3197.56")&&
+        has(timed_direct_idle,"practice-meter=10000/10000 at accepted tick=150")&&
+        has(timed_direct_idle,"direct-timed-relaunches=1 air-dash-starts=0 floors=0 timer698=0.0")&&
+        !has(timed_direct_idle,"practice-direct-timed-relaunch="),
+        "live release lands, and the cue does not survive entry",timed_direct_idle);
+    std::puts("G-Red practice replay: twenty-nine desktop-loop scenarios PASS without opening devices");
 }

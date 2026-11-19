@@ -25,6 +25,7 @@ struct NativeBorgSourceReadout {
     bool direct_expiry_relaunch_ready=false; //The accepted expiry push permits asking for soft-Up relaunch next.
     bool windup_from_relaunch_snap=false; //Accepted wind-up floor entry from the preceding airborne relaunch snap.
     bool floor_windup_relaunch_ready=false; //Accepted completed timed floor wind-up; next input may request neutral relaunch.
+    bool direct_timed_relaunch=false; //Accepted rising relaunch directly from a still-positive walking push.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

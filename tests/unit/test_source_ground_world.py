@@ -717,6 +717,36 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("accepted native tick=0 G-Red-position=-1250.97/", guide.stdout)
         self.assertNotIn("direct expiry relaunch demo:", guide.stdout)
 
+    def test_walk_ledge_direct_timed_relaunch_lifts_immediately_and_preserves_the_countdown(self):
+        for tick, phase, meter, timer, count in (
+            (24, "LEDGE FALL / PUSH", 10000, 14, 0), (25, "RELAUNCH", 9850, 13, 1),
+            (30, "RELAUNCH", 9350, 8, 1), (33, "FALLING", 9150, 5, 1),
+            (38, "FALLING", 9150, 0, 1), (117, "TOUCHDOWN", 9150, 0, 1),
+            (118, "LANDING", 9150, 0, 1), (150, "IDLE", 10000, 0, 1),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-direct-timed-relaunch", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"direct-timed-relaunches={count} air-dash-starts=0 floors=0 timer698={timer}.0", result.stdout)
+                self.assertIn("walk-ledge-fall-pushes=3 last-angle-s16=13653", result.stdout)
+                self.assertEqual("practice-direct-timed-relaunch=AIRBORNE / DIRECT TIMED RELAUNCH" in result.stdout, tick == 25)
+                self.assertNotIn("practice-direct-expiry-relaunch=", result.stdout)
+                if timer:
+                    self.assertIn(f"practice-ledge-timer-ticks={timer} ", result.stdout)
+                else:
+                    self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
+                if tick == 150:
+                    self.assertIn("G-Red-position=-3665.00/10.00/-3197.56", result.stdout)
+        guide = self.run_host(["--gred-walk-ledge-direct-timed-relaunch", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("direct timed relaunch guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-4066.18/", guide.stdout)
+        self.assertNotIn("direct timed relaunch demo:", guide.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),

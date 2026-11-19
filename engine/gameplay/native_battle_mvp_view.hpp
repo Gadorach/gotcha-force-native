@@ -63,6 +63,7 @@ public:
     static constexpr const char* dash_interrupt_hint="DASH CANCELED";
     static constexpr const char* landing_dash_hint="DASH FROM LANDING";
     static constexpr const char* direct_expiry_relaunch_hint="DIRECT EXPIRY RELAUNCH";
+    static constexpr const char* direct_timed_relaunch_hint="AIRBORNE / DIRECT TIMED RELAUNCH";
     static constexpr const char* direct_expiry_request_hint="UP+SHIFT/B TO REQUEST RELAUNCH";
     static constexpr const char* windup_from_relaunch_snap_hint="AIRBORNE / RELAUNCH TO WIND-UP";
     static const char* practice_relaunch_floor_cue(const NativeBorgSourceReadout& frame){
@@ -283,6 +284,7 @@ public:
             if(practice->dash_interrupted_takeoff){text+="\n";text+=dash_interrupt_hint;}
             if(practice->landing_dash_started){text+="\n";text+=landing_dash_hint;}
             if(practice->direct_expiry_relaunch){text+="\n";text+=direct_expiry_relaunch_hint;}
+            if(practice->direct_timed_relaunch){text+="\n";text+=direct_timed_relaunch_hint;}
             if(practice->direct_expiry_relaunch_ready){text+="\n";text+=direct_expiry_request_hint;}
             if(practice->windup_from_relaunch_snap){text+="\n";text+=windup_from_relaunch_snap_hint;}
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));

@@ -72,6 +72,9 @@ int main(){
         Definition::floor_windup_handoff_clock(expiring_floor,0,0)&&
         !Definition::floor_windup_handoff_clock(expiring_floor,1,1)&&
         !Definition::floor_windup_handoff_clock(expiring_floor,2,0));
+    static_assert(unsigned(Mode::GroundWalkTimedDirectRelaunch)==67&&unsigned(Policy::GroundWalkTimedDirectRelaunch)==63&&
+        !Definition::allows(Mode::GroundExpiringSnapWindupRelaunch,Behavior::WalkTimedDirectRelaunch)&&
+        Definition::allows(Mode::GroundWalkTimedDirectRelaunch,Behavior::WalkTimedDirectRelaunch));
     static_assert(Definition::floor_windup_handoff_clock(expired_floor,0,0)&&
         !Definition::floor_windup_handoff_clock(expired_floor,7,6)&&
         Definition::floor_windup_handoff_clock(positive_floor,0,0)&&

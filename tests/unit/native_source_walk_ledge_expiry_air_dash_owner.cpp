@@ -279,5 +279,82 @@ int main(){
             source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
             "both complete routes use no paid dash or further contact response and return to idle");
     }
-    std::printf("Expiry air dash and relaunch: %u checks PASS, scoped zero-timer entries and separate costs/landing\n",checks);
+    auto timed_prefix=[&](Mode mode){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={-4066.18164f,-3400.83032f};cfg.spawn_query_y[0]=1846.01367f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"declared grounded timed push fixture");
+        while(world.tick()<24){
+            const auto tick=world.tick()+1;
+            check(prepare(false,&offer,false,tick>=6&&tick<=7),"walk off the original rim, then fall without new input");
+            if(tick>=22)check(offer.kind==Kind::GroundLossPush&&offer.walk_ledge&&offer.walk_ledge->walk_origin&&
+                offer.controller_timer698==f32(38-tick)&&offer.static_push&&offer.static_push->surface.triangle==(tick==24?2011u:2021u)&&
+                offer.static_push->angle==(tick==24?13653:8192)&&offer.vertical_speed==f32(offer.static_push->vertical_speed*.9f),
+                "three verified descending walking pushes retain actual selected faces, damping and timer");
+            accept(offer);
+        }
+    };
+    timed_prefix(Mode::GroundExpiringSnapWindupRelaunch);
+    {
+        const auto retained=pose;const auto before=world.actors()[0].position;
+        check(!prepare(false,&offer,true)&&error.find("accepted zero-timer walking push")!=std::string::npos&&world.tick()==24&&
+            source.ground_loss_timer698()==14.f&&source.resource()==10000&&world.actors()[0].position==before&&
+            !source.relaunches()&&retained.frame_scope.expired()&&!world.step({},false,&view),
+            "previous policies still refuse this same direct press before any timer, meter or fallback changes");
+    }
+    timed_prefix(Mode::GroundWalkTimedDirectRelaunch);
+    check(!prepare(false,&offer,true,true)&&error.find("plain neutral lift")!=std::string::npos&&world.tick()==24&&
+        source.ground_loss_timer698()==14.f&&source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
+        "directional lift does not borrow the new neutral entry permission");
+    bind(Mode::GroundWalkTimedDirectRelaunch);prefix(55);
+    check(offer.kind==Kind::GroundLossPush&&source.ground_loss_timer698()==1.f&&
+        !prepare(false,&offer,true,true)&&error.find("still-positive countdown")!=std::string::npos&&world.tick()==55&&
+        source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
+        "pending expiry still cannot stand in for positive or previously expired walking-push history");
+
+    for(unsigned hold:{1u,8u}){
+        timed_prefix(Mode::GroundWalkTimedDirectRelaunch);
+        const auto prior=offer;const auto before=world.actors()[0];const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+        check(prepare(false,&offer,true)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+            offer.controller_timer698==13.f&&!before.grounded&&before.vertical_speed<0.f&&
+            offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&offer.relaunch_motion->vertical_before>0.f&&
+            offer.proposed_position[1]>before.position[1]&&offer.facing==before.facing&&!offer.relaunch_motion->direction&&
+            offer.relaunch_motion->speed_before==prior.jump_motion->speed44&&offer.relaunch_motion->speed_before<prior.jump_motion->move_speed&&
+            offer.relaunch_motion->resource_before==10000&&offer.relaunch_motion->resource_after==9850&&
+            !offer.relaunch_floor&&!offer.static_push&&!offer.air_motion,
+            "plain upward entry uses the projected speed rather than the previous pre-response scalar and keeps 13");
+        auto refuses=[&](const NativeBorgMotionOffer& wrong,const char* why){
+            check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==24&&world.actors()[0].position==before.position&&
+                world.motion_receipt_current(pose.receipt)&&source.ground_loss_timer698()==14.f&&source.resource()==10000&&
+                !view.practice_readout(world)->direct_timed_relaunch,why);
+        };
+        auto wrong=offer;wrong.controller_timer698=0.f;refuses(wrong,"new entry cannot borrow an expiry timer");
+        wrong=offer;wrong.relaunch_motion->speed_before=prior.jump_motion->move_speed;refuses(wrong,"pre-projection speed cannot replace accepted speed");
+        wrong=offer;wrong.relaunch_motion->direction=true;refuses(wrong,"neutral ownership does not allow a direction branch");
+        wrong=offer;wrong.facing={-before.facing.x,-before.facing.z};refuses(wrong,"no camera-directed body reset");
+        wrong=offer;wrong.kind=Kind::RelaunchEntryFloor;wrong.relaunch_floor=NativeBorgRelaunchFloor{};
+        refuses(wrong,"the neutral lift is not permission for an entry floor response");
+        accept(offer);
+        check(view.practice_readout(world)->direct_timed_relaunch&&!view.practice_readout(world)->direct_expiry_relaunch&&
+            source.resource()==9850&&source.ground_loss_timer698()==13.f&&!world.actors()[0].grounded,
+            "the timed cue is published only by the accepted plain lift");
+        unsigned active_tick=0,fall_tick=0,hit=0,land=0;
+        while(world.tick()<150){
+            const unsigned tick=world.tick()+1;const auto timer=source.ground_loss_timer698();
+            check(prepare(false,&offer,tick<25+hold)&&offer.controller_timer698==std::max(0.f,timer-1.f),
+                "actual positive countdown continues across relaunch and release");
+            if(!active_tick&&native_borg_motion_relaunch_active(offer.kind))active_tick=tick;
+            if(!fall_tick&&offer.kind==Kind::JumpAir)fall_tick=tick;
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            check(!view.practice_readout(world)->direct_timed_relaunch,"no stale direct entry cue in continuation");
+            if(tick==fall_tick||tick==hit||tick==land)check(source.resource()==(hold==1?9850:9150),
+                "release and landing retain spent meter until ordinary grounded recovery");
+        }
+        check(active_tick==(hold==1?0u:30u)&&fall_tick==25+hold&&hit==(hold==1?101u:117u)&&land==hit+1&&
+            source.walk_ledge_pushes()==3&&source.relaunches()==1&&!source.air_dash_starts()&&!source.relaunch_floor_contacts()&&
+            source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+            "timed direct tap and hold both reach distinct touchdown/landing and full-meter idle");
+    }
+    std::printf("Walking push air followups: %u checks PASS, timed and expiry entries with separate costs and landing\n",checks);
 }
