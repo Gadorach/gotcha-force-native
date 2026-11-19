@@ -122,6 +122,19 @@ the accepted meter within one pixel. Host tests covered both launch commands;
 the owner sanitizer covered pending frames, pause, foreign worlds and retired
 receipts. The ordinary duel smoke test was unchanged.
 
+## Ground dash on one slope triangle
+
+`--gred-slope-dash` is an opt-in practice mode with the same controls and HUD.
+It allows an ordered ground dash to follow one inclined static triangle,
+using the source tangent and selected height. The native step, body, and bounds
+checks still apply. Cross-triangle slopes and nonflat ledge departures remain
+refused; ordinary `--gred-movement` retains the flat-only dash policy.
+
+`--demo-gred-slope-dash --frames 100` runs a downhill dash on original
+triangle 1014 from a native grounded fixture. The owner tests also exercise
+an uphill dash, reject off-tangent motion and flat-height substitutes, and
+keep the older mode and slope seams closed.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

@@ -142,6 +142,10 @@ callbacks, certify collision, or grant renderer/frame receipts.
   projection with nonpositive incoming vertical speed. It validates the
   half-speed motion at the unintegrated position before the .9 steep response,
   without gravity, timer decrement, or the deferred handoff cost.
+- The `GroundSlopeDash` policy additionally checks ordered root motion on a
+  single selected incline. It recomputes tangent movement and checks endpoint
+  height against the same native triangle and normal. Native step, body, and
+  bounds checks remain in force. Nonflat seams and departures remain refused.
 
 Host trigonometry, square roots and floating arithmetic are native approximations,
 not original hardware/MSL equivalence. Attachments, offsets, moving platforms and
