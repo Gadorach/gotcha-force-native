@@ -12,7 +12,7 @@ enum class BorgMovementBehavior:u8 {
     ReleasedRelaunchPush, RecoveryPush, WindupPush, ActivePush, RelaunchPush,
     RelaunchEntryPush, WindupEntryPush, SlopeDash, CoplanarSlopeDash, ShallowCreaseDash, FlatInclineDash,
     InclinedDashLedge, WalkLedgeFallPush, WalkLedgeHighAnglePush, WalkLedgeExpiryPush, WalkLedgeExpiryAirDash,
-    RecoveryFloorRecontact, RecoveryRecontactDrift, RecoveryRecontactSeam, Count
+    RecoveryFloorRecontact, RecoveryRecontactDrift, RecoveryRecontactSeam, RecoveryFirstContactSeam, Count
 };
 static_assert(unsigned(BorgMovementBehavior::Count)<=64);
 

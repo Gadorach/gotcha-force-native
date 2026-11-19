@@ -95,6 +95,28 @@ at 110; the meter stays at 5750 through landing entry and refills
 normally. Two other probe timings also completed exact second-contact
 crossings. Neither earlier mode got new permissions.
 
+### A shared flat edge on the descending contact
+
+`--gred-recovery-first-contact-seam` additionally permits the first
+recovery contact to cross one exact shared flat edge. It requires soft
+cardinal drift, zero timer698, and a descent from strictly above the
+starting plane. The source includes that starting triangle in the offer;
+native acceptance samples it independently before verifying the edge
+and both travel checks. The first contact still finishes program 12,
+not touchdown or landing. Earlier modes keep their first-contact refusal.
+
+```sh
+gf_native --demo-gred-recovery-first-contact-seam --headless --frames 200 --no-audio
+```
+
+Begin **Right** three updates earlier than in the second-contact demo
+(hold on 105–109). The crossing 1631 → 1624 is accepted on tick 108
+while descending; program 13 confirms touchdown on 1624 at tick 109.
+**FLAT SEAM** appears on 108 but not 109. Landing at 110 and the meter
+refill are unchanged. A separate **Up** route held on 81–109 crosses
+1630 → 1631 on 108 and then 1631 → 1624 on 109. Each frame proves its
+own edge; the first proof cannot authorize the second.
+
 ## Continued walking ledge-fall push (GFMM9)
 
 `--gred-walk-ledge-fall-push` opts into a descending, continued program 13

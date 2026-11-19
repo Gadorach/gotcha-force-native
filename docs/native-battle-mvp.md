@@ -172,6 +172,9 @@ updates 108–109 and shows **Drift Active** on those accepted frames only.
 `--gred-recovery-recontact-seam` also supports a verified shared flat edge
 on the second update only. The `--demo-gred-recovery-recontact-seam`
 replay holds Right instead of Up and shows **Flat Seam** at touchdown.
+`--gred-recovery-first-contact-seam` also admits a verified flat edge on
+the descending first contact. In its demo, Right starts three updates
+earlier and **Flat Seam** appears one update before touchdown.
 
 To check the actual practice loop without opening a window or audio device:
 

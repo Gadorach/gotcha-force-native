@@ -44,6 +44,7 @@ class NativeGRedGroundDashDemo {
         std::optional<NativeBorgAirMotion> air_motion;
         std::optional<NativeBorgRelaunchMotion> relaunch_motion;
         std::optional<NativeBorgSurfaceLanding> surface_landing;
+        std::optional<NativeBorgStaticSurface> recovery_first_seam_start;
         u8 dash_recovery546=0;bool dash_exit545=false;
     };
     struct Pending {
@@ -185,6 +186,7 @@ public:
         s.relaunch_motion.reset();
         s.surface_landing.reset();
         s.recovery_floor_complete=false;
+        s.recovery_first_seam_start.reset();
         if(ledge_mode(mode_)){
             //Native-owned frame-start snapshot, bound to this observed scope/
             //tick. Never reinterpret the previous render/offer as source2C.
@@ -355,11 +357,10 @@ public:
             const auto& after=s.surface_landing->surface;
             const auto& integrated=s.surface_landing->integrated_position;
             StageGroundSurfaceResult start;
-            if(!s.jump_motion->drift_heading||!native_borg_flat_surface(before)||!native_borg_flat_surface(after)||
-                before.height!=after.height||observed.position[1]!=before.height||integrated[1]!=after.height||
+            if(!s.jump_motion->drift_heading||observed.position[1]!=before.height||integrated[1]!=after.height||
                 !ground_for(s).surface(observed.position,&start,error)||!start.selected||
                 NativeBorgStaticSurface{start.height,start.normal,start.triangle}!=before||
-                !stage_ground_coplanar_crossing(grids_[0],before.triangle,after.triangle,observed.position,integrated))
+                !recovery_flat_seam(before,*s.surface_landing,observed.position))
                 return fail(error,"recovery recontact needs a verified flat shared edge");
         }
         const auto contact_drift=s.recovery_floor_complete?s.air_motion->drift_heading:
@@ -427,6 +428,7 @@ public:
         candidate->offer.air_motion=s.air_motion;
         candidate->offer.relaunch_motion=s.relaunch_motion;
         candidate->offer.surface_landing=s.surface_landing;
+        candidate->offer.recovery_first_seam_start=s.recovery_first_seam_start;
         if(controller_landing_jump_mode(mode_))candidate->offer.controller_timer698=s.ground_timer698;
         if(ground_landing_mode(mode_))candidate->offer.landing_target=candidate->landing_target;
         const bool ledger_frame=ledge_mode(mode_)&&(kind==NativeBorgMotionKind::Ground||native_borg_motion_ground_loss(kind)||
@@ -461,7 +463,9 @@ public:
         if(!ready_||!pending_||current_binding.lock()!=binding_.lock()||binding_.expired()||!world.motion_receipt(pending_->offer,&receipt))return fail(error,"source frame has no matching native contact receipt");
         const f32 previous_y=pending_->offer.observed.position[1];
         std::optional<std::array<u32,2>> recovery_seam;
-        if(state_.recovery_floor_complete&&state_.surface_landing&&pending_->offer.surface_landing){
+        if(pending_->offer.recovery_first_seam_start&&pending_->offer.surface_landing){
+            recovery_seam=std::array{pending_->offer.recovery_first_seam_start->triangle,pending_->offer.surface_landing->surface.triangle};
+        }else if(state_.recovery_floor_complete&&state_.surface_landing&&pending_->offer.surface_landing){
             const auto from=state_.surface_landing->surface.triangle,to=pending_->offer.surface_landing->surface.triangle;
             if(from!=to)recovery_seam=std::array{from,to};
         }
@@ -724,6 +728,11 @@ private:
     static bool relaunch_mode(Mode mode){return mode==Mode::Relaunch||mode==Mode::DashJump||legacy_landing_mode(mode)||controller_relaunch_mode(mode);}
     static bool air_dash_mode(Mode mode){return mode==Mode::AirDash||relaunch_mode(mode)||ground_air_mode(mode);}
     static bool moving_mode(Mode mode){return mode==Mode::Jump||ledge_mode(mode)||air_dash_mode(mode);}
+    bool recovery_flat_seam(const NativeBorgStaticSurface& start,const NativeBorgSurfaceLanding& landing,
+                            const BattleMvpVec& from)const{
+        return native_borg_flat_surface(start)&&native_borg_flat_surface(landing.surface)&&start.height==landing.surface.height&&
+            stage_ground_coplanar_crossing(grids_[0],start.triangle,landing.surface.triangle,from,landing.integrated_position);
+    }
     bool air_contact(State& s,const CharacterMovementStaticGround& ground,const CharacterMovementMotionState& before,
                       const CharacterMovementMotionState& proposed,CharacterMovementMotionState* out,bool* touchdown,std::string* error,bool moving,
                       bool allow_push=false,bool recovery_push=false,bool walk_loss_push=false){
@@ -1017,9 +1026,14 @@ private:
            (!evidence.drift_heading||allows(mode_,Behavior::RecoveryRecontactDrift))&&
            s.surface_landing&&native_borg_flat_surface(s.surface_landing->surface)){
             StageGroundSurfaceResult start;
-            if(!ground.surface(before.position,&start,error)||!start.selected||
-                NativeBorgStaticSurface{start.height,start.normal,start.triangle}!=s.surface_landing->surface)
-                return false;
+            if(!ground.surface(before.position,&start,error)||!start.selected)return false;
+            const NativeBorgStaticSurface starting_surface{start.height,start.normal,start.triangle};
+            if(starting_surface!=s.surface_landing->surface){
+                if(!allows(mode_,Behavior::RecoveryFirstContactSeam)||!evidence.drift_heading||
+                    before.position[1]<=starting_surface.height||!recovery_flat_seam(starting_surface,*s.surface_landing,before.position))
+                    return false;
+                s.recovery_first_seam_start=starting_surface;
+            }
             // 617E4 reads lower completion after 65E64's zero/selector7
             // callback. 6A750 does not clear the completion latch; selector6
             // supersedes 7 but keeps the contact's height and zero speeds.

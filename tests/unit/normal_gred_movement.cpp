@@ -40,6 +40,9 @@ int main(){
     static_assert(unsigned(Mode::GroundRecoveryRecontactSeam)==58&&unsigned(Policy::GroundRecoveryRecontactSeam)==54&&
         !Definition::allows(Mode::GroundRecoveryRecontactDrift,Behavior::RecoveryRecontactSeam)&&
         Definition::allows(Mode::GroundRecoveryRecontactSeam,Behavior::RecoveryRecontactSeam));
+    static_assert(unsigned(Mode::GroundRecoveryFirstContactSeam)==59&&unsigned(Policy::GroundRecoveryFirstContactSeam)==55&&
+        !Definition::allows(Mode::GroundRecoveryRecontactSeam,Behavior::RecoveryFirstContactSeam)&&
+        Definition::allows(Mode::GroundRecoveryFirstContactSeam,Behavior::RecoveryFirstContactSeam));
     static_assert(unsigned(Behavior::WalkLedgeExpiryPush)==32&&
         !Definition::allows(Mode::GroundWalkLedgeHighAnglePush,Behavior::WalkLedgeExpiryPush)&&
         Definition::allows(Mode::GroundWalkLedgeExpiryPush,Behavior::WalkLedgeExpiryPush));

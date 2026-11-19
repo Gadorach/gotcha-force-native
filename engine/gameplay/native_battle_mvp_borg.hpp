@@ -14,7 +14,7 @@ struct NativeBorgSourceReadout {
     std::optional<u8> ledge_timer_ticks; //0 means expired on a ledge fall/landing, absent outside its window
     bool ledge_drift_active=false; //Only an accepted ledge-fall update with a direct drift heading.
     bool recovery_drift_active=false; //Only either accepted recovery floor-contact update with sealed drift.
-    std::optional<std::array<u32,2>> recovery_seam; //Only the accepted recontact that changes triangle.
+    std::optional<std::array<u32,2>> recovery_seam; //Only an accepted recovery contact that changes triangle.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

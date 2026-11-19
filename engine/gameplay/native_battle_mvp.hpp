@@ -220,6 +220,7 @@ struct NativeBorgMotionOffer {
     std::optional<NativeBorgSurfaceLanding> surface_landing{};
     std::optional<f32> controller_timer698{};
     std::weak_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion{};
+    std::optional<NativeBorgStaticSurface> recovery_first_seam_start{};
 };
 class NativeBorgMotionReceipt {
     friend class NativeBattleMvp;
@@ -291,6 +292,7 @@ public:
              const bool recovery_recontact_policy=behaviors.has(Behavior::RecoveryFloorRecontact);
              const bool recovery_drift_policy=behaviors.has(Behavior::RecoveryRecontactDrift);
              const bool recovery_seam_policy=behaviors.has(Behavior::RecoveryRecontactSeam);
+             const bool recovery_first_seam_policy=behaviors.has(Behavior::RecoveryFirstContactSeam);
             constexpr const auto& meter=NormalGRedMovementDefinition::air_meter;
             const bool slope_seam_dash_policy=behaviors.has(Behavior::CoplanarSlopeDash);
             const bool slope_dash_policy=behaviors.has(Behavior::SlopeDash);
@@ -353,6 +355,7 @@ public:
             const unsigned phase=native_borg_motion_phase(o.kind);
              if(phase>4||(vertical&&producer->policy_==NativeBorgMotionPolicy::GroundOnly)||
                     (recovery_floor_complete&&!recovery_recontact_policy)||
+                    (o.recovery_first_seam_start&&(!recovery_first_seam_policy||!recovery_floor_complete))||
                    (moving&&!ledge_policy&&!push_policy&&producer->policy_!=NativeBorgMotionPolicy::Jump&&producer->policy_!=NativeBorgMotionPolicy::AirDash&&producer->policy_!=NativeBorgMotionPolicy::Relaunch)||
                    (air_dash&&!controller_air_policy&&!push_policy&&producer->policy_!=NativeBorgMotionPolicy::AirDash&&producer->policy_!=NativeBorgMotionPolicy::Relaunch)||
                    (relaunch&&!controller_relaunch_policy&&!push_policy&&producer->policy_!=NativeBorgMotionPolicy::Relaunch)||
@@ -460,11 +463,15 @@ public:
                          !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&start)||
                          (recovery_recontact&&(!last_offer_.surface_landing||last_offer_.surface_landing->surface!=start||
                             actor.position[1]!=surface.height||integrated[1]!=surface.height)))return false;
-                     // Only the steered confirmation may cross an exact flat
-                     // neighbor. The independent native sweeps still follow.
-                     if(start!=surface&&(!recovery_recontact||!recovery_seam_policy||!o.jump_motion->drift_heading||
-                         !native_borg_flat_surface(start)||start.height!=surface.height||
-                         !terrain->coplanar_crossing(start.triangle,surface.triangle,actor.position,integrated)))return false;
+                     if(start!=surface){
+                         const bool scoped_seam=recovery_recontact?
+                             recovery_seam_policy&&bool(o.jump_motion->drift_heading):
+                             recovery_first_seam_policy&&o.recovery_first_seam_start==start&&
+                                 bool(o.air_motion->drift_heading)&&actor.position[1]>start.height;
+                         if(!scoped_seam||!native_borg_flat_surface(start)||start.height!=surface.height||
+                             !terrain->coplanar_crossing(start.triangle,surface.triangle,actor.position,integrated))
+                             return false;
+                     }else if(o.recovery_first_seam_start)return false;
                  }
                 //Qualified normal G-Red timer-bound gates/epsilon. Match the shared
                 //source contact's bounded host normalization, not an UP floor.
@@ -1261,7 +1268,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryRecontactSeam)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryFirstContactSeam)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
@@ -1289,6 +1296,7 @@ public:
             offer.landing_target!=last_offer_.landing_target||offer.air_motion!=last_offer_.air_motion||
             offer.relaunch_motion!=last_offer_.relaunch_motion||offer.surface_landing!=last_offer_.surface_landing||
              offer.controller_timer698!=last_offer_.controller_timer698||
+             offer.recovery_first_seam_start!=last_offer_.recovery_first_seam_start||
              offer.recovery_completion.owner_before(last_offer_.recovery_completion)||
              last_offer_.recovery_completion.owner_before(offer.recovery_completion))return false;
         *out=last_receipt_;return true;

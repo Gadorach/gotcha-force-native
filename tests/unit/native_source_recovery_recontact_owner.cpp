@@ -258,5 +258,54 @@ int main(){
     prefix(200);
     check(world.actors()[0].grounded&&source.landings()==1&&source.resource()==10000&&!source.selector(),
         "seam route finishes at grounded idle");
+
+    for(const bool two_edges:{false,true}){
+        bind(Mode::GroundRecoveryFirstContactSeam);prefix(two_edges?80:104);
+        const auto direction=two_edges?up:drift;
+        const u32 from=two_edges?1630:1631,to=two_edges?1631:1624;
+        while(world.tick()<107){check(prepare(direction),"steered approach before first-contact seam");accept();}
+        const auto airborne=world.actors()[0];
+        check(prepare(direction)&&offer.kind==Kind::AirDashRecoveryFloorComplete&&offer.recovery_first_seam_start&&
+            offer.air_motion&&offer.air_motion->lower_done&&offer.air_motion->next_selector==6&&offer.air_motion->drift_heading&&
+            offer.surface_landing&&offer.recovery_first_seam_start->triangle==from&&offer.surface_landing->surface.triangle==to&&
+            airborne.position[1]>10&&airborne.vertical_speed==-30&&offer.surface_landing->integrated_position[1]<10&&
+            offer.proposed_position[1]==10&&!offer.vertical_speed&&offer.facing==airborne.facing&&
+            view.coplanar_crossing(from,to,airborne.position,offer.surface_landing->integrated_position),
+            "the first seam crosses while descending, then snaps and finishes program 12");
+        auto missing=offer;missing.recovery_first_seam_start.reset();
+        rejects(missing,view,"the descending seam needs its exact starting-plane packet");
+        missing=offer;missing.recovery_first_seam_start=offer.surface_landing->surface;
+        rejects(missing,view,"the endpoint cannot substitute for the starting plane");
+        const SeamTerrain first_no_edge(view,offer.proposed_position,0);
+        rejects(offer,first_no_edge,"independent native edge proof is required before first contact");
+        const SeamTerrain first_pre(view,offer.proposed_position,1),first_post(view,offer.proposed_position,2);
+        rejects(offer,first_pre,"first-contact descent still checks pre-contact travel");
+        rejects(offer,first_post,"first-contact projection still checks post-contact travel");
+        check(first_pre.endpoint_queries==1&&first_post.endpoint_queries==2,"the two first-contact sweeps stay separate");
+        accept();
+        check(view.practice_readout(world)->recovery_seam==std::array{from,to}&&
+            !world.actors()[0].grounded&&!source.landings()&&source.resource()==5750&&
+            source.movement_programs()==std::array<u16,2>{12,12},"first seam publishes only recovery contact, not touchdown");
+
+        check(prepare(direction)&&offer.kind==Kind::JumpTouchdown&&!offer.recovery_first_seam_start&&offer.surface_landing&&
+            offer.surface_landing->surface.triangle==1624&&offer.surface_landing->integrated_position[1]==10,
+            "the next update independently confirms touchdown with no vertical descent");
+        if(two_edges){
+            const SeamTerrain second_no_edge(view,offer.proposed_position,0);
+            rejects(offer,second_no_edge,"an accepted first seam cannot certify a different second seam");
+            check(second_no_edge.edge_checks==1,"second contact requested its own edge proof");
+        }
+        accept();
+        const auto reported=view.practice_readout(world)->recovery_seam;
+        check((two_edges?reported==std::array<u32,2>{1631,1624}:!reported)&&world.actors()[0].grounded&&
+            source.landings()==1&&source.resource()==5750&&source.movement_programs()==std::array<u16,2>{13,13},
+            "touchdown reports only its own seam and preserves meter");
+        prefix(110);
+        check(offer.kind==Kind::JumpLanding&&!view.practice_readout(world)->recovery_seam&&source.resource()==5750,
+            "landing still starts separately");
+        prefix(200);
+        check(world.actors()[0].grounded&&source.landings()==1&&source.resource()==10000&&!source.selector(),
+            "both first-contact seam routes settle completely");
+    }
     std::printf("Recovery recontact: %u checks PASS, scoped completion, floor contact and landing\n",checks);
 }
