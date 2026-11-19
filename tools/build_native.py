@@ -20,6 +20,7 @@ def device_test(source):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", action="store_true")
+    parser.add_argument("--practice-replay", action="store_true", help="desktop-linked G-Red practice replay with headless backends")
     parser.add_argument("--headers", action="store_true")
     parser.add_argument("--tests", default="", help="comma-separated names, or all (CPU tests)")
     parser.add_argument("--output", type=Path, default=ROOT / "build/direct")
@@ -27,8 +28,8 @@ def main():
     parser.add_argument("--opt", choices=("0", "1", "2"), default="1")
     parser.add_argument("--sanitize", action="store_true")
     args = parser.parse_args()
-    if not (args.host or args.headers or args.tests):
-        parser.error("choose --host, --headers or --tests")
+    if not (args.host or args.headers or args.tests or args.practice_replay):
+        parser.error("choose --host, --headers, --tests or --practice-replay")
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     compiler = shlex.split(os.environ.get("CXX", "g++"))
@@ -36,11 +37,15 @@ def main():
     if args.sanitize:
         flags += ["-g1", "-fsanitize=address,undefined,float-cast-overflow", "-fno-omit-frame-pointer"]
     jobs = []
-    if args.host:
-        platform = subprocess.check_output(["pkg-config", "--cflags", "--libs", "sdl2", "gl"], text=True)
-        jobs.append(("gf_native", [*compiler, *flags, str(ROOT / "platform/pc/native_main.cpp"),
-                    str(ROOT / "platform/pc/sdl_platform.cpp"), str(ROOT / "platform/gl/gl_renderer.cpp"),
-                    "-o", str(output / "gf_native"), *shlex.split(platform)], False))
+    if args.host or args.practice_replay:
+        platform = shlex.split(subprocess.check_output(["pkg-config", "--cflags", "--libs", "sdl2", "gl"], text=True))
+        platform_sources = [str(ROOT / "platform/pc/sdl_platform.cpp"), str(ROOT / "platform/gl/gl_renderer.cpp")]
+        for enabled, name, path, execute in (
+                (args.host, "gf_native", "platform/pc/native_main.cpp", False),
+                (args.practice_replay, "gred_practice_replay", "tests/host/gred_practice_replay.cpp", True)):
+            if enabled:
+                jobs.append((name, [*compiler, *flags, str(ROOT / path), *platform_sources,
+                                    "-o", str(output / name), *platform], execute))
     if args.headers:
         headers = sorted((ROOT / "engine").rglob("*.hpp"))
         source = output / "all-native-headers.cpp"

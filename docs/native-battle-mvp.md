@@ -99,6 +99,17 @@ route with the same HUD. Both commands need the qualified local GFMM9 pack
 and native stage/model data. They do not change the duel, enable combat, or
 relax unsupported contact refusals.
 
+To check the actual practice loop without opening a window or audio device:
+
+```sh
+python3 -B tools/build_native.py --practice-replay --jobs 1
+```
+
+The replay links the desktop host but uses a fake clock and scripted input. It
+checks session controls between movement ticks, short taps, separately sampled
+jump and dash, resuming after a refused input, and restart after a terrain stop.
+It skips if the qualified local stage or movement pack is absent.
+
 [Contact Sheet 59](../local/recomp-evidence/contact-sheets/gred-movement-practice-v1/contact-sheet-59.png)
 shows actual offscreen OpenGL captures. All four rendered bar widths matched
 the accepted meter within one pixel. Host tests covered both launch commands;
