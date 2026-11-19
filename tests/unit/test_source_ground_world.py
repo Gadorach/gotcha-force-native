@@ -762,6 +762,33 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("accepted native tick=0 G-Red-position=830.73/482.75/2191.48", guide.stdout)
         self.assertNotIn("incline dash jump demo:", guide.stdout)
 
+    def test_timed_incline_landing_dash_preserves_timer_and_recovers(self):
+        for tick, phase, timer in (
+            (32, "TOUCHDOWN", 7), (33, "LANDING", 6), (34, "GROUND DASH", 5),
+            (38, "GROUND DASH", 1), (39, "GROUND DASH", 0), (70, "IDLE", 0),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-timed-incline-landing-dash", "--headless",
+                                     "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter=10000/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn(f"loss-landings=1 timer698={timer}.0", run.stdout)
+                if timer:
+                    self.assertIn(f"practice-ledge-timer-ticks={timer} cue=LEDGE TIMER {timer} TICKS", run.stdout)
+                else:
+                    self.assertNotIn("practice-ledge-timer-ticks=", run.stdout)
+                self.assertEqual("practice-landing-dash=DASH FROM LANDING" in run.stdout, tick == 34)
+                if tick == 70:
+                    self.assertIn("G-Red-position=-1408.01/27.15/-935.02", run.stdout)
+                    self.assertIn("resets=1 root-updates=25", run.stdout)
+        guide = self.run_host(["--gred-timed-incline-landing-dash", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("timed incline landing dash guide: paused at tick=0", guide.stdout)
+        self.assertIn("accepted native tick=0 G-Red-position=-1719.39/", guide.stdout)
+        self.assertNotIn("timed incline landing dash demo:", guide.stdout)
+
     def test_slope_crease_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-crease-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

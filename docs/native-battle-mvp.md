@@ -205,6 +205,12 @@ dash-jump guide. Step with **S** on 6, then **Shift** on 14–37.
 **DASH CANCELED** appears on accepted takeoff. The old dash does not
 move G-Red again, and the flight meter is first charged on lift.
 
+`--gred-timed-incline-landing-dash --practice-start` starts a separate
+short guide: **Left Arrow** on 6–9, then **A** on 34. Touchdown and landing
+take separate steps before the dash can cross the incline. **DASH FROM
+LANDING** is shown on the accepted entry, with five ledge-timer ticks left.
+Use `--demo-gred-timed-incline-landing-dash` for the automatic replay.
+
 Both guides are available with `--practice-from-picker`. From
 **Standard**, select the next route twice for **Timed Relaunch Floor**
 or three times for **Incline Dash Jump** (**Right** in the owned picker,

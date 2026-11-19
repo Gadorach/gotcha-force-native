@@ -574,7 +574,8 @@ public:
                 accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active,
                 recovery_drift_active,recovery_seam,recovery_push_complete,recovery_push_exit_drift,plain_windup_relaunch_ready,
                 accepted.relaunch_floor?std::optional{accepted.relaunch_floor->response_factor<1.f}:std::nullopt,
-                pending_->interrupted_dash&&accepted.kind==NativeBorgMotionKind::JumpTakeoff}));
+                pending_->interrupted_dash&&accepted.kind==NativeBorgMotionKind::JumpTakeoff,
+                accepted.landing_target==12}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

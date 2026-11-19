@@ -20,6 +20,7 @@ struct NativeBorgSourceReadout {
     bool plain_windup_relaunch_ready=false; //Accepted plain handoff window, not a receipt for the next action.
     std::optional<bool> relaunch_floor_damped; //Accepted airborne snap; true only for the negative-speed tail.
     bool dash_interrupted_takeoff=false; //First accepted takeoff after interrupting an existing dash.
+    bool landing_dash_started=false; //Accepted phase-12 dash replacing an entered landing.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

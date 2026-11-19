@@ -61,6 +61,7 @@ public:
     }
     static constexpr const char* windup_handoff_hint="SHIFT/B RELAUNCH / NEUTRAL DASH";
     static constexpr const char* dash_interrupt_hint="DASH CANCELED";
+    static constexpr const char* landing_dash_hint="DASH FROM LANDING";
     static const char* practice_relaunch_floor_cue(const NativeBorgSourceReadout& frame){
         return frame.relaunch_floor_damped?
             (*frame.relaunch_floor_damped?"AIRBORNE / DESCENT DAMPED":"AIRBORNE / VERTICAL SPEED RETAINED"):nullptr;
@@ -277,6 +278,7 @@ public:
             if(practice->plain_windup_relaunch_ready){text+="\n";text+=windup_handoff_hint;}
             if(const char* cue=practice_relaunch_floor_cue(*practice)){text+="\n";text+=cue;}
             if(practice->dash_interrupted_takeoff){text+="\n";text+=dash_interrupt_hint;}
+            if(practice->landing_dash_started){text+="\n";text+=landing_dash_hint;}
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }

@@ -458,6 +458,41 @@ interruption during active dash. The bounded scan completed 153 of
 252 routes; incomplete trajectories did not grant any new movement
 or contact permissions.
 
+### Timed landing dash across a shallow incline
+
+The slope-transition controller already combines the retained ledge timer
+with landing interruption and independently checked shallow joins. From
+the declared grounded native start at X/Z `-1719.38672/-508.356781`
+(floor query `343.13092`, arena half-width `4500`), step with **Left Arrow**
+on 6–9 and neutral until **A** on 34.
+
+```sh
+gf_native --demo-gred-timed-incline-landing-dash --headless --frames 70 --no-audio
+gf_native --gred-timed-incline-landing-dash --practice-start --no-audio
+```
+
+| Accepted tick | Role | Ledge timer |
+| --- | --- | ---: |
+| 8–9 | Walking departure, then fall entry | — / 30 |
+| 32 | Touchdown on original incline 1226 | 7 |
+| 33 | Separate landing entry | 6 |
+| 34 | Dash from landing crosses onto incline 1014 | 5 |
+| 38–39 | Countdown expires during the ordered dash | 1 / 0 |
+| 59–60 | Recovery resets, then idle | 0 |
+
+**DASH FROM LANDING** appears only on the accepted dash entry. Its
+25-unit ground step uses the actual selected heights and fresh root;
+remaining speed is 24.5 and the flight meter stays full. A lone A flick a
+tick earlier doesn't start or queue a dash: touchdown hasn't entered the
+landing callback yet.
+The older flat-only retained-timer mode refuses the same incline dash.
+
+A bounded 3,030-route original-stage scan found 586 completed nonflat
+routes with positive time at dash entry. This guide publishes one; it
+doesn't relax terrain or add air or steep-push permissions. In particular,
+the old flat landing fixture's forward dash still refuses, even with the
+shallow-join mode.
+
 ## Descending air-dash wind-up entry push in the combined controller (GFMM9)
 
 `--source-ground-windup-entry-push` adds steep projection during wind-up entry

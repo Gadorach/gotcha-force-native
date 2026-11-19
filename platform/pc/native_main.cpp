@@ -149,6 +149,7 @@ struct Options {
     bool gred_slope_crease_dash=false;
     bool gred_slope_transition_dash=false;
     bool gred_inclined_dash_jump=false;
+    bool gred_timed_incline_landing_dash=false;
     bool gred_inclined_dash_ledge=false;
     bool gred_inclined_walk_ledge=false;
     bool gred_practice_start=false;
@@ -363,6 +364,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-slope-crease-dash" || arg == "--demo-gred-slope-crease-dash" ||
                  arg == "--gred-slope-transition-dash" || arg == "--demo-gred-slope-transition-dash" ||
                  arg == "--gred-inclined-dash-jump" || arg == "--demo-gred-inclined-dash-jump" ||
+                 arg == "--gred-timed-incline-landing-dash" || arg == "--demo-gred-timed-incline-landing-dash" ||
                  arg == "--gred-inclined-dash-ledge" || arg == "--demo-gred-inclined-dash-ledge" ||
                  arg == "--gred-inclined-walk-ledge" || arg == "--demo-gred-inclined-walk-ledge" ||
                  arg == "--gred-walk-ledge-fall-push" || arg == "--demo-gred-walk-ledge-fall-push" ||
@@ -440,8 +442,9 @@ bool parse(int argc, char** argv, Options* options) {
                 arg=="--gred-inclined-dash-ledge"||arg=="--demo-gred-inclined-dash-ledge";
             options->gred_inclined_walk_ledge=arg=="--gred-inclined-walk-ledge"||arg=="--demo-gred-inclined-walk-ledge";
             options->gred_inclined_dash_jump=arg=="--gred-inclined-dash-jump"||arg=="--demo-gred-inclined-dash-jump";
+            options->gred_timed_incline_landing_dash=arg=="--gred-timed-incline-landing-dash"||arg=="--demo-gred-timed-incline-landing-dash";
             options->gred_slope_transition_dash=options->gred_inclined_dash_ledge||options->gred_inclined_walk_ledge||options->gred_inclined_dash_jump||
-                arg=="--gred-slope-transition-dash"||arg=="--demo-gred-slope-transition-dash";
+                options->gred_timed_incline_landing_dash||arg=="--gred-slope-transition-dash"||arg=="--demo-gred-slope-transition-dash";
             options->gred_slope_crease_dash=options->gred_slope_transition_dash||arg=="--gred-slope-crease-dash"||arg=="--demo-gred-slope-crease-dash";
             options->gred_slope_seam_dash=options->gred_slope_crease_dash||arg=="--gred-slope-seam-dash"||arg=="--demo-gred-slope-seam-dash";
             options->gred_slope_dash=options->gred_slope_seam_dash||arg=="--gred-slope-dash"||arg=="--demo-gred-slope-dash";
@@ -825,6 +828,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "timed relaunch floor","Down+Right Arrows 6-122, Shift 147-157"};
     constexpr PracticeTimingGuide incline_jump_guide{"INCLINE DASH JUMP\nS 6 / SHIFT 14-37",
         "incline dash jump","S 6, Shift 14-37"};
+    constexpr PracticeTimingGuide incline_landing_guide{"TIMED INCLINE LANDING DASH\nLEFT ARROW 6-9 / A 34",
+        "timed incline landing dash","Left Arrow 6-9, A 34"};
     const PracticeTimingGuide* guide=nullptr;
     if(options.gred_practice_start&&options.source_ground_interactive){
         if(timed_followup==TimedLedgeFollowup::Relaunch)guide=&ledge_relaunch_guide;
@@ -834,6 +839,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         else if(timed_followup==TimedLedgeFollowup::ExpiryHandoffRelaunch)guide=&ledge_expiry_handoff_guide;
         else if(options.gred_timed_relaunch_floor)guide=&ledge_floor_guide;
         else if(options.gred_inclined_dash_jump)guide=&incline_jump_guide;
+        else if(options.gred_timed_incline_landing_dash)guide=&incline_landing_guide;
         else if(options.gred_recovery_completion_exit)guide=&exit_guide;
         else if(options.gred_recovery_completion_push)guide=&push_guide;
         else if(options.gred_recovery_first_contact_seam)guide=&seam_guide;
@@ -899,6 +905,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         if(options.gred_slope_seam_dash){config.spawn[0]={1406.01709f,2922.08545f};config.spawn_query_y[0]=485.585205f;}
         if(options.gred_slope_crease_dash){config.spawn[0]={3589.76465f,-2425.93408f};config.spawn_query_y[0]=192.512665f;}
         if(options.gred_slope_transition_dash){config.spawn[0]={830.733398f,2191.48145f};config.spawn_query_y[0]=487.747528f;}
+        if(options.gred_timed_incline_landing_dash){config.spawn[0]={-1719.38672f,-508.356781f};config.spawn_query_y[0]=343.13092f;}
         if(options.gred_inclined_dash_ledge){config.spawn[0]={2582.89014f,-2846.36206f};config.spawn_query_y[0]=116.592773f;}
         if(options.gred_inclined_walk_ledge){config.spawn[0]={2599.00806f,-2758.12109f};config.spawn_query_y[0]=125.757187f;}
         if(options.gred_walk_ledge_fall_push){
@@ -1035,6 +1042,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                            "timed wind-up relaunch demo: walk right, W on 30 after the ordinary falls, Shift on 36 instead of active dash":
                            options.gred_inclined_dash_jump?
                            "incline dash jump demo: S on 6, cross the flat/incline join, then Shift on 14-37":
+                           options.gred_timed_incline_landing_dash?
+                           "timed incline landing dash demo: Left Arrow on 6-9, then A on 34 after the accepted landing":
                            timed_followup==TimedLedgeFollowup::ExpiryHandoffRelaunch?
                            "expiry wind-up relaunch demo: walk left, expiry push at 56, A on 57, Shift on 63 instead of active dash":
                            options.gred_walk_ledge_expiry_air_dash?
@@ -1315,6 +1324,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                                 }
                           }else if(options.gred_inclined_walk_ledge){
                               device.dpad_up=world.tick()>=5&&world.tick()<20&&!source.ground_departures();
+                          }else if(options.gred_timed_incline_landing_dash){
+                              const auto tick=world.tick();
+                              device.dpad_left=tick>=5&&tick<9;
+                              if(tick==33)device.stick_x=-127;
                           }else if(options.gred_slope_dash){
                               if(world.tick()==5){
                                     if(options.gred_inclined_dash_ledge||(options.gred_slope_crease_dash&&!options.gred_slope_transition_dash))device.stick_x=127;
@@ -1556,6 +1569,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                  gf::log_info(context,"source-ground","practice-relaunch-floor=%s",cue);
              if(practice->dash_interrupted_takeoff)
                  gf::log_info(context,"source-ground","practice-dash-takeoff=%s",view.dash_interrupt_hint);
+             if(practice->landing_dash_started)
+                 gf::log_info(context,"source-ground","practice-landing-dash=%s",view.landing_dash_hint);
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");
@@ -1585,6 +1600,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()));
     if(options.source_ground_jump)gf::log_info(context,"source-ground","ground-jump-air-frames=%llu landings=%llu resource=%d dash-jumps=%llu last-interrupted-selector=%u programs=%u/%u cached87=%u; source subset, no extra ordered root advance on takeoff",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),static_cast<unsigned long long>(source.dash_jumps()),unsigned(source.last_dash_jump_selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_landing)gf::log_info(context,"source-ground","landing-jumps=%llu landing-dashes=%llu landings=%llu resource=%d programs=%u/%u cached87=%u; accepted landing entry before interruption, no touchdown skip or forced refill",static_cast<unsigned long long>(source.landing_jumps()),static_cast<unsigned long long>(source.landing_dashes()),static_cast<unsigned long long>(source.landings()),int(source.resource()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
+    if(options.gred_timed_incline_landing_dash)gf::log_info(context,"source-ground","landing-dashes=%llu loss-landings=%llu timer698=%.1f resource=%d; retained countdown and independently checked shallow dash joins",
+        static_cast<unsigned long long>(source.landing_dashes()),static_cast<unsigned long long>(source.ground_loss_landings()),
+        double(source.ground_loss_timer698()),int(source.resource()));
     if(options.source_ground_air)gf::log_info(context,"source-ground","controller-air-starts=%llu active=%llu landings=%llu relaunches=%llu resource=%d selector=%u programs=%u/%u cached87=%u; no floor/push/relaunch authority",static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.air_dash_active_frames()),static_cast<unsigned long long>(source.landings()),static_cast<unsigned long long>(source.relaunches()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_air_floor)gf::log_info(context,"source-ground","controller-floor-starts=%llu windup=%llu active=%llu entry=%llu positive-entry=%llu landings=%llu relaunches=%llu resource=%d selector=%u programs=%u/%u cached87=%u; no entry-floor/push/relaunch authority",static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.windup_floor_contacts()),static_cast<unsigned long long>(source.active_floor_contacts()),static_cast<unsigned long long>(source.windup_entry_floor_contacts()),static_cast<unsigned long long>(source.positive_windup_floor_contacts()),static_cast<unsigned long long>(source.landings()),static_cast<unsigned long long>(source.relaunches()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));
     if(options.source_ground_relaunch)gf::log_info(context,"source-ground","controller-relaunches=%llu lower=%u upper=%u air=%llu floor=%llu pushes=%llu landings=%llu resource=%d selector=%u programs=%u/%u cached87=%u; no relaunch-floor/entry-floor/push authority",static_cast<unsigned long long>(source.relaunches()),unsigned(source.relaunch_stages().lower_stage),unsigned(source.relaunch_stages().upper_stage),static_cast<unsigned long long>(source.air_dash_starts()),static_cast<unsigned long long>(source.relaunch_floor_contacts()),static_cast<unsigned long long>(source.surface_pushes()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),source.movement_programs()[0],source.movement_programs()[1],unsigned(source.cached_airborne87()));

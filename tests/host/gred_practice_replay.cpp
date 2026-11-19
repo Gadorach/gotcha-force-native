@@ -6,7 +6,7 @@
 
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
-    RecoverySeamRestart,InclineDashJump,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
+    RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
@@ -56,6 +56,13 @@ public:
             snapshot_.frame_step=f%2==0;
             if(tick==6)raw.axis[1]=20000; // S on the desktop keyboard adapter.
             if(tick>=14&&tick<=37)raw.buttons|=1u<<1;
+            break;
+        }
+        case Replay::TimedInclineLandingDash:{
+            const unsigned tick=1+f/2;
+            snapshot_.frame_step=f%2==0;
+            if(tick>=6&&tick<=9)raw.buttons|=1u<<7;
+            if(tick==34)raw.axis[0]=-20000; // A on the desktop keyboard adapter.
             break;
         }
         case Replay::PickerPractice:
@@ -174,11 +181,13 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     Options options;
     const bool seam=replay==Replay::RecoverySeamRestart;
     const bool incline=replay==Replay::InclineDashJump;
-    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline;
+    const bool timed_incline=replay==Replay::TimedInclineLandingDash;
+    const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||timed_incline;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
-         recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump";
+         recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
+         incline_landing[]="--gred-timed-incline-landing-dash";
     char audio[]="--no-audio",start[]="--practice-start";
-    char* args[]={program,incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
+    char* args[]={program,timed_incline?incline_landing:incline?incline_jump:seam?recovery:fixture?expiry:practice,audio,start};
     check(parse(fixture?4:3,args,&options),scenario,log.text);
     options.frames=frames;
     options.headless=replay==Replay::RaisedFace||fixture; // Exactly one scheduled tick per frame.
@@ -499,5 +508,16 @@ int main(int argc,char** argv){
         has(jump_landed,"practice-meter=10000/10000 at accepted tick=120")&&has(jump_landed,"practice-phase=IDLE")&&
         !has(jump_landed,"practice-dash-takeoff=")&&!has(jump_landed,"practice stopped"),
         "live guide lands and refills on its original slope without retaining the takeoff cue",jump_landed);
-    std::puts("G-Red practice replay: fourteen desktop-loop scenarios PASS without opening devices");
+    const auto timed_dash=run(Replay::TimedInclineLandingDash,68,"timed incline landing dash entry");
+    check(picker_guide_played(timed_dash,"timed incline landing dash",34)&&
+        once(timed_dash,"practice-landing-dash=DASH FROM LANDING")&&has(timed_dash,"practice-ledge-timer-ticks=5")&&
+        has(timed_dash,"practice-meter=10000/10000 at accepted tick=34"),
+        "live advance must accept the distinct landing entry before the timed incline dash",timed_dash);
+    const auto timed_dash_idle=run(Replay::TimedInclineLandingDash,140,"timed incline landing dash idle");
+    check(picker_guide_played(timed_dash_idle,"timed incline landing dash",70)&&
+        has(timed_dash_idle,"accepted native tick=70 G-Red-position=-1408.01/27.15/-935.02")&&
+        has(timed_dash_idle,"landing-dashes=1 loss-landings=1 timer698=0.0 resource=10000")&&
+        has(timed_dash_idle,"resets=1 root-updates=25")&&!has(timed_dash_idle,"practice-landing-dash="),
+        "countdown expiry, dash recovery and idle are reached under live input without a stale cue",timed_dash_idle);
+    std::puts("G-Red practice replay: sixteen desktop-loop scenarios PASS without opening devices");
 }
