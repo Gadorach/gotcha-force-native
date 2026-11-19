@@ -5,17 +5,28 @@
 namespace gf {
 class NativeGRedGroundDashDemo;
 struct NativeBorgSourceMeter {s16 value=0,limit=0;};
+struct NativeBorgSourceReadout {
+    NativeBorgSourceMeter meter;
+    NativeBorgMotionKind kind=NativeBorgMotionKind::Ground;
+    BattleMvpAction action=BattleMvpAction::Idle;
+    bool ascent=false;
+};
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
-    NativeBorgSourcePoseScope(const NativeBorgMotionReceipt& receipt,NativeBorgSourceMeter meter):receipt_(receipt),meter_(meter){}
+    NativeBorgSourcePoseScope(const NativeBorgMotionReceipt& receipt,NativeBorgSourceReadout readout):receipt_(receipt),readout_(readout){}
     NativeBorgSourcePoseScope(const NativeBorgSourcePoseScope&)=delete;
     NativeBorgSourcePoseScope& operator=(const NativeBorgSourcePoseScope&)=delete;
     NativeBorgMotionReceipt receipt_;
-    NativeBorgSourceMeter meter_;
+    NativeBorgSourceReadout readout_;
 public:
+    std::optional<NativeBorgSourceReadout> readout(const NativeBattleMvp& world)const{
+        const auto meter=readout_.meter;
+        if(!world.motion_receipt_current(receipt_)||meter.limit<=0||meter.value<0||meter.value>meter.limit)return {};
+        return readout_;
+    }
     std::optional<NativeBorgSourceMeter> meter(const NativeBattleMvp& world)const{
-        if(!world.motion_receipt_current(receipt_)||meter_.limit<=0||meter_.value<0||meter_.value>meter_.limit)return {};
-        return meter_;
+        const auto frame=readout(world);
+        return frame?std::optional{frame->meter}:std::nullopt;
     }
 };
 struct NativeBorgAnimationSeed {

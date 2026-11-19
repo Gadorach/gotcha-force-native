@@ -40,9 +40,29 @@ public:
     void source_ground_relaunch_entry_push_controls(){source_ground_relaunch_entry_push_=true;}
     void source_ground_windup_entry_push_controls(){source_ground_windup_entry_push_=true;}
     void source_practice_controls(){source_practice_=true;}
-    std::optional<NativeBorgSourceMeter> practice_meter(const NativeBattleMvp& world)const{
+    std::optional<NativeBorgSourceReadout> practice_readout(const NativeBattleMvp& world)const{
         const auto frame=source_practice_frame_.lock();
-        return source_practice_&&frame?frame->meter(world):std::nullopt;
+        return source_practice_&&frame?frame->readout(world):std::nullopt;
+    }
+    std::optional<NativeBorgSourceMeter> practice_meter(const NativeBattleMvp& world)const{
+        const auto frame=practice_readout(world);
+        return frame?std::optional{frame->meter}:std::nullopt;
+    }
+    static const char* practice_phase(const NativeBorgSourceReadout& frame){
+        const auto kind=frame.kind;
+        if(kind==NativeBorgMotionKind::Ground){
+            if(frame.action==BattleMvpAction::GroundDash)return "GROUND DASH";
+            return frame.action==BattleMvpAction::Move?"WALKING":"IDLE";
+        }
+        if(native_borg_motion_phase(kind)==3)return "TOUCHDOWN";
+        if(native_borg_motion_phase(kind)==4)return "LANDING";
+        if(native_borg_motion_phase(kind)==1)return "TAKEOFF";
+        if(native_borg_motion_ground_loss(kind))return "LEDGE FALL";
+        if(native_borg_motion_windup_entry(kind)||native_borg_motion_windup_update(kind))return "DASH WIND-UP";
+        if(native_borg_motion_active_entry(kind)||native_borg_motion_active_update(kind))return "AIR DASH";
+        if(native_borg_motion_recovery(kind))return "DASH RECOVERY";
+        if(native_borg_motion_relaunch(kind))return "RELAUNCH";
+        return frame.ascent?"RISING":"FALLING";
     }
     unsigned draw_practice_stop(RenderEngine& render,s32 width,s32 height,u32 tick)const{
         if(!source_practice_||width<=0||height<=0)return 0;
@@ -167,16 +187,23 @@ public:
         if(!geometry_.empty()){const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;}
         render.state()={};render.state().depth_test=render.state().depth_write=false;render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;render.state().cull_backface=false;render.upload_matrix(0,identity.m);geometry_.clear();
         for(unsigned i=0;i<2;++i){const f32 x=i?f32(width)-310:24;ScreenDraw::textured_quad(geometry_,x,24,x+286,42,0,0,0,1,1,{35,35,45,230});ScreenDraw::textured_quad(geometry_,x,24,x+286*f32(world.actors()[i].health)/world.config().health,42,0,0,0,1,1,i?Tint{100,170,255,255}:Tint{255,100,70,255});}
-        const auto meter=practice_meter(world);
-        if(meter&&width>=200&&height>=190){
+        const auto practice=practice_readout(world);
+        if(practice&&width>=200&&height>=190){
+            const auto meter=practice->meter;
             const f32 width_px=f32(std::min(286,width-48));
             ScreenDraw::textured_quad(geometry_,24,52,24+width_px,62,0,0,0,1,1,{35,35,45,230});
-            if(meter->value)ScreenDraw::textured_quad(geometry_,24,52,24+width_px*f32(meter->value)/meter->limit,62,0,0,0,1,1,{255,210,80,255});
+            if(meter.value)ScreenDraw::textured_quad(geometry_,24,52,24+width_px*f32(meter.value)/meter.limit,62,0,0,0,1,1,{255,210,80,255});
         }
         const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;
         TextRenderer::Style style;style.scale=width>=1000?2:1;
-        if(meter&&width>=200&&height>=190)
-            draws+=text_.draw(render,"FLIGHT "+std::to_string(meter->value)+"/"+std::to_string(meter->limit),24,68,style);
+        if(practice&&width>=200&&height>=190){
+            const auto meter=practice->meter;
+            std::string text="FLIGHT "+std::to_string(meter.value)+"/"+std::to_string(meter.limit);
+            text+="\n";text+=practice_phase(*practice);
+            if(native_borg_motion_push(practice->kind))text+=" / PUSH";
+            else if(native_borg_motion_air_dash_floor(practice->kind)||native_borg_motion_relaunch_floor(practice->kind))text+=" / FLOOR SNAP";
+            draws+=text_.draw(render,text,24,68,style);
+        }
         std::string status="G-RED VS SASUKE - NATIVE MVP / PROVISIONAL RULES\nWASD MOVE  L DASH  SHIFT JUMP  SPACE PRIMARY  E SECONDARY  Q RESTART  ENTER PAUSE";
         if(world.actors()[0].source_ground_motion)status="G-RED SOURCE GROUND-DASH LAB - SCRIPTED / NATIVE CONTACT PROXY\nENTER PAUSE  Q RESTART  ESC CLOSE - NO SOURCE WALK/JUMP/COMBAT";
         if(source_general_)status=std::string("G-RED SOURCE GROUND LAB - ")+(source_interactive_?"INTERACTIVE":"SCRIPTED")+" / NATIVE CONTACT PROXY\nARROWS WALK  WASD FLICK DASH  ENTER PAUSE  Q RESTART - NO JUMP/FLIGHT/COMBAT";

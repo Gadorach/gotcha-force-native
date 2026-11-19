@@ -113,8 +113,9 @@ int main(){
         check(prepare(pad_at(t,combined),&offer)&&source.resource()==meter&&source.windup_entry_surface_pushes()==count&&
             source.air_dash_stages().timer568==stages.timer568,"entry half-speed, future50, timer and counters remain staged");
         if(combined&&t){
-            const auto presented=view.practice_meter(world);
-            check(presented&&presented->value==meter&&presented->limit==10000,"staged motion cannot publish its pending practice meter");
+            const auto presented=view.practice_readout(world);
+            check(presented&&presented->meter.value==meter&&presented->meter.limit==10000&&presented->kind==prior.kind,
+                "staged motion cannot publish its pending practice meter or phase");
         }
         if(offer.kind==NativeBorgMotionKind::AirDashWindupEntryPush){
             const auto tick=world.tick();const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);auto wrong=offer;
@@ -146,8 +147,11 @@ int main(){
         }
         accept(offer);const auto tick=world.tick();
         if(combined){
-            const auto presented=view.practice_meter(world);
-            check(presented&&presented->limit==10000&&presented->value==source.resource(),"accepted source pose publishes exact meter and limit");
+            const auto presented=view.practice_readout(world);
+            check(presented&&presented->meter.limit==10000&&presented->meter.value==source.resource()&&
+                presented->kind==offer.kind&&presented->action==offer.action&&
+                presented->ascent==bool(offer.jump_motion&&offer.jump_motion->phase==5),
+                "accepted source pose publishes exact meter and movement role");
             if(tick==86){
                 const auto frame=pose.frame_scope.lock();NativeBattleMvp foreign;
                 check(frame&&!frame->meter(foreign)&&!view.practice_meter(foreign),"foreign world cannot borrow the practice meter");
@@ -201,7 +205,7 @@ int main(){
         "600-frame original-stage route preserves distinct entry, continuation, recovery and lifetime boundaries");
     const auto retired=pose;source.reject();
     check(retired.frame_scope.expired()&&!world.motion_receipt_current(retired.receipt),"entry producer retirement revokes retained pose and receipt");
-    check(!view.practice_meter(world),"retired source scope cannot display a stale meter");
+    check(!view.practice_readout(world),"retired source scope cannot display stale practice data");
     std::printf("%s entry: entry=%u handoff=%u active=%u touchdown=%u\n",combined?"combined":"legacy",entry,handoff,active,touchdown);
     }
     if(has_combined){

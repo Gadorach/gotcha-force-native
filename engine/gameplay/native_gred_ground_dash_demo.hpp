@@ -433,7 +433,8 @@ public:
             last_air_dash_floor_programs_=movement_programs();
         }
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
-            new NativeBorgSourcePoseScope(receipt,{state_.resource.value736,input_.resource_limit}));
+            new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,input_.resource_limit},pending_->offer.kind,
+                pending_->offer.action,pending_->offer.jump_motion&&pending_->offer.jump_motion->phase==5}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

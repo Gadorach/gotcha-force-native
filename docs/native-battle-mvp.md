@@ -60,7 +60,9 @@ This opens the existing combined G-Red movement controller on the original
 stage using the ordinary practice spawn and arena bounds. Arrows walk or steer,
 WASD flicks dash, and Shift jumps or rises. Release and press Shift again to
 relaunch when eligible. Enter pauses, Q restarts, and Esc closes. The HUD's
-flight bar reads the last accepted source frame, not pending input or animation.
+flight bar and movement label read the last accepted source frame, not pending
+input or a guessed animation phase. For example, wind-up still displays
+`DASH WIND-UP` on the handoff tick, and `TOUCHDOWN` precedes `LANDING`.
 Pause and restart are sampled each rendered frame, even if no 60 Hz movement
 tick is due. Resuming does not catch up elapsed pause time.
 One sampled Shift tap can carry to the next movement tick if released before

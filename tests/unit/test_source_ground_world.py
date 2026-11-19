@@ -16,14 +16,18 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("G-Red movement practice: arrows walk/steer, WASD flick dash", result.stdout)
         self.assertIn("practice-meter=10000/10000 at accepted tick=10", result.stdout)
+        self.assertIn("practice-phase=IDLE", result.stdout)
         self.assertIn("G-Red-position=-240.00/10.00/300.00", result.stdout)
         self.assertNotIn("demo only:", result.stdout)
 
     def test_practice_demo_meter_tracks_existing_accepted_windup_route(self):
-        for tick, value in ((81, 8450), (86, 8000), (140, 6450), (600, 10000)):
+        phases=((81,8450,"DASH WIND-UP / PUSH"),(86,8000,"DASH WIND-UP / PUSH"),
+                (87,7950,"AIR DASH"),(140,6450,"TOUCHDOWN"),(141,6450,"LANDING"),(600,10000,"IDLE"))
+        for tick, value, phase in phases:
             result = self.run_host(["--demo-gred-movement", "--headless", "--frames", str(tick), "--no-audio"])
             self.assertEqual(result.returncode, 0, result.stdout)
             self.assertIn(f"practice-meter={value}/10000 at accepted tick={tick}", result.stdout)
+            self.assertIn(f"practice-phase={phase}\n", result.stdout)
             self.assertIn(f"accepted native tick={tick}", result.stdout)
             self.assertIn("controller-windup-pushes=", result.stdout)
             self.assertIn("projectiles-spawned=0 hits=0 health=100/100", result.stdout)
