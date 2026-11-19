@@ -123,6 +123,13 @@ public:
         forget_shared_texture(handle);
         return backend_.upload_texture(handle, desc);
     }
+    bool frame_in_progress()const{return frame_open_;}
+    bool texture_is_shared(u32 handle)const{return shared_textures_.find(handle)!=shared_textures_.end();}
+    bool release_texture(u32 handle){
+        if(!handle||frame_open_||model_pass_active_||texture_is_shared(handle)||!backend_.release_texture(handle))return false;
+        if(state_.texture==handle)state_.texture=0;
+        return true;
+    }
     // Explicit immutable resource namespace. Equal IDs require byte-identical
     // images AND samplers; collisions refuse instead of overwriting another bank.
     bool upload_texture_shared(u32 handle,const TextureDesc& desc){

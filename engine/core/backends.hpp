@@ -249,6 +249,9 @@ public:
     // DrawCall refer to this stream.
     virtual bool upload_vertices(const Vertex* vertices, std::size_t count) = 0;
     virtual bool upload_texture(u32 handle, const TextureDesc& desc) = 0;
+    // Idempotent release of a non-shared handle between frames. Backends
+    // without an owned texture lifetime interface must refuse.
+    virtual bool release_texture(u32) { return false; }
     // Only valid inside an active frame. Unknown/headless backends refuse; they
     // must not acknowledge a copy by accepting an unrelated texture upload.
     virtual bool copy_framebuffer(const FramebufferCopy&) { return false; }

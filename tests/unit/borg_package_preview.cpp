@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <set>
 #include "engine/core/headless_backends.hpp"
 #include "engine/gameplay/native_animation_mosaic.hpp"
 
@@ -16,6 +17,20 @@ std::vector<gf::u8> read(const std::filesystem::path& path){
     std::ifstream file(path,std::ios::binary);return {std::istreambuf_iterator<char>(file),{}};
 }
 gf::ByteView view(const std::vector<gf::u8>& bytes){return {bytes.data(),bytes.size()};}
+class TrackingRender final:public gf::IRenderBackend {
+public:
+    std::set<gf::u32> textures;
+    bool initialize(const gf::RenderConfig&,gf::IWindowBackend*,std::string*)override{return true;}
+    void shutdown()override{textures.clear();}
+    bool upload_vertices(const gf::Vertex*,std::size_t)override{return true;}
+    bool upload_texture(gf::u32 slot,const gf::TextureDesc&)override{textures.insert(slot);return true;}
+    bool release_texture(gf::u32 slot)override{textures.erase(slot);return true;}
+    bool upload_matrix(gf::u32,const gf::f32*)override{return true;}
+    void begin_frame(const gf::FrameDesc&)override{}
+    void submit(const gf::DrawCall&)override{}
+    void end_frame()override{}
+    void present()override{}
+};
 }
 int main(){
     using namespace gf;
@@ -33,8 +48,10 @@ int main(){
     if(model.empty()||prefix.empty()||pose.empty()||motions.empty()){
         std::puts("Borg package preview profile PASS; optional original model data absent");return 0;
     }
-    headless::Render device;RenderEngine render(device);std::string error;
+    TrackingRender device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"package preview"},nullptr,&error),"headless shared renderer",error);
+    const u8 pixel[]{255,255,255,255};
+    check(render.upload_texture_shared(42,{1,1,pixel})&&!render.release_texture(42),"preview release cannot evict shared assets");
     NativeAnimationMosaic preview;
     const BorgIdentity identity{"example:preview","G-Red model preview"};
     auto load=[&](const BorgPreviewProfile& p,ByteView pose_data){
@@ -43,11 +60,18 @@ int main(){
     check(load(parsed,view(pose)), "load explicit idle through shared model and clip data",error);
     const auto shown=preview.page_previews();
     check(shown.size()==1&&shown[0].supported&&!shown[0].source_program&&shown[0].end_frame>0,"one raw in-place clip, no actor programs");
+    check(device.textures.size()>1&&render.shared_texture_count()==1,"preview owns replaceable device textures separately from shared art");
     GamePadState pad;pad.dpad_down=true;
     check(preview.step(pad,1.f/60,render,&error)&&preview.borg()==0,"package preview cannot switch to the classifier's other Borg",error);
     render.begin_frame({1,.055f,.065f,.085f});render.reset_arena();
+    check(!preview.close_package_preview(render),"a preview cannot retire submitted textures in an active frame");
     const auto draws=preview.draw(render,640,480);render.end_frame();
     check(draws>0,"real preview draw path uses existing headless renderer");
+    headless::Render other_device;RenderEngine other(other_device);
+    check(!preview.close_package_preview(other)&&preview.close_package_preview(render)&&device.textures==std::set<u32>{42},
+        "the owning renderer retires only the preview textures and leaves shared art alive");
+    check(load(parsed,view(pose))&&preview.close_package_preview(render)&&device.textures==std::set<u32>{42},
+        "close and reopen reuses the same bounded slots");
     CharacterMotionBank bank;
     check(character_motion_bank_load(view(motions),&bank,&error),"find actual absent source group",error);
     for(unsigned i=0;i<bank.groups.size();++i)if(bank.groups[i].empty()){

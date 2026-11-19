@@ -54,11 +54,17 @@ selected editor icon through the shared texture system. Placeholder,
 unresolved and unavailable icons are labelled separately. A package with
 no available catalogue stays visible without inventing a variant.
 
+**E/X** opens the selected package and exact variant in the shared body
+preview. **Shift/B** returns to the same selection. Missing or unsupported
+preview assets leave you in the picker with an unavailable notice rather
+than changing the variant. The preview releases its own device textures
+between visits. The [standalone body preview](#standalone-body-preview)
+also remains available by explicit package and variant IDs.
+
 This is a read-only picker for installed definitions, not the retail box,
 an owned collection, or mode admission. It does not open a save or a
-battle. The [standalone body preview](#standalone-body-preview) still takes
-explicit package and variant IDs. `--demo-borg-browser --frames 10` drives a
-repeatable navigation sequence for checks.
+battle. `--demo-borg-browser --frames 26` drives a repeatable navigation and
+preview sequence for checks.
 
 ## Catalogue and editor-icon check
 

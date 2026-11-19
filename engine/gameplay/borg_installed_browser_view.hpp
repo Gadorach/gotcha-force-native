@@ -14,7 +14,7 @@ struct BorgBrowserTile {
 class BorgInstalledBrowserView {
 public:
     unsigned draw(RenderEngine& render,s32 width,s32 height,const BorgInstalledBrowser& browser,
-                  const BorgBrowserTile& tile,bool confirmed){
+                  const BorgBrowserTile& tile,bool confirmed,bool preview_unavailable=false){
         if(width<440||height<320)return 0;
         const auto saved=render.state();
         render.state()={};render.state().depth_test=render.state().depth_write=false;
@@ -79,9 +79,11 @@ public:
                     text(label,right,235,right_space,small);
                 }
                 if(confirmed)text("SELECTION INSPECTED - NO SAVE CHANGES",right,height-62,right_space,body);
+                if(preview_unavailable)text("BODY PREVIEW UNAVAILABLE",right,height-79,right_space,small);
             }else text("CATALOGUE METADATA UNAVAILABLE",right,166,right_space,small);
         }
-        text("UP/DOWN PACKAGE  LEFT/RIGHT VARIANT  SPACE/A INSPECT  ESC CLOSE",16,height-27,width-32,small);
+        text("UP/DOWN PACKAGE  LEFT/RIGHT VARIANT",16,height-32,width-32,small);
+        text("SPACE/A INSPECT  E/X BODY PREVIEW  ESC CLOSE",16,height-19,width-32,small);
         render.state()=saved;
         return draws;
     }

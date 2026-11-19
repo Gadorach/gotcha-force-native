@@ -32,6 +32,7 @@ inline std::vector<NativeAnimationEntry> native_animation_catalog(const Characte
 class NativeAnimationMosaic {
 public:
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,unsigned columns,unsigned rows,std::string* error){
+        if(!close_package_preview(render)){if(error)*error="package preview textures still owned";return false;}
         ready_=source_programs_=source_handlers_=package_preview_=false;cells_.clear();selected_=page_=0;
         if(!columns||!rows||columns>6||rows>4||columns*rows>24){if(error)*error="animation mosaic: grid must have1..24 cells";return false;}
         columns_=columns;rows_=rows;
@@ -53,8 +54,11 @@ public:
     // construct a gameplay actor.
     bool load_package_preview(const BorgIdentity& identity,const BorgPreviewProfile& profile,
                               ByteView model,ByteView prefix,ByteView pose,ByteView motions,
-                              RenderEngine& render,std::string* error){
+                              RenderEngine& render,std::string* error,bool returnable=false){
+        if(render.frame_in_progress()){if(error)*error="package preview can only load between frames";return false;}
+        if(!close_package_preview(render)){if(error)*error="package preview textures still owned";return false;}
         ready_=source_programs_=source_handlers_=false;package_preview_=true;
+        package_returnable_=returnable;
         cells_.clear();sources_={};selected_=page_=0;columns_=rows_=1;
         clock_=yaw_=0;paused_=false;speed_=.5f;previous_={};
         if(!borg_package_id_valid(identity.id)||!display_name_valid(identity.name,96)||!borg_catalog_variant_id_valid(profile.variant)||
@@ -74,7 +78,19 @@ public:
             return false;
         }
         source.entries.push_back({0,selected.index,profile.idle_group,profile.idle_choice,false,{}});
-        ready_=prepare_page(render,error);return ready_;
+        ready_=prepare_page(render,error);
+        if(!ready_)close_package_preview(render);
+        return ready_;
+    }
+    bool close_package_preview(RenderEngine& render){
+        if(!package_preview_)return true;
+        if(render.frame_in_progress()||(package_texture_owner_&&package_texture_owner_!=&render))return false;
+        ready_=false;
+        for(unsigned i=0;i<package_texture_count_;++i)
+            if(!render.release_texture(package_texture_base_+i))return false;
+        package_texture_count_=0;package_texture_owner_=nullptr;
+        cells_.clear();sources_={};package_preview_=package_returnable_=false;
+        return true;
     }
     //Explicit source-timeline inspection only. No input admission, root-motion
     //integration, attack effects or gameplay actor is produced by this view.
@@ -119,6 +135,7 @@ public:
            program_motion_.model_hash!=program_asset_.model_hash)return false;
         source_handlers_=true;ready_=true;return prepare_page(render,error);
     }
+    void sync_input(const GamePadState& pad){previous_=pad;}
     bool step(const GamePadState& pad,f32 seconds,RenderEngine& render,std::string* error){
         if(!ready_||!std::isfinite(seconds)||seconds<0)return false;
         bool changed=false;
@@ -168,7 +185,8 @@ public:
         else std::snprintf(heading,sizeof heading,"%s - %s - PAGE %u/%u - %u %s",source_handlers_?"VM + DASH HANDLER REPLAY":source_programs_?"SOURCE PROGRAM REPLAY":"ANIMATION MOSAIC",sources_[selected_].name.c_str(),page_+1,page_count(),unsigned(sources_[selected_].entries.size()),source_programs_?"PROGRAMS":"CLIPS");
         draws+=text_.draw(render,heading,12,10,title);
         TextRenderer::Style small;small.scale=1;
-        draws+=text_.draw(render,package_preview_?"SPACE PAUSE  Q/E SPEED  Z ROTATE":source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
+        draws+=text_.draw(render,package_preview_?(package_returnable_?"SHIFT/B BACK  SPACE PAUSE  Q/E SPEED  Z ROTATE":
+            "SPACE PAUSE  Q/E SPEED  Z ROTATE"):source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
         char mode[160];
         if(package_preview_)std::snprintf(mode,sizeof mode,"VARIANT %s - ONE DECLARED IDLE CLIP - %.3gX %s",
             package_variant_.c_str(),double(speed_),paused_?"PAUSED":"LOOPING");
@@ -192,6 +210,7 @@ public:
     unsigned page()const{return page_;}unsigned borg()const{return selected_;}
     bool select(unsigned borg,unsigned page,RenderEngine& render,std::string* error){
         if(!ready_||borg>=sources_.size()||(source_programs_&&borg)||page>=(sources_[borg].entries.size()+columns_*rows_-1)/(columns_*rows_)){if(error)*error="animation mosaic: Borg/page out of range";return false;}
+        if(package_preview_)return true; // only the already prepared one-cell view is valid
         selected_=borg;page_=page;return prepare_page(render,error);
     }
     unsigned page_count()const{return std::max(1u,(unsigned(sources_[selected_].entries.size())+columns_*rows_-1)/(columns_*rows_));}
@@ -284,7 +303,24 @@ private:
                 f32 extent=1;for(unsigned k=0;k<3;++k){cell->centre[k]=(low[k]+high[k])*.5f;extent=std::max(extent,high[k]-low[k]);}
                 //Program poses can extend beyond their initial stance. Extra
                 //inspection-camera margin is not a source movement parameter.
-                cell->radius=std::max(50.f,extent*(source_programs_?.85f:.65f));cell->model.upload_textures_shared(render,selected_?70000:60000);
+                cell->radius=std::max(50.f,extent*(source_programs_?.85f:.65f));
+                if(package_preview_){
+                    const auto count=cell->model.asset().scene.textures.size();
+                    if(count>1024){if(error)*error="package preview: texture count budget";return false;}
+                    for(unsigned i=0;i<count;++i)if(render.texture_is_shared(package_texture_base_+i)){
+                        if(error)*error="package preview: texture range conflicts with shared art";
+                        return false;
+                    }
+                    if(count&&!render.release_texture(package_texture_base_)){
+                        if(error)*error="package preview: backend cannot release preview textures";
+                        return false;
+                    }
+                    package_texture_count_=unsigned(count);package_texture_owner_=&render;
+                    if(cell->model.upload_textures(render,package_texture_base_)!=count){
+                        if(error)*error="package preview: texture upload failed";
+                        return false;
+                    }
+                }else cell->model.upload_textures_shared(render,selected_?70000:60000);
             }
             cells_.push_back(std::move(cell));
         }
@@ -295,6 +331,10 @@ private:
     CharacterProgramAsset program_asset_;CharacterPoseHeightProfile program_height_;CharacterMotionDriver program_driver_;bool source_programs_=false;
     CharacterMovementProfile program_motion_;bool source_handlers_=false,package_preview_=false;
     std::string package_variant_;
+    static constexpr u32 package_texture_base_=65000;
+    unsigned package_texture_count_=0;
+    RenderEngine* package_texture_owner_=nullptr;
+    bool package_returnable_=false;
     unsigned selected_=0,page_=0,columns_=4,rows_=3;f64 clock_=0;f32 speed_=.5f,yaw_=0;bool ready_=false,paused_=false;GamePadState previous_{};
 };
 }

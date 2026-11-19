@@ -103,6 +103,7 @@ public:
     RenderCapabilities capabilities() const override { return {0, false, false, "headless"}; }
     bool upload_vertices(const Vertex*, std::size_t) override { return true; }
     bool upload_texture(u32, const TextureDesc&) override { return true; }
+    bool release_texture(u32 handle) override { return handle!=0; }
     bool upload_matrix(u32, const f32*) override { return true; }
     void begin_frame(const FrameDesc&) override {}
     void submit(const DrawCall&) override {}

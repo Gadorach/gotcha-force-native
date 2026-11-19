@@ -1193,8 +1193,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
 int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,const gf::BorgPackageCatalog& packages){
     gf::BorgInstalledBrowser browser;browser.open(packages);
     gf::BorgInstalledBrowserView view;gf::BorgBrowserTile tile;gf::InputRouter router;
+    gf::NativeAnimationMosaic preview;std::string error;
     constexpr gf::u32 tile_handle=59001; // single replaceable texture in this isolated presentation mode
-    bool confirmed=false,captured=false;
+    bool confirmed=false,captured=false,preview_open=false,preview_unavailable=false,previous_back=false;
     auto refresh_tile=[&](){
         tile={};
         const auto* variant=browser.variant();
@@ -1215,7 +1216,7 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
         refresh_tile();
     };
     refresh_package();
-    unsigned frame=0;const auto start=context.clock().monotonic_ns();
+    unsigned frame=0;const auto start=context.clock().monotonic_ns();auto previous=start;
     while(context.window().pump_events()&&!context.window().should_close()){
         const auto now=context.clock().monotonic_ns();
         if(options.seconds&&now-start>=gf::u64(options.seconds)*1000000000ull)break;
@@ -1223,19 +1224,51 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
         auto pad=router.route(input,0);if(input.quit||pad.quit_requested)break;
         if(options.demo_borg_browser){
             pad={};pad.dpad_right=frame==1||frame==7;pad.dpad_down=frame==3;pad.dpad_up=frame==5;pad.a=frame==9;
+            pad.x=frame==11||frame==17||frame==23;pad.b=frame==19||frame==25;
+            pad.dpad_down|=frame==15;pad.dpad_up|=frame==21;
         }
-        switch(browser.step(pad)){
-        case gf::BorgBrowserChange::Package:confirmed=false;refresh_package();break;
-        case gf::BorgBrowserChange::Variant:confirmed=false;refresh_tile();break;
+        const bool back=pad.b&&!previous_back;previous_back=pad.b;
+        const gf::f32 dt=(options.headless||options.frames)?1.f/60:gf::f32(now>=previous?now-previous:0)/1e9f;previous=now;
+        if(preview_open){
+            if(back||!preview.step(pad,dt,render,&error)){
+                preview_unavailable=!back;
+                if(!preview.close_package_preview(render)){
+                    gf::log_error(context,"borg-picker","could not release preview textures");render.shutdown();return 2;
+                }
+                browser.sync_input(pad);preview_open=false;
+                if(back)gf::log_info(context,"borg-picker","returned from body preview");
+                else gf::log_warn(context,"borg-picker","body preview stopped: %s",error.c_str());
+            }
+        }else switch(browser.step(pad)){
+        case gf::BorgBrowserChange::Package:confirmed=preview_unavailable=false;refresh_package();break;
+        case gf::BorgBrowserChange::Variant:confirmed=preview_unavailable=false;refresh_tile();break;
         case gf::BorgBrowserChange::Confirm:
             confirmed=true;
             if(const auto selection=browser.selection())gf::log_info(context,"borg-picker","inspected %s variant=%s (no save or battle admission)",
                 selection->identity.id.c_str(),selection->variant.c_str());
             break;
+        case gf::BorgBrowserChange::Preview:
+            if(const auto selection=browser.selection()){
+                gf::pc::BorgPackagePreviewFiles files;using Inputs=gf::pc::BorgPackagePreviewFiles;
+                if(gf::pc::load_borg_preview_files("borgs",browser.catalog(),selection->identity.id,selection->variant,&files,&error)&&
+                    preview.load_package_preview(files.identity,files.profile,Inputs::view(files.model),Inputs::view(files.rig_prefix),
+                        Inputs::view(files.pose_profile),Inputs::view(files.motions),render,&error,true)){
+                    preview.sync_input(pad);preview_open=true;preview_unavailable=false;
+                    gf::log_info(context,"borg-picker","opened body preview %s variant=%s",selection->identity.id.c_str(),selection->variant.c_str());
+                }else{
+                    if(!preview.close_package_preview(render)){
+                        gf::log_error(context,"borg-picker","could not release failed preview textures");render.shutdown();return 2;
+                    }
+                    preview_unavailable=true;
+                    gf::log_warn(context,"borg-picker","body preview unavailable: %s",error.c_str());
+                }
+            }
+            break;
         case gf::BorgBrowserChange::None:break;
         }
         render.begin_frame({frame,.055f,.065f,.085f});render.reset_arena();
-        const auto draws=view.draw(render,options.width,options.height,browser,tile,confirmed);
+        const auto draws=preview_open?preview.draw(render,options.width,options.height):
+            view.draw(render,options.width,options.height,browser,tile,confirmed,preview_unavailable);
         render.end_frame();
         if(!captured)captured=capture_if_requested(context,options,frame);
         render.present();context.advance_frame();++frame;
@@ -1243,9 +1276,10 @@ int run_borg_browser(gf::Context& context,gf::RenderEngine& render,const Options
         if(options.frames&&frame>=options.frames)break;
     }
     const auto* selected=browser.entry();const auto* variant=browser.variant();
-    gf::log_info(context,"borg-picker","frames=%u packages=%zu selected=%s variant=%s",
+    gf::log_info(context,"borg-picker","frames=%u packages=%zu selected=%s variant=%s view=%s",
         frame,browser.catalog().discovered.size(),selected?selected->manifest.identity.id.c_str():"none",
-        variant?variant->id.c_str():"unavailable");
+        variant?variant->id.c_str():"unavailable",preview_open?"preview":"picker");
+    if(!preview.close_package_preview(render)){gf::log_error(context,"borg-picker","could not release preview textures");render.shutdown();return 2;}
     render.shutdown();return 0;
 }
 
@@ -1309,7 +1343,9 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
         if(!draws){gf::log_error(context,"animation-mosaic","no preview draws");render.shutdown();return 2;}
         if(options.frames&&frame>=options.frames)break;
     }
-    gf::log_info(context,"animation-mosaic","frames=%u Borg=%u page=%u",frame,mosaic.borg(),mosaic.page()+1);render.shutdown();return 0;
+    gf::log_info(context,"animation-mosaic","frames=%u Borg=%u page=%u",frame,mosaic.borg(),mosaic.page()+1);
+    if(!mosaic.close_package_preview(render)){gf::log_error(context,"borg-preview","could not release preview textures");render.shutdown();return 2;}
+    render.shutdown();return 0;
 }
 
 } // namespace

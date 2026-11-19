@@ -28,6 +28,12 @@ int main(){
     browser.step({});pad={};pad.a=true;
     check(browser.step(pad)==BorgBrowserChange::Confirm&&browser.selection()->label=="Bronze"&&
         browser.step(pad)==BorgBrowserChange::None,"confirmation yields an exact read-only selection");
+    browser.step({});pad={};pad.x=true;
+    check(browser.step(pad)==BorgBrowserChange::Preview&&browser.selection()->variant=="bronze"&&
+        browser.step(pad)==BorgBrowserChange::None,"open preview uses an edge and the exact selected variant");
+    pad={};pad.dpad_down=true;browser.sync_input(pad);
+    check(browser.step(pad)==BorgBrowserChange::None&&browser.selection()->variant=="bronze",
+        "returning from preview suppresses held navigation");
     browser.step({});pad={};pad.dpad_down=true;pad.a=true;
     check(browser.step(pad)==BorgBrowserChange::Package&&browser.entry()->manifest.identity.id=="example:beta"&&
         !browser.variant()&&!browser.selection()&&!browser.bind(metadata),"package movement wins over confirm and clears stale metadata");

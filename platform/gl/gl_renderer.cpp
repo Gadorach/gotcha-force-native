@@ -424,6 +424,16 @@ public:
                      static_cast<GLsizei>(desc.height), 0, GL_RGBA, GL_UNSIGNED_BYTE, desc.pixels);
         return true;
     }
+    bool release_texture(u32 handle) override {
+        if(!handle||!context_||frame_open_||SDL_GL_GetCurrentContext()!=context_)return false;
+        const auto it=textures_.find(handle);
+        if(it!=textures_.end()){
+            glDeleteTextures(1,&it->second);
+            textures_.erase(it);
+        }
+        copy_sizes_.erase(handle);
+        return true;
+    }
 
     bool copy_framebuffer(const FramebufferCopy& copy) override {
         if(!context_||SDL_GL_GetCurrentContext()!=context_||!frame_open_||!framebuffer_copy_valid(copy))return false;

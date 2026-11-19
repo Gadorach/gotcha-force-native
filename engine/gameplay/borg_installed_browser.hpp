@@ -8,7 +8,7 @@ struct BorgBrowserSelection {
     std::string variant,label;
     bool operator==(const BorgBrowserSelection&)const=default;
 };
-enum class BorgBrowserChange {None,Package,Variant,Confirm};
+enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview};
 
 // Read-only navigation of an installation snapshot. A selection is neither
 // a saved instance nor a permission to construct an actor.
@@ -41,10 +41,11 @@ public:
         if(!value||!selected)return {};
         return BorgBrowserSelection{selected->manifest.identity,value->id,value->label};
     }
+    void sync_input(const GamePadState& pad){previous_=pad;}
     BorgBrowserChange step(const GamePadState& pad){
         const bool up=pad.dpad_up&&!previous_.dpad_up,down=pad.dpad_down&&!previous_.dpad_down;
         const bool left=pad.dpad_left&&!previous_.dpad_left,right=pad.dpad_right&&!previous_.dpad_right;
-        const bool confirm=pad.a&&!previous_.a;previous_=pad;
+        const bool confirm=pad.a&&!previous_.a,preview=pad.x&&!previous_.x;previous_=pad;
         const auto entries=catalog_.discovered.size();
         if(entries>1&&up!=down){
             entry_=up?(entry_+entries-1)%entries:(entry_+1)%entries;
@@ -56,7 +57,9 @@ public:
             variant_=left?(variant_+count-1)%count:(variant_+1)%count;
             return BorgBrowserChange::Variant;
         }
-        return confirm&&variant()?BorgBrowserChange::Confirm:BorgBrowserChange::None;
+        if(!variant())return BorgBrowserChange::None;
+        if(preview)return BorgBrowserChange::Preview;
+        return confirm?BorgBrowserChange::Confirm:BorgBrowserChange::None;
     }
 private:
     BorgPackageCatalog catalog_;
