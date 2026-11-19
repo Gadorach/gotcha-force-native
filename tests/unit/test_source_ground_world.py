@@ -135,6 +135,14 @@ class SourceGroundWorldTests(unittest.TestCase):
             duel = start(11, 8, mode="--demo-battle-mvp")
             self.assertEqual(duel.returncode, 2, duel.stdout)
             self.assertNotIn("backend=", duel.stdout)
+            for flags in (["--browse-borgs"], ["--place-owned-borg", str(accounts), "7", "11", "1", "1"]):
+                result = self.run_host([*flags, "--practice-from-picker", "--headless"], cwd=root)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertNotIn("backend=", result.stdout)
+            replay = subprocess.run([seed, "--replay-owned-practice-picker", accounts], capture_output=True,
+                                    text=True, timeout=90, cwd=root)
+            self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
+            self.assertIn("exact launch/return, disabled refusal, and held-key isolation PASS", replay.stdout)
             self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):

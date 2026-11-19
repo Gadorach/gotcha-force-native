@@ -17,12 +17,13 @@ struct BorgPlacementPanel {
     u16 declared_cost=0;
     bool confirm_selected=false,locked=false,headless=false;
 };
+struct BorgBrowserPracticePanel {std::string_view status;};
 
 class BorgInstalledBrowserView {
 public:
     unsigned draw(RenderEngine& render,s32 width,s32 height,const BorgInstalledBrowser& browser,
                   const BorgBrowserTile& tile,bool confirmed,bool preview_unavailable=false,std::string_view save_name={},
-                  const BorgPlacementPanel* placement=nullptr){
+                  const BorgPlacementPanel* placement=nullptr,const BorgBrowserPracticePanel* practice=nullptr){
         if(width<440||height<320)return 0;
         const auto saved=render.state();
         render.state()={};render.state().depth_test=render.state().depth_write=false;
@@ -129,7 +130,8 @@ public:
                         fill(right,267,std::max(1,s32(f32(tile.width)*scale)),std::max(1,s32(f32(tile.height)*scale)),{},tile.texture);
                     }
                 }
-                if(preview_unavailable)text("BODY PREVIEW UNAVAILABLE",right,height-60,right_space,small);
+                if(practice&&!practice->status.empty())text(practice->status,right,height-60,right_space,body);
+                else if(preview_unavailable)text("BODY PREVIEW UNAVAILABLE",right,height-60,right_space,small);
                 else if(confirmed)text("SELECTION INSPECTED",right,height-60,right_space,body);
             }else if(const auto* variant=browser.variant()){
                 const auto label=printable(variant->label);
@@ -157,7 +159,8 @@ public:
         }else{
             text(owned?"UP/DOWN OWNED COPY  SHIFT/B RETURN FROM PREVIEW":"UP/DOWN PACKAGE  LEFT/RIGHT VARIANT",
                 16,height-32,width-32,small);
-            text("SPACE/A INSPECT  E/X BODY PREVIEW  ESC CLOSE",16,height-19,width-32,small);
+            text(practice?"SPACE/A INSPECT  E/X PREVIEW  Q/Y PRACTICE  ESC CLOSE":"SPACE/A INSPECT  E/X BODY PREVIEW  ESC CLOSE",
+                16,height-19,width-32,small);
         }
         render.state()=saved;
         return draws;

@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart};
+enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,PickerPractice};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -44,6 +44,12 @@ public:
         case Replay::FixtureRestart:
             if(f>=5&&f<25)raw.buttons|=1u<<7; // Actual D-pad left from the verified foothold.
             if(replay_==Replay::FixtureRestart&&f>=75&&f<79)raw.buttons|=1u<<3;
+            break;
+        case Replay::PickerPractice:
+            // Hold both launch and exit across the renderer/session handoff.
+            if(f<=3||(f>=16&&f<=18))raw.buttons|=1u<<3;
+            if((f>=11&&f<=13)||(f>=22&&f<=24))raw.quit=true;
+            if(f==14)raw.buttons|=1u<<6; // Held on the return/release frame, not a fresh collection move.
             break;
         }
     }
@@ -135,10 +141,54 @@ int seed_owned_practice(const std::string& root){
     };
     return write(save,roster)&&write(other,other_roster)?0:1;
 }
+
+int replay_owned_practice_picker(std::string root){
+    auto files=gf::sdl::create_file_system();
+    gf::headless::Bundle headless;ReplayInput input(Replay::PickerPractice);ReplayLog log;
+    auto backends=headless.get();backends.files=files.get();backends.input=&input;backends.clock=&input;backends.log=&log;
+    auto run_picker=[&](char* instance){
+        Options options;
+        char program[]="gf_native",mode[]="--browse-owned-borgs",account[]="7",save[]="11";
+        char owned[]="--owned-instance",practice[]="--practice-from-picker",off[]="--headless",frames[]="--frames",count[]="32";
+        char* args[]={program,mode,root.data(),account,save,owned,instance,practice,off,frames,count};
+        check(parse(int(std::size(args)),args,&options),"owned picker options",log.text);
+        gf::Context context(backends,60);gf::RenderEngine render(context.render());std::string error;
+        check(render.initialize({640,480,false,true,"Owned picker replay"},nullptr,&error),"picker renderer",error);
+        const auto packages=gf::pc::scan_borg_packages("borgs");
+        check(run_borg_browser(context,render,options,packages)==0,"owned picker practice",log.text);
+        return context.frame_index();
+    };
+    auto count=[](std::string_view text,std::string_view part){
+        std::size_t found=0;
+        for(std::size_t at=0;(at=text.find(part,at))!=std::string_view::npos;at+=part.size())++found;
+        return found;
+    };
+    char enabled[]="8";
+    check(run_picker(enabled)==32&&count(log.text,"launched practice for owned instance=8")==2&&
+        count(log.text,"returned to owned instance=8 after practice")==2&&
+        count(log.text,"owned instance=8 (Saved G-Red / Saved Standard); save is read-only")==2&&
+        !has(log.text,"practice restarted at tick=0")&&has(log.text,"selected=fixture:gred variant=normal view=picker")&&
+        has(log.text,"frames=32 packages=1")&&has(log.text,"instance=8 saved-variant=normal"),
+        "two fresh launches, held-key isolation, exact return and one total frame budget",log.text);
+    log.text.clear();input=ReplayInput(Replay::PickerPractice);
+    char disabled[]="9";
+    check(run_picker(disabled)>0&&!has(log.text,"launched practice for")&&
+        has(log.text,"practice unavailable for instance=9: the requested owned copy is disabled")&&
+        has(log.text,"instance=9 saved-variant=normal disabled=1"),
+        "disabled copy stays in the collection but cannot launch",log.text);
+    std::puts("Owned picker practice: exact launch/return, disabled refusal, and held-key isolation PASS");
+    return 0;
+}
 }
 
 int main(int argc,char** argv){
-    if(argc!=1)return argc==3&&std::string_view(argv[1])=="--seed-owned-practice"?seed_owned_practice(argv[2]):2;
+    if(argc!=1){
+        if(argc!=3)return 2;
+        const std::string_view command=argv[1];
+        if(command=="--seed-owned-practice")return seed_owned_practice(argv[2]);
+        if(command=="--replay-owned-practice-picker")return replay_owned_practice_picker(argv[2]);
+        return 2;
+    }
     const auto files=gf::sdl::create_file_system();
     if(!files->exists("local/content/source-gred-ground-v9/motion.gfmm")||
        !files->exists("local/content/native-battle-mvp-v1/stage.hsd")){

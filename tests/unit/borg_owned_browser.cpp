@@ -33,6 +33,14 @@ int main(){
     auto tap=[&](const GamePadState& pad){browser.step({});return browser.step(pad);};
     check(tap(right)==BorgBrowserChange::None&&tap(x)==BorgBrowserChange::Preview&&browser.selection()->variant=="silver",
         "owned variants cannot cycle; preview request is exact");
+    GamePadState q;q.y=true;
+    check(tap(q)==BorgBrowserChange::None,"practice is not a default picker action");
+    browser.step({},true);
+    check(browser.step(q,true)==BorgBrowserChange::Practice&&browser.step(q,true)==BorgBrowserChange::None&&
+        browser.owned_entry()->instance==3,"an opted-in practice request is a single edge on the exact copy");
+    browser.step({},true);
+    auto together=q;together.x=true;
+    check(browser.step(together,true)==BorgBrowserChange::Preview,"a simultaneous preview never launches practice");
     browser.sync_input(down);
     check(browser.step(down)==BorgBrowserChange::None&&browser.owned_entry()->instance==3,
         "held navigation after preview cannot change owned copy");
@@ -56,5 +64,8 @@ int main(){
     check(browser.open_owned(catalog,roster,7)&&browser.owned_entry()->instance==7&&browser.size()==5&&!browser.entry()&&
         browser.owned_status()=="PACKAGE SCAN UNAVAILABLE","failed scan doesn't hide ownership or fabricate absence");
     check(browser.open_owned(catalog,{})&&browser.owned()&&!browser.size(),"empty selected roster remains an owned view");
+    check(browser.step(q,true)==BorgBrowserChange::None,"an empty owned view cannot request practice");
+    browser.open(catalog);
+    check(browser.step(q,true)==BorgBrowserChange::None,"an installed-only picker cannot request owned practice");
     std::puts("Owned Borg picker: exact variants, distinct copies, unavailable states and shared rendering PASS");
 }

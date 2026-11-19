@@ -8,7 +8,7 @@ struct BorgBrowserSelection {
     std::string variant,label;
     bool operator==(const BorgBrowserSelection&)const=default;
 };
-enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview};
+enum class BorgBrowserChange {None,Package,Variant,Confirm,Preview,Practice};
 
 // Read-only navigation of installed packages or a selected save snapshot.
 // Body preview uses package identity, never owned-instance or actor authority.
@@ -76,10 +76,11 @@ public:
         return BorgBrowserSelection{selected->manifest.identity,value->id,value->label};
     }
     void sync_input(const GamePadState& pad){previous_=pad;}
-    BorgBrowserChange step(const GamePadState& pad){
+    BorgBrowserChange step(const GamePadState& pad,bool allow_practice=false){
         const bool up=pad.dpad_up&&!previous_.dpad_up,down=pad.dpad_down&&!previous_.dpad_down;
         const bool left=pad.dpad_left&&!previous_.dpad_left,right=pad.dpad_right&&!previous_.dpad_right;
-        const bool confirm=pad.a&&!previous_.a,preview=pad.x&&!previous_.x;previous_=pad;
+        const bool confirm=pad.a&&!previous_.a,preview=pad.x&&!previous_.x;
+        const bool practice=allow_practice&&pad.y&&!previous_.y&&!pad.b&&!pad.start;previous_=pad;
         const auto entries=size();
         if(entries>1&&up!=down){
             entry_=up?(entry_+entries-1)%entries:(entry_+1)%entries;
@@ -91,6 +92,9 @@ public:
             variant_=left?(variant_+count-1)%count:(variant_+1)%count;
             return BorgBrowserChange::Variant;
         }
+        // This is a request to check the exact owned copy, not a readiness
+        // receipt. Preview and inspect win if pressed on the same sample.
+        if(practice&&!preview&&!confirm&&owned_entry())return BorgBrowserChange::Practice;
         if(const auto* saved=owned_entry();saved&&saved->disabled)return BorgBrowserChange::None;
         if(!variant())return BorgBrowserChange::None;
         if(preview)return BorgBrowserChange::Preview;

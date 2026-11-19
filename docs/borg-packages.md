@@ -108,6 +108,20 @@ silently redirect the launch or restart; close and reopen to use it. No
 practice progress, Force placement, or ownership changes are written.
 This is not a Force or battle-mode admission path.
 
+To launch and return without leaving the owned collection, open it with
+practice enabled:
+
+```sh
+gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID --practice-from-picker --no-audio
+```
+
+**Q/Y** checks the highlighted copy and opens ordinary live practice if
+it qualifies. The check can still refuse a disabled copy, unsupported
+variant, or unavailable assets. **Esc** in practice returns to the same
+copy; release and press it again to close the collection. Each view owns
+its renderer resources only while active. If the selected save has changed,
+reopen the collection rather than continuing with a stale selection.
+
 ## Read-only installed Borg picker
 
 `gf_native --browse-borgs` opens the standalone installed-package picker.
