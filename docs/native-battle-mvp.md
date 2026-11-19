@@ -71,10 +71,10 @@ tick is due. Resuming does not catch up elapsed pause time.
 One sampled Shift tap can carry to the next movement tick if released before
 then. It is still subject to the source jump and relaunch rules. Pending taps
 do not survive pause, restart, or a stopped practice session.
-A sampled high-deflection WASD or stick flick can also carry for one tick
-when released to neutral. Live stick or arrow input takes priority, and the
-source controller still decides whether to dash. Pending flicks clear on the
-same session boundaries.
+A sampled high-deflection WASD or stick flick can also carry for one tick.
+Only the latest eligible sample is retained. Live jump, stick, or arrow
+input takes priority. Separate sampled jump and flick presses are never merged
+into a new combination, and the source controller still decides what to admit.
 [Contact Sheet 61](../local/recomp-evidence/contact-sheets/gred-practice-clock-v1/contact-sheet-61.png)
 shows an offscreen replay of pause and resume at tick 2, then one restart
 while Q remains held.

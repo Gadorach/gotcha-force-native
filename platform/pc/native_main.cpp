@@ -45,8 +45,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
-#include "platform/pc/gred_practice_flick.hpp"
-#include "platform/pc/gred_practice_jump_tap.hpp"
+#include "platform/pc/gred_practice_input.hpp"
 #include "platform/pc/sdl_platform.hpp"
 
 namespace {
@@ -755,8 +754,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     bool input_refused=false,practice_stopped=false;
     const bool practice_restartable=options.gred_practice&&options.source_ground_interactive;
     bool practice_restart_held=false,practice_pause_held=false;
-    gf::pc::GRedPracticeJumpTap practice_jump;
-    gf::pc::GRedPracticeFlick practice_flick;
+    gf::pc::GRedPracticeInput practice_input;
     gf::u32 landing_jump_script_tick=0,landing_dash_script_tick=0;
     gf::u32 windup_entry_push_flick_tick=0;
     for(unsigned i=0;i<2;++i){gf::BattleMvpVec low,high;if(view.actor_bounds(i,&low,&high))gf::log_info(context,"battle-mvp","actor=%u ground-y=%.1f model-y=%.1f..%.1f",i,world.actors()[i].position[1],low[1],high[1]);}
@@ -774,8 +772,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             const bool pause=pad.start&&!practice_pause_held;
             practice_restart_held=pad.y;practice_pause_held=pad.start;
             const bool practicing=!restart&&!pause&&!practice_stopped&&!world.paused();
-            practice_jump.sample(pad.b,practicing);
-            practice_flick.sample(pad,source.practice_flick_direction(pad),practicing);
+            practice_input.sample(pad,source.practice_flick_direction(pad),practicing);
             if(restart){
                 if(!world.start(config,&view)||!view.update(world,&error)||!bind_source()){
                     gf::log_error(context,"source-ground","practice restart refused: %s",error.c_str());
@@ -809,10 +806,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 gf::NativeGRedGroundInput mapped;
                 if(options.source_ground_walk){
                     auto device=pad;
-                    if(practice_restartable){
-                        device.b=practice_jump.take();
-                        practice_flick.take(device);
-                    }
+                    if(practice_restartable)practice_input.take(device);
                     if(!options.source_ground_interactive){
                         device={};const unsigned t=world.tick()%(options.source_air_dash?480:options.source_moving_jump?480:options.source_vertical_jump?600:360);
                          if(options.source_ground_windup_entry_push){

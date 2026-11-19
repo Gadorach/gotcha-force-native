@@ -494,12 +494,14 @@ public:
     GRedAirDashState air_dash_stages()const{return state_.air_dash;}
     u8 ascent_stage()const{return state_.jump.ascent_stage;}
     u8 selector()const{return state_.jump.selector?state_.jump.selector:state_.dash.selector?state_.dash.selector:state_.walk_selector;}
-    u8 practice_flick_direction(GamePadState pad)const{
-        if(!ready_||pad.dpad_up||pad.dpad_down||pad.dpad_left||pad.dpad_right)return 0;
+    std::optional<u8> practice_flick_direction(GamePadState pad)const{
+        if(!ready_)return {};
         pad.b=false;
         NativeGRedGroundInput mapped;u8 direction=0;
-        return native_gred_ground_input(input_,pad,&mapped,nullptr)&&
-            character_movement_stick_nibble(input_,mapped.x,mapped.y,input_.high_threshold,&direction)?direction:0;
+        if(!native_gred_ground_input(input_,pad,&mapped,nullptr))return {};
+        if(pad.dpad_up||pad.dpad_down||pad.dpad_left||pad.dpad_right)return u8{0};
+        if(!character_movement_stick_nibble(input_,mapped.x,mapped.y,input_.high_threshold,&direction))return {};
+        return direction;
     }
     bool map_input(const GamePadState& pad,NativeGRedGroundInput* out,std::string* error)const{
         if(ground_jump_mode(mode_)){
