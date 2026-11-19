@@ -796,6 +796,27 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("Up Arrow+Shift 25-32", guide.stdout)
         self.assertNotIn("direct timed Up relaunch demo:", guide.stdout)
 
+    def test_walk_ledge_expiring_direct_relaunch_stays_plain_and_descending(self):
+        ready = "practice-direct-expiring-request=UP+SHIFT/B TO REQUEST RELAUNCH ON EXPIRY"
+        entry = "practice-direct-expiring-relaunch=AIRBORNE / RELAUNCH ON EXPIRY"
+        for tick, phase, meter, timer in (
+            (37, "LEDGE FALL / PUSH", 10000, 1), (38, "RELAUNCH", 9850, 0), (39, "FALLING", 9850, 0),
+            (91, "TOUCHDOWN", 9850, 0), (92, "LANDING", 9850, 0), (125, "IDLE", 10000, 0),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-expiring-direct-relaunch", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"direct-expiring-relaunches={int(tick>=38)} air-dash-starts=0 floors=0 entry-pushes=0 timer698={timer}.0", result.stdout)
+                self.assertIn("walk-ledge-fall-pushes=1", result.stdout)
+                self.assertEqual(ready in result.stdout, tick == 37)
+                self.assertEqual(entry in result.stdout, tick == 38)
+                self.assertNotIn("practice-direct-expiry-relaunch=", result.stdout)
+                if tick == 125:
+                    self.assertIn("G-Red-position=-755.24/10.00/-3150.42", result.stdout)
+
     def test_timed_release_push_uses_the_ordinary_falling_role(self):
         for tick, phase, meter, timer, pushes in (
             (23, "RELAUNCH", 9850, 16, 0), (24, "FALLING", 9850, 15, 0),

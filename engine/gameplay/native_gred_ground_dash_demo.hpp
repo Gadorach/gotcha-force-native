@@ -49,7 +49,7 @@ class NativeGRedGroundDashDemo {
     };
     struct Pending {
         State state;NativeBorgMotionOffer offer;CharacterLocalPose local;u8 interrupted_dash=0,landing_target=0;
-        bool direct_expiry_relaunch=false,direct_timed_relaunch=false;
+        bool direct_expiry_relaunch=false,direct_timed_relaunch=false,direct_expiring_relaunch=false;
         std::shared_ptr<const NativeBorgRecoveryCompletionScope> recovery_completion;
     };
 public:
@@ -337,7 +337,9 @@ public:
             const bool timed_direct_policy=allows(mode_,Behavior::WalkTimedDirectRelaunch);
             const bool timed_direct=direct_push&&timed_direct_policy&&state_.ground_timer698>1.f&&
                 s.ground_timer698==state_.ground_timer698-1.f;
-            if(direct_push&&!timed_direct&&(state_.ground_timer698!=0.f||s.ground_timer698!=0.f))
+            const bool expiring_direct=direct_push&&allows(mode_,Behavior::WalkExpiringDirectRelaunch)&&
+                state_.ground_timer698==1.f&&s.ground_timer698==0.f;
+            if(direct_push&&!timed_direct&&!expiring_direct&&(state_.ground_timer698!=0.f||s.ground_timer698!=0.f))
                 return fail(error,timed_direct_policy?"direct relaunch needs a still-positive countdown or an accepted zero-timer walking push":
                     "direct relaunch needs the accepted zero-timer walking push");
             if(direct_push&&!timed_direct&&(stick_x!=0||stick_y!=32))
@@ -391,8 +393,9 @@ public:
                     !matches(observed.position)||!matches(s.motion.position))
                     return fail(error,"timed floor handoff needs plain neutral relaunch over the same flat triangle");
             }
-            candidate->direct_expiry_relaunch=direct_push&&!timed_direct;
+            candidate->direct_expiry_relaunch=direct_push&&!timed_direct&&!expiring_direct;
             candidate->direct_timed_relaunch=timed_direct;
+            candidate->direct_expiring_relaunch=expiring_direct;
         }else if(s.jump.selector>=15&&s.jump.selector<=17){
             const bool push_windup=allows(mode_,Behavior::WalkLedgeExpiryAirDash)&&state_.walk_loss_origin&&
                 state_.static_push&&s.jump.selector==15&&!s.air_dash.entered;
@@ -642,17 +645,21 @@ public:
             state_.jump.cached87&&air->timed_relaunch_floor_windup&&NormalGRedMovementDefinition::floor_windup_handoff_clock(
                 NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),
                 *accepted.controller_timer698,std::max(0.f,*accepted.controller_timer698-1.f));
-        bool direct_expiry_relaunch_ready=false;
+        bool direct_expiry_relaunch_ready=false,direct_expiring_relaunch_ready=false;
         if(allows(mode_,Behavior::WalkExpiryDirectRelaunch)&&accepted.kind==NativeBorgMotionKind::GroundLossPush&&
             accepted.static_push&&accepted.walk_ledge&&accepted.walk_ledge->walk_origin&&
-            accepted.walk_ledge->timer698==0.f&&accepted.controller_timer698==0.f&&state_.jump.cached87){
+            accepted.controller_timer698==accepted.walk_ledge->timer698&&state_.jump.cached87){
+            const bool expired=accepted.walk_ledge->timer698==0.f;
+            const bool expiring=accepted.walk_ledge->timer698==1.f&&allows(mode_,Behavior::WalkExpiringDirectRelaunch);
             // Preview only the input predicate on a copy. No motion, VM work,
             // travel check or permission for the following frame is published.
             u8 up=0;CharacterMovementInputState preview;GRedMovementAdmission admission;
             const GRedMovementAdmissionFields fields{state_.jump.selector,state_.jump.air_ready588,state_.motion.flags5e0,true};
-            direct_expiry_relaunch_ready=character_movement_stick_nibble(input_,0,32,input_.low_threshold,&up)&&up&&
+            const bool ready=(expired||expiring)&&character_movement_stick_nibble(input_,0,32,input_.low_threshold,&up)&&up&&
                 character_movement_input_step(input_,state_.input,{0,32,(u32(up)<<16)|0x100u,fields.flags5e0},&preview,nullptr)&&
                 gred_movement_admit(input_,preview,state_.resource,fields,&admission,nullptr)&&admission.changed&&admission.selector==8;
+            direct_expiry_relaunch_ready=ready&&expired;
+            direct_expiring_relaunch_ready=ready&&expiring;
         }
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
@@ -665,7 +672,8 @@ public:
                 pending_->direct_timed_relaunch&&accepted.relaunch_motion&&accepted.relaunch_motion->direction,
                 relaunch_from_active_snap,accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&
                 accepted.jump_motion->timed_walk_relaunch_fall,accepted.kind==NativeBorgMotionKind::StaticPush&&
-                accepted.jump_motion&&accepted.jump_motion->second_timed_release_push}));
+                accepted.jump_motion&&accepted.jump_motion->second_timed_release_push,pending_->direct_expiring_relaunch,
+                direct_expiring_relaunch_ready}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

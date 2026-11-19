@@ -68,6 +68,8 @@ public:
         return frame.direct_timed_relaunch_up?"AIRBORNE / DIRECT TIMED UP RELAUNCH":"AIRBORNE / DIRECT TIMED RELAUNCH";
     }
     static constexpr const char* direct_expiry_request_hint="UP+SHIFT/B TO REQUEST RELAUNCH";
+    static constexpr const char* direct_expiring_request_hint="UP+SHIFT/B TO REQUEST RELAUNCH ON EXPIRY";
+    static constexpr const char* direct_expiring_relaunch_hint="AIRBORNE / RELAUNCH ON EXPIRY";
     static constexpr const char* windup_from_relaunch_snap_hint="AIRBORNE / RELAUNCH TO WIND-UP";
     static constexpr const char* relaunch_from_active_snap_hint="AIRBORNE / ACTIVE DASH TO RELAUNCH";
     static const char* practice_timed_release_push_cue(const NativeBorgSourceReadout& frame){
@@ -294,6 +296,8 @@ public:
             if(practice->direct_expiry_relaunch){text+="\n";text+=direct_expiry_relaunch_hint;}
             if(const char* cue=practice_direct_timed_relaunch_cue(*practice)){text+="\n";text+=cue;}
             if(practice->direct_expiry_relaunch_ready){text+="\n";text+=direct_expiry_request_hint;}
+            if(practice->direct_expiring_relaunch_ready){text+="\n";text+=direct_expiring_request_hint;}
+            if(practice->direct_expiring_relaunch){text+="\n";text+=direct_expiring_relaunch_hint;}
             if(practice->windup_from_relaunch_snap){text+="\n";text+=windup_from_relaunch_snap_hint;}
             if(practice->relaunch_from_active_snap){text+="\n";text+=relaunch_from_active_snap_hint;}
             if(const char* cue=practice_timed_release_push_cue(*practice)){text+="\n";text+=cue;}

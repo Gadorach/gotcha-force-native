@@ -949,8 +949,10 @@ public:
                      if(o.proposed_position!=expected)return false;
                 }
             }
-              const bool direct_expiry_relaunch=behaviors.has(Behavior::WalkExpiryDirectRelaunch)&&walking_push&&
-                  walking_push->timer698==0.f&&o.controller_timer698==0.f&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
+               const bool direct_expiring_relaunch=behaviors.has(Behavior::WalkExpiringDirectRelaunch)&&walking_push&&
+                   walking_push->timer698==1.f&&last_offer_.controller_timer698==1.f;
+               const bool direct_expiry_relaunch=behaviors.has(Behavior::WalkExpiryDirectRelaunch)&&walking_push&&
+                   (walking_push->timer698==0.f||direct_expiring_relaunch)&&o.controller_timer698==0.f&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
                   o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
                   o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
                   native_gred_relaunch_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
@@ -1388,7 +1390,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedWalkReleaseSecondPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpiringDirectRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

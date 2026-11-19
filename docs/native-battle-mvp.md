@@ -317,6 +317,15 @@ comes from that input, with the same 150 cost and 13-tick remainder.
 Only soft Up is added on entry; the neutral-only guide and contact
 checks are unchanged.
 
+`--gred-walk-ledge-expiring-direct-relaunch --practice-start` starts
+on a different foothold. Step with **Left Arrow** on 6–7, tap
+**Up Arrow + Shift** on 38, then stay neutral. On 37 an accepted
+walking push leaves one ledge tick. On 38 the plain relaunch spends
+150 as the clock drops to zero; G-Red is still descending. This
+is neither the already-expired push route nor the floor wind-up
+handoff. Use `--demo-gred-walk-ledge-expiring-direct-relaunch`
+for automatic playback.
+
 `--gred-walk-ledge-timed-release-push --practice-start` shows the
 separate contact after release. Step with **Right Arrow** on 6–8,
 tap **Shift** on 23, then leave the controls neutral. Ordinary

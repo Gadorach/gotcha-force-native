@@ -383,5 +383,80 @@ int main(){
             source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
             "timed direct tap and hold both reach distinct touchdown/landing and full-meter idle");
     }
+    auto expiring_prefix=[&](Mode mode){
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={-1080.47473f,-3357.9165f};cfg.spawn_query_y[0]=1846.01367f;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,mode),"fresh grounded start for the expiring plain entry");
+        prefix(37);
+        check(offer.kind==Kind::GroundLossPush&&offer.walk_ledge->walk_origin&&offer.walk_ledge->timer698==1.f&&
+            offer.static_push&&offer.static_push->surface.triangle==2009&&offer.static_push->angle==8192&&
+            offer.vertical_speed==-27.f&&source.resource()==10000,"real integrated timer-one walking push, not an expired sample");
+    };
+    expiring_prefix(Mode::GroundTimedWalkReleaseSecondPush);
+    check(!view.practice_readout(world)->direct_expiring_relaunch_ready&&!prepare(false,&offer,true,true)&&
+        error.find("still-positive countdown")!=std::string::npos&&source.ground_loss_timer698()==1.f&&
+        world.tick()==37&&source.resource()==10000&&!world.step({},false,&view),"older mode refuses the same prefix and requested transition");
+    expiring_prefix(Mode::GroundWalkExpiringDirectRelaunch);
+    check(!prepare(false,&offer,true)&&error.find("needs soft Up")!=std::string::npos&&world.tick()==37&&
+        source.ground_loss_timer698()==1.f&&source.resource()==10000&&!world.step({},false,&view),
+        "neutral Shift alone does not qualify");
+    bind(Mode::GroundWalkExpiringDirectRelaunch);prefix(55);
+    check(!prepare(false,&offer,true,true)&&error.find("plain descending entry without contact response")!=std::string::npos&&
+        world.tick()==55&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&!world.step({},false,&view),
+        "a real nearby steep entry response is not admitted by the plain expiry-step permission");
+    expiring_prefix(Mode::GroundWalkExpiringDirectRelaunch);
+    const auto prior=offer;const auto before=world.actors()[0];const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+    check(view.practice_readout(world)->direct_expiring_relaunch_ready&&!view.practice_readout(world)->direct_expiry_relaunch_ready&&
+        prepare(false,&offer,true,true)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&offer.controller_timer698==0.f&&
+        source.ground_loss_timer698()==1.f&&source.resource()==10000&&!source.relaunches(),
+        "timer and entry cost do not publish when staging Up+Shift");
+    const auto& e=*offer.relaunch_motion;
+    check(e.entry&&e.direction&&native_gred_relaunch_up_turn(frame,before.facing,e.travel5ae,offer.facing)&&
+        offer.entry_vertical_delta==15.f&&e.vertical_before==-12.f&&e.speed_before==prior.jump_motion->speed44&&
+        e.move_speed==e.speed_before&&offer.proposed_position[1]==f32(before.position[1]-12.f)&&
+        offer.vertical_speed==std::fma(e.vertical_accel,1.f,-12.f)&&e.resource_before==10000&&e.resource_after==9850&&
+        !offer.air_motion&&!offer.static_push&&!offer.relaunch_floor&&!offer.surface_landing,
+        "plain descending entry adds 15 before integration, turns from the accepted facing and pays 150");
+    auto refuses_expiring=[&](const NativeBorgMotionOffer& wrong,const NativeBorgMovementFrame* camera,const char* why){
+        const bool refused=!world.step({},false,&view,nullptr,camera,&wrong);
+        const auto shown=view.practice_readout(world);
+        check(refused&&world.tick()==37&&world.actors()[0].position==before.position&&
+            world.motion_receipt_current(pose.receipt)&&source.ground_loss_timer698()==1.f&&source.resource()==10000&&
+            shown&&shown->direct_expiring_relaunch_ready&&!shown->direct_expiring_relaunch,why);
+    };
+    refuses_expiring(offer,nullptr,"native needs the qualified camera-relative Up turn");
+    NativeBorgMovementFrame backwards;
+    check(native_borg_movement_frame({-frame.forward.x,-frame.forward.z},&backwards),"opposite valid camera");
+    refuses_expiring(offer,&backwards,"another valid camera cannot prove this turn");
+    auto wrong=offer;wrong.controller_timer698=1.f;refuses_expiring(wrong,&frame,"cannot keep the old clock");
+    wrong=offer;wrong.controller_timer698.reset();refuses_expiring(wrong,&frame,"no implicit zero clock");
+    wrong=offer;wrong.entry_vertical_delta=0.f;refuses_expiring(wrong,&frame,"must add 15 before moving");
+    wrong=offer;wrong.proposed_position[0]+=1.f;refuses_expiring(wrong,&frame,"native independently recomputes the endpoint");
+    wrong=offer;wrong.relaunch_motion->resource_after=10000;refuses_expiring(wrong,&frame,"cannot erase the entry cost");
+    wrong=offer;wrong.kind=Kind::RelaunchEntryPush;wrong.static_push=prior.static_push;
+    refuses_expiring(wrong,&frame,"projection cannot borrow the plain entry gate");
+    wrong=offer;wrong.kind=Kind::RelaunchEntryFloor;wrong.relaunch_floor=NativeBorgRelaunchFloor{};
+    refuses_expiring(wrong,&frame,"snap cannot borrow the plain entry gate");
+    accept(offer);
+    check(view.practice_readout(world)->direct_expiring_relaunch&&!view.practice_readout(world)->direct_expiring_relaunch_ready&&
+        !view.practice_readout(world)->direct_expiry_relaunch&&source.ground_loss_timer698()==0.f&&source.resource()==9850&&
+        !world.actors()[0].grounded&&source.movement_programs()==std::array<u16,2>{14,14},
+        "accepted relaunch publishes only its 1 to 0 cue, with a descending airborne frame");
+    unsigned touched=0,landed=0;
+    while(world.tick()<125){
+        const auto tick=world.tick()+1;
+        check(prepare(false,&offer)&&offer.controller_timer698==0.f,"ordinary release and landing keep the expired clock");
+        if(tick==39)check(offer.kind==Kind::JumpAir&&offer.jump_motion&&offer.jump_motion->entry&&offer.jump_motion->relaunch_origin,
+            "a one-update tap releases into ordinary falling");
+        if(offer.kind==Kind::JumpTouchdown)touched=tick;
+        if(touched&&!landed&&offer.kind==Kind::JumpLanding)landed=tick;
+        accept(offer);
+        check(!view.practice_readout(world)->direct_expiring_relaunch&&!view.practice_readout(world)->direct_expiring_relaunch_ready,
+            "no stale expiry-step cue while falling or landing");
+        if(tick==39||tick==touched||tick==landed)check(source.resource()==9850,"release and landing preserve the charge");
+    }
+    check(touched==91&&landed==92&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
+        source.walk_ledge_pushes()==1&&source.relaunches()==1&&!source.relaunch_surface_pushes()&&!source.relaunch_floor_contacts()&&
+        !source.air_dash_starts(),"one plain entry, one walking push, separate landing, then full idle");
     std::printf("Walking push air followups: %u checks PASS, timed and expiry entries with separate costs and landing\n",checks);
 }
