@@ -916,12 +916,15 @@ int main(){
     }
     check(hit==102&&land==103&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
         source.relaunch_fall_pushes()==4&&!source.air_dash_starts()&&source.relaunches()==1,"fourth steered push leads to normal landing and idle");
-    for(bool diagonal:{false,true}){
+    enum class ExpiryFollowup { DownOnExpiry,Neutral,HoldDiagonal,TurnDown,TurnDownLeft };
+    for(auto followup:{ExpiryFollowup::DownOnExpiry,ExpiryFollowup::Neutral,ExpiryFollowup::HoldDiagonal,
+                      ExpiryFollowup::TurnDown,ExpiryFollowup::TurnDownLeft}){
+        const bool diagonal=followup!=ExpiryFollowup::DownOnExpiry;
         third_prefix(Mode::GroundTimedWalkReleaseDownPush);
         NativeBorgMotionOffer offer;
         check(prepare(down,&offer)&&offer.jump_motion->down_timed_release_push,"repeat the actual Down response");
         accept(offer);
-        const auto before=world.actors()[0];const auto other=world.actors()[1];const auto retained=pose;
+        const auto before=world.actors()[0];const auto retained=pose;
         const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
         auto steer=down;steer.dpad_right=diagonal;
         check(prepare(steer,&offer)&&offer.kind==Kind::StaticPush&&offer.static_push&&offer.jump_motion&&
@@ -930,8 +933,9 @@ int main(){
             offer.jump_motion->drift_heading&&offer.facing==before.facing&&source.ground_loss_timer698()==1.f&&source.resource()==9850,
             "both inputs stage a zero-timer high-angle response, not an extra timed permission");
         auto travel=[&](const BattleMvpVec& end){
-            const auto& cfg=world.config();NativeBorgContactResult result;
-            NativeBorgContactRequest request{before.position,other.position,{end[0]-before.position[0],end[2]-before.position[2]},
+            const auto& cfg=world.config();const auto& from=world.actors()[0];const auto& other=world.actors()[1];
+            NativeBorgContactResult result;
+            NativeBorgContactRequest request{from.position,other.position,{end[0]-from.position[0],end[2]-from.position[2]},
                 cfg.arena_half,cfg.actor_radius,cfg.actor_height,cfg.step_height,false,other.health!=0};
             request.vertical_end_y=end[1];
             check(native_borg_resolve_contact(request,&view,&result),"query the two native paths independently");
@@ -953,11 +957,37 @@ int main(){
         check(source.ground_loss_timer698()==0.f&&source.resource()==9850&&source.relaunch_fall_pushes()==5&&
             !view.practice_readout(world)->timed_release_push&&!view.practice_readout(world)->down_timed_release_push,
             "the accepted fifth response uses the existing zero-timer rule, not the timed cue");
+        const auto expiry_position=world.actors()[0].position;
+        const auto expiry_facing=world.actors()[0].facing;
+        if(followup==ExpiryFollowup::TurnDown||followup==ExpiryFollowup::TurnDownLeft){
+            auto turn=down;turn.dpad_left=followup==ExpiryFollowup::TurnDownLeft;
+            const auto expiry_pose=pose;
+            const auto expiry_frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(prepare(turn,&offer)&&offer.kind==Kind::StaticPush&&offer.static_push&&offer.jump_motion&&
+                offer.static_push->surface.triangle==2011&&offer.static_push->angle==13653&&offer.controller_timer698==0.f&&
+                offer.jump_motion->drift_heading&&!offer.jump_motion->timed_walk_relaunch_fall&&offer.facing==expiry_facing,
+                "turning Down or Down+Left on 39 stages a sixth projection but not a timed contact");
+            const auto approach=travel(offer.static_push->integrated_position);const auto projection=travel(offer.proposed_position);
+            check(offer.static_push->surface.height>expiry_position[1]&&approach.terrain_blocked&&!projection.terrain_blocked&&
+                !approach.body_hit&&!projection.body_hit&&!approach.bounds_hit&&!projection.bounds_hit,
+                "a sixth staged projection clears its endpoint but its approach hits the raised side of face 2011");
+            check(!world.step({},false,&view,nullptr,&expiry_frame,&offer)&&world.tick()==38&&
+                world.actors()[0].position==expiry_position&&world.motion_receipt_current(expiry_pose.receipt)&&
+                !expiry_pose.frame_scope.expired()&&source.ground_loss_timer698()==0.f&&source.resource()==9850&&
+                source.cached_airborne87()==1&&source.relaunch_fall_pushes()==5,
+                "native retains the accepted fifth push, pose and meter when the sixth approach is blocked");
+            source.reject();
+            check(expiry_pose.frame_scope.expired()&&!world.step({},false,&view),"the refused sixth approach cannot fall back");
+            continue;
+        }
         hit=land=0;
         while(world.tick()<145){
             const auto tick=world.tick()+1;
-            check(prepare({},&offer),"existing neutral falling leaves the face and reaches ordinary landing");
-            if(tick==39)check(offer.kind==Kind::JumpAir&&!offer.static_push,"no extra contact after the expiry response");
+            const bool held_drift=followup==ExpiryFollowup::HoldDiagonal&&tick<=41;
+            check(prepare(held_drift?steer:GamePadState{},&offer),"existing falling leaves the face and reaches ordinary landing");
+            if(tick<=42)check(offer.kind==Kind::JumpAir&&!offer.static_push&&offer.jump_motion&&
+                bool(offer.jump_motion->drift_heading)==held_drift&&offer.facing==expiry_facing&&
+                offer.controller_timer698==0.f,"neutral or continued Down+Right drifts without another projection or a body turn");
             if(offer.kind==Kind::JumpTouchdown)hit=tick;
             if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
             accept(offer);

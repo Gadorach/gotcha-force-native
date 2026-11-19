@@ -1304,6 +1304,25 @@ which does not excuse the pre-projection refusal. Tick 37 and its
 one remaining timer tick stay accepted. Both paths pass with
 Down+Right. The guide adds no runtime contact permission.
 
+### Steering after the fifth push
+
+On the same start, holding **Down+Right** through tick 41
+then releasing gives ordinary falling drift on 39–41, not
+another push. Touchdown and landing remain on 103–104 and
+idle refills normally. Changing to **Down** or **Down+Left**
+on tick 39 stages another zero-timer projection on face 2011,
+but native refuses the approach: the floor for **Down** is Y
+`1718.0416`, above the accepted actor Y `1713.7493`. The
+projected endpoint clears its floor; that does not make the
+approach legal. The accepted state remains at tick 38, 9850
+meter and five pushes.
+
+An isolated sweep of nearby starts and steering schedules
+reached 1,320 accepted fifth-push prefixes. It staged 264
+further pushes and accepted none; 914 trials reached idle
+without another push. This bounds the tested routes, not
+every possible zero-timer fall. No contact rule changes.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately
