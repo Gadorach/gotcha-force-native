@@ -463,6 +463,26 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick==200:
                     self.assertIn("G-Red-position=1129.93/10.00/-590.36", run.stdout)
 
+    def test_gred_recovery_recontact_flat_seam_reports_only_the_accepted_crossing(self):
+        for tick, phase, meter, landings in (
+            (108, "DASH RECOVERY / FLOOR CONTACT", 5750, 0),
+            (109, "TOUCHDOWN", 5750, 1),
+            (110, "LANDING", 5750, 1),
+            (200, "IDLE", 10000, 1),
+        ):
+            with self.subTest(tick=tick):
+                run = self.run_host(["--demo-gred-recovery-recontact-seam", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(run.returncode, 0, run.stdout)
+                self.assertIn(f"practice-phase={phase}\n", run.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", run.stdout)
+                self.assertIn(f"recovery-recontact landings={landings} resource={meter}", run.stdout)
+                if tick==109:
+                    self.assertIn("practice-recovery-seam=1631->1624 cue=FLAT SEAM\n", run.stdout)
+                else:
+                    self.assertNotIn("practice-recovery-seam=", run.stdout)
+                if tick==200:
+                    self.assertIn("G-Red-position=1136.49/10.00/-599.57", run.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

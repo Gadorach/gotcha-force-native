@@ -41,6 +41,27 @@ public:
         return true;
     }
 };
+// Keep the original surface answers. Independently withdraw the edge proof,
+// or block just one native sweep after a genuine edge proof.
+class SeamTerrain final:public gf::IBattleMvpTerrain {
+    const gf::NativeBattleMvpView& view_;
+    gf::BattleMvpVec endpoint_;
+    unsigned reject_sweep_;
+public:
+    mutable unsigned edge_checks=0,endpoint_queries=0;
+    SeamTerrain(const gf::NativeBattleMvpView& view,gf::BattleMvpVec endpoint,unsigned reject_sweep)
+        :view_(view),endpoint_(endpoint),reject_sweep_(reject_sweep){}
+    bool height(gf::f32 x,gf::f32 z,gf::f32 y,gf::f32* out)const override{
+        if(out&&x==endpoint_[0]&&z==endpoint_[2]&&++endpoint_queries==reject_sweep_){*out=y+1;return true;}
+        return view_.height(x,z,y,out);
+    }
+    bool static_surface(gf::f32 x,gf::f32 z,gf::f32 y,gf::NativeBorgStaticSurface* out)const override{
+        return view_.static_surface(x,z,y,out);
+    }
+    bool coplanar_crossing(gf::u32 from,gf::u32 to,const gf::BattleMvpVec& start,const gf::BattleMvpVec& end)const override{
+        ++edge_checks;return reject_sweep_&&view_.coplanar_crossing(from,to,start,end);
+    }
+};
 }
 
 int main(){
@@ -92,7 +113,8 @@ int main(){
             world.actors()[0].position==before.position&&world.actors()[0].vertical_speed==before.vertical_speed&&
             world.motion_receipt_current(pose.receipt)&&source.resource()==5750&&!source.landings()&&
             view.practice_readout(world)->kind==shown->kind&&
-            view.practice_readout(world)->recovery_drift_active==shown->recovery_drift_active,why);
+            view.practice_readout(world)->recovery_drift_active==shown->recovery_drift_active&&
+            view.practice_readout(world)->recovery_seam==shown->recovery_seam,why);
     };
     check(prepare()&&offer.kind==Kind::AirDashRecoveryFloorComplete&&offer.air_motion&&offer.surface_landing,
         "staged completion with physical contact but not touchdown");
@@ -196,5 +218,45 @@ int main(){
             world.tick()==108&&!source.landings()&&source.resource()==5750&&!world.step({},false,&view),
             "recontact still refuses diagonal, flick and lift inputs");
     }
+
+    bind(Mode::GroundRecoveryRecontactSeam);prefix(104);
+    while(world.tick()<107){check(prepare(drift),"earlier Right steers along the original recovery path");accept();}
+    check(!prepare(drift)&&error.find("source air-dash handler/contact branch refused")!=std::string::npos&&
+        world.tick()==107&&!source.landings()&&source.resource()==5750,
+        "seam opt-in still cannot cross a triangle boundary on the first contact");
+
+    bind(Mode::GroundRecoveryRecontactSeam);prefix(107);
+    check(prepare(drift)&&offer.kind==Kind::AirDashRecoveryFloorComplete&&offer.surface_landing->surface.triangle==1631,
+        "the seam replay still starts with floor contact on one triangle");
+    accept();
+    check(!view.practice_readout(world)->recovery_seam&&!world.actors()[0].grounded&&source.resource()==5750,
+        "a future seam is not visible at first contact");
+    const auto seam_start=world.actors()[0];
+    check(prepare(drift)&&offer.kind==Kind::JumpTouchdown&&offer.surface_landing&&offer.jump_motion&&
+        offer.surface_landing->surface.triangle==1624&&offer.surface_landing->surface.height==seam_start.position[1]&&
+        offer.surface_landing->integrated_position[1]==seam_start.position[1]&&offer.facing==seam_start.facing&&
+        offer.jump_motion->drift_heading&&view.coplanar_crossing(1631,1624,seam_start.position,offer.surface_landing->integrated_position),
+        "genuine Right recontact crosses the interior of the exact shared flat edge");
+    const SeamTerrain no_edge(view,offer.proposed_position,0);
+    rejects(offer,no_edge,"equal height and matching endpoint answers cannot replace native shared-edge evidence");
+    check(no_edge.edge_checks==1&&!no_edge.endpoint_queries,"edge refusal precedes the sweeps");
+    const DifferentTriangle stale_start(view,seam_start.position);
+    rejects(offer,stale_start,"the new endpoint cannot substitute for the previously accepted starting plane");
+    const SeamTerrain pre_blocked(view,offer.proposed_position,1);
+    rejects(offer,pre_blocked,"a proven edge does not waive native pre-contact travel");
+    check(pre_blocked.edge_checks==1&&pre_blocked.endpoint_queries==1,"pre-contact sweep reached the proven neighbor");
+    const SeamTerrain post_blocked(view,offer.proposed_position,2);
+    rejects(offer,post_blocked,"a passed first sweep does not waive the post-contact sweep");
+    check(post_blocked.edge_checks==1&&post_blocked.endpoint_queries==2,"post-contact sweep ran after the first passed");
+    accept();
+    check(view.practice_readout(world)->recovery_seam==std::array<u32,2>{1631,1624}&&world.actors()[0].grounded&&
+        source.selector()==7&&source.movement_programs()==std::array<u16,2>{13,13}&&source.resource()==5750&&source.landings()==1,
+        "one accepted seam publishes a distinct touchdown without an early refill");
+    prefix(110);
+    check(offer.kind==Kind::JumpLanding&&!view.practice_readout(world)->recovery_seam&&source.resource()==5750,
+        "seam cue clears on separate landing entry");
+    prefix(200);
+    check(world.actors()[0].grounded&&source.landings()==1&&source.resource()==10000&&!source.selector(),
+        "seam route finishes at grounded idle");
     std::printf("Recovery recontact: %u checks PASS, scoped completion, floor contact and landing\n",checks);
 }

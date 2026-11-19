@@ -154,6 +154,7 @@ struct Options {
     bool demo_gred_walk_ledge_expiry_relaunch=false;
     bool gred_recovery_recontact=false;
     bool gred_recovery_recontact_drift=false;
+    bool gred_recovery_recontact_seam=false;
     std::string source_ground_assets;
     std::string battle_mvp_assets="local/content/native-battle-mvp-v1";
     bool animation_mosaic=false;unsigned animation_columns=4,animation_rows=3,animation_page=0,animation_borg=0;
@@ -358,6 +359,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-walk-ledge-expiry-air-dash" || arg == "--demo-gred-walk-ledge-expiry-air-dash" ||
                  arg == "--gred-recovery-recontact" || arg == "--demo-gred-recovery-recontact" ||
                  arg == "--gred-recovery-recontact-drift" || arg == "--demo-gred-recovery-recontact-drift" ||
+                 arg == "--gred-recovery-recontact-seam" || arg == "--demo-gred-recovery-recontact-seam" ||
                  arg == "--demo-gred-walk-ledge-expiry-drift" || arg == "--demo-gred-walk-ledge-expiry-relaunch"){
             if(options->demo_source_ground)return false;
             options->battle_mvp=options->demo_source_ground=true;
@@ -405,7 +407,9 @@ bool parse(int argc, char** argv, Options* options) {
             options->gred_slope_crease_dash=options->gred_slope_transition_dash||arg=="--gred-slope-crease-dash"||arg=="--demo-gred-slope-crease-dash";
             options->gred_slope_seam_dash=options->gred_slope_crease_dash||arg=="--gred-slope-seam-dash"||arg=="--demo-gred-slope-seam-dash";
             options->gred_slope_dash=options->gred_slope_seam_dash||arg=="--gred-slope-dash"||arg=="--demo-gred-slope-dash";
-            options->gred_recovery_recontact_drift=arg=="--gred-recovery-recontact-drift"||arg=="--demo-gred-recovery-recontact-drift";
+            options->gred_recovery_recontact_seam=arg=="--gred-recovery-recontact-seam"||arg=="--demo-gred-recovery-recontact-seam";
+            options->gred_recovery_recontact_drift=options->gred_recovery_recontact_seam||
+                arg=="--gred-recovery-recontact-drift"||arg=="--demo-gred-recovery-recontact-drift";
             options->gred_recovery_recontact=options->gred_recovery_recontact_drift||
                 arg=="--gred-recovery-recontact"||arg=="--demo-gred-recovery-recontact";
             options->gred_practice=options->gred_recovery_recontact||options->gred_slope_dash||arg=="--gred-movement"||arg=="--demo-gred-movement";
@@ -829,7 +833,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
         options.source_ordered_ground?"local/content/source-gred-ground-v9":options.source_ground_walk?"local/content/source-gred-ground-v2":"local/content/source-gred-ground-v1"):options.source_ground_assets;
-    const auto source_mode=options.gred_recovery_recontact_drift?gf::NativeGRedGroundDashDemo::Mode::GroundRecoveryRecontactDrift:
+    const auto source_mode=options.gred_recovery_recontact_seam?gf::NativeGRedGroundDashDemo::Mode::GroundRecoveryRecontactSeam:
+         options.gred_recovery_recontact_drift?gf::NativeGRedGroundDashDemo::Mode::GroundRecoveryRecontactDrift:
          options.gred_recovery_recontact?gf::NativeGRedGroundDashDemo::Mode::GroundRecoveryRecontact:
          options.gred_walk_ledge_expiry_air_dash?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryAirDash:
          options.gred_walk_ledge_expiry_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkLedgeExpiryPush:
@@ -874,7 +879,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(picker)view.source_practice_back(options.force_practice?gf::PracticeBackScreen::ForceBrowser:gf::PracticeBackScreen::OwnedCollection);
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-     if(options.gred_recovery_recontact_drift)gf::log_info(context,"source-ground","drift at recovery floor completion or recontact: soft camera-relative cardinal input, retained body heading; same flat triangle and zero timer698 only");
+     if(options.gred_recovery_recontact_seam)gf::log_info(context,"source-ground","steered recovery recontact may cross one verified shared edge on identical flat planes; first contact still requires one triangle; zero timer698");
+     else if(options.gred_recovery_recontact_drift)gf::log_info(context,"source-ground","drift at recovery floor completion or recontact: soft camera-relative cardinal input, retained body heading; same flat triangle and zero timer698 only");
      else if(options.gred_recovery_recontact)gf::log_info(context,"source-ground","recovery completion at zero timer698: floor contact then falling, not landing entry; neutral recontact on the same flat triangle only");
      else if(options.gred_walk_ledge_expiry_air_dash)gf::log_info(context,"source-ground","plain air-dash wind-up after the accepted zero-timer walking expiry push only; no entry contact response, later costs and travel unchanged");
      else if(options.gred_walk_ledge_expiry_push)gf::log_info(context,"source-ground","walking ledge push at timer698 1 to 0 only after an accepted push, without drift; expired landing gate 10240 and native cap 13653; both travel checks");
@@ -918,7 +924,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_ordered_ground_controls();
              if(options.gred_recovery_recontact){
                  if(!options.source_ground_interactive)
-                     gf::log_info(context,"source-ground","%s",options.gred_recovery_recontact_drift?
+                     gf::log_info(context,"source-ground","%s",options.gred_recovery_recontact_seam?
+                         "recovery recontact seam demo: jump on ticks 6-39, backward flick at 43, D-pad Right on 108-109":
+                         options.gred_recovery_recontact_drift?
                          "recovery recontact drift demo: jump on ticks 6-39, backward flick at 43, D-pad Up on 108-109":
                          "recovery recontact demo: ordinary native start; jump on ticks 6-39, backward flick at 43, then neutral");
              }else if(options.gred_slope_dash){
@@ -1166,7 +1174,10 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                            if(options.gred_recovery_recontact){
                                const auto tick=world.tick();device.b=tick>=5&&tick<39;
                                if(tick==42)device.stick_y=-127;
-                               device.dpad_up=options.gred_recovery_recontact_drift&&tick>=107&&tick<109;
+                               if(options.gred_recovery_recontact_drift&&tick>=107&&tick<109){
+                                   device.dpad_right=options.gred_recovery_recontact_seam;
+                                   device.dpad_up=!options.gred_recovery_recontact_seam;
+                               }
                            }else if(options.gred_walk_ledge_fall_push){
                               if(world.tick()>=5&&world.tick()<30&&!source.ground_departures()){
                                   device.dpad_right=!options.gred_walk_ledge_expiry_push;
@@ -1398,6 +1409,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                  gf::log_info(context,"source-ground","practice-ledge-timer-ticks=%u cue=%s",
                      unsigned(*ticks),view.practice_ledge_cue(*practice).c_str());
              if(practice->recovery_drift_active)gf::log_info(context,"source-ground","practice-recovery-drift=DRIFT ACTIVE");
+             if(const auto& seam=practice->recovery_seam)
+                 gf::log_info(context,"source-ground","practice-recovery-seam=%u->%u cue=FLAT SEAM",(*seam)[0],(*seam)[1]);
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");

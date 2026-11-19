@@ -169,6 +169,9 @@ The separate `--gred-recovery-recontact-drift` mode lets you hold a single
 arrow through both contact updates if G-Red stays on the same flat
 triangle. The scripted `--demo-gred-recovery-recontact-drift` holds Up on
 updates 108–109 and shows **Drift Active** on those accepted frames only.
+`--gred-recovery-recontact-seam` also supports a verified shared flat edge
+on the second update only. The `--demo-gred-recovery-recontact-seam`
+replay holds Right instead of Up and shows **Flat Seam** at touchdown.
 
 To check the actual practice loop without opening a window or audio device:
 

@@ -290,6 +290,7 @@ public:
              const auto behaviors=NormalGRedMovementDefinition::behaviors(producer->policy_);
              const bool recovery_recontact_policy=behaviors.has(Behavior::RecoveryFloorRecontact);
              const bool recovery_drift_policy=behaviors.has(Behavior::RecoveryRecontactDrift);
+             const bool recovery_seam_policy=behaviors.has(Behavior::RecoveryRecontactSeam);
             constexpr const auto& meter=NormalGRedMovementDefinition::air_meter;
             const bool slope_seam_dash_policy=behaviors.has(Behavior::CoplanarSlopeDash);
             const bool slope_dash_policy=behaviors.has(Behavior::SlopeDash);
@@ -456,9 +457,14 @@ public:
                  if(recovery_floor_complete||recovery_recontact){
                      NativeBorgStaticSurface start;
                      if(timer!=0.f||!native_borg_flat_surface(surface)||
-                        !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&start)||start!=surface||
-                        (recovery_recontact&&(!last_offer_.surface_landing||last_offer_.surface_landing->surface!=surface||
-                           actor.position[1]!=surface.height||integrated[1]!=surface.height)))return false;
+                         !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&start)||
+                         (recovery_recontact&&(!last_offer_.surface_landing||last_offer_.surface_landing->surface!=start||
+                            actor.position[1]!=surface.height||integrated[1]!=surface.height)))return false;
+                     // Only the steered confirmation may cross an exact flat
+                     // neighbor. The independent native sweeps still follow.
+                     if(start!=surface&&(!recovery_recontact||!recovery_seam_policy||!o.jump_motion->drift_heading||
+                         !native_borg_flat_surface(start)||start.height!=surface.height||
+                         !terrain->coplanar_crossing(start.triangle,surface.triangle,actor.position,integrated)))return false;
                  }
                 //Qualified normal G-Red timer-bound gates/epsilon. Match the shared
                 //source contact's bounded host normalization, not an UP floor.
@@ -1255,7 +1261,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryRecontactDrift)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRecoveryRecontactSeam)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

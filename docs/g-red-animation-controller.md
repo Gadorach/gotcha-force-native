@@ -68,10 +68,32 @@ gf_native --demo-gred-recovery-recontact-drift --headless --frames 200 --no-audi
 The replay holds **Up** on ticks 108–109 of the same grounded setup. It
 lands and refills at the same times, about eight units from the neutral
 landing. The HUD shows **DRIFT ACTIVE** only on the two accepted updates.
-Fifteen of twenty bounded timing/direction combinations completed. Holding
-**Right** at the replay's timing accepts the first contact but refuses
-recontact when the selected triangle changes. Diagonal input, a full flick,
-and relaunch input do not qualify for the recontact update.
+Fifteen of twenty bounded timing/direction combinations completed. In this
+mode, holding **Right** at the replay's timing accepts the first contact but
+refuses recontact when the selected triangle changes. Diagonal input, a
+full flick, and relaunch input do not qualify for the recontact update.
+
+### One verified shared flat edge on the second contact
+
+`--gred-recovery-recontact-seam` adds one exact shared edge to the steered
+second contact only. The first contact still requires one triangle. Both
+source and native sample the previously accepted start and the proposed
+endpoint, require equal heights and flat normals, and use the existing
+coplanar crossing verifier to prove exact shared vertices, identical
+planes, and a path through the edge interior. The native travel checks run
+before and after contact. Equal height on its own, a corner, a gap, a step,
+or a crossing without soft cardinal drift do not qualify.
+
+```sh
+gf_native --demo-gred-recovery-recontact-seam --headless --frames 200 --no-audio
+```
+
+On the same native setup, hold **Right** on ticks 108–109. Tick 108 stays
+on triangle 1631, and tick 109 touches down on 1624, both at Y=10.
+**FLAT SEAM** appears only on the accepted crossing. Landing is separate
+at 110; the meter stays at 5750 through landing entry and refills
+normally. Two other probe timings also completed exact second-contact
+crossings. Neither earlier mode got new permissions.
 
 ## Continued walking ledge-fall push (GFMM9)
 

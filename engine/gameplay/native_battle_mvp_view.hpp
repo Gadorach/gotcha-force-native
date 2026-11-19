@@ -261,6 +261,7 @@ public:
                 text+=*ticks?"\nRELEASE IN "+std::to_string(*ticks)+" TICKS":"\nCENTER TO RECOVER";
             if(const auto cue=practice_ledge_cue(*practice);!cue.empty())text+="\n"+cue;
             if(practice->recovery_drift_active)text+="\nDRIFT ACTIVE";
+            if(practice->recovery_seam)text+="\nFLAT SEAM";
             practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }

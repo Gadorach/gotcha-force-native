@@ -344,10 +344,24 @@ public:
             if(error&&!detail.empty())*error+=" / "+detail;
             return false;
         }
-        if(state_.recovery_floor_complete&&(kind!=NativeBorgMotionKind::JumpTouchdown||!s.jump_motion||
-            !s.jump_motion->entry||!s.jump_motion->air_dash_origin||s.ground_timer698!=0.f||!s.surface_landing||
-            !state_.surface_landing||s.surface_landing->surface!=state_.surface_landing->surface))
-            return fail(error,"recovery recontact needs the same flat floor and ordinary falling entry");
+         if(state_.recovery_floor_complete&&(kind!=NativeBorgMotionKind::JumpTouchdown||!s.jump_motion||
+             !s.jump_motion->entry||!s.jump_motion->air_dash_origin||s.ground_timer698!=0.f||!s.surface_landing||
+             !state_.surface_landing))
+             return fail(error,"recovery recontact needs the same flat floor and ordinary falling entry");
+        if(state_.recovery_floor_complete&&s.surface_landing->surface!=state_.surface_landing->surface){
+            if(!allows(mode_,Behavior::RecoveryRecontactSeam))
+                return fail(error,"recovery recontact needs the same flat floor and ordinary falling entry");
+            const auto& before=state_.surface_landing->surface;
+            const auto& after=s.surface_landing->surface;
+            const auto& integrated=s.surface_landing->integrated_position;
+            StageGroundSurfaceResult start;
+            if(!s.jump_motion->drift_heading||!native_borg_flat_surface(before)||!native_borg_flat_surface(after)||
+                before.height!=after.height||observed.position[1]!=before.height||integrated[1]!=after.height||
+                !ground_for(s).surface(observed.position,&start,error)||!start.selected||
+                NativeBorgStaticSurface{start.height,start.normal,start.triangle}!=before||
+                !stage_ground_coplanar_crossing(grids_[0],before.triangle,after.triangle,observed.position,integrated))
+                return fail(error,"recovery recontact needs a verified flat shared edge");
+        }
         const auto contact_drift=s.recovery_floor_complete?s.air_motion->drift_heading:
             state_.recovery_floor_complete?s.jump_motion->drift_heading:std::optional<s16>{};
         std::optional<s16> recovery_drift_offset;
@@ -446,6 +460,11 @@ public:
         NativeBorgMotionReceipt receipt;
         if(!ready_||!pending_||current_binding.lock()!=binding_.lock()||binding_.expired()||!world.motion_receipt(pending_->offer,&receipt))return fail(error,"source frame has no matching native contact receipt");
         const f32 previous_y=pending_->offer.observed.position[1];
+        std::optional<std::array<u32,2>> recovery_seam;
+        if(state_.recovery_floor_complete&&state_.surface_landing&&pending_->offer.surface_landing){
+            const auto from=state_.surface_landing->surface.triangle,to=pending_->offer.surface_landing->surface.triangle;
+            if(from!=to)recovery_seam=std::array{from,to};
+        }
         state_=std::move(pending_->state);state_.motion.position=world.actors()[0].position;state_.previous_y=previous_y;expected_tick_=world.tick();
         ++accepted_frames_;body_contacts_+=receipt.contact().body_hit;
         air_frames_+=native_borg_motion_phase(pending_->offer.kind)==2;
@@ -513,7 +532,7 @@ public:
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
             new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
                 accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks,ledge_drift_active,
-                recovery_drift_active}));
+                recovery_drift_active,recovery_seam}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
