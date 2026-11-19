@@ -1,0 +1,192 @@
+# What makes a self-contained Borg?
+
+This is a requirements map based on the current engine and recovered data, **not
+a new manifest schema or an integration plan already in effect**. The existing
+[`borg.manifest`](borg-packages.md) discovers files; it does not interpret their
+contents or make a Borg selectable. “Self-contained” means one directory owns
+the Borg-specific data and declares any dependencies on shared content. It does
+not ship a second renderer, physics engine, controller VM, or copy of the menus.
+
+## Identity and classification
+
+Keep these identities distinct. The same Borg definition can have several
+variants and many owned instances. A single owned instance can appear in
+several Forces.
+
+| Key | Owner and use |
+| --- | --- |
+| Stable Borg ID | The package's namespaced ID, independent of folder, display name, archive order or current scan. Used for joins between systems. A retail adapter may supply a separate legacy model ID; do not assign custom Borgs spare retail IDs. |
+| Name and catalogue metadata | Default readable name, optional localized names, description, and sorting/filtering data. A collection number or display order is not the ID. Tribe, movement family, and mode eligibility are separate classifications. |
+| Variant ID | A stable key local to the Borg, with a label and an explicit default. A variant can override presentation and/or gameplay; it is not automatically just a recolor. A gameplay transformation is a state change, not a cosmetic selection. |
+| Owned instance ID | Save-owned identity for a particular copy. The save owns its selected variant, progress, edits, and disable state, and caches a readable name for missing packages. Force slots refer to instances, not names or models. |
+| Runtime actor and resource identities | Assigned by the world and resource owners when preparing/spawning a valid instance. Live animation cursors, timers, HP, ammo, target, velocity, and receipts are state, not manifest fields or saved type IDs. |
+
+Use separate fields for **tribe/collection filters**, **displayed jump type and
+count**, **actual movement and resource policy**, **combat capabilities**, and
+**mode availability**. A similar pose, identical displayed jump count, or
+shared model cannot select a controller. The original compatibility catalog
+already separates model, collection number, tribe, source name, cost, rarity
+and XP thresholds ([`ForceCatalog`](../engine/assets/force_catalog.hpp)).
+Preserve source sort order and encoded names in that adapter without requiring
+native packages to use the original font encoding or numbering.
+
+### Variants and progression
+
+- A complete declaration resolves, per variant, its model/rig compatibility,
+  materials and textures, icon or preview overrides, its stats or inheritance,
+  and any action/map overrides. Inheritance is explicit; a missing override is
+  not permission to silently substitute another variant or animation.
+- Entry prices, rarity, level progression/XP thresholds, health and other
+  derived stats belong to the definition or a named shared progression rule.
+  Current level, XP, acquisition serial, and any user-entered overrides belong
+  to the instance. Keep **display ratings** (DEF/SHT/ATK/SPD) separate from
+  **simulation values** and ammo; one cannot generally be inferred from the
+  other ([spec data](../engine/assets/force_specification.hpp),
+  [edit provenance](../engine/gameplay/borg_edits.hpp)).
+- The original inventory handles six variants (`0..5`) and ten level rows; its
+  bundle has a model wrapper per variant, with separate actor/battle data and a
+  motion bank. That proves how originals are keyed and selected, **not** that
+  all six variants can spawn. Current checked class, combat level and preview
+  paths admit a much narrower normal-variant subset. Do not copy the retail
+  slot counts or assume its variant labels/appearance rules for authored
+  packages ([bundles](../engine/assets/battle_character_resources.hpp),
+  [class](../engine/assets/battle_normal_class.hpp),
+  [level rows](../engine/assets/battle_actor_levels.hpp)).
+
+## Package contents and present evidence
+
+“Needed for” below is a capability gate. A catalogue-only or preview-only Borg
+may intentionally stop earlier; a complete playable Borg needs all referenced
+data for its declared features. **Observed** means a current reader or owner
+uses that data, not that every Borg or variant is supported.
+
+| Area | Self-contained data or explicit shared dependency | Needed for / current evidence |
+| --- | --- | --- |
+| Identity and description | Stable ID, name, localized labels or localization references, description, tribe/tags, optional display number/order, declared variants and supported features. | Collection, picker, editor and save restoration. Discovery currently recognizes ID, name and file references only. |
+| Inventory and progression | Per-variant cost/rarity, stats, XP curve, starting level/resource/stock defaults as applicable. Optional part identities, same-variant recipes or collection relationships by stable ID. | Inventory, stats, Force budgets and rewards. [`ForceSupplement`](../engine/assets/force_supplement.hpp) and [`ForceFusion`](../engine/gameplay/force_fusion.hpp) already separate parts/recipes from ownership; encounter drop odds and unlock policies belong to the mode. Native package saves currently store identity, disable state and reserved slots, **not** variant/XP/progression yet. |
+| Force editor art | Borg tile/icon, optionally variant badges or icon overrides, framing and transparency sufficient for a small tile. Optional portrait, nameplate, descriptions, collection art and a preview camera/scale/idle selection. | Editor grid, held tile, Force cards, picker and specification. Original icons are **separate static presentation records** selected by model through [`ForceEditorArt::icon`](../engine/assets/force_editor_art.hpp), reused by [Challenge cards](../engine/gameplay/challenge_force_scene.hpp) and [Story cards](../engine/gameplay/story_force_card_scene.hpp). A native image could feed the same role; the HSD record is not a mandatory authoring format. [Nameplate/stats UI](../engine/gameplay/force_stats_ui_presentation.hpp) can run with 3D preview unavailable. |
+| Model, rig and material assets | Battle/preview mesh, hierarchy, skin weights, bind/default pose, units/origin/facing, material slots, textures and palettes, UV usage, visibility groups, and optional alternate parts. Name bones or binding points for animation, attachments and collisions. | 3D preview/render. The shared [`CharacterModelScene`](../engine/gameplay/character_model_scene.hpp) currently reads HSD model, bone prefix and pose profile together and refuses unsupported material/attachment paths. It is not a generic glTF importer. The original model/pose binding includes logical bone order, mirror pairing and upper/lower lane membership; [part selection](../engine/assets/character_model_parts.hpp) can select extra records by bone and visibility. |
+| Animation assets | Compatible clip bank with stable clip references, skeleton binding, duration/timebase, and channel/track data. Declare shared banks explicitly; no need to copy identical clips. | Clip inspection, preview and action playback. [`CharacterMotionBank`](../engine/assets/character_motion.hpp) binds source group/entry to archives, including aliases, and the bone sampler validates logical bone binding. Unsupported tracks or references are not a new package's idle fallback. |
+| Animation bindings and programs | Map each declared action/phase to clip(s) or a supported program: idle, travel/directions, dash phases, takeoff/ascent/apex/fall/landing as applicable; attacks, hit reactions, defeat, spawn, transitions, transforms or fusion as declared. Specify lanes, mirroring, blend/hold/loop/completion, root-motion ownership, and event timing where required. | A clip label is for inspection; a binding drives playback; a controller chooses when to play it. Names in a compatible bank may supply explicit unambiguous mappings; otherwise include an animation map. The [MVP clip map](../engine/gameplay/native_borg_motion_map.hpp) is distinct from recovered [GFMP programs](../engine/assets/character_program.hpp) and the [G-Red program-ID table](../engine/gameplay/borgs/normal_gred_movement_programs.hpp). Do not treat program IDs as clip IDs or give a package authority to run arbitrary code. |
+| Movement and contact rules | Name supported behavior primitives and provide selected walk/turn/stop/dash/jump/flight constants, directional/input interpretation, state priorities and legal cancels. Declare resource type/capacity/charges/refill, contact semantics (standing, hover floor, free flight), dimensions/feet and movement/landing limits. Defaults and no-action states must be explicit. | Movement lab and battle. [G-Red's definition](../engine/gameplay/borgs/normal_gred_movement.hpp), [admission table](../engine/gameplay/borgs/normal_gred_movement_admission.hpp) and [GFMM operands](../engine/assets/character_movement.hpp) are the reviewed example, not a generic rules loader. Terrain queries, sweeps, tangent math and accepted-frame sequencing remain engine services. See [observed movement families](borg-movement-families.md) for hypotheses that still need separate proof. |
+| Executable moveset and collision | For each move: semantic input and availability (ground/air, direction, held/charged, combo context), priority/cancel gates, timings and resource/ammo costs, animation phases/events, damage and reactions, and the hit/shot/attachment producer. Declare hurt boxes, active hit shapes/windows, hit rules, and muzzle/weapon offsets, projectile or melee parameters and effects where used. | Battle readiness. The [native duel](native-battle-mvp.md) has actor-slot weapon choices, provisional damage, cooldowns and body proxies. Source [body/attack collision data](../engine/assets/character_collision_bank.hpp) exists in a bounded format, but a parsed shape, animation, or sound cue does not imply a working actor-side callback or combat move. |
+| Displayed moveset | Localized move names/descriptions, input hints, activation presentation, icons and optional demo binding. Link to executable move IDs where supported and visibly separate entries that are only documented. | Specification/unit info. The current [display catalog](../engine/assets/force_specification.hpp) reads up to five source move rows with icon, button, activation and text index. Its [page access gate](../engine/gameplay/force_specification.hpp) reads collection state; text/readout does not authorize the move in battle. |
+| Actor lifecycle | Spawn/init defaults, semantic hooks for spawn/land/hit/defeat, optional alternate part/attachment dependencies and the resource owners each hook needs. | Required where invoked by a declared behavior; missing mandatory nodes/resources must block that capability. The [legacy binding](../engine/gameplay/battle_character_binding.hpp) ties class data, rig, model, materials and motion hashes before publishing an actor pose. |
+| Effects and sound | Per-Borg effect and sound banks, with stable IDs and event bindings. Include or explicitly reference bullet/beam/missile graphics and materials, charge/muzzle/trail/impact effects, and firing, impact or other action sounds. See the reserved groups below. | Any declared visual/audio behavior. [Motion sound events](../engine/gameplay/character_program_sound_events.hpp) provide some source inputs, not full allocation/playback receipts. [The native duel](native-battle-mvp.md) has provisional shot/impact presentation, not a generic Borg effects loader. |
+| AI and mode participation | Optional compatible AI behavior choice/hints tied to real moves (range, mobility, resource use) and authored capability metadata. Mode admission references the validated Borg/variant rather than a self-granted “Story allowed” flag. | Challenge and Story owners decide roster/encounter eligibility, budget, rewards and scripted availability. [Challenge party assembly](../engine/gameplay/challenge_initial_party.hpp) consumes model/variant/level and instance provenance, and [AI pool selection](../engine/gameplay/challenge_ai_force.hpp) is difficulty/wave/cost data. A different model or rewritten record cannot borrow those source receipts. |
+
+The Force editor's **layout, cards and background panels**, shared glyphs,
+button/feature/rarity art, and the battle HUD are engine or mode assets.
+Package-owned portraits/icons/nameplates are their inputs, not a duplicate UI.
+Keep cockpit layout and other display-mode resources shared. Likewise stage collision,
+cameras, targeting/damage resolution, input-device bindings, RNG, account/save
+storage, encounter scripts and inventory ownership stay outside the Borg folder.
+
+### Reserve effect and sound slots now
+
+Give these groups explicit names even when the engine cannot run them yet.
+Every reference has a type and stable ID. Its declaration may be a local asset,
+an explicit shared-bank reference, an explicit `none` for an intentionally
+absent optional cue, or `unresolved` for a known feature whose data or runtime
+binding is not ready. Do not use one status to mean the other. Unsupported
+critical events block the capability that needs them. An unresolved cosmetic
+cue can be reported as missing presentation, but cannot be used as evidence
+that an original move is complete.
+
+| Reserved group | What the definition owns |
+| --- | --- |
+| Projectile appearance | The visual for an in-flight projectile, beam, missile or bomb: sprite/mesh/segment or other declared asset kind, its textures/material, scale/pivot and animation/loop if needed. Optional engine-supported trail, tracer, glow or flight sound travels with the **live shot**, not the owner's animation forever. |
+| Move/weapon effects | Charge flash or loop, muzzle effect and firing cue, melee slash/arc, attach/detach, throw or deploy effects, and their bone/socket, shot, or world anchors. Bind them to named phases/events, not to guessed frame numbers. |
+| Contact and outcome effects | Hit/block/terrain-impact effects and SFX, optional explosion or lingering graphic, and expiry without impact. Event setup states whose position/normal/team context is consumed and which owner retires the effect. Contact detection and damage remain simulation-owned. |
+| Actor and ambient effects | Spawn/defeat, landing dust, hover/boost loops, form-change/fusion, hit reactions, voice cues and any conditional material or attached model. Provide the start/stop hooks and fallbacks for absent optional cues. |
+| Audio definitions | Stable cue ID, local clip or named shared bank/entry, one-shot/loop and owner-stop behavior, spatial anchor, and bounded mix hints where supported. Sample decoding, queuing, and mixer routing remain shared services. |
+| Event bindings | Semantic source (`accepted move`, `shot spawn`, `shot contact`, `shot expiry`, `accepted animation event`), phase/time reference where applicable, target effect/SFX ID, an anchor, and lifetime/stop policy. Preview-only events must not create damaging shots or change live combat state. |
+
+For example, reserve this graph even if the impact visuals are still unknown:
+
+```text
+move:primary -> projectile:primary-shot              [gameplay definition]
+projectile:primary-shot -> visual:primary-bullet     [appearance]
+shot spawn  -> effect:primary-muzzle, sound:primary-fire
+shot flight -> effect:primary-trail                  [may be none]
+shot hit    -> effect:primary-impact, sound:primary-hit
+shot expiry -> stop flight effects and loops
+```
+
+The projectile's speed, spread, collision shape, damage and lifetime are
+separate gameplay data. The bullet graphic and audio never grant a hit or count
+as evidence of a recovered weapons callback. An author may use shared effect
+assets without copying them into every package, but must name the dependency.
+
+## Shape of one folder
+
+The following is a **logical grouping**, not new supported filenames, syntax or
+encodings. A small Borg can use one file per group or keep validated data
+embedded with its model. Required references should be explicit and bounded.
+
+```text
+borgs/<package-folder>/
+  borg.manifest           discovery identity and file references
+  catalog/               names, description, stats, variants, progression
+  ui/                    editor icon, optional portraits / variant art / nameplate
+  visual/                meshes, rig/bind pose, parts, materials, textures
+  animation/             clip bank, optional role map, transitions/events
+  gameplay/              movement and resource rules, moveset, body/contact shapes
+  effects/               per-Borg projectile/weapon/impact/actor visuals
+  audio/                 SFX/voice cues, local files or shared references
+  events/                effect/SFX bindings and declared unresolved slots
+```
+
+Use a versioned format with stable keys and bounded validation. Resolve
+variant, action, clip, event, mesh/bone/attachment and dependency references
+before publishing a capability. Reject missing required roles, bad formats,
+unsupported behaviors or conflicting IDs with a reason. Never derive readiness
+from filenames or tint, default to a different Borg, or treat the discovered
+files as trusted executable rules. Retail provenance (source IDs, hashes and
+callback/layout keys) stays in the original adapter; no source addresses are
+callable package fields. Original assets and private extraction outputs stay
+out of Git.
+
+Apply the same placeholder convention beyond effects. For an observed but
+unrecovered feature, record its stable key, area (e.g. variant override,
+transformation, attachment event, hit reaction, AI profile), expected
+dependencies, and `unresolved` status. Record whether the missing piece is
+asset data, a mapping, or engine behavior. This reserves the place without
+inventing numeric defaults, silently omitting the feature, or making the
+package battle-ready. It is distinct from a Borg that intentionally has no
+such feature.
+
+## What is ready today?
+
+| Slice | Established | Not established |
+| --- | --- | --- |
+| Native package plumbing | `borgs/` discovery, duplicate refusal, saved name/ID, per-instance disable state and Force positions, candidate missing-package decisions. | Package file-content loader, variant/level/XP storage for packaged instances, mixed inventory, recovery prompt and native mode admission. |
+| Original normal G-Red | Model/rig and motion data, classified pose references, recovered ordered walk/dash/jump/relaunch/fall/landing subset with measured meter and selected contacts. Existing normal-pair render, spec and native duel paths. | Full animation-controller map, original combat/weapon/auxiliary/effect dispatch, other variants and several contact/transition routes. A successful inclined-ledge lab probe is not a published controller permission. |
+| Original normal Sasuke | Renderable in the duel with the existing fallback prototype selection, and separate per-Borg raw previews. | Verified Sasuke behavior/program mapping from the displayed jump gauge or G-Red's labels. Three air-jump points and dash-height behavior remain observations to verify. |
+| Other Borgs and variants | Original catalogue/icon/spec and model-bundle readers cover data beyond the playable normal pair. | Parsing/cataloguing a row does not prove its animation lanes, combat, transformations, variant effects, and modes are ready. Unreviewed and edited-Borg refusals stay intact. |
+
+## Gates before integration
+
+1. **Discovered → catalogue-ready.** Resolve one stable identity and explicit
+   variant metadata to a readable row with an icon or a deliberately labelled
+   placeholder. Discovery grants neither ownership nor battle permission.
+2. **Catalogue-ready → preview-ready.** Validate one model, rig, its textures
+   and at least a bound idle/preview role in the shared renderer. A stats-only
+   view stays usable if 3D preview fails. This should be the first vertical slice
+   before wiring every menu.
+3. **Movement-ready → combat-ready.** Only claim explicit roles and supported
+   action graphs that pass per-Borg controller tests. Require a complete
+   validated move and the right actor/collision/event owners before a package
+   can fight. Test an original adapter and a separately authored test package;
+   one does not validate the other.
+4. **Per-mode admission and save round-trip.** Join stable IDs against owned
+   instances and variants once through a shared roster view; let each mode
+   apply its own budgets, availability and restrictions. A missing package
+   should show its saved name and affected Forces, preserve slots on disable,
+   and delete only confirmed instances. Separately test missing variant data,
+   corrupt assets, scan failure, duplicates and restoration. Integrate collection
+   and picker before enrolling content automatically in Challenge or Story.
+
+Do not expand the discovery manifest or wire every mode from this map alone.
+First choose the minimum catalogue/preview contract and validate it with real
+data; record what remains unknown rather than filling gaps by analogy.

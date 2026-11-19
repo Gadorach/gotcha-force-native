@@ -1,5 +1,9 @@
 # Borg packages
 
+See the [self-contained Borg requirements map](borg-package-requirements.md)
+for the current engine consumers, package/engine ownership split, and gates
+before integration. The discovery manifest below is only the first layer.
+
 The desktop host scans `borgs/` at startup, relative to the launch directory.
 Each Borg lives in one subfolder. The subfolder is just a location, not an ID:
 
