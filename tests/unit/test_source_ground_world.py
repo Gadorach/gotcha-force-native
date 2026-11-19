@@ -586,6 +586,7 @@ class SourceGroundWorldTests(unittest.TestCase):
                 self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=13653", result.stdout)
                 self.assertIn(f"relaunches={int(tick>56)} air-dash-starts=0 floors=0 timer698=0.0", result.stdout)
                 self.assertEqual("practice-direct-expiry-relaunch=DIRECT EXPIRY RELAUNCH" in result.stdout, tick == 57)
+                self.assertEqual("practice-direct-expiry-request=UP+SHIFT/B TO REQUEST RELAUNCH" in result.stdout, tick == 56)
                 self.assertEqual("practice-ledge-timer-ticks=0 cue=LEDGE TIMER 0 TICKS" in result.stdout, tick == 56)
                 self.assertNotIn("practice-windup-handoff=", result.stdout)
                 if tick == 170:

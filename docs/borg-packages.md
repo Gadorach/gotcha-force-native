@@ -119,8 +119,9 @@ gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID --practice-
 saved variant. **Standard** starts in the ordinary arena. The other
 choices use verified starts and live input, never demo input. From
 **Standard**, press **Right** once for **Recovery Seam**, twice for
-**Timed Relaunch Floor**, or three times for **Incline Dash Jump**.
-All three start paused with a
+**Timed Relaunch Floor**, three times for **Incline Dash Jump**, four for
+**Timed Landing Dash**, or five for **Direct Expiry Relaunch**.
+These routes start paused with a
 [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
 Press **Left** three times for **Expiry Handoff**, or four times for
 **Timed Handoff**.
@@ -766,7 +767,8 @@ instead of inspecting stale claims.
 With `--practice-from-picker`, **L/R** (keys or shoulder buttons) selects
 the same live G-Red routes as the owned picker without moving the Force
 cursor. From **Standard**, press **R** once for **Recovery Seam**,
-twice for **Timed Relaunch Floor**, or three times for **Incline Dash Jump**.
+twice for **Timed Relaunch Floor**, three times for **Incline Dash Jump**,
+four for **Timed Landing Dash**, or five for **Direct Expiry Relaunch**.
 For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
 times, respectively.
 **Q/Y** rechecks the highlighted position and opens that route

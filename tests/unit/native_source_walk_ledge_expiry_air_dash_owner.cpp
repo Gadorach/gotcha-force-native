@@ -157,6 +157,7 @@ int main(){
         "positive-timer handoff mode still refuses the completed zero-timer wind-up");
 
     bind(Mode::GroundExpiryPlainWindupRelaunch);prefix(56);
+    check(!view.practice_readout(world)->direct_expiry_relaunch_ready,"older modes do not promise a direct entry");
     check(prepare(false,&offer,true,true)&&offer.kind==Kind::RelaunchEntry,
         "older mode stages the same soft-Up candidate but cannot authorize it");
     const auto direct_frame=NativeBattleMvpView::movement_frame(world,1152,648);
@@ -205,14 +206,23 @@ int main(){
             "tap and held expiry handoffs both reach idle without active dash");
     }
     bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(55);
+    check(!view.practice_readout(world)->direct_expiry_relaunch_ready,"a timer of one does not publish the next-input hint");
     check(offer.kind==Kind::GroundLossPush&&source.ground_loss_timer698()==1.f&&
         !prepare(false,&offer,true,true)&&world.tick()==55&&error.find("accepted zero-timer walking push")!=std::string::npos&&
         source.ground_loss_timer698()==1.f&&source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
         "one-tick-early Shift cannot substitute a pending decrement for the accepted expiry push");
     bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(56);
+    check(view.practice_readout(world)->direct_expiry_relaunch_ready,"only the accepted expiry push offers Up+Shift");
     check(!prepare(false,&offer,true)&&world.tick()==56&&error.find("needs soft Up")!=std::string::npos&&
         source.resource()==10000&&!source.relaunches()&&!world.step({},false,&view),
         "neutral direct relaunch is not the verified directional route");
+
+    bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(56);
+    check(view.practice_readout(world)->direct_expiry_relaunch_ready&&prepare(false,&offer)&&offer.kind==Kind::GroundLossAir&&
+        view.practice_readout(world)->direct_expiry_relaunch_ready,"neutral input stages an ordinary fall but cannot replace the accepted hint yet");
+    accept(offer);
+    check(!view.practice_readout(world)->direct_expiry_relaunch_ready&&!view.practice_readout(world)->direct_expiry_relaunch,
+        "an ordinary zero-timer fall explicitly closes the direct window");
 
     for(const bool held:{false,true}){
         bind(Mode::GroundWalkExpiryDirectRelaunch);prefix(56);
@@ -230,7 +240,7 @@ int main(){
         auto refuses=[&](const NativeBorgMotionOffer& wrong,const NativeBorgMovementFrame* camera,const char* why){
             check(!world.step({},false,&view,nullptr,camera,&wrong)&&world.tick()==56&&world.actors()[0].position==before.position&&
                 source.resource()==10000&&!source.relaunches()&&world.motion_receipt_current(pose.receipt)&&
-                !view.practice_readout(world)->direct_expiry_relaunch,why);
+                !view.practice_readout(world)->direct_expiry_relaunch&&view.practice_readout(world)->direct_expiry_relaunch_ready,why);
         };
         refuses(offer,nullptr,"native requires a current camera-frame turn proof");
         NativeBorgMovementFrame backwards;
@@ -245,7 +255,7 @@ int main(){
         refuses(wrong,&frame,"direct expiry cannot borrow an old steep response");
         accept(offer);
         check(!world.actors()[0].grounded&&source.movement_programs()==std::array<u16,2>{14,14}&&source.resource()==9850&&
-            source.relaunches()==1&&view.practice_readout(world)->direct_expiry_relaunch,
+            source.relaunches()==1&&view.practice_readout(world)->direct_expiry_relaunch&&!view.practice_readout(world)->direct_expiry_relaunch_ready,
             "matching acceptance publishes relaunch and the cue, not touchdown or wind-up");
         unsigned active_tick=0,fall_tick=0,hit=0,land=0,lift_tick=0;
         while(world.tick()<170){

@@ -404,10 +404,13 @@ gf_native --gred-walk-ledge-expiry-direct-relaunch --practice-start --no-audio
 ```
 
 **Left Arrow** on 6–25 reaches the accepted expiry push at 56. Hold
-**Up Arrow + Shift** on 57–76. Entry adds 15 to the projected downward
-speed, so G-Red still descends. It spends only 150 and shows **DIRECT
-EXPIRY RELAUNCH** on that accepted frame. Continued relaunch first moves
-up on 76. Release at 77 with 7950 meter; touchdown at 136 and separate
+**Up Arrow + Shift** on 57–76. The accepted expiry push shows
+**UP+SHIFT/B TO REQUEST RELAUNCH** only while that input can be asked for;
+the cue does not promise the next contact check will pass. Entry adds
+15 to the projected downward speed, so G-Red still descends. It spends
+150 and shows **DIRECT EXPIRY RELAUNCH** on that accepted frame.
+Continued relaunch first moves up on 76. Release at 77 with 7950 meter;
+touchdown at 136 and separate
 landing at 137 preserve it until normal recovery. A single Up+Shift tap
 on 57 also finishes: falling resumes at 58 with 9850, touchdown at 110,
 and landing at 111. Neither route pays an air-dash charge.

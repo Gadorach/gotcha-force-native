@@ -89,6 +89,15 @@ int main(){
         browser.practice_route()==GRedPickerPracticeRoute::InclineDashJump&&browser.practice_route_name()=="INCLINE DASH JUMP"&&
         browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
         "third Right selects the incline jump without changing saved contents");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::TimedLandingDash&&browser.practice_route_name()=="TIMED LANDING DASH",
+        "fourth Right reaches the timed landing dash");
+    browser.step({},true);
+    check(browser.step(right,true)==BorgBrowserChange::PracticeRoute&&
+        browser.practice_route()==GRedPickerPracticeRoute::DirectExpiryRelaunch&&browser.practice_route_name()=="DIRECT EXPIRY RELAUNCH"&&
+        browser.owned_entry()->instance==3&&browser.selection()->variant=="silver",
+        "fifth Right reaches direct expiry relaunch without replacing the copy or variant");
     check(tap(down)==BorgBrowserChange::Package&&browser.owned_entry()->instance==7&&!browser.selection()&&
         browser.bind(metadata)&&browser.variant()&&!browser.selection()&&tap(x)==BorgBrowserChange::None,
         "disabled copy stays visible but cannot request preview");

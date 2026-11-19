@@ -1586,6 +1586,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                  gf::log_info(context,"source-ground","practice-landing-dash=%s",view.landing_dash_hint);
              if(practice->direct_expiry_relaunch)
                  gf::log_info(context,"source-ground","practice-direct-expiry-relaunch=%s",view.direct_expiry_relaunch_hint);
+             if(practice->direct_expiry_relaunch_ready)
+                 gf::log_info(context,"source-ground","practice-direct-expiry-request=%s",view.direct_expiry_request_hint);
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");
@@ -1722,6 +1724,7 @@ int inspect_borg_force(const Options& options,const gf::BorgPackageCatalog& pack
 bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice){
     constexpr std::array<std::string_view,unsigned(gf::GRedPickerPracticeRoute::Count)> modes{
         "--gred-movement","--gred-recovery-first-contact-seam","--gred-walk-ledge-timed-relaunch-floor","--gred-inclined-dash-jump",
+        "--gred-timed-incline-landing-dash","--gred-walk-ledge-expiry-direct-relaunch",
         "--gred-slope-transition-dash",
         "--gred-inclined-walk-ledge","--gred-inclined-dash-ledge",
         "--gred-walk-ledge-fall-push","--gred-walk-ledge-high-angle-push",

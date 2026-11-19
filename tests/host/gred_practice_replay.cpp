@@ -8,7 +8,8 @@ namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
     RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,DirectExpiryRelaunch,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
-    OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump};
+    OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
+    OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -150,6 +151,26 @@ public:
                     if(tick==6)raw.axis[1]=20000;
                     if(tick>=14&&tick<=37)raw.buttons|=1u<<1;
                 }
+            }
+            if(f>=14+2*ticks&&f<=16+2*ticks)raw.quit=true;
+            break;
+        }
+        case Replay::OwnedLandingDash:
+        case Replay::ForceLandingDash:
+        case Replay::OwnedDirectExpiry:
+        case Replay::ForceDirectExpiry:{
+            const bool owned=replay_==Replay::OwnedLandingDash||replay_==Replay::OwnedDirectExpiry;
+            const bool expiry=replay_==Replay::OwnedDirectExpiry||replay_==Replay::ForceDirectExpiry;
+            const unsigned routes=expiry?5:4,ticks=expiry?(owned?56:170):(owned?34:70);
+            if(f<2*routes&&f%2==0)raw.buttons|=1u<<(owned?8:10);
+            if(f>=2*routes&&f<=2*routes+2)raw.buttons|=1u<<3;
+            if(f>=13&&f<13+2*ticks){
+                const unsigned tick=1+(f-13)/2;
+                snapshot_.frame_step=(f-13)%2==0;
+                if(tick>=6&&tick<=(expiry?25u:9u))raw.buttons|=1u<<7;
+                if(expiry){
+                    if(tick>=57&&tick<=76)raw.buttons|=(1u<<5)|(1u<<1);
+                }else if(tick==34)raw.axis[0]=-20000;
             }
             if(f>=14+2*ticks&&f<=16+2*ticks)raw.quit=true;
             break;
@@ -345,6 +366,21 @@ int replay_owned_practice_picker(std::string root){
         once(log.text,"practice-dash-takeoff=DASH CANCELED")&&
         once(log.text,"returned to owned instance=8 after practice route=INCLINE DASH JUMP"),
         "owned incline guide publishes the accepted cancel and returns to the same exact copy and route",log.text);
+    log.text.clear();input=ReplayInput(Replay::OwnedLandingDash);
+    char landing_limit[]="96",direct_limit[]="140";
+    check(run_picker(enabled,landing_limit)==96&&picker_guide_played(log.text,"timed incline landing dash",34)&&
+        once(log.text,"launched practice for owned instance=8 route=TIMED LANDING DASH")&&
+        once(log.text,"practice-landing-dash=DASH FROM LANDING")&&has(log.text,"practice-ledge-timer-ticks=5")&&
+        once(log.text,"returned to owned instance=8 after practice route=TIMED LANDING DASH"),
+        "owned timed landing dash enters on the incline and returns to the same copy and route",log.text);
+    log.text.clear();input=ReplayInput(Replay::OwnedDirectExpiry);
+    check(run_picker(enabled,direct_limit)==140&&picker_guide_played(log.text,"direct expiry relaunch",56)&&
+        once(log.text,"launched practice for owned instance=8 route=DIRECT EXPIRY RELAUNCH")&&
+        once(log.text,"practice-direct-expiry-request=UP+SHIFT/B TO REQUEST RELAUNCH")&&
+        has(log.text,"relaunches=0 air-dash-starts=0 floors=0 timer698=0.0")&&
+        !has(log.text,"practice-direct-expiry-relaunch=")&&
+        once(log.text,"returned to owned instance=8 after practice route=DIRECT EXPIRY RELAUNCH"),
+        "owned expiry guide offers the next input without dispatching it and returns to the exact copy and route",log.text);
     log.text.clear();input=ReplayInput(Replay::PickerPractice);
     char disabled[]="9";
     check(run_picker(disabled,short_limit)>0&&!has(log.text,"launched practice for")&&
@@ -423,6 +459,22 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
         has(log.text,"practice-meter=10000/10000 at accepted tick=120")&&has(log.text,"practice-phase=IDLE")&&
         once(log.text,"returned to Force 1 slot 2 after practice route=INCLINE DASH JUMP")&&snapshot->current(),
         "Force incline guide completes live and returns to the same exact slot and route",log.text);
+    char landing_limit[]="167",direct_limit[]="366";
+    run(Replay::ForceLandingDash,landing_limit);
+    check(picker_guide_played(log.text,"timed incline landing dash",70)&&
+        once(log.text,"launched practice for Force 1 slot 2 instance=8 route=TIMED LANDING DASH")&&
+        has(log.text,"accepted native tick=70 G-Red-position=-1408.01/27.15/-935.02")&&
+        has(log.text,"landing-dashes=1 loss-landings=1 timer698=0.0 resource=10000")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=TIMED LANDING DASH")&&snapshot->current(),
+        "Force timed landing dash finishes recovery and returns to the exact slot and route",log.text);
+    run(Replay::ForceDirectExpiry,direct_limit);
+    check(picker_guide_played(log.text,"direct expiry relaunch",170)&&
+        once(log.text,"launched practice for Force 1 slot 2 instance=8 route=DIRECT EXPIRY RELAUNCH")&&
+        has(log.text,"accepted native tick=170 G-Red-position=-440.81/10.00/-2989.32")&&
+        has(log.text,"practice-meter=10000/10000 at accepted tick=170")&&has(log.text,"relaunches=1 air-dash-starts=0 floors=0 timer698=0.0")&&
+        !has(log.text,"practice-direct-expiry-request=")&&!has(log.text,"practice-direct-expiry-relaunch=")&&
+        once(log.text,"returned to Force 1 slot 2 after practice route=DIRECT EXPIRY RELAUNCH")&&snapshot->current(),
+        "Force direct expiry guide runs live through landing and returns without leaking either cue",log.text);
     std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }

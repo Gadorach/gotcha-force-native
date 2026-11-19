@@ -71,6 +71,14 @@ int main(){
     check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
         cursor.practice_route()==GRedPickerPracticeRoute::InclineDashJump&&cursor.practice_route_name()=="INCLINE DASH JUMP"&&
         cursor.force()==force_before&&cursor.slot()==slot_before,"third Right shoulder reaches incline dash jump without moving either cursor");
+    cursor.step({});
+    check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
+        cursor.practice_route()==GRedPickerPracticeRoute::TimedLandingDash&&cursor.practice_route_name()=="TIMED LANDING DASH",
+        "fourth Right shoulder reaches the timed landing dash");
+    cursor.step({});
+    check(cursor.step(next_route,true)==BorgForceBrowseChange::PracticeRoute&&
+        cursor.practice_route()==GRedPickerPracticeRoute::DirectExpiryRelaunch&&cursor.practice_route_name()=="DIRECT EXPIRY RELAUNCH"&&
+        cursor.force()==force_before&&cursor.slot()==slot_before,"fifth Right shoulder reaches direct expiry relaunch without moving either cursor");
 
     headless::Render device;RenderEngine render(device);std::string error;
     check(render.initialize({640,480,false,true,"Force browser"},nullptr,&error),"shared render backend");

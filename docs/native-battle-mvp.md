@@ -244,6 +244,13 @@ Use `--demo-gred-walk-ledge-expiry-direct-relaunch` for the automatic
 replay. A positive timer or any contact response on entry remains
 unsupported in this route.
 
+From **Standard**, advance the route four times for **Timed Landing
+Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
+picker, **R** in the Force browser). On the accepted zero-timer push,
+the direct relaunch guide shows **UP+SHIFT/B TO REQUEST RELAUNCH** for
+the next step. It does not skip input or contact checks. After the
+next accepted step, the hint clears whether you relaunch or keep falling.
+
 `--gred-recovery-recontact` uses the ordinary practice start and opts into
 the verified flat-floor recovery overlap. Try
 `--demo-gred-recovery-recontact --headless --frames 200 --no-audio` to see
