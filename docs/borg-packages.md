@@ -280,6 +280,55 @@ height. A boss can instead describe `horizontal-anchor=stage-center` with a
 separate absolute Y, without assuming that any stage or large body can fit
 there. See the [spawn requirements](borg-package-requirements.md#reserve-a-spawn-policy-independent-of-flight).
 
+### Standalone gameplay-form check
+
+Set `forms=gameplay/forms.txt` in a version 2 catalogue. A
+`GFBORG-FORMS 1` file starts with `default-form=ID` and declares up to 16
+gameplay forms and 64 transitions in at most 64 KiB. The default form is
+separate from the catalogue's default costume variant.
+
+Each `form=ID|label` starts a block with explicit `model`, `rig`,
+`animations`, `animation-map`, `movement`, `moves`, `collision` and `effects`
+fields. Each field is a package-relative file, `inherit` (package default
+for that role, with no inferred form-to-form inheritance), `none` or
+`unresolved`.
+
+For example, after declaring `base` and `powered`, a temporary entry may be:
+
+```text
+transition=power-on|base|powered|temporary-entry
+trigger=move-event
+event=charge-complete
+guard=can-power-up
+interrupt=charge-cancel
+timer=power-life
+animation=power-on
+effect=power-flash
+transfer=unresolved
+priority=10
+```
+
+- The transition header is `ID|from|to|kind`, where `kind` is `selected`,
+  `temporary-entry`, `return` or `unresolved`. The source form must be
+  declared; the destination may explicitly be `unresolved`. A transition
+  cannot target its own source form.
+- Triggers are `selection`, `move-event`, `expiry`, `stagger`, `damage`,
+  `contact` and `unresolved`. Event, guard, interrupt, timer, animation,
+  effect and transfer are local IDs, `none` or `unresolved`. Priority
+  is a nonnegative ordinal or `unresolved`; no selection is performed.
+- A selected transition cannot declare a named expiry timer. A known
+  temporary destination requires a separate `return` path; if the entry
+  names a duration timer it also requires an expiry return referencing that
+  timer or explicitly leaving the timer unresolved. A stagger or other
+  interrupt return is distinct. A return can reserve its destination as
+  unresolved without inventing a model swap.
+
+Run `gf_native --check-borg-forms example:clockwork-crane` to check the
+declarations, nonempty local override files and form IDs in any declared
+move/spawn profiles. It does not parse inherited or overridden assets,
+resolve transition payloads, start timers, replace a model or transfer HP,
+movement, ammo or other state. Battle fusion remains a separate facet.
+
 ## Standalone body preview
 
 For one default variant with compatible HSD assets, add `preview=preview.txt`

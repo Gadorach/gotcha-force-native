@@ -206,6 +206,9 @@ change movement family; it must not silently retain or refill the wrong meter.
 Bind form changes through the world/controller owner and publish them only
 after matching model/rig and gameplay resources are ready. Unknown transitions
 remain explicit `unresolved` placeholders.
+The [standalone forms check](borg-packages.md#standalone-gameplay-form-check)
+validates these declarations, including a temporary form's independent return
+paths, without interpreting the transitions.
 
 ### Reserve effect and sound slots now
 
