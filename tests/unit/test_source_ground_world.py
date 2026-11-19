@@ -13,7 +13,7 @@ class SourceGroundWorldTests(unittest.TestCase):
         return subprocess.run([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, timeout=90, cwd=cwd)
 
-    def test_packaged_gred_practice_runs_without_any_loose_gred_actor_inputs(self):
+    def normal_practice_fixture(self, root):
         content = Path(__file__).resolve().parents[2] / "local/content"
         art = content / "native-battle-mvp-v1"
         source = content / "source-gred-ground-v9"
@@ -31,32 +31,36 @@ class SourceGroundWorldTests(unittest.TestCase):
         }
         if not all(path.is_file() for path in (*inputs.values(), *(art / x for x in stage_files), *(source / x for x in stage_grids))):
             self.skipTest("qualified local stage and practice inputs not present")
+        package = root / "borgs/initial-folder"
+        package.mkdir(parents=True)
+        for directory, names in ((art, stage_files), (source, stage_grids)):
+            target = root / "local/content" / directory.name
+            target.mkdir(parents=True)
+            for name in names:
+                shutil.copyfile(directory / name, target / name)
+        for name, path in inputs.items():
+            shutil.copyfile(path, package / name)
+        manifest = ("GFBORG 1\nid=fixture:gred\nname=Practice G-Red\nmodel=body.hsd\nanimations=motions.bank\n"
+                    "rules=practice.rules\ncatalog=catalog.txt\n")
+        (package / "borg.manifest").write_text(manifest, encoding="utf-8")
+        (package / "catalog.txt").write_text(
+            "GFBORG-CATALOG 1\ndescription=Fixture.\ntribe=none\ndefault-variant=normal\n"
+            "variant=normal|Normal|0|unresolved\nvariant=shadow|Shadow|0|unresolved\n", encoding="utf-8")
+        (package / "practice.rules").write_text(
+            "GFBORG-PRACTICE 1\ncontroller=normal-gred-gfmm9\nvariant=normal\n"
+            "rig-prefix=rig.prefix\npose-profile=rig.pose\nlocomotion=locomotion.gfmp\n"
+            "pose-height=height.gfhc\nmovement-input=input.gfmi\nmovement-motion=motion.gfmm\n", encoding="utf-8")
+        return package, manifest, inputs
+
+    def test_packaged_gred_practice_runs_without_any_loose_gred_actor_inputs(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            package = root / "borgs/initial-folder"
-            package.mkdir(parents=True)
-            for directory, names in ((art, stage_files), (source, stage_grids)):
-                target = root / "local/content" / directory.name
-                target.mkdir(parents=True)
-                for name in names:
-                    shutil.copyfile(directory / name, target / name)
-            for name, path in inputs.items():
-                shutil.copyfile(path, package / name)
-            manifest = ("GFBORG 1\nid=fixture:gred\nname=Practice G-Red\nmodel=body.hsd\nanimations=motions.bank\n"
-                        "rules=practice.rules\ncatalog=catalog.txt\n")
-            (package / "borg.manifest").write_text(manifest, encoding="utf-8")
-            (package / "catalog.txt").write_text(
-                "GFBORG-CATALOG 1\ndescription=Fixture.\ntribe=none\ndefault-variant=normal\n"
-                "variant=normal|Normal|0|unresolved\nvariant=shadow|Shadow|0|unresolved\n", encoding="utf-8")
-            (package / "practice.rules").write_text(
-                "GFBORG-PRACTICE 1\ncontroller=normal-gred-gfmm9\nvariant=normal\n"
-                "rig-prefix=rig.prefix\npose-profile=rig.pose\nlocomotion=locomotion.gfmp\n"
-                "pose-height=height.gfhc\nmovement-input=input.gfmi\nmovement-motion=motion.gfmm\n", encoding="utf-8")
+            package, manifest, inputs = self.normal_practice_fixture(root)
             base = ["--practice-borg", "fixture:gred", "--headless", "--no-audio"]
             exact = [*base, "--borg-variant", "normal"]
             for flags in (
                 ["--gred-movement", *base], exact,
-                ["--gred-movement", *exact, "--source-ground-assets", str(source)],
+                ["--gred-movement", *exact, "--source-ground-assets", str(root / "local/content/source-gred-ground-v9")],
                 ["--gred-movement", *exact, "--list-borgs"],
             ):
                 result = self.run_host(flags, cwd=root)
@@ -89,6 +93,49 @@ class SourceGroundWorldTests(unittest.TestCase):
             self.assertEqual(linked.returncode, 2, linked.stdout)
             self.assertIn("unavailable or wrong-sized practice asset: pose-profile", linked.stdout)
             self.assertNotIn("backend=", linked.stdout)
+
+    def test_owned_package_practice_uses_exact_scoped_saved_copy_without_writes(self):
+        seed = Path(os.environ["GF_SOURCE_WORLD_BINARY"]).resolve().with_name("gred_practice_replay")
+        if not seed.is_file():
+            self.skipTest("practice replay fixture seeder not built")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package, manifest, _ = self.normal_practice_fixture(root)
+            accounts = root / "new-account-store"
+            subprocess.run([seed, "--seed-owned-practice", accounts], check=True, timeout=30, cwd=root)
+            before = {path.name: path.read_bytes() for path in accounts.iterdir()}
+            package = package.rename(package.with_name("moved-package"))
+            (package / "borg.manifest").write_text(manifest.replace("Practice G-Red", "Current Package Name"), encoding="utf-8")
+
+            def start(save, instance, *extra, mode="--gred-movement"):
+                return self.run_host([mode, "--practice-owned-borg", str(accounts), "7", str(save), str(instance),
+                                      "--headless", "--no-audio", *extra], cwd=root)
+
+            good = start(11, 8, "--frames", "180", mode="--demo-gred-walk-ledge-expiry-push")
+            self.assertEqual(good.returncode, 0, good.stdout)
+            self.assertIn("bound fixture:gred variant=normal", good.stdout)
+            self.assertIn("account=7 save=11 owned instance=8 (Saved G-Red / Saved Standard); save is read-only", good.stdout)
+            self.assertIn("walk-ledge-fall-pushes=2 last-angle-s16=13653 landings=1 resource=10000 selector=0", good.stdout)
+            for save, instance, message in (
+                (11, 9, "owned copy is disabled"), (11, 10, "no exact saved variant"),
+                (11, 11, "explicitly selected normal variant"), (11, 12, "uniquely discovered package"),
+                (11, 99, "not owned in this save"), (12, 8, "uniquely discovered package"),
+                (13, 8, "no package roster"), (999, 8, "requested save unavailable"),
+            ):
+                with self.subTest(save=save, instance=instance):
+                    refused = start(save, instance)
+                    self.assertEqual(refused.returncode, 2, refused.stdout)
+                    self.assertIn(message, refused.stdout)
+                    self.assertNotIn("backend=", refused.stdout)
+            for flags in (["--borg-variant", "normal"], ["--practice-borg", "fixture:gred", "--borg-variant", "normal"],
+                          ["--browse-owned-borgs", str(accounts), "7", "11"]):
+                refused = start(11, 8, *flags)
+                self.assertEqual(refused.returncode, 2, refused.stdout)
+                self.assertNotIn("backend=", refused.stdout)
+            duel = start(11, 8, mode="--demo-battle-mvp")
+            self.assertEqual(duel.returncode, 2, duel.stdout)
+            self.assertNotIn("backend=", duel.stdout)
+            self.assertEqual(before, {path.name: path.read_bytes() for path in accounts.iterdir()})
 
     def test_inclined_dash_ledge_demo_departs_and_lands_without_spend(self):
         result = self.run_host(["--demo-gred-inclined-dash-ledge", "--headless", "--frames", "100", "--no-audio"])

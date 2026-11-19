@@ -116,7 +116,10 @@ relax unsupported contact refusals.
 
 An explicitly selected [qualified normal G-Red package](borg-packages.md#qualified-normal-g-red-practice-package)
 can supply the player body, rig and controller for the same practice
-session. Stage and target assets stay in the existing harness.
+session. The same path can read the exact variant of an
+[enabled owned copy](borg-packages.md#practice-an-owned-copy) from a
+selected save without changing it. Stage and target assets stay in the
+existing harness.
 
 ### Try a demo route with your own inputs
 

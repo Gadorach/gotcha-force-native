@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/assets/borg_practice_profile.hpp"
-#include "platform/pc/borg_catalog_load.hpp"
+#include "engine/save/borg_package_save.hpp"
+#include "platform/pc/borg_selected_save.hpp"
 
 namespace gf::pc {
 struct BorgPracticeFiles {
@@ -43,4 +44,52 @@ inline bool load_borg_practice_files(const std::filesystem::path& root,const Bor
     if(!next.views().qualified())return fail("practice assets do not match the qualified normal G-Red content");
     *out=std::move(next);if(error)error->clear();return true;
 }
+
+struct BorgOwnedPracticeRequest {
+    std::string root;
+    AccountSaveKey key;
+    u64 instance=0;
+    bool operator==(const BorgOwnedPracticeRequest&)const=default;
+};
+class BorgOwnedPractice {
+public:
+    const AccountSaveKey& save_key()const{return selected_->entry.key;}
+    const OwnedPackageBorg& saved()const{return saved_;}
+    const BorgPracticeFiles& files()const{return files_;}
+    bool matches(const BorgOwnedPracticeRequest& request)const{
+        return request_==request&&save_key()==request.key&&saved_.instance==request.instance;
+    }
+    bool current()const{return record_.current();}
+
+    static std::unique_ptr<BorgOwnedPractice> open(const BorgOwnedPracticeRequest& request,
+                                                   const std::filesystem::path& packages_root,
+                                                   const BorgPackageCatalog& packages,std::string* error){
+        auto fail=[&](const char* why)->std::unique_ptr<BorgOwnedPractice>{if(error)*error=why;return {};};
+        if(!request.instance)return fail("an explicit owned instance ID is required");
+        auto selected=open_borg_selected_save(request.root,request.key.account,request.key.save,error);
+        if(!selected)return {};
+        auto next=std::unique_ptr<BorgOwnedPractice>(new BorgOwnedPractice(request,std::move(selected)));
+        PackageBorgRoster roster;
+        const auto loaded=next->record_.load(&roster);
+        if(loaded==PackageBorgLoad::Missing)return fail("the selected save has no package roster");
+        if(loaded!=PackageBorgLoad::Loaded)return fail("the selected package roster is unavailable or invalid");
+        const auto* owned=roster.find(request.instance);
+        if(!owned)return fail("the requested instance is not owned in this save");
+        if(owned->disabled)return fail("the requested owned copy is disabled");
+        if(!owned->variant)return fail("the requested owned copy has no exact saved variant");
+        if(!load_borg_practice_files(packages_root,packages,owned->identity.id,owned->variant->id,&next->files_,error))return {};
+        if(!next->current())return fail("the selected save changed during practice preparation; reopen it");
+        next->saved_=*owned;if(error)error->clear();return next;
+    }
+private:
+    explicit BorgOwnedPractice(const BorgOwnedPracticeRequest& request,std::unique_ptr<BorgSelectedSave> selected)
+        :request_(request),selected_(std::move(selected)),record_(*selected_->backend){}
+    // No write interface is exposed to the practice consumer. The exact
+    // roster record is checked through the selected account/save lease.
+    const BorgOwnedPracticeRequest request_;
+    std::unique_ptr<BorgSelectedSave> selected_;
+    mutable PackageBorgSaveStore record_;
+    OwnedPackageBorg saved_;
+    BorgPracticeFiles files_;
+};
 }

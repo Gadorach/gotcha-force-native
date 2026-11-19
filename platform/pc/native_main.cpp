@@ -76,6 +76,7 @@ struct Options {
     gf::u64 selected_account=0,selected_save=0,recovery_notice=0,inspect_force=0,owned_instance=0,placement_force=0,placement_slot=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
         check_borg_acquisition,check_borg_variants,preview_borg,practice_borg,borg_variant;
+    std::optional<gf::pc::BorgOwnedPracticeRequest> owned_practice;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -249,6 +250,12 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--practice-borg"){
             if(++i>=argc||!options->practice_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->practice_borg=argv[i];
+        }else if(arg=="--practice-owned-borg"){
+            if(argc-i<=4||options->owned_practice)return false;
+            auto& request=options->owned_practice.emplace();
+            request.root=argv[++i];
+            if(request.root.empty()||!id(argv[++i],&request.key.account)||!id(argv[++i],&request.key.save)||
+               !id(argv[++i],&request.instance))return false;
         }else if(arg=="--borg-variant"){
             if(++i>=argc||!options->borg_variant.empty()||!gf::borg_catalog_variant_id_valid(argv[i]))return false;
             options->borg_variant=argv[i];
@@ -452,6 +459,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "[--screenshot PATH.ppm]\n"
                           "       gf_native --gred-movement [--practice-start] [--no-audio]\n"
                           "       gf_native --gred-movement --practice-borg NAMESPACE:ID --borg-variant normal\n"
+                          "       gf_native --gred-movement --practice-owned-borg ROOT ACCOUNT SAVE INSTANCE\n"
                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
                          "       gf_native --check-borg-moves NAMESPACE:ID\n"
                          "       gf_native --check-borg-spawn NAMESPACE:ID\n"
@@ -479,7 +487,9 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
        !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->borg_variant.empty()&&options->preview_borg.empty()&&options->practice_borg.empty())return false;
-    if(!options->practice_borg.empty()&&(!options->gred_practice||options->borg_variant.empty()||
+    if((!options->practice_borg.empty()&&options->borg_variant.empty())||
+       (options->owned_practice&&(!options->practice_borg.empty()||!options->borg_variant.empty())))return false;
+    if((!options->practice_borg.empty()||options->owned_practice)&&(!options->gred_practice||
        !options->preview_borg.empty()||!options->source_ground_assets.empty()||options->list_borgs||
        !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
@@ -674,13 +684,19 @@ int run_battle_test(gf::Context& context,gf::RenderEngine& render,const Options&
 }
 
 int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& options,
-                   const gf::pc::BorgPracticeFiles* package=nullptr){
+                   const gf::pc::BorgPracticeFiles* package=nullptr,const gf::pc::BorgOwnedPractice* owned=nullptr){
     gf::NativeBattleMvp world;gf::NativeBattleMvpView view;std::string error;
-    if(bool(package)!=!options.practice_borg.empty()||
-       (package&&(!options.gred_practice||package->identity.id!=options.practice_borg||package->variant!=options.borg_variant))){
+    const bool wants_package=!options.practice_borg.empty()||options.owned_practice.has_value();
+    if(bool(package)!=wants_package||bool(owned)!=options.owned_practice.has_value()||(package&&!options.gred_practice)||
+       (owned&&(package!=&owned->files()||!owned->matches(*options.owned_practice)))||
+       (!owned&&package&&(package->identity.id!=options.practice_borg||package->variant!=options.borg_variant))){
         gf::log_error(context,"borg-practice","exact requested practice snapshot required; no fallback");
         render.shutdown();return 2;
     }
+    auto owned_current=[&](){
+        if(!owned||owned->current())return true;
+        error="selected save changed; reopen it to start practice again";return false;
+    };
     const auto practice_bytes=package?package->views():gf::NativeGRedPracticeAssets{};
     const auto* practice=package?&practice_bytes:nullptr;
     gf::BattleMvpConfig config;
@@ -751,7 +767,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         }
         if(options.gred_walk_ledge_expiry_push){config.spawn[0]={-1250.96863f,-3313.80225f};config.spawn_query_y[0]=1846.01367f;}
     }
-    if(!view.load(context.files(),options.battle_mvp_assets,render,&error,practice)||!world.start(config,&view)||!view.update(world,&error)){
+    if(!owned_current()||!view.load(context.files(),options.battle_mvp_assets,render,&error,practice)||
+       !world.start(config,&view)||!view.update(world,&error)){
         gf::log_error(context,"battle-mvp","initialization failed: %s",error.c_str());render.shutdown();return 2;}
     gf::NativeGRedGroundDashDemo source;gf::GamePadState source_previous;
     const auto source_inputs=options.source_ground_assets.empty()?std::string(options.source_walk_ledge?"local/content/source-gred-ground-v8":options.source_relaunch_floor?"local/content/source-gred-ground-v7":options.source_steep?"local/content/source-gred-ground-v6":options.source_surface?"local/content/source-gred-ground-v5":options.source_air_dash?"local/content/source-gred-ground-v4":options.source_moving_jump?"local/content/source-gred-ground-v3":
@@ -773,10 +790,22 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         options.source_ground_relaunch_fall_push?gf::NativeGRedGroundDashDemo::Mode::GroundRelaunchFallPush:
         options.source_walk_ledge?gf::NativeGRedGroundDashDemo::Mode::WalkLedge:options.source_windup_entry_push?gf::NativeGRedGroundDashDemo::Mode::WindupEntryPush:options.source_windup_positive_floor?gf::NativeGRedGroundDashDemo::Mode::WindupPositiveFloor:options.source_windup_entry_floor?gf::NativeGRedGroundDashDemo::Mode::WindupEntryFloor:options.source_air_dash_floor?gf::NativeGRedGroundDashDemo::Mode::AirDashFloor:options.source_relaunch_floor?gf::NativeGRedGroundDashDemo::Mode::RelaunchFloor:options.source_relaunch_entry_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchEntrySurface:options.source_relaunch_surface?gf::NativeGRedGroundDashDemo::Mode::RelaunchSurface:options.source_active_surface?gf::NativeGRedGroundDashDemo::Mode::ActiveSurface:options.source_windup_surface?gf::NativeGRedGroundDashDemo::Mode::WindupSurface:options.source_recovery_surface?gf::NativeGRedGroundDashDemo::Mode::RecoverySurface:options.source_fall_surface?gf::NativeGRedGroundDashDemo::Mode::FallingSurface:options.source_steep?gf::NativeGRedGroundDashDemo::Mode::Steep:options.source_surface?gf::NativeGRedGroundDashDemo::Mode::Surface:options.source_landing_interrupt?gf::NativeGRedGroundDashDemo::Mode::LandingInterrupt:options.source_dash_jump?gf::NativeGRedGroundDashDemo::Mode::DashJump:options.source_relaunch?gf::NativeGRedGroundDashDemo::Mode::Relaunch:options.source_air_dash?gf::NativeGRedGroundDashDemo::Mode::AirDash:options.source_moving_jump?gf::NativeGRedGroundDashDemo::Mode::Jump:options.source_vertical_jump?gf::NativeGRedGroundDashDemo::Mode::VerticalJump:
         options.source_ground_air_fall_push?gf::NativeGRedGroundDashDemo::Mode::GroundAirFallPush:options.source_ground_fall_push?gf::NativeGRedGroundDashDemo::Mode::GroundFallPush:options.source_ground_loss_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundLossRelaunch:options.source_ground_loss_air?gf::NativeGRedGroundDashDemo::Mode::GroundLossAir:options.source_ground_loss_landing?gf::NativeGRedGroundDashDemo::Mode::GroundLossLanding:options.source_ground_loss_jump?gf::NativeGRedGroundDashDemo::Mode::GroundLossJump:options.source_ground_loss_surface?gf::NativeGRedGroundDashDemo::Mode::GroundLossSurface:options.source_ground_surface?gf::NativeGRedGroundDashDemo::Mode::GroundSurface:options.source_ground_windup_entry_floor?gf::NativeGRedGroundDashDemo::Mode::GroundWindupEntryFloor:options.source_ground_relaunch_floor?gf::NativeGRedGroundDashDemo::Mode::GroundRelaunchFloor:options.source_ground_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundRelaunch:options.source_ground_air_floor?gf::NativeGRedGroundDashDemo::Mode::GroundAirFloor:options.source_ground_air?gf::NativeGRedGroundDashDemo::Mode::GroundAir:options.source_ground_landing?gf::NativeGRedGroundDashDemo::Mode::GroundLanding:options.source_ground_jump?gf::NativeGRedGroundDashDemo::Mode::GroundJump:options.source_ground_ledge?gf::NativeGRedGroundDashDemo::Mode::GroundLedge:options.source_dash_ledge?gf::NativeGRedGroundDashDemo::Mode::DashLedge:options.source_ordered_ground?gf::NativeGRedGroundDashDemo::Mode::OrderedGround:options.source_ground_walk?gf::NativeGRedGroundDashDemo::Mode::Ground:gf::NativeGRedGroundDashDemo::Mode::DashOnly;
-    auto bind_source=[&](){gf::NativeBorgAnimationSeed seed;return view.source_seed(world,&seed)&&source.bind(context.files(),options.battle_mvp_assets,source_inputs,world,seed,&error,source_mode,practice);};
+    auto bind_source=[&](){
+        gf::NativeBorgAnimationSeed seed;
+        if(!owned_current()||!view.source_seed(world,&seed)||
+           !source.bind(context.files(),options.battle_mvp_assets,source_inputs,world,seed,&error,source_mode,practice))return false;
+        if(!owned_current()){source.reject();return false;}
+        return true;
+    };
     if(options.demo_source_ground&&!bind_source()){gf::log_error(context,"source-ground","bind failed: %s",error.c_str());render.shutdown();return 2;}
     if(package)gf::log_info(context,"borg-practice","bound %s variant=%s; qualified normal G-Red movement only, no save or battle admission",
         package->identity.id.c_str(),package->variant.c_str());
+    if(owned){
+        view.source_practice_owned_copy(owned->saved().instance);
+        gf::log_info(context,"borg-practice","account=%llu save=%llu owned instance=%llu (%s / %s); save is read-only",
+            static_cast<unsigned long long>(owned->save_key().account),static_cast<unsigned long long>(owned->save_key().save),
+            static_cast<unsigned long long>(owned->saved().instance),owned->saved().identity.name.c_str(),owned->saved().variant->label.c_str());
+    }
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
      if(options.gred_walk_ledge_expiry_push)gf::log_info(context,"source-ground","walking ledge push at timer698 1 to 0 only after an accepted push, without drift; expired landing gate 10240 and native cap 13653; both travel checks");
@@ -1013,7 +1042,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             const bool practicing=!restart&&!pause&&!practice_stopped&&!world.paused();
             practice_input.sample(pad,source.practice_flick_direction(pad),practicing);
             if(restart){
-                if(!world.start(config,&view)||!view.update(world,&error)||!bind_source()){
+                if(!owned_current()||!world.start(config,&view)||!view.update(world,&error)||!bind_source()){
                     gf::log_error(context,"source-ground","practice restart refused: %s",error.c_str());
                     render.shutdown();return 2;
                 }
@@ -1741,11 +1770,19 @@ int main(int argc, char** argv) {
        unsigned(!options.check_borg_acquisition.empty())+unsigned(!options.check_borg_variants.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     gf::pc::BorgPracticeFiles practice_package;
-    if(!options.practice_borg.empty()){
+    std::unique_ptr<gf::pc::BorgOwnedPractice> owned_practice;
+    const gf::pc::BorgPracticeFiles* package=nullptr;
+    if(options.owned_practice){
+        std::string error;
+        owned_practice=gf::pc::BorgOwnedPractice::open(*options.owned_practice,"borgs",borg_packages,&error);
+        if(!owned_practice){std::fprintf(stderr,"Owned Borg practice: %s\n",error.c_str());return 2;}
+        package=&owned_practice->files();
+    }else if(!options.practice_borg.empty()){
         std::string error;
         if(!gf::pc::load_borg_practice_files("borgs",borg_packages,options.practice_borg,options.borg_variant,&practice_package,&error)){
             std::fprintf(stderr,"Borg practice: %s\n",error.c_str());return 2;
         }
+        package=&practice_package;
     }
     if(options.inspect_force)return inspect_borg_force(options,borg_packages);
     using BorgScan=gf::BorgPackageScanStatus;
@@ -1932,7 +1969,7 @@ int main(int argc, char** argv) {
     }
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
-    if(options.battle_mvp)return run_battle_mvp(context,render,options,options.practice_borg.empty()?nullptr:&practice_package);
+    if(options.battle_mvp)return run_battle_mvp(context,render,options,package,owned_practice.get());
     if(options.browse_borgs||options.browse_owned_borgs)return run_borg_browser(context,render,options,borg_packages);
     if(!options.selected_save_root.empty())return run_borg_recovery(context,render,options,borg_packages);
     if(options.animation_mosaic||!options.preview_borg.empty())return run_animation_mosaic(context,render,options,borg_packages);

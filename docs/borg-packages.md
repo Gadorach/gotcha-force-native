@@ -86,6 +86,28 @@ Sasuke target remain separate harness inputs; the package does not supply
 them. Preview art and editor icons are not required. Existing practice
 options such as `--practice-start` also work with an eligible package.
 
+### Practice an owned copy
+
+To use the identity and variant from a particular saved copy instead of
+supplying an installed package ID:
+
+```sh
+gf_native --gred-movement --practice-owned-borg ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID INSTANCE_ID --no-audio
+```
+
+The account, save, and instance IDs are explicit positive decimal values.
+The selected account store must already exist. An absent or disabled
+copy, an unspecified variant, or an exact variant whose package cannot
+run this practice path refuses. `--practice-borg` and `--borg-variant`
+cannot override the saved identity. The live package may be renamed or
+moved to a different folder: its stable ID must still match.
+
+The selected save is checked after preparing the package assets, before
+starting the session, and again on **Q** restart. A changed save cannot
+silently redirect the launch or restart; close and reopen to use it. No
+practice progress, Force placement, or ownership changes are written.
+This is not a Force or battle-mode admission path.
+
 ## Read-only installed Borg picker
 
 `gf_native --browse-borgs` opens the standalone installed-package picker.

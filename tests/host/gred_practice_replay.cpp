@@ -101,9 +101,44 @@ std::string line(const std::string& log,const char* prefix){
     const auto start=log.find(prefix);
     return start==std::string::npos?std::string{}:log.substr(start,log.find('\n',start)-start);
 }
+
+// Test-only entry point. Create a fresh isolated account store rather
+// than opening any existing data to manufacture a roster.
+int seed_owned_practice(const std::string& root){
+    std::error_code ec;
+    if(!std::filesystem::create_directory(root,ec)||ec)return 2;
+    auto storage=gf::pc::create_account_save_storage(root,false,nullptr);
+    if(!storage)return 1;
+    gf::AccountSaveRepository repo(*storage);
+    gf::AccountSaveEntry account,save,other,empty;
+    using R=gf::AccountResult;
+    if(repo.create_account(7,"Practice Fixtures",&account)!=R::Ok||
+       repo.create_save(account,11,"Owned Practice",&save)!=R::Ok||
+       repo.create_save(account,12,"Other Practice",&other)!=R::Ok||
+       repo.create_save(account,13,"No Roster",&empty)!=R::Ok)return 1;
+    const gf::PackageBorgRoster roster{{
+        {8,{"fixture:gred","Saved G-Red"},false,gf::SavedPackageVariant{"normal","Saved Standard"}},
+        {9,{"fixture:gred","Disabled G-Red"},true,gf::SavedPackageVariant{"normal","Disabled"}},
+        {10,{"fixture:gred","Legacy G-Red"}},
+        {11,{"fixture:gred","Shadow G-Red"},false,gf::SavedPackageVariant{"shadow","Shadow"}},
+        {12,{"fixture:missing","Missing Borg"},false,gf::SavedPackageVariant{"normal","Missing"}},
+    },{{8,0,1}}};
+    const gf::PackageBorgRoster other_roster{{
+        {8,{"fixture:missing","Other instance eight"},false,gf::SavedPackageVariant{"normal","Missing"}},
+    },{}};
+    auto write=[&](const gf::AccountSaveEntry& entry,const gf::PackageBorgRoster& value){
+        std::unique_ptr<gf::AccountSaveBackend> backend;
+        if(repo.open(entry,&backend)!=R::Ok)return false;
+        gf::PackageBorgSaveStore store(*backend);gf::PackageBorgRoster unused;
+        const bool ok=store.load(&unused)==gf::PackageBorgLoad::Missing&&store.write(value);
+        repo.close();return ok;
+    };
+    return write(save,roster)&&write(other,other_roster)?0:1;
+}
 }
 
-int main(){
+int main(int argc,char** argv){
+    if(argc!=1)return argc==3&&std::string_view(argv[1])=="--seed-owned-practice"?seed_owned_practice(argv[2]):2;
     const auto files=gf::sdl::create_file_system();
     if(!files->exists("local/content/source-gred-ground-v9/motion.gfmm")||
        !files->exists("local/content/native-battle-mvp-v1/stage.hsd")){
