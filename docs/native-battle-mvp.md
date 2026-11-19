@@ -229,6 +229,13 @@ HUD shows one ledge tick left. Tap **Shift** without a direction
 on 55 to relaunch as it reaches zero, or stay neutral to dash.
 The earlier positive and expired modes keep their old clock gates.
 
+`--gred-walk-ledge-active-snap-relaunch --practice-start` compares
+relaunch with the active entry already paid. Use **Up Arrow** on
+6–8, **Shift** on 25–26 and **W** on 26. Stay neutral through 32,
+then tap **Shift** on 33. The 450 wind-up and 50 active-entry
+charges stay spent. Tap **Up+Shift** instead on 33 to compare
+the directional speed cap with neutral damping.
+
 With `--practice-from-picker`, both browsers offer all three floor-snap
 guides. From **Standard**, press **Right** in the owned picker or **R** in
 the Force browser:

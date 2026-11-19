@@ -492,6 +492,81 @@ int main(){
                 "positive and expiring choices both reach separate landing and normal idle");
         }
     }
+    auto active_fixture=[&](){
+        const auto& r=clock_routes[0];
+        BattleMvpConfig cfg;cfg.arena_half=4500;cfg.spawn[0]={r.x,r.z};cfg.spawn_query_y[0]=r.reference;
+        check(world.start(cfg,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+            source.bind(files,art,pack,world,seed,&error,Mode::GroundLossRelaunch),"same positive floor fixture in the earlier scope");
+    };
+    auto active_pad=[](unsigned tick,unsigned relaunch,bool up){
+        GamePadState pad;pad.dpad_up=(tick>=6&&tick<=8)||(tick==relaunch&&up);
+        pad.b=tick==25||tick==26||tick==relaunch;
+        if(tick==26)pad.stick_y=-127;
+        return pad;
+    };
+    active_fixture();
+    {
+        NativeBorgMotionOffer offer;
+        for(unsigned tick=1;tick<=31;++tick){
+            check(prepare(active_pad(tick,0,false),&offer),"existing owner accepts paid floor wind-up");
+            accept(offer);
+        }
+        const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);const auto retained=pose;
+        check(!view.practice_readout(world)->floor_windup_relaunch_ready&&prepare(active_pad(32,32,false),&offer)&&
+            offer.kind==Kind::RelaunchEntry&&!world.step({},false,&view,nullptr,&frame,&offer)&&world.tick()==31&&
+            source.resource()==9400&&source.ground_loss_timer698()==7.f&&world.motion_receipt_current(retained.receipt),
+            "this mode still needs the actual active frame before allowing relaunch");
+    }
+    for(bool up:{false,true}){
+        active_fixture();
+        unsigned hit=0,land=0;NativeBorgMotionOffer previous;
+        for(unsigned tick=1;tick<=110;++tick){
+            const auto before=world.actors()[0];const auto retained=pose;
+            const auto meter=source.resource();const auto timer=source.ground_loss_timer698();
+            NativeBorgMotionOffer offer;
+            check(prepare(active_pad(tick,33,up),&offer)&&source.resource()==meter&&source.ground_loss_timer698()==timer,
+                "actual post-active relaunch and clock stay staged");
+            check(offer.controller_timer698==(offer.kind==Kind::GroundLossEntry?30.f:std::max(0.f,timer-1.f)),"every role retains the real clock");
+            if(tick==32)check(offer.kind==Kind::AirDashActiveEntryFloor&&offer.air_motion&&offer.air_dash_floor&&
+                offer.air_motion->resource_before==9400&&offer.air_motion->resource_after==9350&&
+                offer.controller_timer698==6.f&&!before.grounded,"separate active snap pays its own 50 before the new lift");
+            if(tick==33){
+                check(previous.air_motion&&previous.air_dash_floor&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+                    offer.relaunch_motion->direction==up&&offer.controller_timer698==5.f&&!before.grounded&&
+                    offer.relaunch_motion->speed_before==previous.air_motion->speed44&&offer.relaunch_motion->speed_before>29.f&&
+                    offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&
+                    offer.relaunch_motion->resource_before==9350&&offer.relaunch_motion->resource_after==9200&&
+                    !offer.relaunch_floor&&!offer.static_push,"plain relaunch starts from the paid active frame without a new contact");
+                const auto& motion=*offer.relaunch_motion;
+                check(up?(motion.move_speed==motion.speed_before&&motion.speed44==8.f):
+                    (motion.move_speed==f32(motion.speed_before*.98f)&&motion.speed44==motion.move_speed&&motion.speed44>29.f),
+                    "only the directional acceleration caps retained speed; neither branch clamps movement before integration");
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                auto refuses=[&](const NativeBorgMotionOffer& wrong,const char* why){
+                    check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==32&&
+                        world.actors()[0].position==before.position&&source.resource()==9350&&source.ground_loss_timer698()==6.f&&
+                        world.motion_receipt_current(retained.receipt)&&!view.practice_readout(world)->relaunch_from_active_snap,why);
+                };
+                auto wrong=offer;wrong.relaunch_motion->resource_before=9400;refuses(wrong,"cannot refund the active dash");
+                wrong=offer;wrong.relaunch_motion->move_speed=8.f;refuses(wrong,"cannot cap the movement before integration");
+                wrong=offer;wrong.relaunch_motion->vertical_before=15.f;refuses(wrong,"cannot discard the active snap's negative velocity");
+                wrong=offer;wrong.controller_timer698=0.f;refuses(wrong,"cannot restart or erase the existing countdown");
+            }
+            if(tick==34)check(offer.kind==Kind::JumpAir&&offer.controller_timer698==4.f&&offer.jump_motion->relaunch_origin,
+                "release uses the ordinary fall after relaunch, not another active update");
+            if(offer.kind==Kind::JumpTouchdown)hit=tick;
+            if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+            accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->relaunch_from_active_snap==(tick==33)&&!shown->floor_windup_relaunch_ready,
+                "the marker is exclusive to the actual accepted post-active entry");
+            if(tick==34||tick==hit||tick==land)check(source.resource()==9200,"release and landing preserve both earlier charges");
+            previous=offer;
+        }
+        check(hit==(up?66u:67u)&&land==hit+1&&source.air_dash_active_frames()==1&&source.relaunches()==2&&
+            source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+            "two genuine post-active choices finish in idle under existing permissions");
+    }
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

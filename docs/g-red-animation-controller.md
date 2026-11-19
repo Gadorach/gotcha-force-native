@@ -243,6 +243,13 @@ grounded target placements, and four of 2,720 stage-wide approaches with
 the usual target placement. Neither scan reached a later touchdown after
 a push. There is still no complete dash-origin push route for admission.
 
+A further scan tested 2,952 approaches from grounded ledge starts,
+also varying the walking lead-in to the dash. This produced 33 ordered-dash
+departures and eight accepted first inter-gate pushes in isolation.
+All eight refused the following contact before an ordinary fall could
+be accepted, so there was no valid predecessor for a relaunch recovery.
+Dash-origin push permissions remain unchanged.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
@@ -1261,6 +1268,36 @@ rewrite the preceding snap or count as grounded contact.
 Eight complete 1 → 0 relaunch routes were found in the bounded scan.
 No entry snap, steep contact, directional relaunch or earlier-policy
 permission was added by this change.
+
+### Relaunch after a paid active floor snap
+
+`--gred-walk-ledge-active-snap-relaunch` uses the same grounded
+start as the short positive floor handoff, but the existing
+ground-loss relaunch mode. In this mode, pressing Shift before
+active entry still refuses. Step with **Up Arrow** on 6–8 and
+**Shift** on 25–26, adding **W** on 26. Stay neutral through 32.
+
+```sh
+gf_native --demo-gred-walk-ledge-active-snap-relaunch --headless --frames 110 --no-audio
+gf_native --gred-walk-ledge-active-snap-relaunch --practice-start --no-audio
+```
+
+Tick 31 pays 450 for wind-up (9400 meter). Tick 32 pays an additional
+50 for the active floor snap (9350 meter and six ledge ticks left).
+The active dash's **Release in 30 ticks** cue does not delay relaunch.
+Tap **Shift** with no direction on 33 to relaunch at 9200 with five
+ticks left. This differs from relaunching before active entry: the
+50 is already spent. **AIRBORNE / ACTIVE DASH TO RELAUNCH** marks
+only the accepted entry. Release at 34; touchdown and landing remain
+separate at 67–68.
+
+Neutral input damps the inherited 29.95 planar speed to about 29.35
+without clamping it to 8. Adding **Up Arrow** to Shift on 33
+instead caps the retained speed at 8 **after** movement and
+acceleration. It keeps the same charges and touches down/lands
+at 66–67. Both trajectories finish normally. The earlier mode
+completed all 24 bounded post-active trials; no motion or contact
+permission changed.
 
 Native placement/input/clocks/libm/camera/target/body/terrain approximations
 remain explicit, not original-hardware or whole-game equivalence. Push,

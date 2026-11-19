@@ -690,6 +690,31 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("accepted native tick=0 G-Red-position=3895.57/", guide.stdout)
         self.assertNotIn("expiring floor wind-up relaunch demo:", guide.stdout)
 
+    def test_relaunch_after_active_snap_keeps_both_paid_dash_charges(self):
+        for tick, phase, meter, timer in (
+            (31, "DASH WIND-UP / FLOOR SNAP", 9400, 7), (32, "AIR DASH / FLOOR SNAP", 9350, 6),
+            (33, "RELAUNCH", 9200, 5), (34, "FALLING", 9200, 4),
+            (67, "TOUCHDOWN", 9200, 0), (68, "LANDING", 9200, 0), (110, "IDLE", 10000, 0),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-active-snap-relaunch", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"controller-loss-relaunches={1 if tick<33 else 2} timer698={timer}.0", result.stdout)
+                self.assertIn(f"active-floors={int(tick>=32)}", result.stdout)
+                self.assertEqual("practice-active-snap-relaunch=AIRBORNE / ACTIVE DASH TO RELAUNCH" in result.stdout, tick == 33)
+                self.assertNotIn("practice-floor-windup-handoff=", result.stdout)
+                if tick == 110:
+                    self.assertIn("G-Red-position=1970.01/10.00/-1610.82", result.stdout)
+        guide = self.run_host(["--gred-walk-ledge-active-snap-relaunch", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("active snap relaunch guide: paused at tick=0", guide.stdout)
+        self.assertIn("neutral 27-32, then Shift 33", guide.stdout)
+        self.assertNotIn("active snap relaunch demo:", guide.stdout)
+
     def test_walk_ledge_direct_expiry_relaunch_has_no_air_dash_charge(self):
         for tick, phase, meter in (
             (56, "LEDGE FALL / PUSH", 10000), (57, "RELAUNCH", 9850),

@@ -7,7 +7,7 @@
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
     RecoverySeamRestart,InclineDashJump,TimedInclineLandingDash,DirectExpiryRelaunch,TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
-    PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,
+    PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -114,11 +114,12 @@ public:
             if(tick==150)raw.axis[0]=raw.axis[1]=20000;
             break;
         }
-        case Replay::PositiveFloorHandoff:{
+        case Replay::PositiveFloorHandoff:
+        case Replay::ActiveSnapRelaunch:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             if(tick>=6&&tick<=8)raw.buttons|=1u<<5;
-            if(tick==25||tick==26||tick==32)raw.buttons|=1u<<1;
+            if(tick==25||tick==26||tick==(replay_==Replay::ActiveSnapRelaunch?33u:32u))raw.buttons|=1u<<1;
             if(tick==26)raw.axis[1]=-20000; // W.
             break;
         }
@@ -312,9 +313,10 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool expiring_handoff=replay==Replay::ExpiringFloorHandoff;
     const bool direct_timed=replay==Replay::DirectTimedRelaunch;
     const bool direct_timed_up=replay==Replay::DirectTimedUpRelaunch;
+    const bool active_snap_relaunch=replay==Replay::ActiveSnapRelaunch;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||timed_incline||
-        direct_expiry||snap_dash||snap_handoff||positive_handoff||expiring_handoff||direct_timed||direct_timed_up;
+        direct_expiry||snap_dash||snap_handoff||positive_handoff||expiring_handoff||direct_timed||direct_timed_up||active_snap_relaunch;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
           incline_landing[]="--gred-timed-incline-landing-dash",expiry_direct[]="--gred-walk-ledge-expiry-direct-relaunch",
@@ -322,9 +324,10 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
           positive_floor_handoff[]="--gred-walk-ledge-positive-snap-handoff",
           expiring_floor_handoff[]="--gred-walk-ledge-expiring-snap-handoff",
           direct_timed_relaunch[]="--gred-walk-ledge-direct-timed-relaunch",
-          direct_timed_up_relaunch[]="--gred-walk-ledge-direct-timed-up-relaunch";
+          direct_timed_up_relaunch[]="--gred-walk-ledge-direct-timed-up-relaunch",
+          after_active_snap[]="--gred-walk-ledge-active-snap-relaunch";
     char audio[]="--no-audio",start[]="--practice-start";
-    char* args[]={program,direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
+    char* args[]={program,active_snap_relaunch?after_active_snap:direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
         expiring_handoff?expiring_floor_handoff:positive_handoff?positive_floor_handoff:
         snap_handoff?floor_handoff:snap_dash?timed_snap_dash:
         direct_expiry?expiry_direct:timed_incline?incline_landing:
@@ -804,5 +807,17 @@ int main(int argc,char** argv){
         has(timed_up_idle,"direct-timed-relaunches=1 air-dash-starts=0 floors=0 timer698=0.0")&&
         !has(timed_up_idle,"practice-direct-timed-relaunch="),
         "directional travel gives a distinct landing position without changing admission or the cue after entry",timed_up_idle);
-    std::puts("G-Red practice replay: thirty-one desktop-loop scenarios PASS without opening devices");
+    const auto post_active=run(Replay::ActiveSnapRelaunch,66,"live relaunch after active snap");
+    check(picker_guide_played(post_active,"active snap relaunch",33)&&
+        has(post_active,"practice-meter=9200/10000 at accepted tick=33")&&has(post_active,"practice-ledge-timer-ticks=5")&&
+        once(post_active,"practice-active-snap-relaunch=AIRBORNE / ACTIVE DASH TO RELAUNCH")&&
+        !has(post_active,"practice-floor-windup-handoff="),
+        "wait for the paid active snap, then relaunch without refunding either charge",post_active);
+    const auto post_active_idle=run(Replay::ActiveSnapRelaunch,220,"live post-active relaunch to idle");
+    check(picker_guide_played(post_active_idle,"active snap relaunch",110)&&
+        has(post_active_idle,"accepted native tick=110 G-Red-position=1970.01/10.00/-1610.82")&&
+        has(post_active_idle,"practice-meter=10000/10000 at accepted tick=110")&&has(post_active_idle,"active-floors=1")&&
+        !has(post_active_idle,"practice-active-snap-relaunch="),
+        "post-active lift reaches normal idle without carrying its entry marker into landing",post_active_idle);
+    std::puts("G-Red practice replay: thirty-three desktop-loop scenarios PASS without opening devices");
 }

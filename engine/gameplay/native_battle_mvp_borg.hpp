@@ -27,6 +27,7 @@ struct NativeBorgSourceReadout {
     bool floor_windup_relaunch_ready=false; //Accepted completed timed floor wind-up; next input may request neutral relaunch.
     bool direct_timed_relaunch=false; //Accepted rising relaunch directly from a still-positive walking push.
     bool direct_timed_relaunch_up=false; //The same timed handoff with the accepted soft Up turn.
+    bool relaunch_from_active_snap=false; //Accepted plain relaunch from an already paid active-dash floor snap.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;

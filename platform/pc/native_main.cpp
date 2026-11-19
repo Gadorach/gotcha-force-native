@@ -134,6 +134,7 @@ struct Options {
     bool source_ground_loss_relaunch=false;
     bool gred_timed_relaunch_floor=false;
     bool gred_timed_relaunch_snap_dash=false;
+    bool gred_active_snap_relaunch=false;
     bool gred_timed_snap_windup_relaunch=false;
     bool gred_positive_snap_windup_relaunch=false;
     bool gred_expiring_snap_windup_relaunch=false;
@@ -353,6 +354,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--source-ground-loss-relaunch" || arg == "--demo-source-ground-loss-relaunch" ||
                  arg == "--gred-walk-ledge-timed-relaunch-floor" || arg == "--demo-gred-walk-ledge-timed-relaunch-floor" ||
                  arg == "--gred-walk-ledge-timed-snap-dash" || arg == "--demo-gred-walk-ledge-timed-snap-dash" ||
+                 arg == "--gred-walk-ledge-active-snap-relaunch" || arg == "--demo-gred-walk-ledge-active-snap-relaunch" ||
                  arg == "--gred-walk-ledge-timed-snap-handoff" || arg == "--demo-gred-walk-ledge-timed-snap-handoff" ||
                  arg == "--gred-walk-ledge-positive-snap-handoff" || arg == "--demo-gred-walk-ledge-positive-snap-handoff" ||
                  arg == "--gred-walk-ledge-expiring-snap-handoff" || arg == "--demo-gred-walk-ledge-expiring-snap-handoff" ||
@@ -416,7 +418,8 @@ bool parse(int argc, char** argv, Options* options) {
             options->gred_expiring_snap_windup_relaunch=arg=="--gred-walk-ledge-expiring-snap-handoff"||arg=="--demo-gred-walk-ledge-expiring-snap-handoff";
             options->gred_timed_snap_windup_relaunch=options->gred_positive_snap_windup_relaunch||options->gred_expiring_snap_windup_relaunch||
                 arg=="--gred-walk-ledge-timed-snap-handoff"||arg=="--demo-gred-walk-ledge-timed-snap-handoff";
-            options->gred_timed_relaunch_snap_dash=options->gred_timed_snap_windup_relaunch||
+            options->gred_active_snap_relaunch=arg=="--gred-walk-ledge-active-snap-relaunch"||arg=="--demo-gred-walk-ledge-active-snap-relaunch";
+            options->gred_timed_relaunch_snap_dash=options->gred_timed_snap_windup_relaunch||options->gred_active_snap_relaunch||
                 arg=="--gred-walk-ledge-timed-snap-dash"||arg=="--demo-gred-walk-ledge-timed-snap-dash";
             options->gred_timed_relaunch_floor=options->gred_timed_relaunch_snap_dash||
                 arg=="--gred-walk-ledge-timed-relaunch-floor"||arg=="--demo-gred-walk-ledge-timed-relaunch-floor";
@@ -866,6 +869,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "floor wind-up relaunch","Down+Right Arrows 6-122, Shift 148-150 with D+S on 150, then Shift 156"};
     constexpr PracticeTimingGuide positive_snap_handoff_guide{"POSITIVE FLOOR WIND-UP\nUP ARROW 6-8 / SHIFT 25-26\nW 26 / SHIFT 32",
         "positive floor wind-up relaunch","Up Arrow 6-8, Shift 25-26 with W on 26, then Shift 32"};
+    constexpr PracticeTimingGuide active_snap_relaunch_guide{"ACTIVE SNAP TO RELAUNCH\nUP ARROW 6-8 / SHIFT 25-26\nW 26 / NEUTRAL 27-32 / SHIFT 33",
+        "active snap relaunch","Up Arrow 6-8, Shift 25-26 with W on 26, neutral 27-32, then Shift 33"};
     constexpr PracticeTimingGuide expiring_snap_handoff_guide{"FLOOR HANDOFF ON EXPIRY\nUP ARROW 6-25 / SHIFT 46-47\nA 47 / SHIFT 55",
         "expiring floor wind-up relaunch","Up Arrow 6-25, Shift 46-47 with A on 47, then Shift 55"};
     constexpr PracticeTimingGuide incline_jump_guide{"INCLINE DASH JUMP\nS 6 / SHIFT 14-37",
@@ -884,6 +889,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         else if(direct_timed)guide=&ledge_timed_direct_guide;
         else if(options.gred_expiring_snap_windup_relaunch)guide=&expiring_snap_handoff_guide;
         else if(options.gred_positive_snap_windup_relaunch)guide=&positive_snap_handoff_guide;
+        else if(options.gred_active_snap_relaunch)guide=&active_snap_relaunch_guide;
         else if(options.gred_timed_snap_windup_relaunch)guide=&ledge_snap_handoff_guide;
         else if(options.gred_timed_relaunch_snap_dash)guide=&ledge_snap_dash_guide;
         else if(options.gred_timed_relaunch_floor)guide=&ledge_floor_guide;
@@ -940,7 +946,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         (!options.source_ground_interactive||(options.gred_timed_relaunch_floor&&use_demo_start))){
         config={};config.arena_half=4500;config.spawn[0]={-1368.47f,(options.source_ground_loss_landing||options.source_ground_loss_relaunch)?-466.667f:-628.674f};config.spawn_query_y[0]=94.339f;
         if(options.gred_expiring_snap_windup_relaunch){config.spawn[0]={3895.56787f,-1816.47241f};config.spawn_query_y[0]=262.01004f;}
-        else if(options.gred_positive_snap_windup_relaunch){config.spawn[0]={2892.57739f,-2198.41479f};config.spawn_query_y[0]=151.148178f;}
+        else if(options.gred_positive_snap_windup_relaunch||options.gred_active_snap_relaunch){
+            config.spawn[0]={2892.57739f,-2198.41479f};config.spawn_query_y[0]=151.148178f;
+        }
     } //declared grounded original-stage placement/query reference; not an original spawn, teleport or edited terrain
     if(options.source_ground_fall_push&&!options.source_ground_interactive){
         config={};config.spawn[0]={-606.6735f,-1373.0029f};
@@ -1178,7 +1186,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                      "completed uninterrupted flat-floor wind-up can request neutral relaunch while the actual countdown stays positive; 1 to 0 and relaunch entry contact still refused");
                  else if(options.gred_timed_snap_windup_relaunch)gf::log_info(context,"source-ground",
                      "completed flat-floor wind-up from an accepted positive-timer relaunch snap can request neutral relaunch after expiry; live plane and shared edge proofs required");
-                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_expiring_snap_windup_relaunch?
+                 if(!options.source_ground_interactive)gf::log_info(context,"source-ground","%s",options.gred_active_snap_relaunch?
+                     "active snap relaunch demo: Up Arrow 6-8, Shift 25-26 with W on 26, neutral through 32, then Shift 33":
+                     options.gred_expiring_snap_windup_relaunch?
                      "expiring floor wind-up relaunch demo: Up Arrow 6-25, Shift 46-47 with A on 47, then Shift 55":
                      options.gred_positive_snap_windup_relaunch?
                      "positive floor wind-up relaunch demo: Up Arrow 6-8, Shift 25-26 with W on 26, then Shift 32":
@@ -1461,9 +1471,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                                   device.dpad_up=tick>=5&&tick<25;
                                   device.b=tick==45||tick==46||tick==54;
                                   if(tick==46)device.stick_x=-127;
-                              }else if(options.gred_positive_snap_windup_relaunch){
+                              }else if(options.gred_positive_snap_windup_relaunch||options.gred_active_snap_relaunch){
                                   device.dpad_up=tick>=5&&tick<8;
-                                  device.b=tick==24||tick==25||tick==31;
+                                  device.b=tick==24||tick==25||tick==(options.gred_active_snap_relaunch?32u:31u);
                                   if(tick==25)device.stick_y=-127;
                               }else{
                                   if(tick>=5&&!source.ground_loss_entries()){device.dpad_down=true;device.dpad_right=true;}
@@ -1681,6 +1691,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                  gf::log_info(context,"source-ground","practice-direct-expiry-request=%s",view.direct_expiry_request_hint);
              if(practice->windup_from_relaunch_snap)
                  gf::log_info(context,"source-ground","practice-relaunch-snap-windup=%s",view.windup_from_relaunch_snap_hint);
+             if(practice->relaunch_from_active_snap)
+                 gf::log_info(context,"source-ground","practice-active-snap-relaunch=%s",view.relaunch_from_active_snap_hint);
         }
     }
     if(options.source_vertical_jump)gf::log_info(context,"source-ground","%s-air-frames=%llu landings=%llu resource=%d selector=%u; %s, native contact proxy",options.source_walk_ledge?"ground-loss":options.source_moving_jump?"moving":"vertical",static_cast<unsigned long long>(source.air_frames()),static_cast<unsigned long long>(source.landings()),int(source.resource()),unsigned(source.selector()),options.source_walk_ledge?"walk-only source loss subset":"source jump subset");
