@@ -185,6 +185,13 @@ must agree. Run `--demo-gred-walk-ledge-fall-push --headless --frames 120
 --no-audio` for two pushes, a later separate landing, and unchanged meter.
 The older modes do not gain this permission.
 
+`--gred-walk-ledge-high-angle-push` adds the verified steeper face range to
+that same walking response, up to the measured native cap of 13653 (about
+75°). It does not change either landing gate, accept an expired timer, or
+skip either travel check. `--demo-gred-walk-ledge-high-angle-push --frames 120`
+shows three inter-gate pushes followed by two steeper pushes and a later
+landing. The inter-gate mode keeps its original cap.
+
 ## Current priority: Borg movement controller
 
 User feedback: movement is rough. Focus on camera-relative control, acceleration/

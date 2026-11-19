@@ -16,6 +16,7 @@ void check(bool ok,const char* why){
 }
 class Files final:public gf::IFileSystem {
 public:
+    bool change_contact_operand=false;
     bool file_size(const std::string& path,gf::u64* out)override{
         std::error_code e;const auto size=std::filesystem::file_size(path,e);
         if(e||!out)return false;
@@ -23,7 +24,9 @@ public:
     }
     bool read(const std::string& path,std::vector<gf::u8>& out)override{
         gf::u64 size=0;if(!file_size(path,&size)||size>(32u<<20))return false;
-        std::ifstream in(path,std::ios::binary);out.assign(std::istreambuf_iterator<char>(in),{});return out.size()==size;
+        std::ifstream in(path,std::ios::binary);out.assign(std::istreambuf_iterator<char>(in),{});
+        if(change_contact_operand&&path.ends_with("/motion.gfmm")&&out.size()==376)out[349]^=1;
+        return out.size()==size;
     }
     bool exists(const std::string& path)override{return std::filesystem::exists(path);}
     bool write(const std::string&,const gf::u8*,std::size_t)override{return false;}
@@ -127,6 +130,42 @@ int main(){
         source.walk_ledge_pushes()==3&&source.ground_loss_timer698()==14&&!view.practice_readout(world)&&
         !world.step({},false,&view),"next out-of-range face still refuses without a fallback or displayed candidate");
 
+    bind(inter_gate,Mode::GroundWalkLedgeHighAnglePush);
+    unsigned high_pushes=0,high_touchdown=0,high_landing=0;
+    while(world.tick()<120){
+        const auto tick=world.tick()+1;const auto previous=world.actors()[0].position;
+        check(prepare(inter_gate,&offer),"replay the formerly stopped walk fall and recover");
+        if(offer.kind==Kind::GroundLossPush&&offer.static_push->angle>10240){
+            ++high_pushes;
+            const auto& push=*offer.static_push;NativeBorgStaticSurface selected;
+            check((tick==26||tick==27)&&push.angle==13653&&push.surface.triangle==1949&&
+                view.static_surface(push.integrated_position[0],push.integrated_position[2],previous[1],&selected)&&
+                selected==push.surface&&selected.height<=previous[1]&&offer.proposed_position[1]>push.integrated_position[1]&&
+                offer.walk_ledge->timer698==f32(39-tick)&&offer.walk_ledge->walk_origin&&!offer.surface_landing&&
+                offer.vertical_speed==f32(push.vertical_speed*bits_to_f32(0x3f666666u)),
+                "steep face must have a matching descending approach and keep the positive walking timer");
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            const RaisedTravel pre(view,push.integrated_position),post(view,offer.proposed_position);
+            const auto shown=view.practice_readout(world);
+            check(!world.step({},false,&pre,nullptr,&frame,&offer)&&!world.step({},false,&post,nullptr,&frame,&offer)&&
+                world.tick()+1==tick&&world.actors()[0].position==previous&&world.motion_receipt_current(pose.receipt)&&
+                shown&&shown->ledge_timer_ticks==u8(40-tick)&&
+                view.practice_readout(world)->ledge_timer_ticks==shown->ledge_timer_ticks&&source.resource()==10000,
+                "steeper authorization cannot use the projection to bypass either native travel test or publish early");
+        }
+        if(offer.kind==Kind::GroundLossTouchdown){
+            high_touchdown=tick;
+            check(offer.walk_ledge->timer698==0&&offer.proposed_position[1]==10,"later ordinary flat touchdown after timer expiry");
+        }
+        if(high_touchdown&&!high_landing&&offer.kind==Kind::JumpLanding)high_landing=tick;
+        accept(offer);
+        check(source.resource()==10000&&!source.ordered_root().updates&&!source.air_dash_starts()&&!source.relaunches(),
+            "steeper walk-fall has no borrowed resource, root, dash, or relaunch");
+    }
+    check(high_pushes==2&&source.walk_ledge_pushes()==5&&source.walk_departures()==1&&!source.dash_departures()&&
+        high_touchdown==80&&high_landing==81&&world.actors()[0].grounded&&!source.selector(),
+        "explicit high-angle policy adds two pushes and reaches the separate landing and idle");
+
     bind(complete,Mode::GroundWalkLedgeFallPush);
     unsigned departure=0,fall=0,touchdown=0,landing=0;
     while(world.tick()<120){
@@ -165,13 +204,13 @@ int main(){
         accept(offer);
     }
 
-    bind(expires,Mode::GroundWalkLedgeFallPush);
+    bind(expires,Mode::GroundWalkLedgeHighAnglePush);
     while(world.tick()<55){check(prepare(expires,&offer),"approach and one push on the final timer tick");accept(offer);}
     check(source.walk_ledge_pushes()==1&&source.ground_loss_timer698()==1&&
         !prepare(expires,&offer)&&world.tick()==55&&source.ground_loss_timer698()==1&&source.walk_ledge_pushes()==1,
         "a subsequent steep contact at timer zero does not inherit push permission");
 
-    bind(raised,Mode::GroundWalkLedgeFallPush);
+    bind(raised,Mode::GroundWalkLedgeHighAnglePush);
     while(world.tick()<140){check(prepare(raised,&offer),"known raised-face approach");accept(offer);}
     check(prepare(raised,&offer)&&offer.kind==Kind::GroundLossPush&&offer.walk_ledge->timer698==28&&
         offer.static_push->surface.height>world.actors()[0].position[1],"source can compute a raised-face candidate");
@@ -179,5 +218,11 @@ int main(){
     check(!world.step({},false,&view,nullptr,&frame,&offer)&&world.tick()==140&&source.ground_loss_timer698()==29&&
         !source.walk_ledge_pushes()&&world.motion_receipt_current(pose.receipt),
         "native still refuses the real raised face before publishing pose or timer");
+
+    files.change_contact_operand=true;
+    check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+        !source.bind(files,art,pack,world,seed,&error,Mode::GroundWalkLedgeHighAnglePush)&&
+        error.find("qualified normal source profiles required")!=std::string::npos,
+        "the qualified-pack loader refuses a modified source angle before the new mode acquires a producer");
     std::printf("walk ledge-fall push: %u checks PASS, scoped positive-timer continuation and refusal boundaries\n",checks);
 }

@@ -17,7 +17,7 @@ enum class NormalGRedMovementMode {
     GroundSurface,GroundLossSurface,GroundLossJump,GroundLossLanding,GroundLossAir,GroundLossRelaunch,
     GroundFallPush,GroundAirFallPush,GroundRelaunchFallPush,GroundRecoveryPush,GroundWindupPush,GroundActivePush,
     GroundRelaunchPush,GroundRelaunchEntryPush,GroundWindupEntryPush,GroundSlopeDash,GroundSlopeSeamDash,GroundSlopeCreaseDash,
-    GroundSlopeTransitionDash,GroundInclinedDashLedge,GroundWalkLedgeFallPush
+    GroundSlopeTransitionDash,GroundInclinedDashLedge,GroundWalkLedgeFallPush,GroundWalkLedgeHighAnglePush
 };
 
 struct NormalGRedMovementDefinition {
@@ -68,6 +68,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundSlopeTransitionDash,Policy::GroundSlopeTransitionDash,Behavior::FlatInclineDash},
         CombinedRule{Mode::GroundInclinedDashLedge,Policy::GroundInclinedDashLedge,Behavior::InclinedDashLedge},
         CombinedRule{Mode::GroundWalkLedgeFallPush,Policy::GroundWalkLedgeFallPush,Behavior::WalkLedgeFallPush},
+        CombinedRule{Mode::GroundWalkLedgeHighAnglePush,Policy::GroundWalkLedgeHighAnglePush,Behavior::WalkLedgeHighAnglePush},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -99,6 +100,11 @@ struct NormalGRedMovementDefinition {
         return index<combined.size()&&combined[index].policy==policy?cumulative_[index]:BorgMovementBehaviors{};
     }
     static constexpr bool allows(Mode mode,Behavior behavior){return behaviors(native_policy(mode)).has(behavior);}
+    // Native ceiling for this continued walking response. 13653 is the
+    // steepest witnessed face, not a replacement for either source angle gate.
+    static constexpr s16 walk_ledge_push_angle_cap(BorgMovementBehaviors flags){
+        return flags.has(Behavior::WalkLedgeHighAnglePush)?13653:10240;
+    }
 private:
     static constexpr auto cumulative_=[]{
         std::array<BorgMovementBehaviors,combined.size()> table{};

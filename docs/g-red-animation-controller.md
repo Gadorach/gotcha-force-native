@@ -52,6 +52,29 @@ accepted pushes, a steep candidate after timer expiry, and the earlier
 raised-side approach. Native clocks, terrain queries, body response,
 and the demo spawn are not original hardware or whole-actor equivalence.
 
+### Steeper continued walking contact
+
+`--gred-walk-ledge-high-angle-push` preserves the same walking provenance,
+positive timer, descending velocity, and separate native checks before and
+after projection. It raises only the opt-in native ceiling from 10240 to
+13653 (the steepest witnessed face, about 75°). The original landing gates
+remain 6144/10240. The earlier walking-push mode still stops at the stronger
+face; the new mode verifies the qualified source angle and displacement
+epsilon operands when binding.
+
+```sh
+gf_native --demo-gred-walk-ledge-high-angle-push --headless --frames 120 --no-audio
+```
+
+This is the earlier refusal setup, one native unit away in Z from the
+inter-gate demo: X/Z `1000.65021/-3362.34546`, query `1549.25293`, and
+the same D-pad Right then neutral. After three pushes on face 1953 at
+ticks 23–25, it accepts two more on face 1949 at ticks 26–27 (angle
+13653, timer 13/12). Touchdown at 80 and landing at 81 remain independent
+of those pushes. The meter stays at 10000 throughout. An expired timer,
+blocked approach or projection, and angles above the verified ceiling
+still refuse.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the

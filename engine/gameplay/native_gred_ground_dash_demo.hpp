@@ -79,6 +79,9 @@ public:
         if(relaunch_floor_mode(mode_)&&!motion_.relaunch_floor_operands)return fail(error,"source null-callback floor contact requires GFMM7 operands");
         if(mode_==Mode::WalkLedge&&!motion_.ground_loss_operands)return fail(error,"source walk-ledge mode requires GFMM8 operands");
         if(ordered_mode(mode_)&&!motion_.ordered_dash_operands)return fail(error,"source ordered-ground mode requires GFMM9 operands");
+        if(allows(mode_,Behavior::WalkLedgeHighAnglePush)&&(motion_.landing_angles!=std::array<s16,2>{10240,6144}||
+           motion_.contact_motion_epsilon!=bits_to_f32(0x2edbe6feu)))
+            return fail(error,"walking high-angle push requires the qualified source contact operands");
         root_lane_=2;
         if(ordered_mode(mode_)){
             for(unsigned lane=0;lane<2;++lane)for(unsigned i=seed.rig.cuts[lane];i<seed.rig.cuts[lane+1];++i)
@@ -658,8 +661,13 @@ private:
         if(!gred_surface_contact(motion_,ground,before,proposed,{timer,0,(steep_mode(mode_)&&allow_push)||fall_push||
             combined_recovery_push||walk_loss_push},&result,error))return false;
         if(result.kind==GRedSurfaceContactKind::Pushed){
-            if(walk_loss_push&&result.angle>motion_.landing_angles[0]){
-                if(error)*error="ground-loss push: above the verified inter-gate angle range";
+            const auto flags=NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_));
+            const bool high_angle=flags.has(Behavior::WalkLedgeHighAnglePush);
+            const s16 cap=high_angle?NormalGRedMovementDefinition::walk_ledge_push_angle_cap(flags):motion_.landing_angles[0];
+            if(walk_loss_push&&result.angle>cap){
+                if(error)*error=high_angle?
+                    "ground-loss push: above the verified high-angle range":
+                    "ground-loss push: above the verified inter-gate angle range";
                 return false;
             }
             s.static_push=NativeBorgStaticPush{proposed.position,proposed.vertical48,

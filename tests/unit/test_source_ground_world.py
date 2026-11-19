@@ -70,6 +70,26 @@ class SourceGroundWorldTests(unittest.TestCase):
                 else:
                     self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
 
+    def test_walk_ledge_high_angle_push_adds_two_pushes_without_changing_timer_rules(self):
+        for tick, phase, pushes, landings in (
+            (25, "LEDGE FALL / PUSH", 3, 0),
+            (26, "LEDGE FALL / PUSH", 4, 0),
+            (27, "LEDGE FALL / PUSH", 5, 0),
+            (80, "TOUCHDOWN", 5, 1),
+            (81, "LANDING", 5, 1),
+            (120, "IDLE", 5, 1),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-high-angle-push", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn("native cap 13653, same selected-plane and pre/post-travel checks", result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                angle = 8191 if tick == 25 else 13653
+                self.assertIn(f"walk-ledge-fall-pushes={pushes} last-angle-s16={angle} landings={landings} resource=10000", result.stdout)
+                self.assertIn(f"practice-meter=10000/10000 at accepted tick={tick}", result.stdout)
+                if tick <= 27:
+                    self.assertIn(f"practice-ledge-timer-ticks={39 - tick} cue=DRIFT LOCKED {39 - tick} TICKS", result.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

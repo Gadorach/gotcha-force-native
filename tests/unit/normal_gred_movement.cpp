@@ -26,6 +26,9 @@ int main(){
     static_assert(unsigned(Mode::GroundSlopeTransitionDash)==50&&unsigned(Policy::GroundSlopeTransitionDash)==46);
     static_assert(unsigned(Mode::GroundInclinedDashLedge)==51&&unsigned(Policy::GroundInclinedDashLedge)==47);
     static_assert(unsigned(Mode::GroundWalkLedgeFallPush)==52&&unsigned(Policy::GroundWalkLedgeFallPush)==48);
+    static_assert(unsigned(Mode::GroundWalkLedgeHighAnglePush)==53&&unsigned(Policy::GroundWalkLedgeHighAnglePush)==49);
+    static_assert(Definition::walk_ledge_push_angle_cap(Definition::behaviors(Policy::GroundWalkLedgeFallPush))==10240&&
+        Definition::walk_ledge_push_angle_cap(Definition::behaviors(Policy::GroundWalkLedgeHighAnglePush))==13653);
     constexpr Policy legacy[]{
         Policy::GroundOnly,Policy::GroundOnly,Policy::VerticalJump,Policy::Jump,Policy::AirDash,Policy::Relaunch,
         Policy::Relaunch,Policy::Relaunch,Policy::Relaunch,Policy::StaticPush,Policy::FallHistoryPush,
