@@ -62,7 +62,7 @@ struct Options {
     bool headless = false;
     bool list_borgs = false;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
-        check_borg_acquisition,preview_borg;
+        check_borg_acquisition,check_borg_variants,preview_borg,preview_variant;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -189,9 +189,15 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--check-borg-acquisition"){
             if(++i>=argc||!options->check_borg_acquisition.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_acquisition=argv[i];
+        }else if(arg=="--check-borg-variants"){
+            if(++i>=argc||!options->check_borg_variants.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_variants=argv[i];
         }else if(arg=="--preview-borg"){
             if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->preview_borg=argv[i];
+        }else if(arg=="--borg-variant"){
+            if(++i>=argc||!options->preview_variant.empty()||!gf::borg_catalog_variant_id_valid(argv[i]))return false;
+            options->preview_variant=argv[i];
         }
         else if (arg == "--menu") options->menu = true;
         else if (arg == "--demo-input") options->demo_input = true;
@@ -384,7 +390,8 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --check-borg-forms NAMESPACE:ID\n"
                          "       gf_native --check-borg-fusions NAMESPACE:ID\n"
                          "       gf_native --check-borg-acquisition NAMESPACE:ID\n"
-                         "       gf_native --preview-borg NAMESPACE:ID [--headless] [--frames N]\n");
+                         "       gf_native --check-borg-variants NAMESPACE:ID\n"
+                         "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
             return false;
         }
     }
@@ -396,7 +403,8 @@ bool parse(int argc, char** argv, Options* options) {
        options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||options->list_borgs||
        !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
-       !options->check_borg_acquisition.empty()||options->animation_page||options->animation_borg))return false;
+       !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||options->animation_page||options->animation_borg))return false;
+    if(!options->preview_variant.empty()&&options->preview_borg.empty())return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1174,7 +1182,7 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
     const bool package_preview=!options.preview_borg.empty();
     if(package_preview){
         gf::pc::BorgPackagePreviewFiles files;using Inputs=gf::pc::BorgPackagePreviewFiles;
-        if(!gf::pc::load_borg_preview_files("borgs",packages,options.preview_borg,&files,&error)||
+        if(!gf::pc::load_borg_preview_files("borgs",packages,options.preview_borg,options.preview_variant,&files,&error)||
            !mosaic.load_package_preview(files.identity,files.profile,Inputs::view(files.model),Inputs::view(files.rig_prefix),
                Inputs::view(files.pose_profile),Inputs::view(files.motions),render,&error)){
             gf::log_error(context,"borg-preview","load failed: %s",error.c_str());render.shutdown();return 2;
@@ -1240,7 +1248,7 @@ int main(int argc, char** argv) {
     if(unsigned(options.list_borgs)+unsigned(!options.check_borg_catalog.empty())+unsigned(!options.check_borg_moves.empty())+
        unsigned(!options.check_borg_spawn.empty())+unsigned(!options.check_borg_effects.empty())+
        unsigned(!options.check_borg_forms.empty())+unsigned(!options.check_borg_fusions.empty())+
-       unsigned(!options.check_borg_acquisition.empty())>1)return 2;
+       unsigned(!options.check_borg_acquisition.empty())+unsigned(!options.check_borg_variants.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
@@ -1356,6 +1364,24 @@ int main(int argc, char** argv) {
             std::printf("%s\tmode=%s\tvariant=%s\tgrant=%s\n",route.id.c_str(),route.mode.c_str(),route.variant.c_str(),
                 grants[unsigned(route.grant)]);
         std::puts("Acquisition declarations validated; no rewards, inventory, trade, or save changes.");
+        return 0;
+    }
+    if(!options.check_borg_variants.empty()){
+        gf::pc::BorgVariantInspection variants;std::string error;
+        if(!gf::pc::load_borg_variant_inspection("borgs",borg_packages,options.check_borg_variants,&variants,&error)){
+            std::fprintf(stderr,"Borg variants: %s\n",error.c_str());return 2;
+        }
+        std::printf("%s\t%s\toverrides=%zu\n",variants.identity.id.c_str(),variants.identity.name.c_str(),
+            variants.profile.variants.size());
+        auto print_offset=[](const gf::BorgVariantLevelOffset& value){
+            if(value.kind==gf::BorgVariantLevelKind::Offset)std::printf("%d",int(value.value));
+            else std::fputs(value.kind==gf::BorgVariantLevelKind::Inherit?"inherit":"unresolved",stdout);
+        };
+        for(const auto& row:variants.profile.variants){
+            std::printf("%s\thp-level-offset=",row.variant.c_str());print_offset(row.hp);
+            std::fputs("\tammo-level-offset=",stdout);print_offset(row.ammo);std::putchar('\n');
+        }
+        std::puts("Variant declarations validated; assets not decoded, no live stat or gameplay changes.");
         return 0;
     }
 

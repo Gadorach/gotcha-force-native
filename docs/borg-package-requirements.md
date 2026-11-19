@@ -103,6 +103,9 @@ discarded just because an infobox lacks a field; neither check executes them.
   packages ([bundles](../engine/assets/battle_character_resources.hpp),
   [class](../engine/assets/battle_normal_class.hpp),
   [level rows](../engine/assets/battle_actor_levels.hpp)).
+  The [variant checker](borg-packages.md#variant-overrides) keeps asset
+  inheritance and HP/ammo-level overrides separate; the standalone preview
+  requires a matching profile for a selected nondefault variant.
 
 ## Package contents and present evidence
 

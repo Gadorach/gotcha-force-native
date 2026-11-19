@@ -419,6 +419,41 @@ retirement=unresolved
 It does not resolve mission/rule references, award a Borg or crystals,
 retire ownership, or change any save.
 
+### Variant overrides
+
+Set `variant-overrides=gameplay/variants.txt` in a version 2 catalogue. Each
+override starts with `variant=ID`, matching a declared catalogue variant:
+
+```text
+GFBORG-VARIANTS 1
+variant=bronze
+model=inherit
+animations=inherit
+preview=visual/bronze.preview
+textures=none
+materials=none
+stats=unresolved
+movement=inherit
+moves=inherit
+collision=inherit
+effects=inherit
+acquisition=unresolved
+hp-level-offset=unresolved
+ammo-level-offset=unresolved
+```
+
+Each asset field is a package-relative file, `inherit` (package base for
+that role, not another variant), `none` (no separate override), or
+`unresolved`. The two displayed-level offsets are independent signed values
+from −255 to 255, `inherit` or `unresolved`. A literal `0` is explicit;
+these bounds are for storage, not a retail rule. The format does not
+infer colour palettes, stat effects, or a level curve from a variant's name.
+
+Run `gf_native --check-borg-variants example:clockwork-crane` to check up to
+16 override rows in 16 KiB, including catalogue IDs and nonempty local
+files. That check does not decode the referenced assets or apply the stat
+declarations.
+
 ## Standalone body preview
 
 For one default variant with compatible HSD assets, add `preview=preview.txt`
@@ -437,11 +472,19 @@ idle=0:0
 
 Run `gf_native --preview-borg example:clockwork-crane` to open the body
 preview, or add `--headless --frames 3` for validation without a window. The
-package must pass the catalogue check. The same model/skin, bone sampler and
+package must pass the catalogue check. Select a declared nondefault variant
+with `--borg-variant ID`; it must name its own preview profile in the
+overrides file. The profile's `variant` must match the request. Model and
+motions can explicitly inherit the base body, but an incompatible profile,
+missing clip, or unsupported separate/unresolved texture or material override
+fails instead of displaying the default look. This lets a stat-only variant
+explicitly share visuals without claiming a recolour.
+
+The same model/skin, bone sampler and
 renderer used by the animation mosaic handle the in-place clip. An absent or
 incompatible clip or rig fails, including a motion-bank request that would
-otherwise fall back to a default. Other variants, materials or formats are
-not inferred. This does not import glTF, load rules or effects, alter the
+otherwise fall back to a default. Materials and formats are not inferred.
+This does not import glTF, load rules or effects, alter the
 classifier, or grant battle capability.
 
 ## Connecting discovery to gameplay and saves

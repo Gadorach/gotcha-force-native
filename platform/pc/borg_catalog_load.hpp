@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/assets/borg_catalog_profile.hpp"
 #include "engine/assets/borg_preview_profile.hpp"
+#include "engine/assets/borg_variant_profile.hpp"
 #include "platform/pc/borg_package_scan.hpp"
 
 namespace gf::pc {
@@ -29,6 +30,22 @@ inline bool read_profile(const std::filesystem::path& root,const BorgPackageEntr
         return false;
     }
     return true;
+}
+inline bool read_variants(const std::filesystem::path& folder,const BorgCatalogProfile& catalogue,
+                          BorgVariantProfile* out,std::string* error){
+    auto fail=[&](const char* why){if(error)*error=why;return false;};
+    if(!catalogue.details)return fail("a version 2 catalogue profile is required for variant overrides");
+    const auto& reference=catalogue.details->references[unsigned(BorgDefinitionFacet::VariantOverrides)];
+    if(reference.kind==BorgDefinitionReferenceKind::None)return fail("package declares no variant overrides");
+    if(reference.kind!=BorgDefinitionReferenceKind::LocalFile)return fail("variant overrides are unresolved");
+    std::string bytes;BorgVariantProfile next;
+    if(!borg_package_scan_detail::read_local(folder,reference.file,kBorgVariantProfileBytes,&bytes)||
+        !borg_read_variant_profile(bytes,&next))return fail("missing or invalid variant override file");
+    for(const auto& row:next.variants)if(!catalogue.find(row.variant)){
+        if(error)*error="override references undeclared variant "+row.variant;
+        return false;
+    }
+    *out=std::move(next);if(error)error->clear();return true;
 }
 }
 // Load for inspection on demand, not for every package on startup. Broken
@@ -64,24 +81,71 @@ struct BorgPackagePreviewFiles {
     std::string model,rig_prefix,pose_profile,motions;
     static ByteView view(const std::string& data){return {reinterpret_cast<const u8*>(data.data()),data.size()};}
 };
+struct BorgVariantInspection {
+    BorgIdentity identity;
+    BorgVariantProfile profile;
+};
+inline bool load_borg_variant_inspection(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
+                                         std::string_view id,BorgVariantInspection* out,std::string* error){
+    const auto* package=scanned.status==BorgPackageScanStatus::Complete?scanned.find(id):nullptr;
+    if(!out||!package){if(error)*error="a uniquely discovered Borg ID is required";return false;}
+    std::filesystem::path folder;BorgCatalogProfile catalogue;BorgVariantInspection next;
+    next.identity=package->manifest.identity;
+    if(!borg_catalog_detail::read_profile(root,*package,&folder,&catalogue,error)||
+        !borg_catalog_detail::read_variants(folder,catalogue,&next.profile,error))return false;
+    for(const auto& row:next.profile.variants)for(const auto& asset:row.assets){
+        if(asset.kind!=BorgVariantAssetKind::LocalFile)continue;
+        std::error_code ec;
+        if(!borg_package_scan_detail::local_file(folder,asset.file)||!std::filesystem::file_size(folder/asset.file,ec)||ec){
+            if(error)*error="missing, empty or linked override for variant "+row.variant;
+            return false;
+        }
+    }
+    *out=std::move(next);return true;
+}
 inline bool load_borg_preview_files(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
-                                   std::string_view id,BorgPackagePreviewFiles* out,std::string* error){
+                                    std::string_view id,std::string_view requested_variant,BorgPackagePreviewFiles* out,std::string* error){
     auto fail=[&](const char* why){if(error)*error=why;return false;};
     if(!out)return fail("preview output required");
     BorgCatalogCard card;
     if(!load_borg_catalog_card(root,scanned,id,&card,error))return false;
     const auto& package=*scanned.find(id);
-    if(package.manifest.preview.empty())return fail("no preview profile declared");
+    const auto& catalogue=card.profile;
+    const std::string_view variant=requested_variant.empty()?std::string_view(catalogue.default_variant):requested_variant;
+    if(!catalogue.find(variant))return fail("undeclared preview variant");
     std::filesystem::path folder;
     if(!borg_catalog_detail::current_folder(root,package,&folder,error))return false;
+    std::string_view preview_file=package.manifest.preview,model_file=package.manifest.model,motions_file=package.manifest.animations;
+    BorgVariantProfile overrides;
+    const bool has_overrides=catalogue.details&&
+        catalogue.details->references[unsigned(BorgDefinitionFacet::VariantOverrides)].kind==BorgDefinitionReferenceKind::LocalFile;
+    if(has_overrides&&!borg_catalog_detail::read_variants(folder,catalogue,&overrides,error))return false;
+    const auto* row=overrides.find(variant);
+    if(variant!=catalogue.default_variant&&(!row||row->asset(BorgVariantAssetRole::Preview).kind!=BorgVariantAssetKind::LocalFile))
+        return fail("nondefault variant needs its own declared preview profile");
+    if(row){
+        auto resolve=[&](BorgVariantAssetRole role,std::string_view* path){
+            const auto& ref=row->asset(role);
+            if(ref.kind==BorgVariantAssetKind::LocalFile){*path=ref.file;return true;}
+            return ref.kind==BorgVariantAssetKind::Inherit;
+        };
+        for(auto role:{BorgVariantAssetRole::Textures,BorgVariantAssetRole::Materials}){
+            const auto kind=row->asset(role).kind;
+            if(kind!=BorgVariantAssetKind::Inherit&&kind!=BorgVariantAssetKind::None)
+                return fail("separate or unresolved texture and material overrides cannot be rendered in this preview");
+        }
+        if(!resolve(BorgVariantAssetRole::Preview,&preview_file)||!resolve(BorgVariantAssetRole::Model,&model_file)||
+           !resolve(BorgVariantAssetRole::Animations,&motions_file))return fail("variant preview, model or motion declaration is unavailable");
+    }
+    if(preview_file.empty())return fail("no preview profile declared");
     BorgPackagePreviewFiles next;next.identity=card.identity;
     std::string profile;
     using borg_package_scan_detail::read_local;
-    if(!read_local(folder,package.manifest.preview,kBorgPreviewProfileBytes,&profile)||
+    if(!read_local(folder,preview_file,kBorgPreviewProfileBytes,&profile)||
        !borg_read_preview_profile(profile,&next.profile))return fail("missing or unsupported preview profile");
-    if(next.profile.variant!=card.profile.default_variant)return fail("preview must match the declared default variant");
-    if(!read_local(folder,package.manifest.model,16u<<20,&next.model)||
-       !read_local(folder,package.manifest.animations,32u<<20,&next.motions)||
+    if(next.profile.variant!=variant)return fail("preview profile does not match the selected variant");
+    if(!read_local(folder,model_file,16u<<20,&next.model)||
+       !read_local(folder,motions_file,32u<<20,&next.motions)||
        !read_local(folder,next.profile.rig_prefix,1u<<16,&next.rig_prefix)||
        !read_local(folder,next.profile.pose_profile,1u<<16,&next.pose_profile))return fail("missing, linked or oversized preview asset");
     *out=std::move(next);if(error)error->clear();return true;

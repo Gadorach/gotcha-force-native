@@ -57,12 +57,15 @@ public:
         ready_=source_programs_=source_handlers_=false;package_preview_=true;
         cells_.clear();sources_={};selected_=page_=0;columns_=rows_=1;
         clock_=yaw_=0;paused_=false;speed_=.5f;previous_={};
-        if(!borg_package_id_valid(identity.id)||!display_name_valid(identity.name,96)||!prefix.data||!prefix.size||
+        if(!borg_package_id_valid(identity.id)||!display_name_valid(identity.name,96)||!borg_catalog_variant_id_valid(profile.variant)||
+           !prefix.data||!prefix.size||
            prefix.size>(1u<<16)||!pose.data||!pose.size||pose.size>(1u<<16)){
             if(error)*error="package preview: invalid identity or rig assets";
             return false;
         }
-        auto& source=sources_[0];source.name=identity.name;
+        auto& source=sources_[0];source.name=preview_label(identity.name);
+        if(source.name.empty())source.name=preview_label(identity.id);
+        package_variant_=preview_label(profile.variant);
         source.prefix.assign(prefix.data,prefix.data+prefix.size);source.pose.assign(pose.data,pose.data+pose.size);
         if(!source.bank.load(model,error,true)||!character_motion_bank_load(motions,&source.motions,error))return false;
         CharacterMotionSelection selected;
@@ -166,7 +169,10 @@ public:
         draws+=text_.draw(render,heading,12,10,title);
         TextRenderer::Style small;small.scale=1;
         draws+=text_.draw(render,package_preview_?"SPACE PAUSE  Q/E SPEED  Z ROTATE":source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
-        char mode[160];std::snprintf(mode,sizeof mode,"%s - %.3gX %s",package_preview_?"ONE DECLARED IDLE CLIP":
+        char mode[160];
+        if(package_preview_)std::snprintf(mode,sizeof mode,"VARIANT %s - ONE DECLARED IDLE CLIP - %.3gX %s",
+            package_variant_.c_str(),double(speed_),paused_?"PAUSED":"LOOPING");
+        else std::snprintf(mode,sizeof mode,"%s - %.3gX %s",
             source_handlers_?"HELD-INPUT DASH HOLDS/TIMERS - 96-TICK WINDOW - FINISH POSE HELD":
             source_programs_?"VM WAITS/CONTROLS IN PLACE - 96-TICK REPLAY WINDOW":"BODY CLIPS IN PLACE - 10000+ IDS ARE SHARED CLIPS",
             double(speed_),paused_?"PAUSED":"LOOPING");draws+=text_.draw(render,mode,12,50,small);
@@ -204,6 +210,17 @@ private:
     struct Source {std::string name;std::vector<u8> prefix,pose,model_bytes;HsdRecordAnimationBank bank;CharacterMotionBank motions,common;std::vector<NativeAnimationEntry> entries;};
     struct Cell {NativeAnimationEntry entry;CharacterModelScene model;HsdBoneMotionClip clip;CharacterProgramVm vm;CharacterProgramHeightControl height;GRedGroundDashState dash;f32 speed=0,change=0;unsigned program_tick=0;std::string error;bool valid=false,program_started=false;std::array<f32,3> centre{0,90,0};f32 radius=120;};
     static ByteView view(const std::vector<u8>& bytes){return {bytes.data(),bytes.size()};}
+    // The small diagnostic font is ASCII/uppercase only. This changes the
+    // drawn label, not the catalog name or the variant/identity key.
+    static std::string preview_label(std::string_view text){
+        std::string label(text);
+        for(char& c:label){
+            if(c>='a'&&c<='z')c=char(c-'a'+'A');
+            if(c=='_')c='-';
+            if(!TextRenderer::covers(c))return {};
+        }
+        return label;
+    }
     static bool read(IFileSystem& files,const std::string& path,std::vector<u8>* out,std::string* error,u64 maximum=32u<<20){u64 size=0;if(!files.file_size(path,&size)||!size||size>maximum||!files.read(path,*out)||out->size()!=size){if(error)*error="animation mosaic: missing/oversized "+path;return false;}return true;}
     bool evaluate(Cell& cell,f64 clock,std::string* error){
         if(source_programs_){
@@ -277,6 +294,7 @@ private:
     std::array<Source,2> sources_;std::vector<std::unique_ptr<Cell>> cells_;TextRenderer text_;std::vector<Vertex> panels_;
     CharacterProgramAsset program_asset_;CharacterPoseHeightProfile program_height_;CharacterMotionDriver program_driver_;bool source_programs_=false;
     CharacterMovementProfile program_motion_;bool source_handlers_=false,package_preview_=false;
+    std::string package_variant_;
     unsigned selected_=0,page_=0,columns_=4,rows_=3;f64 clock_=0;f32 speed_=.5f,yaw_=0;bool ready_=false,paused_=false;GamePadState previous_{};
 };
 }
