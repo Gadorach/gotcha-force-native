@@ -54,15 +54,7 @@ namespace borg_move_detail {
 inline bool reserved(std::string_view text){return text=="none"||text=="unresolved";}
 inline bool id(std::string_view text){return !reserved(text)&&borg_catalog_variant_id_valid(text);}
 inline bool cue(std::string_view text){return reserved(text)||id(text);}
-template<std::size_t N> bool split(std::string_view text,std::array<std::string_view,N>* out){
-    for(unsigned i=0;i<N;++i){
-        const auto pipe=text.find('|');
-        if((pipe==std::string_view::npos)!=(i+1==N))return false;
-        (*out)[i]=text.substr(0,pipe);
-        if(pipe!=std::string_view::npos)text.remove_prefix(pipe+1);
-    }
-    return true;
-}
+using borg_package_detail::split_fields;
 inline constexpr std::array<std::string_view,9> context_names{
     "grounded","airborne","ground-dash","air-dash","flying","above-target","jumping","landing","contact"
 };
@@ -84,7 +76,7 @@ inline bool contexts(std::string_view text,BorgMoveDefinition& move){
 inline bool phase(std::string_view text,BorgMovePhaseDefinition* out){
     using borg_catalog_detail::label;
     std::array<std::string_view,8> fields;
-    if(!split(text,&fields))return false;
+    if(!split_fields(text,&fields))return false;
     const auto [name,trigger,anim,effect,sound,solid,pass,blast]=fields;
     if(!id(name)||!cue(trigger)||!cue(anim)||!cue(effect)||!cue(sound)||
         !label(solid,{"unresolved","not-applicable","solid","non-solid"},&out->solidity)||
@@ -95,7 +87,7 @@ inline bool phase(std::string_view text,BorgMovePhaseDefinition* out){
 inline bool outcome(std::string_view text,BorgMoveOutcomeDefinition* out){
     using borg_catalog_detail::label;
     std::array<std::string_view,6> fields;
-    if(!split(text,&fields))return false;
+    if(!split_fields(text,&fields))return false;
     const auto [name,event,kind,target,duration,payload]=fields;
     if(!id(name)||!cue(event)||!cue(duration)||!cue(payload)||
        !label(kind,{"unresolved","damage","stat-modifier","behavior-modifier","control-modifier","transform",
@@ -132,7 +124,7 @@ inline bool borg_read_move_profile(std::string_view text,BorgMoveProfile* out){
         if(key=="move"){
             if(next.moves.size()==kBorgMoveCount||(!next.moves.empty()&&!complete()))return false;
             std::array<std::string_view,5> parts;
-            if(!split(value,&parts))return false;
+            if(!split_fields(value,&parts))return false;
             const auto [move_id,form,button,kind,name]=parts;
             BorgMoveDefinition move;
             if(!id(move_id)||next.find(move_id)||!id(form)||!display_name_valid(name,96)||

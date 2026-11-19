@@ -194,6 +194,44 @@ animation/effect/sound assets. It runs no triggers, physics, resource spending
 or actor logic. `moves=none` and `moves=unresolved`
 remain valid catalogue declarations without a move file.
 
+### Standalone effects and audio check
+
+Set `effects=effects/definitions.txt` in a version 2 catalogue. The sidecar
+names visual/SFX assets and how they would be triggered and retired:
+
+```text
+GFBORG-EFFECTS 1
+visual=bolt-body|mesh|local:effects/bolt.hsd
+visual=flash|sprite|shared:engine:muzzle-flash
+sound=fire-sound|one-shot|local:audio/fire.dsp
+sound=flight-hum|loop|unresolved
+cue=fire|move-start|socket:muzzle|event|none|flash|fire-sound
+cue=flight|shot-spawn|projectile|projectile|none|bolt-body|flight-hum
+cue=impact|shot-contact|contact|timer:impact-age|none|unresolved|none
+```
+
+- Visual rows name an ID and `sprite`, `mesh`, `beam`, `trail`, `material`,
+  `decal` or `unresolved`. Sound rows name an ID and `one-shot`, `loop` or
+  `unresolved`. Asset references are `local:relative/path`,
+  `shared:namespace:id`, or `unresolved`.
+- Cue fields are `id|event|anchor|lifetime|stop event|visual ID|sound ID`.
+  Anchors include `actor`, `projectile`, `contact`, `world`, `socket:ID`
+  and `unresolved`. Lifetimes are `event`, `projectile`, `owner`,
+  `until-stop`, `timer:ID` or `unresolved`. `until-stop` cannot declare
+  `none` for its stop event. A loop cannot be tied to event-only lifetime.
+  Visual and sound IDs may explicitly be `none` or `unresolved`.
+- In a move phase, `effect cue` names a cue row and `sound cue` names a
+  sound row directly. Use the cue path for looping sound so its lifetime
+  and stop behavior are explicit. These are presentation bindings, not
+  gameplay outcome bindings.
+
+`gf_native --check-borg-effects example:clockwork-crane` checks the
+64 KiB/64-visual/64-sound/128-cue limits, local references, and that concrete
+local assets exist as nonempty files. If a move file is declared, it also
+checks its cue/sound cross-references. It does not decode assets, resolve
+shared references, subscribe to events, trigger timers or play anything.
+The gameplay projectile, damage and status effects remain separate.
+
 ### Standalone spawn-policy check
 
 Set `spawn=gameplay/spawn.txt` in a version 2 catalogue. This example reserves

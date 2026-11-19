@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <string>
 #include <utility>
 #include <vector>
@@ -68,6 +69,15 @@ inline std::string_view line(std::string_view& text){
     text.remove_prefix(newline==std::string_view::npos?text.size():newline+1);
     if(value.ends_with('\r'))value.remove_suffix(1);
     return value;
+}
+template<std::size_t N> bool split_fields(std::string_view text,std::array<std::string_view,N>* out){
+    for(unsigned i=0;i<N;++i){
+        const auto pipe=text.find('|');
+        if((pipe==std::string_view::npos)!=(i+1==N))return false;
+        (*out)[i]=text.substr(0,pipe);
+        if(pipe!=std::string_view::npos)text.remove_prefix(pipe+1);
+    }
+    return true;
 }
 }
 // Passing the manifest parser is not model, animation, behavior, actor or

@@ -45,6 +45,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
+#include "platform/pc/borg_effect_load.hpp"
 #include "platform/pc/borg_move_load.hpp"
 #include "platform/pc/borg_spawn_load.hpp"
 #include "platform/pc/gred_practice_input.hpp"
@@ -57,7 +58,7 @@ constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 struct Options {
     bool headless = false;
     bool list_borgs = false;
-    std::string check_borg_catalog,check_borg_moves,check_borg_spawn,preview_borg;
+    std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,preview_borg;
     bool menu = false;
     bool demo_input = false;   // scripted pad for unattended demos
     bool demo_option = false;
@@ -172,6 +173,9 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--check-borg-spawn"){
             if(++i>=argc||!options->check_borg_spawn.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_spawn=argv[i];
+        }else if(arg=="--check-borg-effects"){
+            if(++i>=argc||!options->check_borg_effects.empty()||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_effects=argv[i];
         }else if(arg=="--preview-borg"){
             if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->preview_borg=argv[i];
@@ -363,6 +367,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
                          "       gf_native --check-borg-moves NAMESPACE:ID\n"
                          "       gf_native --check-borg-spawn NAMESPACE:ID\n"
+                         "       gf_native --check-borg-effects NAMESPACE:ID\n"
                          "       gf_native --preview-borg NAMESPACE:ID [--headless] [--frames N]\n");
             return false;
         }
@@ -374,7 +379,7 @@ bool parse(int argc, char** argv, Options* options) {
     if(!options->preview_borg.empty()&&(options->animation_mosaic||options->battle_mvp||options->test_battle||options->menu||
        options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||options->list_borgs||
        !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
-       options->animation_page||options->animation_borg))return false;
+       !options->check_borg_effects.empty()||options->animation_page||options->animation_borg))return false;
     if(!options->animation_export.empty()&&(!options->animation_mosaic||options->headless||options->animation_export_frames<2||options->animation_export_frames>120))return false;
     if(!options->animation_export.empty()&&(options->width>2048||options->height>2048||options->width<320||options->height<240))return false;
     if(options->animation_programs.empty()!=options->animation_height_profile.empty())return false;
@@ -1216,7 +1221,7 @@ int main(int argc, char** argv) {
     Options options;
     if (!parse(argc, argv, &options)) return 2;
     if(unsigned(options.list_borgs)+unsigned(!options.check_borg_catalog.empty())+unsigned(!options.check_borg_moves.empty())+
-       unsigned(!options.check_borg_spawn.empty())>1)return 2;
+       unsigned(!options.check_borg_spawn.empty())+unsigned(!options.check_borg_effects.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
     using BorgScan=gf::BorgPackageScanStatus;
     const bool scan_failed=borg_packages.status==BorgScan::Unavailable||borg_packages.status==BorgScan::EntryBudget;
@@ -1281,6 +1286,17 @@ int main(int argc, char** argv) {
             else std::puts(rule.horizontal_kind==gf::BorgSpawnValue::None?"none":"unresolved");
         }
         std::puts("Spawn declarations validated; no stage, placement, or actor loaded.");
+        return 0;
+    }
+    if(!options.check_borg_effects.empty()){
+        gf::pc::BorgEffectInspection effects;std::string error;
+        if(!gf::pc::load_borg_effect_inspection("borgs",borg_packages,options.check_borg_effects,&effects,&error)){
+            std::fprintf(stderr,"Borg effects: %s\n",error.c_str());return 2;
+        }
+        std::printf("%s\t%s\tvisuals=%zu\tsounds=%zu\tcues=%zu\tmove-references=%s\n",
+            effects.identity.id.c_str(),effects.identity.name.c_str(),effects.profile.visuals.size(),effects.profile.sounds.size(),
+            effects.profile.cues.size(),effects.checked_move_references?"checked":"not-declared");
+        std::puts("Effect declarations validated; assets not decoded, shared references not resolved, no playback or gameplay.");
         return 0;
     }
 

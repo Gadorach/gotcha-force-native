@@ -242,6 +242,8 @@ The projectile's speed, spread, collision shape, damage and lifetime are
 separate gameplay data. The bullet graphic and audio never grant a hit or count
 as evidence of a recovered weapons callback. An author may use shared effect
 assets without copying them into every package, but must name the dependency.
+The [standalone effects check](borg-packages.md#standalone-effects-and-audio-check)
+validates these typed cues and named move references without playback.
 
 ## Shape of one folder
 

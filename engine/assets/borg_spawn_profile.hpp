@@ -75,13 +75,7 @@ inline bool borg_read_spawn_profile(std::string_view text,BorgSpawnProfile* out)
         if(key=="spawn"){
             if(next.rules.size()==kBorgSpawnRules||(!next.rules.empty()&&!complete()))return false;
             std::array<std::string_view,4> selectors;
-            auto remaining=value;
-            for(unsigned i=0;i<selectors.size();++i){
-                const auto pipe=remaining.find('|');
-                if((pipe==std::string_view::npos)!=(i+1==selectors.size()))return false;
-                selectors[i]=remaining.substr(0,pipe);
-                if(pipe!=std::string_view::npos)remaining.remove_prefix(pipe+1);
-            }
+            if(!borg_package_detail::split_fields(value,&selectors))return false;
             const auto [name,form,mode,variant]=selectors;
             if(!id(name)||!scope(form)||!scope(mode)||!scope(variant))return false;
             for(const auto& existing:next.rules)if(existing.id==name||
