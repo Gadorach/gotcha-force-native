@@ -354,7 +354,9 @@ public:
                 NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),
                 state_.ground_timer698,s.ground_timer698);
             if(floor_windup_handoff&&(!previous_air->timed_relaunch_floor_windup||!floor_handoff_clock))
-                return fail(error,positive_floor_handoff?
+                return fail(error,allows(mode_,Behavior::ExpiringSnapWindupRelaunch)?
+                    "floor wind-up relaunch needs uninterrupted timed snap history and a qualified countdown transition":
+                    positive_floor_handoff?
                     "floor wind-up relaunch needs uninterrupted timed snap history and a still-positive or previously expired countdown":
                     "floor wind-up relaunch needs uninterrupted timed snap history and an expired countdown");
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");

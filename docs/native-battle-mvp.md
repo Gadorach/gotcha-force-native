@@ -222,6 +222,13 @@ ticks left. Tap neutral-direction **Shift** on 32 to relaunch with
 six ticks remaining, or leave the controls neutral for active dash.
 `--demo-gred-walk-ledge-positive-snap-handoff` replays the relaunch.
 
+`--gred-walk-ledge-expiring-snap-handoff --practice-start` is the
+separate expiry-step guide. Use **Up Arrow** on 6–25, **Shift** on
+46–47 and **A** on 47. On the accepted paid wind-up at 54, the
+HUD shows one ledge tick left. Tap **Shift** without a direction
+on 55 to relaunch as it reaches zero, or stay neutral to dash.
+The earlier positive and expired modes keep their old clock gates.
+
 With `--practice-from-picker`, both browsers offer all three floor-snap
 guides. From **Standard**, press **Right** in the owned picker or **R** in
 the Force browser:

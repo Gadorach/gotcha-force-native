@@ -63,6 +63,15 @@ int main(){
         Definition::allows(Mode::GroundPositiveSnapWindupRelaunch,Behavior::PositiveSnapWindupRelaunch));
     constexpr auto expired_floor=Definition::behaviors(Policy::GroundTimedSnapWindupRelaunch);
     constexpr auto positive_floor=Definition::behaviors(Policy::GroundPositiveSnapWindupRelaunch);
+    constexpr auto expiring_floor=Definition::behaviors(Policy::GroundExpiringSnapWindupRelaunch);
+    static_assert(unsigned(Mode::GroundExpiringSnapWindupRelaunch)==66&&unsigned(Policy::GroundExpiringSnapWindupRelaunch)==62&&
+        !Definition::allows(Mode::GroundPositiveSnapWindupRelaunch,Behavior::ExpiringSnapWindupRelaunch)&&
+        Definition::allows(Mode::GroundExpiringSnapWindupRelaunch,Behavior::ExpiringSnapWindupRelaunch)&&
+        Definition::floor_windup_handoff_clock(expiring_floor,1,0)&&
+        Definition::floor_windup_handoff_clock(expiring_floor,2,1)&&
+        Definition::floor_windup_handoff_clock(expiring_floor,0,0)&&
+        !Definition::floor_windup_handoff_clock(expiring_floor,1,1)&&
+        !Definition::floor_windup_handoff_clock(expiring_floor,2,0));
     static_assert(Definition::floor_windup_handoff_clock(expired_floor,0,0)&&
         !Definition::floor_windup_handoff_clock(expired_floor,7,6)&&
         Definition::floor_windup_handoff_clock(positive_floor,0,0)&&

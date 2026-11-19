@@ -1175,6 +1175,37 @@ in 6066 approaches, then verified 16 full positive handoffs.
 The expiry-only mode still refuses this same relaunch. No floor,
 steep-contact, body or landing checks were relaxed.
 
+### Completing the floor handoff on the expiry step
+
+`--gred-walk-ledge-expiring-snap-handoff` opts into the actual
+**1 → 0** update, separate from the still-positive and already
+expired cases. The wind-up must already have paid its charge
+on a certified uninterrupted flat-floor sequence. Older modes
+still refuse this exact request.
+
+```sh
+gf_native --demo-gred-walk-ledge-expiring-snap-handoff --headless --frames 135 --no-audio
+gf_native --gred-walk-ledge-expiring-snap-handoff --practice-start --no-audio
+```
+
+The grounded native start is X/Z `3895.56787/-1816.47241`
+(floor query `262.01004`, arena half-width `4500`). Step with
+**Up Arrow** on 6–25 and **Shift** on 46–47; add **A** on 47.
+The first relaunch snap has nine ticks left. The wind-up enters
+free with eight, stays on flat triangle 1542, then spends 450
+at 54 with one tick left and 9400 meter.
+
+On 55, tap **Shift** without a direction to rise 15 units while
+the timer reaches zero. Meter becomes 9250; release on 56 and
+touch down at 89, then land at 90. Neutral instead starts the
+ordinary active dash at 9350 and touches down/lands at 85–86.
+The timer changes on that accepted action; it does not retroactively
+rewrite the preceding snap or count as grounded contact.
+
+Eight complete 1 → 0 relaunch routes were found in the bounded scan.
+No entry snap, steep contact, directional relaunch or earlier-policy
+permission was added by this change.
+
 Native placement/input/clocks/libm/camera/target/body/terrain approximations
 remain explicit, not original-hardware or whole-game equivalence. Push,
 nonflat ordered dash, raised-side/clipped/unknown contacts and combat remain

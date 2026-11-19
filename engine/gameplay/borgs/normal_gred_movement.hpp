@@ -21,7 +21,7 @@ enum class NormalGRedMovementMode {
     GroundWalkLedgeExpiryPush,GroundWalkLedgeExpiryAirDash,GroundRecoveryRecontact,GroundRecoveryRecontactDrift,
     GroundRecoveryRecontactSeam,GroundRecoveryFirstContactSeam,GroundWalkLedgeDirectTimedAirDash,
     GroundTimedPlainWindupRelaunch,GroundExpiryPlainWindupRelaunch,GroundWalkExpiryDirectRelaunch,GroundTimedSnapWindupRelaunch,
-    GroundPositiveSnapWindupRelaunch
+    GroundPositiveSnapWindupRelaunch,GroundExpiringSnapWindupRelaunch
 };
 
 struct NormalGRedMovementDefinition {
@@ -85,6 +85,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundWalkExpiryDirectRelaunch,Policy::GroundWalkExpiryDirectRelaunch,Behavior::WalkExpiryDirectRelaunch},
         CombinedRule{Mode::GroundTimedSnapWindupRelaunch,Policy::GroundTimedSnapWindupRelaunch,Behavior::TimedSnapWindupRelaunch},
         CombinedRule{Mode::GroundPositiveSnapWindupRelaunch,Policy::GroundPositiveSnapWindupRelaunch,Behavior::PositiveSnapWindupRelaunch},
+        CombinedRule{Mode::GroundExpiringSnapWindupRelaunch,Policy::GroundExpiringSnapWindupRelaunch,Behavior::ExpiringSnapWindupRelaunch},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -116,12 +117,13 @@ struct NormalGRedMovementDefinition {
         return index<combined.size()&&combined[index].policy==policy?cumulative_[index]:BorgMovementBehaviors{};
     }
     static constexpr bool allows(Mode mode,Behavior behavior){return behaviors(native_policy(mode)).has(behavior);}
-    // A pending 1 -> 0 is neither a still-positive update nor an already
-    // accepted expiry. Callers verify the history and contacts separately.
+    // The expiry step is its own permission, not a still-positive update or
+    // an already accepted expiry. History and contacts are checked separately.
     static constexpr bool floor_windup_handoff_clock(BorgMovementBehaviors flags,f32 previous,f32 next){
         return flags.has(Behavior::TimedSnapWindupRelaunch)&&
             ((previous==0.f&&next==0.f)||(flags.has(Behavior::PositiveSnapWindupRelaunch)&&
-                previous>1.f&&previous<=30.f&&next==previous-1.f));
+                previous>1.f&&previous<=30.f&&next==previous-1.f)||
+                (flags.has(Behavior::ExpiringSnapWindupRelaunch)&&previous==1.f&&next==0.f));
     }
     // Native ceiling for this continued walking response. 13653 is the
     // steepest witnessed face, not a replacement for either source angle gate.
