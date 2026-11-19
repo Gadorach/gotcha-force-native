@@ -1232,6 +1232,35 @@ The scoped 274-route replay found 22 accepted pairs and eight
 completed routes. Nearby replays also verified that a real
 different-face successor and a third positive contact still refuse.
 
+### A third positive-timer push on face 2021
+
+`--gred-walk-ledge-timed-release-three-pushes` adds a final
+same-face successor after two accepted timed pushes, only on
+face 2021 at angle 8192. It keeps the neutral released-relaunch
+history, both travel checks and the real positive countdown.
+The two-push mode still refuses this third contact. Another
+face, late contact, fourth positive push, or active relaunch
+does not borrow the new permission.
+
+```sh
+gf_native --gred-walk-ledge-timed-release-three-pushes --practice-start --no-audio
+gf_native --demo-gred-walk-ledge-timed-release-three-pushes --headless --frames 145 --no-audio
+```
+
+From grounded X/Z `-4080.66113/-3463.83618` (query `1846.01367`,
+arena half-width `4500`), hold **Up+Left Arrows** on 6–7, tap
+**Shift** on 20, then stay neutral. Ordinary falling starts on
+21 and the three pushes on 34–36 retain four, three and two
+timer ticks. The next step is ordinary falling with one tick
+left, not another push. All three responses stay airborne at
+9850. Touchdown on 101 and landing on 102 remain separate,
+and idle recovers normally. Eight nearby routes completed in
+the initial 126-trial sweep; the accepted third was not used
+on its own as proof of landing.
+On this start, **Down** on 37 instead of neutral produces
+another steep-contact request. It still refuses, leaving 36 as
+the last accepted frame with two ticks and 9850 meter.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

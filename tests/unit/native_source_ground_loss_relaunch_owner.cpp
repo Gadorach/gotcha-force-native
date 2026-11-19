@@ -779,6 +779,67 @@ int main(){
             source.ground_loss_timer698()==(third?3.f:6.f)&&retained.frame_scope.expired()&&!world.step({},false,&view),
             "actual different-face or third positive response refuses with no fallback or publication");
     }
+    two_push_fixture(Mode::GroundTimedWalkReleaseThirdPush,-4080.66113f,-3463.83618f);
+    timed_pushes=hit=land=0;previous={};
+    for(unsigned tick=1;tick<=145;++tick){
+        const auto before=world.actors()[0];const auto retained=pose;
+        const auto timer=source.ground_loss_timer698();const auto meter=source.resource();
+        GamePadState pad;pad.dpad_up=pad.dpad_left=tick==6||tick==7;pad.b=tick==20;
+        NativeBorgMotionOffer offer;
+        check(prepare(pad,&offer)&&source.ground_loss_timer698()==timer&&source.resource()==meter,
+            "the third contact is staged without publishing clock, motion or resource");
+        const bool first=tick==34,second=tick==35,third=tick==36;
+        check(offer.controller_timer698==(offer.kind==Kind::GroundLossEntry?30.f:std::max(0.f,timer-1.f))&&
+            (offer.jump_motion&&offer.jump_motion->second_timed_release_push)==second&&
+            (offer.jump_motion&&offer.jump_motion->third_timed_release_push)==third,"actual countdown and each contact's ordinal are distinct");
+        if(tick==21)check(offer.kind==Kind::JumpAir&&offer.jump_motion->entry&&offer.jump_motion->relaunch_origin,
+            "ordinary released relaunch precedes the three neutral contacts");
+        auto refuses=[&](const NativeBorgMotionOffer& wrong,const char* why){
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            const bool refused=!world.step({},false,&view,nullptr,&frame,&wrong);
+            const auto shown=view.practice_readout(world);
+            check(refused&&world.tick()==tick-1&&world.actors()[0].position==before.position&&
+                source.ground_loss_timer698()==timer&&source.resource()==meter&&world.motion_receipt_current(retained.receipt)&&
+                shown&&shown->third_timed_release_push==(tick==37),why);
+        };
+        if(offer.kind==Kind::StaticPush){
+            ++timed_pushes;
+            check((first||second||third)&&offer.controller_timer698==f32(38-tick)&&offer.static_push->surface.triangle==2021&&
+                offer.static_push->angle==8192&&offer.jump_motion->timed_walk_relaunch_fall&&!offer.jump_motion->entry&&
+                !offer.jump_motion->drift_heading&&before.vertical_speed<0.f&&!offer.surface_landing&&
+                offer.vertical_speed==f32(offer.static_push->vertical_speed*.9f)&&
+                (first?previous.kind==Kind::JumpAir:previous.kind==Kind::StaticPush&&
+                    previous.static_push->surface.normal==offer.static_push->surface.normal),
+                "three independent steep responses carry one face and plane, not a snap or callback");
+            auto wrong=offer;wrong.jump_motion->third_timed_release_push=!third;
+            refuses(wrong,"the third tag requires the actual accepted second contact");
+            if(third){
+                check(previous.jump_motion->second_timed_release_push&&timer==3.f,"second contact owns the exact timing and predecessor");
+                wrong=offer;wrong.static_push->surface.triangle=1993;refuses(wrong,"another inter-gate face is not the witnessed successor");
+                wrong=offer;wrong.controller_timer698=0.f;refuses(wrong,"the third cannot borrow an expired clock");
+                wrong=offer;wrong.proposed_position[1]+=.5f;refuses(wrong,"the third projection is independently checked");
+            }
+        }
+        if(tick==37){
+            check(offer.kind==Kind::JumpAir&&!offer.jump_motion->timed_walk_relaunch_fall&&offer.controller_timer698==1.f,
+                "permission is exhausted before the clock expires");
+            auto wrong=offer;wrong.jump_motion->third_timed_release_push=true;wrong.jump_motion->timed_walk_relaunch_fall=true;
+            refuses(wrong,"after three, fabricated history cannot reopen the positive-timer path");
+        }
+        if(offer.kind==Kind::JumpTouchdown)hit=tick;
+        if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
+        accept(offer);
+        const auto shown=view.practice_readout(world);
+        check(shown&&shown->timed_release_push==(first||second||third)&&shown->second_timed_release_push==second&&
+            shown->third_timed_release_push==third,"cues describe only the current accepted ordinal");
+        if(first||second||third)check(!world.actors()[0].grounded&&source.cached_airborne87()==1&&source.resource()==9850&&!source.landings(),
+            "none of the three responses grounds, charges or refills");
+        if(tick==hit||tick==land)check(source.resource()==9850,"distinct touchdown and landing keep the original tap charge");
+        previous=offer;
+    }
+    check(timed_pushes==3&&hit==101&&land==102&&source.relaunches()==1&&source.relaunch_fall_pushes()==3&&
+        !source.air_dash_starts()&&!source.walk_ledge_pushes()&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector(),
+        "the third verified response still reaches ordinary landing and full idle");
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
         !source.bind(files,art,"local/content/source-gred-ground-v8",world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundLossRelaunch),"new relaunch scope requires GFMM9");
     std::printf("ground-loss/relaunch/actual698/conditional-clamp/latches/receipt: %u checks PASS; genuine relaunch and snap-to-wind-up routes plus old-policy/gate/lineage refusals; native proxies only\n",checks);

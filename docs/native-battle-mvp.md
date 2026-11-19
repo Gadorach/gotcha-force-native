@@ -408,6 +408,13 @@ twice on the same face, staying airborne with five and then four
 ledge ticks. Use `--demo-gred-walk-ledge-timed-release-two-pushes`
 for automatic playback.
 
+`--gred-walk-ledge-timed-release-three-pushes --practice-start`
+uses **Up+Left Arrows** on 6–7, a **Shift** tap on 20, then neutral.
+The three same-face pushes occur on 34–36 with four, three and
+two ledge ticks left. This separate guide leaves the two-push
+mode unchanged. Use `--demo-gred-walk-ledge-timed-release-three-pushes`
+for playback.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,

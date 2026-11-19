@@ -78,6 +78,7 @@ public:
     static constexpr const char* relaunch_from_active_snap_hint="AIRBORNE / ACTIVE DASH TO RELAUNCH";
     static const char* practice_timed_release_push_cue(const NativeBorgSourceReadout& frame){
         if(!frame.timed_release_push)return nullptr;
+        if(frame.third_timed_release_push)return "AIRBORNE / THIRD TIMED RELAUNCH-FALL PUSH";
         return frame.second_timed_release_push?"AIRBORNE / SECOND TIMED RELAUNCH-FALL PUSH":"AIRBORNE / TIMED RELAUNCH-FALL PUSH";
     }
     static const char* practice_relaunch_floor_cue(const NativeBorgSourceReadout& frame){

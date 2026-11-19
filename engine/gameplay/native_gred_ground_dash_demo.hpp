@@ -725,7 +725,8 @@ public:
                 accepted.jump_motion->timed_walk_relaunch_fall,accepted.kind==NativeBorgMotionKind::StaticPush&&
                 accepted.jump_motion&&accepted.jump_motion->second_timed_release_push,pending_->direct_expiring_relaunch,
                 direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push,pending_->expiring_walk_air_dash,
-                pending_->expiring_walk_air_dash_relaunch,pending_->expiring_walk_air_dash_snap}));
+                pending_->expiring_walk_air_dash_relaunch,pending_->expiring_walk_air_dash_snap,
+                accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->third_timed_release_push}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
@@ -1297,13 +1298,19 @@ private:
             if(!gred_jump_acceleration(motion_,plan.state.direction550,&s.motion))return false;
         }
         //Only the immediate positive-clock successor may carry a first push's history.
-        const bool timed_release_second=allows(mode_,Behavior::TimedWalkReleaseSecondPush)&&state_.ground_timer698>1.f&&
+        const bool timed_repeat_candidate=state_.ground_timer698>1.f&&
             state_.static_push&&state_.jump_motion&&
-            state_.jump_motion->timed_walk_relaunch_fall&&!state_.jump_motion->second_timed_release_push;
+            state_.jump_motion->timed_walk_relaunch_fall&&!state_.jump_motion->third_timed_release_push;
+        const bool timed_release_second=timed_repeat_candidate&&allows(mode_,Behavior::TimedWalkReleaseSecondPush)&&
+            !state_.jump_motion->second_timed_release_push;
+        const bool timed_release_third=timed_repeat_candidate&&allows(mode_,Behavior::TimedWalkReleaseThirdPush)&&
+            state_.jump_motion->second_timed_release_push&&
+            NormalGRedMovementDefinition::third_timed_release_face(state_.static_push->surface.triangle,state_.static_push->angle);
+        const bool timed_repeat=timed_release_second||timed_release_third;
         const bool timed_walk_fall=allows(mode_,Behavior::TimedWalkReleasePush)&&plan.state.selector==6&&
             plan.state.falling_after_relaunch&&s.ground_timer698>0.f&&!(held&0x100u)&&
             (plan.request?(state_.relaunch_motion&&state_.relaunch_motion->timed_walk_relaunch_tap):
-                (state_.jump_motion&&state_.jump_motion->timed_walk_relaunch_fall&&(!state_.static_push||timed_release_second)));
+                (state_.jump_motion&&state_.jump_motion->timed_walk_relaunch_fall&&(!state_.static_push||timed_repeat)));
         bool touchdown=false;
         if(plan.air_move){
             const auto before=s.motion;const auto ground=ground_for(s);
@@ -1336,10 +1343,11 @@ private:
                             (controller_air_fall_push_mode(mode_)&&plan.state.falling_after_dash&&!plan.state.falling_after_relaunch)||
                              (controller_relaunch_fall_push_mode(mode_)&&plan.state.falling_after_relaunch)),false,walk_loss_push,timed_release_push)||
                 (touchdown&&plan.state.selector!=6))return false;
-            if(timed_release_push&&timed_release_second&&s.static_push&&
+            if(timed_release_push&&timed_repeat&&s.static_push&&
                 (s.static_push->surface.triangle!=state_.static_push->surface.triangle||
                  s.static_push->surface.normal!=state_.static_push->surface.normal)){
-                if(error)*error="second timed release push needs the same selected face";
+                if(error)*error=timed_release_third?"third timed release push needs the same selected face":
+                    "second timed release push needs the same selected face";
                 return false;
             }
         }
@@ -1369,8 +1377,9 @@ private:
                 evidence.relaunch_coarse57d=evidence.relaunch_origin?plan.state.falling_coarse57d:0;
             }
             evidence.speed44=s.motion.speed44;
-            evidence.timed_walk_relaunch_fall=timed_walk_fall&&!evidence.drift_heading&&!touchdown&&(!timed_release_second||s.static_push);
+            evidence.timed_walk_relaunch_fall=timed_walk_fall&&!evidence.drift_heading&&!touchdown&&(!timed_repeat||s.static_push);
             evidence.second_timed_release_push=evidence.timed_walk_relaunch_fall&&timed_release_second;
+            evidence.third_timed_release_push=evidence.timed_walk_relaunch_fall&&timed_release_third;
             s.jump_motion=evidence;
         }
         return true;
