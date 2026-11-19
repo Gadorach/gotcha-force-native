@@ -747,6 +747,30 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("accepted native tick=0 G-Red-position=-4066.18/", guide.stdout)
         self.assertNotIn("direct timed relaunch demo:", guide.stdout)
 
+    def test_walk_ledge_direct_timed_up_relaunch_turns_with_the_same_cost_and_timer(self):
+        for tick, phase, meter, timer in (
+            (24, "LEDGE FALL / PUSH", 10000, 14), (25, "RELAUNCH", 9850, 13),
+            (29, "RELAUNCH", 9450, 9), (33, "FALLING", 9150, 5),
+            (114, "TOUCHDOWN", 9150, 0), (115, "LANDING", 9150, 0), (150, "IDLE", 10000, 0),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-direct-timed-up-relaunch", "--headless",
+                                        "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"direct-timed-relaunches={int(tick>=25)} air-dash-starts=0 floors=0 timer698={timer}.0", result.stdout)
+                self.assertEqual("practice-direct-timed-relaunch=AIRBORNE / DIRECT TIMED UP RELAUNCH" in result.stdout, tick == 25)
+                self.assertNotIn("practice-direct-expiry-relaunch=", result.stdout)
+                if tick == 150:
+                    self.assertIn("G-Red-position=-3539.49/10.00/-3042.58", result.stdout)
+        guide = self.run_host(["--gred-walk-ledge-direct-timed-up-relaunch", "--practice-start", "--headless",
+                               "--frames", "8", "--no-audio"])
+        self.assertEqual(guide.returncode, 0, guide.stdout)
+        self.assertIn("direct timed Up relaunch guide: paused at tick=0", guide.stdout)
+        self.assertIn("Up Arrow+Shift 25-32", guide.stdout)
+        self.assertNotIn("direct timed Up relaunch demo:", guide.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),

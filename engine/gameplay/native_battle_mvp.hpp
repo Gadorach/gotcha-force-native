@@ -89,7 +89,7 @@ inline bool native_gred_relaunch_acceleration_valid(f32 value){
 // Exact soft-Up branch of the qualified normal G-Red ascent turn (gain1).
 // Recover the stored body angle without accepting a tolerance on travel:
 // bounded atan2 can truncate one unit away from the exact forward vector.
-inline bool native_gred_expiry_up_turn(const NativeBorgMovementFrame& camera,BattlePoint before,s16 travel,BattlePoint after){
+inline bool native_gred_relaunch_up_turn(const NativeBorgMovementFrame& camera,BattlePoint before,s16 travel,BattlePoint after){
     CharacterMovementHeadingFrame frame;
     if(!native_borg_source_heading_frame(camera,before,&frame))return false;
     const auto desired=source_heading_wrap(s32(frame.camera5b0)-0x8000);
@@ -930,15 +930,19 @@ public:
                   walking_push->timer698==0.f&&o.controller_timer698==0.f&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
                   o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
                   o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
-                  native_gred_expiry_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
+                  native_gred_relaunch_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
               bool direct_timed_relaunch=false;
               if(behaviors.has(Behavior::WalkTimedDirectRelaunch)&&walking_push&&walking_push->timer698>1.f&&
                   o.controller_timer698&&*o.controller_timer698==walking_push->timer698-1.f&&
                   o.kind==NativeBorgMotionKind::RelaunchEntry&&o.relaunch_motion&&o.relaunch_motion->entry&&
-                  !o.relaunch_motion->direction&&actor.vertical_speed<0.f&&o.relaunch_motion->vertical_before>0.f&&
-                  o.vertical_speed>0.f&&o.facing==actor.facing){
-                  BattlePoint travel;source_heading_xz(o.relaunch_motion->travel5ae,&travel.x,&travel.z);
-                  direct_timed_relaunch=travel==actor.facing;
+                  actor.vertical_speed<0.f&&o.relaunch_motion->vertical_before>0.f&&o.vertical_speed>0.f){
+                  if(o.relaunch_motion->direction){
+                      direct_timed_relaunch=behaviors.has(Behavior::WalkTimedDirectUpRelaunch)&&player_frame&&
+                          native_gred_relaunch_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
+                  }else{
+                      BattlePoint travel;source_heading_xz(o.relaunch_motion->travel5ae,&travel.x,&travel.z);
+                      direct_timed_relaunch=travel==actor.facing&&o.facing==actor.facing;
+                  }
               }
               const bool relaunch_entry_prior=direct_expiry_relaunch||direct_timed_relaunch||
                  prior==NativeBorgMotionKind::JumpAir||prior==NativeBorgMotionKind::StaticPush||
@@ -1358,7 +1362,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkTimedDirectRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkTimedDirectUpRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

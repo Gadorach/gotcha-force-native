@@ -452,6 +452,30 @@ in 912 approaches and completed ten direct relaunch routes in
 172 follow-up attempts. The new permission uses only the neutral
 rising branch. Older policies, other Borgs, and contact rules are unchanged.
 
+### Soft Up on the same positive-timer entry
+
+`--gred-walk-ledge-direct-timed-up-relaunch` is a separate opt-in for
+soft camera-relative **Up**. It inherits neutral entry, but does not
+allow diagonals or a full-stick direction on the entry step. The source
+requires the mapped soft-Up input, and native verifies the exact turn
+from the accepted body heading with the current movement camera.
+Changing the presentation camera alone does not turn the Borg.
+
+```sh
+gf_native --demo-gred-walk-ledge-direct-timed-up-relaunch --headless --frames 150 --no-audio
+gf_native --gred-walk-ledge-direct-timed-up-relaunch --practice-start --no-audio
+```
+
+Use the same grounded start and **Up+Left Arrow** on 6–7. Hold
+**Up Arrow + Shift** on 25–32, then release both. On 25 G-Red gets
+the same 150 charge and timer 14 → 13, but turns and accelerates
+horizontally instead of applying neutral damping. The existing
+directional cap is reached on 29. Release at 33 still leaves 9150
+meter and five ticks, but this trajectory touches down at 114 and
+lands at 115. A one-tick Up+Shift tap also completes. The neutral-only
+mode still refuses this same Up entry; a pending 1 → 0 and entry
+contact responses remain outside this permission.
+
 ## Ordered dash off an inclined ledge (GFMM9)
 
 `--gred-inclined-dash-ledge` admits a scoped normal G-Red departure using the

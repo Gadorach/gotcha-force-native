@@ -366,9 +366,12 @@ public:
             if(!relaunch_mode(mode_)||!relaunch(s,held,frame,&kind,error))return fail(error,"source relaunch/early-contact branch refused");
             if(plain_windup_handoff&&kind!=NativeBorgMotionKind::RelaunchEntry)
                 return fail(error,"timed wind-up handoff requires plain relaunch without contact response");
-            if(timed_direct&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||s.relaunch_motion->direction||
-                s.body!=state_.body||observed.vertical_speed>=0.f||s.relaunch_motion->vertical_before<=0.f||s.motion.vertical48<=0.f))
-                return fail(error,"direct timed relaunch needs plain neutral lift without contact response");
+            const bool timed_up_policy=allows(mode_,Behavior::WalkTimedDirectUpRelaunch);
+            const bool timed_up=timed_up_policy&&stick_x==0&&stick_y==32;
+            if(timed_direct&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||s.relaunch_motion->direction!=timed_up||
+                (!timed_up&&s.body!=state_.body)||observed.vertical_speed>=0.f||s.relaunch_motion->vertical_before<=0.f||s.motion.vertical48<=0.f))
+                return fail(error,timed_up_policy?"direct timed relaunch needs plain neutral or soft-Up lift without contact response":
+                    "direct timed relaunch needs plain neutral lift without contact response");
             if(direct_push&&!timed_direct&&(kind!=NativeBorgMotionKind::RelaunchEntry||!s.relaunch_motion||!s.relaunch_motion->direction||
                 s.relaunch_motion->vertical_before>=0.f||s.motion.vertical48>=0.f))
                 return fail(error,"direct expiry relaunch requires plain descending entry without contact response");
@@ -652,7 +655,8 @@ public:
                 accepted.relaunch_floor?std::optional{accepted.relaunch_floor->response_factor<1.f}:std::nullopt,
                 pending_->interrupted_dash&&accepted.kind==NativeBorgMotionKind::JumpTakeoff,
                 accepted.landing_target==12,pending_->direct_expiry_relaunch,direct_expiry_relaunch_ready,windup_from_relaunch_snap,
-                floor_windup_relaunch_ready,pending_->direct_timed_relaunch}));
+                floor_windup_relaunch_ready,pending_->direct_timed_relaunch,
+                pending_->direct_timed_relaunch&&accepted.relaunch_motion&&accepted.relaunch_motion->direction}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

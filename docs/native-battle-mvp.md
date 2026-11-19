@@ -294,6 +294,12 @@ lifts with 13 ledge ticks left. Use
 `--demo-gred-walk-ledge-direct-timed-relaunch` for the replay.
 No direction or contact response is admitted on this entry.
 
+`--gred-walk-ledge-direct-timed-up-relaunch --practice-start` uses
+the same foothold but holds **Up Arrow + Shift** on 25–32. The turn
+comes from that input, with the same 150 cost and 13-tick remainder.
+Only soft Up is added on entry; the neutral-only guide and contact
+checks are unchanged.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,

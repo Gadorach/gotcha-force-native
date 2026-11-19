@@ -26,6 +26,7 @@ struct NativeBorgSourceReadout {
     bool windup_from_relaunch_snap=false; //Accepted wind-up floor entry from the preceding airborne relaunch snap.
     bool floor_windup_relaunch_ready=false; //Accepted completed timed floor wind-up; next input may request neutral relaunch.
     bool direct_timed_relaunch=false; //Accepted rising relaunch directly from a still-positive walking push.
+    bool direct_timed_relaunch_up=false; //The same timed handoff with the accepted soft Up turn.
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
