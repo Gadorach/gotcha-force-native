@@ -159,9 +159,22 @@ int main(){
             if(tick==86){
                 const auto frame=pose.frame_scope.lock();NativeBattleMvp foreign;
                 check(frame&&!frame->meter(foreign)&&!view.practice_meter(foreign),"foreign world cannot borrow the practice meter");
+                const auto draw_count=[&](bool refused){
+                    render.begin_frame({0,.15f,.21f,.3f});render.reset_arena();
+                    const auto draws=view.draw(render,world,1152,648,&error,refused);render.end_frame();
+                    return draws;
+                };
+                const auto position=world.actors()[0].position;GamePadState combat;combat.a=true;
+                NativeGRedGroundInput mapped;
+                check(!source.map_input(combat,&mapped,&error),"practice still refuses unsupported combat input");
+                const auto clean_draws=draw_count(false);
+                check(clean_draws>0&&draw_count(true)==clean_draws+1&&world.tick()==tick&&world.actors()[0].position==position&&
+                    world.motion_receipt_current(pose.receipt)&&view.practice_meter(world)->value==8000,
+                    "input refusal adds only the notice, keeping accepted pose and meter");
                 check(world.set_paused(true)&&world.set_paused(true)&&world.paused()&&world.tick()==tick&&
                     view.practice_meter(world)&&view.practice_meter(world)->value==8000,
                     "session pause requires no input tick and preserves the last accepted practice meter");
+                check(draw_count(true)==draw_count(false),"paused practice does not show the input refusal notice");
                 check(world.set_paused(false)&&!world.paused()&&world.tick()==tick&&world.motion_receipt_current(pose.receipt)&&
                     view.practice_meter(world)&&view.practice_meter(world)->value==8000,
                     "session resume does not step, refill the meter or revoke its accepted receipt");

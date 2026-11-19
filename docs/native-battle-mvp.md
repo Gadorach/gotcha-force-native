@@ -85,6 +85,10 @@ retired pose or meter and does not advance or switch controllers. Press Q to
 start a fresh round, or Esc to close. Scripted movement labs still fail on a
 refusal so regressions are not hidden.
 
+An input rejected before movement (for example, pressing a combat button)
+shows `INPUT REFUSED - RELEASE AND RETRY` instead. The current scene and meter
+remain visible, and valid input can continue without a restart.
+
 [Contact Sheet 60](../local/recomp-evidence/contact-sheets/gred-practice-restart-v1/contact-sheet-60.png)
 shows an offscreen input replay that stops on a raised face after tick 104.
 The simulation remains at that tick until Q. Holding Q restarts once, and the

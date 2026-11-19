@@ -782,7 +782,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 gf::log_info(context,"source-ground","practice restarted at tick=%u",world.tick());
             }else if(pause&&!practice_stopped){
                 if(!world.set_paused(!world.paused())){render.shutdown();return 2;}
-                steps=0;phase=0;
+                input_refused=false;steps=0;phase=0;
                 gf::log_info(context,"source-ground","practice %s at tick=%u",world.paused()?"paused":"resumed",world.tick());
             }
             if(practice_stopped||world.paused())steps=0;
@@ -999,7 +999,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         if(options.source_vertical_jump)view.source_vertical_jump_controls(source.resource(),options.source_moving_jump,options.source_air_dash,options.source_relaunch,options.source_dash_jump,options.source_landing_interrupt,options.source_surface,options.source_steep,options.source_fall_surface,options.source_recovery_surface,options.source_windup_surface,options.source_active_surface,options.source_relaunch_surface,options.source_relaunch_entry_surface,options.source_relaunch_floor);
         render.begin_frame({frame,.15f,.21f,.3f});render.reset_arena();
         const auto draws=practice_stopped?view.draw_practice_stop(render,options.width,options.height,world.tick()):
-            view.draw(render,world,options.width,options.height,&error);
+            view.draw(render,world,options.width,options.height,&error,practice_restartable&&input_refused);
         render.end_frame();
         if(!draws){gf::log_error(context,"battle-mvp","draw failed: %s",error.c_str());render.shutdown();return 2;}
         if(!captured)captured=capture_if_requested(context,options,frame);

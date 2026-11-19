@@ -162,7 +162,7 @@ public:
     static NativeBorgMovementFrame movement_frame(const NativeBattleMvp& world,s32 width,s32 height){
         const auto camera=camera_for(world,width,height);NativeBorgMovementFrame frame;native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);return frame;
     }
-    unsigned draw(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,std::string* error){
+    unsigned draw(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,std::string* error,bool practice_input_refused=false){
         if(!ready_||!world.ready()||width<=0||height<=0)return 0;
         const auto camera=camera_for(world,width,height);unsigned draws=0;
         const SceneLighting* old=render.scene_lighting();const bool had=old!=nullptr;const SceneLighting saved=had?*old:SceneLighting{};
@@ -205,6 +205,10 @@ public:
             if(const auto ticks=practice->dash_release_ticks)
                 text+=*ticks?"\nRELEASE IN "+std::to_string(*ticks)+" TICKS":"\nCENTER TO RECOVER";
             draws+=text_.draw(render,text,24,68,style);
+        }
+        if(source_practice_&&practice_input_refused&&!world.paused()&&width>=260&&height>=248){
+            auto notice=style;notice.r=255;notice.g=210;notice.b=80;
+            draws+=text_.draw(render,"INPUT REFUSED - RELEASE AND RETRY",24,68+3*text_.line_height(style),notice);
         }
         std::string status="G-RED VS SASUKE - NATIVE MVP / PROVISIONAL RULES\nWASD MOVE  L DASH  SHIFT JUMP  SPACE PRIMARY  E SECONDARY  Q RESTART  ENTER PAUSE";
         if(world.actors()[0].source_ground_motion)status="G-RED SOURCE GROUND-DASH LAB - SCRIPTED / NATIVE CONTACT PROXY\nENTER PAUSE  Q RESTART  ESC CLOSE - NO SOURCE WALK/JUMP/COMBAT";
