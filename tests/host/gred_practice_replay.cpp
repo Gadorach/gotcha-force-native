@@ -5,7 +5,7 @@
 #undef main
 
 namespace {
-enum class Replay {Session,Jump,Separate,RefusedInput,RaisedFace};
+enum class Replay {Session,SingleStep,Jump,Separate,RefusedInput,RaisedFace};
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
 public:
@@ -17,6 +17,12 @@ public:
         case Replay::Session:
             if(f==3||f==5||f==7)raw.buttons|=(1u<<4)|1u; //Enter with an unsupported combat button.
             if(f>=7&&f<=9)raw.buttons|=1u<<3;            //Q at a zero-tick frame, then held.
+            break;
+        case Replay::SingleStep:
+            if(f==3||f==10)raw.buttons|=1u<<4;
+            snapshot_.frame_step=(f>=4&&f<=5)||f==7||f==9||f==11;
+            if(f==4)raw.buttons|=1u<<1;
+            if(f==7)raw.buttons|=1u; //A refused step leaves the tick and pause intact.
             break;
         case Replay::Jump:
         case Replay::Separate:
@@ -100,6 +106,13 @@ int main(){
     check(has(jump,"frames=12 ticks=6")&&has(jump,"practice-phase=TAKEOFF")&&has(jump,"ordered-entries=0"),
         "between-tick jump reaches its next movement tick",jump);
 
+    const auto stepped=run(Replay::SingleStep,12,"paused single step");
+    check(once(stepped,"practice paused at tick=2")&&once(stepped,"practice stepped to tick=3")&&
+        once(stepped,"no simulation advanced")&&once(stepped,"practice stepped to tick=4")&&
+        once(stepped,"practice resumed at tick=4")&&!has(stepped,"practice stepped to tick=5")&&
+        has(stepped,"frames=12 ticks=5")&&has(stepped,"practice-phase=TAKEOFF"),
+        "single step uses live input, does not repeat when held, and preserves pause after a refusal",stepped);
+
     const auto separate=run(Replay::Separate,12,"separate inputs");
     check(has(separate,"frames=12 ticks=6")&&has(separate,"practice-phase=GROUND DASH")&&
         has(separate,"ordered-entries=1 active=3")&&!has(separate,"practice-phase=TAKEOFF"),
@@ -117,5 +130,5 @@ int main(){
     check(once(restarted,"practice stopped at tick=104")&&once(restarted,"practice restarted at tick=0")&&
         has(restarted,"frames=141 ticks=8")&&has(restarted,"practice-meter=10000/10000 at accepted tick=8"),
         "held Q restarts once and the meter returns on a fresh source frame",restarted);
-    std::puts("G-Red practice replay: six desktop-loop scenarios PASS without opening devices");
+    std::puts("G-Red practice replay: seven desktop-loop scenarios PASS without opening devices");
 }

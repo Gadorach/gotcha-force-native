@@ -598,7 +598,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         view.source_ground_controls(options.source_ground_interactive);
         if(options.gred_practice){
             view.source_practice_controls();
-            gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, Q restart, Esc close; native proxies, no combat");
+            gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, Q restart, Esc close; native proxies, no combat");
         }
         if(options.source_ordered_ground){
             view.source_ordered_ground_controls();
@@ -753,7 +753,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     bool input_refused=false,practice_stopped=false;
     const bool practice_restartable=options.gred_practice&&options.source_ground_interactive;
-    bool practice_restart_held=false,practice_pause_held=false;
+    bool practice_restart_held=false,practice_pause_held=false,practice_step_held=false;
     gf::pc::GRedPracticeInput practice_input;
     gf::u32 landing_jump_script_tick=0,landing_dash_script_tick=0;
     gf::u32 windup_entry_push_flick_tick=0;
@@ -765,12 +765,16 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         if(!options.headless&&!((options.demo_battle_mvp||options.demo_locomotion||(options.demo_source_ground&&!options.source_ground_interactive))&&options.frames)){
             const auto elapsed=now>=previous?std::min<gf::u64>(now-previous,250000000):0;phase+=elapsed*60;steps=unsigned(std::min<gf::u64>(phase/1000000000ull,8));phase%=1000000000ull;}
         previous=now;
+        bool practice_step=false;
+        const auto tick_before_step=world.tick();
         if(practice_restartable){
             //These are session controls, not source movement inputs. Observe
             //their edges even when this render frame has no scheduled tick.
             const bool restart=pad.y&&!practice_restart_held;
             const bool pause=pad.start&&!practice_pause_held;
+            const bool step=snapshot.frame_step&&!practice_step_held;
             practice_restart_held=pad.y;practice_pause_held=pad.start;
+            practice_step_held=snapshot.frame_step;
             const bool practicing=!restart&&!pause&&!practice_stopped&&!world.paused();
             practice_input.sample(pad,source.practice_flick_direction(pad),practicing);
             if(restart){
@@ -785,7 +789,12 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 input_refused=false;steps=0;phase=0;
                 gf::log_info(context,"source-ground","practice %s at tick=%u",world.paused()?"paused":"resumed",world.tick());
             }
-            if(practice_stopped||world.paused())steps=0;
+            if(step&&!restart&&!pause&&!practice_stopped&&world.paused()){
+                //Run the existing source transaction once, then restore pause
+                //before presenting it. No buffered input or wall-clock catch-up.
+                if(!world.set_paused(false)){render.shutdown();return 2;}
+                practice_step=true;steps=1;phase=0;
+            }else if(practice_stopped||world.paused())steps=0;
         }
         for(unsigned i=0;i<steps;++i){
             auto input=pad;
@@ -989,6 +998,11 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                 source_previous=controls;++commands;continue;
             }
             if(!world.step({input,{}},!options.demo_locomotion,&view,nullptr,&movement)){gf::log_error(context,"battle-mvp","gameplay/terrain step failed");render.shutdown();return 2;}++commands;
+        }
+        if(practice_step&&!practice_stopped){
+            if(!world.set_paused(true)){render.shutdown();return 2;}
+            if(world.tick()!=tick_before_step)
+                gf::log_info(context,"source-ground","practice stepped to tick=%u",world.tick());
         }
         if(!practice_stopped){
             bool posed=false;

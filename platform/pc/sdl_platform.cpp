@@ -140,6 +140,7 @@ public:
         const Uint8* keys = SDL_GetKeyboardState(nullptr);
         if (keys) {
             if (keys[SDL_SCANCODE_RETURN]) keyboard.buttons |= kButtonStart;
+            snapshot_.frame_step = keys[SDL_SCANCODE_P] != 0;
             if (keys[SDL_SCANCODE_ESCAPE]) keyboard.quit = true;
             if (keys[SDL_SCANCODE_SPACE]) keyboard.buttons |= kButtonA;
             if (keys[SDL_SCANCODE_LSHIFT]) keyboard.buttons |= kButtonB;

@@ -258,10 +258,12 @@ public:
         if(source_ground_relaunch_push_)status="G-RED CONTINUED RELAUNCH PUSH / NATIVE PROXY\nRELAUNCH14-15 / ZERO698 / .9 TAIL\nNO ENTRY REPLAY / SEPARATE RELEASE AND LANDING";
         if(source_ground_relaunch_entry_push_)status="G-RED RELAUNCH ENTRY PUSH / NATIVE PROXY\nDESCENDING AFTER +15 / ZERO698 / .9 TAIL\nONE ENTRY COST / SEPARATE RELEASE AND LANDING";
         if(source_ground_windup_entry_push_)status="G-RED WIND-UP ENTRY PUSH / NATIVE PROXY\nHALF-SPEED THEN .9 / NO PRE-CONTACT MOVE\nDEFERRED HANDOFF / SEPARATE ACTIVE ENTRY";
-        if(source_practice_)status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  Q RESTART  ESC CLOSE / NO COMBAT";
+        if(source_practice_)status="G-RED MOVEMENT PRACTICE / NATIVE PROXY\nARROWS WALK  WASD FLICK DASH  SHIFT JUMP/RISE\nRELEASE THEN PRESS SHIFT TO RELAUNCH\nENTER PAUSE  P STEP WHILE PAUSED\nQ RESTART  ESC CLOSE / NO COMBAT";
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(world.result()==BattleMvpResult::GRedWins?"G-RED WINS":world.result()==BattleMvpResult::SasukeWins?"SASUKE WINS":"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+="\nPAUSED";
-        draws+=text_.draw(render,status,24,f32(height)-80,style);render.state()=state;return draws;
+        const s32 status_y=source_practice_?std::max(0,height-16-
+            s32(1+std::count(status.begin(),status.end(),'\n'))*text_.line_height(style)):height-80;
+        draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;
     }
 private:
     bool ready_=false,source_general_=false,source_interactive_=false,source_vertical_jump_=false;u32 floor_hash_=0,rendered_tick_=0;std::weak_ptr<const NativeBorgMotionScope> rendered_scope_;

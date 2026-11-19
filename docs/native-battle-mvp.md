@@ -68,6 +68,9 @@ shows `CENTER TO RECOVER` once that release is eligible. Neither a landing nor
 a dash already transitioning to recovery shows the cue.
 Pause and restart are sampled each rendered frame, even if no 60 Hz movement
 tick is due. Resuming does not catch up elapsed pause time.
+While paused, press P to attempt one movement tick with the current controls.
+Practice stays paused afterward, and holding P does not repeat. A refused
+input does not advance the tick.
 One sampled Shift tap can carry to the next movement tick if released before
 then. It is still subject to the source jump and relaunch rules. Pending taps
 do not survive pause, restart, or a stopped practice session.
