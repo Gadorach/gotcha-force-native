@@ -431,9 +431,19 @@ public:
             if(air->next_stage==2&&air->callback)dash_release_ticks=0;
             else if(air->next_stage==1&&air->timer568>=1&&air->timer568<=30)dash_release_ticks=u8(air->timer568);
         }
+        // Read only the timer sealed into this exact accepted offer. A staged
+        // next frame or generic airborne animation cannot start a HUD timer.
+        const auto& accepted=pending_->offer;
+        const auto timer=accepted.controller_timer698?accepted.controller_timer698:
+            accepted.walk_ledge?std::optional{accepted.walk_ledge->timer698}:std::nullopt;
+        const bool ledge_fall_or_landing=accepted.kind==NativeBorgMotionKind::GroundLossEntry||
+            accepted.kind==NativeBorgMotionKind::GroundLossAir||accepted.kind==NativeBorgMotionKind::GroundLossTouchdown||
+            (accepted.kind==NativeBorgMotionKind::JumpLanding&&accepted.walk_ledge);
+        std::optional<u8> ledge_timer_ticks;
+        if(timer&&(*timer>0||ledge_fall_or_landing))ledge_timer_ticks=u8(*timer);
         frame_scope_=std::shared_ptr<const NativeBorgSourcePoseScope>(
-            new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},pending_->offer.kind,
-                pending_->offer.action,pending_->offer.jump_motion&&pending_->offer.jump_motion->phase==5,dash_release_ticks}));
+            new NativeBorgSourcePoseScope(receipt,{{state_.resource.value736,air_meter_.limit},accepted.kind,
+                accepted.action,accepted.jump_motion&&accepted.jump_motion->phase==5,dash_release_ticks,ledge_timer_ticks}));
         pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}

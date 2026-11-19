@@ -59,12 +59,21 @@ public:
         if(native_borg_motion_phase(kind)==3)return "TOUCHDOWN";
         if(native_borg_motion_phase(kind)==4)return "LANDING";
         if(native_borg_motion_phase(kind)==1)return "TAKEOFF";
-        if(native_borg_motion_ground_loss(kind))return "LEDGE FALL";
+        if(kind==NativeBorgMotionKind::GroundDeparture)return "LEDGE DEPARTURE";
+        if(kind==NativeBorgMotionKind::GroundLossEntry)return "LEDGE FALL ENTRY";
+        if(kind==NativeBorgMotionKind::GroundLossAir)return "LEDGE FALL";
         if(native_borg_motion_windup_entry(kind)||native_borg_motion_windup_update(kind))return "DASH WIND-UP";
         if(native_borg_motion_active_entry(kind)||native_borg_motion_active_update(kind))return "AIR DASH";
         if(native_borg_motion_recovery(kind))return "DASH RECOVERY";
         if(native_borg_motion_relaunch(kind))return "RELAUNCH";
         return frame.ascent?"RISING":"FALLING";
+    }
+    static std::string practice_ledge_cue(const NativeBorgSourceReadout& frame){
+        if(!frame.ledge_timer_ticks)return {};
+        const auto ticks=*frame.ledge_timer_ticks;
+        if(frame.kind==NativeBorgMotionKind::GroundLossEntry||frame.kind==NativeBorgMotionKind::GroundLossAir)
+            return ticks?"DRIFT LOCKED "+std::to_string(ticks)+" TICKS":"DRIFT UNLOCKED";
+        return "LEDGE TIMER "+std::to_string(ticks)+" TICKS";
     }
     unsigned draw_practice_stop(RenderEngine& render,s32 width,s32 height,u32 tick)const{
         if(!source_practice_||width<=0||height<=0)return 0;
@@ -221,6 +230,7 @@ public:
         }
         const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;
         TextRenderer::Style style;style.scale=width>=1000?2:1;
+        s32 practice_notice_line=3;
         if(practice&&width>=200&&height>=190){
             const auto meter=practice->meter;
             std::string text="FLIGHT "+std::to_string(meter.value)+"/"+std::to_string(meter.limit);
@@ -229,11 +239,13 @@ public:
             else if(native_borg_motion_air_dash_floor(practice->kind)||native_borg_motion_relaunch_floor(practice->kind))text+=" / FLOOR SNAP";
             if(const auto ticks=practice->dash_release_ticks)
                 text+=*ticks?"\nRELEASE IN "+std::to_string(*ticks)+" TICKS":"\nCENTER TO RECOVER";
+            if(const auto cue=practice_ledge_cue(*practice);!cue.empty())text+="\n"+cue;
+            practice_notice_line=std::max(practice_notice_line,1+s32(std::count(text.begin(),text.end(),'\n')));
             draws+=text_.draw(render,text,24,68,style);
         }
         if(source_practice_&&practice_input_refused&&!world.paused()&&width>=260&&height>=248){
             auto notice=style;notice.r=255;notice.g=210;notice.b=80;
-            draws+=text_.draw(render,"INPUT REFUSED - RELEASE AND RETRY",24,68+3*text_.line_height(style),notice);
+            draws+=text_.draw(render,"INPUT REFUSED - RELEASE AND RETRY",24,68+practice_notice_line*text_.line_height(style),notice);
         }
         std::string status="G-RED VS SASUKE - NATIVE MVP / PROVISIONAL RULES\nWASD MOVE  L DASH  SHIFT JUMP  SPACE PRIMARY  E SECONDARY  Q RESTART  ENTER PAUSE";
         if(world.actors()[0].source_ground_motion)status="G-RED SOURCE GROUND-DASH LAB - SCRIPTED / NATIVE CONTACT PROXY\nENTER PAUSE  Q RESTART  ESC CLOSE - NO SOURCE WALK/JUMP/COMBAT";

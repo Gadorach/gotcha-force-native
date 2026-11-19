@@ -61,6 +61,7 @@ int main(){
         check(source.commit(world,view.source_binding(),&error)&&source.pose(world,&pose)&&view.update_source(world,pose,&error),
             "complete receipt before frame history/timer/VM/contact/resource/pose publication");
     };
+    view.source_practice_controls();
     for(unsigned index:{0u,3u}){
         const auto& r=routes[index];bind(r,NativeGRedGroundDashDemo::Mode::GroundSurface);bool refused=false;
         for(unsigned t=0;t<200&&!refused;++t){
@@ -74,11 +75,13 @@ int main(){
         }
         check(refused,"new timer-bound permission does not widen older controller");
     }
+    unsigned unlocked_in_fall=0;
     for(const auto& r:routes){
         bind(r,NativeGRedGroundDashDemo::Mode::GroundLossSurface);
         std::weak_ptr<const NativeBorgMotionProducer> producer;u32 departed=0,entered=0,touchdown=0;BattleMvpVec landed{};
         for(unsigned t=0;t<600;++t){
             const auto before=world.actors()[0];const auto retained=pose;const auto timer=source.ground_loss_timer698();
+            const auto prior_readout=view.practice_readout(world);
             const auto entries=source.ground_loss_entries(),landings=source.ground_loss_landings();NativeBorgMotionOffer offer;
             check(prepare(pad_at(t,r),&offer)&&source.ground_loss_timer698()==timer&&source.ground_loss_entries()==entries&&
                 source.ground_loss_landings()==landings&&source.resource()==10000,"frame history/countdown/contact/counters and meter remain staged");
@@ -94,8 +97,11 @@ int main(){
             auto rejects=[&](NativeBorgMotionOffer wrong,const char* why){
                 const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
                 check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==t&&world.actors()[0].position==before.position&&
-                    source.ground_loss_timer698()==timer&&source.ground_loss_landings()==landings&&!retained.frame_scope.expired()&&
-                    world.motion_receipt_current(retained.receipt),why);
+                     source.ground_loss_timer698()==timer&&source.ground_loss_landings()==landings&&!retained.frame_scope.expired()&&
+                     world.motion_receipt_current(retained.receipt),why);
+                const auto unchanged=view.practice_readout(world);
+                check(prior_readout&&unchanged&&unchanged->kind==prior_readout->kind&&
+                    unchanged->ledge_timer_ticks==prior_readout->ledge_timer_ticks,"rejected timer packet cannot change the HUD");
             };
             if(hit){
                 touchdown=t+1;landed=offer.proposed_position;const auto& e=*offer.surface_landing;
@@ -127,7 +133,30 @@ int main(){
                         "coherent45-degree plane metadata cannot borrow ordinary AC gate while timer698 is positive");
                 }
             }
+            const auto pending_readout=view.practice_readout(world);
+            check(bool(pending_readout)==bool(prior_readout)&&(!pending_readout||
+                (pending_readout->kind==prior_readout->kind&&pending_readout->ledge_timer_ticks==prior_readout->ledge_timer_ticks)),
+                "preparing a frame cannot display its timer or phase");
             accept(offer);
+            const auto shown=view.practice_readout(world);
+            check(shown&&shown->kind==offer.kind,"accepted pose and practice phase share an owner");
+            using Kind=NativeBorgMotionKind;
+            const f32 committed_timer=offer.walk_ledge->timer698;
+            const auto cue=NativeBattleMvpView::practice_ledge_cue(*shown);
+            const std::string_view phase=NativeBattleMvpView::practice_phase(*shown);
+            if(offer.kind==Kind::GroundDeparture)
+                check(!shown->ledge_timer_ticks&&phase=="LEDGE DEPARTURE"&&cue.empty(),"departure doesn't start a timer one frame early");
+            if(offer.kind==Kind::GroundLossEntry||offer.kind==Kind::GroundLossAir){
+                const bool entry=offer.kind==Kind::GroundLossEntry;
+                check(shown->ledge_timer_ticks==u8(committed_timer)&&phase==(entry?"LEDGE FALL ENTRY":"LEDGE FALL")&&
+                    cue==(committed_timer>0?"DRIFT LOCKED "+std::to_string(u8(committed_timer))+" TICKS":"DRIFT UNLOCKED"),
+                    "drift cue follows accepted entry, countdown and airborne expiry");
+                unlocked_in_fall+=committed_timer==0;
+            }
+            if(hit)check(shown->ledge_timer_ticks==u8(committed_timer)&&phase=="TOUCHDOWN"&&
+                cue=="LEDGE TIMER "+std::to_string(u8(committed_timer))+" TICKS","touchdown retains the timer but not the drift cue");
+            if(offer.kind==Kind::Ground&&!committed_timer)
+                check(!shown->ledge_timer_ticks&&cue.empty(),"ordinary ground without an active ledge timer has no cue");
             check(source.resource()==10000&&!source.surface_pushes()&&!source.air_dash_starts()&&!source.relaunches()&&!source.ordered_root().updates,
                 "walking ground loss invents no resource spending/refill/root/flight/push");
             if(hit){
@@ -145,8 +174,10 @@ int main(){
             source.selector()==0&&source.ground_loss_timer698()==0&&source.movement_programs()==std::array<u16,2>{0,0}&&
             !world.shots_spawned()&&world.actors()[0].health==100&&world.actors()[1].health==100,
             "six genuine600-update positive/zero timer, inclined/flat ground-loss routes return idle");
-        source.reject();check(pose.frame_scope.expired()&&!world.motion_receipt_current(pose.receipt),"timer-bound pose/receipt retirement");
+        source.reject();check(pose.frame_scope.expired()&&!world.motion_receipt_current(pose.receipt)&&!view.practice_readout(world),
+            "timer-bound pose, receipt and HUD retire together");
     }
+    check(unlocked_in_fall>0,"a real long fall displays the zero-timer drift cue before touchdown");
     //698 is not reset by touchdown. Neither old target4/12 evidence nor a new
     //press may authorize an unreviewed landing interruption while it persists.
     const auto& r=routes[0];bind(r,NativeGRedGroundDashDemo::Mode::GroundLossSurface);

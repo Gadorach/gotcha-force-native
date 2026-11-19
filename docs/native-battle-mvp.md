@@ -66,6 +66,15 @@ input or a guessed animation phase. For example, wind-up still displays
 During a continuing air dash, the HUD counts down to directional release and
 shows `CENTER TO RECOVER` once that release is eligible. Neither a landing nor
 a dash already transitioning to recovery shows the cue.
+
+For a ledge drop, `LEDGE DEPARTURE` precedes `LEDGE FALL ENTRY` and
+`LEDGE FALL`. The fall entry starts the accepted drift-lock countdown;
+`DRIFT LOCKED` shows its remaining ticks and `DRIFT UNLOCKED` appears if it
+expires while still falling. After touchdown the HUD can show the retained
+ledge timer, but no longer shows a drift cue. These labels report the
+accepted controller state; they do not change what inputs or contacts are
+allowed.
+
 Pause and restart are sampled each rendered frame, even if no 60 Hz movement
 tick is due. Resuming does not catch up elapsed pause time.
 While paused, press P to attempt one movement tick with the current controls.

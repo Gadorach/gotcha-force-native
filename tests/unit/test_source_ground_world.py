@@ -31,6 +31,26 @@ class SourceGroundWorldTests(unittest.TestCase):
         self.assertIn("practice-meter=10000/10000 at accepted tick=100", result.stdout)
         self.assertIn("practice-phase=IDLE", result.stdout)
 
+    def test_practice_ledge_cue_depends_on_accepted_frame(self):
+        for tick, phase, cue in (
+            (7, "WALKING", None),
+            (8, "LEDGE DEPARTURE", None),
+            (9, "LEDGE FALL ENTRY", "30 cue=DRIFT LOCKED 30 TICKS"),
+            (10, "LEDGE FALL", "29 cue=DRIFT LOCKED 29 TICKS"),
+            (23, "TOUCHDOWN", "16 cue=LEDGE TIMER 16 TICKS"),
+            (24, "LANDING", "15 cue=LEDGE TIMER 15 TICKS"),
+            (100, "IDLE", None),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-inclined-walk-ledge", "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter=10000/10000 at accepted tick={tick}", result.stdout)
+                if cue:
+                    self.assertIn(f"practice-ledge-timer-ticks={cue}\n", result.stdout)
+                else:
+                    self.assertNotIn("practice-ledge-timer-ticks=", result.stdout)
+
     def test_slope_transition_dash_demo_crosses_and_recovers(self):
         result = self.run_host(["--demo-gred-slope-transition-dash", "--headless", "--frames", "100", "--no-audio"])
         self.assertEqual(result.returncode, 0, result.stdout)

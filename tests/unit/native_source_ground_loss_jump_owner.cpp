@@ -24,6 +24,7 @@ int main(){
     headless::Render backend;RenderEngine render(backend);NativeBattleMvp world;NativeBattleMvpView view;
     NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;NativeBorgSourcePose pose;
     check(render.initialize({1152,648,false,true,"retained698 landing jump"},nullptr,&error)&&view.load(files,art,render,&error),"shared original stage/models/renderer");
+    view.source_practice_controls();
     std::vector<u8> bytes;CharacterMovementInputProfile input;
     check(files.read(pack+"/movement.gfmi",bytes)&&character_movement_input_load({bytes.data(),bytes.size()},&input,&error),"same qualified resource kernel");
     struct Route {f32 x,z,query;u8 direction;u32 first,jump,second;f32 jump_timer;};
@@ -115,6 +116,13 @@ int main(){
                 auto wrong=offer;wrong.surface_landing->timer698=expected_timer>0?0:1;rejects(wrong,"callback cannot choose another gate after role change");
             }
             accept(offer);model=expected;
+            if(offer.kind==NativeBorgMotionKind::JumpTakeoff){
+                const auto readout=view.practice_readout(world);
+                const std::optional<u8> displayed=expected_timer>0?std::optional{u8(expected_timer)}:std::nullopt;
+                check(readout&&readout->ledge_timer_ticks==displayed&&(!displayed||
+                    NativeBattleMvpView::practice_ledge_cue(*readout)=="LEDGE TIMER "+std::to_string(*displayed)+" TICKS"),
+                    "a live timer can carry into takeoff without falsely showing a fall drift cue");
+            }
             check(source.ground_loss_timer698()==expected_timer&&source.resource()==model.value736&&!source.surface_pushes()&&
                 !source.air_dash_starts()&&!source.relaunches()&&!source.ordered_root().updates,"same timer/resource kernels and no fabricated flight/root/push");
             if(offer.controller_timer698){

@@ -11,6 +11,7 @@ struct NativeBorgSourceReadout {
     BattleMvpAction action=BattleMvpAction::Idle;
     bool ascent=false;
     std::optional<u8> dash_release_ticks; //0 means ready, absent outside continuing active dash
+    std::optional<u8> ledge_timer_ticks; //0 means expired on a ledge fall/landing, absent outside its window
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
