@@ -156,6 +156,33 @@ accepted pushes, a steep candidate after timer expiry, and the earlier
 raised-side approach. Native clocks, terrain queries, body response,
 and the demo spawn are not original hardware or whole-actor equivalence.
 
+### Relaunch and air dash after four ordinary falling updates
+
+The same grounded start can use either action while timer698 is still
+positive. Both replays accept the same pushes at 24–25, then four
+ordinary falling updates at 26–29. The input on tick 30 uses the
+ordinary fall as its predecessor and decrements the timer from 10 to 9.
+Neither action can start directly from the push. No contact permission
+or asset changed.
+
+```sh
+gf_native --demo-gred-walk-ledge-timed-relaunch --headless --frames 180 --no-audio
+gf_native --demo-gred-walk-ledge-timed-air-dash --headless --frames 180 --no-audio
+```
+
+Hold **Right Arrow** on 6–8, then neutral. For the relaunch, hold
+**Shift** on 30–34: the 150 entry charge is followed by four 100-unit
+charges. Falling resumes at 35 with 9450 meter and timer 4, touchdown
+at 96, and separate landing at 97. For the air dash, flick **W** on
+30: wind-up entry is stationary and free, the 450 handoff charge
+lands on 35 with timer 4, and the separate 50 active-entry charge
+on 36 with timer 3. Falling resumes at 96 with 8000 meter, touchdown
+at 122, and landing at 123. Both reach full-meter idle. Timer698
+expires at 39 in both, without interrupting the running dash or fall.
+
+Add `--practice-start` to the corresponding live command (without
+`--demo-`) for a paused guide on the same native start. Inputs stay live.
+
 ### Steeper continued walking contact
 
 `--gred-walk-ledge-high-angle-push` preserves the same walking provenance,

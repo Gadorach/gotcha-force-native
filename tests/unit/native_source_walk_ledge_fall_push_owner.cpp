@@ -185,6 +185,94 @@ int main(){
         world.actors()[0].grounded&&world.actors()[0].position[1]==10&&!source.selector(),
         "original stage completes both pushes and the independent touchdown/landing/idle sequence");
 
+    for(const bool use_dash:{false,true}){
+        bind(complete,Mode::GroundWalkLedgeFallPush);
+        while(world.tick()<25){check(prepare(complete,&offer),"qualified positive-push prefix");accept(offer);}
+        check(offer.kind==Kind::GroundLossPush&&source.ground_loss_timer698()==14,"last push still owns a positive timer");
+        GamePadState input;if(use_dash)input.stick_y=-127;else input.b=true;
+        const auto position=world.actors()[0].position;
+        if(prepare(complete,&offer,input)){
+            const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+            check(!world.step({},false,&view,nullptr,&frame,&offer)&&world.motion_receipt_current(pose.receipt),
+                "a prepared action cannot immediately follow the positive push");
+            source.reject();
+        }
+        check(world.tick()==25&&world.actors()[0].position==position&&source.ground_loss_timer698()==14&&
+            !source.air_dash_starts()&&!source.relaunches()&&source.resource()==10000&&!world.step({},false,&view),
+            "direct action leaves the positive push unchanged and does not fall back");
+    }
+
+    NativeBorgMotionOffer shared_fall;
+    for(const bool use_dash:{false,true}){
+        bind(complete,Mode::GroundWalkLedgeFallPush);
+        NativeBorgMotionOffer prior;
+        unsigned action_entry=0,active_entry=0,ordinary_fall=0,action_touchdown=0,action_landing=0;
+        while(world.tick()<180){
+            const unsigned tick=world.tick()+1;const auto before=world.actors()[0];
+            GamePadState pad;
+            if(use_dash)pad.stick_y=tick==30?-127:0;
+            else pad.b=tick>=30&&tick<=34;
+            check(prepare(complete,&offer,pad),"timed action travels and lands under the existing walking-push policy");
+            if(tick>=26&&tick<=29){
+                check(offer.kind==Kind::GroundLossAir&&offer.walk_ledge&&offer.walk_ledge->walk_origin&&
+                    offer.walk_ledge->timer698==f32(39-tick)&&!offer.static_push&&!offer.walk_ledge->drift_heading,
+                    "four accepted ordinary falls, each with its own positive timer, follow the last push");
+                if(tick==29){
+                    if(use_dash)check(offer.proposed_position==shared_fall.proposed_position&&
+                        offer.vertical_speed==shared_fall.vertical_speed&&offer.walk_ledge==shared_fall.walk_ledge&&
+                        offer.jump_motion==shared_fall.jump_motion,"both actions start from exactly the same accepted falling state");
+                    else shared_fall=offer;
+                }
+            }
+            if(tick==30){
+                check(prior.kind==Kind::GroundLossAir&&source.ground_loss_timer698()==10&&offer.controller_timer698==9,
+                    "entry uses the next decrement of the already accepted falling timer");
+                if(use_dash)check(offer.kind==Kind::AirDashWindupEntry&&offer.air_motion&&
+                    offer.air_motion->vertical_before==f32(before.vertical_speed*.5f)&&offer.proposed_position==before.position&&
+                    offer.air_motion->resource_before==10000&&offer.air_motion->resource_after==10000,
+                    "timed wind-up halves descending speed before any motion or charge");
+                else check(offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&
+                    offer.relaunch_motion->vertical_before==f32(before.vertical_speed+15.f)&&offer.relaunch_motion->vertical_before<0&&
+                    offer.relaunch_motion->resource_before==10000&&offer.relaunch_motion->resource_after==9850,
+                    "timed relaunch applies the entry lift once and spends 150 without a timer reset");
+                ++action_entry;
+                const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);
+                auto wrong=offer;wrong.controller_timer698=0;
+                check(!world.step({},false,&view,nullptr,&frame,&wrong)&&world.tick()==29&&
+                    world.actors()[0].position==before.position&&source.resource()==10000&&
+                    source.ground_loss_timer698()==10&&world.motion_receipt_current(pose.receipt)&&
+                    view.practice_readout(world)->ledge_timer_ticks==10,
+                    "forged expiry cannot advance the motion, timer, meter or pose");
+            }
+            if(use_dash&&tick==35)check(offer.air_motion&&offer.air_motion->next_selector==16&&
+                offer.controller_timer698==4&&offer.air_motion->resource_before==10000&&offer.air_motion->resource_after==9550,
+                "wind-up handoff costs 450 while the timer is positive");
+            if(native_borg_motion_active_entry(offer.kind)){
+                active_entry=tick;
+                check(use_dash&&tick==36&&offer.controller_timer698==3&&offer.air_motion->resource_after==9500,
+                    "separate active dash entry spends 50 and retains the countdown");
+            }
+            if(tick==39)check(offer.controller_timer698==0&&offer.kind==(use_dash?Kind::AirDashActive:Kind::JumpAir),
+                "ordinary timer expiry does not interrupt the running action or the fall");
+            if(tick>30&&offer.kind==Kind::JumpAir&&!ordinary_fall)ordinary_fall=tick;
+            if(offer.kind==Kind::JumpTouchdown)action_touchdown=tick;
+            if(action_touchdown&&!action_landing&&offer.kind==Kind::JumpLanding)action_landing=tick;
+            accept(offer);
+            if(tick==30)check(view.practice_readout(world)->ledge_timer_ticks==9&&source.resource()==(use_dash?10000:9850),
+                "the retained timer and cost are visible only after the accepted action entry");
+            if(tick==ordinary_fall||tick==action_touchdown||tick==action_landing)
+                check(source.resource()==(use_dash?8000:9450),"release, touchdown and landing entry do not refill");
+            prior=offer;
+        }
+        check(action_entry==1&&source.walk_ledge_pushes()==2&&source.landings()==1&&source.resource()==10000&&
+            world.actors()[0].grounded&&!source.selector()&&
+            (use_dash?(active_entry==36&&ordinary_fall==96&&action_touchdown==122&&action_landing==123&&
+                source.air_dash_starts()==1&&!source.relaunches()):
+                (!active_entry&&ordinary_fall==35&&action_touchdown==96&&action_landing==97&&
+                !source.air_dash_starts()&&source.relaunches()==1)),
+            "both timed follow-ups finish a real landing and reach full-meter idle");
+    }
+
     const Route dash{2582.89014f,-2846.36206f,116.592773f,0};
     bind(dash,Mode::GroundWalkLedgeFallPush);
     while(world.tick()<7){

@@ -70,6 +70,8 @@ namespace {
 
 constexpr gf::f32 kProbeIdentity[12] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
 
+enum class TimedLedgeFollowup { None, Relaunch, AirDash };
+
 struct Options {
     bool headless = false;
     bool list_borgs = false;
@@ -150,6 +152,7 @@ struct Options {
     bool gred_practice_start=false;
     bool gred_walk_ledge_fall_push=false;
     bool gred_walk_ledge_high_angle_push=false;
+    TimedLedgeFollowup timed_ledge_followup=TimedLedgeFollowup::None;
     bool gred_walk_ledge_expiry_push=false;
     bool gred_walk_ledge_expiry_air_dash=false;
     bool demo_gred_walk_ledge_expiry_drift=false;
@@ -360,6 +363,8 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-inclined-walk-ledge" || arg == "--demo-gred-inclined-walk-ledge" ||
                  arg == "--gred-walk-ledge-fall-push" || arg == "--demo-gred-walk-ledge-fall-push" ||
                  arg == "--gred-walk-ledge-high-angle-push" || arg == "--demo-gred-walk-ledge-high-angle-push" ||
+                 arg == "--gred-walk-ledge-timed-relaunch" || arg == "--demo-gred-walk-ledge-timed-relaunch" ||
+                 arg == "--gred-walk-ledge-timed-air-dash" || arg == "--demo-gred-walk-ledge-timed-air-dash" ||
                  arg == "--gred-walk-ledge-expiry-push" || arg == "--demo-gred-walk-ledge-expiry-push" ||
                  arg == "--gred-walk-ledge-expiry-air-dash" || arg == "--demo-gred-walk-ledge-expiry-air-dash" ||
                  arg == "--gred-recovery-recontact" || arg == "--demo-gred-recovery-recontact" ||
@@ -405,9 +410,13 @@ bool parse(int argc, char** argv, Options* options) {
              options->gred_walk_ledge_expiry_push=options->demo_gred_walk_ledge_expiry_drift||options->demo_gred_walk_ledge_expiry_relaunch||
                  options->gred_walk_ledge_expiry_air_dash||
                 arg=="--gred-walk-ledge-expiry-push"||arg=="--demo-gred-walk-ledge-expiry-push";
-            options->gred_walk_ledge_high_angle_push=options->gred_walk_ledge_expiry_push||
-                arg=="--gred-walk-ledge-high-angle-push"||arg=="--demo-gred-walk-ledge-high-angle-push";
-            options->gred_walk_ledge_fall_push=options->gred_walk_ledge_high_angle_push||
+             options->gred_walk_ledge_high_angle_push=options->gred_walk_ledge_expiry_push||
+                 arg=="--gred-walk-ledge-high-angle-push"||arg=="--demo-gred-walk-ledge-high-angle-push";
+            options->timed_ledge_followup=
+                arg=="--gred-walk-ledge-timed-relaunch"||arg=="--demo-gred-walk-ledge-timed-relaunch"?TimedLedgeFollowup::Relaunch:
+                arg=="--gred-walk-ledge-timed-air-dash"||arg=="--demo-gred-walk-ledge-timed-air-dash"?TimedLedgeFollowup::AirDash:
+                    TimedLedgeFollowup::None;
+            options->gred_walk_ledge_fall_push=options->gred_walk_ledge_high_angle_push||options->timed_ledge_followup!=TimedLedgeFollowup::None||
                 arg=="--gred-walk-ledge-fall-push"||arg=="--demo-gred-walk-ledge-fall-push";
             options->gred_inclined_dash_ledge=options->gred_walk_ledge_fall_push||
                 arg=="--gred-inclined-dash-ledge"||arg=="--demo-gred-inclined-dash-ledge";
@@ -775,8 +784,26 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     const auto* practice=package?&practice_bytes:nullptr;
     gf::BattleMvpConfig config;
     const bool use_demo_start=!options.source_ground_interactive||options.gred_practice_start;
-    const bool guided_recovery=options.gred_practice_start&&options.source_ground_interactive&&
-        (options.gred_recovery_first_contact_seam||options.gred_recovery_completion_push);
+    const auto timed_followup=options.timed_ledge_followup;
+    struct PracticeTimingGuide {const char* hud;const char* name;const char* inputs;};
+    constexpr PracticeTimingGuide seam_guide{"RECOVERY SEAM\nSHIFT 6-39 / W 43 / RIGHT ARROW 105-109",
+        "recovery seam","Shift 6-39, W 43, Right Arrow 105-109"};
+    constexpr PracticeTimingGuide push_guide{"RECOVERY COMPLETION PUSH\nSHIFT 6-38 / W 46-72 / LEFT ARROW 111-112",
+        "recovery completion push","Shift 6-38, W 46-72, Left Arrow 111-112"};
+    constexpr PracticeTimingGuide exit_guide{"RECOVERY EXIT\nSHIFT 6-38 / W 46-72\nLEFT 111 / UP+LEFT 112",
+        "recovery completion exit","Shift 6-38, W 46-72, Left 111, Up+Left 112"};
+    constexpr PracticeTimingGuide ledge_relaunch_guide{"TIMED LEDGE RELAUNCH\nRIGHT ARROW 6-8 / SHIFT 30-34",
+        "timed ledge relaunch","Right Arrow 6-8, Shift 30-34"};
+    constexpr PracticeTimingGuide ledge_air_dash_guide{"TIMED LEDGE AIR DASH\nRIGHT ARROW 6-8 / W 30",
+        "timed ledge air dash","Right Arrow 6-8, W 30"};
+    const PracticeTimingGuide* guide=nullptr;
+    if(options.gred_practice_start&&options.source_ground_interactive){
+        if(timed_followup==TimedLedgeFollowup::Relaunch)guide=&ledge_relaunch_guide;
+        else if(timed_followup==TimedLedgeFollowup::AirDash)guide=&ledge_air_dash_guide;
+        else if(options.gred_recovery_completion_exit)guide=&exit_guide;
+        else if(options.gred_recovery_completion_push)guide=&push_guide;
+        else if(options.gred_recovery_first_contact_seam)guide=&seam_guide;
+    }
     //Explicit native demo placement at original stage473 floor triangle1297's
     //interior, not a recovered actor constructor/spawn or edited stage asset.
     if(options.source_surface&&!options.source_ground_interactive)config.spawn[0]={-619.2617f,169.4453f};
@@ -930,11 +957,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             view.source_practice_controls();
             gf::log_info(context,"source-ground","G-Red movement practice: arrows walk/steer, WASD flick dash, Shift jump/rise, release and press Shift again to relaunch; Enter pause, P step while paused, C camera, Q restart, Esc close; native proxies, no combat");
             if(options.gred_practice_start){
-                const char* hint=guided_recovery?(options.gred_recovery_completion_exit?
-                    "RECOVERY EXIT\nSHIFT 6-38 / W 46-72\nLEFT 111 / UP+LEFT 112":
-                    options.gred_recovery_completion_push?
-                    "RECOVERY COMPLETION PUSH\nSHIFT 6-38 / W 46-72 / LEFT ARROW 111-112":
-                    "RECOVERY SEAM\nSHIFT 6-39 / W 43 / RIGHT ARROW 105-109"):
+                const char* hint=guide?guide->hud:
                     options.gred_walk_ledge_expiry_air_dash?"WALK LEFT / FLICK LEFT AFTER EXPIRY PUSH":
                     options.gred_walk_ledge_expiry_push?"LEFT ARROW THEN RELEASE":
                     options.gred_walk_ledge_fall_push?"RIGHT ARROW THEN RELEASE":
@@ -957,8 +980,12 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                          "recovery recontact drift demo: jump on ticks 6-39, backward flick at 43, D-pad Up on 108-109":
                          "recovery recontact demo: ordinary native start; jump on ticks 6-39, backward flick at 43, then neutral");
              }else if(options.gred_slope_dash){
-                if(!options.source_ground_interactive)
-                     gf::log_info(context,"source-ground","%s",options.gred_walk_ledge_expiry_air_dash?
+                 if(!options.source_ground_interactive)
+                      gf::log_info(context,"source-ground","%s",timed_followup==TimedLedgeFollowup::Relaunch?
+                           "timed ledge relaunch demo: walk right, two pushes, four ordinary falling updates, then Shift on 30-34":
+                           timed_followup==TimedLedgeFollowup::AirDash?
+                           "timed ledge air dash demo: walk right, two pushes, four ordinary falling updates, then W on 30":
+                           options.gred_walk_ledge_expiry_air_dash?
                           "walk ledge expiry air-dash demo: D-pad left then neutral, one left flick after accepted tick56":options.demo_gred_walk_ledge_expiry_drift?
                           "walk ledge expiry drift demo: neutral on the expiry push, then 36 accepted D-pad up updates":options.demo_gred_walk_ledge_expiry_relaunch?
                           "walk ledge expiry relaunch demo: neutral fall at tick57, hold jump on ticks58-77, then release":options.gred_walk_ledge_expiry_push?
@@ -1126,17 +1153,13 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     }
     bool input_refused=false,practice_stopped=false;
     const bool practice_restartable=options.gred_practice&&options.source_ground_interactive;
-    auto pause_guided_recovery=[&](){
-        if(!guided_recovery)return true;
+    auto pause_guided_practice=[&](){
+        if(!guide)return true;
         if(!world.set_paused(true))return false;
-        gf::log_info(context,"source-ground",options.gred_recovery_completion_exit?
-            "recovery completion exit guide: paused at tick=%u; P steps; Shift 6-38, W 46-72, Left 111, Up+Left 112":
-            options.gred_recovery_completion_push?
-            "recovery completion push guide: paused at tick=%u; P steps; Shift 6-38, W 46-72, Left Arrow 111-112":
-            "recovery seam guide: paused at tick=%u; P steps; Shift 6-39, W 43, Right Arrow 105-109",world.tick());
+        gf::log_info(context,"source-ground","%s guide: paused at tick=%u; P steps; %s",guide->name,world.tick(),guide->inputs);
         return true;
     };
-    if(!pause_guided_recovery()){render.shutdown();return 2;}
+    if(!pause_guided_practice()){render.shutdown();return 2;}
     // Y launched from the picker. Its held key is not a second action in the
     // new session; an actual release and re-press still requests restart.
     bool practice_restart_held=picker!=nullptr,practice_pause_held=false,practice_step_held=false,practice_camera_held=false;
@@ -1173,7 +1196,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
             const bool practicing=!restart&&!pause&&!practice_stopped&&!world.paused();
             practice_input.sample(pad,source.practice_flick_direction(pad),practicing);
             if(restart){
-                if(!owned_current()||!world.start(config,&view)||!view.update(world,&error)||!bind_source()||!pause_guided_recovery()){
+                if(!owned_current()||!world.start(config,&view)||!view.update(world,&error)||!bind_source()||!pause_guided_practice()){
                     gf::log_error(context,"source-ground","practice restart refused: %s",error.c_str());
                     render.shutdown();return 2;
                 }
@@ -1227,7 +1250,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                                   device.dpad_left=options.gred_walk_ledge_expiry_push;
                                }else if(options.gred_walk_ledge_expiry_air_dash&&world.tick()==56)device.stick_x=-127;
                                else if(options.demo_gred_walk_ledge_expiry_drift&&world.tick()>=56&&world.tick()<92)device.dpad_up=true;
-                               else if(options.demo_gred_walk_ledge_expiry_relaunch&&world.tick()>=57&&world.tick()<77)device.b=true;
+                                else if(options.demo_gred_walk_ledge_expiry_relaunch&&world.tick()>=57&&world.tick()<77)device.b=true;
+                               else if(timed_followup==TimedLedgeFollowup::Relaunch&&world.tick()>=29&&world.tick()<34)device.b=true;
+                               else if(timed_followup==TimedLedgeFollowup::AirDash&&world.tick()==29)device.stick_y=-127;
                           }else if(options.gred_inclined_walk_ledge){
                               device.dpad_up=world.tick()>=5&&world.tick()<20&&!source.ground_departures();
                           }else if(options.gred_slope_dash){

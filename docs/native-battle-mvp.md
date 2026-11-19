@@ -154,6 +154,17 @@ instead so the directional controls can still browse the saved roster.
 From Standard, select the previous route twice for **Expiry Air Dash**;
 after the zero-timer push, flick left (**A** on keyboard).
 
+Two live **timed ledge** guides start from the walking ledge-push
+foothold. Both use Right Arrow on 6–8, then wait through four ordinary
+falling updates after the last push. While the ledge timer is still
+positive, hold Shift on 30–34 for relaunch or flick W on 30 for air
+dash. Direct action from the push still refuses.
+
+```sh
+gf_native --gred-walk-ledge-timed-relaunch --practice-start --no-audio
+gf_native --gred-walk-ledge-timed-air-dash --practice-start --no-audio
+```
+
 Select the next route once from Standard (**Right** in the owned picker,
 **R** in the Force browser) for **Recovery Seam**. It starts paused at
 tick 0. Press **P** to step once while holding the indicated movement
