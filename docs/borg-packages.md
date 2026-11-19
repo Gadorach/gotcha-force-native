@@ -73,6 +73,51 @@ or invalid catalogue or icon does not remove its discovery entry or count as a
 missing Borg in a save. This check validates neither 3D assets nor move logic,
 effects, battle fusion or transformations, and does not change the menus.
 
+### Extended catalogue fields
+
+`GFBORG-CATALOG 2` keeps the version 1 description, tribe, default variant and
+variant rows, and adds the catalogue identifiers found in the Borg reference.
+For example, append these declarations to a version 2 profile:
+
+```text
+collection-number=33
+combat-role=all-round
+rarity-grade=C
+crystals=2
+alternate=unresolved
+level-schedule=normal
+experience=unresolved
+display-jump=air:3
+hp=200|unresolved
+ratings=3|0|unresolved|5
+moves=unresolved
+traits=unresolved
+forms=none
+fusions=none
+acquisition=unresolved
+effects=unresolved
+variant-overrides=unresolved
+```
+
+All fields in the example are required in version 2, but may explicitly record
+missing information. `source-reference-code` (four hex digits) and
+`observed-speed-note` (display text) are optional; neither feeds simulation.
+
+| Fields | Values and boundaries |
+| --- | --- |
+| `collection-number` | A positive display ordinal or `unresolved`, not the stable Borg ID or a runtime model key. |
+| `combat-role`, `rarity-grade` | `short-range`, `long-range`, `all-round`, `speed`, `support`; and `D`, `C`, `B`, `A`, `S`, respectively. Both accept `unresolved`. Role is not tribe; grade is not a colour variant. |
+| `crystals`, `alternate` | A positive crystal count, `fusion-only`, `none` or `unresolved`; and `yes`, `no` or `unresolved` for alternate availability. Availability alone does not declare a loaded variant. |
+| `level-schedule`, `experience` | `fast`, `normal`, `slow`, or `unresolved`; `earns-xp`, `no-xp` or `unresolved`. A schedule and permission to gain XP are independent. |
+| `display-jump` | `air:N`, `air:unresolved`, `boost`, `none` or `unresolved`. This is the displayed classification, not a controller or a resource implementation. |
+| `hp`, `ratings` | HP endpoints at levels 1 and 10; DEF, SHT, ATK, SPD readout ratings. Separate values with `\|`. Each value can be `unresolved`; neither endpoints nor ratings imply live combat stats or a level curve. |
+| `moves`, `traits`, `forms`, `fusions`, `acquisition`, `effects`, `variant-overrides` | Each reserves a package-relative sidecar, `none` for intentional absence, or `unresolved`. The catalogue validator checks the path syntax only; it does not load these sidecars or admit a move, form, reward or actor. |
+
+Version 1 remains readable. Both catalogue versions use explicit per-variant
+editor icons and Force costs; version 2 does not assume all the retail colours
+are supported by the package. See the [requirements map](borg-package-requirements.md)
+for what the reserved move and relationship sidecars need to represent.
+
 ## Standalone body preview
 
 For one default variant with compatible HSD assets, add `preview=preview.txt`

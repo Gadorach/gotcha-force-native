@@ -30,6 +30,38 @@ and XP thresholds ([`ForceCatalog`](../engine/assets/force_catalog.hpp)).
 Preserve source sort order and encoded names in that adapter without requiring
 native packages to use the original font encoding or numbering.
 
+### Identifiers from the Borg reference
+
+The July 2022 Gotcha Force Wiki snapshot was audited as the source for this
+catalogue field set. All 206 numbered entries have name, image reference,
+collection number, Force cost, crystal requirement, tribe, combat role, rarity
+grade, alternate availability, level-1/level-10 HP, four displayed ratings,
+displayed jump type and a level-up schedule. A few additionally report a
+source Borg code or observed speed. [`GFBORG-CATALOG 2`](borg-packages.md)
+represents these distinctions without making the reference code a model ID or
+the displayed jump type a gameplay rule.
+
+The move entries identify B shot, B melee, charged B, X and charged X, as
+well as separate form movesets. Reserve stable move IDs linked by input,
+context and form; a button does not name a single move. For projectile and
+attack definitions, keep these identifiers independent:
+
+- **Solidity/interaction**, **penetrated target classes** (such as Borgs or
+  objects), and **explosion** with its trigger and phase. Some moves list
+  multiple values, so allow phase-specific rules rather than one flag per Borg.
+- **Ammunition applicability**, capacity at levels 1 and 10, and **refill
+  pattern** (e.g. all at once or gradually). An unknown endpoint, no ammunition
+  for a move, and unlimited stock are different. Do not derive missing values.
+- **Context, fallback and passive traits**: airborne/grounded/dash/contact
+  checks, chained/charged phases, and special actions such as copying or
+  passive damage. These attach to authored action or trait IDs, not to rarity
+  or model graphics.
+
+The catalogue reserves sidecars for moves, traits, forms, fusions, acquisition,
+effects and variant overrides. Those files' contents and runtime consumers
+remain separate work. Prose-only requirements such as encounter/unlock
+conditions are not discarded just because an infobox lacks a field.
+
 ### Variants and progression
 
 - A complete declaration resolves, per variant, its model/rig compatibility,

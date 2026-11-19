@@ -1230,6 +1230,12 @@ int main(int argc, char** argv) {
             if(const auto& icon=card.icons[i])std::printf("%ux%u\n",icon->width,icon->height);
             else std::puts("placeholder");
         }
+        if(const auto& details=card.profile.details){
+            if(details->collection_number)std::printf("collection-number=%u\n",unsigned(*details->collection_number));
+            else std::puts("collection-number=unresolved");
+            if(!details->source_reference_code.empty())std::printf("source-reference-code=%s\n",details->source_reference_code.c_str());
+            std::puts("Extended catalogue fields validated; facet references not loaded.");
+        }
         std::puts("Catalogue profile validated; model, animation, and gameplay not loaded.");
         return 0;
     }

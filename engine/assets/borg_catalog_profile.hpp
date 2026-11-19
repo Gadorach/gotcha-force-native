@@ -2,7 +2,7 @@
 #include <array>
 #include <charconv>
 #include <optional>
-#include "engine/assets/borg_package.hpp"
+#include "engine/assets/borg_catalog_details.hpp"
 #include "engine/assets/tpl.hpp"
 
 namespace gf {
@@ -17,6 +17,7 @@ struct BorgCatalogVariant {
 struct BorgCatalogProfile {
     std::string description,tribe,default_variant;
     std::vector<BorgCatalogVariant> variants;
+    std::optional<BorgCatalogDetails> details;
     const BorgCatalogVariant* find(std::string_view id)const{
         for(const auto& variant:variants)if(variant.id==id)return &variant;
         return nullptr;
@@ -36,8 +37,12 @@ inline bool borg_catalog_variant_id_valid(std::string_view id){
     return true;
 }
 inline bool borg_catalog_read_profile(std::string_view text,BorgCatalogProfile* out){
-    if(!out||text.size()>kBorgCatalogProfileBytes||borg_package_detail::line(text)!="GFBORG-CATALOG 1")return false;
+    if(!out||text.size()>kBorgCatalogProfileBytes)return false;
+    const auto header=borg_package_detail::line(text);
+    const bool extended=header=="GFBORG-CATALOG 2";
+    if(!extended&&header!="GFBORG-CATALOG 1")return false;
     BorgCatalogProfile next;
+    borg_catalog_detail::DetailsReader details;
     while(!text.empty()){
         const auto row=borg_package_detail::line(text);
         if(row.empty()||row.starts_with('#'))continue;
@@ -65,11 +70,16 @@ inline bool borg_catalog_read_profile(std::string_view text,BorgCatalogProfile* 
             continue;
         }
         auto* target=key=="description"?&next.description:key=="tribe"?&next.tribe:key=="default-variant"?&next.default_variant:nullptr;
-        if(!target||!target->empty()||!(key=="description"?display_name_valid(value,512):
+        if(!target){
+            if(!extended||!details.add(key,value))return false;
+            continue;
+        }
+        if(!target->empty()||!(key=="description"?display_name_valid(value,512):
             key=="tribe"?(value=="none"||borg_package_id_valid(value)):borg_catalog_variant_id_valid(value)))return false;
         *target=value;
     }
-    if(next.description.empty()||next.tribe.empty()||!next.find(next.default_variant))return false;
+    if(next.description.empty()||next.tribe.empty()||!next.find(next.default_variant)||
+       (extended&&!details.finish(&next.details)))return false;
     *out=std::move(next);return true;
 }
 
