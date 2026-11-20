@@ -193,6 +193,18 @@ continuation, then trace each Borg's X Fly and any class-owned refill-inhibit
 writers separately. There is no general hover-height rule or new gameplay
 admission.
 
+The detached `normal_type2_glide` component shares only the reviewed
+normal Wing Soldier/Quick Valkrie scalar paths. It proposes the fall/glide
+selector suffix and keeps the frame scalars, pre-selection meter refill,
+floor callback, and phase-zero landing flags separate. Floor input must
+declare a qualified static snap or an ordinary no-response return; it
+does not generate a floor or accept a side approach. The floor tail
+consumes the supplied continuation, not a landing guessed from height.
+The native comparison matched **420 bounded source-fragment cases**:
+128 selector requests, 24 frame-scalar steps, 192 refill visits, 64 floor
+tails and 12 landing prefixes across the two exact models. Neither
+character gains admission, shared clips or a shared X Fly action.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
