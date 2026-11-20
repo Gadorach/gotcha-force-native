@@ -1142,6 +1142,26 @@ overlaps, determine whether a token is a duplicate, apply the reaction,
 write HP, or prove that a beam pierces a body. The current duel does
 not use it.
 
+### Argument 43: ordinary amount and HP proposal
+
+For the same declared normal pair, the `3CD5C` amount starts at
+attacking row 0's **20**, then applies the beam's relative `C4`, source
+table factors, and the receiver's scale. The checked matchup table
+entry is 1; the other factors must be supplied explicitly. Binding 2's
+mask or the ordinary `1DA & 2` branch picks zero before those reads.
+This does not define a universal hit amount for G-Red.
+
+All **384** bounded source amount and writer comparisons matched.
+In one declared normal fixture (HP samples 200/180, unit scales,
+zero difficulty/rank/tier indices, and force ratios `0/100`), the
+resolved amount was **19**, proposing Sasuke HP `180 -> 161`.
+
+`3D344` is a separate writer. In the checked ordinary case it records
+the prior HP and clamps subtraction at zero. A held scene or already
+zero HP skips the write, even if the amount was computed. This is a
+detached numeric proposal: live table selection, collider admission,
+credit statistics, reactions and KO dispatch are not joined.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
