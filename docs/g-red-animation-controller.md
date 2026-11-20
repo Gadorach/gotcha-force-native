@@ -394,6 +394,40 @@ python3 -B -m tools.analyze.gred_body_contact COLLIDER_TRACE COMPARISON_JSON NOR
     --stage-owner 18 --descriptor 86
 ```
 
+#### Original sphere–box one-face proposal
+
+The source solid dispatcher `30420` selects `32FF8` for shapes
+0/1; the reversed 1/0 table entry swaps the inputs first. The
+leaf reads six signed clearances for the current sphere center
+and six for the previous center against the **previous** box
+planes. For each face, it requires current clearance at or below
+the radius, previous clearance at or above zero, and the four
+adjacent clearances at or below the radius. It does not check the
+opposite plane in that face's adjacency test.
+
+One qualifying face sends its current normal and **current
+clearance minus radius** to `358F4`, including zero separation
+at radius equality. `solid_sphere_box_face` recovers that proposal
+and the proven no-contact case. Multiple faces and the remaining
+inside-box fallback refuse rather than reporting an invented
+miss. The input requires both preprocessed box snapshots; it is
+not a continuous sweep.
+
+A bounded read-only run of the qualified DOL's branch loop on
+4,096 synthetic clearance pairs matched the native helper:
+798 one-face proposals, 1,957 clears and 1,341 deferred cases.
+The run stopped before actor displacement or any other
+response branch. It did not execute the original plane
+preprocessing, register actors, or reproduce a game frame.
+
+The `358F4` response still owns normalization, actor selection,
+and displacement. Its nonzero-normal path applies a minimum
+separation magnitude of `0.002` (zero uses the negative sign)
+before the weight-based split, so the zero proposal is not proof
+of no later motion. This proposal is not wired into gameplay.
+It does not address the bone-15 **capsule** against flagged box 86
+or change the raised-side refusal.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
