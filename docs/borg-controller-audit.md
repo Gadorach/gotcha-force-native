@@ -1181,10 +1181,33 @@ c++ -std=c++20 -O1 -I . tests/host/gred_sasuke_damage_replay.cpp -o "$work/damag
 "$work/damage-replay" "$work/ordinary.gfda"
 ```
 
-The 600-byte profile stays local. The fixture still declares the
-ordered pair and scalar inputs; it reproduces `180 -> 161` without
-detecting an overlap or writing live HP. **1,178** comparisons matched
-the exact coefficient reads and bounded original HP fragments.
+The 600-byte profile stays local. **1,178** comparisons matched the
+exact coefficient reads and bounded original HP fragments. The
+current fixture also checks the fresh-sphere geometry described below;
+it still does not write live HP.
+
+### Argument 43: fresh sphere overlap on Sasuke body 9
+
+The detached check follows the exact `2DB58` list pairing (`477C`
+attacks into `417C` receivers). It checks the ordinary receiver flag,
+then `2FD7C`'s repeat-token scan of **all 48** entries before receiver
+mode-2 suppression. The token history is not bounded by its write
+cursor. This is one declared pair, not a scene list traversal.
+
+For the exact first-phase kind-0 spheres, `39F6C` rejects broad
+radii `<= 0.1`, and tangency is inclusive. `30500` reports the point
+on the **receiver's** sphere in the beam's direction from its center;
+coincident centers keep the receiver center. **442** bounded source
+comparisons matched the gates and point with host vector math.
+
+The headless table replay now computes the detached overlap at
+`(22,0,0)` and then proposes `180 -> 161`. A one-unit gap and a
+repeated token do not reach the receiver proposal. Sphere centers
+and list memberships are still declared fixture inputs, not current
+scene leases. A moving flag-1 beam can switch to kind 2 after travel
+greater than `0.5`; this entry refuses that shape rather than
+approximating it as another sphere. No live hit, HP write, or
+reaction is connected.
 
 ## Sasuke: original neutral B and paid repeat
 

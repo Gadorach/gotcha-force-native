@@ -1,9 +1,10 @@
-// Source-table arithmetic bench only. The ordered pair and scalar fields
-// are declared fixture inputs, not a collision, a live actor, or an HP write.
+// Source tables and a fresh-sphere bench. Neither the spheres, lists nor
+// scalar inputs are live actor observations or license an HP write.
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_damage_tables.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_fresh_pair.hpp"
 
 int main(int argc,char** argv){
     using namespace gf;
@@ -23,11 +24,23 @@ int main(int argc,char** argv){
 
     constexpr NormalGRedNeutralBSource red{0x0615,0,0};
     constexpr GRedBeamShapeOperands beam{{4,48,49,26,0,false},0,15,0,0,true,0,-2,20};
-    GRedBeamSasukeContactInput ordered;
-    ordered.admitted_pair_declared=true;ordered.receiver_model=10;ordered.receiver_slot=ordered.receiver_credit_slot=1;
+    GRedSasukeFreshPairInput pair;
+    auto& ordered=pair.contact_fields;
+    ordered.receiver_model=10;ordered.receiver_slot=ordered.receiver_credit_slot=1;
     ordered.receiver_descriptor=9;ordered.receiver_hit_row=0;ordered.beam_token26c=1;
-    GRedBeamSasukeContactPrefix contact;
-    if(!normal_gred_beam_sasuke_contact_prefix(red,beam,ordered,&contact))return 1;
+    pair.opposing_direct_scope_declared=pair.lists_declared=true;
+    pair.attack_list.lists=1u<<unsigned(CollisionRegistrationList::L477C);
+    pair.receiver_list.lists=1u<<unsigned(CollisionRegistrationList::L417C);
+    // Declared first-phase spheres at unit scale, with the exact local
+    // radius operands; not a moving beam or the retail actor's live pose.
+    pair.beam={true,1,0,{42,0,0},20,20};pair.body={true,1,0,{},22,22};
+    GRedSasukeFreshPairPlan overlap,other;
+    if(!normal_gred_beam_sasuke_fresh_pair(red,beam,pair,&overlap)||overlap.route!=GRedSasukeFreshPairRoute::Overlap||
+       overlap.point!=std::array<f32,3>{22,0,0})return 1;
+    pair.beam.center64[0]=43;
+    if(!normal_gred_beam_sasuke_fresh_pair(red,beam,pair,&other)||other.route!=GRedSasukeFreshPairRoute::BroadMiss)return 1;
+    pair.beam.center64[0]=42;ordered.receiver_tokens20c=overlap.prefix.receiver_tokens20c;
+    if(!normal_gred_beam_sasuke_fresh_pair(red,beam,pair,&other)||other.route!=GRedSasukeFreshPairRoute::RepeatToken)return 1;
     GRedBeamSasukeTableSample sample;
     sample.declared=true;sample.credit_slot=0;sample.receiver_slot=1;
     sample.credit_level=sample.receiver_level=sample.context32=sample.credit_team88=0;sample.receiver_team88=1;
@@ -38,11 +51,11 @@ int main(int argc,char** argv){
     in.reviewed_ordinary=true;in.receiver_slot=1;in.beam_relative_c4=in.receiver_b4=1;
     in.current1c6=in.max1c4=180;in.previous1c8=29;
     GRedBeamSasukeHealthPlan plan;
-    if(!normal_gred_beam_sasuke_health_from_tables(red,contact,in,sample,table,&plan)||
+    if(!normal_gred_beam_sasuke_health_from_tables(red,overlap.prefix,in,sample,table,&plan)||
        plan.amount!=19||!plan.write_health||plan.current1c6!=161||plan.previous1c8!=180||plan.reaches_zero){
         std::fputs("ordinary source table fixture differed\n",stderr);return 1;
     }
     std::printf("declared level-zero 0615/0 -> 000A/0: source-table amount %d, proposed HP %d -> %d\n",
         int(plan.amount),int(plan.previous1c8),int(plan.current1c6));
-    std::puts("No overlap was detected and no live HP was written.");
+    std::puts("Fresh sphere fixture: tangency at (22,0,0); one-unit gap and repeated token refused. No live HP was written.");
 }

@@ -24,18 +24,23 @@ struct GRedBeamSasukeContactPrefix {
 };
 
 // Exact normal 0615/0 arg-43 row 0 -> normal 000A/0 body 9/row 0.
+inline bool normal_gred_beam_sasuke_pair_scope(NormalGRedNeutralBSource source,const GRedBeamShapeOperands& attack,
+                                               const GRedBeamSasukeContactInput& in){
+    return source.reviewed()&&attack.call==GRedBeamPoolCall{4,48,u8(49+source.slot),26,0,false}&&
+        !attack.attack_group&&attack.descriptor==15&&!attack.hit_row&&attack.credited_slot==source.slot&&
+        attack.beam_transform114&&!attack.start&&attack.end==-2&&attack.local_radius==20.f&&
+        in.receiver_model==0x000a&&!in.receiver_variant&&in.receiver_slot<6&&in.receiver_slot!=source.slot&&
+        in.receiver_credit_slot==in.receiver_slot&&in.receiver_descriptor==9&&!in.receiver_hit_row&&
+        in.beam_token26c&&in.receiver_index26e<in.receiver_tokens20c.size();
+}
+
 // 2E56C..2E6C0 prefix only, after accepting this ordered collider pair.
 // No aim target input, HP write, duplicate-hit admission or live owner
 // publication. The caller must qualify the actual pair and bank identities.
 inline bool normal_gred_beam_sasuke_contact_prefix(NormalGRedNeutralBSource source,const GRedBeamShapeOperands& attack,
                                                    const GRedBeamSasukeContactInput& in,GRedBeamSasukeContactPrefix* out){
-    if(!out||!source.reviewed()||attack.call!=GRedBeamPoolCall{4,48,u8(49+source.slot),26,0,false}||
-       attack.attack_group||attack.descriptor!=15||attack.hit_row||attack.credited_slot!=source.slot||
-       !attack.beam_transform114||attack.start||attack.end!=-2||attack.local_radius!=20.f||
-       !in.admitted_pair_declared||in.receiver_model!=0x000a||in.receiver_variant||
-       in.receiver_slot>=6||in.receiver_slot==source.slot||in.receiver_credit_slot!=in.receiver_slot||
-       in.receiver_descriptor!=9||in.receiver_hit_row||!in.beam_token26c||
-       in.receiver_index26e>=in.receiver_tokens20c.size()||!source_intersection_detail::valid(in.contact_vector))return false;
+    if(!out||!in.admitted_pair_declared||!normal_gred_beam_sasuke_pair_scope(source,attack,in)||
+       !source_intersection_detail::valid(in.contact_vector))return false;
 
     GRedBeamSasukeContactPrefix next;
     next.beam_receiver290=next.credit_receiver290=in.receiver_slot;
