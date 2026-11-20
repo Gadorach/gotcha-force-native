@@ -343,6 +343,16 @@ full state transfer, actor/collider rebinding, interruption before commit,
 or the actual retail Tank projectile. Verify both directions and the
 flagged return independently; do not reuse the result for Proto Titan.
 
+The detached Titan planner takes the conditioned X request, observed class
+and floor return, and actual staged model/completion as separate inputs.
+The flag-return prefix is separate from the X completion gate. Titan and
+Gold Hero share only the scalar rebind prefix (target model, retained
+variant and wrapping revision byte), not class actions, stock, pose clocks
+or transfer rules. The native comparison matched **134 bounded cases**:
+48 input leaves, four preparations, 64 cyclic rebind prefixes, 16
+flag checks and two form-data observations. It does not enact the
+unresolved state-1 return, rebind a live actor or admit retail Titan Tank.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

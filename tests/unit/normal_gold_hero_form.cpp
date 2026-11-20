@@ -43,14 +43,14 @@ int main(){
     check(normal_gold_hero_setup_action(base,request,{2,1,2,true,true},&action)&&action==A::SetUp,"observed one-charge debit queues setup");
 
     GoldHeroRebindPlan rebind;
-    check(normal_gold_hero_rebind(base,action,0,7,&rebind)&&!rebind.requested,"setup without lower completion cannot change model");
-    check(normal_gold_hero_rebind(base,action,1,7,&rebind)&&rebind.requested&&rebind.target_model==S::transformed&&
-        rebind.selected_variant==0&&rebind.next_revision3f0==8&&rebind.target_traits==GoldHeroFormTraits{432,0,4},
+    check(normal_gold_hero_rebind(base,action,0,7,&rebind)&&!rebind.binding.requested,"setup without lower completion cannot change model");
+    check(normal_gold_hero_rebind(base,action,1,7,&rebind)&&rebind.binding==ModelFormRebindPrefix{true,S::transformed,0,8}&&
+        rebind.target_traits==GoldHeroFormTraits{432,0,4},
         "completed lower lane requests in-place resource rebind");
     const auto entered=rebind;
     check(!normal_gold_hero_rebind(base,A::Return,1,7,&rebind)&&rebind==entered,"return cannot be invoked from base");
     check(!normal_gold_hero_rebind({S::base,1},A::SetUp,1,7,&rebind)&&rebind==entered,"edited or alternate bindings cannot borrow the plan");
-    check(normal_gold_hero_rebind(base,A::SetUp,128,255,&rebind)&&rebind.requested&&rebind.next_revision3f0==0,
+    check(normal_gold_hero_rebind(base,A::SetUp,128,255,&rebind)&&rebind.binding==ModelFormRebindPrefix{true,S::transformed,0,0},
         "any nonzero observed completion qualifies this leaf; raw byte is not an actor generation");
 
     GoldHeroExpiryStep expiry;
@@ -59,8 +59,8 @@ int main(){
     check(normal_gold_hero_expiry_step(form,1,0x1000,&expiry)&&expiry==GoldHeroExpiryStep{-1,A::None},"blocked last tick defers");
     check(normal_gold_hero_expiry_step(form,expiry.ticks144,1,&expiry)&&expiry==GoldHeroExpiryStep{-1,A::None},"blocked retry preserves sentinel");
     check(normal_gold_hero_expiry_step(form,expiry.ticks144,0,&expiry)&&expiry==GoldHeroExpiryStep{0,A::Return},"unblocked retry queues return");
-    check(normal_gold_hero_rebind(form,expiry.action,0,33,&rebind)&&rebind.requested&&rebind.target_model==S::base&&
-        rebind.next_revision3f0==34&&rebind.target_traits==GoldHeroFormTraits{0,1,2},
+    check(normal_gold_hero_rebind(form,expiry.action,0,33,&rebind)&&rebind.binding==ModelFormRebindPrefix{true,S::base,0,34}&&
+        rebind.target_traits==GoldHeroFormTraits{0,1,2},
         "accepted return leaf does not use the entry's lower-completion gate");
     check(!normal_gold_hero_expiry_step(base,1,0,&expiry)&&!normal_gold_hero_expiry_step(form,-2,0,&expiry)&&
         expiry==GoldHeroExpiryStep{0,A::Return},"wrong form or unreviewed negative counter cannot publish");

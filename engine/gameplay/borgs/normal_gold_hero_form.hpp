@@ -1,5 +1,5 @@
 #pragma once
-#include "engine/core/types.hpp"
+#include "engine/gameplay/model_form_rebind.hpp"
 
 namespace gf {
 // 0803 is a runtime form of the same retail selection, never a package or
@@ -83,9 +83,7 @@ inline bool normal_gold_hero_expiry_step(NormalGoldHeroSource source,s32 ticks14
 }
 
 struct GoldHeroRebindPlan {
-    bool requested=false;
-    u16 target_model=0;
-    u8 selected_variant=0,next_revision3f0=0;
+    ModelFormRebindPrefix binding;
     GoldHeroFormTraits target_traits;
     bool operator==(const GoldHeroRebindPlan&)const=default;
 };
@@ -98,14 +96,13 @@ inline bool normal_gold_hero_rebind(NormalGoldHeroSource source,GoldHeroFormActi
     if(!out)return false;
     using S=NormalGoldHeroSource;
     GoldHeroRebindPlan next;
+    u16 target_model=0;
     if(source.is_base()&&current_action==GoldHeroFormAction::SetUp){
-        if(lower_complete1cee)next.target_model=S::transformed;
-    }else if(source.is_transformed()&&current_action==GoldHeroFormAction::Return)next.target_model=S::base;
+        if(lower_complete1cee)target_model=S::transformed;
+    }else if(source.is_transformed()&&current_action==GoldHeroFormAction::Return)target_model=S::base;
     else return false;
-    if(next.target_model){
-        next.requested=true;next.selected_variant=source.variant;next.next_revision3f0=u8(revision3f0+1u);
-        if(!normal_gold_hero_form_traits({next.target_model,source.variant},&next.target_traits))return false;
-    }
+    next.binding=model_form_rebind_prefix(target_model,source.variant,revision3f0);
+    if(next.binding.requested&&!normal_gold_hero_form_traits({target_model,source.variant},&next.target_traits))return false;
     *out=next;return true;
 }
 }
