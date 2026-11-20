@@ -129,12 +129,13 @@ The thirteenth and fourteenth are **Relaunch on Expiry** and **Entry
 Push on Expiry**, both on the 1 → 0 timer step. The fifteenth through
 seventeenth are
 **Adjacent Entry Push**, **Air Dash on Expiry**, **Expiry Wind-up
-Relaunch**. The eighteenth and nineteenth are **Timed Down-Drift Push**
-and **Expiry Drift Push**, followed by **Inclined Ledge Relaunch** and
-**Three Timed Release Pushes** (18, 17, 16 and 15 presses of **Left** in
-that order). Next come **Expiry Wind-up Snap**, **Expiry Snap Relaunch**,
-and **Diagonal Expiry Relaunch**, still 14, 13 and 12 presses of **Left**.
-The twenty-fifth and twenty-sixth are **Timed Release Push** and
+Relaunch**. The eighteenth is **Rising Wind-up Relaunch** (19 presses of
+**Left**). Next are **Timed Down-Drift Push**, **Expiry Drift Push**,
+**Inclined Ledge Relaunch**, and **Three Timed Release Pushes** (18, 17,
+16 and 15 presses of **Left** in that order). Next come **Expiry
+Wind-up Snap**, **Expiry Snap Relaunch**, and **Diagonal Expiry
+Relaunch**, still 14, 13 and 12 presses of **Left**.
+The twenty-sixth and twenty-seventh are **Timed Release Push** and
 **Two Timed Release Pushes**, reachable with 11 or 10 presses of **Left**.
 These routes start paused with a
 [single-step guide](native-battle-mvp.md#try-a-demo-route-with-your-own-inputs).
@@ -792,12 +793,13 @@ The thirteenth and fourteenth reach **Relaunch on Expiry** and **Entry
 Push on Expiry**, both on the 1 → 0 timer step. The fifteenth through
 seventeenth reach
 **Adjacent Entry Push**, **Air Dash on Expiry**, **Expiry Wind-up
-Relaunch**. The eighteenth and nineteenth reach **Timed Down-Drift Push**
-and **Expiry Drift Push**, followed by **Inclined Ledge Relaunch** and
-**Three Timed Release Pushes** (18, 17, 16 and 15 presses of **L** in
-that order). Next come **Expiry Wind-up Snap**, **Expiry Snap Relaunch**,
-and **Diagonal Expiry Relaunch**, still 14, 13 and 12 presses of **L**.
-The twenty-fifth and twenty-sixth reach **Timed Release Push** and
+Relaunch**. The eighteenth reaches **Rising Wind-up Relaunch** (19 presses of
+**L**). Next are **Timed Down-Drift Push**, **Expiry Drift Push**,
+**Inclined Ledge Relaunch**, and **Three Timed Release Pushes** (18, 17,
+16 and 15 presses of **L** in that order). Next come **Expiry
+Wind-up Snap**, **Expiry Snap Relaunch**, and **Diagonal Expiry
+Relaunch**, still 14, 13 and 12 presses of **L**.
+The twenty-sixth and twenty-seventh reach **Timed Release Push** and
 **Two Timed Release Pushes**, reachable with 11 or 10 presses of **L**.
 For **Expiry Handoff** or **Timed Handoff**, press **L** three or four
 times, respectively.

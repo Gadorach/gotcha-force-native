@@ -19,7 +19,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     OwnedExpiryStep,ForceExpiryStep,OwnedDirectTimed,ForceDirectTimed,OwnedDirectTimedUp,ForceDirectTimedUp,
     OwnedActiveSnap,ForceActiveSnap,OwnedExpiringDirect,ForceExpiringDirect,OwnedExpiringEntryPush,ForceExpiringEntryPush,
     OwnedAdjacentEntryPush,ForceAdjacentEntryPush,OwnedExpiringAirDash,ForceExpiringAirDash,OwnedExpiringDashRelaunch,ForceExpiringDashRelaunch,
-    OwnedTimedDownDrift,ForceTimedDownDrift,OwnedExpiryDrift,ForceExpiryDrift,
+    OwnedRisingWindup,ForceRisingWindup,OwnedTimedDownDrift,ForceTimedDownDrift,OwnedExpiryDrift,ForceExpiryDrift,
     OwnedInclinedLedgeRelaunch,ForceInclinedLedgeRelaunch,OwnedTimedReleaseThreePushes,ForceTimedReleaseThreePushes,
     OwnedExpiringSnap,ForceExpiringSnap,OwnedExpiringSnapRelaunch,ForceExpiringSnapRelaunch,
     OwnedExpiringShortRelaunch,ForceExpiringShortRelaunch,
@@ -27,7 +27,8 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
 
 enum class TimedPickerInputs {PositiveFloor,ExpiredFloor,SnapDash,ExpiryStep,DirectTimed,DirectTimedUp,ActiveSnap,
     ExpiringDirect,ExpiringEntryPush,AdjacentEntryPush,ExpiringAirDash,ExpiringDashRelaunch,ExpiringShortRelaunch,
-    ExpiringSnap,ExpiringSnapRelaunch,InclinedLedgeRelaunch,ReleasePush,ReleaseTwoPushes,ReleaseThreePushes,TimedDownDrift,ExpiryDrift};
+    ExpiringSnap,ExpiringSnapRelaunch,InclinedLedgeRelaunch,ReleasePush,ReleaseTwoPushes,ReleaseThreePushes,TimedDownDrift,ExpiryDrift,
+    RisingWindupTap,RisingWindupDash};
 struct TimedPickerReplay {
     Replay sequence;
     TimedPickerInputs inputs;
@@ -69,66 +70,70 @@ constexpr TimedPickerReplay timed_picker_replays[]{
         "accepted native tick=150 G-Red-position=-3539.49/10.00/-3042.58","direct-timed-relaunches=1 air-dash-starts=0 floors=0 timer698=0.0"},
     {Replay::OwnedActiveSnap,TimedPickerInputs::ActiveSnap,true,12,33,"ACTIVE SNAP RELAUNCH","active snap relaunch",
         "practice-meter=9200/10000 at accepted tick=33","practice-active-snap-relaunch=AIRBORNE / ACTIVE DASH TO RELAUNCH"},
-    {Replay::ForceActiveSnap,TimedPickerInputs::ActiveSnap,false,24,110,"ACTIVE SNAP RELAUNCH","active snap relaunch",
+    {Replay::ForceActiveSnap,TimedPickerInputs::ActiveSnap,false,25,110,"ACTIVE SNAP RELAUNCH","active snap relaunch",
          "accepted native tick=110 G-Red-position=2490.76/10.00/-1941.56","active-floors=1",true},
     {Replay::OwnedExpiringDirect,TimedPickerInputs::ExpiringDirect,true,13,38,"RELAUNCH ON EXPIRY","direct relaunch on expiry",
          "practice-meter=9850/10000 at accepted tick=38","practice-direct-expiring-relaunch=AIRBORNE / RELAUNCH ON EXPIRY"},
-    {Replay::ForceExpiringDirect,TimedPickerInputs::ExpiringDirect,false,23,125,"RELAUNCH ON EXPIRY","direct relaunch on expiry",
+    {Replay::ForceExpiringDirect,TimedPickerInputs::ExpiringDirect,false,24,125,"RELAUNCH ON EXPIRY","direct relaunch on expiry",
          "accepted native tick=125 G-Red-position=-755.24/10.00/-3150.42",
          "direct-expiring-relaunches=1 air-dash-starts=0 floors=0 entry-pushes=0 timer698=0.0",true},
-    {Replay::OwnedExpiringEntryPush,TimedPickerInputs::ExpiringEntryPush,true,22,56,"ENTRY PUSH ON EXPIRY","relaunch entry push on expiry",
+    {Replay::OwnedExpiringEntryPush,TimedPickerInputs::ExpiringEntryPush,true,23,56,"ENTRY PUSH ON EXPIRY","relaunch entry push on expiry",
          "practice-meter=9850/10000 at accepted tick=56","practice-direct-expiring-entry-push=AIRBORNE / RELAUNCH ENTRY PUSH ON EXPIRY",true},
     {Replay::ForceExpiringEntryPush,TimedPickerInputs::ExpiringEntryPush,false,14,145,"ENTRY PUSH ON EXPIRY","relaunch entry push on expiry",
          "accepted native tick=145 G-Red-position=-419.40/10.00/-3301.88",
          "direct-expiring-push-relaunches=1 air-dash-starts=0 floors=0 entry-pushes=1 relaunch-fall-pushes=0 timer698=0.0"},
     {Replay::OwnedAdjacentEntryPush,TimedPickerInputs::AdjacentEntryPush,true,15,56,"ADJACENT ENTRY PUSH","adjacent entry push on expiry",
         "accepted native tick=56 G-Red-position=-771.56/1404.49/-3368.72","practice-direct-expiring-entry-push=AIRBORNE / RELAUNCH ENTRY PUSH ON EXPIRY"},
-    {Replay::ForceAdjacentEntryPush,TimedPickerInputs::AdjacentEntryPush,false,21,145,"ADJACENT ENTRY PUSH","adjacent entry push on expiry",
+    {Replay::ForceAdjacentEntryPush,TimedPickerInputs::AdjacentEntryPush,false,22,145,"ADJACENT ENTRY PUSH","adjacent entry push on expiry",
         "accepted native tick=145 G-Red-position=-419.40/10.00/-3302.19",
         "direct-expiring-push-relaunches=1 air-dash-starts=0 floors=0 entry-pushes=1 relaunch-fall-pushes=0 timer698=0.0",true},
-    {Replay::OwnedExpiringAirDash,TimedPickerInputs::ExpiringAirDash,true,20,38,"AIR DASH ON EXPIRY","air dash on expiry",
+    {Replay::OwnedExpiringAirDash,TimedPickerInputs::ExpiringAirDash,true,21,38,"AIR DASH ON EXPIRY","air dash on expiry",
         "practice-meter=10000/10000 at accepted tick=38","practice-expiring-walk-air-dash=AIRBORNE / DASH WIND-UP ON EXPIRY",true},
     {Replay::ForceExpiringAirDash,TimedPickerInputs::ExpiringAirDash,false,16,175,"AIR DASH ON EXPIRY","air dash on expiry",
         "accepted native tick=175 G-Red-position=1296.58/10.00/-3473.49","windup-pushes=2 active-frames=31 relaunches=0 timer698=0.0"},
     {Replay::OwnedExpiringDashRelaunch,TimedPickerInputs::ExpiringDashRelaunch,true,17,44,"EXPIRY WIND-UP RELAUNCH","expiry-step wind-up relaunch",
         "practice-meter=9550/10000 at accepted tick=44","practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH"},
-    {Replay::ForceExpiringDashRelaunch,TimedPickerInputs::ExpiringDashRelaunch,false,19,145,"EXPIRY WIND-UP RELAUNCH","expiry-step wind-up relaunch",
-        "accepted native tick=145 G-Red-position=-736.86/10.00/-3446.59","windup-pushes=2 active-frames=0 relaunches=1 timer698=0.0",true},
-    {Replay::OwnedTimedDownDrift,TimedPickerInputs::TimedDownDrift,true,18,37,"TIMED DOWN-DRIFT PUSH","timed Down-drift push",
+    {Replay::ForceExpiringDashRelaunch,TimedPickerInputs::ExpiringDashRelaunch,false,20,145,"EXPIRY WIND-UP RELAUNCH","expiry-step wind-up relaunch",
+         "accepted native tick=145 G-Red-position=-736.86/10.00/-3446.59","windup-pushes=2 active-frames=0 relaunches=1 timer698=0.0",true},
+    {Replay::OwnedRisingWindup,TimedPickerInputs::RisingWindupTap,true,19,53,"RISING WIND-UP RELAUNCH","rising wind-up relaunch",
+        "practice-meter=8600/10000 at accepted tick=53","relaunch-fall-pushes=5 relaunches=3 timer698=0.0 landings=0",true},
+    {Replay::ForceRisingWindup,TimedPickerInputs::RisingWindupDash,false,18,190,"RISING WIND-UP RELAUNCH","rising wind-up relaunch",
+        "accepted native tick=190 G-Red-position=-2499.58/10.00/-1420.30","relaunch-fall-pushes=5 relaunches=2 timer698=0.0 landings=1"},
+    {Replay::OwnedTimedDownDrift,TimedPickerInputs::TimedDownDrift,true,19,37,"TIMED DOWN-DRIFT PUSH","timed Down-drift push",
         "practice-meter=9850/10000 at accepted tick=37","practice-timed-release-push=AIRBORNE / TIMED DOWN-DRIFT PUSH"},
     {Replay::ForceTimedDownDrift,TimedPickerInputs::TimedDownDrift,false,18,145,"TIMED DOWN-DRIFT PUSH","timed Down-drift push",
         "accepted native tick=145 G-Red-position=-3700.26/10.00/-3253.91","relaunch-fall-pushes=4 relaunches=1 timer698=0.0 landings=1",true},
     {Replay::OwnedExpiryDrift,TimedPickerInputs::ExpiryDrift,true,17,38,"EXPIRY DRIFT PUSH","expiry drift push",
         "practice-meter=9850/10000 at accepted tick=38","relaunch-fall-pushes=5 relaunches=1 timer698=0.0 landings=0",true},
-    {Replay::ForceExpiryDrift,TimedPickerInputs::ExpiryDrift,false,19,145,"EXPIRY DRIFT PUSH","expiry drift push",
+    {Replay::ForceExpiryDrift,TimedPickerInputs::ExpiryDrift,false,20,145,"EXPIRY DRIFT PUSH","expiry drift push",
         "accepted native tick=145 G-Red-position=-3719.20/10.00/-3264.03","relaunch-fall-pushes=5 relaunches=1 timer698=0.0 landings=1"},
-    {Replay::OwnedInclinedLedgeRelaunch,TimedPickerInputs::InclinedLedgeRelaunch,true,20,8,"INCLINED LEDGE RELAUNCH","inclined dash ledge relaunch",
+    {Replay::OwnedInclinedLedgeRelaunch,TimedPickerInputs::InclinedLedgeRelaunch,true,21,8,"INCLINED LEDGE RELAUNCH","inclined dash ledge relaunch",
         "practice-meter=9850/10000 at accepted tick=8","inclined-dash-ledge-relaunches=1 air-dash-starts=0 surface-pushes=0 timer698=29.0"},
     {Replay::ForceInclinedLedgeRelaunch,TimedPickerInputs::InclinedLedgeRelaunch,false,16,80,"INCLINED LEDGE RELAUNCH","inclined dash ledge relaunch",
         "accepted native tick=80 G-Red-position=2082.15/10.00/-2260.40","inclined-dash-ledge-relaunches=1 air-dash-starts=0 surface-pushes=0 timer698=0.0",true},
     {Replay::OwnedTimedReleaseThreePushes,TimedPickerInputs::ReleaseThreePushes,true,15,36,"THREE TIMED RELEASE PUSHES","three timed relaunch-fall pushes",
         "practice-meter=9850/10000 at accepted tick=36","practice-timed-release-push=AIRBORNE / THIRD TIMED RELAUNCH-FALL PUSH",true},
-    {Replay::ForceTimedReleaseThreePushes,TimedPickerInputs::ReleaseThreePushes,false,21,145,"THREE TIMED RELEASE PUSHES","three timed relaunch-fall pushes",
+    {Replay::ForceTimedReleaseThreePushes,TimedPickerInputs::ReleaseThreePushes,false,22,145,"THREE TIMED RELEASE PUSHES","three timed relaunch-fall pushes",
         "accepted native tick=145 G-Red-position=-3681.14/10.00/-3240.03","relaunch-fall-pushes=3 relaunches=1 timer698=0.0 landings=1"},
-    {Replay::OwnedExpiringSnap,TimedPickerInputs::ExpiringSnap,true,22,40,"EXPIRY WIND-UP SNAP","wind-up entry snap on expiry",
+    {Replay::OwnedExpiringSnap,TimedPickerInputs::ExpiringSnap,true,23,40,"EXPIRY WIND-UP SNAP","wind-up entry snap on expiry",
         "practice-meter=10000/10000 at accepted tick=40","practice-expiring-walk-air-dash-snap=AIRBORNE / WIND-UP ENTRY SNAP ON EXPIRY"},
     {Replay::ForceExpiringSnap,TimedPickerInputs::ExpiringSnap,false,14,175,"EXPIRY WIND-UP SNAP","wind-up entry snap on expiry",
         "accepted native tick=175 G-Red-position=1349.75/10.00/-3466.02","windup-pushes=0 active-frames=31 relaunches=0 timer698=0.0",true},
     {Replay::OwnedExpiringSnapRelaunch,TimedPickerInputs::ExpiringSnapRelaunch,true,13,46,"EXPIRY SNAP RELAUNCH","expiry snap wind-up relaunch",
         "practice-meter=9550/10000 at accepted tick=46","practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH",true},
-    {Replay::ForceExpiringSnapRelaunch,TimedPickerInputs::ExpiringSnapRelaunch,false,23,175,"EXPIRY SNAP RELAUNCH","expiry snap wind-up relaunch",
+    {Replay::ForceExpiringSnapRelaunch,TimedPickerInputs::ExpiringSnapRelaunch,false,24,175,"EXPIRY SNAP RELAUNCH","expiry snap wind-up relaunch",
         "accepted native tick=175 G-Red-position=-691.88/10.00/-3444.54","windup-pushes=0 active-frames=0 relaunches=1 timer698=0.0"},
-    {Replay::OwnedExpiringShortRelaunch,TimedPickerInputs::ExpiringShortRelaunch,true,24,43,"DIAGONAL EXPIRY RELAUNCH","diagonal expiry-step wind-up relaunch",
+    {Replay::OwnedExpiringShortRelaunch,TimedPickerInputs::ExpiringShortRelaunch,true,25,43,"DIAGONAL EXPIRY RELAUNCH","diagonal expiry-step wind-up relaunch",
         "practice-meter=9550/10000 at accepted tick=43","practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH"},
     {Replay::ForceExpiringShortRelaunch,TimedPickerInputs::ExpiringShortRelaunch,false,12,145,"DIAGONAL EXPIRY RELAUNCH","diagonal expiry-step wind-up relaunch",
         "accepted native tick=145 G-Red-position=-768.57/10.00/-3396.78","windup-pushes=2 active-frames=0 relaunches=1 timer698=0.0",true},
-    {Replay::OwnedTimedReleasePush,TimedPickerInputs::ReleasePush,true,25,33,"TIMED RELEASE PUSH","timed relaunch-fall push",
+    {Replay::OwnedTimedReleasePush,TimedPickerInputs::ReleasePush,true,26,33,"TIMED RELEASE PUSH","timed relaunch-fall push",
          "practice-meter=9850/10000 at accepted tick=33","practice-timed-release-push=AIRBORNE / TIMED RELAUNCH-FALL PUSH"},
     {Replay::ForceTimedReleasePush,TimedPickerInputs::ReleasePush,false,11,125,"TIMED RELEASE PUSH","timed relaunch-fall push",
          "accepted native tick=125 G-Red-position=752.13/10.00/-3156.15","relaunch-fall-pushes=1 relaunches=1 timer698=0.0 landings=1",true},
     {Replay::OwnedTimedReleaseTwoPushes,TimedPickerInputs::ReleaseTwoPushes,true,10,34,"TWO TIMED RELEASE PUSHES","two timed relaunch-fall pushes",
          "practice-meter=9850/10000 at accepted tick=34","practice-timed-release-push=AIRBORNE / SECOND TIMED RELAUNCH-FALL PUSH",true},
-    {Replay::ForceTimedReleaseTwoPushes,TimedPickerInputs::ReleaseTwoPushes,false,26,125,"TWO TIMED RELEASE PUSHES","two timed relaunch-fall pushes",
+    {Replay::ForceTimedReleaseTwoPushes,TimedPickerInputs::ReleaseTwoPushes,false,27,125,"TWO TIMED RELEASE PUSHES","two timed relaunch-fall pushes",
          "accepted native tick=125 G-Red-position=-1279.39/10.00/-3166.36","relaunch-fall-pushes=2 relaunches=1 timer698=0.0 landings=1"},
 };
 constexpr gf::u32 expiring_entry_inputs(unsigned tick,bool push){
@@ -164,6 +169,10 @@ constexpr gf::u32 timed_release_inputs(unsigned tick,bool two,bool three=false){
 constexpr gf::u32 timed_down_inputs(unsigned tick,bool through_expiry){
     return timed_release_inputs(tick,false,true)|(tick==37?1u<<6:0u)|
         (through_expiry&&tick==38?(1u<<6)|(1u<<8):0u);
+}
+void rising_windup_inputs(gf::RawInputState& pad,unsigned tick,bool tap){
+    if((tick>=41&&tick<=47)||(tap&&tick==53))pad.buttons|=1u<<1;
+    if(tick==47)pad.axis[1]=-20000; // W while Shift is still held.
 }
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
@@ -321,11 +330,8 @@ public:
             raw.buttons|=replay_==Replay::TimedReleaseThreePushes?timed_release_inputs(tick,false,true):
                 timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes);
             if(replay_==Replay::TimedReleaseExpiryRelaunch&&tick>=41&&tick<=50)raw.buttons|=1u<<1;
-            if(replay_==Replay::TimedReleaseExpiryDash||replay_==Replay::RisingWindupRelaunch){
-                if(tick>=41&&tick<=47)raw.buttons|=1u<<1;
-                if(tick==47)raw.axis[1]=-20000; // W while Shift is still held.
-                if(replay_==Replay::RisingWindupRelaunch&&tick==53)raw.buttons|=1u<<1;
-            }
+            if(replay_==Replay::TimedReleaseExpiryDash||replay_==Replay::RisingWindupRelaunch)
+                rising_windup_inputs(raw,tick,replay_==Replay::RisingWindupRelaunch);
             break;
         }
         case Replay::PickerPractice:
@@ -453,6 +459,8 @@ public:
         case Replay::ForceExpiringAirDash:
         case Replay::OwnedExpiringDashRelaunch:
         case Replay::ForceExpiringDashRelaunch:
+        case Replay::OwnedRisingWindup:
+        case Replay::ForceRisingWindup:
         case Replay::OwnedTimedDownDrift:
         case Replay::ForceTimedDownDrift:
         case Replay::OwnedExpiryDrift:
@@ -521,6 +529,11 @@ public:
                 case TimedPickerInputs::TimedDownDrift:
                 case TimedPickerInputs::ExpiryDrift:
                     raw.buttons|=timed_down_inputs(tick,spec->inputs==TimedPickerInputs::ExpiryDrift);
+                    break;
+                case TimedPickerInputs::RisingWindupTap:
+                case TimedPickerInputs::RisingWindupDash:
+                    raw.buttons|=timed_down_inputs(tick,true);
+                    rising_windup_inputs(raw,tick,spec->inputs==TimedPickerInputs::RisingWindupTap);
                     break;
                 case TimedPickerInputs::ExpiringDirect:
                 case TimedPickerInputs::ExpiringEntryPush:
@@ -707,10 +720,14 @@ bool timed_picker_played(const std::string& log,const TimedPickerReplay& spec){
     const bool drift_ending=spec.owned?(has(log,"practice-phase=FALLING / PUSH\n")&&
         (expiry_drift?!has(log,"practice-timed-release-push="):has(log,"practice-ledge-timer-ticks=1"))):
         !has(log,"practice-timed-release-push=")&&has(log,"practice-phase=IDLE")&&has(log,"practice-meter=10000/10000 at accepted tick=145");
+    const bool rising_tap=spec.inputs==TimedPickerInputs::RisingWindupTap;
+    const bool rising_windup=rising_tap||spec.inputs==TimedPickerInputs::RisingWindupDash;
+    const bool rising_ending=!has(log,"practice-windup-handoff=")&&(rising_tap?has(log,"practice-phase=RELAUNCH\n"):
+        has(log,"practice-phase=IDLE\n")&&has(log,"practice-meter=10000/10000 at accepted tick=190"));
     return once(log,launch.c_str())&&once(log,returned.c_str())&&picker_guide_played(log,spec.guide,spec.ticks)&&
         has(log,spec.expected)&&has(log,spec.receipt)&&(!release||ending)&&(!expiring||expiry_ending)&&(!expiry_dash||dash_ending)&&
         (!expiry_snap||snap_ending)&&(spec.inputs!=TimedPickerInputs::InclinedLedgeRelaunch||incline_ending)&&(!release_drift||drift_ending)&&
-        (has(log,"practice-floor-windup-handoff=")==(spec.sequence==Replay::OwnedExpiredFloor));
+         (!rising_windup||rising_ending)&&(has(log,"practice-floor-windup-handoff=")==(spec.sequence==Replay::OwnedExpiredFloor));
 }
 std::size_t occurrences(std::string_view text,std::string_view part){
     std::size_t found=0;
@@ -975,7 +992,7 @@ int main(int argc,char** argv){
         return 2;
     }
     using Route=gf::GRedPickerPracticeRoute;
-    static_assert(unsigned(Route::Count)==36);
+    static_assert(unsigned(Route::Count)==37);
     for(bool previous:{false,true}){
         auto route=Route::Standard;
         std::array<bool,unsigned(Route::Count)> seen{};
@@ -1004,13 +1021,16 @@ int main(int argc,char** argv){
             if(route==Route::TimedReleaseFourPushes||route==Route::TimedReleaseExpiryDrift)
                 check(guide.timed_ledge_followup==(route==Route::TimedReleaseFourPushes?TimedLedgeFollowup::TimedReleaseFourPushes:
                     TimedLedgeFollowup::TimedReleaseExpiryDrift),"both drift guides use their exact inputs","");
+            if(route==Route::RisingWindupRelaunch)
+                check(guide.timed_ledge_followup==TimedLedgeFollowup::RisingWindupRelaunch,
+                    "the paid rising handoff uses its own opt-in, not the older drift route","");
             if(route==Route::InclinedLedgeRelaunch)
                 check(guide.gred_inclined_dash_ledge&&guide.gred_inclined_dash_ledge_relaunch&&!guide.gred_walk_ledge_fall_push,
                     "incline relaunch reuses ordinary ordered-dash fall instead of push permissions","");
             seen[unsigned(route)]=true;
             route=gf::cycle_gred_picker_practice_route(route,previous);
         }
-        check(route==Route::Standard,"all 36 choices wrap in both directions","");
+        check(route==Route::Standard,"all 37 choices wrap in both directions","");
     }
     const auto files=gf::sdl::create_file_system();
     if(!files->exists("local/content/source-gred-ground-v9/motion.gfmm")||
