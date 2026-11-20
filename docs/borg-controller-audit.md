@@ -595,6 +595,15 @@ complete damage behavior remain unverified. This is neither Gold Hero's
 fixed in-place form pair nor Switching Ninja's reciprocal movement.
 No live actor or copy was admitted.
 
+The detached Copy Man helpers separate head request, contact donor,
+ordinary same-slot request, eligible expiry and observed re-entry HP.
+The reload planner covers only the exact normal Copy Man/Sasuke witness;
+it refuses other donors instead of substituting that witness. The native
+comparison matched **95 bounded cases**, including release/contact,
+outbound and return requests, guarded clock visits and HP clamping.
+Donor live fields, actual resource loading, damage and actor admission
+are not implemented here.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
