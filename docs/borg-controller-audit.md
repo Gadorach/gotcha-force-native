@@ -1065,6 +1065,31 @@ identify a contact receiver. **132** bounded factory, dispatch and
 shape-owner comparisons matched, using the exact credited bank for
 shape operands. The playable duel still does not use them.
 
+### Argument 43: authored beam art
+
+The argument row has `+42 = 0`: `C3D2C` selects the common effect
+bank at `803CB32C + 48`, not a record from G-Red's model bank.
+`42878` loads AFS member 697 (`efct.pzz`); ordinary mode `29 = 0`
+selects model block 1. The `726C` call selects record 0, and
+`86B8` requests its first material clip at time 0 for team 0.
+The alternate effect bank and other team selectors remain separate.
+
+The qualified local bank loads through the shared HSD record and
+animation systems. With an explicitly supplied beam matrix, the
+headless render test submits both authored blended meshes (708
+vertices), with no textures or provisional billboard. This verifies
+the record's draw path, not a screenshot, live carrier, material
+update schedule, or collision.
+
+Given the local `efct.pzz` extracted from the original AFS:
+
+```sh
+work=$(mktemp -d)
+python3 -B -m tools.extract.gred_beam_art "$EFCT" "$work/beam.hsd"
+c++ -std=c++20 -O1 -I . tests/host/gred_beam_art.cpp -o "$work/gred-beam-art"
+"$work/gred-beam-art" "$work/beam.hsd"
+```
+
 ### Argument 43: untargeted flight prefix and lifetime
 
 The detached initializer math adds the unit bearing to the muzzle
