@@ -887,6 +887,24 @@ The shared mode-1 refill visit preserves a negative overshoot when it
 restores the cap, unlike mode 0. It matched **121 bounded source cases**.
 No class VM, projectile allocation, hit test or actor update is wired.
 
+## G-Red: original neutral B release
+
+Exact normal **G-Red `GG4E08:0615/0`** (#1, AFS member 587) does not
+fire its original beam on the native duel's provisional cooldown rule.
+
+| Boundary | Recovered source behavior |
+| --- | --- |
+| Request | A fresh B edge can generate close and ordinary shot pulses. An admitted charged-B request or close-B request precedes the neutral shot. The scoped ordinary row selects both lanes as 44, giving the upper class action and lower no-op. |
+| Pose and release | Local group 2 slot 0 uses directional pose records and a separate authored release cue. The release requires the cue **and** an aim pass or local timeout. Timeout without the cue does not fire; holding a pending cue pauses the inspected VM call, not the whole actor. |
+| Stock and beam | Entry availability is check-only. The release attempts one channel-0 debit, then requests object argument **43** only on success. An allocation refusal follows the debit and is not a verified refund. |
+| Contact | The beam carries the geometry, G-Red owns credit, and the receiving collider supplies the actual recipient. The aim snapshot is not a hit. The separate object lifetime does not measure stock refill or live range. |
+
+All **134 bounded offline cases** matched. A live witness still needs
+one exact normal slot from fresh input through accepted VM cue, aim or
+timeout, stock, beam allocation, and actual contact/HP outcome. Neither
+native cooldown output nor the source fragments qualify that route.
+[Wiki lead: Beam Gun](https://gotchaforce.fandom.com/wiki/G_Red?oldid=5897).
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

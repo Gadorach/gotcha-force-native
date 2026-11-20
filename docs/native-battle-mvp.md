@@ -25,6 +25,10 @@ explicit native gameplay policy, not a claim of original behaviour.
 weapon selection are provisional tuning, not recovered constants. Ground can be
 supplied through an adapter to the existing stage grid. Weapon origins can be
 supplied by the animation system; the fallback muzzle offset is provisional.
+The [original G-Red neutral-B audit](borg-controller-audit.md#g-red-original-neutral-b-release)
+found a fresh-edge, pose- and stock-gated beam request, not this cooldown
+shot. The audit does not replace the provisional duel policy or verify
+a live shot-to-contact route.
 
 ## Working desktop prototype
 
