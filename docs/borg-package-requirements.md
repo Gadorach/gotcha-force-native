@@ -212,6 +212,12 @@ change movement family; it must not silently retain or refill the wrong meter.
 Bind form changes through the world/controller owner and publish them only
 after matching model/rig and gameplay resources are ready. Unknown transitions
 remain explicit `unresolved` placeholders.
+The [normal Gold Hero audit](borg-controller-audit.md#normal-gold-hero-temporary-form-and-deferred-return)
+shows why the entry cost, animation-gated commit, and guarded expiry return
+must be separate. The same actor can retain its selected variant while the
+form changes the movement limit and reinitializes stock. The full transfer and
+interruption rules still need their own evidence.
+
 The [standalone forms check](borg-packages.md#standalone-gameplay-form-check)
 validates these declarations, including a temporary form's independent return
 paths, without interpreting the transitions.

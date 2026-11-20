@@ -269,6 +269,33 @@ cases**, including 256 table placements, 48 hook prefixes, six fallback
 heights, 64 lane requests and 48 refill passes. These are not actor or
 spawn receipts.
 
+## Normal Gold Hero: temporary form and deferred return
+
+`GG4E08:0802/0` is Gold Hero's normal retail selection. `0803` is the
+verified destination of its in-battle form change, not a separate collection
+entry or retail color. Both model IDs resolve to AFS member 622; the
+transformed installer selects a second actor-data block in the same resource
+slot. The selected retail variant still resolves the normal wrapper.
+That does not establish the visible form or live collision rebinding:
+different loose hit banks exist, and their handoff is unresolved.
+[Wiki lead: Gold Hero](https://gotchaforce.fandom.com/wiki/Gold_Hero?oldid=6576).
+
+| Stage | Source finding |
+| --- | --- |
+| Entry request | A qualified fresh press, clear action guard and positive channel-2 stock are required. Successful debit spends one charge and queues class state 4; neither the debit nor the request changes the form. The wiki names this move X / Gold Set Up; raw pad-to-command mapping was not tested. |
+| Entered form | After program and motion processing, lower-lane completion gates the commit. The rebind prefix changes the model to `0803` on the same actor, preserves its selected variant, and chooses new class and data inputs. Later cleanup and initialization still belong to the transition before publication. |
+| Expiry and return | The transformed initializer seeds 1800. Qualifying class-hook calls count it down and crossing zero sets a negative pending sentinel. Pending expiry retries the action guard; a blocked call does not revert. An accepted request queues state 5 without another stock debit; that state restores `0802`. This is not a verified wall-clock duration or immediate swap on expiry. |
+| Controller and stock | Both forms use type 0, count policy 0 and the same selector table. The limit rises from **2 to 4**; movement operands and the effective pose default differ. Shared stock setup runs again, and sampled weapon dispatch and refill delay differ. A sampled rebind prefix preserving HP, root and used air points does not prove the full transition preserves those fields. |
+
+All **84 bounded offline cases** matched. Completion, guard and actor
+fields were supplied explicitly; no live animation, collision, device input,
+action outcome or complete actor update ran. A live witness needs both
+rebinding directions, accepted lower-lane completion, stock and used-count
+observations, actual collider rebinding and a blocked-then-retried expiry.
+Whether interruption cancels or refunds entry, stagger can trigger return,
+or damage protection holds remains unresolved. This evidence neither
+authorizes a separately deployable `0803` nor defines another Hero's form.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
@@ -281,10 +308,10 @@ heading. No missing row inherits another Borg's rules.
 Priorities are a normal Sasuke input/launch/dash/landing witness, an exact
 Blue Striker boost cycle, and independent Wing/Angel floor-height and
 Satellite placement traces. Then compare more same-tribe members and sample
-individual class action guards, stock and effects. Verify Gold Hero's
-transformed state, vehicle/robot toggles, temporary forms, copy effects, and
-Galactic Emperor's special starts independently. [Wiki leads: Gold Hero](https://gotchaforce.fandom.com/wiki/Gold_Hero?oldid=6576)
-and [battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
+individual class action guards, stock and effects. Verify Gold Hero's live
+form handoff, other temporary forms, vehicle/robot toggles, copy effects, and
+Galactic Emperor's special starts independently.
+[Wiki lead: battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
 Battle fusion is a separate two-owner transition, not collection assembly.
 No assumption is made about form timers, state transfer, transformed or
 alternate animation maps, or Challenge/Story admission.
