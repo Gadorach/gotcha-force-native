@@ -410,6 +410,16 @@ final cleanup remain unverified. The separate catalogue discovery path
 mentions `050F`, not the battle models. No crystal part, acquisition rule,
 inventory grant or new actor is implied.
 
+The detached Seiryu and Machine Dragon helpers now share the verified
+handshake and team clock behind exact pair checks. Dragon's channel-15
+completion and 120-count fallback stay local to its primary entry. Mode-4
+cleanup is a separate per-slot proposal on an observed pending tuple, with
+the corrected `48A` gate. The native comparison matched **53** bounded
+cases for Dragon assignment, staging, restore and entry, including 24
+cleanup checks across both pairs. The **130** prior Seiryu comparisons
+still match. No ledger publication, asset reload, split or actor admission
+is wired.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
