@@ -66,6 +66,9 @@ The [Gunman and Beta II audit](borg-controller-audit.md#revolver-gunman-and-deat
 illustrates why input admission, a pose release event, stock debit, and
 actor-owned outcome publication must remain separate. The same movement
 mapping does not select the same pose or outcome.
+The [Roach audit](borg-controller-audit.md#roach-one-use-jump-control-only-programs-and-bomb-stock)
+also shows why replenishment can depend on an owned object's retirement,
+not a generic elapsed reload timer.
 
 Reserve **mechanical outcomes** as their own event bindings, not VFX/SFX.
 User examples guide the slots: Witch charge shots may buff allies, debuff

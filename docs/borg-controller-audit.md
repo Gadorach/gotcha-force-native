@@ -631,6 +631,27 @@ grounded refill gate. The native comparison matched **242** cases:
 nine wind-up steps and 24 active-debit outcomes. No VM, floor, actor,
 other takeoff predecessor, or initial placement is wired here.
 
+## Roach: one-use jump, control-only programs and bomb stock
+
+Exact normal **Roach `GG4E08:0F05/0`** is catalogue #189, AFS member 691.
+Movement type **1** does not make it Normal Tank's metered controller:
+Roach uses policy 0 with a **one-use** jump count. Its full 48-pair
+selector table differs from the checked Sasuke table at 12–17 only.
+Unlike Flame Dragon, it refuses both ordinary ground and airborne dash
+without consuming the flick at the refused selector.
+
+| Mechanism | Recovered ordinary path |
+| --- | --- |
+| Jump and landing | Takeoff request and startup spend nothing; ascent entry consumes the single use. A count-zero fall can admit an airborne relaunch, unlike falling after an ordinary jump with count one. A floor snap is not a reset: the later eligible grounded bookkeeping clears the used count. |
+| Empty motion bank | Both program roots are present; both pose-descriptor roots and the local bank are absent. Sampled movement programs write lane controls and run wait clocks without binding a local clip. Those controls can change the airborne flag or gate transitions, even without a clip. This does not establish that the rendered body never moves. |
+| Normal B / Bomb | An admitted B uses upper class action ownership. A class phase requests one channel-0 debit, then can request a caster-owned type-16 bomb. The exact stock mode zeros the generic refill clock on debit; a checked bomb retirement callback returns one stock to the owner, capped at maximum. This is independent of jump reset and does not prove that every removal or failed allocation refunds stock. |
+
+All **167 bounded offline cases** matched, including control lanes and
+clocks as well as movement and bomb branches. Live movement, floor contact,
+rendered pose, bomb behavior and the alternate constructor role remain
+unverified. [Wiki lead: Roach](https://gotchaforce.fandom.com/wiki/Roach?oldid=6558).
+No other Bug or actor inherits the findings.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
