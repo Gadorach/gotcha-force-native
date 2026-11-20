@@ -357,6 +357,43 @@ travel. It checks frozen boxes only (17 other stage shapes were not
 tested here) and writes no input or game files. It supplies no
 movement permission.
 
+#### Normal G-Red's body eligibility and staged volume overlap
+
+The complete signed ordinary body list in the qualified normal
+`0615` battle bundle has **11 descriptors**. Records 4, 5, 6, 7
+and 9 have descriptor flag `0x4` for possible `3B7C` membership;
+none has `0x1` (`477C`) or `0x80` (`177C`). `8A2BC` masks
+descriptor bits off; changing the usual visibility or suppression
+fields cannot create either missing bit. This rules out the
+ordinary body bank as a `477C` producer for `2DB58`, even
+though box 86 is a `417C` target. It says nothing about attack
+descriptors, auxiliary objects, or which eligible body is actually
+registered on a live frame.
+
+A separate local pose probe used the shared G-Red renderer rig
+and the five authored sphere/capsule descriptors with C0=1, at
+both the integrated and projected roots. At 17, body record 4
+(bone 15, radius 20) still overlaps box 86 after projection:
+one capsule endpoint is already inside the box. No other one of
+the five overlaps it in that probe. The projected **foot point**
+missing the box is therefore not body-clearance evidence. The
+pose was inspected before publication in the isolated witness;
+the rejected step did not commit. The original logical collider
+update and live collision pass are still unverified.
+
+To compare a captured pose trace against the same verified box
+snapshot, use the read-only audit below. Its `VOLUME` rows carry
+tick, `integrated` or `projected` root label, lab acceptance
+flag, body record, bone, descriptor flags, radius and two XYZ
+endpoints (equal for spheres). It verifies the exact normal
+bundle and requires complete paired samples. It reports geometry
+and possible flags, not a live registry or solid-contact receipt.
+
+```sh
+python3 -B -m tools.analyze.gred_body_contact COLLIDER_TRACE COMPARISON_JSON NORMAL_GRED_BUNDLE POSED_VOLUMES \
+    --stage-owner 18 --descriptor 86
+```
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
