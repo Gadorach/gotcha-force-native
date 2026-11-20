@@ -175,6 +175,9 @@ public:
         const StageGroundParameters p{-100000,100000,500,0,-.5f,20000,-20000,true};
         return ready_&&stage_ground_same_face_push_exit(floor_,p,face,start,integrated,projected);
     }
+    bool trace_floor_approach(u32 face,const BattleMvpVec& start,const BattleMvpVec& end,StageFloorApproachTrace* out)const{
+        return ready_&&stage_ground_trace_floor_approach(floor_,face,start,end,out);
+    }
     bool static_surface(f32 x,f32 z,f32 current_y,NativeBorgStaticSurface* out)const override{
         if(!ready_||!out)return false;
         const StageGroundParameters p{-100000,100000,500,0,-.5f,20000,-20000,true};std::span<const u32> refs;

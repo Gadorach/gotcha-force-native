@@ -71,5 +71,24 @@ int main(){
     auto hidden=low;hidden.vertices={{{105,31,111},{105,31,115},{107,31,111}}};hidden.plane={0,1,0,-31};
     load(floor,{face,low,hidden});
     check(!stage_ground_same_face_push_exit(floor,p,0,start,approach,exit)); //competing face under the segment only
-    std::printf("static surface selection, slope seams and same-face projection exit: %u checks PASS\n",checks);
+    using A=StageFloorApproach;
+    StageFloorApproachTrace trace;
+    auto classification=[&](const std::array<f32,3>& from,const std::array<f32,3>& to,A kind){
+        check(stage_ground_trace_floor_approach(floor,0,from,to,&trace)&&trace.kind==kind);
+    };
+    classification(start,approach,A::DescendsFromFace);
+    check(trace.enter==0&&trace.exit==1&&trace.clearance_at_entry==0&&trace.clearance_at_exit==-6);
+    classification({99,19,106},{106,16,106},A::EntersBelow);
+    check(trace.enter>0&&trace.exit==1&&trace.clearance_at_entry< -1&&trace.clearance_at_exit< -9);
+    classification({104,26,106},approach,A::CrossesFromAbove);
+    classification({104,23,106},approach,A::StartsBelow);
+    classification({104,60,106},{106,59,106},A::ClearAbove);
+    classification({99,20,106},{98,20,106},A::MissesFootprint);
+    classification({95,25,105},{105,25,95},A::BoundaryOnly); //only the vertex is shared
+    check(trace.enter==.5&&trace.exit==.5);
+    classification({100,24,105},{100,24,115},A::BoundaryOnly); //along an edge, not through the interior
+    classification(start,exit,A::NearPlane);
+    check(!stage_ground_trace_floor_approach(floor,3,start,approach,&trace)&&
+        !stage_ground_trace_floor_approach(floor,0,{1e8f,0,0},approach,&trace));
+    std::printf("static surface selection, slope seams, projection exit and approach diagnostics: %u checks PASS\n",checks);
 }

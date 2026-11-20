@@ -68,7 +68,7 @@ inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
 namespace stage_ground_detail {
 struct ProjectedFloorSpan {
     f64 enter=0,exit=1;
-    bool intersects=true,start_inside=true,end_inside=true,edge_exit=false;
+    bool intersects=true,start_inside=true,end_inside=true,edge_exit=false,edge_only=false;
 };
 // Clip against the three XZ half planes. A point or edge touch counts when
 // checking competing faces, but never proves an interior exit.
@@ -89,6 +89,7 @@ inline bool projected_floor_span(const StihTriangle& face,const std::array<f32,3
         to[i]=sign*side(v[i],v[(i+1)%3],end);
         span.start_inside=span.start_inside&&from[i]>0;
         span.end_inside=span.end_inside&&to[i]>0;
+        span.edge_only=span.edge_only||(from[i]==0&&to[i]==0);
         if(from[i]<0&&to[i]<0){span.intersects=false;*out=span;return true;}
         if(from[i]<0)span.enter=std::max(span.enter,-from[i]/(to[i]-from[i]));
         if(to[i]<0){
@@ -110,6 +111,53 @@ inline f64 projected_floor_clearance(const StihTriangle& face,const std::array<f
     return f64(point[1])-v[1]+(f64(n[0])*(f64(point[0])-v[0])+f64(n[2])*(f64(point[2])-v[2]))/n[1];
 }
 } // namespace stage_ground_detail
+
+enum class StageFloorApproach {
+    MissesFootprint,BoundaryOnly,ClearAbove,CrossesFromAbove,DescendsFromFace,EntersBelow,StartsBelow,NearPlane
+};
+struct StageFloorApproachTrace {
+    StageFloorApproach kind=StageFloorApproach::MissesFootprint;
+    f64 enter=0,exit=0,clearance_at_entry=0,clearance_at_exit=0;
+};
+inline constexpr const char* stage_floor_approach_name(StageFloorApproach kind){
+    switch(kind){
+    case StageFloorApproach::MissesFootprint:return "misses-footprint";
+    case StageFloorApproach::BoundaryOnly:return "boundary-only";
+    case StageFloorApproach::ClearAbove:return "clear-above";
+    case StageFloorApproach::CrossesFromAbove:return "crosses-from-above";
+    case StageFloorApproach::DescendsFromFace:return "descends-from-face";
+    case StageFloorApproach::EntersBelow:return "enters-below-face";
+    case StageFloorApproach::StartsBelow:return "starts-below-face";
+    case StageFloorApproach::NearPlane:return "near-plane";
+    }
+    return "unknown";
+}
+// A diagnostic for one candidate floor face. This samples neither blockers
+// outside that face nor the actor's body and does not authorize contact.
+inline bool stage_ground_trace_floor_approach(const StihGrid& grid,u32 face,const std::array<f32,3>& start,
+                                              const std::array<f32,3>& end,StageFloorApproachTrace* out){
+    using namespace stage_ground_detail;
+    if(!out||!grid.loaded()||face>=grid.triangles().size()||!vector(start)||!vector(end))return false;
+    const auto& triangle=grid.triangles()[face];ProjectedFloorSpan span;
+    if(!projected_floor_span(triangle,start,end,&span))return false;
+    StageFloorApproachTrace trace;
+    if(span.intersects){
+        using A=StageFloorApproach;
+        constexpr f64 tolerance=.001;
+        const f64 from=projected_floor_clearance(triangle,start),change=projected_floor_clearance(triangle,end)-from;
+        trace.enter=span.enter;trace.exit=span.exit;
+        trace.clearance_at_entry=std::fma(span.enter,change,from);
+        trace.clearance_at_exit=std::fma(span.exit,change,from);
+        const f64 first=trace.clearance_at_entry,last=trace.clearance_at_exit;
+        if(span.edge_only||span.enter==span.exit)trace.kind=A::BoundaryOnly;
+        else if(first< -tolerance)trace.kind=span.start_inside?A::StartsBelow:A::EntersBelow;
+        else if(last< -tolerance&&first>tolerance)trace.kind=A::CrossesFromAbove;
+        else if(last< -tolerance&&span.start_inside)trace.kind=A::DescendsFromFace;
+        else if(first>tolerance&&last>tolerance)trace.kind=A::ClearAbove;
+        else trace.kind=A::NearPlane;
+    }
+    *out=trace;return true;
+}
 
 // Evidence for a projected foot step that starts on an upward face, descends
 // inside that same face, then exits via one edge without entering any higher

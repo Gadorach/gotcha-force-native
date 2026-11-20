@@ -261,6 +261,34 @@ selected face 1130 at Y `459.49591`, above the actor's starting Y
 The blocked approach remains a refusal. This search did not change
 the runtime contact gates.
 
+#### What the face-1130 refusal actually represents
+
+A later isolated trace replayed the same grounded start (`726.917969`,
+`3344.20435`, floor query `487.747589`, W flick on 6). The first lab push
+at 14 uses angle 8855 and 23 ticks. Its movement reaches face 1130 from
+above; it was not admitted to the shipping controller. On 15, with
+22 ticks left, both the start and integrated X/Z remain in the face
+interior. The projection also ends inside the face. This differs from
+the projected **exit** on face 2011, so the shipping exit proof is not
+an interchangeable permission.
+
+An isolated extension checked the retained face interval with a
+lab-only `0.006`-unit near-plane limit. It accepted 15 and a projected
+edge exit on 16, keeping the original post-projection, body, and bounds
+checks. On 17 the approach
+re-enters 1130 at about 62% of its length, roughly 6.75 units below the
+plane. The clear endpoint of the projection does not fix that side
+entry. Of 81 nearby starts, 59 departed and 53 reached the second lab
+push; none returned to ordinary falling or completed landing. These
+are partial witnesses. No dash-origin push or raised-side permission
+has been added.
+
+Refused push offers now log the **candidate** face's approach and
+projection classifications, plus the approach's fractional footprint
+interval and vertical clearances at its ends. This explains such
+geometry differences without claiming the logged face caused every
+native rejection. The diagnostic does not change acceptance.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral

@@ -1848,10 +1848,20 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                     if(options.source_ground_walk){x=mapped.x;y=mapped.y;held=mapped.held;}
                     gf::NativeBorgMotionOffer offer;
                     const auto last_tick=world.tick();error.clear();
-                    if(!source.prepare(world,view.source_binding(),movement,x,y,held,&offer,&error)||
-                       !world.step({controls,{}},false,&view,nullptr,&movement,&offer)||!source.commit(world,view.source_binding(),&error)){
+                     const bool planned=source.prepare(world,view.source_binding(),movement,x,y,held,&offer,&error);
+                     if(!planned||
+                        !world.step({controls,{}},false,&view,nullptr,&movement,&offer)||!source.commit(world,view.source_binding(),&error)){
                         source.reject();
-                        gf::log_error(context,"source-ground","motion acceptance refused: tick=%u kind=%u from-y=%.3f proposed-y=%.3f old-v=%.3f; %s",world.tick(),unsigned(offer.kind),offer.observed.position[1],offer.proposed_position[1],offer.observed.vertical_speed,error.c_str());
+                         gf::log_error(context,"source-ground","motion acceptance refused: tick=%u kind=%u from-y=%.3f proposed-y=%.3f old-v=%.3f; %s",world.tick(),unsigned(offer.kind),offer.observed.position[1],offer.proposed_position[1],offer.observed.vertical_speed,error.c_str());
+                         if(planned&&world.tick()==last_tick&&offer.static_push){
+                             const auto& push=*offer.static_push;
+                             gf::StageFloorApproachTrace approach,projection;
+                             if(view.trace_floor_approach(push.surface.triangle,offer.observed.position,push.integrated_position,&approach)&&
+                                view.trace_floor_approach(push.surface.triangle,offer.observed.position,offer.proposed_position,&projection))
+                                 gf::log_info(context,"source-ground","candidate floor face=%u approach=%s projection=%s; approach span=%.5f..%.5f clearance=%.5f..%.5f",
+                                     push.surface.triangle,gf::stage_floor_approach_name(approach.kind),gf::stage_floor_approach_name(projection.kind),
+                                     approach.enter,approach.exit,approach.clearance_at_entry,approach.clearance_at_exit);
+                         }
                         if(!practice_restartable||world.tick()!=last_tick){render.shutdown();return 2;}
                         practice_stopped=true;
                         gf::log_info(context,"source-ground","practice stopped at tick=%u; Q restarts, Esc %s",world.tick(),

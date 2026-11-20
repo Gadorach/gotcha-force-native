@@ -12,7 +12,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
     TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,TimedReleaseExpiryRelaunch,TimedReleaseExpiryDash,RisingWindupRelaunch,
-    RisingDiagonalWindupRelaunch,SameFaceExpiryPush,
+    RisingDiagonalWindupRelaunch,SameFaceExpiryPush,FaceApproachRefusal,FaceSideRefusal,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -334,12 +334,15 @@ public:
         case Replay::TimedReleaseExpiryDash:
         case Replay::RisingWindupRelaunch:
         case Replay::RisingDiagonalWindupRelaunch:
-        case Replay::SameFaceExpiryPush:{
+        case Replay::SameFaceExpiryPush:
+        case Replay::FaceApproachRefusal:
+        case Replay::FaceSideRefusal:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
+            const bool held_down=replay_==Replay::SameFaceExpiryPush||replay_==Replay::FaceApproachRefusal;
             raw.buttons|=replay_==Replay::TimedReleaseThreePushes?timed_release_inputs(tick,false,true):
-                timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes&&replay_!=Replay::SameFaceExpiryPush);
-            if(replay_==Replay::SameFaceExpiryPush&&tick==38)raw.buttons|=1u<<6; // Down, not Down+Right.
+                timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes&&!held_down);
+            if((held_down&&tick==38)||(replay_==Replay::FaceSideRefusal&&tick==39))raw.buttons|=1u<<6;
             if(replay_==Replay::TimedReleaseExpiryRelaunch&&tick>=41&&tick<=50)raw.buttons|=1u<<1;
             if(replay_==Replay::TimedReleaseExpiryDash||replay_==Replay::RisingWindupRelaunch||replay_==Replay::RisingDiagonalWindupRelaunch)
                 rising_windup_inputs(raw,tick,replay_!=Replay::TimedReleaseExpiryDash,replay_==Replay::RisingDiagonalWindupRelaunch);
@@ -630,10 +633,10 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_three=replay==Replay::TimedReleaseThreePushes;
     const bool timed_release_four=replay==Replay::TimedReleaseFourPushes;
     const bool rising_diagonal_windup=replay==Replay::RisingDiagonalWindupRelaunch;
-    const bool same_face_expiry=replay==Replay::SameFaceExpiryPush;
+    const bool same_face_expiry=replay==Replay::SameFaceExpiryPush||replay==Replay::FaceSideRefusal;
     const bool rising_windup_relaunch=rising_diagonal_windup||replay==Replay::RisingWindupRelaunch;
     const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift||replay==Replay::TimedReleaseExpiryRelaunch||
-        replay==Replay::TimedReleaseExpiryDash;
+        replay==Replay::TimedReleaseExpiryDash||replay==Replay::FaceApproachRefusal;
     const bool snap_dash=replay==Replay::TimedSnapDash;
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||incline_ledge_relaunch||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
@@ -1460,5 +1463,15 @@ int main(int argc,char** argv){
         has(same_face_idle,"practice-meter=10000/10000 at accepted tick=145")&&
         has(same_face_idle,"relaunch-fall-pushes=5 relaunches=1 timer698=0.0 landings=1"),
         "the proved Down continuation lands with full idle, without opening another push",same_face_idle);
-    std::puts("G-Red practice replay: seventy-one desktop-loop scenarios PASS without opening devices");
+    const auto on_face=run(Replay::FaceApproachRefusal,76,"older height-only rules refuse a same-face approach");
+    check(once(on_face,"practice stopped at tick=37")&&has(on_face,"accepted native tick=37 ")&&
+        has(on_face,"candidate floor face=2011 approach=descends-from-face projection=near-plane;")&&
+        has(on_face,"relaunch-fall-pushes=4 relaunches=1 timer698=1.0 landings=0"),
+        "the staged approach is on-face without publishing a fifth push in the old mode",on_face);
+    const auto from_side=run(Replay::FaceSideRefusal,78,"same-face mode still refuses below-face entry");
+    check(once(from_side,"practice stopped at tick=38")&&has(from_side,"accepted native tick=38 ")&&
+        has(from_side,"candidate floor face=2011 approach=enters-below-face projection=misses-footprint;")&&
+        has(from_side,"relaunch-fall-pushes=5 relaunches=1 timer698=0.0 landings=0"),
+        "the projection misses the face but does not excuse below-face approach or publish a sixth push",from_side);
+    std::puts("G-Red practice replay: seventy-three desktop-loop scenarios PASS without opening devices");
 }
