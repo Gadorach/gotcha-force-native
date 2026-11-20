@@ -38,7 +38,10 @@ the tested ordinary paths use zero floor offset. A snap can lead to grounding
 if it runs the landing continuation and landing state, but the meter does
 not reset on that event. The [Beam Satellite follow-up](borg-controller-audit.md#normal-beam-satellite-placement-stance-and-support)
 found table-based placement and ordinary steering out of its stationary idle.
-That is not evidence of a fixed-XYZ Fortress family. Other hover-height
-producers, live Fortress placement and Sasuke's dash height over a full
-route remain unverified. Do not fill animation annotations or generalize
-G-Red's recovered profile from these audits.
+The [Galactic Emperor follow-up](borg-controller-audit.md#normal-galactic-emperor-class-pin-and-placement)
+instead found a guarded class pin at absolute world Y=2000, separate from
+constructor placement and projection, and no admitted ordinary steering.
+Neither establishes a fixed-XYZ Fortress family. Other hover-height producers,
+live Fortress placement and Sasuke's dash height over a full route remain
+unverified. Do not fill animation annotations or generalize G-Red's recovered
+profile from these audits.

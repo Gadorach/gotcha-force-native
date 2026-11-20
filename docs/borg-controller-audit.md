@@ -236,6 +236,29 @@ live projections and support links are not wired. The native comparison
 matched **790 bounded cases**, including 640 table placements and 150
 steering, handoff, flag and resource cases.
 
+## Normal Galactic Emperor: class pin and placement
+
+Exact normal `GG4E08:0E04/0`, AFS member 684, installs movement type **8**,
+not Beam Satellite's type 9. Both use resource policy 1 and lack local
+motion-bank data. This does not remove their distinct class actions.
+[Wiki lead: Galactic Emperor](https://gotchaforce.fandom.com/wiki/Galactic_Emperor?oldid=6772).
+
+| Mechanism | Exact normal source finding |
+| --- | --- |
+| Class position and heading | With constructor role byte `493 = 0`, the class initializer and both frame hook prefixes write **world `(0, 2000, 0)`** and heading `8192`. All reassert logical airborne status. Nonzero role bytes skip those coordinate writes in the inspected prefixes; the distinct preview route is not a battle start or a verified alternate form. |
+| Shared placement | Ordinary construction invokes the class initializer **before** shared placement. Type 8 can then use the stage/team/side XYZ table and the subsequent static/dynamic projections. Its separate zero-authored-Y per-slot fallback adds **1000 to a queried floor**, compared with Beam's **2000**. None of these paths makes the class pin an arena ceiling, the final initial root, or a clearance guarantee. |
+| Steering and actions | Only idle 0 and shared recovery selectors 9–11 are installed. The actual lane setters refuse Beam's steering selectors 1–3, ordinary jump and landing, and plane selectors 27/28. The class action exit's upper-only request for 27 also refuses, unlike Beam's. Neither this refusal nor the idle no-op proves that class actions or recovery are absent. |
+| Body and refill | Five of 25 ordinary body descriptors carry the family support-eligibility bit, compared with three of 11 for Beam. This and nominal weight 50000 prove neither live attachment nor immunity to displacement. Meter recovery requires the logical grounded cache, not height or boost inactivity; the class pin itself is not a refill. |
+
+All **116 bounded offline cases** matched, including both lane setters,
+guarded class pose writes, the separate placement paths and refill.
+They do not establish final live spawn, collision ordering relative to the
+hooks, body clearance, special starts, child ownership, action outcomes or
+mode admission. A live witness needs the constructor role, stage/team rows
+and projection returns, then the root and heading around both class hooks
+and the physical response. Do not borrow Beam's steering or placement
+candidate as an Emperor actor receipt.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
@@ -250,7 +273,7 @@ Blue Striker boost cycle, and independent Wing/Angel floor-height and
 Satellite placement traces. Then compare more same-tribe members and sample
 individual class action guards, stock and effects. Verify Gold Hero's
 transformed state, vehicle/robot toggles, temporary forms, copy effects, and
-Galactic Emperor `0E04` independently. [Wiki leads: Gold Hero](https://gotchaforce.fandom.com/wiki/Gold_Hero?oldid=6576)
+Galactic Emperor's special starts independently. [Wiki leads: Gold Hero](https://gotchaforce.fandom.com/wiki/Gold_Hero?oldid=6576)
 and [battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
 Battle fusion is a separate two-owner transition, not collection assembly.
 No assumption is made about form timers, state transfer, transformed or
