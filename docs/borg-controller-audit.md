@@ -776,6 +776,23 @@ area-object request from the later pending-defeat consumer. It matched
 match after sharing the flight code. Nothing here queries a real scene,
 creates an area object, applies damage or admits an actor.
 
+## Death Bomb: steerable fall and stockless Drop
+
+Exact normal **Death Bomb `GG4E08:0D07/0`** is catalogue #108, AFS member
+679. Its type-10 selector table differs from Death ICBM's at fall 6 and
+cruise/boost 27–28: Death Bomb admits the former, not the latter.
+
+| Boundary | Recovered game behavior |
+| --- | --- |
+| Placement and entry | The inspected floor-relative placement adds 3000 game units before later projection. Entry code 2 separately selects fall; the height offset does not. Alternate setup roles do not qualify the ordinary impact hook. |
+| Fall and ordinary X | The normal fall is steerable. The reviewed fresh X uses the class-owned **Drop** descent with no stock debit; it does not trigger impact. Its motion is not the ordinary lower fall controller. A floor snap or a landing request does not install an unavailable landing row. |
+| Contact and defeat | The late lifecycle/contact gate matches the reviewed Death ICBM gate, independently of whether the actor is falling normally or using X. It requests a different caster-owned effect, **type 5 / argument 17**, and queues the actor's own defeat even if allocation fails. Already-committed defeat blocks the gate, but an already-created effect was not shown to cancel. |
+
+All **211 bounded offline cases** matched. Final placement, contact and
+hit outcomes, live interruption and effect lifetime remain unverified.
+[Wiki lead: Drop](https://gotchaforce.fandom.com/wiki/Death_Bomb?oldid=6657).
+No actor was admitted.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
