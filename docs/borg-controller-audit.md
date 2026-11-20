@@ -982,6 +982,25 @@ owned transforms at initializer time. The cue's pose alone does not
 establish which matrices were live at that time. Contact, actual
 recipient and HP changes need separate evidence.
 
+#### Staged ordinary-B animation visit
+
+The portable normal G-Red visit now owns a checked local animation
+library: the exact model, rig and motion bank, neutral-B `GFMP3`, and
+pose-height profile. It uses the shared VM, directional controls and
+pose sampler. The admitted phase-1 visit is neutral steering with no
+target and no root-control consumer. It stages the two bound lanes,
+local pose, and aim/release gate together; a late aim refusal cannot
+publish a newly raised cue. A pending cue visits with VM step zero,
+not a second cue. Only a staged due cue can propose the one-round
+debit, including last-round and empty-stock alternatives.
+
+The headless fixture still reaches the first cue after 16 step-1
+updates. It refuses foreign controls or motion libraries, altered
+inputs, a missing side clip and a targeted visit. Neither a staged
+pose nor a debit proposal commits native actor state or allocates a
+beam; the battle owner must accept the staged visit and perform that
+join in its current update.
+
 ### Argument 43: allocation and shape ownership
 
 The detached argument-43 checks distinguish two original allocations.

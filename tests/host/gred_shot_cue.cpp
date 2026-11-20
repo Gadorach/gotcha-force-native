@@ -6,7 +6,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_phase_one.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
-#include "engine/gameplay/character_program_directional_control.hpp"
+#include "engine/gameplay/borgs/normal_gred_neutral_b_visit.hpp"
 
 namespace {
 using namespace gf;
@@ -142,30 +142,24 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         error="exact normal 0615/0 model, rig, bank, shot profile and GFHC required";return false;
     }
 
-    HsdModelBones bones;
-    CharacterPoseRig rig;
-    CharacterLocalPose initial;
-    CharacterMotionBank bank;
-    CharacterProgramAsset asset;
-    CharacterPoseHeightProfile height;
-    if(!hsd_bones_load(prefix.view(),model.view(),&bones,&error)||
-       !character_pose_rig_load(pose.view(),bones,&rig,&error)||
-       !character_pose_initial_local(rig,&initial,&error)||
-       !character_motion_bank_load(bank_bytes.view(),&bank,&error)||
-       !character_program_load_control_flow(program.view(),model_hash,&asset,&error)||
-       !character_pose_height_profile_load(height_bytes.view(),&height,&error))return false;
-
-    constexpr std::array<std::array<u8,2>,9> keys{{
-        {0,0},{0,1},{0,6},{3,0},{3,1},{3,2},{3,11},{3,12},{3,13}
-    }};
-    std::vector<CharacterMotionClipBinding> clips;
-    for(const auto& [group,index]:keys){
-        CharacterMotionSelection selected;
-        if(!character_motion_select(bank,group,index,&selected,&error))return false;
-        if(selected.fallback){error="exact clip required (no default fallback)";return false;}
-        CharacterMotionClipBinding clip{group,index,{}};
-        if(!hsd_bone_motion_load(selected.archive,bones,&clip.clip,&error))return false;
-        clips.push_back(std::move(clip));
+    const GRedNeutralBLocalAssets inputs{model.view(),prefix.view(),pose.view(),bank_bytes.view(),program.view(),height_bytes.view()};
+    GRedNeutralBLocalLibrary library;
+    if(!library.load(inputs,&error))return false;
+    const auto& driver=library.driver();
+    const auto& rig=*driver.rig();
+    const auto& asset=*library.program();
+    const auto& height=*library.height();
+    for(bool alter_bank:{false,true}){
+        auto bad=alter_bank?bank_bytes.bytes:program.bytes;
+        bad.back()^=1;
+        auto input=inputs;
+        const ByteView altered{bad.data(),bad.size()};
+        if(alter_bank)input.motion_bank=altered;
+        else input.program=altered;
+        auto unqualified=library;
+        if(unqualified.load(input,&error)||unqualified.ready()||!library.ready()){
+            error="modified local input was not refused independently";return false;
+        }
     }
 
     std::vector<CharacterProgramOperation> ops;
@@ -187,11 +181,9 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         }
         return true;
     };
-    CharacterMotionDriver driver;
     CharacterProgramVm vm,foreign;
     CharacterProgramDirectionalControl control,foreign_control;
-    if(!driver.load_directional_transitions(model.view(),rig,asset,clips,initial,{7,11},&error)||
-       !seed(driver,vm,control)||!seed(driver,foreign,foreign_control))return false;
+    if(!seed(driver,vm,control)||!seed(driver,foreign,foreign_control))return false;
     const auto before=vm.state();
     if(vm.request_with_actor_controls(2,0,lanes,-1,step,driver,foreign_control,&ops,&error)||
        !ops.empty()||!unchanged(before,vm.state())){
@@ -208,43 +200,75 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
     }
     // Startup mask 15 is reduced by the original actor's effective mask 3.
     if(!vm.request_with_actor_controls(start.group,start.program,u8(start.mask&lanes),-1,step,driver,control,&ops,&error))return false;
+    GRedNeutralBVisitPlan staged;
+    GRedNeutralBReleasePlan no_request;
+    if(staged.propose_debit(full_stock,&no_request)){
+        error="default visit cannot propose a debit";return false;
+    }
+    const auto opening_state=vm.state();
+    const GRedNeutralBVisitInput input{1,0,true,heading,step,start.aim_clock560};
+    auto targeted=input;targeted.no_active_target_cc=false;
+    if(normal_gred_neutral_b_phase_one_visit(source,library,vm,foreign_control,input,&staged,&error)||
+       normal_gred_neutral_b_phase_one_visit(source,library,vm,control,targeted,&staged,&error)||
+       !unchanged(opening_state,vm.state())||staged.propose_debit(full_stock,&no_request)){
+        error="foreign controls and targeted visits must leave the opening intact";return false;
+    }
     Trace trace;
     auto aim_clock=start.aim_clock560;
     for(unsigned visit=0;visit<=budget;++visit){
         if(visit){
-            f32 vm_step=0;
-            if(!normal_gred_neutral_b_vm_step(source,vm.state().actor.control0[0],step,&vm_step)){
-                error="detached VM step refused";return false;
+            const auto previous=vm.state();
+            auto update=input;update.aim_clock560=aim_clock;
+            if(visit==expected_updates){
+                auto bad_aim=update;bad_aim.actor_step=11; // VM step supported, signed aim allowance refused
+                if(normal_gred_neutral_b_phase_one_visit(source,library,vm,control,bad_aim,&staged,&error)||
+                   !unchanged(previous,vm.state())||staged.raised_cue()||staged.gate().release_due||
+                   staged.propose_debit(full_stock,&no_request)){
+                    error="late aim refusal must not publish the candidate cue or debit";return false;
+                }
             }
-            if(!vm.update_with_actor_controls(lanes,vm_step,driver,control,&ops,&error))return false;
+            if(!normal_gred_neutral_b_phase_one_visit(source,library,vm,control,update,&staged,&error))return false;
+            if(!unchanged(previous,vm.state())||staged.vm_step()!=step){
+                error="local visit changed the accepted VM or sampled the wrong step";return false;
+            }
+            // Accept only in this local fixture. No native actor step occurs.
+            vm=staged.vm();ops=staged.operations();
         }
         const auto& state=vm.state();
         if(!trace.visit(state,ops,asset.programs[1],control,driver)){error="accepted pose or cue differed from the exact program";return false;}
-        // No-target bench: an actual cue from this accepted VM, a heading
-        // supplied by the fixture, and the exact no-target scalar aim path.
-        GRedNeutralBNoTargetAim aim;
-        GRedNeutralBReleaseGate gate;
-        if(!normal_gred_neutral_b_no_target_aim(source,true,heading,step,&aim)||!aim.aim_pass||
-           !aim.clear_aim_refs||aim.heading72!=heading||aim.error5aa||
-           !normal_gred_neutral_b_release_gate(source,state.actor.control0[0],aim.aim_pass,aim_clock,step,&gate)||
+        if(!visit)continue;
+        const auto& aim=staged.aim();
+        const auto& gate=staged.gate();
+        if(!aim.aim_pass||!aim.clear_aim_refs||aim.heading72!=heading||aim.error5aa||
            gate.aim_clock560!=aim_clock||gate.release_due!=(state.actor.control0[0]==1)){
             error="no-target aim or accepted cue gate differed";return false;
         }
         aim_clock=gate.aim_clock560;
-        if(!gate.release_due)continue;
-        if(visit!=expected_updates||trace.selects!=std::array<unsigned,2>{2,2}){
+        if(!gate.release_due){
+            if(staged.propose_debit(full_stock,&no_request)){error="opening pose cannot propose a debit";return false;}
+            continue;
+        }
+        if(!staged.raised_cue()||visit!=expected_updates||trace.selects!=std::array<unsigned,2>{2,2}){
             error="unexpected cue visit or incomplete release pose lanes";return false;
+        }
+        GRedNeutralBVisitPlan pending_visit;
+        if(!normal_gred_neutral_b_phase_one_visit(source,library,vm,control,input,&pending_visit,&error)||
+           pending_visit.vm_step()!=0||pending_visit.raised_cue()||!pending_visit.gate().release_due||
+           std::any_of(pending_visit.operations().begin(),pending_visit.operations().end(),[](const auto& op){
+               return op.kind==CharacterProgramOperationKind::Control0;
+           })){
+            error="pending cue must visit with zero step without raising a second cue";return false;
         }
         // Alternatives at this same cue, not repeated releases or live stock
         // writes. A channel can empty between availability and the cue.
         constexpr WeaponStockModeZeroState last{1,1,180,0},empty{0,0,180,0};
         GRedNeutralBReleasePlan paid,last_round,refused;
-        if(!normal_gred_neutral_b_debit(source,gate,availability.state,&paid)||
+        if(!staged.propose_debit(availability.state,&paid)||
            !paid.request_beam||paid.owner_slot!=source.slot||paid.object_type!=2||paid.argument!=43||
            paid.stock!=WeaponStockModeZeroState{4,5,180,0}||
-           !normal_gred_neutral_b_debit(source,gate,last,&last_round)||!last_round.request_beam||
+           !staged.propose_debit(last,&last_round)||!last_round.request_beam||
            last_round.stock!=WeaponStockModeZeroState{0,1,180,180}||
-           !normal_gred_neutral_b_debit(source,gate,empty,&refused)||refused.request_beam||refused.stock!=empty){
+           !staged.propose_debit(empty,&refused)||refused.request_beam||refused.stock!=empty){
             error="detached channel-0 debit or beam request differed";return false;
         }
         // The cue fixture has no allocator result. It must stop before the
@@ -257,12 +281,23 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
 
         // At zero weight the original side target still has to bind. Remove it
         // only from a separate bench library, not from the qualified inputs.
-        auto incomplete=clips;
-        std::erase_if(incomplete,[](const auto& clip){return clip.group==3&&clip.index==12;});
+        CharacterMotionBank bank;
+        if(!character_motion_bank_load(bank_bytes.view(),&bank,&error))return false;
+        constexpr std::array<std::array<u8,2>,8> incomplete_keys{{
+            {0,0},{0,1},{0,6},{3,0},{3,1},{3,2},{3,11},{3,13}
+        }};
+        std::vector<CharacterMotionClipBinding> incomplete;
+        for(const auto& [group,index]:incomplete_keys){
+            CharacterMotionSelection motion;
+            CharacterMotionClipBinding clip{group,index,{}};
+            if(!character_motion_select(bank,group,index,&motion,&error)||motion.fallback||
+               !hsd_bone_motion_load(motion.archive,rig.binding,&clip.clip,&error))return false;
+            incomplete.push_back(std::move(clip));
+        }
         CharacterMotionDriver missing_driver;
         CharacterProgramVm missing_vm;
         CharacterProgramDirectionalControl missing_control;
-        if(!missing_driver.load_directional_transitions(model.view(),rig,asset,incomplete,initial,{7,11},&error)||
+        if(!missing_driver.load_directional_transitions(model.view(),rig,asset,incomplete,*driver.initial_local_pose(),{7,11},&error)||
            !seed(missing_driver,missing_vm,missing_control)||
            !missing_vm.request_with_actor_controls(2,0,lanes,-1,step,missing_driver,missing_control,&ops,&error))return false;
         for(unsigned update=1;update<visit;++update){
@@ -270,13 +305,14 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
             if(missing_vm.state().actor.control0!=opening){error="premature cue without the side clip";return false;}
         }
         const auto pre_cue=missing_vm.state();
-        if(missing_vm.update_with_actor_controls(lanes,step,missing_driver,missing_control,&ops,&error)||
+        GRedNeutralBVisitPlan missing_visit;
+        if(normal_gred_neutral_b_phase_one_visit(source,library,missing_vm,missing_control,input,&missing_visit,&error)||
+           missing_visit.propose_debit(full_stock,&no_request)||
+           missing_vm.update_with_actor_controls(lanes,step,missing_driver,missing_control,&ops,&error)||
            !ops.empty()||!unchanged(pre_cue,missing_vm.state())){
             error="missing side clip must refuse without publishing the cue";return false;
         }
 
-        CharacterLocalPose local;
-        if(!control.compose_local_pose(state,&local,&error))return false;
         // Unit-scale bench placement, not a reconstruction of when the live
         // initializer sees the parent's world matrices. The two roles use
         // different keys even though both are assigned to the fixture slot.
@@ -286,7 +322,7 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         CharacterPoseFrame frame;
         CharacterWorldPose fixture_matrices;
         if(!character_pose_initial_frame(rig,frame_base,&frame,&error)||
-           !character_pose_direct_world(rig,local,frame,&fixture_matrices,&error))return false;
+           !character_pose_direct_world(rig,staged.pose(),frame,&fixture_matrices,&error))return false;
         if(fixture_matrices.matrices.size()<=7){error="fixture matrix keys missing";return false;}
         const GRedBeamNoTargetBasis basis{source.slot,source.slot,
             fixture_matrices.matrices[7],fixture_matrices.matrices[0]};
@@ -340,7 +376,8 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         }
         std::printf("candidate model bytes=%u/%u; no live actor pose\n",
             unsigned(state.actor.models[0]),unsigned(state.actor.models[1]));
-        std::puts("foreign VM scope and missing zero-weight side clip refused without publishing");
+        std::puts("foreign VM/driver, targeted visit, late aim failure, modified assets and missing side clip refused");
+        std::puts("pending cue sampled with zero VM step and no second cue; debit remains a proposal");
         std::printf("no-target fixture: heading=0x%04x, channel-0 stock %d -> %d, type %u arg %u requested only\n",
             unsigned(u16(aim.heading72)),int(full_stock.current),int(paid.stock.current),unsigned(paid.object_type),unsigned(paid.argument));
         std::puts("last-stock alternative armed 180; empty-stock alternative requested nothing; no allocation or contact");
