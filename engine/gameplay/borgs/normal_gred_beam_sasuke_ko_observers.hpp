@@ -19,6 +19,7 @@ struct GRedSasukeKoObserverSnapshot {
 struct GRedSasukeKoObserverPlan {
     std::array<GRedSasukeKoObserverSlot,6> slots{};
     u8 queue_write_mask=0,ally_stat_mask=0;
+    u8 credit_slot=255,receiver_slot=255;
 };
 // 2FB14..2FC14, exact ordinary mode-zero opposing pair. A declared
 // physical-slot queue snapshot is not a live actor or a notification.
@@ -32,6 +33,7 @@ inline bool normal_gred_beam_sasuke_ko_observers(NormalGRedNeutralBSource source
     const u8 subject=in.slots[ko.receiver_slot].slot3e4;
     if(subject>=in.slots.size())return false;
     GRedSasukeKoObserverPlan next;next.slots=in.slots;
+    next.credit_slot=ko.credit_slot;next.receiver_slot=ko.receiver_slot;
     for(unsigned i=0;i<next.slots.size();++i){
         auto& observer=next.slots[i];
         if(!observer.active00||i==ko.receiver_slot)continue;

@@ -8,7 +8,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_selected_hit.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_post_hit.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_ko_prefix.hpp"
-#include "engine/gameplay/borgs/normal_gred_beam_sasuke_ko_observers.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_ko_tally.hpp"
 
 int main(int argc,char** argv){
     using namespace gf;
@@ -104,6 +104,15 @@ int main(int argc,char** argv){
     if(!normal_gred_beam_sasuke_ko_observers(red,ko,observers,&writes)||writes.queue_write_mask!=1||
        writes.ally_stat_mask||writes.slots[0].queue464[7]!=GRedSasukeKoObserverEvent{3,1}||
        writes.slots[0].cursor484||writes.slots[1]!=observers.slots[1])return 1;
+    StoryRewardCounters tally;
+    GRedSasukeKoTallyInput tally_in;
+    tally_in.caller_and_rng_declared=true;tally_in.credit_slot=0;tally_in.receiver_slot=1;
+    tally_in.context32=tally_in.credit_selector3e6=tally_in.credit_kind83=tally_in.receiver_kind83=0;
+    tally_in.receiver_link4a0=tally_in.receiver_variant3ed=0;tally_in.receiver_model3ea=0x000a;tally_in.rng={5,1};
+    GRedSasukeKoTallyPlan tally_plan;
+    if(!normal_gred_beam_sasuke_ko_tally(red,writes,tally,tally_in,&tally_plan)||!tally_plan.appended||
+       tally_plan.active_index||tally_plan.active_count!=1||tally_plan.stored_word!=~0x000a0009u||
+       tally_plan.rng!=SourceByteRngState{8,3}||tally_plan.receiver_credit5a4_slot!=0||tally.active_count)return 1;
     in.current1c6=180;in.scene_hp_hold1f=true;
     if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&held)||held.stat_write||
        held.health.write_health||!held.reaction.visited)return 1;
@@ -111,4 +120,5 @@ int main(int argc,char** argv){
     std::puts("Moving post-hit alternatives: surviving counters kept separate; 7 -> 0 selects KO continuation; scene hold skips HP and stats.");
     std::puts("Detached KO ledger: declared cost 150, team budget 140 -> 0, credited slot 0.");
     std::puts("Observer fixture: slot 0 writes (3,1) at cursor 7 -> 0; fallen slot skipped. No event delivered.");
+    std::puts("Story tally fixture: proposed normal Sasuke key +9 and credit slot 0. No reward or save write.");
 }

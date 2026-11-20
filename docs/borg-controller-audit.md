@@ -1317,6 +1317,27 @@ the subject from the physical receiver. The headless KO proposes
 This stops at queue writes; no live notification, event consumption,
 actor lifecycle change, or victory decision is wired.
 
+### Argument 43: ordinary KO caller and Story tally
+
+After the direct KO ledger and observer scan, the opposing kind-zero
+pair in context `32 = 0` takes the caller's `2F204..2F304` path.
+With the credited actor's selector `3E6 = 0` and no receiver link,
+it calls `18214C` with the receiver's current model/variant `3EA/3ED`,
+then stores the credited actor reference in the receiver's `5A4`.
+
+The tally updates the first matching complemented model/variant word
+in the active Story reward table, or appends a new word. It uses one
+draw from the existing `55FC` byte stream and adds `1 + (draw & 15)`
+only if the low halfword can hold the result. Overflow leaves the old
+word intact but still consumes the source draw. The detached planner
+refuses an append at capacity rather than writing into the backup.
+
+**1,764** bounded comparisons matched the original caller, tally and
+RNG. The headless fixture proposes a normal Sasuke tally of 9 and
+G-Red's slot for `5A4`. It does not advance an owned RNG, publish a
+live reference, run the common hit-effects tail, grant a Borg, or
+write a save.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
