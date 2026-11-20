@@ -9,6 +9,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_post_hit.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_ko_prefix.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_ko_tally.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_hit_cues.hpp"
 
 int main(int argc,char** argv){
     using namespace gf;
@@ -116,9 +117,19 @@ int main(int argc,char** argv){
     in.current1c6=180;in.scene_hp_hold1f=true;
     if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&held)||held.stat_write||
        held.health.write_health||!held.reaction.visited)return 1;
+    GRedSasukeHitCueInput cue_input;
+    cue_input.ordinary_tail_declared=true;cue_input.receiver_kind83=cue_input.receiver_link4a0=0;
+    cue_input.receiver_render_index96=1;cue_input.receiver_scalar7fc=2.5f;cue_input.sound_counters8_to_11[1]=255;
+    for(const auto* hit:{&moving_hit,&lethal,&held}){
+        GRedSasukeHitCuePlan cues;
+        if(!normal_gred_beam_sasuke_hit_cues(red,selected.contact,*hit,cue_input,&cues)||cues.point!=selected.point||
+           !cues.request_class2||cues.visual_row!=1||!cues.request_sound||cues.sound_id!=67||
+           cues.visual_latch2af!=4||cues.sound_latch2ae!=4||cues.sound_counters8_to_11[1])return 1;
+    }
     std::puts("Separate moving shape-2 fixture: selected (-22,0,0), moved and rebuilt candidate matrix, proposed HP 180 -> 161.");
     std::puts("Moving post-hit alternatives: surviving counters kept separate; 7 -> 0 selects KO continuation; scene hold skips HP and stats.");
     std::puts("Detached KO ledger: declared cost 150, team budget 140 -> 0, credited slot 0.");
     std::puts("Observer fixture: slot 0 writes (3,1) at cursor 7 -> 0; fallen slot skipped. No event delivered.");
     std::puts("Story tally fixture: proposed normal Sasuke key +9 and credit slot 0. No reward or save write.");
+    std::puts("Common hit cues at (-22,0,0): class-2 row 1 and sound 67 proposed in all three HP alternatives.");
 }

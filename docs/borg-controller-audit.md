@@ -1338,6 +1338,28 @@ G-Red's slot for `5A4`. It does not advance an owned RNG, publish a
 live reference, run the common hit-effects tail, grant a Borg, or
 write a save.
 
+### Argument 43: common contact cues
+
+The exact shooting and receiving rows have no special status bits in
+their `+10/+12` hex halfwords. The ordinary `2F514..2F8BC` tail gates
+visual and sound requests independently, using the accepted contact
+point. `2AF = 0` proposes setting it to 4 and calling `19550` with
+visual row 1 and the **beam carrier**, not its credited actor. The
+source cue scan verified the class-2 allocation request with an
+allocator refusal; sound selection still followed.
+
+`2AE = 0` proposes setting it to 4, then derives sound family 8–11
+from strict `7FC > 1.5`, `> 2.5` and `> 3.5` checks. `F088C` uses
+the receiver's render index `96`, separate from its battle slot.
+The old family counter's low bit chooses the variant at base cue
+64, 66, 68 or 70; the counter advances as a byte.
+
+**12,636** bounded source comparisons matched the routing, latches,
+counter writes and playback arguments. The headless fixture proposes
+visual row 1 and cue 67 at the moving contact in surviving, held and
+new-zero alternatives. No effect is allocated, no sound is played,
+and no live latch, counter, or actor state is published.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
