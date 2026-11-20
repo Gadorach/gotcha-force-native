@@ -77,6 +77,10 @@ and actor-interruption conditions: its landing outcome is distinct from being
 destroyed before contact. None of these examples supplies validated durations,
 radius, damage, priority or carry-over values. A guard, outcome payload,
 duration and interruption policy each needs its own owner and tests.
+The [Patra Witch and Angel Nurse audit](borg-controller-audit.md#patra-witch-and-angel-nurse-distinct-x-contact-outcomes)
+shows that a caster, carrier object, snapshotted target and actual recipient
+can differ. A contact outcome uses the resolved recipient, not a pose, target
+hint or visual effect as a substitute for contact.
 
 The catalogue reserves sidecars for moves, traits, forms, fusions, acquisition,
 effects and variant overrides. The [standalone moves check](borg-packages.md#standalone-moves-check)

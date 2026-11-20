@@ -464,6 +464,27 @@ the reload clock. The native comparison matched **114 bounded cases**:
 16 action requests, 14 release gates, 16 projectile requests, eight repeat
 checks and 60 stock cases. No live stock, actor or projectile is published.
 
+## Patra Witch and Angel Nurse: distinct X contact outcomes
+
+Exact normal **Patra Witch `GG4E08:0902/0`** (#48, AFS 636) and
+**Angel Nurse `GG4E08:0900/0`** (#47, AFS 634) share the ordinary movement
+selector table, but not their class dispatch or pose data. The reviewed
+conditioned X path selects group 2 and class state `2/0` for both;
+an earlier action can preempt it. Both use a channel-2 stock debit in
+the audited branches, at different points.
+
+| Move | Stock and contact | Recovered recipient behavior |
+| --- | --- | --- |
+| Patra Witch: Big Spell | Group 4 entry 0 emits event pair `(1,1)`. The class consumes the event and attempts one debit before requesting a caster-owned type-60 object. | That object's qualified contact can request a distinct type-33 effect owned by the **contacted actor**, not necessarily the stored target. Scale mutation, duration, refresh and complete team eligibility are unresolved. |
+| Angel Nurse: Healing | The class attempts the debit during setup. In the audited fallback pose, a lane-gated program command requests a Nurse-owned contact shape; later visual events are not the contact producer. | The checked same-team ordinary branch adds **200 HP** to the **contacted actor**, capped at its own maximum, and refuses zero current HP. It is not a revival, party-wide heal, or guaranteed hit on the stored target. |
+
+[Wiki leads: Patra Witch](https://gotchaforce.fandom.com/wiki/Patra_Witch?oldid=6420)
+and [Angel Nurse](https://gotchaforce.fandom.com/wiki/Angel_Nurse?oldid=6419)
+supply the move names. All **39 bounded offline cases** matched. They
+supplied animation fields, contact owners and allocation results; they
+did not establish full targeting, cast interruption, reload/effect
+lifetimes, or live contacts. Neither actor gained admission.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
