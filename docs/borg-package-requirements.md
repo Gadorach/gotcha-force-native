@@ -194,6 +194,11 @@ bindings or unresolved transfer rules must not consume either actor or produce
 a partially initialized result.
 The [standalone fusion check](borg-packages.md#standalone-battle-fusion-check)
 validates the declared roles and dependencies without fusing or selecting units.
+The [Seiryu source audit](borg-controller-audit.md#cyber-machine-seiryu-two-slot-battle-fusion)
+shows that one result definition can require distinct primary and companion
+controllers on the two existing owner slots. Input ownership, role assignment,
+resource reload, per-owner restore and team expiry are separate. The current
+metadata validator does not implement these runtime boundaries.
 
 **Transformations** also need explicit form IDs, including a default form and
 the model/rig/animation map, moveset, collision, movement policy and effects each

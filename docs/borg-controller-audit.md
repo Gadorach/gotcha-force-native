@@ -353,6 +353,31 @@ or transfer rules. The native comparison matched **134 bounded cases**:
 flag checks and two form-data observations. It does not enact the
 unresolved state-1 return, rebind a live actor or admit retail Titan Tank.
 
+## Cyber Machine Seiryu: two-slot battle fusion
+
+The exact normal `GG4E08` battle matcher pairs **Machine Red `0600/0`**
+(#164, AFS member 575) and **Machine Blue `0601/0`** (#165, member 576).
+It stages **Seiryu `0602/0`** (#176, member 577) and **internal companion
+`0603/0`** (same member, no separate nameplate). These are two reconfigured
+owner slots, not a third combatant or a single-actor form alias.
+
+| Boundary | Recovered source behavior |
+| --- | --- |
+| Request and role | The conditioned fusion command sets a short battle latch. The team scan matches two eligible, requesting slots, then stages reciprocal links, destinations and roles without changing current models. Red ordinarily gets the primary; human Blue takes it when Red is AI. The service's returned anchor and the primary role are distinct. This exact normal pair uses variant 0 for both destinations; non-normal inputs were not audited. |
+| Synchronization and commit | The pair advances through linked readiness and approach stages. Both must reach stage 7 before reconfiguration is staged. The slot lifecycle then reloads both bound resources through the primary owner, retaining owner indices. That is not the scalar in-place rebind used by Titan or Gold Hero. |
+| Active roles | Primary `0602` uses movement type 0 and its own controller. Companion `0603` uses type 7, admits only selector 0, has distinct class hooks, and follows the primary through the companion copy pass. Shared art does not make it a second freely moving Seiryu or a purely visual attachment. Fused initialization pools saved HP; ongoing damage and other state transfer remain unverified. |
+| Expiry and split | The team timer counts **1800 eligible updates** from the last applicable initialization. Zero clears the active team state, but does not split the pair by itself. When the guards allow, each owner queues its own saved original model and variant, independent of which owner piloted Seiryu. Resource retirement and link cleanup are separate, not guaranteed by the request. |
+| Pre-commit interruption | A separate branch can clear the two transition stages and team entry state before commit. It is not the active-fusion split or evidence that every interruption or defeat follows that path. |
+
+All **44 bounded offline cases** matched. They covered latch, role assignment,
+synchronization, timer, return requests, and selected stat/companion fields
+without executing a battle. Live ownership, controller input priority,
+full split, cleanup, and damage/stock transfer need separate witnesses.
+Catalogue discovery writes are independent of battle ownership; no crystal
+acquisition or drop rule was traced.
+[Wiki lead: battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
+Do not extend these rules to another fusion pair.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
