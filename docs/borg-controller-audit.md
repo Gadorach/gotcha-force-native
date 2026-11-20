@@ -623,6 +623,14 @@ program-completion and scene operands. Live motion, pose timing, contact
 and weapon controls remain unverified. [Wiki lead: Flame Dragon](https://gotchaforce.fandom.com/wiki/Flame_Dragon?oldid=6670).
 No other Dragon or actor inherits this evidence.
 
+The detached Flame Dragon component models only the reviewed selector
+leaves, idle-derived takeoff, wind-up debit and active-depletion handoff.
+It reuses the shared meter calculation with Flame Dragon's own costs and
+grounded refill gate. The native comparison matched **242** cases:
+117 requests, eight takeoff/handoff cases, 48 charges, 36 refill visits,
+nine wind-up steps and 24 active-debit outcomes. No VM, floor, actor,
+other takeoff predecessor, or initial placement is wired here.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
