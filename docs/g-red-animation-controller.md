@@ -428,6 +428,37 @@ of no later motion. This proposal is not wired into gameplay.
 It does not address the bone-15 **capsule** against flagged box 86
 or change the raised-side refusal.
 
+#### Ordered displacement amounts after owner selection
+
+The numeric part of `358F4` now has its own portable plan.
+For a nonzero normal it uses a minimum magnitude of `0.002`,
+preserving the sign except that zero takes the negative branch.
+It normalizes the direction and raises weights below 1 to 1.
+`8B480` reads the common `EB` byte: when it is nonzero,
+non-player kinds and owners whose team bits **do not** match
+the mask get weight 50000. A matching team is not given that
+override. An earlier `2AC` bit can select the collider's
+alternate owner; the plan requires that owner selection as
+an explicit caller observation.
+
+If exactly one effective weight reaches 50000, the other
+owner gets the entire displacement. Otherwise `358F4` gives
+the second owner its weighted share, then gives the first
+the opposite remainder. **Two heavy owners still split**;
+50000 is not a blanket no-motion flag. `35CA4` applies each
+write and can propagate it to other owners, so order matters.
+The native plan emits those ordered candidates without
+writing actors, accumulated `1CC`, or `1DD`.
+
+The comparison runs 4,096 synthetic axis-normal cases
+through the qualified DOL branch with explicit owner and
+mask data. It intercepts vector helpers and records calls
+before `35CA4`, not executing a live solid pass. The native
+step counts, target order and float components match: 797
+no-ops, 529 first-only, 516 second-only and 2,254 splits.
+General direction normalization remains a bounded host
+model. Contact admission and gameplay are unchanged.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
