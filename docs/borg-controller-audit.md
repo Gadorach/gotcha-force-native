@@ -528,6 +528,15 @@ All **34 bounded source-fragment checks and four staged vector checks**
 passed. No live contact, charged Slash outcome, device input, or
 interruption sequence was verified.
 
+The detached Teleport Ninja helpers propose the history-based goal, first
+step, iterative travel and completion flags for the caster only. The
+directed-target gate refuses instead of borrowing the history path. Motion
+outputs still require contact; the helper cannot establish immunity or
+publish a root. Mode-1 stock now shares the stock planner but adds the
+preset on each successful debit, preserving mode-0 behavior. The comparison
+matched **40 source-branch cases and 40 staged vector cases**. No directed
+normalization, phase scheduler, live contact, swap or actor is wired.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
