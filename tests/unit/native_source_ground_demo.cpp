@@ -23,9 +23,13 @@ int main(){
     check(render.initialize({1152,648,false,true,"source ground owned fixture"},nullptr,&error),"shared headless renderer");
     NativeBattleMvp world;NativeBattleMvpView view;NativeGRedGroundDashDemo source;NativeBorgAnimationSeed seed;
     check(!view.source_seed(world,&seed),"unevaluated assets/world do not provide a source seed");
+    NativeGRedPracticeWorldMatrices keys;
+    keys.tick=999;
+    check(!view.observe_gred_source_world(world,&keys)&&keys.tick==999,"no key snapshot from unevaluated assets");
     if(!files.exists("local/content/source-gred-ground-v1/locomotion.gfmp")){std::printf("source ground demo: %u checks PASS; optional original inputs absent\n",checks);return 0;}
     const std::string art="local/content/native-battle-mvp-v1",inputs="local/content/source-gred-ground-v1";
     check(view.load(files,art,render,&error)&&world.start({},&view)&&view.update(world,&error),"real shared stage/models and initialized native actors");
+    check(!view.observe_gred_source_world(world,&keys),"provisional duel pose is not a source practice frame");
     NativeBattleMvp neighbor;check(neighbor.start({},&view),"same-model neighboring world");
     check(!view.source_seed(neighbor,&seed),"renderer seed cannot be borrowed by same-model neighbor with identical coordinates");
     check(view.source_seed(world,&seed)&&source.bind(files,art,inputs,world,seed,&error),"same-world/render-instance source binding");
@@ -39,11 +43,24 @@ int main(){
         const auto frame=NativeBattleMvpView::movement_frame(world,1152,648);NativeBorgMotionOffer offer;
         check(source.prepare(world,view.source_binding(),frame,x,y,held,&offer,&error),"source input/VM/motion candidate");
         check(world.step({},false,&view,nullptr,&frame,&offer)&&source.commit(world,view.source_binding(),&error),"shared native response before source-state commit");
+        if(tick<2)check(!view.observe_gred_source_world(world,&keys),"a newer native receipt alone does not publish world keys");
         NativeBorgSourcePose pose;check(source.pose(world,&pose)&&view.update_source(world,pose,&error),"accepted frame and exact render-instance source pose");
         moved|=world.actors()[0].position!=start;
         if(tick==0){
             previous=pose;
+            check(view.observe_gred_source_world(world,&keys)&&keys.tick==world.tick()&&
+                  character_pose_detail::matrix(keys.key0)&&character_pose_detail::matrix(keys.key7)&&
+                  !std::equal(std::begin(keys.key0.m),std::end(keys.key0.m),std::begin(keys.key7.m)),
+                  "accepted source world publishes distinct affine key 0 and key 7 together");
+            check(neighbor.step({},false,&view)&&neighbor.tick()==world.tick()&&
+                  !view.observe_gred_source_world(neighbor,&keys)&&keys.tick==world.tick(),
+                  "same-model neighbor at the same tick cannot inspect or replace current keys");
+            auto missing=pose;missing.frame_scope.reset();
+            check(world.motion_receipt_current(missing.receipt)&&!view.update_source(world,missing,&error)&&
+                  !view.observe_gred_source_world(world,&keys),"movement receipt without the owned frame cannot publish matrices");
+            check(view.update_source(world,pose,&error),"exact frame still publishes after invalid packet refusal");
             check(!view.update(world,&error),"source actor cannot render through legacy curated-pose fallback");
+            check(!view.observe_gred_source_world(world,&keys),"failed legacy publication does not retain authority");
             check(view.update_source(world,pose,&error),"explicit accepted source pose restores publication");
         }
         if(tick==1){
@@ -55,7 +72,8 @@ int main(){
     NativeBorgSourcePose accepted;check(source.pose(world,&accepted),"current accepted pose before explicit producer retirement");
     source.reject();
     BattleMvpVec low,high;
-    check(accepted.frame_scope.expired()&&!world.motion_receipt_current(accepted.receipt)&&!view.actor_bounds(0,&low,&high),"producer retirement revokes old pose and receipt, even with retained packet");
+    check(accepted.frame_scope.expired()&&!world.motion_receipt_current(accepted.receipt)&&!view.actor_bounds(0,&low,&high)&&
+          !view.observe_gred_source_world(world,&keys),"producer retirement revokes old pose, receipt and key observation");
     check(!view.update_source(world,accepted,&error),"retired source cannot publish old model state");
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,inputs,world,seed,&error),"explicit restart rebinds source world and pose generations");
     NativeBorgMotionOffer current;
@@ -64,6 +82,10 @@ int main(){
     const auto retained_old_binding=accepted.binding.lock();
     check(view.load(files,art,render,&error),"same-model renderer reload");
     check(retained_old_binding&&retained_old_binding!=view.source_binding().lock()&&!view.update_source(world,accepted,&error),"retained old model identity cannot publish into reloaded instance");
+    auto retagged=accepted;retagged.binding=view.source_binding();
+    check(world.motion_receipt_current(retagged.receipt)&&!retagged.frame_scope.expired()&&
+          !view.update_source(world,retagged,&error)&&!view.observe_gred_source_world(world,&keys),
+          "retagging the public binding cannot replace the original frame's model owner");
     check(!source.prepare(world,view.source_binding(),NativeBattleMvpView::movement_frame(world,1152,648),0,0,0,&current,&error)&&accepted.frame_scope.expired(),"reloaded render instance retires source producer");
     check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&source.bind(files,art,inputs,world,seed,&error),"fresh actor/render generation after reload refusal");
     NativeBorgMotionOffer rejected;
@@ -147,7 +169,8 @@ int main(){
                 previous_air=pose;
                 check(native_borg_movement_frame({0,1},&camera),"camera observation may rotate during vertical motion");
                 const auto frozen_tick=world.tick();GamePadState pause;pause.start=true;
-                check(world.step({pause,{}},false,&view)&&world.paused()&&world.tick()==frozen_tick&&source.pose(world,&pose),"pause preserves current accepted airborne frame");
+                 check(world.step({pause,{}},false,&view)&&world.paused()&&world.tick()==frozen_tick&&source.pose(world,&pose)&&
+                       view.observe_gred_source_world(world,&keys)&&keys.tick==frozen_tick,"pause preserves current accepted airborne frame and keys");
                 check(world.step({},false,&view)&&world.step({pause,{}},false,&view)&&!world.paused()&&world.tick()==frozen_tick&&
                     source.resource()==previous_resource,"unpause does not spend resource or integrate hidden air updates");
             }

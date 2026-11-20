@@ -1149,6 +1149,22 @@ world and exact class-3 lease, then bind its class-4 child to that
 carrier's current or source-retained `114` in the registry pass.
 A slot, beam token, or numeric matrix alone is not that evidence.
 
+#### Native practice matrix ownership
+
+The accepted movement frame now owns its immutable local pose and
+original renderer binding. A copied pose packet supplies no editable
+bone data, and retagging its public binding cannot carry the old pose
+into a reloaded renderer. The shared view can inspect keys 0 and 7
+together only after a successful publication for the exact current
+native tick, producer frame, and render instance. A newer movement
+receipt alone, a same-model neighbor, a legacy pose, or a retired
+producer does not publish either key.
+
+These are diagnostics from the real movement-practice renderer, not
+the source combat actor's post-release matrices. The ordinary-B VM,
+paid release, and class-3/class-4 owners still need a common battle
+update; the practice matrices cannot satisfy that join.
+
 ### Argument 43: admitted normal Sasuke receiver prefix
 
 In the scoped ordered pair, the normal G-Red beam uses attack descriptor

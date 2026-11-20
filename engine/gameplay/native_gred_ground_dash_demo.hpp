@@ -749,8 +749,9 @@ public:
                 direct_expiring_relaunch_ready,pending_->direct_expiring_entry_push,pending_->expiring_walk_air_dash,
                 pending_->expiring_walk_air_dash_relaunch,pending_->expiring_walk_air_dash_snap,
                 accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->third_timed_release_push,
-                accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->down_timed_release_push}));
-        pose_={std::move(pending_->local),binding_,receipt,frame_scope_};pending_.reset();return true;
+                 accepted.kind==NativeBorgMotionKind::StaticPush&&accepted.jump_motion&&accepted.jump_motion->down_timed_release_push},
+                 binding_,std::move(pending_->local)));
+        pose_={binding_,receipt,frame_scope_};pending_.reset();return true;
     }
     void reject(){retire();}
     bool pose(const NativeBattleMvp& world,NativeBorgSourcePose* out)const{

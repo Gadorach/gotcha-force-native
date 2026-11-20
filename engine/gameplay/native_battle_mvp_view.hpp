@@ -196,7 +196,7 @@ public:
         *out=below?selected:low;return true;
     }
     bool update(const NativeBattleMvp& world,std::string* error){
-        source_practice_frame_.reset();
+        source_practice_frame_.reset();rendered_scope_.reset();
         if(!ready_||!world.ready())return false;
         for(unsigned i=0;i<2;++i)if(!borgs_[i].update(world.actors()[i],world.tick(),error))return false;
         rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();
@@ -208,11 +208,15 @@ public:
     }
     std::weak_ptr<const CharacterModelBinding> source_binding()const{return borgs_[0].render_binding();}
     bool update_source(const NativeBattleMvp& world,const NativeBorgSourcePose& source,std::string* error){
-        source_practice_frame_.reset();
+        source_practice_frame_.reset();rendered_scope_.reset();
         if(!ready_||!world.motion_receipt_current(source.receipt)){borgs_[0].refuse_source_pose();if(error)*error="source view: stale/foreign native contact receipt";return false;}
         if(!borgs_[0].update_source_pose(world,source,error)||!borgs_[1].update(world.actors()[1],world.tick(),error))return false;
         if(source_practice_)source_practice_frame_=source.frame_scope;
         rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();return true;
+    }
+    bool observe_gred_source_world(const NativeBattleMvp& world,NativeGRedPracticeWorldMatrices* out)const{
+        return ready_&&rendered_tick_==world.tick()&&world.owns_motion_scope(rendered_scope_)&&
+            borgs_[0].observe_source_world_matrices(world,out);
     }
     bool actor_bounds(unsigned actor,BattleMvpVec* low,BattleMvpVec* high)const{return actor<2&&borgs_[actor].bounds(low,high);}
     static Camera camera_for_actors(const BattleMvpActor& player,const BattleMvpActor& target,s32 width,s32 height){

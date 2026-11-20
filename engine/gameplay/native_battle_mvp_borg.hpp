@@ -41,11 +41,16 @@ struct NativeBorgSourceReadout {
 };
 class NativeBorgSourcePoseScope {
     friend class NativeGRedGroundDashDemo;
-    NativeBorgSourcePoseScope(const NativeBorgMotionReceipt& receipt,NativeBorgSourceReadout readout):receipt_(receipt),readout_(readout){}
+    friend class NativeBattleMvpBorg;
+    NativeBorgSourcePoseScope(const NativeBorgMotionReceipt& receipt,NativeBorgSourceReadout readout,
+                             std::weak_ptr<const CharacterModelBinding> binding,CharacterLocalPose local)
+        :receipt_(receipt),readout_(readout),binding_(std::move(binding)),local_(std::move(local)){}
     NativeBorgSourcePoseScope(const NativeBorgSourcePoseScope&)=delete;
     NativeBorgSourcePoseScope& operator=(const NativeBorgSourcePoseScope&)=delete;
     NativeBorgMotionReceipt receipt_;
     NativeBorgSourceReadout readout_;
+    std::weak_ptr<const CharacterModelBinding> binding_;
+    CharacterLocalPose local_;
 public:
     std::optional<NativeBorgSourceReadout> readout(const NativeBattleMvp& world)const{
         const auto meter=readout_.meter;
@@ -63,9 +68,12 @@ struct NativeBorgAnimationSeed {
     std::weak_ptr<const NativeBorgMotionScope> world_scope;
 };
 struct NativeBorgSourcePose {
-    CharacterLocalPose local;std::weak_ptr<const CharacterModelBinding> binding;NativeBorgMotionReceipt receipt;
+    std::weak_ptr<const CharacterModelBinding> binding;NativeBorgMotionReceipt receipt;
     std::weak_ptr<const NativeBorgSourcePoseScope> frame_scope;
 };
+// Diagnostic copy from an accepted normal G-Red movement frame. It is not
+// the source combat actor's world, a muzzle receipt, or permission to fire.
+struct NativeGRedPracticeWorldMatrices {u32 tick=0;Mat4 key0,key7;};
 //Presentation for a native MVP gameplay actor, using the shared bone sampler,
 //pose evaluation, skinning and renderer. No source constructor/callback receipt.
 class NativeBattleMvpBorg {
@@ -150,15 +158,25 @@ public:
     bool update_source_pose(const NativeBattleMvp& accepted,const NativeBorgSourcePose& source,std::string* error){
         const auto& actor=accepted.actors()[0];const auto tick=accepted.tick();
         presentation_ready_=false;
-        if(!ready_||source.frame_scope.expired()||!accepted.motion_receipt_current(source.receipt)||!actor.source_ground_motion||model_id_!=0x615||actor.model!=0x615||source.binding.lock()!=scene_.instance_binding()){
+        const auto owned=source.frame_scope.lock();const auto binding=scene_.instance_binding();
+        if(!ready_||!owned||!binding||source.binding.lock()!=binding||owned->binding_.lock()!=binding||
+           !accepted.motion_receipt_current(source.receipt)||!accepted.motion_receipt_current(owned->receipt_)||
+           !actor.source_ground_motion||model_id_!=0x615||actor.model!=0x615){
             if(error)*error="native Borg source pose: foreign/reloaded model binding";
             return false;
         }
         CharacterPoseFrame frame;CharacterWorldPose world;
         const auto root=mat4_multiply(mat4_translation(actor.position.data()),mat4_rotation_y(std::atan2(actor.facing.x,actor.facing.z)));
-        if(!character_pose_initial_frame(scene_.rig(),root,&frame,error)||!character_pose_direct_world(scene_.rig(),source.local,frame,&world,error)||!scene_.set_world_pose(world,{},error))return false;
-        world_=std::move(world);displayed_=source.local;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=0;
+        if(!character_pose_initial_frame(scene_.rig(),root,&frame,error)||!character_pose_direct_world(scene_.rig(),owned->local_,frame,&world,error)||!scene_.set_world_pose(world,{},error))return false;
+        world_=std::move(world);displayed_=owned->local_;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=0;
         source_pose_active_=true;source_frame_scope_=source.frame_scope;presentation_ready_=true;return true;
+    }
+    bool observe_source_world_matrices(const NativeBattleMvp& world,NativeGRedPracticeWorldMatrices* out)const{
+        if(!out||!ready_||!presentation_ready_||!source_pose_active_||!scene_.ready()||
+           last_tick_!=world.tick()||world_.matrices.size()<=7)return false;
+        const auto owned=source_frame_scope_.lock();const auto binding=scene_.instance_binding();
+        if(!owned||!binding||owned->binding_.lock()!=binding||!world.motion_receipt_current(owned->receipt_))return false;
+        *out={last_tick_,world_.matrices[0],world_.matrices[7]};return true;
     }
     std::weak_ptr<const CharacterModelBinding> render_binding()const{return scene_.instance_binding();}
     void upload(RenderEngine& render,u32 base){scene_.upload_textures_shared(render,base);}
