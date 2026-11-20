@@ -259,6 +259,16 @@ and projection returns, then the root and heading around both class hooks
 and the physical response. Do not borrow Beam's steering or placement
 candidate as an Emperor actor receipt.
 
+The detached Emperor component keeps four independent boundaries: the
+three class-pin prefixes, shared table arithmetic, the separate per-slot
+floor-lift amount, and the exact upper/lower selector coverage. Beam now
+uses the same table arithmetic behind its own identity check and retains
+its distinct steering. Neither wrapper embeds original rows or performs
+projection. Emperor native proposals matched **422 bounded source-fragment
+cases**, including 256 table placements, 48 hook prefixes, six fallback
+heights, 64 lane requests and 48 refill passes. These are not actor or
+spawn receipts.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
