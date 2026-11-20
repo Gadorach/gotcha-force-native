@@ -3,7 +3,9 @@
 #include <fstream>
 #include "engine/core/headless_backends.hpp"
 #include "engine/gameplay/native_battle_mvp_view.hpp"
+#include "engine/gameplay/native_gred_class3_trial_bridge.hpp"
 #include "engine/gameplay/native_gred_neutral_b_trial.hpp"
+#include "tests/unit/scene_physical_pools_fixture.hpp"
 
 namespace {
 using namespace gf;
@@ -33,13 +35,95 @@ bool check(bool ok,const char* why){
     if(!ok)std::fprintf(stderr,"native neutral-B trial: %s (%s)\n",why,error.c_str());
     return ok;
 }
+enum class Capacity {NoAttempt,Available,NoDescriptor,NoCarrier,BothFull};
+struct AllocationFixture {
+    SceneDescriptorBootstrap models;
+    ScenePhysicalPools physical;
+    NativeGRedClass3TrialBridge bridge;
+    std::vector<SceneDescriptorLease> held_descriptors;
+    std::vector<SceneClass3Lease> held_carriers;
+
+    bool bind(NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,Capacity capacity){
+        auto recipe=physical_pools_fixture::bytes();
+        recipe[160+9]=16; // exact group 9 kind for the scoped slot-0 request
+        ScenePhysicalPoolsProfile profile;
+        if(!check(profile.load({recipe.data(),recipe.size()},&error)&&models.begin_fresh(physical_pools_fixture::descriptor_profile(),&error)&&
+                  physical.begin_fresh(profile,models,&error)&&bridge.bind(source,world,physical),
+                  "actual class3/class4/model allocation domain joined to the fresh trial"))return false;
+        auto pool=physical.class2_pool();
+        const auto descriptors=models.model_pool();
+        if(capacity==Capacity::NoCarrier||capacity==Capacity::BothFull)
+            for(unsigned i=0;i<512;++i){
+                SceneClass3Lease lease;
+                if(!check(pool->acquire_class3(-1,false,0,&lease,&error)==SceneObjectAcquire::Allocated,
+                          "occupy real carrier capacity"))return false;
+                held_carriers.push_back(lease);
+            }
+        if(capacity==Capacity::NoDescriptor||capacity==Capacity::BothFull)
+            while(descriptors->snapshot()->free_count){
+                SceneDescriptorLease lease;
+                if(!check(descriptors->acquire(&lease,&error)==SceneDescriptorAcquire::Acquired,
+                          "occupy real descriptor capacity"))return false;
+                held_descriptors.push_back(lease);
+            }
+        return true;
+    }
+    bool finish(NativeGRedNeutralBTrial& source,NativeBattleMvp& world,NativeBattleMvpView& view,Capacity capacity,
+                const WeaponStockModeZeroState& after){
+        using S=GRedClass3TrialStatus;
+        const auto expected=capacity==Capacity::Available?S::Allocated:capacity==Capacity::NoCarrier?S::NoCarrier:S::NoDescriptors;
+        const auto pool=physical.class2_pool();
+        const auto descriptors=models.model_pool();
+        const auto carrier_before=*pool->class3_snapshot();
+        const auto shape_before=*pool->collision_snapshot();
+        const auto descriptor_before=*descriptors->snapshot();
+        const auto lists_before=*pool->snapshot();
+        NativeGRedNeutralBTrialReadout state;
+        NativeBattleMvp foreign;
+        NativeGRedNeutralBTrial other_producer;
+        NativeGRedTrialBeamHandoff duplicate;
+        if(!check(foreign.start({},&view)&&!bridge.try_once(source,foreign,view,&error)&&
+                  !bridge.try_once(other_producer,world,view,&error)&&
+                  bridge.try_once(source,world,view,&error)&&bridge.status()==expected&&
+                  !source.take_beam_handoff(world,view,&duplicate)&&source.observe(world,&state)&&state.stock==after&&
+                  *pool->collision_snapshot()==shape_before&&!world.shots_spawned()&&!world.hits(),
+                  "same paid owner and view consume one attempt with no class4 or stock refund"))return false;
+        if(expected==S::Allocated){
+            const auto& lease=bridge.lease();
+            const auto* record=pool->inspect(lease);
+            const auto* models_owned=pool->class3_models(lease);
+            if(!check(lease.current()&&record&&models_owned&&record->group01==9&&record->kind83==16&&
+                      !record->active00&&!models_owned->header_installed&&pool->snapshot()->group_heads[9]==ScenePhysicalLink{3,lease.index()}&&
+                      models_owned->descriptor_count99==1&&models_owned->descriptor_indices[0]==descriptor_before.free_head&&
+                      pool->class3_snapshot()->free_count+1==carrier_before.free_count&&
+                      descriptors->snapshot()->free_count+1==descriptor_before.free_count&&
+                      bridge.factory().propose_header&&bridge.factory().argument11==43,
+                      "one rootless lease and descriptor; factory header is a proposal"))return false;
+            return check(!bridge.try_once(source,world,view,&error)&&bridge.release_uninitialized(&error)&&
+                         bridge.status()==S::Released&&!lease.current()&&!bridge.release_uninitialized(&error)&&
+                         pool->class3_snapshot()->free_count==carrier_before.free_count&&
+                         descriptors->snapshot()->free_count==descriptor_before.free_count,
+                         "rootless release revokes the lease and cannot run twice");
+        }
+        if(!check(!bridge.lease().current()&&!bridge.factory().propose_header&&
+                  *pool->class3_snapshot()==carrier_before&&*descriptors->snapshot()==descriptor_before&&
+                  *pool->snapshot()==lists_before,"capacity refusal leaves pools and lists unchanged"))return false;
+        if(!held_descriptors.empty()&&!check(descriptors->release(held_descriptors.back(),&error),"return descriptor capacity"))return false;
+        if(!held_carriers.empty()&&!check(pool->release(held_carriers.back(),&error),"return carrier capacity"))return false;
+        return check(!bridge.try_once(source,world,view,&error)&&!bridge.lease().current()&&!bridge.release_uninitialized(&error),
+                     "later capacity cannot repeat the paid attempt");
+    }
+};
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
-           const GRedNeutralBLocalLibrary& library,s16 rounds,bool edit_final){
+           const GRedNeutralBLocalLibrary& library,s16 rounds,bool edit_final,Capacity capacity=Capacity::NoAttempt){
     NativeBattleMvp world;
     NativeBorgAnimationSeed seed;
     NativeGRedNeutralBTrial source;
     if(!check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
               source.begin(files,art,ground,world,seed,library,rounds,&error),"fresh same-renderer native trial"))return false;
+    AllocationFixture allocation;
+    if(capacity!=Capacity::NoAttempt&&(!allocation.bind(source,world,capacity)||
+       !check(!allocation.bridge.try_once(source,world,view,&error),"unpaid frame cannot touch class3")))return false;
     NativeGRedNeutralBTrialReadout state;
     NativeGRedPracticeWorldMatrices keys;
     NativeGRedTrialBeamHandoff handoff;
@@ -69,12 +153,15 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
         if(frame==17&&edit_final){
             return check(!source.commit(world,view.source_binding(),&error)&&!source.observe(world,&state)&&
                          !source.commit(world,view.source_binding(),&error)&&!source.take_beam_handoff(world,view,&handoff)&&
+                         (capacity==Capacity::NoAttempt||(!allocation.bridge.try_once(source,world,view,&error)&&
+                          allocation.physical.bank(3)->free_count==512))&&
                          !handoff.inspect(world,view,&call)&&!world.shots_spawned()&&!world.hits(),
                          "foreign serial cannot publish a due debit or be retried");
         }
         NativeBorgSourcePose pose;
         if(!check(source.commit(world,view.source_binding(),&error)&&source.pose(world,&pose)&&
-                  !source.take_beam_handoff(world,view,&handoff),
+                  !source.take_beam_handoff(world,view,&handoff)&&(capacity==Capacity::NoAttempt||
+                  !allocation.bridge.try_once(source,world,view,&error)),
                   "matching movement receipt alone does not hand off a factory call"))return false;
         if(!check(view.update_source(world,pose,&error)&&view.observe_gred_source_world(world,&keys)&&keys.tick==frame&&
                   source.observe(world,&state)&&state.tick==frame&&bool(state.paid)==(frame==17),
@@ -94,6 +181,7 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
               !source.prepare(world,view.source_binding(),camera,&blocked,&error)&&
               !world.step({},false,&view)&&source.observe(world,&state)&&state.stock==after,
               "one debit, one accepted request, and no reentry or legacy fallback"))return false;
+    if(capacity!=Capacity::NoAttempt)return allocation.finish(source,world,view,capacity,after);
     NativeBattleMvpView unpublished;
     if(!check(world.set_paused(true)&&!source.take_beam_handoff(world,view,&handoff)&&world.set_paused(false)&&
               !source.take_beam_handoff(world,unpublished,&handoff)&&!source.take_beam_handoff(world,view,nullptr)&&
@@ -136,6 +224,8 @@ int main(int argc,char** argv){
     if(!check(render.initialize({1152,648,false,true,"source neutral-B trial"},nullptr,&error)&&
               view.load(files,art,render,&error),"shared headless renderer and stage"))return 1;
     if(!trial(files,art,ground,view,library,5,false)||!trial(files,art,ground,view,library,1,false)||
-       !trial(files,art,ground,view,library,5,true))return 1;
-    std::printf("native neutral-B trial: %u checks PASS; cue at tick 17 and one allocator handoff, no allocated beam\n",checks);
+       !trial(files,art,ground,view,library,5,true,Capacity::Available))return 1;
+    for(auto capacity:{Capacity::Available,Capacity::NoDescriptor,Capacity::NoCarrier,Capacity::BothFull})
+        if(!trial(files,art,ground,view,library,5,false,capacity))return 1;
+    std::printf("native neutral-B trial: %u checks PASS; one rootless class3 outcome, no beam header or child\n",checks);
 }

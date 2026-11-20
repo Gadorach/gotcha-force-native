@@ -1027,8 +1027,8 @@ The host trial passes **327** checks in native and sanitizer builds.
 
 The trial uses the shared pose owner and stock planner, but is not in
 the duel, pickers or Story. It does not resolve a live target, continue
-recovery/reload, allocate a beam or collider, apply damage, or write
-a save.
+recovery/reload, spawn an active beam or collider, apply damage, or
+write a save.
 
 With the same local inputs and the exported `neutral-b.gfmp` above:
 
@@ -1075,9 +1075,18 @@ arena, index and generation, and FIFO reuse does not revive a stale
 lease. Standalone class 2 cannot create either bank.
 
 This checkpoint includes allocation and unbound release only. The
-isolated paid-trial test reaches a class-3 lease with one descriptor
-or the real capacity refusal. It installs no beam header or shape,
-does not populate the registry, and does not change the playable duel.
+stationary paid trial can now consume the handoff through the shared
+allocator. It captures the exact trial owner and pool at bind, and
+requires the current paid renderer publication before its one attempt.
+Success owns a rootless class-3 lease and one descriptor. Either
+capacity refusal consumes the attempt without refund or retry; if both
+banks are full, descriptor refusal wins. The host also checks rootless
+release and stale-lease refusal. **4,775** host checks passed in both
+native and sanitizer builds.
+
+The resulting factory header is still a proposal. No actor-field
+copy, class-4 child initialization, matrix read, or registry publication
+is implied by that lease. The playable duel is unchanged.
 
 ### Argument 43: authored beam art
 

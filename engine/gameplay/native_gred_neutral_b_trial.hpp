@@ -30,6 +30,7 @@ private:
 // native movement acceptance and shared renderer. It does not admit combat,
 // resolve a target, service a reload/pose exit, or take a pool allocation.
 class NativeGRedNeutralBTrial {
+    friend class NativeGRedClass3TrialBridge;
     static constexpr NormalGRedNeutralBSource source_{0x0615,0,0};
     struct Pending {
         CharacterProgramVm vm;
@@ -140,6 +141,9 @@ public:
     }
     void retire(){ready_=opening_=handoff_taken_=false;ground_.reject();pending_.reset();paid_.reset();}
 private:
+    std::shared_ptr<const NativeBorgMotionProducer> allocation_trial_owner(const NativeBattleMvp& world)const{
+        return ready_&&world.owns_motion_scope(ground_.world_scope_)?ground_.producer_:nullptr;
+    }
     static bool stable(const BattleMvpActor& actor){
         return actor.health&&actor.grounded&&!actor.movement_speed&&!actor.vertical_speed&&
             !actor.attack_ticks&&!actor.hit_flash&&!actor.dash_ticks&&!actor.upper_body_yaw;
