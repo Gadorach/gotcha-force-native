@@ -289,6 +289,38 @@ interval and vertical clearances at its ends. This explains such
 geometry differences without claiming the logged face caused every
 native rejection. The diagnostic does not change acceptance.
 
+#### Source floor projection vs. later solid correction
+
+Read-only inspection of the qualified initialized DOL separates two
+operations. Selector 6's `5FECC` moves via `67310` before calling
+`677B0`. `67310`'s `68030` call is an upper stage-height clamp, not
+a side-wall sweep. The detached `677B0` path pairs floor height and
+normal through `3E0A8`, tests the new Y and displacement direction,
+then either projects/damps or snaps and calls the landing continuation.
+It has no test of the earlier X/Z point against the selected triangle's
+footprint. This explains why a below-face approach can stage a
+projection without proving solid travel.
+
+The separate world contact pass `2BB14` resets `1DD` and accumulated
+displacement `1CC` through `2CDA4`. Solid-response paths can then write
+them; for example `35CA4` applies displacement and sets bit 0 of `1DD`.
+The floor follow-up at `2BDFC` only proceeds for an occupied actor
+with nonzero `1DD`. It queries the height-only `3D6E4`; for an
+unattached actor it raises Y **only** if floor minus `6D0` exceeds
+the current Y. After a lift, nonzero solid displacement with
+normalized Y at or below `-0.5` sets `1DF` to 2. The constant is
+the initialized scalar at `80436F70`. This substep does not change X/Z,
+write velocity, or call the landing program.
+
+The portable `stage_ground_post_solid_floor` kernel covers that
+detached substep on explicitly supplied fields. It reuses the static
+height query and has tests for the movement gate, strict lift, height
+cutoff, offset, and recovery hold. No native path asserts that the
+original solid pass ran. Attachments, later world responses, and the
+real collider/displacement result on the face-1130 route remain
+unverified. Neither an endpoint floor hit nor the native wall proxy
+can set the original movement flag; raised-side admission stays closed.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
