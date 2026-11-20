@@ -5,6 +5,7 @@
 #include <fstream>
 #include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_phase_one.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
 
 namespace {
@@ -307,6 +308,16 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
            std::abs(seeded.distance180-1.f)>.0001f||std::abs(advanced.distance180-81.f)>.0001f){
             error="detached beam flight prefix differed";return false;
         }
+        GRedBeamScalePlan seed_scale,active_scale;
+        GRedBeamTransformPlan beam_frame;
+        if(!normal_gred_beam_scale_seed(source,1,seeded.distance180,&seed_scale)||
+           !normal_gred_beam_scale_step(source,0,seed_scale.reference188,seed_scale.physical_c0,advanced.distance180,&active_scale)||
+           !normal_gred_beam_transform(source,advanced,active_scale,basis.parent_key7,&beam_frame)||
+           beam_frame.basis!=GRedBeamBasisRoute::UpReference||
+           source_basis_detail::column(beam_frame.frame114,3)!=advanced.position20||
+           std::abs(active_scale.physical_c0-1.082251f)>.0001f||std::abs(active_scale.scale58[2]-3.681818f)>.0001f){
+            error="detached beam scale or affine basis differed";return false;
+        }
         for(unsigned lane=0;lane<2;++lane){
             const auto& l=state.lanes[lane];
             const auto& d=*control.directional_snapshot(l.motion);
@@ -341,6 +352,8 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
             double(muzzle.unit_bearing[0]),double(muzzle.unit_bearing[1]),double(muzzle.unit_bearing[2]));
         std::printf("fixture only: distance %.0f -> %.0f; speed for next visit %.1f; numeric prefix only\n",
             double(seeded.distance180),double(advanced.distance180),double(advanced.speed44));
+        std::printf("fixture only: beam matrix +114, physical C0 %.6f versus axial scale %.6f; no collider update\n",
+            double(active_scale.physical_c0),double(active_scale.scale58[2]));
         if(!stage_dir.empty()&&!stage_fixture(stage_dir,seeded,advanced,error))return false;
         return true;
     }

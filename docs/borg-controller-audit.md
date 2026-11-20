@@ -1076,6 +1076,29 @@ The vertical stage hit refreshes muzzle distance to 90 and retains
 admit the beam into a scene, run the stage effect or modifier/scale
 tail, update a collider, or resolve damage.
 
+### Argument 43: beam matrix and separate shape scale
+
+`C44A8` builds the beam's own `+114` matrix from **current position
+minus muzzle origin**, not from its motion vector. It tries mode 5
+with +Y as the reference, then mode 4 with +X. If both fail, it keeps
+the supplied prior columns. It still applies the explicit scales and
+writes the current translation.
+
+The seed scale is `parent B4 × (40 / 36.96)`. The unmodified active
+tail keeps physical `C0` separate from `min(distance, 1000) / 22` on
+the matrix's Z axis. The fixture's first flight step gives `C0 ≈ 1.082251`
+and axial scale `≈ 3.681818`. **212** bounded original-code cases matched
+the scale, basis selection and matrix writes using host vector math.
+The first sphere initializer reads the carrier's `C0` for its physical
+radius, not the beam's axial scale. No collider update is wired.
+
+The exact descriptor's flag 1 also reaches a separate once-only
+activation write. In **16** bounded source cases, the null-target
+branch used `1CA` to suppress repeats, assigned a nonzero wrapping
+token to beam `26C`, and incremented the credited actor's `404`
+counter. These are initialization bookkeeping writes, not hits or
+HP changes. They remain unwired.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
