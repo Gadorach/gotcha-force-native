@@ -485,6 +485,14 @@ supplied animation fields, contact owners and allocation results; they
 did not establish full targeting, cast interruption, reload/effect
 lifetimes, or live contacts. Neither actor gained admission.
 
+The detached support planners reuse the mode-0 stock proposal and keep
+Patra's release event, caster object and recipient effect separate. Nurse's
+setup, lane-gated shape and ordinary same-team HP write also remain distinct.
+A contact input requires the reviewed row and resolved recipient; a target
+hint or cosmetic cue cannot give it one. The native comparison matched **55**
+cases covering release, cast and setup results, shape lane, effect ownership
+and HP/mode gates. No stock, object, collider, actor HP or effect is applied.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
