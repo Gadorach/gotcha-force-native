@@ -661,6 +661,25 @@ return, not a timed reload. The native comparison matched **89** bounded
 cases across requests, entries, bookkeeping, program metadata, and stock.
 No live control program, bomb, contact or actor is published.
 
+## Normal Knight and Normal Samurai: shared movement, distinct melee
+
+Exact normal **Normal Knight `GG4E08:020A/0`** (#26, AFS member 519)
+and **Normal Samurai `GG4E08:0700/0`** (#39, member 606) share all
+48 selector pairs and the three-use jump policy. Their movement operands,
+class programs, and hit geometry differ. The shared jump count also does
+not make their separate dash meter operands identical.
+
+| Audited action | Recovered source behavior |
+| --- | --- |
+| Knight neutral X / Shield Slash | A negative first program event can arm the shield without launching. A later positive event can debit one channel-2 stock and request a Knight-owned type-24 hit object. Its moving spheres are distinct from the resident shield plane. The inspected return clears the owner latch; an owner hook can restore depleted stock. No live block, reflection or blanket refund was verified. |
+| Samurai ordinary close B / Nitoryu | The close-route classification uses a conditioned input and cached target context, not a hit. The first strike does not debit stock. A lane-gated program command requests group-1 shapes directly on Samurai; a later opcode-17 event can create a separate presentation child. Actual contact supplies the receiver, not the selected target or that child. |
+
+The archived [Knight](https://gotchaforce.fandom.com/wiki/Normal_Knight?oldid=6204)
+and [Samurai](https://gotchaforce.fandom.com/wiki/Normal_Samurai?oldid=6412)
+pages provide the move names. All **169 bounded offline cases** matched.
+Registration and raw hit rows do not establish live overlap, final damage,
+or combo hit count. No action, live guard, or actor gained admission.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
