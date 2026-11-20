@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_muzzle.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
 
@@ -195,6 +196,13 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
            !normal_gred_neutral_b_debit(source,gate,empty,&refused)||refused.request_beam||refused.stock!=empty){
             error="detached channel-0 debit or beam request differed";return false;
         }
+        // The cue fixture has no allocator result. It must stop before the
+        // constructor header, even though the separate muzzle math can run.
+        GRedBeamFactoryPlan allocation;
+        if(!normal_gred_beam_factory_plan(source,paid,aim.clear_aim_refs,GRedBeamPoolSample::Unobserved,&allocation)||
+           allocation.call!=GRedBeamPoolCall{3,8,12,16,1,false}||allocation.propose_header){
+            error="detached factory request crossed the allocator boundary";return false;
+        }
 
         // At zero weight the original side target still has to bind. Remove it
         // only from a separate bench library, not from the qualified inputs.
@@ -269,6 +277,9 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         std::printf("no-target fixture: heading=0x%04x, channel-0 stock %d -> %d, type %u arg %u requested only\n",
             unsigned(u16(aim.heading72)),int(full_stock.current),int(paid.stock.current),unsigned(paid.object_type),unsigned(paid.argument));
         std::puts("last-stock alternative armed 180; empty-stock alternative requested nothing; no allocation or contact");
+        std::printf("allocator request only: class %u, base group %u, slot group %u, %u descriptor; no header\n",
+            unsigned(allocation.call.pool_class),unsigned(allocation.call.group),unsigned(allocation.call.resolved_group),
+            unsigned(allocation.call.descriptors));
         std::printf("fixture only: parent key-7 origin=(%.5f,%.5f,%.5f), credited key-0 bearing=(%.6f,%.6f,%.6f)\n",
             double(muzzle.origin174[0]),double(muzzle.origin174[1]),double(muzzle.origin174[2]),
             double(muzzle.unit_bearing[0]),double(muzzle.unit_bearing[1]),double(muzzle.unit_bearing[2]));

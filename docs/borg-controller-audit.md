@@ -980,6 +980,33 @@ owned transforms at initializer time. The cue's pose alone does not
 establish which matrices were live at that time. Contact, actual
 recipient and HP changes need separate evidence.
 
+### Argument 43: allocation and shape ownership
+
+The detached argument-43 checks distinguish two original allocations.
+On a paid request, `C3BE0` supplies the credited actor to the class-3
+allocator, base group 8, head insertion, and one scene descriptor.
+Direct normal caster slot `s` selects group `9+s`, kind 16. A null
+return proposes no header and does not undo the debit. The cue fixture
+now checks those allocator operands but supplies no allocation result.
+
+On the new beam's first dispatch, `84000` checks the credit's lifecycle
+and model before calling the initializer. Credit phase 2 or higher, or
+a model mismatch, skips registration. Otherwise it seeds phase 1 and lifetime
+300, then calls `8AC80(beam,0)`. That call reads the credited actor's
+bank and requests a **class-4** allocation in base group 48, resolved to
+`49+s`, kind 26, with no scene descriptors. A registration refusal
+leaves the 300 seed, stages phase 2, and skips the muzzle branch.
+
+For the exact normal G-Red bank, attack group 0 references descriptor
+15, hit row 0, and local radius 20. The shape's spatial carrier and
+transform (`beam+114`) belong to the **beam**, not the credit actor
+or its key 0. The credit still supplies the bank and hit table.
+These branches use declared allocator outcomes; they do not create
+leases, run removal, insert a collider into a live registry, or
+identify a contact receiver. **132** bounded factory, dispatch and
+shape-owner comparisons matched, using the exact credited bank for
+shape operands. The playable duel still does not use them.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
