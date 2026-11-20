@@ -751,6 +751,24 @@ timer/targeting proposals. It matched **101** bounded cases covering
 stock/paid state, note records, application/refusal, timer updates and
 sector meaning. No note, damage, audio, target or live status is written.
 
+## Death ICBM: steerable flight and guarded game impact
+
+Exact normal **Death ICBM `GG4E08:0D06/0`** is catalogue #109, AFS
+member 678. **Death Bomb `0D07/0`** is a separate model with a different
+selector table and class branch, not an alternate name or variant.
+
+| Boundary | Recovered game behavior |
+| --- | --- |
+| Placement and start | The inspected ordinary type-3 placement adds 2000 game units to a sampled floor height before later scene projection. This does not select fall. The ordinary active route promotes idle to steerable cruise/boost; the requested fall row is unavailable. Separate setup roles suppress the ordinary impact hook. |
+| Flight | All 48 inspected pairs match Blue Striker. Boost has the eligible-input and release-latch gates, and eligible inactive-boost visits refill independent of grounding. This does not make their motion tuning, class termination or contact behavior interchangeable. |
+| Impact and defeat | The ordinary active post-class hook checks lifecycle, phase, entry hold and qualifying contact from its inspected latches or queries. It is not triggered by a countdown or B/X. It then requests a caster-owned type-73 area object and queues the caster's own defeat. The defeat request is not conditional on successful allocation. |
+| Interruption | Defeat already advanced to lifecycle 2 blocks the later impact hook. It does not prove that defeat cancels an area object already created, or that competing hits always resolve in the same order. The area's collider, lifetime and actual recipients belong to separate services. |
+
+All **161 bounded offline cases** matched using supplied scene/contact
+operands. Live flight, scene placement, contact priority, final area
+coverage and damage remain unverified. [Wiki lead: Death ICBM](https://gotchaforce.fandom.com/wiki/Death_ICBM?oldid=6658).
+No game actor was admitted.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

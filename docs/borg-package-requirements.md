@@ -81,7 +81,9 @@ distinguishes contact-staged destinations from atomic exchange or
 Acceleration Ninja may combine a form
 change with an ongoing contact hit. The Death ICBM example needs impact-area
 and actor-interruption conditions: its landing outcome is distinct from being
-destroyed before contact. None of these examples supplies validated durations,
+destroyed before contact. The [source audit](borg-controller-audit.md#death-icbm-steerable-flight-and-guarded-game-impact)
+separates the impact gate, area-object request and already-committed defeat.
+None of these examples supplies validated wall-clock durations,
 radius, damage, priority or carry-over values. A guard, outcome payload,
 duration and interruption policy each needs its own owner and tests.
 The [Patra Witch and Angel Nurse audit](borg-controller-audit.md#patra-witch-and-angel-nurse-distinct-x-contact-outcomes)
