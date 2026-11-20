@@ -1007,6 +1007,26 @@ identify a contact receiver. **132** bounded factory, dispatch and
 shape-owner comparisons matched, using the exact credited bank for
 shape operands. The playable duel still does not use them.
 
+### Argument 43: untargeted flight prefix and lifetime
+
+The detached initializer math adds the unit bearing to the muzzle
+point **before** scaling the motion vector to 80. With `C8` null,
+the active prefix normalizes the prior motion, moves at the **old**
+speed, then adds 0.5 up to a cap of 160 for the next visit. The cue
+fixture goes from distance 1 to 81 from the muzzle in that numeric
+sample; these are source units, not device-frame speed or live range.
+
+Retirement has a separate order: the `83714` six-slot helper result
+precedes latch mask `1D9 & A2`; both precede the stage segment and
+bounds checks. A stage stop also requests a distance refresh from the
+stage-corrected position. Only an all-clear visit subtracts a lifetime
+count. The earlier stops write retirement marker 1; bounds and expiry
+write marker 2. An unobserved query cannot be treated as clear.
+**285** bounded comparisons matched with host vector math and supplied
+query outcomes. The proposals neither run the scene queries nor activate
+or remove shapes; targeted steering and modifier-dependent update tails
+remain out of scope.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.

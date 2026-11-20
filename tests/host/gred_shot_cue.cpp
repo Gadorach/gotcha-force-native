@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
-#include "engine/gameplay/borgs/normal_gred_beam_muzzle.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_flight.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
 
 namespace {
@@ -251,6 +251,12 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
                 error="fixture muzzle or credited bearing differed";return false;
             }
         }
+        GRedBeamFlightSample seeded,advanced;
+        if(!normal_gred_beam_flight_seed(source,muzzle,&seeded)||
+           !normal_gred_beam_flight_prefix(source,true,seeded,&advanced)||seeded.speed44!=80||advanced.speed44!=80.5f||
+           std::abs(seeded.distance180-1.f)>.0001f||std::abs(advanced.distance180-81.f)>.0001f){
+            error="detached beam flight prefix differed";return false;
+        }
         for(unsigned lane=0;lane<2;++lane){
             const auto& l=state.lanes[lane];
             const auto& d=*control.directional_snapshot(l.motion);
@@ -283,6 +289,8 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         std::printf("fixture only: parent key-7 origin=(%.5f,%.5f,%.5f), credited key-0 bearing=(%.6f,%.6f,%.6f)\n",
             double(muzzle.origin174[0]),double(muzzle.origin174[1]),double(muzzle.origin174[2]),
             double(muzzle.unit_bearing[0]),double(muzzle.unit_bearing[1]),double(muzzle.unit_bearing[2]));
+        std::printf("fixture only: distance %.0f -> %.0f; speed for next visit %.1f; stop queries not run\n",
+            double(seeded.distance180),double(advanced.distance180),double(advanced.speed44));
         return true;
     }
     error="first authored cue not reached within the update budget";return false;
