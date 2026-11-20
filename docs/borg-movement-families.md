@@ -36,6 +36,9 @@ grounded reset, and the HUD's hidden-at-zero-used rule. In the [Wing Soldier
 and Quick Valkrie follow-up](borg-controller-audit.md#normal-wing-soldier-and-quick-valkrie-glide-and-contact),
 the tested ordinary paths use zero floor offset. A snap can lead to grounding
 if it runs the landing continuation and landing state, but the meter does
-not reset on that event. Other hover-height producers, Fortress placement
-and Sasuke's dash height over a full route remain unverified. Do not fill
-animation annotations or generalize G-Red's recovered profile from these audits.
+not reset on that event. The [Beam Satellite follow-up](borg-controller-audit.md#normal-beam-satellite-placement-stance-and-support)
+found table-based placement and ordinary steering out of its stationary idle.
+That is not evidence of a fixed-XYZ Fortress family. Other hover-height
+producers, live Fortress placement and Sasuke's dash height over a full
+route remain unverified. Do not fill animation annotations or generalize
+G-Red's recovered profile from these audits.

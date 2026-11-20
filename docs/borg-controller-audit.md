@@ -74,9 +74,9 @@ nothing, not the `-1` sentinel for an unavailable lane. Tables compare
 - **Flight:** [Blue Striker's exact normal follow-up](#normal-blue-striker-cruise-boost-and-hud)
   separates boost inactivity from ground recovery. The
   [Wing Soldier and Quick Valkrie follow-up](#normal-wing-soldier-and-quick-valkrie-glide-and-contact)
-  separates a glide snap, logical landing and meter refill. Beam Satellite's
-  ordinary idle and disabled jump selectors do not prove fixed height or
-  immunity to displacement. [Wiki lead: Beam Satellite](https://gotchaforce.fandom.com/wiki/Beam_Satellite?oldid=6725).
+  separates a glide snap, logical landing and meter refill. The
+  [Beam Satellite follow-up](#normal-beam-satellite-placement-stance-and-support)
+  found a stationary idle stance but an ordinary steering path out of it.
 - **Pose and actions:** Roach has an empty local bank and sampled lane-control
   programs; Blue Striker and Beam Satellite have empty banks and null local
   program/descriptor roots. All three still dispatch class actions. Roach and
@@ -204,6 +204,27 @@ The native comparison matched **420 bounded source-fragment cases**:
 128 selector requests, 24 frame-scalar steps, 192 refill visits, 64 floor
 tails and 12 landing prefixes across the two exact models. Neither
 character gains admission, shared clips or a shared X Fly action.
+
+## Normal Beam Satellite: placement, stance and support
+
+The `GG4E08:0E01/0` follow-up uses AFS member 681. It observes movement
+type 9 and resource policy 1, with no local motion-bank data. This does
+not remove class or model processing. [Wiki lead: Beam Satellite](https://gotchaforce.fandom.com/wiki/Beam_Satellite?oldid=6725).
+
+| Mechanism | Ordinary source finding |
+| --- | --- |
+| Placement | The type-9 table path (`800579DC`) selects a complete XYZ row using stage code, team and a retained side index. A fresh placement updates the team's cursor; a repeat uses the retained side without advancing it. At raw stage code 0, team 0 has two pre-projection Y values, 1243 and 399. The common static and dynamic projection queries can change Y afterward. A separate per-slot fallback can add 2000 to a queried floor; that is not the height rule for the table path. |
+| Idle and steering | Idle's two return-only movement states do not lock XYZ. With earlier checks clear, held steering requests selector 1, and the turn-completion path can select 2, whose lower handler integrates movement. Neutral steering can request 3 before returning to idle. This does not establish live movement timing or a reachable lower 27/28 boost path. |
+| Air and meter | Class hooks reassert `0x40`; the resource pass uses cached logical airborne status, not height or boost inactivity. Ordinary landing selector 7 is disabled. Floor correction is not landing or refill, and no ordinary 0–3 movement debit was found. |
+| Support and response | Three normal body descriptors carry the `0x20` bit used by a family-`0E` support path. That is eligibility, not registration or a live rider/parent relationship. Nominal weight 50000 enters the shared displacement rules; it does not confer displacement immunity. |
+
+All **314 bounded offline cases** matched, including 256 placement-table
+selections. These used supplied stage, cursor, steering and support fields;
+they did not execute stage queries or an original actor frame. Next,
+witness placement with actual projection returns, then held/released steering
+with root and flag observations. Any live attachment or solid response
+needs its own owner and contact evidence. Galactic Emperor `0E04` and other
+Fortresses remain independent.
 
 ## Package implications and next checks
 
