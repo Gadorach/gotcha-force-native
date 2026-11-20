@@ -226,6 +226,16 @@ with root and flag observations. Any live attachment or solid response
 needs its own owner and contact evidence. Galactic Emperor `0E04` and other
 Fortresses remain independent.
 
+The detached Beam Satellite planner takes explicit XYZ rows for the current
+stage and returns a **pre-projection** candidate. Fresh placement proposes
+actor fields and one team cursor update; repeat placement proposes neither.
+No source table is bundled. The steering suffix, turn-completion and braking
+helpers return scalar proposals without integrating a trajectory. Airborne
+flag writes and cached-ground refill remain separate; the per-slot fallback,
+live projections and support links are not wired. The native comparison
+matched **790 bounded cases**, including 640 table placements and 150
+steering, handoff, flag and resource cases.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
