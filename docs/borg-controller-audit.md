@@ -745,6 +745,12 @@ All **138 bounded offline cases** matched. No live cast, contact, expiry
 timeline, audio, or new actor admission was verified.
 [Wiki lead: Lovely Voice](https://gotchaforce.fandom.com/wiki/Pop_Honey?oldid=6708).
 
+The detached voice component models paid setup, the post-startup program
+request, note group and caster credit, status guards and recipient-only
+timer/targeting proposals. It matched **101** bounded cases covering
+stock/paid state, note records, application/refusal, timer updates and
+sector meaning. No note, damage, audio, target or live status is written.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
