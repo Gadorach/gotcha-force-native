@@ -905,6 +905,12 @@ timeout, stock, beam allocation, and actual contact/HP outcome. Neither
 native cooldown output nor the source fragments qualify that route.
 [Wiki lead: Beam Gun](https://gotchaforce.fandom.com/wiki/G_Red?oldid=5897).
 
+The detached neutral-B planner models the bounded request order, fresh-idle
+program and directional descriptors, VM step hold, post-VM aim/cue gate,
+mode-0 stock and argument-43 beam request. It matched **169** source cases.
+The new mode-0 refill proposal requires an already armed stock clock and
+clears it at expiry. No live pose, contact, allocation or duel shot changed.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
