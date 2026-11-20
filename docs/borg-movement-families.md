@@ -7,7 +7,7 @@ The current implementation work remains scoped to normal G-Red.
 | Family | Resource/contact behavior reported by the user | Examples |
 |---|---|---|
 | Flight meter | Refills while grounded; airborne flight and mid-flight dashes use the meter | G-Red |
-| Air-jump gauge | Three jump points for Sasuke; resets on landing; air dashes do not spend those points and gradually lose height | Sasuke |
+| Air-jump gauge | Three jump points for Sasuke; points return on grounding; ordinary chained air dashes do not spend more points and reportedly lose height | Sasuke |
 | Fixed airborne stance | Static aerial position; jumping/flying are unavailable | Fortress Borgs |
 | Floating/hovering | Flight-meter movement with glide; minimum hover height counts as **ground contact** and triggers the gauge reset | Mainly fairy/angel Borgs |
 | Perpetual flight with boost | Gauge boosts movement speed; recovers gradually while **not boosting**; ground contact is neither required nor expected | Planes, flight transformations and some special flying Borgs |
@@ -27,9 +27,11 @@ The current implementation work remains scoped to normal G-Red.
 - Transformations may change movement family. Which resource state survives a
   transformation, and which contact/boost producer owns it, remain unverified.
 
-The [representative source audit](borg-controller-audit.md) verified Sasuke's
-three-point limit and a conditional wind-up write from zero to one, as well as
-Blue Striker's refill gate when boost is inactive. It did not establish Sasuke's
-dash height over a complete route, minimum-hover-height contact/reset, or fixed
-Fortress placement. Do not auto-fill animation annotations or generalize
+The [representative source audit](borg-controller-audit.md) verified Blue
+Striker's refill gate when boost is inactive. The [normal Sasuke
+follow-up](borg-controller-audit.md#normal-sasuke-air-points-and-hud) verified
+his three-point limit, the conditional zero-to-one wind-up write, the later
+grounded reset, and the HUD's hidden-at-zero-used rule. It did not establish
+dash height over a complete route, minimum-hover-height contact/reset, or
+fixed Fortress placement. Do not fill animation annotations or generalize
 G-Red's recovered profile from either table.

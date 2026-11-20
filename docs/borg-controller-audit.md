@@ -68,12 +68,9 @@ nothing, not the `-1` sentinel for an unavailable lane. Tables compare
 | G | Blue Striker has 0, 9–11 and 27–28. The latter pair has flight handlers, not an ordinary ground jump/dash map. |
 | H | Beam Satellite shares G's 9–11 and 27–28 rows but uses return-only idle and different 1–3 handlers. Shared rows do not prove that a player can reach them. |
 
-- **Resources and contact:** Sasuke's count admission compares the used
-  counter with a limit of three. Count-based ascent adds a point and the
-  grounded recovery branch clears the count. Ordinary midair dash does not
-  spend another point, but count-policy wind-up can seed a zero counter to
-  one. Reachability of that case, HUD behavior and whole-route height loss
-  remain separate checks. [Wiki lead: Sasuke](https://gotchaforce.fandom.com/wiki/Sasuke?oldid=6766).
+- **Resources and contact:** Sasuke uses a three-point count, separate from
+  G-Red's meter. His [exact normal follow-up](#normal-sasuke-air-points-and-hud)
+  distinguishes request, spend, ground reset and HUD update.
 - **Flight:** Blue Striker's boost sets the flag used by its refill gate;
   refill checks boost inactivity, not floor contact. Wing Soldier and Quick
   Valkrie have offset floor probes, but the minimum-hover-height contact
@@ -95,6 +92,30 @@ nothing, not the `-1` sentinel for an unavailable lane. Tables compare
   storage is separate from air resources, but action and movement cannot
   simply tick in any order. Similar pose requests do not establish common
   rigs, native maps or transition timing.
+
+## Normal Sasuke: air points and HUD
+
+This follow-up is scoped to `GG4E08:000A/0`, AFS member 495. The exact normal
+wrapper and local motion bank match the retained native duel art fingerprints;
+that match is not controller admission. [Wiki lead: Sasuke](https://gotchaforce.fandom.com/wiki/Sasuke?oldid=6766).
+
+| Event | Recovered ownership and order |
+| --- | --- |
+| Ground takeoff | The conditioned input requests selector 4. The takeoff pose begins without spending a point. Its lower-lane handoff selects 5; ascent entry (`8005FB54`) increments **points used**. |
+| Air relaunch | The air-jump pulse is fresh, not a continued hold. Requests from falling/recovery (`80069210`) also require the admission latch; active dash (`800692BC`) uses a separate leaf without that latch. Both refuse a used count of 3. The admitted entry (`80060504`), not the request, increments the count. |
+| Air dash | Wind-up (`80061370`) writes `0 → 1` and preserves 1, 2 or 3. The normal wind-up handoff and active dash have zero meter debit. Sasuke's own recovery program 12 starts clip `0:25` at frame 0, not G-Red's clip. Dash phases have distinct vertical producers; net height loss over a route is unverified. |
+| Landing and reset | Ordinary floor contact selects landing; landing entry clears the airborne flag. The next ordinary grounded resource update resets the count (`80055AA0`). A floor hit alone neither resets it nor proves landing; dash wind-up can probe or snap with no landing continuation. |
+| HUD | The count gauge (`80013A28`) leaves draw-ready clear at zero used. At used 1, 2 and 3 it reports 2, 1 and 0 remaining, subject to actor suppression and view gating. Its display transition is separate from the counter write; no rendered pip output was verified. |
+
+The bounded offline comparison against qualified DOL instruction fragments
+matched **162 synthetic input cases**. It checked selected input
+pulses, requests, counter stores and display bookkeeping, not an original
+world frame, physics path or HUD draw. **Walk off a ledge → fall without
+jumping → directional air dash** is a source-supported candidate for the
+zero-to-one case, not an accepted route. Verify it independently from an
+ordinary ground launch → air relaunch → dash → landing witness. Keep exact
+stage contact, accepted input, both pose clocks, the used count and display
+state in the same trace before enabling Sasuke practice.
 
 ## Package implications and next checks
 
