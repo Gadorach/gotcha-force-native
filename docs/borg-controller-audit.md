@@ -569,6 +569,13 @@ clamps, and copied history. Live contact, final terrain response, hit
 damage and complete interruption/rollback behavior remain unverified.
 No actor or swap was admitted.
 
+The detached Switching Ninja planner stages both contact destinations and
+then treats each actor's arm, countdown, clamp and history copy independently.
+The placement proposal still owes a terrain query; no paired rollback,
+damage or live actor writes are supplied. The native comparison matched
+**80 bounded source cases**: 64 staging snapshots and 16 independently
+processed transfer legs, including busy refusals and clamped destinations.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
