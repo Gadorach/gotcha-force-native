@@ -911,6 +911,30 @@ mode-0 stock and argument-43 beam request. It matched **169** source cases.
 The new mode-0 refill proposal requires an already armed stock clock and
 clears it at expiry. No live pose, contact, allocation or duel shot changed.
 
+### Next executable check: G-Red's authored cue
+
+The current locomotion profile lacks the shot program. A separate private
+436-byte GFMP3 slice can carry exact idle `P0:0`, shot `P2:0`, and the
+nine descriptors they reference (`D0:0/1/2`, `D2:0/1/2/6/7/8`). All nine
+clip entries are present in the exact normal bank. Keep the side clips
+even at zero steering, and keep their authored endpoints: release clip
+`3:12` has endpoint 36 rather than 35. These are read-only metadata
+checks, not evidence that the clips or program ran.
+
+The next check should use the shared `CharacterProgramVm` and directional
+motion driver headlessly, with root held by the test fixture and both
+pose lanes seeded from idle. Request `P2:0` on effective mask 3 and stop at
+the first accepted upper-lane `Control0=(1,0,1,0)` at source `80366664`.
+The opening `(0,0,1,0)` is not a release. Preserve both writes and record
+the accepted lane state and command journal. The existing ordinary
+preview refuses the opening control bytes; the movement profile's pose
+receipt does not authorize a shot. Neither should be widened for this check.
+
+An accepted test cue is not permission to spawn a beam. Live argument 43
+still needs the same actor and update to supply the accepted cue, aim pass
+or timeout, stock debit, current owned key-7 transform, and allocation
+receipt. Contact, actual recipient and HP changes need separate evidence.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
