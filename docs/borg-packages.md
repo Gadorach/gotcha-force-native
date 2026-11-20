@@ -261,11 +261,57 @@ missing information. `source-reference-code` (four hex digits) and
 | `hp`, `ratings` | HP endpoints at levels 1 and 10; DEF, SHT, ATK, SPD readout ratings. Separate values with `\|`. Each value can be `unresolved`; neither endpoints nor ratings imply live combat stats or a level curve. |
 | `moves`, `traits`, `forms`, `fusions`, `acquisition`, `effects`, `variant-overrides` | Each reserves a package-relative sidecar, `none` for intentional absence, or `unresolved`. The catalogue validator checks the path syntax only; it does not load these sidecars or admit a move, form, reward or actor. |
 | `spawn` (optional) | A package-relative spawn sidecar, `none` or `unresolved`. If omitted it remains unresolved; existing version 2 profiles do not require this field. |
+| `controllers` (optional) | A package-relative controller review sidecar, `none` or `unresolved`. Omission stays unresolved. Review declarations never instantiate controllers or actors. |
 
 Version 1 remains readable. Both catalogue versions use explicit per-variant
 editor icons and Force costs; version 2 does not assume all the retail colours
 are supported by the package. See the [requirements map](borg-package-requirements.md)
 for what the reserved move and relationship sidecars need to represent.
+
+### Standalone controller check
+
+Set `controllers=gameplay/controllers.txt` in a version 2 catalogue. The
+review format keys each row by an exact **package variant and gameplay form**.
+The following illustrates selected findings from the normal Sasuke source audit
+in a package that declares `forms=none`:
+
+```text
+GFBORG-CONTROLLERS 1
+controller=normal|none
+source=GG4E08:000A/0
+source-movement-type=0
+selector-family=cohort-a
+movement=grounded
+contact=unresolved
+air-resource=air-jumps:3
+recovery=grounded
+motion-bank=local
+pose=clip-based
+actions=class-owned
+evidence=source-audit
+```
+
+Every row declares all eleven fields. The file is limited to 16 KiB and 64
+rows. The variant must occur in the catalogue, and a named form in the package's
+form sidecar. `none` in the form slot requires `forms=none`; `unresolved` records
+an unknown form scope. Neither is a wildcard. Missing variants or forms do not
+inherit a base row, and a selector-family label neither imports another Borg's
+data nor chooses playable behavior.
+
+| Field | Values and boundaries |
+| --- | --- |
+| `source`, `source-movement-type` | `DISC01:HHHH/N` (six-character disc ID, four hex model digits, decimal retail variant byte), `none` or `unresolved`; and the observed type byte in decimal or `unresolved`. Retail variant is not the package variant or form. |
+| `selector-family` | An opaque comparison label, `none` or `unresolved`. Source pointers, executable rules and selector contents are not loaded. |
+| `movement`, `contact` | `grounded`, `hover`, `continuous-flight`, `fixed-aerial`, `other`; and `solid-floor`, `hover-floor`, `open-flight`, `anchored`, `other`, respectively. Both accept `none` and `unresolved`; movement does not prove contact. |
+| `air-resource`, `recovery` | `air-jumps:N` (positive byte, or `air-jumps:unresolved`), `flight-meter`, `boost-meter`, `none`, `unresolved`; and `grounded`, `not-boosting`, `none`, `unresolved`. These do not encode debit order, refill clocks or HUD behavior. |
+| `motion-bank`, `pose`, `actions` | Bank: `local`; pose: `clip-based`, `control-only`, `class-owned`; actions: `class-owned`. Each also accepts `none` or `unresolved`. An empty local bank does not prove that pose or weapon logic is absent. |
+| `evidence` | `authored`, `source-audit` or `unresolved`. `source-audit` requires a syntactically valid source identity, but inspection does not authenticate a build or prove the claim. |
+
+`gf_native --check-borg-controllers example:sasuke` validates and prints the
+declarations without opening model or animation data, running gameplay rules,
+or touching saves. It does not change practice or battle admission. See the
+[representative controller audit](borg-controller-audit.md) for evidence and
+limits; the metadata is not an animation map.
 
 ### Standalone moves check
 

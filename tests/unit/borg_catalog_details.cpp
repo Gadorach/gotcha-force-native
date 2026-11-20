@@ -40,7 +40,8 @@ int main(){
         facet(BorgDefinitionFacet::Moves).file=="actions/moves.txt"&&
         facet(BorgDefinitionFacet::Traits).kind==BorgDefinitionReferenceKind::Unresolved&&
         facet(BorgDefinitionFacet::Forms).kind==BorgDefinitionReferenceKind::None&&
-        facet(BorgDefinitionFacet::Spawn).kind==BorgDefinitionReferenceKind::Unresolved,
+         facet(BorgDefinitionFacet::Spawn).kind==BorgDefinitionReferenceKind::Unresolved&&
+         facet(BorgDefinitionFacet::Controllers).kind==BorgDefinitionReferenceKind::Unresolved,
         "facet files, unresolved and deliberate absence stay distinct");
     for(const auto& bad:{
         replace(full,"GFBORG-CATALOG 2","GFBORG-CATALOG 1"),full+"hp=100|100\n",
@@ -64,5 +65,11 @@ int main(){
     check(borg_catalog_read_profile(known+"spawn=gameplay/spawn.txt\n",&profile)&&
         profile.details->references[unsigned(BorgDefinitionFacet::Spawn)].file=="gameplay/spawn.txt",
         "an additive spawn sidecar does not change older catalogue requirements");
+    check(borg_catalog_read_profile(known+"controllers=none\n",&profile)&&
+        profile.details->references[unsigned(BorgDefinitionFacet::Controllers)].kind==BorgDefinitionReferenceKind::None,
+        "an explicit absence is distinct from an older catalogue without the controller facet");
+    check(!borg_catalog_read_profile(known+"controllers=../controller.txt\n",&profile)&&
+        !borg_catalog_read_profile(known+"controllers=none\ncontrollers=unresolved\n",&profile),
+        "controller facet shares the path and duplicate restrictions");
     std::puts("Borg catalogue details: versioned identity, variants, stats and unresolved facets PASS");
 }

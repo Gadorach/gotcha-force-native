@@ -13,7 +13,7 @@ enum class BorgAlternateAvailability:u8 {Unresolved,No,Yes};
 enum class BorgLevelSchedule:u8 {Unresolved,Fast,Normal,Slow};
 enum class BorgExperienceAvailability:u8 {Unresolved,EarnsXP,NoXP};
 enum class BorgDisplayJump:u8 {Unresolved,None,Boost,Air};
-enum class BorgDefinitionFacet:u8 {Moves,Traits,Forms,Fusions,Acquisition,Effects,VariantOverrides,Spawn,Count};
+enum class BorgDefinitionFacet:u8 {Moves,Traits,Forms,Fusions,Acquisition,Effects,VariantOverrides,Spawn,Controllers,Count};
 enum class BorgDefinitionReferenceKind:u8 {Unresolved,None,LocalFile};
 struct BorgDefinitionReference {
     BorgDefinitionReferenceKind kind=BorgDefinitionReferenceKind::Unresolved;
@@ -122,15 +122,15 @@ public:
         }
     }
     bool finish(std::optional<BorgCatalogDetails>* out){
-        // Spawn is an additive declaration. A pre-spawn version 2 profile
-        // continues to load with the spawn facet explicitly unresolved.
+        // Spawn and controllers are additive declarations. Older version 2
+        // profiles continue to load with missing optional facets unresolved.
         if(!std::all_of(seen_.begin(),seen_.begin()+10+unsigned(BorgDefinitionFacet::Spawn),[](bool seen){return seen;}))return false;
         *out=std::move(details_);return true;
     }
 private:
     static constexpr std::array<std::string_view,10+unsigned(BorgDefinitionFacet::Count)> fields_{
         "collection-number","combat-role","rarity-grade","crystals","alternate","level-schedule","experience",
-        "display-jump","hp","ratings","moves","traits","forms","fusions","acquisition","effects","variant-overrides","spawn"
+        "display-jump","hp","ratings","moves","traits","forms","fusions","acquisition","effects","variant-overrides","spawn","controllers"
     };
     std::array<bool,fields_.size()> seen_{};
     BorgCatalogDetails details_;

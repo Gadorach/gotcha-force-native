@@ -58,6 +58,7 @@
 #include "platform/pc/borg_acquisition_load.hpp"
 #include "platform/pc/borg_effect_load.hpp"
 #include "platform/pc/borg_form_load.hpp"
+#include "platform/pc/borg_controller_load.hpp"
 #include "platform/pc/borg_fusion_load.hpp"
 #include "platform/pc/borg_force_browse.hpp"
 #include "platform/pc/borg_move_load.hpp"
@@ -86,7 +87,7 @@ struct Options {
     gf::u64 selected_account=0,selected_save=0,recovery_notice=0,inspect_force=0,owned_instance=0,placement_force=0,placement_slot=0;
     gf::u64 browse_force_slot=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
-        check_borg_acquisition,check_borg_variants,preview_borg,practice_borg,borg_variant;
+        check_borg_acquisition,check_borg_variants,check_borg_controllers,preview_borg,practice_borg,borg_variant;
     std::optional<gf::pc::BorgOwnedPracticeRequest> owned_practice;
     std::optional<gf::pc::BorgForcePracticeRequest> force_practice;
     bool menu = false;
@@ -266,6 +267,9 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--check-borg-moves"){
             if(++i>=argc||!options->check_borg_moves.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_moves=argv[i];
+        }else if(arg=="--check-borg-controllers"){
+            if(argc!=3||++i>=argc||!gf::borg_package_id_valid(argv[i]))return false;
+            options->check_borg_controllers=argv[i];
         }else if(arg=="--check-borg-spawn"){
             if(++i>=argc||!options->check_borg_spawn.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->check_borg_spawn=argv[i];
@@ -619,6 +623,7 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
                          "       gf_native --check-borg-moves NAMESPACE:ID\n"
                          "       gf_native --check-borg-spawn NAMESPACE:ID\n"
+                         "       gf_native --check-borg-controllers NAMESPACE:ID\n"
                          "       gf_native --check-borg-effects NAMESPACE:ID\n"
                          "       gf_native --check-borg-forms NAMESPACE:ID\n"
                          "       gf_native --check-borg-fusions NAMESPACE:ID\n"
@@ -2760,6 +2765,29 @@ int main(int argc, char** argv) {
             std::printf("%s\t%s\tform=%s\tphases=%zu\toutcomes=%zu\n",move.id.c_str(),move.label.c_str(),
                 move.form.c_str(),move.phases.size(),move.outcomes.size());
         std::puts("Move definitions validated; gameplay, effects, and audio not loaded.");
+        return 0;
+    }
+    if(!options.check_borg_controllers.empty()){
+        gf::pc::BorgControllerInspection controllers;std::string error;
+        if(!gf::pc::load_borg_controller_inspection("borgs",borg_packages,options.check_borg_controllers,&controllers,&error)){
+            std::fprintf(stderr,"Borg controllers: %s\n",error.c_str());return 2;
+        }
+        std::printf("%s\t%s\tcontrollers=%zu\n",controllers.identity.id.c_str(),controllers.identity.name.c_str(),
+            controllers.profile.definitions.size());
+        using namespace gf::borg_controller_detail;
+        for(const auto& row:controllers.profile.definitions){
+            const auto type=row.source_movement_type?std::to_string(*row.source_movement_type):"unresolved";
+            const auto air=row.air_resource==gf::BorgControllerAirResource::AirJumps?
+                std::string("air-jumps:")+(row.air_jump_points?std::to_string(*row.air_jump_points):"unresolved"):
+                std::string(resources[unsigned(row.air_resource)]);
+            std::printf("%s\tform=%s\tsource=%s\tsource-movement-type=%s\tselector-family=%s\tmovement=%s\tcontact=%s"
+                "\tair-resource=%s\trecovery=%s\tmotion-bank=%s\tpose=%s\tactions=%s\tevidence=%s\n",
+                row.variant.c_str(),row.form.c_str(),row.source.c_str(),type.c_str(),row.selector_family.c_str(),
+                movements[unsigned(row.movement)].data(),contacts[unsigned(row.contact)].data(),air.c_str(),
+                recoveries[unsigned(row.recovery)].data(),banks[unsigned(row.motion_bank)].data(),
+                poses[unsigned(row.pose)].data(),actions[unsigned(row.actions)].data(),evidence[unsigned(row.evidence)].data());
+        }
+        std::puts("Controller declarations validated; provenance not authenticated and gameplay not loaded.");
         return 0;
     }
     if(!options.check_borg_spawn.empty()){

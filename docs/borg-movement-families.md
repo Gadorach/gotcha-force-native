@@ -27,7 +27,9 @@ The current implementation work remains scoped to normal G-Red.
 - Transformations may change movement family. Which resource state survives a
   transformation, and which contact/boost producer owns it, remain unverified.
 
-G-Red's recovered source supports a distinct metered policy. Source verification
-of Sasuke's jump-point count, dash height loss and the remaining families is
-deferred. Do not auto-fill animation annotations or generalize G-Red's recovered
-profile from this table.
+The [representative source audit](borg-controller-audit.md) verified Sasuke's
+three-point limit and a conditional wind-up write from zero to one, as well as
+Blue Striker's refill gate when boost is inactive. It did not establish Sasuke's
+dash height over a complete route, minimum-hover-height contact/reset, or fixed
+Fortress placement. Do not auto-fill animation annotations or generalize
+G-Red's recovered profile from either table.
