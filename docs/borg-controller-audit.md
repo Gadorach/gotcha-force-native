@@ -911,7 +911,7 @@ mode-0 stock and argument-43 beam request. It matched **169** source cases.
 The new mode-0 refill proposal requires an already armed stock clock and
 clears it at expiry. No live pose, contact, allocation or duel shot changed.
 
-### Headless G-Red cue witness
+### Headless G-Red cue and no-target request
 
 The locomotion profile still lacks the shot program and is unchanged.
 `--kind neutral-b` exports a separate 436-byte GFMP3 slice: exact idle
@@ -933,6 +933,23 @@ were not widened.
 The same check refused a foreign VM scope and a missing zero-weight
 release-side clip, leaving the previous pose and cue state intact.
 
+The no-target aim path (`6D0DC` with flags `193`, offset `0`, and
+active target `CC` already null) clears both aim references, sets
+the aim headings to the supplied body heading, and passes with zero
+angular error when the signed turn allowance is nonnegative. It
+does not turn the body. A selected neutral action row is not evidence
+of a null active target; the fixture declares that input explicitly.
+The helper matched **160** bounded original-code cases and refused all
+**64** tested negative-wrap cases. Targeted aim remains out of scope.
+
+With that path and the actual VM cue, the fixture proceeds to the
+detached channel-0 debit. The opening control write requests nothing
+even when aim passes. At the authored cue, the check-only count of 5
+becomes a proposed count of 4 with a type-2, argument-43 request.
+Independent last-round and empty-stock alternatives arm a 180-unit
+refill and refuse the request, respectively. No actor or stock is
+updated, and no allocator is called.
+
 Run from the repository root with `DOL` set to the qualified initialized
 executable and the local MVP and practice packs already present:
 
@@ -944,10 +961,11 @@ c++ -std=c++20 -O1 -I . tests/host/gred_shot_cue.cpp -o "$work/gred-shot-cue"
   local/content/source-gred-ground-v9/pose-height.gfhc
 ```
 
-A test cue is not permission to spawn a beam. Live argument 43 still
-needs the same actor and update to supply the accepted cue, aim pass or
-timeout, stock debit, current owned key-7 transform, and allocation
-receipt. Contact, actual recipient and HP changes need separate evidence.
+A test cue or request is not permission to spawn a beam. Live argument
+43 still needs the same actor and update to supply the accepted cue,
+aim pass or timeout, stock debit, current owned key-7 transform, and
+allocation receipt. Contact, actual recipient and HP changes need
+separate evidence.
 
 ## Sasuke: original neutral B and paid repeat
 

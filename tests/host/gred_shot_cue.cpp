@@ -1,16 +1,20 @@
-// Exact normal G-Red pose inspection. No input dispatcher, live actor, world,
-// aim, stock, allocator, renderer or shot publication participates.
+// Exact normal G-Red cue and no-target request inspection. Heading and stock
+// are declared fixture inputs, not live actor observations. No allocator.
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include "engine/gameplay/borgs/normal_gred_neutral_b.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
 
 namespace {
 using namespace gf;
 namespace fs=std::filesystem;
 constexpr u32 model_hash=0xe2b4439a;
+constexpr NormalGRedNeutralBSource source{0x0615,0,3};
 constexpr u8 lanes=3;
 constexpr f32 step=1;
+constexpr s16 heading=0x2345;
+constexpr WeaponStockModeZeroState full_stock{5,5,180,0};
 constexpr unsigned budget=64;
 constexpr unsigned expected_updates=16; // detached step-1 regression, not retail timing
 constexpr std::array<u8,4> opening{0,0,1,0},release{1,0,1,0};
@@ -142,16 +146,54 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         error="foreign VM scope must refuse without publishing state";return false;
     }
 
+    GRedNeutralBStartup start;
+    WeaponStockModeZeroPlan availability;
+    const GRedNeutralBChoice no_target_row{GRedNeutralBRoute::Shot,0,44,0};
+    if(!normal_gred_neutral_b_start(source,true,0,&start)||
+       !normal_gred_neutral_b_availability(source,no_target_row,full_stock,&availability)||
+       !availability.accepted||availability.state!=full_stock){
+        error="detached startup or check-only stock refused";return false;
+    }
     // Startup mask 15 is reduced by the original actor's effective mask 3.
-    if(!vm.request_with_actor_controls(2,0,lanes,-1,step,driver,control,&ops,&error))return false;
+    if(!vm.request_with_actor_controls(start.group,start.program,u8(start.mask&lanes),-1,step,driver,control,&ops,&error))return false;
     Trace trace;
+    auto aim_clock=start.aim_clock560;
     for(unsigned visit=0;visit<=budget;++visit){
-        if(visit&&!vm.update_with_actor_controls(lanes,step,driver,control,&ops,&error))return false;
+        if(visit){
+            f32 vm_step=0;
+            if(!normal_gred_neutral_b_vm_step(source,vm.state().actor.control0[0],step,&vm_step)){
+                error="detached VM step refused";return false;
+            }
+            if(!vm.update_with_actor_controls(lanes,vm_step,driver,control,&ops,&error))return false;
+        }
         const auto& state=vm.state();
         if(!trace.visit(state,ops,asset.programs[1],control,driver)){error="accepted pose or cue differed from the exact program";return false;}
-        if(state.actor.control0[0]==0)continue;
+        // No-target bench: an actual cue from this accepted VM, a heading
+        // supplied by the fixture, and the exact no-target scalar aim path.
+        GRedNeutralBNoTargetAim aim;
+        GRedNeutralBReleaseGate gate;
+        if(!normal_gred_neutral_b_no_target_aim(source,true,heading,step,&aim)||!aim.aim_pass||
+           !aim.clear_aim_refs||aim.heading72!=heading||aim.error5aa||
+           !normal_gred_neutral_b_release_gate(source,state.actor.control0[0],aim.aim_pass,aim_clock,step,&gate)||
+           gate.aim_clock560!=aim_clock||gate.release_due!=(state.actor.control0[0]==1)){
+            error="no-target aim or accepted cue gate differed";return false;
+        }
+        aim_clock=gate.aim_clock560;
+        if(!gate.release_due)continue;
         if(visit!=expected_updates||trace.selects!=std::array<unsigned,2>{2,2}){
             error="unexpected cue visit or incomplete release pose lanes";return false;
+        }
+        // Alternatives at this same cue, not repeated releases or live stock
+        // writes. A channel can empty between availability and the cue.
+        constexpr WeaponStockModeZeroState last{1,1,180,0},empty{0,0,180,0};
+        GRedNeutralBReleasePlan paid,last_round,refused;
+        if(!normal_gred_neutral_b_debit(source,gate,availability.state,&paid)||
+           !paid.request_beam||paid.owner_slot!=source.slot||paid.object_type!=2||paid.argument!=43||
+           paid.stock!=WeaponStockModeZeroState{4,5,180,0}||
+           !normal_gred_neutral_b_debit(source,gate,last,&last_round)||!last_round.request_beam||
+           last_round.stock!=WeaponStockModeZeroState{0,1,180,180}||
+           !normal_gred_neutral_b_debit(source,gate,empty,&refused)||refused.request_beam||refused.stock!=empty){
+            error="detached channel-0 debit or beam request differed";return false;
         }
 
         // At zero weight the original side target still has to bind. Remove it
@@ -196,9 +238,12 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
                 double(direction.primary().frame),double(direction.side().frame),
                 int(direction.primary().end_frame),int(direction.side().end_frame));
         }
-        std::printf("candidate model bytes=%u/%u; no actor, world pose, stock, beam or hit\n",
+        std::printf("candidate model bytes=%u/%u; no actor or world pose\n",
             unsigned(state.actor.models[0]),unsigned(state.actor.models[1]));
         std::puts("foreign VM scope and missing zero-weight side clip refused without publishing");
+        std::printf("no-target fixture: heading=0x%04x, channel-0 stock %d -> %d, type %u arg %u requested only\n",
+            unsigned(u16(aim.heading72)),int(full_stock.current),int(paid.stock.current),unsigned(paid.object_type),unsigned(paid.argument));
+        std::puts("last-stock alternative armed 180; empty-stock alternative requested nothing; no allocation or contact");
         return true;
     }
     error="first authored cue not reached within the update budget";return false;

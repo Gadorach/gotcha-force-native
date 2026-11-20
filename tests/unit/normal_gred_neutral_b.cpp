@@ -40,6 +40,17 @@ int main(){
     f32 vm_step=555;
     check(normal_gred_neutral_b_vm_step(red,1,1.25f,&vm_step)&&vm_step==0&&
         normal_gred_neutral_b_vm_step(red,0,1.25f,&vm_step)&&vm_step==1.25f,"pending cue pauses just the VM call");
+    GRedNeutralBNoTargetAim aim;
+    check(normal_gred_neutral_b_no_target_aim(red,true,-32768,0,&aim)&&aim.aim_pass&&aim.clear_aim_refs&&
+        !aim.error5aa&&aim.heading72==-32768&&aim.target_heading5ac==-32768&&aim.step_heading5ae==-32768,
+        "null active target copies raw heading and accepts zero correction even on a zero step");
+    check(normal_gred_neutral_b_no_target_aim(red,true,0x2345,10.5f,&aim)&&aim.step_heading5ae==0x2345&&
+        !normal_gred_neutral_b_no_target_aim(red,true,0x1234,11,&aim)&&aim.step_heading5ae==0x2345,
+        "signed allowance overflow stays out of scope without overwriting proposal");
+    check(!normal_gred_neutral_b_no_target_aim(red,false,0,1,&aim)&&
+        !normal_gred_neutral_b_no_target_aim({0x0615,1,3},true,0,1,&aim)&&
+        !normal_gred_neutral_b_no_target_aim(red,true,0,-1,&aim)&&aim.step_heading5ae==0x2345,
+        "targeted, edited and invalid-step aim are not no-target fallbacks");
     GRedNeutralBReleaseGate gate;
     check(normal_gred_neutral_b_release_gate(red,0,false,0,1,&gate)&&gate.aim_clock560==-1&&!gate.release_due,
         "timeout alone cannot fire");

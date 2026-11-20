@@ -53,6 +53,25 @@ inline bool normal_gred_neutral_b_vm_step(NormalGRedNeutralBSource source,u8 pre
     if(!vm_step||!source.reviewed()||!std::isfinite(actor_step)||actor_step<0||actor_step>16)return false;
     *vm_step=pre_vm_event1cef?0.f:actor_step;return true;
 }
+
+struct GRedNeutralBNoTargetAim {
+    s16 heading72=0,error5aa=0,target_heading5ac=0,step_heading5ae=0;
+    bool clear_aim_refs=false,aim_pass=false;
+};
+// Scoped 6D0DC(193,0) with CC already null. 6660C clears C8/CC and
+// seeds zero error relative to the current heading. 669D0/66A30 tests
+// that against the signed-halfword turn allowance; only its nonnegative
+// range is reviewed here. This does not resolve, turn toward or hit a target.
+inline bool normal_gred_neutral_b_no_target_aim(NormalGRedNeutralBSource source,bool no_active_target_cc,
+                                                s16 heading72,f32 actor_step,GRedNeutralBNoTargetAim* out){
+    if(!out||!source.reviewed()||!no_active_target_cc||!std::isfinite(actor_step)||
+       actor_step<0||actor_step>16)return false;
+    // Exact 0615/0 data slot 0 at AE, truncated before the halfword compare.
+    const s32 allowance=s32(3072.f*actor_step);
+    if(allowance>32767)return false;
+    *out={heading72,0,heading72,heading72,true,true};return true;
+}
+
 using GRedNeutralBReleaseGate=NeutralShotReleaseGate<NormalGRedNeutralBSource>;
 // After the VM/aim visit; uses the restored actor step and observes the
 // current cue. A timeout alone cannot fire. This isn't a VM or hit receipt.
