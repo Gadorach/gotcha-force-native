@@ -378,6 +378,16 @@ acquisition or drop rule was traced.
 [Wiki lead: battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
 Do not extend these rules to another fusion pair.
 
+The detached normal Seiryu planner keeps the request latch, two-entry match,
+stage-seven reload proposal, eligible team clock and per-owner restore
+separate. Match input requires the exact normal pair in two distinct slots
+and a filtered team list; it does not implement the scan or Hyper fallback.
+At expiry each guarded request refers to the caller's saved model, variant
+and ancillary byte. It does not clear links or publish a split. The native
+comparison matched **130 source-fragment cases**, including 36 latches,
+eight assignments, six reload gates, eight clock cases and 72 restores.
+No resource loads, state transfer or actor admission are wired.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
