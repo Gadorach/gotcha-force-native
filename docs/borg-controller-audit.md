@@ -716,6 +716,35 @@ the ordinary B lane distinction. It matched **170** bounded source cases;
 all **242** preceding Flame Dragon cases still match. The helpers do not
 run an actor, program VM, terrain query, or weapon outcome.
 
+## Pop Honey: contact-delivered targeting status
+
+Exact normal **Pop Honey `GG4E08:0904/0`** is catalogue #50, AFS member
+638. All 48 inspected selector pairs and the three-use jump policy match
+normal Sasuke; the movement operands and pose data do not.
+
+The reviewed neutral X spends one channel-2 stock during setup. The paid
+marker gates the later voice sequence; the separate startup hit does not
+carry its status. Caster cues can make an owned carrier request a
+**collidable type-62 note** credited to Pop Honey. Sound and presentation
+requests are not the status producer.
+
+On an accepted ordinary row-5 contact, the **actual recipient** gets a
+timer of **641 qualifying bookkeeping updates**, not a wall-clock duration.
+A new accepted contact refreshes that value; the first application can
+also request recipient-owned presentation. Sampled team checks allow
+ordinary allies and opponents, but this is not a team-wide, target-lock,
+or guaranteed self-hit effect.
+
+While the timer is nonzero, the checked aim helper clears its active target
+snapshot and the targeting helper swaps lateral sectors 2 and 8. This is
+**not proof of full controller inversion**, allegiance changes, or healing.
+Entry can clear the timer; another recipient flag can pause its decrement.
+The note lifetime, caster's stock clock and recipient timer are independent.
+
+All **138 bounded offline cases** matched. No live cast, contact, expiry
+timeline, audio, or new actor admission was verified.
+[Wiki lead: Lovely Voice](https://gotchaforce.fandom.com/wiki/Pop_Honey?oldid=6708).
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

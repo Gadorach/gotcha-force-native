@@ -92,6 +92,9 @@ The [Copy Man audit](borg-controller-audit.md#copy-man-contact-derived-same-slot
 further separates a contacted donor's current identity from its live state:
 it can select resources for the caster's slot without transferring the
 donor's stock, HP, pointers or ownership.
+The [Pop Honey audit](borg-controller-audit.md#pop-honey-contact-delivered-targeting-status)
+separates targeting-sector changes from full control inversion, and keeps
+the recipient status clock separate from the note lifetime and caster stock.
 
 The catalogue reserves sidecars for moves, traits, forms, fusions, acquisition,
 effects and variant overrides. The [standalone moves check](borg-packages.md#standalone-moves-check)
