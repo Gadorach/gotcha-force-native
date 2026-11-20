@@ -74,7 +74,7 @@ enum class TimedLedgeFollowup { None, Relaunch, AirDash, DirectAirDash, HandoffR
     DirectTimedRelaunch, DirectTimedUpRelaunch, TimedReleasePush, TimedReleaseTwoPushes, ExpiringDirectRelaunch, ExpiringDirectRelaunchPush,
     ExpiringAdjacentRelaunchPush, ExpiringAirDash, ExpiringAirDashRelaunch, ExpiringShortAirDashRelaunch,
     ExpiringAirDashSnap, ExpiringAirDashSnapRelaunch, TimedReleaseThreePushes, TimedReleaseFourPushes, TimedReleaseExpiryDrift,
-    RisingWindupRelaunch };
+    RisingWindupRelaunch, RisingDiagonalWindupRelaunch };
 
 struct Options {
     bool headless = false;
@@ -396,6 +396,7 @@ bool parse(int argc, char** argv, Options* options) {
                  arg == "--gred-walk-ledge-timed-release-four-pushes" || arg == "--demo-gred-walk-ledge-timed-release-four-pushes" ||
                  arg == "--gred-walk-ledge-timed-release-expiry-drift" || arg == "--demo-gred-walk-ledge-timed-release-expiry-drift" ||
                  arg == "--gred-walk-ledge-rising-windup-relaunch" || arg == "--demo-gred-walk-ledge-rising-windup-relaunch" ||
+                 arg == "--gred-walk-ledge-rising-diagonal-windup-relaunch" || arg == "--demo-gred-walk-ledge-rising-diagonal-windup-relaunch" ||
                  arg == "--gred-walk-ledge-timed-handoff-relaunch" || arg == "--demo-gred-walk-ledge-timed-handoff-relaunch" ||
                  arg == "--gred-walk-ledge-expiry-handoff-relaunch" || arg == "--demo-gred-walk-ledge-expiry-handoff-relaunch" ||
                  arg == "--gred-walk-ledge-expiry-direct-relaunch" || arg == "--demo-gred-walk-ledge-expiry-direct-relaunch" ||
@@ -481,6 +482,7 @@ bool parse(int argc, char** argv, Options* options) {
                 arg=="--gred-walk-ledge-timed-release-four-pushes"||arg=="--demo-gred-walk-ledge-timed-release-four-pushes"?TimedLedgeFollowup::TimedReleaseFourPushes:
                 arg=="--gred-walk-ledge-timed-release-expiry-drift"||arg=="--demo-gred-walk-ledge-timed-release-expiry-drift"?TimedLedgeFollowup::TimedReleaseExpiryDrift:
                 arg=="--gred-walk-ledge-rising-windup-relaunch"||arg=="--demo-gred-walk-ledge-rising-windup-relaunch"?TimedLedgeFollowup::RisingWindupRelaunch:
+                arg=="--gred-walk-ledge-rising-diagonal-windup-relaunch"||arg=="--demo-gred-walk-ledge-rising-diagonal-windup-relaunch"?TimedLedgeFollowup::RisingDiagonalWindupRelaunch:
                 arg=="--gred-walk-ledge-timed-handoff-relaunch"||arg=="--demo-gred-walk-ledge-timed-handoff-relaunch"?TimedLedgeFollowup::HandoffRelaunch:
                  arg=="--gred-walk-ledge-expiry-handoff-relaunch"||arg=="--demo-gred-walk-ledge-expiry-handoff-relaunch"?TimedLedgeFollowup::ExpiryHandoffRelaunch:
                   arg=="--gred-walk-ledge-expiry-direct-relaunch"||arg=="--demo-gred-walk-ledge-expiry-direct-relaunch"?TimedLedgeFollowup::ExpiryDirectRelaunch:
@@ -882,7 +884,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     const bool direct_timed_up=timed_followup==TimedLedgeFollowup::DirectTimedUpRelaunch;
     const bool direct_timed=direct_timed_up||timed_followup==TimedLedgeFollowup::DirectTimedRelaunch;
     const bool timed_release_two=timed_followup==TimedLedgeFollowup::TimedReleaseTwoPushes;
-    const bool rising_windup_relaunch=timed_followup==TimedLedgeFollowup::RisingWindupRelaunch;
+     const bool rising_diagonal_windup=timed_followup==TimedLedgeFollowup::RisingDiagonalWindupRelaunch;
+     const bool rising_windup_relaunch=rising_diagonal_windup||timed_followup==TimedLedgeFollowup::RisingWindupRelaunch;
     const bool timed_release_expiry=rising_windup_relaunch||timed_followup==TimedLedgeFollowup::TimedReleaseExpiryDrift;
     const bool timed_release_four=timed_release_expiry||timed_followup==TimedLedgeFollowup::TimedReleaseFourPushes;
     const bool timed_release_three=timed_release_four||timed_followup==TimedLedgeFollowup::TimedReleaseThreePushes;
@@ -939,6 +942,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         "optional fresh Shift on 41-50 or Shift on 41-47 with a W tap on 47"};
     constexpr PracticeTimingGuide rising_windup_relaunch_guide{"RISING WIND-UP RELAUNCH\nUP+LEFT 6-7 / SHIFT 20 / DOWN 37 / DOWN+RIGHT 38\nSHIFT 41-47 + W ON 47 / TAP SHIFT 53\nELSE NEUTRAL",
         "rising wind-up relaunch","Up+Left Arrows 6-7, tap Shift 20, Down 37, Down+Right 38, Shift 41-47 with W on 47, then a neutral Shift tap on 53"};
+    constexpr PracticeTimingGuide rising_diagonal_windup_guide{"DIAGONAL RISING RELAUNCH\nUP+LEFT 6-7 / SHIFT 20 / DOWN 37 / DOWN+RIGHT 38\nSHIFT 41-47 + W+D ON 47 / TAP SHIFT 54\nELSE NEUTRAL",
+        "diagonal rising wind-up relaunch","Up+Left Arrows 6-7, tap Shift 20, Down 37, Down+Right 38, Shift 41-47 with W+D on 47, then a neutral Shift tap on 54"};
     constexpr PracticeTimingGuide ledge_floor_guide{"TIMED RELAUNCH FLOOR\nDOWN+RIGHT ARROWS 6-122 / SHIFT 147-157",
         "timed relaunch floor","Down+Right Arrows 6-122, Shift 147-157"};
     constexpr PracticeTimingGuide ledge_snap_dash_guide{"TIMED SNAP TO AIR DASH\nDOWN+RIGHT ARROWS 6-122 / SHIFT 148-150 / D+S 150",
@@ -975,6 +980,7 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
         else if(direct_expiring_push)guide=&ledge_expiring_push_guide;
         else if(direct_timed_up)guide=&ledge_timed_direct_up_guide;
         else if(direct_timed)guide=&ledge_timed_direct_guide;
+        else if(rising_diagonal_windup)guide=&rising_diagonal_windup_guide;
         else if(rising_windup_relaunch)guide=&rising_windup_relaunch_guide;
         else if(timed_release_expiry)guide=&ledge_timed_release_expiry_guide;
         else if(timed_release_four)guide=&ledge_timed_release_four_guide;
@@ -1093,7 +1099,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
           adjacent_expiring_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringAdjacentRelaunchPush:
           direct_expiring_push?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringDirectRelaunchPush:
           direct_expiring?gf::NativeGRedGroundDashDemo::Mode::GroundWalkExpiringDirectRelaunch:
-           rising_windup_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundRisingPlainWindupRelaunch:
+            rising_diagonal_windup?gf::NativeGRedGroundDashDemo::Mode::GroundRisingDiagonalWindupRelaunch:
+            rising_windup_relaunch?gf::NativeGRedGroundDashDemo::Mode::GroundRisingPlainWindupRelaunch:
            timed_release_four?gf::NativeGRedGroundDashDemo::Mode::GroundTimedWalkReleaseDownPush:
           timed_release_three?gf::NativeGRedGroundDashDemo::Mode::GroundTimedWalkReleaseThirdPush:
           timed_release_two?gf::NativeGRedGroundDashDemo::Mode::GroundTimedWalkReleaseSecondPush:
@@ -1154,7 +1161,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
     if(picker)view.source_practice_back(options.force_practice?gf::PracticeBackScreen::ForceBrowser:gf::PracticeBackScreen::OwnedCollection);
     gf::InputRouter router;unsigned frame=0,commands=0;gf::u64 phase=0;bool captured=false;const auto started=context.clock().monotonic_ns();auto previous=started;
     gf::log_info(context,"battle-mvp","G-Red vs Sasuke: original stage/models, provisional native gameplay rules; no source-frame equivalence or audio claim");
-     if(rising_windup_relaunch)gf::log_info(context,"source-ground",
+     if(rising_diagonal_windup)gf::log_info(context,"source-ground",
+         "separate six-tick non-contact rising wind-up handoff; same paid charge and neutral relaunch at zero ledge timer");
+     else if(rising_windup_relaunch)gf::log_info(context,"source-ground",
          "neutral relaunch from a paid five-tick, non-contact wind-up directly after rising powered relaunch; zero ledge timer");
      else if(timed_release_expiry)gf::log_info(context,"source-ground",
          "the verified Down-drift push followed by the existing zero-timer response on face 2011; no added contact permission");
@@ -1288,7 +1297,9 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                            "direct timed Up relaunch demo: Up+Left Arrows on 6-7 then Up Arrow+Shift on 25-32":
                            direct_timed?
                            "direct timed relaunch demo: Up+Left Arrows on 6-7 then Shift on 25-32, no wind-up dash":
-                           rising_windup_relaunch?
+                            rising_diagonal_windup?
+                            "diagonal rising wind-up relaunch demo: use the expiry drift and second relaunch, flick W+D with Shift on 47, then tap neutral Shift on 54":
+                            rising_windup_relaunch?
                            "rising wind-up relaunch demo: use the expiry drift and second relaunch, flick W with Shift on 47, then tap neutral Shift on 53":
                            timed_release_expiry?
                            "expiry drift push demo: Up+Left Arrows on 6-7, Shift on 20, neutral through 36, Down on 37, Down+Right on 38":
@@ -1602,8 +1613,8 @@ int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& 
                                 device.dpad_down=device.dpad_right||(timed_release_four&&world.tick()==36);
                                 if(rising_windup_relaunch){
                                     const auto tick=world.tick()+1;
-                                    device.b=device.b||(tick>=41&&tick<=47)||tick==53;
-                                    if(tick==47)device.stick_y=-80;
+                                    device.b=device.b||(tick>=41&&tick<=47)||tick==(rising_diagonal_windup?54u:53u);
+                                    if(tick==47){device.stick_y=-80;if(rising_diagonal_windup)device.stick_x=80;}
                                 }
                             }else if(options.gred_walk_ledge_fall_push){
                               if(world.tick()>=5&&world.tick()<30&&!source.ground_departures()){

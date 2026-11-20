@@ -142,6 +142,13 @@ int main(){
         !Definition::allows(Mode::GroundTimedWalkReleaseDownPush,Behavior::RisingPlainWindupRelaunch)&&
         Definition::allows(Mode::GroundRisingPlainWindupRelaunch,Behavior::TimedWalkReleaseDownPush)&&
         Definition::allows(Mode::GroundRisingPlainWindupRelaunch,Behavior::RisingPlainWindupRelaunch));
+    constexpr auto rising_five=Definition::behaviors(Policy::GroundRisingPlainWindupRelaunch);
+    constexpr auto rising_six=Definition::behaviors(Policy::GroundRisingDiagonalWindupRelaunch);
+    static_assert(unsigned(Mode::GroundRisingDiagonalWindupRelaunch)==82&&unsigned(Policy::GroundRisingDiagonalWindupRelaunch)==78&&
+        !rising_five.has(Behavior::RisingSixTickWindupRelaunch)&&rising_six.has(Behavior::RisingSixTickWindupRelaunch)&&
+        Definition::rising_relaunch_windup_length(rising_five,5.f)&&!Definition::rising_relaunch_windup_length(rising_five,6.f)&&
+        Definition::rising_relaunch_windup_length(rising_six,5.f)&&Definition::rising_relaunch_windup_length(rising_six,6.f)&&
+        !Definition::rising_relaunch_windup_length(rising_six,7.f));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));

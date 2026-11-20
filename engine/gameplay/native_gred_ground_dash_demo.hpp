@@ -455,7 +455,8 @@ public:
                  const auto& previous_air=state_.air_motion;
                  s.air_motion->rising_relaunch_windup=s.air_motion->entry?
                      (kind==NativeBorgMotionKind::AirDashWindupEntry&&
-                      s.air_motion->timer568==NormalGRedMovementDefinition::rising_relaunch_windup_ticks&&
+                      NormalGRedMovementDefinition::rising_relaunch_windup_length(
+                          NormalGRedMovementDefinition::behaviors(NormalGRedMovementDefinition::native_policy(mode_)),s.air_motion->timer568)&&
                       lift&&!lift->direction&&!state_.static_push&&!state_.relaunch_floor&&
                       lift->lower_after==3&&lift->upper_after==3&&lift->lower_program==Programs::relaunch_active):
                      (kind==NativeBorgMotionKind::AirDashWindup&&previous_air&&previous_air->rising_relaunch_windup);

@@ -12,6 +12,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
     TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,TimedReleaseExpiryRelaunch,TimedReleaseExpiryDash,RisingWindupRelaunch,
+    RisingDiagonalWindupRelaunch,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -170,9 +171,12 @@ constexpr gf::u32 timed_down_inputs(unsigned tick,bool through_expiry){
     return timed_release_inputs(tick,false,true)|(tick==37?1u<<6:0u)|
         (through_expiry&&tick==38?(1u<<6)|(1u<<8):0u);
 }
-void rising_windup_inputs(gf::RawInputState& pad,unsigned tick,bool tap){
-    if((tick>=41&&tick<=47)||(tap&&tick==53))pad.buttons|=1u<<1;
-    if(tick==47)pad.axis[1]=-20000; // W while Shift is still held.
+void rising_windup_inputs(gf::RawInputState& pad,unsigned tick,bool tap,bool diagonal=false){
+    if((tick>=41&&tick<=47)||(tap&&tick==(diagonal?54u:53u)))pad.buttons|=1u<<1;
+    if(tick==47){
+        pad.axis[1]=-20000; // W while Shift is still held.
+        if(diagonal)pad.axis[0]=20000;
+    }
 }
 
 class ReplayInput final:public gf::IInputBackend,public gf::IClock {
@@ -324,14 +328,15 @@ public:
         case Replay::TimedReleaseExpiryDrift:
         case Replay::TimedReleaseExpiryRelaunch:
         case Replay::TimedReleaseExpiryDash:
-        case Replay::RisingWindupRelaunch:{
+        case Replay::RisingWindupRelaunch:
+        case Replay::RisingDiagonalWindupRelaunch:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             raw.buttons|=replay_==Replay::TimedReleaseThreePushes?timed_release_inputs(tick,false,true):
                 timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes);
             if(replay_==Replay::TimedReleaseExpiryRelaunch&&tick>=41&&tick<=50)raw.buttons|=1u<<1;
-            if(replay_==Replay::TimedReleaseExpiryDash||replay_==Replay::RisingWindupRelaunch)
-                rising_windup_inputs(raw,tick,replay_==Replay::RisingWindupRelaunch);
+            if(replay_==Replay::TimedReleaseExpiryDash||replay_==Replay::RisingWindupRelaunch||replay_==Replay::RisingDiagonalWindupRelaunch)
+                rising_windup_inputs(raw,tick,replay_!=Replay::TimedReleaseExpiryDash,replay_==Replay::RisingDiagonalWindupRelaunch);
             break;
         }
         case Replay::PickerPractice:
@@ -611,7 +616,8 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_two=replay==Replay::TimedReleaseTwoPushes;
     const bool timed_release_three=replay==Replay::TimedReleaseThreePushes;
     const bool timed_release_four=replay==Replay::TimedReleaseFourPushes;
-    const bool rising_windup_relaunch=replay==Replay::RisingWindupRelaunch;
+    const bool rising_diagonal_windup=replay==Replay::RisingDiagonalWindupRelaunch;
+    const bool rising_windup_relaunch=rising_diagonal_windup||replay==Replay::RisingWindupRelaunch;
     const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift||replay==Replay::TimedReleaseExpiryRelaunch||
         replay==Replay::TimedReleaseExpiryDash;
     const bool snap_dash=replay==Replay::TimedSnapDash;
@@ -640,10 +646,11 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
             release_two[]="--gred-walk-ledge-timed-release-two-pushes",release_three[]="--gred-walk-ledge-timed-release-three-pushes";
      char release_four[]="--gred-walk-ledge-timed-release-four-pushes",release_expiry[]="--gred-walk-ledge-timed-release-expiry-drift";
      char rising_windup[]="--gred-walk-ledge-rising-windup-relaunch";
+     char rising_diagonal[]="--gred-walk-ledge-rising-diagonal-windup-relaunch";
     char audio[]="--no-audio",start[]="--practice-start";
      char* args[]={program,expiring_snap_relaunch?expiring_dash_snap_handoff:expiring_air_snap?expiring_dash_snap:
          expiring_short_relaunch?expiring_short_dash_relaunch:expiring_air_relaunch?expiring_dash_relaunch:expiring_air_dash?expiring_dash:
-          rising_windup_relaunch?rising_windup:timed_release_expiry?release_expiry:
+          rising_diagonal_windup?rising_diagonal:rising_windup_relaunch?rising_windup:timed_release_expiry?release_expiry:
           timed_release_four?release_four:timed_release_three?release_three:timed_release_two?release_two:
          timed_release_push?release_push:active_snap_relaunch?after_active_snap:
         direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
@@ -1414,5 +1421,15 @@ int main(int argc,char** argv){
         has(paid_lift,"practice-meter=8600/10000 at accepted tick=53")&&!has(paid_lift,"practice-windup-handoff=")&&
         has(paid_lift,"relaunch-fall-pushes=5 relaunches=3 timer698=0.0 landings=0"),
         "the live neutral Shift takes the 150 lift and skips the 50 dash entry",paid_lift);
-    std::puts("G-Red practice replay: sixty-seven desktop-loop scenarios PASS without opening devices");
+    const auto paid_diagonal=run(Replay::RisingDiagonalWindupRelaunch,106,"live paid diagonal rising wind-up");
+    check(picker_guide_played(paid_diagonal,"diagonal rising wind-up relaunch",53)&&has(paid_diagonal,"practice-phase=DASH WIND-UP\n")&&
+        has(paid_diagonal,"practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH")&&
+        has(paid_diagonal,"practice-meter=8750/10000 at accepted tick=53")&&has(paid_diagonal,"relaunches=2 timer698=0.0 "),
+        "the actual sixth update shows the paid handoff",paid_diagonal);
+    const auto diagonal_lift=run(Replay::RisingDiagonalWindupRelaunch,108,"live neutral relaunch from diagonal rising wind-up");
+    check(picker_guide_played(diagonal_lift,"diagonal rising wind-up relaunch",54)&&has(diagonal_lift,"practice-phase=RELAUNCH\n")&&
+        has(diagonal_lift,"practice-meter=8600/10000 at accepted tick=54")&&!has(diagonal_lift,"practice-windup-handoff=")&&
+        has(diagonal_lift,"relaunch-fall-pushes=5 relaunches=3 timer698=0.0 landings=0"),
+        "neutral Shift takes the relaunch after the six-tick wind-up",diagonal_lift);
+    std::puts("G-Red practice replay: sixty-nine desktop-loop scenarios PASS without opening devices");
 }

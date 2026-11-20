@@ -1381,6 +1381,24 @@ rules; it is not this handoff. Shift during wind-up and
 steered Shift at the new handoff remain outside the guide's
 admitted route. No contact permissions were added.
 
+#### Six-tick diagonal rising handoff
+
+`--gred-walk-ledge-rising-diagonal-windup-relaunch` separately
+allows the same handoff from an actual six-tick plain wind-up.
+Keep Shift held and flick **W+D** on **47** instead of W alone.
+Release all keys on 48, then tap neutral **Shift** on **54**. The
+450 charge and ready cue move to **53**; tick 52 is still
+unpaid. The relaunch spends 150 (8750 → 8600) with no active
+dash updates. Falling resumes on 55, with touchdown and
+landing on 152–153. The opposite **W+A** diagonal also
+completed the six-tick route from this start.
+
+The five-tick guide remains five-tick only, and still refuses
+the same tap after a diagonal wind-up. The new opt-in adds
+six, not longer lengths, and still requires uninterrupted
+rising, contact-free wind-up from neutral powered ascent at
+zero ledge timer. A steered relaunch cannot borrow the proof.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

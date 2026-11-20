@@ -181,7 +181,7 @@ struct NativeBorgAirMotion {
     bool expiring_walk_windup_short=false; //The independently qualified five-tick variant.
     u8 expiring_snap_windup_step=0; //Sequence from the same-height snap, never a plain-entry history.
     bool timed_relaunch_floor_windup=false; //Uninterrupted flat-floor wind-up that entered directly from a timed descending relaunch snap.
-    bool rising_relaunch_windup=false; //Plain five-tick wind-up entered directly from neutral, powered ascent at zero698.
+    bool rising_relaunch_windup=false; //Qualified plain wind-up directly from neutral, powered ascent at zero698.
     bool operator==(const NativeBorgAirMotion&)const=default;
 };
 struct NativeBorgRelaunchMotion {
@@ -595,7 +595,7 @@ public:
                      if(e.entry){
                          const auto& lift=last_offer_.relaunch_motion;
                          rising_windup=o.kind==NativeBorgMotionKind::AirDashWindupEntry&&
-                             e.timer568==NormalGRedMovementDefinition::rising_relaunch_windup_ticks&&
+                             NormalGRedMovementDefinition::rising_relaunch_windup_length(behaviors,e.timer568)&&
                              prior==NativeBorgMotionKind::RelaunchActive&&lift&&!lift->direction&&
                              lift->lower_after==3&&lift->upper_after==3;
                      }else rising_windup=o.kind==NativeBorgMotionKind::AirDashWindup&&previous&&previous->rising_relaunch_windup;
@@ -1474,7 +1474,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-           if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRisingPlainWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+           if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRisingDiagonalWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

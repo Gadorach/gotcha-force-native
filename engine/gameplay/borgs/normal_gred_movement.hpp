@@ -25,7 +25,7 @@ enum class NormalGRedMovementMode {
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
     GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
     GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap,GroundWalkExpiringAirDashSnapRelaunch,GroundTimedWalkReleaseThirdPush,
-    GroundTimedWalkReleaseDownPush,GroundRisingPlainWindupRelaunch
+    GroundTimedWalkReleaseDownPush,GroundRisingPlainWindupRelaunch,GroundRisingDiagonalWindupRelaunch
 };
 
 struct NormalGRedMovementDefinition {
@@ -105,6 +105,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundTimedWalkReleaseThirdPush,Policy::GroundTimedWalkReleaseThirdPush,Behavior::TimedWalkReleaseThirdPush},
         CombinedRule{Mode::GroundTimedWalkReleaseDownPush,Policy::GroundTimedWalkReleaseDownPush,Behavior::TimedWalkReleaseDownPush},
         CombinedRule{Mode::GroundRisingPlainWindupRelaunch,Policy::GroundRisingPlainWindupRelaunch,Behavior::RisingPlainWindupRelaunch},
+        CombinedRule{Mode::GroundRisingDiagonalWindupRelaunch,Policy::GroundRisingDiagonalWindupRelaunch,Behavior::RisingSixTickWindupRelaunch},
     };
 
     static constexpr Policy native_policy(Mode mode){
@@ -166,7 +167,10 @@ struct NormalGRedMovementDefinition {
     static constexpr bool down_timed_release_face(u32 face,s16 angle){
         return face==2011&&angle==13653;
     }
-    static constexpr f32 rising_relaunch_windup_ticks=5.f;
+    static constexpr bool rising_relaunch_windup_length(BorgMovementBehaviors flags,f32 ticks){
+        return flags.has(Behavior::RisingPlainWindupRelaunch)&&
+            (ticks==5.f||(ticks==6.f&&flags.has(Behavior::RisingSixTickWindupRelaunch)));
+    }
     static constexpr u8 expiring_walk_windup_complete=7; // entry, two pushes, four ordinary updates
     static constexpr u8 expiring_walk_windup_end(bool short_windup){
         return short_windup?6:expiring_walk_windup_complete; // The short sequence has three ordinary updates.

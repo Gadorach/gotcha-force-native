@@ -1093,22 +1093,29 @@ int main(){
             world.actors()[0].grounded&&!source.selector()&&source.resource()==10000,
             "the direct, buffered and non-dash controls have distinct landing ticks and restore the meter normally");
     }
-    enum class PaidRising { OldMode, EarlyWindup, Steered, Neutral };
-    for(auto run:{PaidRising::OldMode,PaidRising::EarlyWindup,PaidRising::Steered,PaidRising::Neutral}){
-        const bool tracked=run==PaidRising::Steered||run==PaidRising::Neutral;
+    enum class PaidRising { OldMode, EarlyWindup, Steered, Neutral, FiveModeSix, SixRight, SixLeft };
+    for(auto run:{PaidRising::OldMode,PaidRising::EarlyWindup,PaidRising::Steered,PaidRising::Neutral,
+                  PaidRising::FiveModeSix,PaidRising::SixRight,PaidRising::SixLeft}){
+        const bool extended=run==PaidRising::SixRight||run==PaidRising::SixLeft;
+        const bool diagonal=extended||run==PaidRising::FiveModeSix;
+        const bool take_tap=extended||run==PaidRising::Neutral;
+        const bool tracked=take_tap||run==PaidRising::Steered;
         const unsigned start=run==PaidRising::EarlyWindup?46:47;
-        third_prefix(run==PaidRising::OldMode?Mode::GroundTimedWalkReleaseDownPush:Mode::GroundRisingPlainWindupRelaunch);
+        const unsigned handoff=start+(diagonal?6:5);
+        third_prefix(extended?Mode::GroundRisingDiagonalWindupRelaunch:
+            run==PaidRising::OldMode?Mode::GroundTimedWalkReleaseDownPush:Mode::GroundRisingPlainWindupRelaunch);
         NativeBorgMotionOffer offer;
         check(prepare(down,&offer)&&offer.jump_motion->down_timed_release_push,"paid handoff begins with the original fourth push");
         accept(offer);
-        for(unsigned tick=38;tick<=start+5;++tick){
+        for(unsigned tick=38;tick<=handoff;++tick){
             GamePadState pad;pad.dpad_down=pad.dpad_right=tick==38;
-            pad.b=tick>=41&&tick<=start;if(tick==start)pad.stick_y=-80;
+            pad.b=tick>=41&&tick<=start;
+            if(tick==start){pad.stick_y=-80;if(diagonal)pad.stick_x=run==PaidRising::SixLeft?-80:80;}
             check(prepare(pad,&offer)&&offer.controller_timer698==0.f,"verified prefix at zero ledge clock");
             if(tick>=start){
                 check(offer.air_motion&&offer.air_motion->rising_relaunch_windup==tracked&&!offer.static_push&&!offer.air_dash_floor&&
-                    offer.air_motion->timer568==f32(start+5-tick),"only the uninterrupted five-tick wind-up from powered ascent qualifies");
-                if(tick==start||tick==start+5){
+                    offer.air_motion->timer568==f32(handoff-tick),"uninterrupted rising wind-up needs the opt-in for its actual length");
+                if(tick==start||tick==handoff){
                     const auto from=world.actors()[0].position;const auto token=pose.receipt;
                     const auto camera=NativeBattleMvpView::movement_frame(world,1152,648);
                     auto forged=offer;forged.air_motion->rising_relaunch_windup=!tracked;
@@ -1118,7 +1125,7 @@ int main(){
                 }
             }
             accept(offer);
-            check(view.practice_readout(world)->plain_windup_relaunch_ready==(tracked&&tick==start+5),
+            check(view.practice_readout(world)->plain_windup_relaunch_ready==(tracked&&tick==handoff),
                 "the paid receipt alone publishes the new handoff cue");
         }
         const auto prior=world.actors()[0];const auto paid_pose=pose;
@@ -1127,11 +1134,11 @@ int main(){
             source.resource()==paid_meter&&source.relaunches()==2&&source.air_dash_starts()==1&&!source.air_dash_active_frames(),
             "the real handoff has already spent 450 and has not paid an active dash update");
         GamePadState tap;tap.b=true;tap.dpad_up=run==PaidRising::Steered;
-        if(run!=PaidRising::Neutral){
+        if(!take_tap){
             check(!prepare(tap,&offer)&&error.find(run==PaidRising::Steered?"needs neutral Shift":"plain wind-up relaunch needs")!=std::string::npos&&
-                world.tick()==start+5&&world.actors()[0].position==prior.position&&source.resource()==paid_meter&&
+                world.tick()==handoff&&world.actors()[0].position==prior.position&&source.resource()==paid_meter&&
                 source.relaunches()==2&&!source.air_dash_active_frames()&&paid_pose.frame_scope.expired()&&!world.step({},false,&view),
-                "old mode, early non-powered lineage, or steer cannot borrow the handoff");
+                "old mode, wrong duration, non-powered lineage, or steer cannot borrow the handoff");
             continue;
         }
         check(prepare(tap,&offer)&&offer.kind==Kind::RelaunchEntry&&offer.relaunch_motion&&!offer.relaunch_motion->direction&&
@@ -1141,21 +1148,21 @@ int main(){
             "neutral handoff stages the plain capped lift and the 150 cost without replaying wind-up or active entry");
         const auto camera=NativeBattleMvpView::movement_frame(world,1152,648);
         auto wrong=offer;wrong.relaunch_motion->direction=true;
-        check(!world.step({},false,&view,nullptr,&camera,&wrong)&&world.tick()==52&&world.motion_receipt_current(paid_pose.receipt)&&
+        check(!world.step({},false,&view,nullptr,&camera,&wrong)&&world.tick()==handoff&&world.motion_receipt_current(paid_pose.receipt)&&
             source.resource()==8750&&view.practice_readout(world)->plain_windup_relaunch_ready,"native preserves the paid receipt on a fabricated steered entry");
         accept(offer);
-        check(world.tick()==53&&source.resource()==8600&&source.relaunches()==3&&!source.air_dash_active_frames()&&
+        check(world.tick()==handoff+1&&source.resource()==8600&&source.relaunches()==3&&!source.air_dash_active_frames()&&
             !view.practice_readout(world)->plain_windup_relaunch_ready,"the matching receipt publishes the third relaunch once");
         hit=land=0;
         while(world.tick()<190){
             const auto tick=world.tick()+1;
             check(prepare({},&offer)&&offer.controller_timer698==0.f,"release after the paid handoff leads to ordinary landing");
-            if(tick==54)check(offer.kind==Kind::JumpAir&&offer.jump_motion->relaunch_origin,"tap releases straight into ordinary falling");
+            if(tick==handoff+2)check(offer.kind==Kind::JumpAir&&offer.jump_motion->relaunch_origin,"tap releases straight into ordinary falling");
             if(offer.kind==Kind::JumpTouchdown)hit=tick;
             if(hit&&!land&&offer.kind==Kind::JumpLanding)land=tick;
             accept(offer);
         }
-        check(hit==151&&land==152&&source.relaunches()==3&&source.relaunch_fall_pushes()==5&&source.air_dash_starts()==1&&
+        check(hit==(diagonal?152u:151u)&&land==hit+1&&source.relaunches()==3&&source.relaunch_fall_pushes()==5&&source.air_dash_starts()==1&&
             !source.air_dash_active_frames()&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000,
             "the scoped paid handoff completes without buying any active dash updates");
     }

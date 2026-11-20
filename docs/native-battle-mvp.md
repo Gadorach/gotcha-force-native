@@ -455,6 +455,15 @@ release both, then tap neutral **Shift on 53**. The wind-up's
 instead. Use `--demo-gred-walk-ledge-rising-windup-relaunch`
 for scripted playback of the relaunch branch.
 
+For the six-tick version, use
+`--gred-walk-ledge-rising-diagonal-windup-relaunch --practice-start`.
+Use **Shift+W+D** on **47** instead of Shift+W, release on 48,
+then tap neutral **Shift** on **54**. The ready cue appears on
+53, one tick later. **Rising Wind-up Relaunch** in the pickers
+is still the five-tick guide. Use
+`--demo-gred-walk-ledge-rising-diagonal-windup-relaunch` for the
+six-tick scripted playback.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,
