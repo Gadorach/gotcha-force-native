@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/character_movement_input.hpp"
+#include "engine/gameplay/metered_air_dash_scalar.hpp"
 
 namespace gf {
 struct NormalFlameDragonSource {
@@ -87,37 +88,19 @@ inline bool normal_flame_dragon_charge(NormalFlameDragonSource source,const Char
         character_air_resource_consume(in,NormalFlameDragonSource::meter,u8(charge),rate5f4,out);
 }
 
-struct FlameDragonWindupStep {
-    CharacterAirResourceState resource;
-    f32 remaining568=0;
-    u8 selector=15;
-};
+using FlameDragonWindupStep=MeteredAirDashWindupStep;
 // The reviewed handoff subtracts the movement clock, then pays the shared
 // cost if due. It does not retest positive meter after the debit.
 inline bool normal_flame_dragon_windup_step(NormalFlameDragonSource source,const CharacterAirResourceState& in,
                                            f32 clock568,f32 rate1dc8,f32 rate5f4,FlameDragonWindupStep* out){
-    if(!out||!source.reviewed()||!NormalFlameDragonSource::valid(in)||!std::isfinite(clock568)||clock568<0||clock568>1e5f||
-       !std::isfinite(rate1dc8)||rate1dc8<0||rate1dc8>16||!std::isfinite(rate5f4)||rate5f4<0||rate5f4>16)return false;
-    FlameDragonWindupStep next{in,f32(clock568-rate1dc8),15};
-    if(next.remaining568<=0){
-        if(!normal_flame_dragon_charge(source,in,AirMeterCharge::DashHandoff,rate5f4,&next.resource))return false;
-        next.selector=16;
-    }
-    *out=next;return true;
+    return source.reviewed()&&metered_air_dash_windup_step(NormalFlameDragonSource::meter,in,clock568,rate1dc8,rate5f4,out);
 }
 
 // Ordinary policy-1 active visit after its motion/contact work. The caller
 // supplies the current readiness; zero meter selects recovery, not landing.
-struct FlameDragonActiveDebit {
-    CharacterAirResourceState resource;
-    u8 selector=16,ready588=0;
-};
+using FlameDragonActiveDebit=MeteredAirDashActiveDebit;
 inline bool normal_flame_dragon_active_debit(NormalFlameDragonSource source,const CharacterAirResourceState& in,
                                             f32 rate5f4,u8 ready588,FlameDragonActiveDebit* out){
-    FlameDragonActiveDebit next;
-    if(!out||!normal_flame_dragon_charge(source,in,AirMeterCharge::DashActive,rate5f4,&next.resource))return false;
-    next.ready588=ready588;
-    if(!next.resource.value736)next.selector=17;
-    *out=next;return true;
+    return source.reviewed()&&metered_air_dash_active_debit(NormalFlameDragonSource::meter,in,rate5f4,ready588,out);
 }
 }

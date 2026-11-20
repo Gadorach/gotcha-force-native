@@ -709,6 +709,13 @@ routes, contacts, pose timing and live attacks remain unverified.
 and [Battle Girl](https://gotchaforce.fandom.com/wiki/Battle_Girl?oldid=6750).
 No actor gained admission.
 
+The detached Tank/Girl component shares only the verified metered dash
+arithmetic with Flame Dragon. It retains distinct cost and clock operands,
+the ground program-control gate, the active release/landing latch, and
+the ordinary B lane distinction. It matched **170** bounded source cases;
+all **242** preceding Flame Dragon cases still match. The helpers do not
+run an actor, program VM, terrain query, or weapon outcome.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
