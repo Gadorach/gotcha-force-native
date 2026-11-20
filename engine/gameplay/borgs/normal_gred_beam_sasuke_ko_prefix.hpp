@@ -23,8 +23,10 @@ struct GRedBeamSasukeKoPlan {
     u8 receiver_losses435=0,credit_kos434=0;
     u32 receiver_loss_cost424=0,credit_ko_cost420=0;
     u16 credit_team_bonus=0;
+    u8 credit_slot=255,receiver_slot=255;
+    s16 receiver_cost4aa=-1;
     bool team_debited=false,team_zero_store=false,reserve_decremented=false,scene_pair_requested=false;
-    bool observer_scan_pending=true;
+    bool observer_scan_pending=false;
 };
 
 // Ordinary mode-0 2F8DC..2FB14 prefix, after a declared zero crossing.
@@ -41,6 +43,8 @@ inline bool normal_gred_beam_sasuke_ko_prefix(NormalGRedNeutralBSource source,
        in.receiver_link4a0||in.receiver_cost4aa<0||in.receiver_team_remaining118<0||
        !slot_or_empty(in.scene_credit_b4)||!slot_or_empty(in.scene_receiver_b8))return false;
     GRedBeamSasukeKoPlan next;
+    next.credit_slot=in.credit_slot;next.receiver_slot=in.receiver_slot;
+    next.receiver_cost4aa=in.receiver_cost4aa;next.observer_scan_pending=true;
     next.receiver_team_remaining118=in.receiver_team_remaining118;next.reserves10a=in.reserves10a;
     next.scene_credit_b4=in.scene_credit_b4;next.scene_receiver_b8=in.scene_receiver_b8;
     if(in.debit108){

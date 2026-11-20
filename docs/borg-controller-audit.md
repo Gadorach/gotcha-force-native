@@ -1299,6 +1299,24 @@ reserve, credit and stat comparisons matched. This stops at
 the `2FB14` observer scan boundary. It does not publish a team
 budget, remove an actor, notify observers, or choose victory.
 
+### Argument 43: ordinary KO observer queue writes
+
+The `2FB14..2FC14` tail scans six physical records in order. It skips
+inactive records and skips the fallen receiver by record identity.
+Active opposing records, including the credited attacker, queue code
+3. Other active records on the receiver's team queue code 4 and
+increment `437` and `430` by one loss and the receiver's runtime cost,
+respectively, at the original widths. Both branches write the
+receiver's `3E4` field as the event subject, not the physical scan
+index, and advance the local eight-entry `464` queue cursor `484`.
+
+**9,216** bounded source comparisons matched across all active masks
+and cursor positions, including fixtures that deliberately distinguish
+the subject from the physical receiver. The headless KO proposes
+`(3,1)` for G-Red at cursor `7 -> 0` and leaves Sasuke's queue untouched.
+This stops at queue writes; no live notification, event consumption,
+actor lifecycle change, or victory decision is wired.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
