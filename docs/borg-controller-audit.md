@@ -769,6 +769,13 @@ operands. Live flight, scene placement, contact priority, final area
 coverage and damage remain unverified. [Wiki lead: Death ICBM](https://gotchaforce.fandom.com/wiki/Death_ICBM?oldid=6658).
 No game actor was admitted.
 
+The detached Death ICBM helper reuses verified type-3 scalar flight steps
+with Blue Striker, keeps contact-query order explicit, and separates the
+area-object request from the later pending-defeat consumer. It matched
+**142 bounded source cases**, and **301** Blue Striker comparisons still
+match after sharing the flight code. Nothing here queries a real scene,
+creates an area object, applies damage or admits an actor.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
