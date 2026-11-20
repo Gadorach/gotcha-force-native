@@ -1,9 +1,9 @@
 # Normal Borg controller audit: one per retail tribe
 
-The first pass found **eight movement-selector tables and 20 distinct
+The first pass found **eight movement-selector prefixes and 20 distinct
 class-main callbacks** in a sample of one normal Borg from each retail tribe.
-Eleven representatives share Sasuke's selector table byte-for-byte. Several
-representatives that share a table differ in movement type, resource policy,
+Eleven representatives share Sasuke's first 32 selector pairs byte-for-byte.
+Several representatives that share a prefix differ in movement type, resource policy,
 pose data or class actions. **Tribe is not a controller key.** These are
 static source comparisons, not 20 recovered playable controllers.
 
@@ -52,14 +52,15 @@ comes from this table.
 
 ## What is shared, and what is not
 
-Shared input/selection supplies a 32-pair selector table (`4F0`), with
-independent upper and lower lanes. Source state `0` is a handler that does
+The first pass compared the first 32 pairs of the selector table (`4F0`),
+with independent upper and lower lanes. This is not the full extent for the
+later-audited Ninja and action rows. Source state `0` is a handler that does
 nothing, not the `-1` sentinel for an unavailable lane. Tables compare
 **representable states**, not reachable inputs or animation clips.
 
 | Cohort | Observed distinction |
 | --- | --- |
-| A | Eleven byte-identical tables; selectors 0–17. |
+| A | Eleven byte-identical first-32 prefixes; ordinary selectors 0–17. |
 | B | Battle Girl and Normal Tank share A's coverage but replace two lower states. Their movement types and class hooks differ. |
 | C | G-Red's table adds selectors 25–26 to B. |
 | D | Flame Dragon has a different state at selector 4 and omits 12–14. This is not proof of no dash. |
@@ -172,8 +173,8 @@ contact, flight trajectory or actor admission.
 ## Normal Wing Soldier and Quick Valkrie: glide and contact
 
 Exact normal `GG4E08:0A00/0` and `GG4E08:0B00/0`, AFS members 647 and 658,
-install movement type 2 and resource policy 2. Their selector tables match
-byte-for-byte; their motion banks, sampled pose continuations and class
+install movement type 2 and resource policy 2. Their audited movement
+prefixes match byte-for-byte; their motion banks, sampled pose continuations and class
 actions do not. Neither report supplies an exact X Fly input-to-action path.
 [Wiki leads: Wing Soldier](https://gotchaforce.fandom.com/wiki/Wing_Soldier?oldid=6424)
 and [Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425).
@@ -365,7 +366,7 @@ owner slots, not a third combatant or a single-actor form alias.
 | --- | --- |
 | Request and role | The conditioned fusion command sets a short battle latch. The team scan matches two eligible, requesting slots, then stages reciprocal links, destinations and roles without changing current models. Red ordinarily gets the primary; human Blue takes it when Red is AI. The service's returned anchor and the primary role are distinct. This exact normal pair uses variant 0 for both destinations; non-normal inputs were not audited. |
 | Synchronization and commit | The pair advances through linked readiness and approach stages. Both must reach stage 7 before reconfiguration is staged. The slot lifecycle then reloads both bound resources through the primary owner, retaining owner indices. That is not the scalar in-place rebind used by Titan or Gold Hero. |
-| Active roles | Primary `0602` uses movement type 0 and its own controller. Companion `0603` uses type 7, admits only selector 0, has distinct class hooks, and follows the primary through the companion copy pass. Shared art does not make it a second freely moving Seiryu or a purely visual attachment. Fused initialization pools saved HP; ongoing damage and other state transfer remain unverified. |
+| Active roles | Primary `0602` uses movement type 0 and its own controller. Companion `0603` uses type 7, admits only selector 0 among the first 32, has distinct class hooks, and follows the primary through the companion copy pass. Shared art does not make it a second freely moving Seiryu or a purely visual attachment. Fused initialization pools saved HP; ongoing damage and other state transfer remain unverified. |
 | Expiry and split | The team timer counts **1800 eligible updates** from the last applicable initialization. Zero clears the active team state, but does not split the pair by itself. When the guards allow, each owner queues its own saved original model and variant, independent of which owner piloted Seiryu. Resource retirement and link cleanup are separate, not guaranteed by the request. |
 | Pre-commit interruption | A separate branch can clear the two transition stages and team entry state before commit. It is not the active-fusion split or evidence that every interruption or defeat follows that path. |
 
@@ -400,7 +401,7 @@ class initialization. Similar art does not authorize that substitution.
 | Mechanism | Source-backed comparison |
 | --- | --- |
 | Request and role | The battle team latch and matcher are shared with Seiryu. Head normally takes the primary role; human Mechanical takes it when Head is AI. The orchestration anchor can differ from the primary. Original identities are retained per owner, not reconstructed from the assigned role. |
-| Entry and movement | Dragon uses lower handlers 57/58 for participant entry, not Seiryu's 31/32. The Dragon primary is type 4 and its fused-entry handler has a **local 120-count** fallback for channel-15 completion. Its companion is also type 4 but has its own config, class initialization, and only admits selector 0; Seiryu's companion is type 7. |
+| Entry and movement | Dragon uses lower handlers 57/58 for participant entry, not Seiryu's 31/32. The Dragon primary is type 4 and its fused-entry handler has a **local 120-count** fallback for channel-15 completion. Its companion is also type 4 but has its own config and class initialization, and admits only selector 0 among the first 32; Seiryu's companion is type 7. |
 | Commit and timer | Both battle slots must reach stage 7 before the shared paired reload is staged. The active team clock counts 1800 eligible updates, independent of the Dragon-local animation timeout. Neither seed gives a wall-clock duration. |
 | Return | A guarded expiry queues each owner's saved model and variant. For the later shared mode-4 cleanup, **nonzero `48A` skips** the block at `8005538C`; with `48A = 0`, it clears that slot's fused role and partner pointer before requesting single-slot reload. This corrects the polarity in the earlier private Seiryu audit. The request itself is not cleanup, and the shared cleanup is not an atomic split. |
 
@@ -424,7 +425,7 @@ is wired.
 
 Exact normal **Revolver Gunman `GG4E08:0100/0`** (#21, AFS member 498)
 and **Death Borg Beta II `GG4E08:0105/0`** (#79, member 503) install
-byte-identical movement-selector tables. Their class dispatch, primary
+byte-identical first-32 movement prefixes. Their class dispatch, primary
 pose roots and projectile records differ. Beta's existing native initial-AI
 construction and first-world evidence does not qualify human control,
 later AI decisions, or combat. Gunman has no current native battle admission.
@@ -467,8 +468,8 @@ checks and 60 stock cases. No live stock, actor or projectile is published.
 ## Patra Witch and Angel Nurse: distinct X contact outcomes
 
 Exact normal **Patra Witch `GG4E08:0902/0`** (#48, AFS 636) and
-**Angel Nurse `GG4E08:0900/0`** (#47, AFS 634) share the ordinary movement
-selector table, but not their class dispatch or pose data. The reviewed
+**Angel Nurse `GG4E08:0900/0`** (#47, AFS 634) share the audited ordinary
+movement prefix, but not their class dispatch or pose data. The reviewed
 conditioned X path selects group 2 and class state `2/0` for both;
 an earlier action can preempt it. Both use a channel-2 stock debit in
 the audited branches, at different points.
@@ -492,6 +493,40 @@ A contact input requires the reviewed row and resolved recipient; a target
 hint or cosmetic cue cannot give it one. The native comparison matched **55**
 cases covering release, cast and setup results, shape lane, effect ownership
 and HP/mode gates. No stock, object, collider, actor HP or effect is applied.
+
+## Teleport Ninja: caster movement, not a swap
+
+Exact normal **Teleport Ninja `GG4E08:0005/0`** is catalogue #20, AFS
+member 490. Its audited 48-pair selector table differs from normal Sasuke
+only at slots 12–14. Shared entries do not qualify its motion tuning or
+admit an actor.
+
+**Extended selector correction:** `0x2C` resolves to upper state 61 and
+lower state 0 in the audited normal Ninja, Gunman, Beta II, Patra and
+Nurse tables. It hands the upper lane to the actor's class callback;
+it is not unavailable. The first-32 locomotion comparison does not
+cover that row or prove the full tables match across classes.
+
+For the reviewed ordinary X route, **Ninpo Teleport** uses a fresh
+conditioned X pulse and attempts one channel-2 debit during setup. That
+setup does not branch on the debit result. Its normal stock mode is 1:
+a successful debit adds the refill preset to the existing stock clock.
+The distinct charged-X dispatch is not the ordinary teleport.
+
+The caster's goal normally comes from its own position history; a
+guarded branch aims using a cached target point. Both move **only the
+caster**, through iterative travel and the floor/contact path, not a
+position exchange with the target. The action suppresses selected body
+registrations and clears that bit on completion. This is not blanket
+collision immunity or a guarantee about travel distance or elapsed time.
+[Wiki leads: Teleport Ninja](https://gotchaforce.fandom.com/wiki/Teleport_Ninja?oldid=6693)
+and [Switching Ninja](https://gotchaforce.fandom.com/wiki/Switching_Ninja?oldid=6659).
+Switching Ninja `0009` dispatches separately; its swap outcome is not
+verified by this audit.
+
+All **34 bounded source-fragment checks and four staged vector checks**
+passed. No live contact, charged Slash outcome, device input, or
+interruption sequence was verified.
 
 ## Package implications and next checks
 
