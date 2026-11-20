@@ -6,6 +6,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_damage_tables.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_fresh_pair.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_selected_hit.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_post_hit.hpp"
 
 int main(int argc,char** argv){
     using namespace gf;
@@ -71,8 +72,21 @@ int main(int argc,char** argv){
     std::printf("declared level-zero 0615/0 -> 000A/0: source-table amount %d, proposed HP %d -> %d\n",
         int(plan.amount),int(plan.previous1c8),int(plan.current1c6));
     std::puts("Fresh sphere fixture: tangency at (22,0,0); one-unit gap and repeated token refused. No live HP was written.");
-    GRedBeamSasukeHealthPlan moving_hp;
-    if(!normal_gred_beam_sasuke_health_from_tables(red,selected.contact,in,sample,table,&moving_hp)||
-       moving_hp.amount!=19||moving_hp.current1c6!=161)return 1;
+    GRedBeamSasukePostHitInput after;
+    after.reviewed_post_contact_declared=true;after.credit_total418=100;after.receiver_total41c=30;
+    after.receiver.restore6be=90;after.receiver.remaining6c2=100;after.receiver.threshold6c4=50;
+    after.receiver.impact6c6=120;after.receiver.flags6fd=selected.contact.receiver_flags6fd;
+    GRedBeamSasukePostHitPlan moving_hit,lethal,held;
+    if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&moving_hit)||
+       moving_hit.health.amount!=19||moving_hit.health.current1c6!=161||
+       moving_hit.credit_total418!=119||moving_hit.receiver_total41c!=49||!moving_hit.reaction.visited||
+       moving_hit.reaction.fields.impact6c6!=70||moving_hit.reaction.fields.remaining6c2!=50)return 1;
+    in.current1c6=7;
+    if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&lethal)||!lethal.request_ko_continuation||
+       lethal.health.current1c6||lethal.credit_total418!=119||lethal.reaction.visited)return 1;
+    in.current1c6=180;in.scene_hp_hold1f=true;
+    if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&held)||held.stat_write||
+       held.health.write_health||!held.reaction.visited)return 1;
     std::puts("Separate moving shape-2 fixture: selected (-22,0,0), moved and rebuilt candidate matrix, proposed HP 180 -> 161.");
+    std::puts("Moving post-hit alternatives: surviving counters kept separate; 7 -> 0 selects KO continuation; scene hold skips HP and stats.");
 }

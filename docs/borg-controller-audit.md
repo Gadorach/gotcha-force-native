@@ -1256,6 +1256,30 @@ result is `180 -> 161`, not a second debit on the fresh-sphere
 fixture. Scene list enumeration, live owner handles, reaction and
 HP publication remain unwired.
 
+### Argument 43: ordinary post-hit counters and KO branch
+
+In the scoped opposing normal pair, `2F110` adds the positive computed
+amount to credited G-Red `+418` and receiving Sasuke `+41C` **before**
+the HP clamp. For the `7 -> 0` fixture those totals still get 19, not 7.
+The zero crossing selects the KO continuation instead of the surviving
+counter tail. A scene HP hold skips HP and stats but does not by itself
+skip that surviving tail.
+
+`2F304` uses shooting row `+2` (base 50 with the beam-relative
+adjustment), not HP damage, for `+6C6`. The nonzero `7DE` byte inhibits
+the decrement. With `5E0 & 0x01000000` set it checks the scaled
+threshold; with the bit clear it bypasses that threshold. The surviving
+tail also resets three clocks to 60 and applies row `+4/+5` to
+`6C2/6C8`. A depleted `6C2` restores `6BE` and resets progress before
+the separate progress addition; tier `6CA` caps at 63.
+
+The moving headless replay checks surviving, zero-crossing and held
+alternatives independently. **864** scalar-tail and **216** joined
+post-hit/KO-route comparisons matched the bounded source. The counters
+are numeric proposals, not a hitstun animation or measured reaction.
+The KO selector does not run the KO routine, team ledger, effects, or
+destruction.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
