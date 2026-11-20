@@ -1099,6 +1099,26 @@ token to beam `26C`, and incremented the credited actor's `404`
 counter. These are initialization bookkeeping writes, not hits or
 HP changes. They remain unwired.
 
+### Argument 43: fresh shape activation and list gate
+
+The detached fresh-shape tail now joins those bookkeeping writes to
+the shared `8AA40` matrix filter and `8A2BC` list planner. This entry
+requires the exact normal beam shape operands and a declared shape-0
+initialization visit. The activation writes (`1CA`, `26C`, `2AD`,
+scene token, and credited `404`) precede the column-length filter;
+a degenerate matrix can skip list admission without undoing them.
+The scene token skips zero on wrap and is not a native allocation
+generation.
+
+For descriptor flag `0x0001`, the only candidate list is `477C`,
+subject to the beam carrier's suppression and disable fields. The
+carrier supplies `+114` and registration flags; the credited actor
+supplies the peer fields and credit counter. The declared freeze
+byte can select phase 2 without repeating activation. **768** bounded
+original-code comparisons matched, using host column-length math. Nothing here
+initializes or advances sphere geometry, writes the shared lists or
+counters, establishes a live collider lease, or applies damage.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
