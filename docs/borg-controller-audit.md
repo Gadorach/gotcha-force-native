@@ -1226,11 +1226,35 @@ sum of radii. The fallback therefore misses exact tangency, unlike
 the scoped fresh sphere case. **210** bounded moving-shape and
 candidate-point comparisons matched using host vector services.
 
-The separate moving probe in the headless replay reports a point at
-`(-22,0,0)`. It does not feed that point into the HP proposal.
-`2DB58` still has to select against the actual other candidates,
-apply its move-to-contact continuation and dispatch the callback.
-No live shape update, recipient or damage follows from this point.
+The overlap entry itself returns a point only; it does not select a
+receiver across the list or move the beam.
+
+### Argument 43: moving selection and contact continuation
+
+The detached `2DB58` selection compares squared distance from the
+sweep's **start** to each receiving center, not distance to the
+candidate point. The initial limit is `4e8`; a later list entry
+replaces an equal-distance earlier candidate. This entry requires a
+complete declared list of reviewed body-9 samples, at most one per
+slot. An unknown or inconsistent later entry does not publish the
+earlier proposed winner.
+
+For the selected normal Sasuke row, the source adds
+`point - endpoint98` to the endpoint and beam position and half that
+offset to the broad center. A nonzero offset reaches `C44A8`, which
+rebuilds the matrix from the moved carrier using stored scales; it
+does not refresh `distance180` here. A zero offset still reaches
+the contact callback without rebuilding the matrix. **344** bounded
+nearest/displacement comparisons and two initial-distance limit
+checks matched. Very long synthetic sweeps were used only for the
+limit branch, not to qualify their contact-point arithmetic.
+
+The moving headless fixture now selects `(-22,0,0)`, computes the
+move and matrix, and threads that specific receiver through the
+contact prefix and source-table amount. Its separate proposed HP
+result is `180 -> 161`, not a second debit on the fresh-sphere
+fixture. Scene list enumeration, live owner handles, reaction and
+HP publication remain unwired.
 
 ## Sasuke: original neutral B and paid repeat
 
