@@ -911,28 +911,42 @@ mode-0 stock and argument-43 beam request. It matched **169** source cases.
 The new mode-0 refill proposal requires an already armed stock clock and
 clears it at expiry. No live pose, contact, allocation or duel shot changed.
 
-### Next executable check: G-Red's authored cue
+### Headless G-Red cue witness
 
-The current locomotion profile lacks the shot program. A separate private
-436-byte GFMP3 slice can carry exact idle `P0:0`, shot `P2:0`, and the
-nine descriptors they reference (`D0:0/1/2`, `D2:0/1/2/6/7/8`). All nine
-clip entries are present in the exact normal bank. Keep the side clips
-even at zero steering, and keep their authored endpoints: release clip
-`3:12` has endpoint 36 rather than 35. These are read-only metadata
-checks, not evidence that the clips or program ran.
+The locomotion profile still lacks the shot program and is unchanged.
+`--kind neutral-b` exports a separate 436-byte GFMP3 slice: exact idle
+`P0:0`, shot `P2:0`, and nine descriptors (`D0:0/1/2`,
+`D2:0/1/2/6/7/8`). The headless check loads all nine clips from the
+exact normal bank without fallback. Generated profiles stay local.
 
-The next check should use the shared `CharacterProgramVm` and directional
-motion driver headlessly, with root held by the test fixture and both
-pose lanes seeded from idle. Request `P2:0` on effective mask 3 and stop at
-the first accepted upper-lane `Control0=(1,0,1,0)` at source `80366664`.
-The opening `(0,0,1,0)` is not a release. Preserve both writes and record
-the accepted lane state and command journal. The existing ordinary
-preview refuses the opening control bytes; the movement profile's pose
-receipt does not authorize a shot. Neither should be widened for this check.
+With a settled idle seed, zero steering, effective lane mask 3 and step 1,
+the shared `CharacterProgramVm` and directional driver reached the first
+accepted upper `Control0=(1,0,1,0)` at source `80366664` after **16 VM
+updates** following the shot request. The opening `(0,0,1,0)` did not
+release. At that cue both lanes had wait/cursor `0x40/0x44`, centre/side
+descriptors `D2:6/7`, clips `3:11/3:12` at frames `1/1`, and separate
+endpoints `35/36`. Candidate model bytes were `4/0`. Only a local pose
+was composed. The step count is for this fixture, not original gameplay
+timing. The existing ordinary preview and movement-only pose receipts
+were not widened.
 
-An accepted test cue is not permission to spawn a beam. Live argument 43
-still needs the same actor and update to supply the accepted cue, aim pass
-or timeout, stock debit, current owned key-7 transform, and allocation
+The same check refused a foreign VM scope and a missing zero-weight
+release-side clip, leaving the previous pose and cue state intact.
+
+Run from the repository root with `DOL` set to the qualified initialized
+executable and the local MVP and practice packs already present:
+
+```sh
+work=$(mktemp -d)
+python3 -B -m tools.extract.gred_locomotion "$DOL" "$work/neutral-b.gfmp" --kind neutral-b
+c++ -std=c++20 -O1 -I . tests/host/gred_shot_cue.cpp -o "$work/gred-shot-cue"
+"$work/gred-shot-cue" local/content/native-battle-mvp-v1 "$work/neutral-b.gfmp" \
+  local/content/source-gred-ground-v9/pose-height.gfhc
+```
+
+A test cue is not permission to spawn a beam. Live argument 43 still
+needs the same actor and update to supply the accepted cue, aim pass or
+timeout, stock debit, current owned key-7 transform, and allocation
 receipt. Contact, actual recipient and HP changes need separate evidence.
 
 ## Sasuke: original neutral B and paid repeat

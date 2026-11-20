@@ -1,4 +1,4 @@
-"""Export unaltered G-Red base locomotion programs into the existing GFMP3 format.
+"""Export unaltered G-Red program slices into the existing GFMP3 format.
 
 Reads only a qualified DOL. This packages animation instructions/descriptors,
 not an actor controller, input policy, physics, event consumer or renderer.
@@ -21,8 +21,6 @@ ALLOWED_OPCODES = {0, 1, 2, 3, 6, 7, 8, 11}
 
 
 def encode(read, bank, defaults):
-    if len(defaults) != 2 or any(value >= 128 for value in defaults):
-        raise ValueError("normal default model domain")
     tables = {row["group"]: row["choices"] for row in bank["program_groups"]}
     descriptor_tables = {row["group"]: row["choices"] for row in bank["descriptor_groups"]}
     by_address = {row["address"]: row for row in bank["programs"]}
@@ -57,6 +55,12 @@ def encode(read, bank, defaults):
         if len(raw) != end - start:
             raise ValueError("short source program")
         programs.append((1, choice, raw))
+    return pack_programs(programs, descriptors, defaults)
+
+
+def pack_programs(programs, descriptors, defaults):
+    if len(defaults) != 2 or any(value >= 128 for value in defaults):
+        raise ValueError("normal default model domain")
     if not descriptors or len(descriptors) > 128 or any(len(raw) != 20 for raw in descriptors.values()):
         raise ValueError("descriptor byte/count domain")
     program_table, descriptor_table = 32, 32 + len(programs) * 12
@@ -108,15 +112,36 @@ def recover_height(image):
     return struct.pack(">2I", 0x47464843, 1) + operands
 
 
+def recover_neutral_b(image):
+    if image.sha256 != SOURCE_SHA256:
+        raise ValueError("unqualified source revision for G-Red neutral B")
+    # Exact initialized spans, including the authored waits and recovery tail.
+    # This slice stops before any return-to-locomotion lookup (no group 1 alias).
+    programs = [(0, 0, image.read(0x8036631C, 84)), (2, 0, image.read(0x80366638, 80))]
+    descriptors = {
+        (group, choice): image.read(address, 20)
+        for group, choice, address in (
+            (0, 0, 0x80367542), (0, 1, 0x80367556), (0, 2, 0x8036756A),
+            (2, 0, 0x803676AA), (2, 1, 0x803676BE), (2, 2, 0x803676D2),
+            (2, 6, 0x80367722), (2, 7, 0x80367736), (2, 8, 0x8036774A),
+        )
+    }
+    raw = pack_programs(programs, descriptors, image.read(0x80365AC8 + 0xBE, 2))
+    if len(raw) != 436:
+        raise ValueError("G-Red neutral-B profile extent")
+    return raw
+
+
 def export(dol, output, kind="programs"):
     output = Path(output)
     if output.exists() or output.is_symlink():
         raise FileExistsError("locomotion output already exists")
-    if kind not in ("programs", "pose-height"):
+    recover_kind = {"programs": recover, "pose-height": recover_height, "neutral-b": recover_neutral_b}
+    if kind not in recover_kind:
         raise ValueError("locomotion output kind")
     with ReadOnlyFile(dol) as source:
         image = DolImage(source.read(0, source.size), SOURCE_SHA256)
-        raw = recover(image) if kind == "programs" else recover_height(image)
+        raw = recover_kind[kind](image)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("xb") as stream:
         stream.write(raw)
@@ -128,7 +153,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dol", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--kind", choices=("programs", "pose-height"), default="programs")
+    parser.add_argument("--kind", choices=("programs", "pose-height", "neutral-b"), default="programs")
     args = parser.parse_args()
     print(json.dumps(export(args.dol, args.output, args.kind)))
 
