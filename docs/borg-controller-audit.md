@@ -848,6 +848,12 @@ route. All **249 bounded offline cases** matched. Live pose timing,
 contact, damage and interruption remain unverified. No actor gained
 admission.
 
+The detached X planner keeps shared button-transfer counters and the
+lane-event handoff separate from model-specific program, shape-descriptor
+and visual-key requests. It matched **142 bounded source cases**. This
+does not run the class VM, generate world geometry, add damage, or
+alter the separate Normal Samurai close-B planner.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
