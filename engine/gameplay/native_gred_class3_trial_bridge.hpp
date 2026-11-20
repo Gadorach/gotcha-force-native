@@ -1,14 +1,20 @@
 #pragma once
 #include "engine/gameplay/native_gred_neutral_b_trial.hpp"
 #include "engine/gameplay/scene_physical_pools.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 
 namespace gf {
 enum class GRedClass3TrialStatus {AwaitPaidFrame,Failed,NoDescriptors,NoCarrier,Allocated,HeaderInstalled,Released};
 enum class GRedTrialShapeStatus {NotAttempted,Failed,NoSlot,Constructed};
+struct GRedTrialLaunch {
+    GRedBeamMuzzlePlan muzzle;
+    GRedBeamFlightSample flight;
+    GRedBeamScalePlan scale;
+};
 
 // Opt-in native lab bridge. Owns a class-3 slot and its constructor fields,
-// with a limited class-4 construction visit. It does not publish a matrix,
-// execute shape geometry or join the collision scheduler.
+// with a limited class-4 construction and launch visit. It does not
+// execute shape geometry, register a renderer callback or join collision.
 class NativeGRedClass3TrialBridge {
 public:
     NativeGRedClass3TrialBridge()=default;
@@ -140,6 +146,45 @@ public:
         if(!pool||!pool->trial_beam_shape(shape_)||!trial_shape_init(source,world,view)||!source.attack_profile_)return {};
         return source.attack_profile_->hit_row();
     }
+    bool seed_trial_muzzle_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                const NativeBattleMvpView& view,std::string* error){
+        const auto pool=pool_.lock();
+        const auto* birth=installed_trial_birth(source,world,view);
+        if(!pool||!birth||world.paused()||!source.current(world)||launch_attempted_||
+           shape_status_!=GRedTrialShapeStatus::Constructed||init_.route!=GRedBeamInitRoute::MuzzleBranch||
+           !pool->trial_beam_shape(shape_)||!source.paid_)
+            return refuse(error,"current paid pose and constructed class4 child required before muzzle reads");
+        launch_attempted_=true;
+        NativeGRedPracticeWorldMatrices keys;
+        if(!view.observe_gred_source_world(world,&keys)||keys.tick!=world.tick())
+            return refuse(error,"same-update parent and credit matrices required");
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        const GRedBeamNoTargetBasis basis{birth->parent8c_slot,birth->credit90_slot,keys.key7,keys.key0};
+        GRedTrialLaunch next;
+        GRedBeamTransformPlan matrix;
+        // Fresh source record has zero matrix storage. A nondegenerate
+        // launch must build a basis, not retain or invent a fallback.
+        const Mat4 empty114{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}};
+        if(!normal_gred_beam_no_target_muzzle(red,*source.paid_,birth->targets_c8_cc_null,basis,&next.muzzle)||
+           !normal_gred_beam_flight_seed(red,next.muzzle,&next.flight)||
+           !normal_gred_beam_scale_seed(red,birth->copied.scale_b4,next.flight.distance180,&next.scale)||
+           !normal_gred_beam_transform(red,next.flight,next.scale,empty114,&matrix)||
+           matrix.basis==GRedBeamBasisRoute::Retained)return refuse(error,"ordinary launch operands refused");
+        std::array<f32,12> frame;
+        std::copy_n(matrix.frame114.m,frame.size(),frame.begin());
+        if(!pool->publish_trial_beam_frame(lease_,shape_,frame))return refuse(error,"carrier matrix publication refused");
+        launch_=next;
+        if(error)error->clear();
+        return true;
+    }
+    const GRedTrialLaunch* trial_launch(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                       const NativeBattleMvpView& view)const{
+        const auto pool=pool_.lock();
+        const auto* models=pool?pool->class3_models(lease_):nullptr;
+        if(!launch_||!models||!models->trial_frame114||!pool->trial_beam_shape(shape_)||
+           !installed_trial_birth(source,world,view))return nullptr;
+        return &*launch_;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -152,7 +197,7 @@ private:
         if(error)*error=std::string("G-Red class3 trial: ")+why;
         return false;
     }
-    bool bound_=false,header_attempted_=false;
+    bool bound_=false,header_attempted_=false,launch_attempted_=false;
     u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;
@@ -164,5 +209,6 @@ private:
     GRedBeamInitPlan init_;
     NativeGRedTrialBeamHandoff handoff_;
     std::optional<GRedBeamFactoryBirthFields> birth_;
+    std::optional<GRedTrialLaunch> launch_;
 };
 }

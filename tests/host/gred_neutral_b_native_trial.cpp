@@ -35,9 +35,9 @@ bool check(bool ok,const char* why){
     if(!ok)std::fprintf(stderr,"native neutral-B trial: %s (%s)\n",why,error.c_str());
     return ok;
 }
-enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,Shape,ShapeFull,StaleShape};
+enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,Shape,ShapeFull,StaleShape,StaleMuzzle};
 constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125f,.875f,true};
-bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape;}
+bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape||c==Capacity::StaleMuzzle;}
 struct AllocationFixture {
     SceneDescriptorBootstrap models;
     ScenePhysicalPools physical;
@@ -130,7 +130,7 @@ struct AllocationFixture {
                 if(!finish_shape(source,world,view,capacity))return false;
                 physical.retire();
                 return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
-                             !bridge.trial_shape_hit_row(source,world,view).data,
+                             !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view),
                              "pool retirement revokes both leases without claiming source cleanup");
             }
             if(capacity==Capacity::StaleHeader){
@@ -160,6 +160,9 @@ struct AllocationFixture {
         const auto desc_before=*descriptors->snapshot();
         const auto shape_before=*pool->collision_snapshot();
         const auto scheduler=*physical.scheduler();
+        if(!check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&
+                  !bridge.trial_launch(source,world,view)&&!pool->class3_models(bridge.lease())->trial_frame114,
+                  "a published actor pose and header cannot bypass class4 construction"))return false;
         if(capacity==Capacity::StaleShape){
             NativeBorgSourcePose republished;
             if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error),
@@ -169,7 +172,7 @@ struct AllocationFixture {
             return check(!bridge.initialize_trial_shape_once(source,world,view,&error)&&
                          *pool->collision_snapshot()==shape_before&&bridge.shape_status()==GRedTrialShapeStatus::NotAttempted,
                          "stale header or absent credited bank refuses before allocation");
-        const bool success=capacity==Capacity::Shape;
+        const bool success=capacity==Capacity::Shape||capacity==Capacity::StaleMuzzle;
         if(!check(bridge.initialize_trial_shape_once(source,world,view,&error)&&
                   bridge.shape_status()==(success?GRedTrialShapeStatus::Constructed:GRedTrialShapeStatus::NoSlot)&&
                   *descriptors->snapshot()==desc_before&&*physical.scheduler()==scheduler&&!world.shots_spawned(),
@@ -184,19 +187,51 @@ struct AllocationFixture {
                       !bridge.trial_shape_hit_row(source,world,view).data&&
                       pool->release(held_shapes.back(),&error),"full bank retires this attempt without a child or row"))return false;
             return check(!bridge.initialize_trial_shape_once(source,world,view,&error)&&!lease.current(),
-                         "returning shape capacity does not retry the retired request");
+                         "returning shape capacity does not retry the retired request")&&
+                check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&!pool->class3_models(bridge.lease())->trial_frame114,
+                      "registration refusal cannot publish a muzzle or carrier matrix");
         }
         const auto* body=pool->inspect(lease);
         const auto* shape=pool->trial_beam_shape(lease);
         const auto hit=bridge.trial_shape_hit_row(source,world,view);
-        return check(lease.current()&&body&&shape&&body->group01==49&&body->kind83==26&&body->active00==1&&
+        if(!check(lease.current()&&body&&shape&&body->group01==49&&body->kind83==26&&body->active00==1&&
                      body->update0c_key==0x8008a65c&&shape->carrier20==ScenePhysicalLink{3,bridge.lease().index()}&&
                      shape->carrier_generation==bridge.lease().generation()&&shape->self5c==ScenePhysicalLink{4,lease.index()}&&
                      shape->credit_slot24==0&&shape->descriptor_offset28==0x0f50&&shape->carrier_matrix_offset60==0x114&&
                      !shape->parameter11&&!shape->start48&&shape->end4a==-2&&hit.size==24&&hit.be16(0)==20&&
                      pool->collision_snapshot()->free_count+1==shape_before.free_count&&
                      !bridge.initialize_trial_shape_once(source,world,view,&error)&&!pool->release(lease,&error),
-                     "typed carrier generation, credited row and constructed body; no repeat or rootless free");
+                     "typed carrier generation, credited row and constructed body; no repeat or rootless free"))return false;
+        if(capacity==Capacity::StaleMuzzle){
+            NativeBorgSourcePose republished;
+            return check(source.pose(world,&republished)&&view.update_source(world,republished,&error)&&
+                         !bridge.seed_trial_muzzle_once(source,world,view,&error)&&lease.current()&&
+                         !pool->class3_models(bridge.lease())->trial_frame114,
+                         "same-tick republish cannot launch through an existing class4 child");
+        }
+        NativeGRedPracticeWorldMatrices keys;
+        NativeGRedNeutralBTrial unrelated;
+        const auto class4=*pool->collision_snapshot();
+        if(!check(view.observe_gred_source_world(world,&keys)&&!bridge.seed_trial_muzzle_once(unrelated,world,view,&error)&&
+                  bridge.seed_trial_muzzle_once(source,world,view,&error),"same-frame launch reads the accepted parent/credit matrices"))
+            return false;
+        const auto* launch=bridge.trial_launch(source,world,view);
+        const auto& frame=pool->class3_models(bridge.lease())->trial_frame114;
+        constexpr f32 offset[]{bits_to_f32(0xc2d5999au),bits_to_f32(0xc0666666u),30.f};
+        std::array<f32,3> origin,wrong;
+        mat4_transform_point(keys.key7,offset,origin.data());mat4_transform_point(keys.key0,offset,wrong.data());
+        auto bearing=source_basis_detail::column(keys.key0,2);
+        if(!check(source_basis_detail::normalize(&bearing)&&launch&&frame&&
+                  launch->muzzle.origin174==origin&&origin!=wrong&&launch->muzzle.unit_bearing==bearing&&
+                  launch->flight.position20==gred_beam_flight_detail::advance(origin,bearing)&&launch->flight.speed44==80&&
+                  std::abs(launch->flight.distance180-1.f)<.0001f&&launch->flight.origin174==origin&&
+                  launch->scale.relative_c4==1&&std::abs(launch->scale.physical_c0-1.082251f)<.0001f&&
+                  std::array<f32,3>{(*frame)[3],(*frame)[7],(*frame)[11]}==launch->flight.position20,
+                  "key 7 muzzle, key 0 bearing, unit advance, and carrier-owned affine translation"))return false;
+        return check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&
+                     *pool->collision_snapshot()==class4&&*descriptors->snapshot()==desc_before&&
+                     *physical.scheduler()==scheduler&&!world.shots_spawned()&&!world.hits(),
+                     "launch is one-shot and changes no child, descriptors, scheduler or HP");
     }
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
@@ -325,9 +360,9 @@ int main(int argc,char** argv){
         data.back()^=1;
         if(!check(!altered.load({data.data(),data.size()})&&!altered.ready()&&attack.ready(),
                   "changed hit row cannot replace the owned attack profile"))return 1;
-        for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape})
+        for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape,Capacity::StaleMuzzle})
             if(!trial(files,art,ground,view,library,5,false,capacity,&attack))return 1;
     }
-    std::printf("native neutral-B trial: %u checks PASS; class3 header%s, no matrix or collision admission\n",
-                checks,argc==5?" and class4 child":"");
+    std::printf("native neutral-B trial: %u checks PASS; class3 header%s, no collision admission\n",
+                checks,argc==5?", class4 child and carrier launch matrix":"");
 }

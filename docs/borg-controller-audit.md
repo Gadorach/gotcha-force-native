@@ -1119,7 +1119,6 @@ exact class-3 carrier and generation; `60` names that carrier's
 `114`, not a credit-actor bone. The credited trial owns the descriptor
 and hit row, separate from the carrier. The child is constructed but
 has not sampled `114`, computed geometry, or joined the registry.
-Neither the authored muzzle nor the playable duel is wired here.
 The trial passed **5,735** checks in native and sanitizer builds.
 
 The optional shape cases use `pl0615.pzz` (original AFS member 587)
@@ -1130,6 +1129,22 @@ python3 -B -m tools.extract.gred_beam_shape "$DOL" "$GRED_MEMBER" "$work/beam-sh
 "$work/neutral-b-trial" local/content/native-battle-mvp-v1 \
   local/content/source-gred-ground-v9 "$work/neutral-b.gfmp" "$work/beam-shape.bin"
 ```
+
+#### Trial muzzle and carrier matrix
+
+Only after that class-4 construction succeeds, the stationary trial
+can read the exact paid frame's published matrices. Parent key 7
+supplies the muzzle point; credited key 0 supplies the forward bearing.
+The shared launch kernels advance one source unit along that bearing,
+seed speed 80, and keep the physical scale separate from axial length.
+The resulting `114` is published once into the actual class-3 record
+named by the child. The same-tick renderer republish and full class-4
+bank cases leave `114` unpublished.
+
+This joins the matrix to a carrier generation in the native trial.
+It does not consume it as collider geometry, write the registry,
+register a beam render callback, or add a playable duel shot.
+The native and sanitizer trials both passed **5,861** checks.
 
 ### Argument 43: authored beam art
 

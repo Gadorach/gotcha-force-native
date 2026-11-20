@@ -2,6 +2,7 @@
 #include "engine/assets/scene_object_pool.hpp"
 #include "engine/gameplay/scene_descriptor_pool.hpp"
 #include "engine/gameplay/scene_physical_links.hpp"
+#include <cmath>
 #include <optional>
 namespace gf {
 struct SceneObjectParentFields {u8 kind83=0; s8 slot3e4=0;}; //declared numeric fields ONLY
@@ -19,6 +20,7 @@ struct SceneObjectPoolSnapshot {
 struct SceneClass3ModelFields {
     u8 descriptor_count99=0;std::array<u16,8> descriptor_indices{65535,65535,65535,65535,65535,65535,65535,65535};
     SceneObjectHeader header;bool header_installed=false;
+    std::optional<std::array<f32,12>> trial_frame114;
     bool operator==(const SceneClass3ModelFields&)const=default;
 };
 struct SceneTrialBeamShapeFields {
@@ -227,6 +229,16 @@ private:
            body.active00||body.update0c_key||body.registration85!=255||fields)return false;
         fields=SceneTrialBeamShapeFields{{3,carrier.index_},{4,child.index_},carrier.generation_,0,0,0,0x0f50,0x114,0,-2};
         body.update0c_key=0x8008a65c;body.active00=1;return true;
+    }
+    bool publish_trial_beam_frame(const SceneClass3Lease& carrier,const SceneCollisionLease& child,
+                                  const std::array<f32,12>& frame){
+        if(!owns(carrier))return false;
+        const auto* shape=trial_beam_shape(child);
+        auto& models=storage_->class3_models[carrier.index_];
+        if(!shape||shape->carrier20!=ScenePhysicalLink{3,carrier.index_}||shape->carrier_generation!=carrier.generation_||
+           !models.header_installed||models.trial_frame114)return false;
+        for(f32 value:frame)if(!std::isfinite(value)||std::abs(value)>1e7f)return false;
+        models.trial_frame114=frame;return true;
     }
     bool owns(const SceneObjectLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneClass3Lease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
