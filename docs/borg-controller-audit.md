@@ -652,6 +652,15 @@ rendered pose, bomb behavior and the alternate constructor role remain
 unverified. [Wiki lead: Roach](https://gotchaforce.fandom.com/wiki/Roach?oldid=6558).
 No other Bug or actor inherits the findings.
 
+The detached normal Roach helpers use shared air-point entry and grounded
+bookkeeping, with both dash refusals kept local. The control samples are
+metadata only: the current program asset loader requires descriptors, so this
+does not fabricate one or add a second VM. Mode-2 stock clears the generic
+clock on debit; one observed owner-bound bomb retirement proposes a capped
+return, not a timed reload. The native comparison matched **89** bounded
+cases across requests, entries, bookkeeping, program metadata, and stock.
+No live control program, bomb, contact or actor is published.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
