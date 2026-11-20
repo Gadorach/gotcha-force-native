@@ -456,6 +456,14 @@ All **44 bounded offline cases** matched. Animation timing, live input
 priority, later AI, X, charge/melee contexts, trajectory, hit and damage
 remain unverified. No move or actor was admitted.
 
+The detached basic-shot helpers keep the conditioned request, signed
+program event, stock check/debit and projectile request separate. The
+shared mode-0 stock planner copies the previous count on debit and loads
+the refill preset only when that debit empties the channel. It does not run
+the reload clock. The native comparison matched **114 bounded cases**:
+16 action requests, 14 release gates, 16 projectile requests, eight repeat
+checks and 60 stock cases. No live stock, actor or projectile is published.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
