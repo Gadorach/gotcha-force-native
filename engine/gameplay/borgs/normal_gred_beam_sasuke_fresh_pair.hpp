@@ -10,14 +10,14 @@ struct GRedSasukeFreshSphere {
     std::array<f32,3> center64{};
     f32 radius88=0,broad_radius7c=0;
 };
-struct GRedSasukeFreshPairInput {
+struct GRedSasukeOrderedPairSample {
     bool opposing_direct_scope_declared=false,lists_declared=false;
     CollisionRegistrationPlan attack_list,receiver_list;
     GRedBeamSasukeContactInput contact_fields;
-    GRedSasukeFreshSphere beam,body;
     u8 receiver_flags1da=0;
     u16 receiver_suppressed272=0;
 };
+struct GRedSasukeFreshPairInput:GRedSasukeOrderedPairSample {GRedSasukeFreshSphere beam,body;};
 enum class GRedSasukeFreshPairRoute:u8 {NotListed,ReceiverHeld,RepeatToken,Suppressed,BroadMiss,Overlap};
 struct GRedSasukeFreshPairPlan {
     GRedSasukeFreshPairRoute route=GRedSasukeFreshPairRoute::NotListed;
@@ -25,6 +25,20 @@ struct GRedSasukeFreshPairPlan {
     std::array<f32,3> point{};
     GRedBeamSasukeContactPrefix prefix;
 };
+enum class GRedSasukePairGate:u8 {NotListed,ReceiverHeld,RepeatToken,Suppressed,Geometry};
+inline bool normal_gred_beam_sasuke_pair_gate(NormalGRedNeutralBSource source,const GRedBeamShapeOperands& attack,
+    const GRedSasukeOrderedPairSample& in,GRedSasukePairGate* out){
+    using R=GRedSasukePairGate;
+    if(!out||!in.opposing_direct_scope_declared||!in.lists_declared||in.contact_fields.admitted_pair_declared||
+       !normal_gred_beam_sasuke_pair_scope(source,attack,in.contact_fields))return false;
+    if(!in.attack_list.contains(CollisionRegistrationList::L477C)||
+       !in.receiver_list.contains(CollisionRegistrationList::L417C)){*out=R::NotListed;return true;}
+    if(in.receiver_flags1da&2u){*out=R::ReceiverHeld;return true;}
+    for(u16 token:in.contact_fields.receiver_tokens20c)
+        if(token==in.contact_fields.beam_token26c){*out=R::RepeatToken;return true;}
+    *out=in.receiver_suppressed272&2u?R::Suppressed:R::Geometry;
+    return true;
+}
 
 // Scoped 2DB58 (477C -> 417C) with exact opposing direct owners. The
 // lists and first initialized spheres are declared snapshots, not live
@@ -34,16 +48,17 @@ inline bool normal_gred_beam_sasuke_fresh_pair(NormalGRedNeutralBSource source,c
                                               const GRedSasukeFreshPairInput& in,GRedSasukeFreshPairPlan* out){
     using namespace source_intersection_detail;
     using R=GRedSasukeFreshPairRoute;
-    if(!out||!in.opposing_direct_scope_declared||!in.lists_declared||in.contact_fields.admitted_pair_declared||
-       !normal_gred_beam_sasuke_pair_scope(source,attack,in.contact_fields))return false;
+    GRedSasukePairGate gate;
+    if(!out||!normal_gred_beam_sasuke_pair_gate(source,attack,in,&gate))return false;
     GRedSasukeFreshPairPlan next;
     auto finish=[&](R route){next.route=route;*out=next;return true;};
-    if(!in.attack_list.contains(CollisionRegistrationList::L477C)||
-       !in.receiver_list.contains(CollisionRegistrationList::L417C))return finish(R::NotListed);
-    if(in.receiver_flags1da&2u)return finish(R::ReceiverHeld);
-    for(u16 token:in.contact_fields.receiver_tokens20c)
-        if(token==in.contact_fields.beam_token26c)return finish(R::RepeatToken);
-    if(in.receiver_suppressed272&2u)return finish(R::Suppressed);
+    switch(gate){
+    case GRedSasukePairGate::NotListed:return finish(R::NotListed);
+    case GRedSasukePairGate::ReceiverHeld:return finish(R::ReceiverHeld);
+    case GRedSasukePairGate::RepeatToken:return finish(R::RepeatToken);
+    case GRedSasukePairGate::Suppressed:return finish(R::Suppressed);
+    case GRedSasukePairGate::Geometry:break;
+    }
 
     for(const auto* sphere:{&in.beam,&in.body}){
         if(!sphere->initialized_declared||sphere->phase10!=1||sphere->effective_kind58||

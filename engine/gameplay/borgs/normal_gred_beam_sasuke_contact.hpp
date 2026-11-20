@@ -26,9 +26,7 @@ struct GRedBeamSasukeContactPrefix {
 // Exact normal 0615/0 arg-43 row 0 -> normal 000A/0 body 9/row 0.
 inline bool normal_gred_beam_sasuke_pair_scope(NormalGRedNeutralBSource source,const GRedBeamShapeOperands& attack,
                                                const GRedBeamSasukeContactInput& in){
-    return source.reviewed()&&attack.call==GRedBeamPoolCall{4,48,u8(49+source.slot),26,0,false}&&
-        !attack.attack_group&&attack.descriptor==15&&!attack.hit_row&&attack.credited_slot==source.slot&&
-        attack.beam_transform114&&!attack.start&&attack.end==-2&&attack.local_radius==20.f&&
+    return normal_gred_beam_shape_scope(source,attack)&&
         in.receiver_model==0x000a&&!in.receiver_variant&&in.receiver_slot<6&&in.receiver_slot!=source.slot&&
         in.receiver_credit_slot==in.receiver_slot&&in.receiver_descriptor==9&&!in.receiver_hit_row&&
         in.beam_token26c&&in.receiver_index26e<in.receiver_tokens20c.size();

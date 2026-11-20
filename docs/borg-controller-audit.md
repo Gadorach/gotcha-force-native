@@ -1209,6 +1209,29 @@ greater than `0.5`; this entry refuses that shape rather than
 approximating it as another sphere. No live hit, HP write, or
 reaction is connected.
 
+### Argument 43: moving shape-2 overlap candidate
+
+The exact flag-1 moving slice of `3A5E4` keeps the two previous
+endpoints and sweeps from the old `+98` endpoint to the new center
+from beam matrix `+114`. Travel must be strictly greater than `0.5`.
+The broad center is the midpoint, with radius `physical radius +
+half the travel`; physical radius still uses the beam's `C0`.
+
+The moving pair reuses the ordinary list/token gate. `39564` first
+tests the centerline against **only** Sasuke's sphere radius.
+`30A3C` takes the one-root-on-segment result directly. With both
+roots on the segment, or without that direct result, the fallback
+projects onto the swept endpoints/interior and tests a **strict**
+sum of radii. The fallback therefore misses exact tangency, unlike
+the scoped fresh sphere case. **210** bounded moving-shape and
+candidate-point comparisons matched using host vector services.
+
+The separate moving probe in the headless replay reports a point at
+`(-22,0,0)`. It does not feed that point into the HP proposal.
+`2DB58` still has to select against the actual other candidates,
+apply its move-to-contact continuation and dispatch the callback.
+No live shape update, recipient or damage follows from this point.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.

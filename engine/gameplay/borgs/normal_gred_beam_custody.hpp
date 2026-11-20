@@ -79,6 +79,11 @@ struct GRedBeamShapeOperands {
     s16 start=0,end=0;
     f32 local_radius=0;
 };
+inline bool normal_gred_beam_shape_scope(NormalGRedNeutralBSource source,const GRedBeamShapeOperands& shape){
+    return source.reviewed()&&shape.call==GRedBeamPoolCall{4,48,u8(49+source.slot),26,0,false}&&
+        !shape.attack_group&&shape.descriptor==15&&!shape.hit_row&&shape.credited_slot==source.slot&&
+        shape.beam_transform114&&!shape.start&&shape.end==-2&&shape.local_radius==20.f;
+}
 // 8AC80 uses the credited actor's slot-2 bank and hit table. Its class-4
 // shape follows the BEAM transform at +114 because beam kind83 is nonzero,
 // not key 0 of the credited actor. No registry insertion or geometry solve.

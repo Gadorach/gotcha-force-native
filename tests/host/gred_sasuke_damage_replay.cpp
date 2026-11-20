@@ -5,6 +5,7 @@
 #include <fstream>
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_damage_tables.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_fresh_pair.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_swept_pair.hpp"
 
 int main(int argc,char** argv){
     using namespace gf;
@@ -37,6 +38,13 @@ int main(int argc,char** argv){
     GRedSasukeFreshPairPlan overlap,other;
     if(!normal_gred_beam_sasuke_fresh_pair(red,beam,pair,&overlap)||overlap.route!=GRedSasukeFreshPairRoute::Overlap||
        overlap.point!=std::array<f32,3>{22,0,0})return 1;
+    GRedSasukeSweptPairInput moving;
+    static_cast<GRedSasukeOrderedPairSample&>(moving)=pair;
+    moving.body=pair.body;
+    moving.beam={true,{-60,0,0},{-60,0,0},{},1};
+    GRedSasukeSweptPairPlan swept;
+    if(!normal_gred_beam_sasuke_swept_pair(red,beam,moving,&swept)||swept.route!=GRedSasukeSweptRoute::RayCrossing||
+       swept.point!=std::array<f32,3>{-22,0,0})return 1;
     pair.beam.center64[0]=43;
     if(!normal_gred_beam_sasuke_fresh_pair(red,beam,pair,&other)||other.route!=GRedSasukeFreshPairRoute::BroadMiss)return 1;
     pair.beam.center64[0]=42;ordered.receiver_tokens20c=overlap.prefix.receiver_tokens20c;
@@ -58,4 +66,5 @@ int main(int argc,char** argv){
     std::printf("declared level-zero 0615/0 -> 000A/0: source-table amount %d, proposed HP %d -> %d\n",
         int(plan.amount),int(plan.previous1c8),int(plan.current1c6));
     std::puts("Fresh sphere fixture: tangency at (22,0,0); one-unit gap and repeated token refused. No live HP was written.");
+    std::puts("Separate moving shape-2 fixture: geometric candidate at (-22,0,0); no selection or callback.");
 }
