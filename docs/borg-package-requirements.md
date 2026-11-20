@@ -199,6 +199,10 @@ shows that one result definition can require distinct primary and companion
 controllers on the two existing owner slots. Input ownership, role assignment,
 resource reload, per-owner restore and team expiry are separate. The current
 metadata validator does not implement these runtime boundaries.
+The [Machine Dragon audit](borg-controller-audit.md#machine-dragon-battle-result-versus-catalogue-entry)
+also separates its catalogue identity from the primary and companion battle
+models. Shared handshakes do not imply shared entry programs, local clocks,
+or movement controllers.
 
 **Transformations** also need explicit form IDs, including a default form and
 the model/rig/animation map, moveset, collision, movement policy and effects each

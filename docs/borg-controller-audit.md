@@ -388,6 +388,28 @@ comparison matched **130 source-fragment cases**, including 36 latches,
 eight assignments, six reload gates, eight clock cases and 72 restores.
 No resource loads, state transfer or actor admission are wired.
 
+## Machine Dragon: battle result versus catalogue entry
+
+The exact normal `GG4E08` battle pair is **Machine Head `0511/0`** (#198,
+AFS member 569) and **Mechanical Dragon `0512/0`** (#199, member 570).
+It stages **primary `0513/0` and companion `0514/0`** in the same two
+owner slots. Both resolve to member 571; catalogue Machine Dragon
+**`050F/0`** (#200, member 567) instead has separate source identity and
+class initialization. Similar art does not authorize that substitution.
+
+| Mechanism | Source-backed comparison |
+| --- | --- |
+| Request and role | The battle team latch and matcher are shared with Seiryu. Head normally takes the primary role; human Mechanical takes it when Head is AI. The orchestration anchor can differ from the primary. Original identities are retained per owner, not reconstructed from the assigned role. |
+| Entry and movement | Dragon uses lower handlers 57/58 for participant entry, not Seiryu's 31/32. The Dragon primary is type 4 and its fused-entry handler has a **local 120-count** fallback for channel-15 completion. Its companion is also type 4 but has its own config, class initialization, and only admits selector 0; Seiryu's companion is type 7. |
+| Commit and timer | Both battle slots must reach stage 7 before the shared paired reload is staged. The active team clock counts 1800 eligible updates, independent of the Dragon-local animation timeout. Neither seed gives a wall-clock duration. |
+| Return | A guarded expiry queues each owner's saved model and variant. For the later shared mode-4 cleanup, **nonzero `48A` skips** the block at `8005538C`; with `48A = 0`, it clears that slot's fused role and partner pointer before requesting single-slot reload. This corrects the polarity in the earlier private Seiryu audit. The request itself is not cleanup, and the shared cleanup is not an atomic split. |
+
+All **38 bounded offline cases** matched. A complete reload lifecycle,
+contact and weapon ownership, active damage/stock transfer, live split and
+final cleanup remain unverified. The separate catalogue discovery path
+mentions `050F`, not the battle models. No crystal part, acquisition rule,
+inventory grant or new actor is implied.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
