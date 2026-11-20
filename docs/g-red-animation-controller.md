@@ -459,6 +459,37 @@ no-ops, 529 first-only, 516 second-only and 2,254 splits.
 General direction normalization remains a bounded host
 model. Contact admission and gameplay are unchanged.
 
+#### Applying the proposal to declared actor slots
+
+`35CA4` removes the actor's old `1CC` displacement from its
+position, adds the new delta to `1CC`, then restores that
+updated displacement to the position. It sets bit 0 of `1DD`
+without clearing older bits. The three float operations are
+separate: replacing them with direct position addition can
+change the result even for the same delta.
+
+After writing the target, the source visits occupied slots
+0–5 selected by its `1DC` mask. It marks those direct links,
+then, in slot order, visits each marked actor's own linked
+slots. This is two passes, not recursive traversal. A shared
+child can be written twice; the second pass does not mark
+new descendants.
+
+`solid_pair_apply_displacements` models the ordered writes
+on a copy of an explicitly declared six-slot snapshot with
+distinct resolved owners. A read-only run of the qualified
+DOL's write loop matched the native float words, moved bits,
+and write order on 2,048 synthetic schedules, including the
+maximum 86 writes across a two-step plan. The run supplies
+explicit slot data and models the vector add/subtract helpers;
+it does not execute the original world or create links. A
+separate synthetic test consumes the resulting `1CC`/`1DD`
+in the detached post-solid floor correction.
+
+The component does not create actor lifetimes or authorize
+a solid pair. External stage owners and live attachment
+ownership are still unwired. The face-1130 refusal is unchanged.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
