@@ -1044,12 +1044,37 @@ keeps its own entry point and behavior.
 The optional headless fixture loads all three exact stage473 grids with
 declared X/Z bounds of `[-4500,4500]`. The cue's flight segment tests
 seven triangle references and misses. A separate vertical segment
-from `(0,100,0)` to `(0,-100,0)` hits primary triangle 2301 at
+from `(0,100,0)` to `(0,-60,0)` hits primary triangle 2301 at
 `(0,10,0)`. **138** bounded original-code comparisons matched for the
 clips and query gates; the strict-nearest branch was checked separately.
-Neither scene fixture is a live beam trace. The earlier six-slot helper,
-later bounds check, stage effect, retirement and contact remain
-separate from this static geometry result.
+Neither scene fixture is a live beam trace.
+
+### Argument 43: detached phase-one stop chain
+
+The `83714` helper visits six scene slots in order. It reads position
+only for an enabled, non-null slot passing the scene's optional bitmask.
+The first far slot increases the nudge weight by 3, capped at 100.
+Every far contribution uses the same post-motion beam position and
+that same weight. A slot at distance `<=150` stops the scan: it keeps an
+earlier weight increase but discards the accumulated positional nudge.
+This is not a collider hit or an actor eligibility rule.
+
+The detached untargeted phase-one check connects those ordered slot
+samples to the latch, the three-grid segment, and `83244`'s point
+bounds check. The latter allows 750 extra units in X/Z and above the
+declared ceiling, with a fixed lower Y limit of `-1000`. Exact edges
+are inside. A stage stop replaces the proposed position and refreshes
+muzzle distance, without running the bounds check or decrementing
+lifetime. A nudge alone does not refresh the earlier flight distance.
+**720** six-slot and **63** bounds comparisons matched the bounded
+original fragments; vector math used a host reference.
+
+With declared empty slots, prior position and ceiling, the stage473
+cue fixture reaches the all-clear branch and proposes `300 -> 299`.
+The vertical stage hit refreshes muzzle distance to 90 and retains
+300. A separate out-of-bounds probe also retains 300. This does not
+admit the beam into a scene, run the stage effect or modifier/scale
+tail, update a collider, or resolve damage.
 
 ## Sasuke: original neutral B and paid repeat
 

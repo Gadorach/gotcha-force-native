@@ -4,9 +4,8 @@
 #include <filesystem>
 #include <fstream>
 #include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
-#include "engine/gameplay/borgs/normal_gred_beam_flight.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_phase_one.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
-#include "engine/gameplay/stage_projectile_segment.hpp"
 
 namespace {
 using namespace gf;
@@ -94,19 +93,41 @@ bool stage_fixture(const fs::path& dir,const GRedBeamFlightSample& from,const GR
     }
     // Same declared horizontal bounds as the movement bench, not a live read
     // from the original stage global. These exercise geometry in isolation.
-    constexpr StageRayParameters bounds{-4500,4500,-4500,4500,500,true};
+    constexpr StageProjectileBounds bounds{{-4500,4500,-4500,4500,500,true},5000,true};
     const std::array<const StihGrid*,3> grids{&stage[0],&stage[1],&stage[2]};
-    StageProjectileSegment flight,vertical;
-    if(!stage_projectile_segment(grids,bounds,to.position20,from.position20,&flight,&error)||
-       !stage_projectile_segment(grids,bounds,{0,-100,0},{0,100,0},&vertical,&error))return false;
-    if(!flight.queried||flight.surface.grid_code||flight.surface.nearest.tested!=7||
-       !vertical.queried||vertical.surface.grid_code!=1||vertical.surface.nearest.triangle!=2301||
-       vertical.position!=std::array<f32,3>{0,10,0}){
-        error="real-grid flight miss or positive vertical check differed";return false;
+    // Declared empty six-slot sample, not a synthetic actor or evidence of
+    // what the original scene would have in its live slot array.
+    GRedBeamPhaseOneInputs in;
+    in.flight=from;in.previous2c=from.position20;in.slots.declared=true;
+    in.lifetime1c=300;in.previous_declared=in.null_target_c8=true;
+    using V=std::array<f32,3>;
+    using R=GRedBeamActiveRoute;
+    GRedBeamPhaseOnePlan flight,vertical,outside;
+    if(!normal_gred_beam_phase_one_plan(source,in,grids,bounds,&flight,&error))return false;
+    if(!flight.stage_visited||!flight.stage.queried||flight.stage.surface.grid_code||flight.stage.surface.nearest.tested!=7||
+       !flight.bounds_visited||flight.flight.position20!=to.position20||
+       flight.active.route!=R::Continue||flight.active.lifetime1c!=299){
+        error="detached all-clear slice differed";return false;
     }
-    std::printf("fixture stage473: cue segment miss (%u tests); vertical segment hit grid %u triangle %u at (%.3f,%.3f,%.3f)\n",
-        flight.surface.nearest.tested,unsigned(vertical.surface.grid_code),vertical.surface.nearest.triangle,
-        double(vertical.position[0]),double(vertical.position[1]),double(vertical.position[2]));
+    in.flight={{0,100,0},{0,100,0},{0,-80,0},160,0};in.previous2c=in.flight.position20;
+    if(!normal_gred_beam_phase_one_plan(source,in,grids,bounds,&vertical,&error))return false;
+    if(!vertical.stage_visited||!vertical.stage.queried||vertical.stage.surface.grid_code!=1||
+       vertical.stage.surface.nearest.triangle!=2301||vertical.flight.position20!=V{0,10,0}||
+       vertical.flight.distance180!=90||vertical.bounds_visited||vertical.active.route!=R::StageStop||
+       vertical.active.lifetime1c!=300||vertical.active.marker19!=1){
+        error="detached stage-stop slice differed";return false;
+    }
+    in.flight={{5300,100,0},{5300,100,0},{80,0,0},80,0};in.previous2c=in.flight.position20;
+    if(!normal_gred_beam_phase_one_plan(source,in,grids,bounds,&outside,&error))return false;
+    if(!outside.stage_visited||outside.stage.queried||!outside.bounds_visited||
+       outside.active.route!=R::BoundsStop||outside.active.marker19!=2||outside.active.lifetime1c!=300){
+        error="detached bounds-stop slice differed";return false;
+    }
+    std::printf("fixture stage473 only: cue segment miss (%u tests), life 300 -> 299; "
+        "vertical probe hit grid %u triangle %u at Y %.0f, refreshed distance %.0f; "
+        "bounds probe stopped without decrement\n",
+        flight.stage.surface.nearest.tested,unsigned(vertical.stage.surface.grid_code),vertical.stage.surface.nearest.triangle,
+        double(vertical.flight.position20[1]),double(vertical.flight.distance180));
     return true;
 }
 

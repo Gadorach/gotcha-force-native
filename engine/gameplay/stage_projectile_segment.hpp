@@ -48,4 +48,22 @@ inline bool stage_projectile_segment(const std::array<const StihGrid*,3>& grids,
     }
     *out=next;if(error)error->clear();return true;
 }
+
+struct StageProjectileBounds {
+    StageRayParameters horizontal;
+    f32 top34=0;
+    bool top_declared=false;
+};
+// 83244 point test, after a clear segment result. The X/Z margins and
+// asymmetric vertical limits are not the earlier segment clip rectangle.
+inline bool stage_projectile_outside(const StageProjectileBounds& bounds,const std::array<f32,3>& position,bool* out){
+    using namespace source_intersection_detail;
+    const auto& p=bounds.horizontal;
+    if(!out||!bounds.top_declared||!stage_ray_parameters_valid(p)||!valid(position)||
+       !std::isfinite(bounds.top34)||std::abs(bounds.top34)>1e7f)return false;
+    *out=position[0]<f32(p.min_x-750.f)||position[0]>f32(p.max_x+750.f)||
+        position[2]<f32(p.min_z-750.f)||position[2]>f32(p.max_z+750.f)||
+        position[1]>f32(bounds.top34+750.f)||position[1]< -1000.f;
+    return true;
+}
 }
