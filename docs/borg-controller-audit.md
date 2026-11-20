@@ -1119,6 +1119,29 @@ original-code comparisons matched, using host column-length math. Nothing here
 initializes or advances sphere geometry, writes the shared lists or
 counters, establishes a live collider lease, or applies damage.
 
+### Argument 43: admitted normal Sasuke receiver prefix
+
+In the scoped ordered pair, the normal G-Red beam uses attack descriptor
+15/row 0 and normal Sasuke supplies body descriptor 9/row 0. The latter
+is a sphere on logical binding 2. `2E2A8` reads the attack carrier,
+attack credit, and actual receiving body independently; both the beam
+and G-Red record the receiving body at `+290`. No aim pointer supplies
+that receiver.
+
+For this pair the two row prefixes skip the special modifier branches.
+The ordinary receiving kind adds beam latch `0x10`. G-Red receives
+the resulting latch only on the explicit `beam+2AC & 1` branch.
+`0x10` alone does not satisfy the beam's earlier-audited `0xA2`
+retirement mask. The prefix also copies the declared contact vector,
+records the beam's `26C` token in the receiving body's 48-entry history,
+and stages a small set of row and binding fields on Sasuke.
+
+All **768** bounded source-prefix comparisons matched. The proposal
+starts from a declared already-admitted pair. It does not query
+overlaps, determine whether a token is a duplicate, apply the reaction,
+write HP, or prove that a beam pierces a body. The current duel does
+not use it.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
