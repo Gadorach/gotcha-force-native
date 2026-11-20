@@ -6,6 +6,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_flight.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
+#include "engine/gameplay/stage_projectile_segment.hpp"
 
 namespace {
 using namespace gf;
@@ -81,7 +82,35 @@ bool unchanged(const CharacterProgramState& before,const CharacterProgramState& 
     return true;
 }
 
-bool witness(const fs::path& assets,const fs::path& profile,const fs::path& height_file,std::string& error){
+bool stage_fixture(const fs::path& dir,const GRedBeamFlightSample& from,const GRedBeamFlightSample& to,std::string& error){
+    std::array<StihGrid,3> stage;
+    constexpr std::array<const char*,3> files{"floor.stih","secondary.stih","tertiary.stih"};
+    constexpr std::array<std::size_t,3> sizes{215748,126948,36484};
+    constexpr std::array<u32,3> hashes{0x0d913901u,0x01859c01u,0xfe083e8fu};
+    for(unsigned i=0;i<stage.size();++i){
+        Input bytes;
+        if(!bytes.load(dir/files[i],sizes[i],hashes[i])){error="exact stage473 fixture grids required";return false;}
+        if(!stage[i].load(bytes.view(),&error))return false;
+    }
+    // Same declared horizontal bounds as the movement bench, not a live read
+    // from the original stage global. These exercise geometry in isolation.
+    constexpr StageRayParameters bounds{-4500,4500,-4500,4500,500,true};
+    const std::array<const StihGrid*,3> grids{&stage[0],&stage[1],&stage[2]};
+    StageProjectileSegment flight,vertical;
+    if(!stage_projectile_segment(grids,bounds,to.position20,from.position20,&flight,&error)||
+       !stage_projectile_segment(grids,bounds,{0,-100,0},{0,100,0},&vertical,&error))return false;
+    if(!flight.queried||flight.surface.grid_code||flight.surface.nearest.tested!=7||
+       !vertical.queried||vertical.surface.grid_code!=1||vertical.surface.nearest.triangle!=2301||
+       vertical.position!=std::array<f32,3>{0,10,0}){
+        error="real-grid flight miss or positive vertical check differed";return false;
+    }
+    std::printf("fixture stage473: cue segment miss (%u tests); vertical segment hit grid %u triangle %u at (%.3f,%.3f,%.3f)\n",
+        flight.surface.nearest.tested,unsigned(vertical.surface.grid_code),vertical.surface.nearest.triangle,
+        double(vertical.position[0]),double(vertical.position[1]),double(vertical.position[2]));
+    return true;
+}
+
+bool witness(const fs::path& assets,const fs::path& profile,const fs::path& height_file,const fs::path& stage_dir,std::string& error){
     Input model,prefix,pose,bank_bytes,program,height_bytes;
     if(!model.load(assets/"g-red.hsd",193095,model_hash)||
        !prefix.load(assets/"g-red.prefix",256,0x5e71a4a7)||
@@ -289,8 +318,9 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
         std::printf("fixture only: parent key-7 origin=(%.5f,%.5f,%.5f), credited key-0 bearing=(%.6f,%.6f,%.6f)\n",
             double(muzzle.origin174[0]),double(muzzle.origin174[1]),double(muzzle.origin174[2]),
             double(muzzle.unit_bearing[0]),double(muzzle.unit_bearing[1]),double(muzzle.unit_bearing[2]));
-        std::printf("fixture only: distance %.0f -> %.0f; speed for next visit %.1f; stop queries not run\n",
+        std::printf("fixture only: distance %.0f -> %.0f; speed for next visit %.1f; numeric prefix only\n",
             double(seeded.distance180),double(advanced.distance180),double(advanced.speed44));
+        if(!stage_dir.empty()&&!stage_fixture(stage_dir,seeded,advanced,error))return false;
         return true;
     }
     error="first authored cue not reached within the update budget";return false;
@@ -298,7 +328,9 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
 }
 
 int main(int argc,char** argv){
-    if(argc!=4){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR NEUTRAL_B_GFMP POSE_HEIGHT_GFHC\n",argv[0]);return 2;}
+    if(argc!=4&&argc!=5){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR NEUTRAL_B_GFMP POSE_HEIGHT_GFHC [STAGE473_DIR]\n",argv[0]);return 2;}
     std::string error;
-    if(!witness(argv[1],argv[2],argv[3],error)){std::fprintf(stderr,"G-Red shot cue refused: %s\n",error.c_str());return 1;}
+    if(!witness(argv[1],argv[2],argv[3],argc==5?fs::path(argv[4]):fs::path{},error)){
+        std::fprintf(stderr,"G-Red shot cue refused: %s\n",error.c_str());return 1;
+    }
 }

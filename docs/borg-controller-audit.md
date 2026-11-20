@@ -968,8 +968,10 @@ work=$(mktemp -d)
 python3 -B -m tools.extract.gred_locomotion "$DOL" "$work/neutral-b.gfmp" --kind neutral-b
 c++ -std=c++20 -O1 -I . tests/host/gred_shot_cue.cpp -o "$work/gred-shot-cue"
 "$work/gred-shot-cue" local/content/native-battle-mvp-v1 "$work/neutral-b.gfmp" \
-  local/content/source-gred-ground-v9/pose-height.gfhc
+  local/content/source-gred-ground-v9/pose-height.gfhc local/content/source-gred-ground-v9
 ```
+
+Omit the final directory to run without the optional stage-grid fixture.
 
 A test cue, request, or fixture muzzle does not authorize a beam.
 The original allocates the object first, and its initializer gets
@@ -1026,6 +1028,28 @@ write marker 2. An unobserved query cannot be treated as clear.
 query outcomes. The proposals neither run the scene queries nor activate
 or remove shapes; targeted steering and modifier-dependent update tails
 remain out of scope.
+
+### Argument 43: static stage segment
+
+`84170` clips the current and previous endpoints separately, in X-then-Z
+order, each against the **other original endpoint**. For a long-enough
+segment, `3E978` starts at the clipped **previous** endpoint and searches
+the tertiary, secondary, then primary grid. It keeps the strictly
+nearest hit across all three, so an equal-distance hit in a later grid
+does not replace it. A hit proposes the surface position; a miss keeps
+the unclipped current position. Missing grids or a degenerate clip are
+refusals, not computed misses. The existing secondary-only spawn query
+keeps its own entry point and behavior.
+
+The optional headless fixture loads all three exact stage473 grids with
+declared X/Z bounds of `[-4500,4500]`. The cue's flight segment tests
+seven triangle references and misses. A separate vertical segment
+from `(0,100,0)` to `(0,-100,0)` hits primary triangle 2301 at
+`(0,10,0)`. **138** bounded original-code comparisons matched for the
+clips and query gates; the strict-nearest branch was checked separately.
+Neither scene fixture is a live beam trace. The earlier six-slot helper,
+later bounds check, stage effect, retirement and contact remain
+separate from this static geometry result.
 
 ## Sasuke: original neutral B and paid repeat
 
