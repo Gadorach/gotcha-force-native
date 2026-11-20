@@ -1001,6 +1001,34 @@ pose nor a debit proposal commits native actor state or allocates a
 beam; the battle owner must accept the staged visit and perform that
 join in its current update.
 
+#### Native stationary neutral-B trial
+
+The opt-in host trial joins that visit to the existing native ground
+controller and renderer. It requires a freshly bound stationary
+normal G-Red/Sasuke world, the exact local B assets, and explicit
+initial trial stock. The native world first accepts an unchanged
+ground position and heading. Only the matching offer receipt then
+publishes the staged B pose and, on the cue, updates the trial's
+stock and exposes the paid type-2/argument-43 request. The first
+frame opens the shot; the fixture reaches the cue on native tick 17.
+
+Both a full-stock and last-round trial stop after that single request.
+Pause retains the last accepted pose and stock. A mismatched offer
+serial cannot publish the pending release, even if the same native
+position was accepted. The host trial covers **272** checks.
+This uses the shared pose owner and stock
+planner, but the trial is not in the duel, pickers or Story. It does
+not resolve a live target, continue recovery/reload, allocate a beam
+or collider, apply damage, or write a save.
+
+With the same local inputs and the exported `neutral-b.gfmp` above:
+
+```sh
+c++ -std=c++20 -O1 -I . tests/host/gred_neutral_b_native_trial.cpp -o "$work/neutral-b-trial"
+"$work/neutral-b-trial" local/content/native-battle-mvp-v1 \
+  local/content/source-gred-ground-v9 "$work/neutral-b.gfmp"
+```
+
 ### Argument 43: allocation and shape ownership
 
 The detached argument-43 checks distinguish two original allocations.

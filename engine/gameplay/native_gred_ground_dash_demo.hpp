@@ -21,6 +21,7 @@
 #include "engine/gameplay/character_movement_motion.hpp"
 namespace gf {
 class NativeGRedGroundDashDemo {
+    friend class NativeGRedNeutralBTrial;
     struct State {
         CharacterProgramVm vm;CharacterProgramHeightControl height;CharacterMovementInputState input;
         CharacterAirResourceState resource;CharacterMovementMotionState motion;GRedGroundDashState dash;
