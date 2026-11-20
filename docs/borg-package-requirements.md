@@ -85,6 +85,10 @@ The [Patra Witch and Angel Nurse audit](borg-controller-audit.md#patra-witch-and
 shows that a caster, carrier object, snapshotted target and actual recipient
 can differ. A contact outcome uses the resolved recipient, not a pose, target
 hint or visual effect as a substitute for contact.
+The [Copy Man audit](borg-controller-audit.md#copy-man-contact-derived-same-slot-reload)
+further separates a contacted donor's current identity from its live state:
+it can select resources for the caster's slot without transferring the
+donor's stock, HP, pointers or ownership.
 
 The catalogue reserves sidecars for moves, traits, forms, fusions, acquisition,
 effects and variant overrides. The [standalone moves check](borg-packages.md#standalone-moves-check)

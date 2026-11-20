@@ -576,6 +576,25 @@ damage or live actor writes are supplied. The native comparison matched
 **80 bounded source cases**: 64 staging snapshots and 16 independently
 processed transfer legs, including busy refusals and clamped destinations.
 
+## Copy Man: contact-derived same-slot reload
+
+Exact normal **Copy Man `GG4E08:0806/0`** is catalogue #44, AFS member 625.
+The [archived Copy Attack name](https://gotchaforce.fandom.com/wiki/Copy_Man?oldid=6705)
+corresponds to the reviewed **charged X release**, not ordinary X.
+
+| Boundary | Recovered source behavior |
+| --- | --- |
+| Cast and hit | Exact program events `(1,1)` advance the class stage. With no existing head latch, the action requests a caster-owned type-85 head. No ordinary weapon-stock debit was found on this launch path. An eligible hit records the **actual contacted actor**; a stored aim target does not supply the donor. The hit's damage path is separate. |
+| Request and reload | The reviewed ordinary contact consumer reads the donor's **current model and variant**. It queues a single-slot reload of Copy Man's own slot, retaining caster level and saved original identity. It does not clone the donor's in-progress pose, pointers, HP, stock, or ownership. The destination installer and caster-level rows regenerate pose, collision and stock bindings. |
+| HP | The normal non-fused reload uses the caster's absolute current HP, capped at the installed model's maximum. Returning caps the then-current HP against the original maximum, rather than restoring lost HP or converting a ratio. The exact normal Sasuke donor sample is a bounded data witness, not a general donor whitelist. |
+| Expiry | The copied-mode clock starts at **900 qualifying updates**. On a blocked expiry it retries from 1; an ordinary zero does not itself queue return. A permitted return stages the caster's saved original tuple and uses the same single-slot lifecycle, not a two-actor exchange or a new owner. |
+
+All **56 bounded offline cases** matched. Special donor modes, exact
+exclusions, live contact, resource retirement, interrupted return and
+complete damage behavior remain unverified. This is neither Gold Hero's
+fixed in-place form pair nor Switching Ninja's reciprocal movement.
+No live actor or copy was admitted.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
