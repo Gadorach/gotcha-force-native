@@ -604,6 +604,25 @@ outbound and return requests, guarded clock visits and HP clamping.
 Donor live fields, actual resource loading, damage and actor admission
 are not implemented here.
 
+## Flame Dragon: type-4 takeoff and airborne dash
+
+Exact normal **Flame Dragon `GG4E08:0500/0`** is catalogue #149, AFS
+member 553. It uses movement type **4** and meter policy **1**. Compared
+with normal G-Red, the inspected 48 selector pairs differ at **4, 12–14,
+and 25–26**. That does not make the shared handler indices a pose map.
+
+| Mechanism | Recovered ordinary path |
+| --- | --- |
+| Ground takeoff | A conditioned jump can select **4 → state 56** on both lanes. The checked idle-derived lower startup requests local program 2 and hands off to selector 5 only on program completion. Startup itself does not spend ascent meter. |
+| Dash | Ground-dash rows 12–14 refuse without consuming the flick. An eligible buffered airborne flick can instead request **15 → 16 → 17**. Wind-up pays at the handoff; active visits debit separately. There is no ordinary Blue Striker-style 27/28 cruise/boost route. |
+| Meter and floor | Capacity 10000, increment 2000, delay 0; ascent entry/update and dash handoff/active costs **100/25/200/15**, not G-Red's row. Refill checks the cached ordinary grounded state, not boost inactivity. A snap with no landing continuation does not request landing or refill. |
+| Initial placement | The inspected type-4 floor-relative paths add **1000** to a queried height before later scene projection. That does not set a takeoff selector or establish hover height, final placement, or entry velocity. |
+
+All **268 bounded offline cases** matched using supplied input,
+program-completion and scene operands. Live motion, pose timing, contact
+and weapon controls remain unverified. [Wiki lead: Flame Dragon](https://gotchaforce.fandom.com/wiki/Flame_Dragon?oldid=6670).
+No other Dragon or actor inherits this evidence.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
