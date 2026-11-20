@@ -800,6 +800,24 @@ It matched **191 bounded source cases**; all **142** preceding Death ICBM
 comparisons still match after sharing the gate. No live motion,
 world query, impact object, or damage is applied.
 
+## Acceleration Ninja: steerable stance with actor-bound contact
+
+Exact normal **Acceleration Ninja `GG4E08:0004/0`** is catalogue #19,
+AFS member 489. The reviewed fresh X enters a **stockless stance** on
+the existing actor. It does not change the model, selected variant, or
+owned identity, unlike the audited form and reload paths.
+
+| Boundary | Recovered game behavior |
+| --- | --- |
+| Start and steer | The class requests startup program `4:0` and separately requests a visual trail. Its active branch uses conditioned steering and can continue through a successful floor probe. The trail is not the carrier of the hit shapes. |
+| Passive contact | A lane-gated command in the startup program requests two **actor-bound** shapes in group 10. Their activation follows animation progress, not planar speed. Actual admitted contact supplies the receiver, not the aim target. Ordinary air dash has a separate group-11 path; neither is an always-active body hit. |
+| Exit and interruption | After startup lockout, a fresh X edge requests recovery; timeout and insufficient movement can also do so. Changing the program can retire the old shapes through their own updater. Committed defeat replaces the stance, but same-update hit priority and rollback are unverified. |
+
+All **146 bounded offline cases** matched. Live steering, exact
+animation/contact windows, final damage and interruption remain
+unverified. [Wiki lead: Ninpo Full Throttle](https://gotchaforce.fandom.com/wiki/Acceleration_Ninja?oldid=6692).
+No actor was admitted.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

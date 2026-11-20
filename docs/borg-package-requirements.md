@@ -78,8 +78,9 @@ explicit participants and per-actor acceptance. The
 [Switching Ninja audit](borg-controller-audit.md#switching-ninja-contact-staged-position-exchange)
 distinguishes contact-staged destinations from atomic exchange or
 [Teleport Ninja's caster-only movement](borg-controller-audit.md#teleport-ninja-caster-movement-not-a-swap);
-Acceleration Ninja may combine a form
-change with an ongoing contact hit. The Death ICBM example needs impact-area
+the [Acceleration Ninja audit](borg-controller-audit.md#acceleration-ninja-steerable-stance-with-actor-bound-contact)
+instead found a stance on the same model, with actor-bound hits gated by
+pose progress. The Death ICBM example needs impact-area
 and actor-interruption conditions: its landing outcome is distinct from being
 destroyed before contact. The [source audit](borg-controller-audit.md#death-icbm-steerable-flight-and-guarded-game-impact)
 separates the impact gate, area-object request and already-committed defeat.
