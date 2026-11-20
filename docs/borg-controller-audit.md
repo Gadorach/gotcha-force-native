@@ -1092,8 +1092,8 @@ the scale, basis selection and matrix writes using host vector math.
 The first sphere initializer reads the carrier's `C0` for its physical
 radius, not the beam's axial scale. No collider update is wired.
 
-The exact descriptor's flag 1 also reaches a separate once-only
-activation write. In **16** bounded source cases, the null-target
+The exact descriptor's flag 1 also reaches a separate activation write
+guarded by `1CA`. In **16** bounded source cases, the null-target
 branch used `1CA` to suppress repeats, assigned a nonzero wrapping
 token to beam `26C`, and incremented the credited actor's `404`
 counter. These are initialization bookkeeping writes, not hits or
@@ -1118,6 +1118,36 @@ byte can select phase 2 without repeating activation. **768** bounded
 original-code comparisons matched, using host column-length math. Nothing here
 initializes or advances sphere geometry, writes the shared lists or
 counters, establishes a live collider lease, or applies damage.
+
+### Argument 43: same-update world scheduling boundary
+
+In the ordinary `29434` update with scene `66` clear, `53A2C` runs
+the actors before `89A94(8)` walks the beam groups. `54070` can finish
+the actor's `465FC` world update after the actor phase callback, so
+the matrices used by the beam initializer are not snapshots taken at
+the release cue. A class-3 beam inserted during that actor pass can
+be visited later in the **same** update. `C3D2C` can allocate its
+class-4 child and build beam matrix `114` before `8A28C` resets the
+registry counts, `89AEC` walks the colliders and `2BB14` uses the
+resulting lists.
+
+`8997C` visits the slot-biased carrier group `9+s` when the physical
+actor is active and its `D1` bit is clear. It copies position `20`
+and angles `70` into `2C/76` before the active carrier callback,
+then clears `1CA` if the **post-callback** `86` byte is nonzero.
+Thus `1CA` is not a once-per-lifetime flag. The class-4 bucket
+`49+s` is separately reached by `89AEC` when the physical actor is
+active, even if `D1` skipped the carrier. A new registry pass does
+not necessarily imply a new beam transform.
+
+**5,832** bounded dispatch comparisons matched, including injected
+same-update insertions and retained-shape cases, with actor, beam,
+collider and contact callback bodies stubbed at their boundaries.
+The planner does not walk, allocate or publish a live object.
+The remaining join must bind a paid release to the current actor
+world and exact class-3 lease, then bind its class-4 child to that
+carrier's current or source-retained `114` in the registry pass.
+A slot, beam token, or numeric matrix alone is not that evidence.
 
 ### Argument 43: admitted normal Sasuke receiver prefix
 
