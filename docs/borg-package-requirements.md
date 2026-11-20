@@ -62,6 +62,10 @@ and **action kind** (melee, projectile, special, no action). Ammo stock,
 refill pattern and replenishment timer are separate values. This allows
 range-dependent melee versus shot, charge and release branches, and an
 explicit no-op when no action is eligible. It does not infer an input priority.
+The [Gunman and Beta II audit](borg-controller-audit.md#revolver-gunman-and-death-borg-beta-ii-shared-movement-distinct-shots)
+illustrates why input admission, a pose release event, stock debit, and
+actor-owned outcome publication must remain separate. The same movement
+mapping does not select the same pose or outcome.
 
 Reserve **mechanical outcomes** as their own event bindings, not VFX/SFX.
 User examples guide the slots: Witch charge shots may buff allies, debuff

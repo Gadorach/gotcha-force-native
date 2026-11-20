@@ -420,6 +420,42 @@ cleanup checks across both pairs. The **130** prior Seiryu comparisons
 still match. No ledger publication, asset reload, split or actor admission
 is wired.
 
+## Revolver Gunman and Death Borg Beta II: shared movement, distinct shots
+
+Exact normal **Revolver Gunman `GG4E08:0100/0`** (#21, AFS member 498)
+and **Death Borg Beta II `GG4E08:0105/0`** (#79, member 503) install
+byte-identical movement-selector tables. Their class dispatch, primary
+pose roots and projectile records differ. Beta's existing native initial-AI
+construction and first-world evidence does not qualify human control,
+later AI decisions, or combat. Gunman has no current native battle admission.
+
+In the reviewed idle/no-target B branch, a fresh conditioned pulse selects
+the ordinary class action. It does **not** spend stock at selection. The
+later class handler requires a positive signed program event at `1CEF`;
+this is an animation release event, **not a physical button release**.
+It then attempts one channel-0 debit before invoking the shared projectile
+constructor with the firing actor as owner. A repeat input checks
+availability without spending another shot at that check.
+
+| Reviewed difference | Gunman: Fast Shooting | Beta II: Shot |
+| --- | --- | --- |
+| Base-side class program request | Group argument 2, entry 4 | Group argument 2, entry 0 |
+| Projectile key | 0 at base side, 1 at the other checked side | 56 at base side, 57 at the other checked side |
+| Normal level-index-0 channel-0 row | Initial/max 20, mode 0, refill preset 120 | Initial/max 5, mode 0, refill preset 60 |
+
+The archived [Gunman](https://gotchaforce.fandom.com/wiki/Revolver_Gunman?oldid=6547)
+and [Beta II](https://gotchaforce.fandom.com/wiki/Death_Borg_Beta_II?oldid=6600)
+pages supply those move names. Stock rows are original data, not a verified
+visible reload duration. The bounded constructor records the firing owner
+on successful allocation; its tested failure path does not publish a
+projectile or refund the earlier debit. Both classes call a shared aim
+primitive on other branches, but this B trace does not establish an aim,
+body-heading, or target rule for all shots.
+
+All **44 bounded offline cases** matched. Animation timing, live input
+priority, later AI, X, charge/melee contexts, trajectory, hit and damage
+remain unverified. No move or actor was admitted.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
