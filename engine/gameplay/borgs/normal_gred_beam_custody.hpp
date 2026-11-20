@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "engine/assets/character_collision_bank.hpp"
 #include "engine/gameplay/borgs/normal_gred_neutral_b.hpp"
 
@@ -104,6 +105,26 @@ struct GRedBeamShapeOperands {
     bool beam_transform114=false;
     s16 start=0,end=0;
     f32 local_radius=0;
+};
+// Exact local slot-2 bank followed by the credited row-0 hit parameters.
+// Owns only asset bytes, not the actor or any registered shape.
+class GRedBeamAttackProfile {
+public:
+    static constexpr std::size_t bank_bytes=7840,hit_bytes=24,byte_size=bank_bytes+hit_bytes;
+    bool load(ByteView bytes){
+        ready_=false;
+        if(!bytes.data||bytes.size!=byte_size)return false;
+        u32 hash=2166136261u;
+        for(std::size_t i=0;i<byte_size;++i)hash=(hash^bytes.data[i])*16777619u;
+        if(hash!=0x7f816e75u)return false;
+        std::copy_n(bytes.data,byte_size,data_.begin());ready_=true;return true;
+    }
+    bool ready()const{return ready_;}
+    ByteView bank()const{return ready_?ByteView{data_.data(),bank_bytes}:ByteView{};}
+    ByteView hit_row()const{return ready_?ByteView{data_.data()+bank_bytes,hit_bytes}:ByteView{};}
+private:
+    std::array<u8,byte_size> data_{};
+    bool ready_=false;
 };
 inline bool normal_gred_beam_shape_scope(NormalGRedNeutralBSource source,const GRedBeamShapeOperands& shape){
     return source.reviewed()&&shape.call==GRedBeamPoolCall{4,48,u8(49+source.slot),26,0,false}&&

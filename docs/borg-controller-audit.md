@@ -1105,6 +1105,32 @@ code. The native trial passes **5,000** checks in normal and sanitizer
 builds, including missing or stale parent input and duplicate-write
 refusals.
 
+#### Class-4 trial child
+
+The installed trial carrier can now take the `C3D2C`/`8AC80` prefix
+once. It requires the exact credited slot-2 bank and hit row 0,
+owned by the bound trial. The phase/life proposal starts at `1`
+and `300`; full class-4 capacity records phase `2` in the trial
+with life `300`, no child, and no retry when capacity returns.
+
+Success constructs a class-4 record in group `49`, kind `26`, with
+no further model descriptor charge. Its geometry parent names the
+exact class-3 carrier and generation; `60` names that carrier's
+`114`, not a credit-actor bone. The credited trial owns the descriptor
+and hit row, separate from the carrier. The child is constructed but
+has not sampled `114`, computed geometry, or joined the registry.
+Neither the authored muzzle nor the playable duel is wired here.
+The trial passed **5,735** checks in native and sanitizer builds.
+
+The optional shape cases use `pl0615.pzz` (original AFS member 587)
+and the qualified DOL:
+
+```sh
+python3 -B -m tools.extract.gred_beam_shape "$DOL" "$GRED_MEMBER" "$work/beam-shape.bin"
+"$work/neutral-b-trial" local/content/native-battle-mvp-v1 \
+  local/content/source-gred-ground-v9 "$work/neutral-b.gfmp" "$work/beam-shape.bin"
+```
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect

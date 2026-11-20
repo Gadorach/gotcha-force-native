@@ -4,9 +4,11 @@
 
 namespace gf {
 enum class GRedClass3TrialStatus {AwaitPaidFrame,Failed,NoDescriptors,NoCarrier,Allocated,HeaderInstalled,Released};
+enum class GRedTrialShapeStatus {NotAttempted,Failed,NoSlot,Constructed};
 
 // Opt-in native lab bridge. Owns a class-3 slot and its constructor fields,
-// but does not dispatch an initializer, create a child or register a callback.
+// with a limited class-4 construction visit. It does not publish a matrix,
+// execute shape geometry or join the collision scheduler.
 class NativeGRedClass3TrialBridge {
 public:
     NativeGRedClass3TrialBridge()=default;
@@ -19,7 +21,7 @@ public:
         const auto* recipe=physical.recipe();
         if(!owner||!pool||!recipe||recipe->class2_profile().kind(9)!=16||
            !pool->class3_snapshot()||!pool->collision_snapshot())return false;
-        bound_=true;trial_=owner;pool_=pool;return true;
+        bound_=true;trial_=owner;pool_=pool;shape_kind_=recipe->class2_profile().kind(49);return true;
     }
     // True means an exact paid attempt got a known allocator outcome,
     // including ordinary exhaustion. Once checked out it cannot be retried.
@@ -95,6 +97,49 @@ public:
            !owner||owner!=source.allocation_trial_owner(world)||!handoff_.inspect(world,view,&call))return nullptr;
         return &*birth_;
     }
+    bool initialize_trial_shape_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                     const NativeBattleMvpView& view,std::string* error){
+        const auto pool=pool_.lock();
+        const auto* birth=installed_trial_birth(source,world,view);
+        if(!pool||!birth||world.paused()||!source.current(world)||shape_status_!=GRedTrialShapeStatus::NotAttempted||
+           shape_kind_!=26||!source.attack_profile_||!source.attack_profile_->ready())
+            return refuse(error,"current trial carrier and credited shape profile required");
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedBeamInitPlan seed;
+        GRedBeamShapeOperands operands;
+        // Phase 1 here is the accepted stationary trial caster, not an
+        // inference about an MVP actor's source constructor or lifecycle.
+        if(!normal_gred_beam_first_dispatch(red,factory_,1,world.actors()[0].model,GRedBeamPoolSample::Unobserved,&seed)||
+           !normal_gred_beam_shape_operands(red,seed,source.attack_profile_->bank(),&operands)||
+           !normal_gred_beam_shape_scope(red,operands))return refuse(error,"shape initialization scope");
+        shape_status_=GRedTrialShapeStatus::Failed;
+        // Source phase/life seed precedes the real child allocation. There
+        // are still no reads of key 7, key 0 or the carrier's +114.
+        init_=seed;
+        const auto result=pool->acquire_collision(operands.call.group,operands.call.append,
+            SceneObjectParentFields{0,s8(birth->credit90_slot)},&shape_,error);
+        if(result!=SceneObjectAcquire::Allocated&&result!=SceneObjectAcquire::NoObjects)return false;
+        const bool allocated=result==SceneObjectAcquire::Allocated;
+        if(!normal_gred_beam_first_dispatch(red,factory_,1,world.actors()[0].model,allocated?
+           GRedBeamPoolSample::Allocated:GRedBeamPoolSample::Refused,&init_))return refuse(error,"shape outcome mismatch");
+        if(allocated&&!pool->install_trial_beam_shape(lease_,shape_))return refuse(error,"class4 child ownership refused");
+        shape_status_=allocated?GRedTrialShapeStatus::Constructed:GRedTrialShapeStatus::NoSlot;
+        if(error)error->clear();
+        return true;
+    }
+    GRedTrialShapeStatus shape_status()const{return shape_status_;}
+    const SceneCollisionLease& shape_lease()const{return shape_;}
+    const GRedBeamInitPlan* trial_shape_init(const NativeGRedNeutralBTrial& source,
+        const NativeBattleMvp& world,const NativeBattleMvpView& view)const{
+        return (shape_status_==GRedTrialShapeStatus::Constructed||shape_status_==GRedTrialShapeStatus::NoSlot)&&
+            installed_trial_birth(source,world,view)?&init_:nullptr;
+    }
+    ByteView trial_shape_hit_row(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                  const NativeBattleMvpView& view)const{
+        const auto pool=pool_.lock();
+        if(!pool||!pool->trial_beam_shape(shape_)||!trial_shape_init(source,world,view)||!source.attack_profile_)return {};
+        return source.attack_profile_->hit_row();
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -108,11 +153,15 @@ private:
         return false;
     }
     bool bound_=false,header_attempted_=false;
+    u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
+    GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;
     std::weak_ptr<const NativeBorgMotionProducer> trial_;
     std::weak_ptr<SceneObjectPool> pool_;
     SceneClass3Lease lease_;
+    SceneCollisionLease shape_;
     GRedBeamFactoryPlan factory_;
+    GRedBeamInitPlan init_;
     NativeGRedTrialBeamHandoff handoff_;
     std::optional<GRedBeamFactoryBirthFields> birth_;
 };

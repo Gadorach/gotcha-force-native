@@ -21,6 +21,13 @@ struct SceneClass3ModelFields {
     SceneObjectHeader header;bool header_installed=false;
     bool operator==(const SceneClass3ModelFields&)const=default;
 };
+struct SceneTrialBeamShapeFields {
+    ScenePhysicalLink carrier20,self5c;
+    u64 carrier_generation=0;
+    u8 credit_slot24=255,selector14=0,parameter11=0;
+    u16 descriptor_offset28=0,carrier_matrix_offset60=0;
+    s16 start48=0,end4a=0;
+};
 namespace scene_object_pool_detail {
 struct Storage {
     bool live=true,battle_widgets_claimed=false;SceneObjectPoolProfile profile;std::shared_ptr<SceneDescriptorPool> descriptors;const SceneDescriptorPoolSnapshot* descriptor_identity=nullptr;
@@ -28,6 +35,7 @@ struct Storage {
     ScenePhysicalBankSnapshot class3,collision;
     std::vector<SceneClass3ModelFields> class3_models;
     std::vector<std::array<SceneDescriptorLease,8>> class3_leases;
+    std::vector<std::optional<SceneTrialBeamShapeFields>> trial_beam_shapes;
     bool current()const{return live&&descriptors&&descriptors->ready()&&descriptors->snapshot()==descriptor_identity;}
 };
 }
@@ -155,6 +163,14 @@ public:
     }
     const ScenePhysicalBankSnapshot* collision_snapshot()const{return ready()&&storage_->collision.runtime_class==4?&storage_->collision:nullptr;}
     const ScenePhysicalRecord* inspect(const SceneCollisionLease& lease)const{return owns(lease)?&storage_->collision.records[lease.index_]:nullptr;}
+    const SceneTrialBeamShapeFields* trial_beam_shape(const SceneCollisionLease& lease)const{
+        if(!owns(lease))return nullptr;
+        const auto& shape=storage_->trial_beam_shapes[lease.index_];
+        if(!shape||shape->carrier20.physical!=3||!shape->carrier20.present()||
+           unsigned(shape->carrier20.index)>=storage_->class3.records.size())return nullptr;
+        const auto& carrier=storage_->class3.records[unsigned(shape->carrier20.index)];
+        return carrier.allocated&&carrier.generation==shape->carrier_generation?&*shape:nullptr;
+    }
     // Class4 uses the same group links and no model descriptors. Allocation
     // alone cannot make a body active or populate any collision registry.
     SceneObjectAcquire acquire_collision(s16 group,bool append,const std::optional<SceneObjectParentFields>& parent,
@@ -171,7 +187,7 @@ public:
         if(!bank.free_count){if(error)error->clear();return SceneObjectAcquire::NoObjects;}
         const auto index=u16(bank.free_head);auto& old=bank.records[index];
         if(old.generation==std::numeric_limits<u64>::max())return refuse("native generation overflow");
-        old=pop_physical(bank,selected,append,index);
+        old=pop_physical(bank,selected,append,index);storage_->trial_beam_shapes[index].reset();
         out->owner_=storage_;out->index_=index;out->generation_=old.generation;if(error)error->clear();return SceneObjectAcquire::Allocated;
     }
     bool release(const SceneCollisionLease& lease,std::string* error){
@@ -201,6 +217,17 @@ private:
         models.header={2,43,0,0x800c3cdcu,0x800c4468u};
         models.header_installed=true;record.update0c_key=models.header.update0c_key;record.active00=1;return true;
     }
+    bool install_trial_beam_shape(const SceneClass3Lease& carrier,const SceneCollisionLease& child){
+        if(!owns(carrier)||!owns(child))return false;
+        const auto& parent=storage_->class3.records[carrier.index_];
+        auto& body=storage_->collision.records[child.index_];
+        auto& fields=storage_->trial_beam_shapes[child.index_];
+        if(!parent.active00||parent.update0c_key!=0x800c3cdcu||parent.group01!=9||
+           body.class02!=4||body.physical03!=4||body.group01!=49||body.kind83!=26||
+           body.active00||body.update0c_key||body.registration85!=255||fields)return false;
+        fields=SceneTrialBeamShapeFields{{3,carrier.index_},{4,child.index_},carrier.generation_,0,0,0,0x0f50,0x114,0,-2};
+        body.update0c_key=0x8008a65c;body.active00=1;return true;
+    }
     bool owns(const SceneObjectLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneClass3Lease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneCollisionLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
@@ -221,6 +248,7 @@ private:
     }
     bool initialize_collision_pool(u16 count){
         if(!ready()||storage_->collision.runtime_class!=-1||count!=384)return false;
+        storage_->trial_beam_shapes.resize(count);
         initialize_physical(storage_->collision,4,count);return true;
     }
     static void initialize_physical(ScenePhysicalBankSnapshot& bank,u8 physical,u16 count){

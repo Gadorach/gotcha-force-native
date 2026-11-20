@@ -35,18 +35,20 @@ bool check(bool ok,const char* why){
     if(!ok)std::fprintf(stderr,"native neutral-B trial: %s (%s)\n",why,error.c_str());
     return ok;
 }
-enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull};
+enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,Shape,ShapeFull,StaleShape};
 constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125f,.875f,true};
+bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape;}
 struct AllocationFixture {
     SceneDescriptorBootstrap models;
     ScenePhysicalPools physical;
     NativeGRedClass3TrialBridge bridge;
     std::vector<SceneDescriptorLease> held_descriptors;
     std::vector<SceneClass3Lease> held_carriers;
+    std::vector<SceneCollisionLease> held_shapes;
 
     bool bind(NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,Capacity capacity){
         auto recipe=physical_pools_fixture::bytes();
-        recipe[160+9]=16; // exact group 9 kind for the scoped slot-0 request
+        recipe[160+9]=16;recipe[160+49]=26; // exact kinds for the slot-0 carrier and child
         ScenePhysicalPoolsProfile profile;
         if(!check(profile.load({recipe.data(),recipe.size()},&error)&&models.begin_fresh(physical_pools_fixture::descriptor_profile(),&error)&&
                   physical.begin_fresh(profile,models,&error)&&bridge.bind(source,world,physical),
@@ -67,12 +69,20 @@ struct AllocationFixture {
                           "occupy real descriptor capacity"))return false;
                 held_descriptors.push_back(lease);
             }
+        if(capacity==Capacity::ShapeFull)
+            for(unsigned i=0;i<384;++i){
+                SceneCollisionLease lease;
+                if(!check(pool->acquire_collision(-1,false,{},&lease,&error)==SceneObjectAcquire::Allocated,
+                          "occupy real class4 capacity"))return false;
+                held_shapes.push_back(lease);
+            }
         return true;
     }
     bool finish(NativeGRedNeutralBTrial& source,NativeBattleMvp& world,NativeBattleMvpView& view,Capacity capacity,
                 const WeaponStockModeZeroState& after){
         using S=GRedClass3TrialStatus;
-        const bool allocated=capacity==Capacity::Available||capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader;
+        const bool allocated=capacity==Capacity::Available||capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader||
+            shape_case(capacity);
         const auto expected=allocated?S::Allocated:capacity==Capacity::NoCarrier?S::NoCarrier:S::NoDescriptors;
         const auto pool=physical.class2_pool();
         const auto descriptors=models.model_pool();
@@ -101,7 +111,7 @@ struct AllocationFixture {
                       descriptors->snapshot()->free_count+1==descriptor_before.free_count&&
                       bridge.factory().propose_header&&bridge.factory().argument11==43,
                       "one rootless lease and descriptor; factory header is a proposal"))return false;
-            if(capacity==Capacity::InstallHeader){
+            if(capacity==Capacity::InstallHeader||shape_case(capacity)){
                 if(!check(!bridge.install_trial_header(other_producer,world,view,&error)&&
                           !pool->inspect(lease)->active00&&bridge.install_trial_header(source,world,view,&error)&&
                           bridge.status()==S::HeaderInstalled,"only the exact current caster can install the trial header"))return false;
@@ -117,9 +127,11 @@ struct AllocationFixture {
                           !bridge.release_uninitialized(&error)&&!pool->release(lease,&error)&&
                           *pool->collision_snapshot()==shape_before&&descriptors->snapshot()->free_count+1==descriptor_before.free_count,
                           "installed header refuses replay and rootless cleanup; class4 untouched"))return false;
+                if(!finish_shape(source,world,view,capacity))return false;
                 physical.retire();
-                return check(!lease.current()&&!bridge.installed_trial_birth(source,world,view),
-                             "pool retirement revokes the header inspection without claiming source cleanup");
+                return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
+                             !bridge.trial_shape_hit_row(source,world,view).data,
+                             "pool retirement revokes both leases without claiming source cleanup");
             }
             if(capacity==Capacity::StaleHeader){
                 NativeBorgSourcePose republished;
@@ -142,16 +154,61 @@ struct AllocationFixture {
         return check(!bridge.try_once(source,world,view,&error)&&!bridge.lease().current()&&!bridge.release_uninitialized(&error),
                      "later capacity cannot repeat the paid attempt");
     }
+    bool finish_shape(NativeGRedNeutralBTrial& source,NativeBattleMvp& world,NativeBattleMvpView& view,Capacity capacity){
+        const auto pool=physical.class2_pool();
+        const auto descriptors=models.model_pool();
+        const auto desc_before=*descriptors->snapshot();
+        const auto shape_before=*pool->collision_snapshot();
+        const auto scheduler=*physical.scheduler();
+        if(capacity==Capacity::StaleShape){
+            NativeBorgSourcePose republished;
+            if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error),
+                      "new publication of the same accepted tick"))return false;
+        }
+        if(capacity==Capacity::StaleShape||capacity==Capacity::InstallHeader)
+            return check(!bridge.initialize_trial_shape_once(source,world,view,&error)&&
+                         *pool->collision_snapshot()==shape_before&&bridge.shape_status()==GRedTrialShapeStatus::NotAttempted,
+                         "stale header or absent credited bank refuses before allocation");
+        const bool success=capacity==Capacity::Shape;
+        if(!check(bridge.initialize_trial_shape_once(source,world,view,&error)&&
+                  bridge.shape_status()==(success?GRedTrialShapeStatus::Constructed:GRedTrialShapeStatus::NoSlot)&&
+                  *descriptors->snapshot()==desc_before&&*physical.scheduler()==scheduler&&!world.shots_spawned(),
+                  "known class4 outcome, no descriptor charge, matrix or scheduler change"))return false;
+        const auto* init=bridge.trial_shape_init(source,world,view);
+        if(!check(init&&init->lifetime1c==300&&init->phase18==(success?1:2)&&
+                  init->route==(success?GRedBeamInitRoute::MuzzleBranch:GRedBeamInitRoute::RetireRegistration),
+                  "phase/life seed retained in both class4 outcomes"))return false;
+        const auto& lease=bridge.shape_lease();
+        if(!success){
+            if(!check(!lease.current()&&*pool->collision_snapshot()==shape_before&&
+                      !bridge.trial_shape_hit_row(source,world,view).data&&
+                      pool->release(held_shapes.back(),&error),"full bank retires this attempt without a child or row"))return false;
+            return check(!bridge.initialize_trial_shape_once(source,world,view,&error)&&!lease.current(),
+                         "returning shape capacity does not retry the retired request");
+        }
+        const auto* body=pool->inspect(lease);
+        const auto* shape=pool->trial_beam_shape(lease);
+        const auto hit=bridge.trial_shape_hit_row(source,world,view);
+        return check(lease.current()&&body&&shape&&body->group01==49&&body->kind83==26&&body->active00==1&&
+                     body->update0c_key==0x8008a65c&&shape->carrier20==ScenePhysicalLink{3,bridge.lease().index()}&&
+                     shape->carrier_generation==bridge.lease().generation()&&shape->self5c==ScenePhysicalLink{4,lease.index()}&&
+                     shape->credit_slot24==0&&shape->descriptor_offset28==0x0f50&&shape->carrier_matrix_offset60==0x114&&
+                     !shape->parameter11&&!shape->start48&&shape->end4a==-2&&hit.size==24&&hit.be16(0)==20&&
+                     pool->collision_snapshot()->free_count+1==shape_before.free_count&&
+                     !bridge.initialize_trial_shape_once(source,world,view,&error)&&!pool->release(lease,&error),
+                     "typed carrier generation, credited row and constructed body; no repeat or rootless free");
+    }
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
-           const GRedNeutralBLocalLibrary& library,s16 rounds,bool edit_final,Capacity capacity=Capacity::NoAttempt){
+           const GRedNeutralBLocalLibrary& library,s16 rounds,bool edit_final,Capacity capacity=Capacity::NoAttempt,
+           const GRedBeamAttackProfile* attack=nullptr){
     NativeBattleMvp world;
     NativeBorgAnimationSeed seed;
     NativeGRedNeutralBTrial source;
     auto declared=trial_parent;
-    const bool supply=capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader;
+    const bool supply=capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader||shape_case(capacity);
     if(!check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
-              source.begin(files,art,ground,world,seed,library,rounds,&error,supply?&declared:nullptr),
+              source.begin(files,art,ground,world,seed,library,rounds,&error,supply?&declared:nullptr,attack),
               "fresh same-renderer native trial"))return false;
     declared={}; // only the trial's owned source-field sample may later be copied
     AllocationFixture allocation;
@@ -241,7 +298,7 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
 
 int main(int argc,char** argv){
     using namespace gf;
-    if(argc!=4){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR GROUND_INPUTS_DIR NEUTRAL_B_GFMP\n",argv[0]);return 2;}
+    if(argc!=4&&argc!=5){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR GROUND_INPUTS_DIR NEUTRAL_B_GFMP [BEAM_SHAPE]\n",argv[0]);return 2;}
     const std::string art=argv[1],ground=argv[2];
     std::array<std::string,6> names{art+"/g-red.hsd",art+"/g-red.prefix",art+"/g-red.pose",
                                    art+"/g-red.motions",argv[3],ground+"/pose-height.gfhc"};
@@ -261,5 +318,16 @@ int main(int argc,char** argv){
     for(auto capacity:{Capacity::Available,Capacity::InstallHeader,Capacity::StaleHeader,
                        Capacity::NoDescriptor,Capacity::NoCarrier,Capacity::BothFull})
         if(!trial(files,art,ground,view,library,5,false,capacity))return 1;
-    std::printf("native neutral-B trial: %u checks PASS; paid class3 header, no initializer or child\n",checks);
+    if(argc==5){
+        std::vector<u8> data;
+        GRedBeamAttackProfile attack,altered;
+        if(!check(files.read(argv[4],data)&&attack.load({data.data(),data.size()}),"exact credited slot-2 bank and hit row"))return 1;
+        data.back()^=1;
+        if(!check(!altered.load({data.data(),data.size()})&&!altered.ready()&&attack.ready(),
+                  "changed hit row cannot replace the owned attack profile"))return 1;
+        for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape})
+            if(!trial(files,art,ground,view,library,5,false,capacity,&attack))return 1;
+    }
+    std::printf("native neutral-B trial: %u checks PASS; class3 header%s, no matrix or collision admission\n",
+                checks,argc==5?" and class4 child":"");
 }
