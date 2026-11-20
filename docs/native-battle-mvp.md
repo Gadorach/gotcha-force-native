@@ -262,19 +262,21 @@ picker or **R** in the Force browser:
 | 15 | **Adjacent Entry Push** — the neighboring face 1998 on 1 → 0 |
 | 16 | **Air Dash on Expiry** — stationary wind-up as the timer reaches zero |
 | 17 | **Expiry Wind-up Relaunch** — choose after the six-tick wind-up pays 450 |
-| 18 | **Rising Wind-up Relaunch** — choose relaunch or dash after the paid five-tick rising wind-up |
-| 19 | **Timed Down-Drift Push** — the fourth contact moves onto face 2011 |
-| 20 | **Expiry Drift Push** — Down+Right takes the existing zero-timer push |
-| 21 | **Inclined Ledge Relaunch** — relaunch from the ordinary fall after a dash off the incline |
-| 22 | **Three Timed Release Pushes** — three consecutive airborne pushes on face 2021 |
-| 23 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
-| 24 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
-| 25 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
-| 26 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
-| 27 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
+| 18 | **Diagonal Rising Relaunch** — choose relaunch or dash after the paid six-tick diagonal wind-up |
+| 19 | **Rising Wind-up Relaunch** — choose relaunch or dash after the paid five-tick rising wind-up |
+| 20 | **Timed Down-Drift Push** — the fourth contact moves onto face 2011 |
+| 21 | **Expiry Drift Push** — Down+Right takes the existing zero-timer push |
+| 22 | **Inclined Ledge Relaunch** — relaunch from the ordinary fall after a dash off the incline |
+| 23 | **Three Timed Release Pushes** — three consecutive airborne pushes on face 2021 |
+| 24 | **Expiry Wind-up Snap** — same-height snap on the 1 → 0 entry, then dash |
+| 25 | **Expiry Snap Relaunch** — choose relaunch after the snap's paid wind-up |
+| 26 | **Diagonal Expiry Relaunch** — five-tick wind-up followed by Down drift on release |
+| 27 | **Timed Release Push** — one airborne push after a neutral relaunch tap |
+| 28 | **Two Timed Release Pushes** — two consecutive airborne pushes on the same face |
 
-There are 37 routes in the loop. In the opposite direction (**Left** or
-**L**), **Rising Wind-up Relaunch** takes 19 presses. The two drift
+There are 38 routes in the loop. In the opposite direction (**Left** or
+**L**), **Diagonal Rising Relaunch** takes 20 presses and **Rising
+Wind-up Relaunch** still takes 19. The two drift
 guides still take 18 and 17 presses. **Inclined Ledge Relaunch**
 and **Three Timed Release Pushes** still take 16 and 15.
 The two expiry snap guides still take 14 and 13. **Diagonal Expiry
@@ -455,7 +457,8 @@ release both, then tap neutral **Shift on 53**. The wind-up's
 instead. Use `--demo-gred-walk-ledge-rising-windup-relaunch`
 for scripted playback of the relaunch branch.
 
-For the six-tick version, use
+For the six-tick version, choose **Diagonal Rising Relaunch** in either
+picker or use
 `--gred-walk-ledge-rising-diagonal-windup-relaunch --practice-start`.
 Use **Shift+W+D** on **47** instead of Shift+W, release on 48,
 then tap neutral **Shift** on **54**. The ready cue appears on

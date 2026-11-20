@@ -2100,7 +2100,7 @@ bool picker_practice_options(gf::GRedPickerPracticeRoute route,Options* practice
         "--gred-walk-ledge-active-snap-relaunch",
         "--gred-walk-ledge-expiring-direct-relaunch","--gred-walk-ledge-expiring-relaunch-push",
         "--gred-walk-ledge-expiring-adjacent-relaunch-push","--gred-walk-ledge-expiring-air-dash","--gred-walk-ledge-expiring-air-dash-handoff",
-        "--gred-walk-ledge-rising-windup-relaunch",
+        "--gred-walk-ledge-rising-diagonal-windup-relaunch","--gred-walk-ledge-rising-windup-relaunch",
         "--gred-walk-ledge-timed-release-four-pushes","--gred-walk-ledge-timed-release-expiry-drift",
         "--gred-inclined-dash-ledge-relaunch","--gred-walk-ledge-timed-release-three-pushes",
         "--gred-walk-ledge-expiring-air-dash-snap","--gred-walk-ledge-expiring-air-dash-snap-handoff",
