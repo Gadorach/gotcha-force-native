@@ -169,6 +169,7 @@ struct NativeBorgJumpMotion {
     bool second_timed_release_push=false; //One same-face successor to the accepted positive-timer push.
     bool third_timed_release_push=false; //Verified final successor on face 2021.
     bool down_timed_release_push=false; //Separate steered successor from face 2021 to face 2011.
+    bool expiry_same_face_push=false; //Approach and projected exit stay above competing floors after the Down-drift receipt.
     bool operator==(const NativeBorgJumpMotion&)const=default;
 };
 struct NativeBorgAirMotion {
@@ -366,7 +367,8 @@ public:
              const bool ground_loss=native_borg_motion_ground_loss(o.kind);
              const bool ground_loss_push=o.kind==NativeBorgMotionKind::GroundLossPush;
              const bool walk_loss_push_policy=behaviors.has(Behavior::WalkLedgeFallPush);
-            const bool controller_fall_push_frame=controller_fall_push_policy&&o.kind==NativeBorgMotionKind::StaticPush;
+             const bool controller_fall_push_frame=controller_fall_push_policy&&o.kind==NativeBorgMotionKind::StaticPush;
+             if(o.jump_motion&&o.jump_motion->expiry_same_face_push&&!controller_fall_push_frame)return false;
             const bool controller_recovery_push_frame=controller_recovery_push_policy&&recovery_push;
             const bool controller_windup_push_frame=controller_windup_push_policy&&o.kind==NativeBorgMotionKind::AirDashWindupPush;
             const bool controller_windup_entry_push_frame=controller_windup_entry_push_policy&&windup_entry_push;
@@ -1286,8 +1288,32 @@ public:
                 if(dot>0)return false;
                 NativeBorgContactRequest pre{actor.position,other.position,pre_delta,config_.arena_half,config_.actor_radius,config_.actor_height,config_.step_height,false,other.health!=0};
                 pre.vertical_end_y=e.integrated_position[1];NativeBorgContactResult checked;
-                if(!native_borg_resolve_contact(pre,terrain,&checked)||checked.body_hit||checked.bounds_hit||checked.terrain_blocked||
-                   checked.position[0]!=e.integrated_position[0]||checked.position[2]!=e.integrated_position[2])return false;
+                 if(!native_borg_resolve_contact(pre,terrain,&checked))return false;
+                 bool expiry_same_face=false;
+                 const auto* jump=o.jump_motion?&*o.jump_motion:nullptr;
+                 if(checked.terrain_blocked&&behaviors.has(Behavior::WalkReleaseExpirySameFacePush)&&controller_fall_push_frame&&
+                    prior==NativeBorgMotionKind::StaticPush&&last_offer_.jump_motion&&last_offer_.jump_motion->down_timed_release_push&&
+                    last_offer_.static_push&&last_offer_.controller_timer698==1.f&&o.controller_timer698==0.f&&
+                    jump&&jump->phase==6&&jump->relaunch_origin&&!jump->entry&&!jump->held_jump&&jump->drift_heading&&
+                    player_frame&&actor.vertical_speed<0.f&&NormalGRedMovementDefinition::down_timed_release_face(surface.triangle,angle)&&
+                    last_offer_.static_push->surface.triangle==surface.triangle&&last_offer_.static_push->surface.normal==surface.normal&&
+                    last_offer_.static_push->angle==angle){
+                     CharacterMovementHeadingFrame heading;
+                     NativeBorgStaticSurface start;
+                     expiry_same_face=native_borg_source_heading_frame(*player_frame,actor.facing,&heading)&&
+                         *jump->drift_heading==heading.camera5b0&&
+                         terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&start)&&
+                         start.triangle==surface.triangle&&start.normal==surface.normal&&
+                         terrain->same_face_push_exit(surface.triangle,actor.position,e.integrated_position,o.proposed_position);
+                 }
+                 if(jump&&jump->expiry_same_face_push!=expiry_same_face)return false;
+                 if(expiry_same_face){
+                     // Recheck the full, nonsliding approach for body and bounds.
+                     // The footprint proof replaces only this endpoint height test.
+                     if(!native_borg_resolve_contact(pre,nullptr,&checked))return false;
+                 }
+                 if(checked.body_hit||checked.bounds_hit||checked.terrain_blocked||
+                    checked.position[0]!=e.integrated_position[0]||checked.position[2]!=e.integrated_position[2])return false;
             }
             if(!vertical&&(prior_phase==1||prior_phase==2||prior_phase==3))return false;
             if(vertical&&prior_phase&&moving!=(unsigned(prior)>=unsigned(NativeBorgMotionKind::JumpTakeoff)))return false;
@@ -1474,7 +1500,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-           if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRisingDiagonalWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+           if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpirySameFacePush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

@@ -149,6 +149,10 @@ int main(){
         Definition::rising_relaunch_windup_length(rising_five,5.f)&&!Definition::rising_relaunch_windup_length(rising_five,6.f)&&
         Definition::rising_relaunch_windup_length(rising_six,5.f)&&Definition::rising_relaunch_windup_length(rising_six,6.f)&&
         !Definition::rising_relaunch_windup_length(rising_six,7.f));
+    static_assert(unsigned(Mode::GroundWalkExpirySameFacePush)==83&&unsigned(Policy::GroundWalkExpirySameFacePush)==79&&
+        !Definition::allows(Mode::GroundTimedWalkReleaseDownPush,Behavior::WalkReleaseExpirySameFacePush)&&
+        !Definition::allows(Mode::GroundRisingDiagonalWindupRelaunch,Behavior::WalkReleaseExpirySameFacePush)&&
+        Definition::allows(Mode::GroundWalkExpirySameFacePush,Behavior::WalkReleaseExpirySameFacePush));
     static_assert(unsigned(Mode::GroundTimedWalkReleasePush)==69&&unsigned(Policy::GroundTimedWalkReleasePush)==65&&
         !Definition::allows(Mode::GroundWalkTimedDirectUpRelaunch,Behavior::TimedWalkReleasePush)&&
         Definition::allows(Mode::GroundTimedWalkReleasePush,Behavior::TimedWalkReleasePush));

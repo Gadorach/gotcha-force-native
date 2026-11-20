@@ -916,11 +916,13 @@ int main(){
     }
     check(hit==102&&land==103&&world.actors()[0].grounded&&!source.selector()&&source.resource()==10000&&
         source.relaunch_fall_pushes()==4&&!source.air_dash_starts()&&source.relaunches()==1,"fourth steered push leads to normal landing and idle");
-    enum class ExpiryFollowup { DownOnExpiry,Neutral,HoldDiagonal,TurnDown,TurnDownLeft };
-    for(auto followup:{ExpiryFollowup::DownOnExpiry,ExpiryFollowup::Neutral,ExpiryFollowup::HoldDiagonal,
+    enum class ExpiryFollowup { DownOnExpiry,SameFace,Neutral,HoldDiagonal,TurnDown,TurnDownLeft };
+    for(auto followup:{ExpiryFollowup::DownOnExpiry,ExpiryFollowup::SameFace,ExpiryFollowup::Neutral,ExpiryFollowup::HoldDiagonal,
                       ExpiryFollowup::TurnDown,ExpiryFollowup::TurnDownLeft}){
-        const bool diagonal=followup!=ExpiryFollowup::DownOnExpiry;
-        third_prefix(Mode::GroundTimedWalkReleaseDownPush);
+        const bool same_face=followup==ExpiryFollowup::SameFace;
+        const bool side_entry=followup==ExpiryFollowup::TurnDown||followup==ExpiryFollowup::TurnDownLeft;
+        const bool diagonal=followup!=ExpiryFollowup::DownOnExpiry&&!same_face;
+        third_prefix(same_face||side_entry?Mode::GroundWalkExpirySameFacePush:Mode::GroundTimedWalkReleaseDownPush);
         NativeBorgMotionOffer offer;
         check(prepare(down,&offer)&&offer.jump_motion->down_timed_release_push,"repeat the actual Down response");
         accept(offer);
@@ -929,7 +931,7 @@ int main(){
         auto steer=down;steer.dpad_right=diagonal;
         check(prepare(steer,&offer)&&offer.kind==Kind::StaticPush&&offer.static_push&&offer.jump_motion&&
             offer.static_push->surface.triangle==2011&&offer.static_push->angle==13653&&offer.controller_timer698==0.f&&
-            !offer.jump_motion->timed_walk_relaunch_fall&&!offer.jump_motion->down_timed_release_push&&
+            !offer.jump_motion->timed_walk_relaunch_fall&&!offer.jump_motion->down_timed_release_push&&offer.jump_motion->expiry_same_face_push==same_face&&
             offer.jump_motion->drift_heading&&offer.facing==before.facing&&source.ground_loss_timer698()==1.f&&source.resource()==9850,
             "both inputs stage a zero-timer high-angle response, not an extra timed permission");
         auto travel=[&](const BattleMvpVec& end){
@@ -944,7 +946,7 @@ int main(){
         const auto pre=travel(offer.static_push->integrated_position);const auto post=travel(offer.proposed_position);
         check(pre.terrain_blocked==!diagonal&&!post.terrain_blocked&&!pre.body_hit&&!post.body_hit&&!pre.bounds_hit&&!post.bounds_hit,
             "holding Down blocks only the approach; Down+Right passes both paths");
-        if(!diagonal){
+        if(!diagonal&&!same_face){
             check(!world.step({},false,&view,nullptr,&frame,&offer)&&world.tick()==37&&world.actors()[0].position==before.position&&
                 world.motion_receipt_current(retained.receipt)&&source.ground_loss_timer698()==1.f&&source.resource()==9850&&
                 view.practice_readout(world)->down_timed_release_push,
@@ -953,23 +955,41 @@ int main(){
             check(retained.frame_scope.expired()&&!world.step({},false,&view),"refusal cannot fall back or advance the clock");
             continue;
         }
+        if(same_face){
+            check(view.same_face_push_exit(2011,before.position,offer.static_push->integrated_position,offer.proposed_position),
+                "the same-face variant proves the entire floor footprint, not just the clear projected endpoint");
+            struct MissingFootprint final:IBattleMvpTerrain {
+                const NativeBattleMvpView& terrain;
+                explicit MissingFootprint(const NativeBattleMvpView& v):terrain(v){}
+                bool height(f32 x,f32 z,f32 y,f32* out)const override{return terrain.height(x,z,y,out);}
+                bool static_surface(f32 x,f32 z,f32 y,NativeBorgStaticSurface* out)const override{return terrain.static_surface(x,z,y,out);}
+            } missing(view);
+            auto forged=offer;forged.jump_motion->expiry_same_face_push=false;
+            check(!world.step({},false,&view,nullptr,&frame,&forged)&&
+                !world.step({},false,&view,nullptr,nullptr,&offer)&&!world.step({},false,&missing,nullptr,&frame,&offer)&&
+                world.tick()==37&&world.actors()[0].position==before.position&&world.motion_receipt_current(retained.receipt)&&
+                source.ground_loss_timer698()==1.f&&source.resource()==9850&&source.relaunch_fall_pushes()==4,
+                "native cannot substitute missing receipt bit, current camera or floor geometry");
+        }
         accept(offer);
         check(source.ground_loss_timer698()==0.f&&source.resource()==9850&&source.relaunch_fall_pushes()==5&&
             !view.practice_readout(world)->timed_release_push&&!view.practice_readout(world)->down_timed_release_push,
             "the accepted fifth response uses the existing zero-timer rule, not the timed cue");
         const auto expiry_position=world.actors()[0].position;
         const auto expiry_facing=world.actors()[0].facing;
-        if(followup==ExpiryFollowup::TurnDown||followup==ExpiryFollowup::TurnDownLeft){
+        if(side_entry){
             auto turn=down;turn.dpad_left=followup==ExpiryFollowup::TurnDownLeft;
             const auto expiry_pose=pose;
             const auto expiry_frame=NativeBattleMvpView::movement_frame(world,1152,648);
             check(prepare(turn,&offer)&&offer.kind==Kind::StaticPush&&offer.static_push&&offer.jump_motion&&
                 offer.static_push->surface.triangle==2011&&offer.static_push->angle==13653&&offer.controller_timer698==0.f&&
-                offer.jump_motion->drift_heading&&!offer.jump_motion->timed_walk_relaunch_fall&&offer.facing==expiry_facing,
+                offer.jump_motion->drift_heading&&!offer.jump_motion->timed_walk_relaunch_fall&&!offer.jump_motion->expiry_same_face_push&&
+                offer.facing==expiry_facing,
                 "turning Down or Down+Left on 39 stages a sixth projection but not a timed contact");
             const auto approach=travel(offer.static_push->integrated_position);const auto projection=travel(offer.proposed_position);
             check(offer.static_push->surface.height>expiry_position[1]&&approach.terrain_blocked&&!projection.terrain_blocked&&
-                !approach.body_hit&&!projection.body_hit&&!approach.bounds_hit&&!projection.bounds_hit,
+                !approach.body_hit&&!projection.body_hit&&!approach.bounds_hit&&!projection.bounds_hit&&
+                !view.same_face_push_exit(2011,expiry_position,offer.static_push->integrated_position,offer.proposed_position),
                 "a sixth staged projection clears its endpoint but its approach hits the raised side of face 2011");
             check(!world.step({},false,&view,nullptr,&expiry_frame,&offer)&&world.tick()==38&&
                 world.actors()[0].position==expiry_position&&world.motion_receipt_current(expiry_pose.receipt)&&
@@ -995,7 +1015,7 @@ int main(){
         }
         check(hit==103&&land==104&&source.resource()==10000&&world.actors()[0].grounded&&!source.selector()&&
             source.relaunch_fall_pushes()==5&&source.relaunches()==1&&!source.air_dash_starts(),
-            "the Down+Right continuation reaches distinct landing and full idle");
+        "both the diagonal and witnessed same-face continuation reach landing and full idle");
     }
     for(const auto& [press,hold]:std::array<std::pair<unsigned,unsigned>,5>{{{38,10},{39,10},{40,10},{41,1},{41,10}}}){
         third_prefix(Mode::GroundTimedWalkReleaseDownPush);

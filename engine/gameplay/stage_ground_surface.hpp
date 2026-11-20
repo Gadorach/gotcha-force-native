@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "engine/gameplay/stage_ground.hpp"
 namespace gf {
 struct StageGroundSurfaceResult {
@@ -63,6 +64,86 @@ inline bool stage_ground_slope_crossing(const StihGrid& grid,u32 from,u32 to,
 inline bool stage_ground_coplanar_crossing(const StihGrid& grid,u32 from,u32 to,
                                           const std::array<f32,3>& start,const std::array<f32,3>& end){
     return stage_ground_slope_crossing(grid,from,to,start,end);
+}
+namespace stage_ground_detail {
+struct ProjectedFloorSpan {
+    f64 enter=0,exit=1;
+    bool intersects=true,start_inside=true,end_inside=true,edge_exit=false;
+};
+// Clip against the three XZ half planes. A point or edge touch counts when
+// checking competing faces, but never proves an interior exit.
+inline bool projected_floor_span(const StihTriangle& face,const std::array<f32,3>& start,
+                                 const std::array<f32,3>& end,ProjectedFloorSpan* out){
+    auto side=[](const auto& a,const auto& b,const auto& p){
+        return (f64(b[0])-a[0])*(f64(p[2])-a[2])-(f64(b[2])-a[2])*(f64(p[0])-a[0]);
+    };
+    const auto& v=face.vertices;
+    const f64 winding=side(v[0],v[1],v[2]);
+    if(!out||!winding||face.plane[1]<=0)return false;
+    const f64 sign=winding>0?1:-1;
+    ProjectedFloorSpan span;
+    std::array<f64,3> from{},to{};
+    unsigned outgoing=3;
+    for(unsigned i=0;i<3;++i){
+        from[i]=sign*side(v[i],v[(i+1)%3],start);
+        to[i]=sign*side(v[i],v[(i+1)%3],end);
+        span.start_inside=span.start_inside&&from[i]>0;
+        span.end_inside=span.end_inside&&to[i]>0;
+        if(from[i]<0&&to[i]<0){span.intersects=false;*out=span;return true;}
+        if(from[i]<0)span.enter=std::max(span.enter,-from[i]/(to[i]-from[i]));
+        if(to[i]<0){
+            const f64 exit=from[i]/(from[i]-to[i]);
+            if(exit<span.exit){span.exit=exit;outgoing=i;}
+        }
+    }
+    span.intersects=span.enter<=span.exit;
+    span.edge_exit=span.start_inside&&outgoing<3&&span.exit>0&&span.exit<1;
+    if(span.edge_exit)for(unsigned i=0;i<3;++i)if(i!=outgoing){
+        const auto& a=v[i];const auto& b=v[(i+1)%3];
+        if(std::fma(span.exit,to[i]-from[i],from[i])<=.001*std::hypot(f64(b[0])-a[0],f64(b[2])-a[2]))
+            span.edge_exit=false;
+    }
+    *out=span;return true;
+}
+inline f64 projected_floor_clearance(const StihTriangle& face,const std::array<f32,3>& point){
+    const auto& v=face.vertices[0];const auto& n=face.plane;
+    return f64(point[1])-v[1]+(f64(n[0])*(f64(point[0])-v[0])+f64(n[2])*(f64(point[2])-v[2]))/n[1];
+}
+} // namespace stage_ground_detail
+
+// Evidence for a projected foot step that starts on an upward face, descends
+// inside that same face, then exits via one edge without entering any higher
+// floor. Scoped to a single known floor cell, not a capsule or wall sweep.
+inline bool stage_ground_same_face_push_exit(const StihGrid& grid,const StageGroundParameters& p,u32 face,
+                                             const std::array<f32,3>& start,const std::array<f32,3>& integrated,
+                                             const std::array<f32,3>& projected){
+    using namespace stage_ground_detail;
+    if(!parameters(p)||!vector(start)||!vector(integrated)||!vector(projected)||
+       !inside(p,start)||!inside(p,integrated)||!inside(p,projected)||
+       start[1]<=integrated[1]||projected[1]<integrated[1])return false;
+    std::span<const u32> refs,approach_refs,exit_refs;
+    if(!cell(grid,p,start,&refs)||!cell(grid,p,integrated,&approach_refs)||!cell(grid,p,projected,&exit_refs)||
+       refs.data()!=approach_refs.data()||refs.data()!=exit_refs.data()||refs.size()!=approach_refs.size()||refs.size()!=exit_refs.size()||
+       refs.size()>128||std::find(refs.begin(),refs.end(),face)==refs.end())return false;
+    const auto& selected=grid.triangles()[face];
+    ProjectedFloorSpan approach,exit;
+    if(!projected_floor_span(selected,start,integrated,&approach)||!approach.start_inside||!approach.end_inside||
+       !projected_floor_span(selected,start,projected,&exit)||!exit.edge_exit)return false;
+    constexpr f64 tolerance=.001; // Narrow documented native near-plane limit, not a source physics constant.
+    const f64 from=projected_floor_clearance(selected,start);
+    if(from<0||from>tolerance||projected_floor_clearance(selected,integrated)>=-tolerance||
+       std::fma(exit.exit,projected_floor_clearance(selected,projected)-from,from)<0)return false;
+    for(u32 index:refs)if(index!=face){
+        const auto& other=grid.triangles()[index];
+        for(const auto* end:{&integrated,&projected}){
+            ProjectedFloorSpan span;
+            if(!projected_floor_span(other,start,*end,&span))return false;
+            if(!span.intersects)continue;
+            const f64 at_start=projected_floor_clearance(other,start),change=projected_floor_clearance(other,*end)-at_start;
+            if(std::min(std::fma(span.enter,change,at_start),std::fma(span.exit,change,at_start))<=tolerance)return false;
+        }
+    }
+    return true;
 }
 //3E0A8's STATIC height+normal sibling. Reuses shared cell/projection/plane and
 //ceiling kernels; its outside return is the source constant-5000, NOT pointY.

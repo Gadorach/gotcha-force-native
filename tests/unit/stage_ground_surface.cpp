@@ -52,5 +52,24 @@ int main(){
     check(!stage_ground_coplanar_crossing(floor,0,1,a_point,b_point));
     check(stage_ground_slope_crossing(floor,0,1,a_point,b_point,true));
     for(u32 index:{2u,3u,4u,5u})check(!stage_ground_slope_crossing(floor,0,index,a_point,b_point,true));
-    std::printf("static surface selected normals, ties, strict gates, span, empty and bounds: %u checks PASS\n",checks);
+    auto face=a;
+    face.vertices={{{100,20,100},{100,20,120},{120,40,100}}};face.plane={-1,1,0,80};
+    auto low=face;for(auto& v:low.vertices)v[1]=0;low.plane={0,1,0,0};
+    const std::array<f32,3> start{104,24,106},approach{106,20,106},exit{107,27,120};
+    load(floor,{face,low});
+    check(stage_ground_same_face_push_exit(floor,p,0,start,approach,exit));
+    // Neither late entry from below nor starting inside the face below its plane.
+    check(!stage_ground_same_face_push_exit(floor,p,0,{99,19,106},{106,16,106},exit));
+    check(!stage_ground_same_face_push_exit(floor,p,0,{104,23.99f,106},approach,exit));
+    check(!stage_ground_same_face_push_exit(floor,p,0,{104,24.01f,106},approach,exit));
+    check(!stage_ground_same_face_push_exit(floor,p,0,start,{106,26,106},exit)); //no incoming crossing
+    check(!stage_ground_same_face_push_exit(floor,p,0,start,approach,{107,26.95f,120})); //subsurface projected travel
+    check(!stage_ground_same_face_push_exit(floor,p,0,start,approach,{106,26,106})); //no edge exit
+    check(!stage_ground_same_face_push_exit(floor,p,0,start,approach,{96,23,94})); //exact corner exit
+    check(!stage_ground_same_face_push_exit(floor,p,0,start,approach,{540,460,106})); //unreviewed cell
+    check(!stage_ground_same_face_push_exit(floor,p,2,start,approach,exit)); //not a live face in the cell
+    auto hidden=low;hidden.vertices={{{105,31,111},{105,31,115},{107,31,111}}};hidden.plane={0,1,0,-31};
+    load(floor,{face,low,hidden});
+    check(!stage_ground_same_face_push_exit(floor,p,0,start,approach,exit)); //competing face under the segment only
+    std::printf("static surface selection, slope seams and same-face projection exit: %u checks PASS\n",checks);
 }

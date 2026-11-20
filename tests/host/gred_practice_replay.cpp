@@ -12,7 +12,7 @@ enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFa
     TimedSnapDash,FloorWindupRelaunch,FloorWindupDash,
     PositiveFloorHandoff,ExpiringFloorHandoff,DirectTimedRelaunch,DirectTimedUpRelaunch,ActiveSnapRelaunch,TimedReleasePush,TimedReleaseTwoPushes,
     TimedReleaseThreePushes,TimedReleaseFourPushes,TimedReleaseExpiryDrift,TimedReleaseExpiryRelaunch,TimedReleaseExpiryDash,RisingWindupRelaunch,
-    RisingDiagonalWindupRelaunch,
+    RisingDiagonalWindupRelaunch,SameFaceExpiryPush,
     PickerPractice,PickerExpiry,ForcePicker,ForceExpiryAirDash,OwnedRecoverySeam,ForceRecoverySeam,
     OwnedTimedHandoff,ForceExpiryHandoff,OwnedTimedFloor,ForceTimedFloor,OwnedInclineJump,ForceInclineJump,
     OwnedLandingDash,ForceLandingDash,OwnedDirectExpiry,ForceDirectExpiry,
@@ -333,11 +333,13 @@ public:
         case Replay::TimedReleaseExpiryRelaunch:
         case Replay::TimedReleaseExpiryDash:
         case Replay::RisingWindupRelaunch:
-        case Replay::RisingDiagonalWindupRelaunch:{
+        case Replay::RisingDiagonalWindupRelaunch:
+        case Replay::SameFaceExpiryPush:{
             const unsigned tick=1+f/2;
             snapshot_.frame_step=f%2==0;
             raw.buttons|=replay_==Replay::TimedReleaseThreePushes?timed_release_inputs(tick,false,true):
-                timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes);
+                timed_down_inputs(tick,replay_!=Replay::TimedReleaseFourPushes&&replay_!=Replay::SameFaceExpiryPush);
+            if(replay_==Replay::SameFaceExpiryPush&&tick==38)raw.buttons|=1u<<6; // Down, not Down+Right.
             if(replay_==Replay::TimedReleaseExpiryRelaunch&&tick>=41&&tick<=50)raw.buttons|=1u<<1;
             if(replay_==Replay::TimedReleaseExpiryDash||replay_==Replay::RisingWindupRelaunch||replay_==Replay::RisingDiagonalWindupRelaunch)
                 rising_windup_inputs(raw,tick,replay_!=Replay::TimedReleaseExpiryDash,replay_==Replay::RisingDiagonalWindupRelaunch);
@@ -628,6 +630,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool timed_release_three=replay==Replay::TimedReleaseThreePushes;
     const bool timed_release_four=replay==Replay::TimedReleaseFourPushes;
     const bool rising_diagonal_windup=replay==Replay::RisingDiagonalWindupRelaunch;
+    const bool same_face_expiry=replay==Replay::SameFaceExpiryPush;
     const bool rising_windup_relaunch=rising_diagonal_windup||replay==Replay::RisingWindupRelaunch;
     const bool timed_release_expiry=replay==Replay::TimedReleaseExpiryDrift||replay==Replay::TimedReleaseExpiryRelaunch||
         replay==Replay::TimedReleaseExpiryDash;
@@ -635,7 +638,7 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
     const bool fixture=replay==Replay::FixtureWalk||replay==Replay::FixtureRestart||seam||incline||incline_ledge_relaunch||timed_incline||
         direct_expiry||direct_expiring||direct_expiring_push||adjacent_expiring_push||snap_dash||snap_handoff||positive_handoff||expiring_handoff||
         direct_timed||direct_timed_up||active_snap_relaunch||expiring_air_dash||expiring_air_relaunch||expiring_short_relaunch||
-        timed_release_push||timed_release_two||timed_release_three||timed_release_four||timed_release_expiry||rising_windup_relaunch||
+        timed_release_push||timed_release_two||timed_release_three||timed_release_four||timed_release_expiry||rising_windup_relaunch||same_face_expiry||
         expiring_air_snap||expiring_snap_relaunch;
     char program[]="gf_native",practice[]="--gred-movement",expiry[]="--gred-walk-ledge-expiry-push",
          recovery[]="--gred-recovery-first-contact-seam",incline_jump[]="--gred-inclined-dash-jump",
@@ -658,10 +661,11 @@ std::string run(Replay replay,unsigned frames,const char* scenario){
      char release_four[]="--gred-walk-ledge-timed-release-four-pushes",release_expiry[]="--gred-walk-ledge-timed-release-expiry-drift";
      char rising_windup[]="--gred-walk-ledge-rising-windup-relaunch";
      char rising_diagonal[]="--gred-walk-ledge-rising-diagonal-windup-relaunch";
+     char same_face_push[]="--gred-walk-ledge-same-face-expiry-push";
     char audio[]="--no-audio",start[]="--practice-start";
      char* args[]={program,expiring_snap_relaunch?expiring_dash_snap_handoff:expiring_air_snap?expiring_dash_snap:
          expiring_short_relaunch?expiring_short_dash_relaunch:expiring_air_relaunch?expiring_dash_relaunch:expiring_air_dash?expiring_dash:
-          rising_diagonal_windup?rising_diagonal:rising_windup_relaunch?rising_windup:timed_release_expiry?release_expiry:
+          same_face_expiry?same_face_push:rising_diagonal_windup?rising_diagonal:rising_windup_relaunch?rising_windup:timed_release_expiry?release_expiry:
           timed_release_four?release_four:timed_release_three?release_three:timed_release_two?release_two:
          timed_release_push?release_push:active_snap_relaunch?after_active_snap:
         direct_timed_up?direct_timed_up_relaunch:direct_timed?direct_timed_relaunch:
@@ -1445,5 +1449,16 @@ int main(int argc,char** argv){
         has(diagonal_lift,"practice-meter=8600/10000 at accepted tick=54")&&!has(diagonal_lift,"practice-windup-handoff=")&&
         has(diagonal_lift,"relaunch-fall-pushes=5 relaunches=3 timer698=0.0 landings=0"),
         "neutral Shift takes the relaunch after the six-tick wind-up",diagonal_lift);
-    std::puts("G-Red practice replay: sixty-nine desktop-loop scenarios PASS without opening devices");
+    const auto same_face=run(Replay::SameFaceExpiryPush,76,"live same-face Down across expiry");
+    check(picker_guide_played(same_face,"same-face expiry push",38)&&has(same_face,"practice-phase=FALLING / PUSH\n")&&
+        has(same_face,"practice-meter=9850/10000 at accepted tick=38")&&
+        has(same_face,"relaunch-fall-pushes=5 relaunches=1 timer698=0.0 landings=0")&&!has(same_face,"practice-timed-release-push="),
+        "held Down uses the same-face proof only on the 1 to 0 step",same_face);
+    const auto same_face_idle=run(Replay::SameFaceExpiryPush,290,"live same-face expiry to idle");
+    check(picker_guide_played(same_face_idle,"same-face expiry push",145)&&
+        has(same_face_idle,"accepted native tick=145 G-Red-position=-3717.55/10.00/-3264.20")&&
+        has(same_face_idle,"practice-meter=10000/10000 at accepted tick=145")&&
+        has(same_face_idle,"relaunch-fall-pushes=5 relaunches=1 timer698=0.0 landings=1"),
+        "the proved Down continuation lands with full idle, without opening another push",same_face_idle);
+    std::puts("G-Red practice replay: seventy-one desktop-loop scenarios PASS without opening devices");
 }

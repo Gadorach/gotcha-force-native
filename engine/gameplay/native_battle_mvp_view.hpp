@@ -171,6 +171,10 @@ public:
     bool inclined_ledge_crossing(u32 from,u32 to,const BattleMvpVec& start,const BattleMvpVec& end,f32 step)const override{
         return ready_&&stage_inclined_ledge_crossing(floor_.triangles(),from,to,start,end,step);
     }
+    bool same_face_push_exit(u32 face,const BattleMvpVec& start,const BattleMvpVec& integrated,const BattleMvpVec& projected)const override{
+        const StageGroundParameters p{-100000,100000,500,0,-.5f,20000,-20000,true};
+        return ready_&&stage_ground_same_face_push_exit(floor_,p,face,start,integrated,projected);
+    }
     bool static_surface(f32 x,f32 z,f32 current_y,NativeBorgStaticSurface* out)const override{
         if(!ready_||!out)return false;
         const StageGroundParameters p{-100000,100000,500,0,-.5f,20000,-20000,true};std::span<const u32> refs;

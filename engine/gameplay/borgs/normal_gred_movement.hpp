@@ -25,7 +25,7 @@ enum class NormalGRedMovementMode {
     GroundTimedWalkReleasePush,GroundTimedWalkReleaseSecondPush,GroundWalkExpiringDirectRelaunch,GroundWalkExpiringDirectRelaunchPush,
     GroundWalkExpiringAdjacentRelaunchPush,GroundWalkExpiringAirDash,GroundWalkExpiringAirDashRelaunch,
     GroundWalkExpiringShortAirDashRelaunch,GroundWalkExpiringAirDashSnap,GroundWalkExpiringAirDashSnapRelaunch,GroundTimedWalkReleaseThirdPush,
-    GroundTimedWalkReleaseDownPush,GroundRisingPlainWindupRelaunch,GroundRisingDiagonalWindupRelaunch
+    GroundTimedWalkReleaseDownPush,GroundRisingPlainWindupRelaunch,GroundRisingDiagonalWindupRelaunch,GroundWalkExpirySameFacePush
 };
 
 struct NormalGRedMovementDefinition {
@@ -106,6 +106,7 @@ struct NormalGRedMovementDefinition {
         CombinedRule{Mode::GroundTimedWalkReleaseDownPush,Policy::GroundTimedWalkReleaseDownPush,Behavior::TimedWalkReleaseDownPush},
         CombinedRule{Mode::GroundRisingPlainWindupRelaunch,Policy::GroundRisingPlainWindupRelaunch,Behavior::RisingPlainWindupRelaunch},
         CombinedRule{Mode::GroundRisingDiagonalWindupRelaunch,Policy::GroundRisingDiagonalWindupRelaunch,Behavior::RisingSixTickWindupRelaunch},
+        CombinedRule{Mode::GroundWalkExpirySameFacePush,Policy::GroundWalkExpirySameFacePush,Behavior::WalkReleaseExpirySameFacePush},
     };
 
     static constexpr Policy native_policy(Mode mode){

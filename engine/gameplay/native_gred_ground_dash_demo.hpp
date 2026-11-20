@@ -1385,6 +1385,19 @@ private:
                 return false;
             }
             evidence.down_timed_release_push=timed_down_push&&s.static_push;
+            if(allows(mode_,Behavior::WalkReleaseExpirySameFacePush)&&soft_down&&evidence.drift_heading==frame.camera5b0&&
+               state_.ground_timer698==1.f&&s.ground_timer698==0.f&&before.vertical48<0.f&&plan.state.selector==6&&
+               plan.state.falling_after_relaunch&&!plan.request&&!(held&0x100u)&&state_.jump_motion&&state_.jump_motion->down_timed_release_push&&
+               state_.static_push&&s.static_push){
+                const auto& prior=*state_.static_push;const auto& response=*s.static_push;
+                StageGroundSurfaceResult start;
+                evidence.expiry_same_face_push=response.surface.height>before.position[1]&&
+                    NormalGRedMovementDefinition::down_timed_release_face(response.surface.triangle,response.angle)&&
+                    prior.surface.triangle==response.surface.triangle&&prior.surface.normal==response.surface.normal&&prior.angle==response.angle&&
+                    ground.surface(before.position,&start,error)&&start.selected&&start.triangle==response.surface.triangle&&start.normal==response.surface.normal&&
+                    stage_ground_same_face_push_exit(*ground.grids[0],ground.parameters,response.surface.triangle,
+                        before.position,response.integrated_position,s.motion.position);
+            }
         }
         evidence.lower_done=s.vm.state().lanes[1].done;
         if(!gred_vertical_jump_finish(plan,evidence.lower_done,touchdown,&s.jump))return false;

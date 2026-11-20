@@ -18,6 +18,7 @@ public:
     virtual bool coplanar_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&)const{return false;}
     virtual bool gentle_slope_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&)const{return false;}
     virtual bool inclined_ledge_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&,f32)const{return false;}
+    virtual bool same_face_push_exit(u32,const std::array<f32,3>&,const std::array<f32,3>&,const std::array<f32,3>&)const{return false;}
 };
 struct NativeBorgContactRequest {
     std::array<f32,3> position{},other_position{};BattlePoint delta{};

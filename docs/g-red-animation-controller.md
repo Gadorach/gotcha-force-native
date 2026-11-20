@@ -1323,6 +1323,38 @@ further pushes and accepted none; 914 trials reached idle
 without another push. This bounds the tested routes, not
 every possible zero-timer fall. No contact rule changes.
 
+### Same-face Down continuation at expiry
+
+The older height-only refusal grouped two different approaches.
+On **38**, held Down starts in the interior of face 2011,
+about `0.000162` units above its plane. The integrated motion
+descends **inside** that face. The higher endpoint floor is
+not evidence of entering from the side. The projected path
+stays above the face until leaving through the interior of an
+edge. By contrast, after the original **Down+Right** on 38,
+Down on **39** starts **outside** 2011 and enters its footprint
+about `6.17` units below the plane. A clear projected endpoint
+does not make that approach valid.
+
+`--gred-walk-ledge-same-face-expiry-push` is a separate opt-in
+for the former case only. It requires the accepted timed Down
+push, face 2011/angle 13653, the actual **1 → 0** update and
+camera-relative soft Down. Source and native check the two
+paths against the selected face and competing floor triangles
+in one known cell. The approach must start on the plane
+within a native `0.001`-unit tolerance, descend inside the
+face, and project through an edge without going beneath the
+face. Native independently checks the full approach for body
+and bounds and still runs the usual post-projection check.
+This is not a wall sweep or general raised-side permission.
+
+Use the same early inputs and hold **Down Arrow on 37–38**,
+then release. The fifth push keeps 9850 meter, ordinary
+falling resumes on 39, and touchdown and landing remain
+103–104. **Expiry Drift Push** still refuses held Down on 38,
+and the true side-entry examples on 39 remain refused even
+in the new mode.
+
 ### Second relaunch after the expiry drift
 
 After the fifth push, stay neutral on **39–40** and press

@@ -467,6 +467,14 @@ is still the five-tick guide. Use
 `--demo-gred-walk-ledge-rising-diagonal-windup-relaunch` for the
 six-tick scripted playback.
 
+`--gred-walk-ledge-same-face-expiry-push --practice-start`
+is a separate guide for holding **Down Arrow on 37–38** on
+that same start. It proves this particular continuation stays
+on the same slope before projecting out, instead of entering
+the slope from below. Release on 39. The fifth push still costs
+nothing, and the older **Expiry Drift Push** route is unchanged.
+Use `--demo-gred-walk-ledge-same-face-expiry-push` for playback.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,
