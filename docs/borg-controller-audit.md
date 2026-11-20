@@ -854,6 +854,33 @@ and visual-key requests. It matched **142 bounded source cases**. This
 does not run the class VM, generate world geometry, add damage, or
 alter the separate Normal Samurai close-B planner.
 
+## Kung-Fu Master: close-B priority and paid Spirit Shot
+
+Exact normal **Kung-Fu Master `GG4E08:0800/0`** is catalogue #41,
+AFS member 620. All 48 selector pairs and the three-use jump policy
+match Normal and Demon Samurai; movement operands and pose data differ.
+
+- **One B edge, two candidates.** The ordinary conditioner can publish
+  a close and a shot pulse. The close route tries first when its guarded
+  target context is eligible. That classification is not a hit; the
+  close-strike outcome was not audited.
+- **Choice, availability, release.** The checked neutral shot stages
+  action state `0/0` and takes both lanes. Its entry stock query is
+  check-only. The later program event pair `(3,1)` attempts one
+  channel-0 debit in the release subphase. Successful debit adds to the
+  mode-1 stock clock and requests projectile key 12. A refused debit
+  creates no projectile request; the release subphase still advances.
+- **Separate owners and clocks.** The projectile is the spatial carrier,
+  Kung-Fu Master gets credit, and the receiving collider determines
+  the actual recipient. The hand presentation is separate. The
+  projectile lifetime and stock refill are independent, even though
+  the checked source operands are both 300.
+
+All **185 bounded offline cases** matched. Actual aim, contact, damage,
+hit timing, close/air actions and interruption ordering remain unverified.
+[Wiki lead: Spirit Shot](https://gotchaforce.fandom.com/wiki/Kung-Fu_Master?oldid=6583).
+No actor gained admission.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
