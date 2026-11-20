@@ -688,6 +688,27 @@ never replaces its actor-owned shapes. The native comparison matched
 **106 bounded cases** across requests, shield events/stock, and melee and
 presentation masks. No collider, stock or actor is changed live.
 
+## Normal Tank and Battle Girl: shared metered routes
+
+Exact normal **Normal Tank `GG4E08:0C00/0`** (#64, AFS member 666) and
+**Battle Girl `GG4E08:0300/0`** (#34, member 525) share all 48 selector
+pairs and meter policy 1, despite movement types **1 and 0**. Their
+ordinary ground dash, ascent, relaunch, air dash, and landing use the
+same inspected handler paths, not the same pose maps or motion tuning.
+
+| Boundary | Verified difference or common rule |
+| --- | --- |
+| Ground dash ending | Both gate the release clock on a lower program-control byte. Tank seeds 10 and Girl 20, with different authored waits; a dash request does not start an unconditional wall-clock timeout. |
+| Air costs | The ascent entry/update and dash handoff/active costs are **200/90/150/50** for Tank and **150/50/450/50** for Girl. Both refill on eligible cached-grounded visits, not on the floor snap itself. |
+| Active air dash | The release latch uses **60 source units for Tank, 30 for Girl**. An open latch permits a direction release to enter recovery; held direction and fuel can keep the dash active. Depletion can enter recovery before the latch opens. |
+| Ordinary neutral B | Tank's action takes the upper lane and preserves the existing lower movement selector. Girl's takes both lanes. This is a selector-ownership difference, not a measured movement or shot outcome. |
+
+All **320 bounded offline cases** matched. Actual ground and airborne
+routes, contacts, pose timing and live attacks remain unverified.
+[Wiki leads: Normal Tank](https://gotchaforce.fandom.com/wiki/Normal_Tank?oldid=6435)
+and [Battle Girl](https://gotchaforce.fandom.com/wiki/Battle_Girl?oldid=6750).
+No actor gained admission.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
