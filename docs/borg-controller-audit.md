@@ -284,7 +284,7 @@ different loose hit banks exist, and their handoff is unresolved.
 | --- | --- |
 | Entry request | A qualified fresh press, clear action guard and positive channel-2 stock are required. Successful debit spends one charge and queues class state 4; neither the debit nor the request changes the form. The wiki names this move X / Gold Set Up; raw pad-to-command mapping was not tested. |
 | Entered form | After program and motion processing, lower-lane completion gates the commit. The rebind prefix changes the model to `0803` on the same actor, preserves its selected variant, and chooses new class and data inputs. Later cleanup and initialization still belong to the transition before publication. |
-| Expiry and return | The transformed initializer seeds 1800. Qualifying class-hook calls count it down and crossing zero sets a negative pending sentinel. Pending expiry retries the action guard; a blocked call does not revert. An accepted request queues state 5 without another stock debit; that state restores `0802`. This is not a verified wall-clock duration or immediate swap on expiry. |
+| Expiry and return | The transformed initializer seeds 1800. Qualifying class-hook calls count it down. The last tick can queue a return on that invocation if the guard allows; otherwise the negative pending sentinel retries later. An accepted request queues state 5 without another stock debit; that state restores `0802`. This is not a verified wall-clock duration or immediate swap on expiry. |
 | Controller and stock | Both forms use type 0, count policy 0 and the same selector table. The limit rises from **2 to 4**; movement operands and the effective pose default differ. Shared stock setup runs again, and sampled weapon dispatch and refill delay differ. A sampled rebind prefix preserving HP, root and used air points does not prove the full transition preserves those fields. |
 
 All **84 bounded offline cases** matched. Completion, guard and actor
@@ -295,6 +295,15 @@ observations, actual collider rebinding and a blocked-then-retried expiry.
 Whether interruption cancels or refunds entry, stagger can trigger return,
 or damage protection holds remains unresolved. This evidence neither
 authorizes a separately deployable `0803` nor defines another Hero's form.
+
+The detached native form helper separates the stock-debit request and
+observed result, lower-completion-gated entry rebind, guarded expiry and
+return rebind. It preserves the selected variant in the proposal and models
+the raw revision byte separately from actor identity. The native comparison
+matched **187** qualified source-fragment cases: 96 entry checks, 56 expiry
+steps, 32 rebind prefixes, two form-data observations and the timer seed.
+The helper does not run the stock owner, schedule an action, rebind pose or
+collision data, publish a form, or infer interrupted state transfer.
 
 ## Package implications and next checks
 
