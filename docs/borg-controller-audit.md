@@ -950,6 +950,16 @@ Independent last-round and empty-stock alternatives arm a 180-unit
 refill and refuse the request, respectively. No actor or stock is
 updated, and no allocator is called.
 
+The same fixture now evaluates the argument-43 muzzle inputs from the
+accepted cue pose, at a declared unit-scale placement. The initializer
+reads the **parent's key 7** to transform the local point
+`(-106.8, -3.6, 30)`. With no copied target it takes the **credited
+actor's key-0 +Z column**, normalized, for the bearing instead of
+using key 7's direction. The direct fixture uses slot 3 for both roles,
+but supplies the keys separately. **128** bounded source-routing and
+numeric comparisons matched; normalization used a host reference, not
+paired-single hardware parity.
+
 Run from the repository root with `DOL` set to the qualified initialized
 executable and the local MVP and practice packs already present:
 
@@ -961,11 +971,14 @@ c++ -std=c++20 -O1 -I . tests/host/gred_shot_cue.cpp -o "$work/gred-shot-cue"
   local/content/source-gred-ground-v9/pose-height.gfhc
 ```
 
-A test cue or request is not permission to spawn a beam. Live argument
-43 still needs the same actor and update to supply the accepted cue,
-aim pass or timeout, stock debit, current owned key-7 transform, and
-allocation receipt. Contact, actual recipient and HP changes need
-separate evidence.
+A test cue, request, or fixture muzzle does not authorize a beam.
+The original allocates the object first, and its initializer gets
+successful shape registration before it reads the matrices. A live
+witness still has to join the accepted actor cue, aim or timeout and
+stock debit to the allocated object's generation, registration and both
+owned transforms at initializer time. The cue's pose alone does not
+establish which matrices were live at that time. Contact, actual
+recipient and HP changes need separate evidence.
 
 ## Sasuke: original neutral B and paid repeat
 

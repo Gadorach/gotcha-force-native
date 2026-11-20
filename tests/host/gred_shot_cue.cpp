@@ -1,9 +1,9 @@
-// Exact normal G-Red cue and no-target request inspection. Heading and stock
-// are declared fixture inputs, not live actor observations. No allocator.
+// Exact normal G-Red cue and no-target request inspection. Heading, placement
+// and stock are fixture inputs, not live actor observations. No allocator.
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
-#include "engine/gameplay/borgs/normal_gred_neutral_b.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_muzzle.hpp"
 #include "engine/gameplay/character_program_directional_control.hpp"
 
 namespace {
@@ -218,6 +218,31 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
 
         CharacterLocalPose local;
         if(!control.compose_local_pose(state,&local,&error))return false;
+        // Unit-scale bench placement, not a reconstruction of when the live
+        // initializer sees the parent's world matrices. The two roles use
+        // different keys even though both are assigned to the fixture slot.
+        constexpr f32 placed[]{125,34,-205};
+        const Mat4 frame_base=mat4_multiply(mat4_translation(placed),
+            mat4_rotation_y(f32(aim.heading72)*bits_to_f32(0x38c90fdb)));
+        CharacterPoseFrame frame;
+        CharacterWorldPose fixture_matrices;
+        if(!character_pose_initial_frame(rig,frame_base,&frame,&error)||
+           !character_pose_direct_world(rig,local,frame,&fixture_matrices,&error))return false;
+        if(fixture_matrices.matrices.size()<=7){error="fixture matrix keys missing";return false;}
+        const GRedBeamNoTargetBasis basis{source.slot,source.slot,
+            fixture_matrices.matrices[7],fixture_matrices.matrices[0]};
+        GRedBeamMuzzlePlan muzzle;
+        if(!normal_gred_beam_no_target_muzzle(source,paid,aim.clear_aim_refs,basis,&muzzle)){
+            error="fixture muzzle inputs refused";return false;
+        }
+        constexpr std::array<f32,3> expected_origin{238.14360f,226.52010f,-82.33281f};
+        constexpr std::array<f32,3> expected_bearing{.761513f,0,.648149f};
+        for(unsigned i=0;i<3;++i){
+            if(std::abs(muzzle.origin174[i]-expected_origin[i])>.002f||
+               std::abs(muzzle.unit_bearing[i]-expected_bearing[i])>.00002f){
+                error="fixture muzzle or credited bearing differed";return false;
+            }
+        }
         for(unsigned lane=0;lane<2;++lane){
             const auto& l=state.lanes[lane];
             const auto& d=*control.directional_snapshot(l.motion);
@@ -238,12 +263,15 @@ bool witness(const fs::path& assets,const fs::path& profile,const fs::path& heig
                 double(direction.primary().frame),double(direction.side().frame),
                 int(direction.primary().end_frame),int(direction.side().end_frame));
         }
-        std::printf("candidate model bytes=%u/%u; no actor or world pose\n",
+        std::printf("candidate model bytes=%u/%u; no live actor pose\n",
             unsigned(state.actor.models[0]),unsigned(state.actor.models[1]));
         std::puts("foreign VM scope and missing zero-weight side clip refused without publishing");
         std::printf("no-target fixture: heading=0x%04x, channel-0 stock %d -> %d, type %u arg %u requested only\n",
             unsigned(u16(aim.heading72)),int(full_stock.current),int(paid.stock.current),unsigned(paid.object_type),unsigned(paid.argument));
         std::puts("last-stock alternative armed 180; empty-stock alternative requested nothing; no allocation or contact");
+        std::printf("fixture only: parent key-7 origin=(%.5f,%.5f,%.5f), credited key-0 bearing=(%.6f,%.6f,%.6f)\n",
+            double(muzzle.origin174[0]),double(muzzle.origin174[1]),double(muzzle.origin174[2]),
+            double(muzzle.unit_bearing[0]),double(muzzle.unit_bearing[1]),double(muzzle.unit_bearing[2]));
         return true;
     }
     error="first authored cue not reached within the update budget";return false;
