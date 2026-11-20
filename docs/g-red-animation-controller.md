@@ -321,6 +321,42 @@ real collider/displacement result on the face-1130 route remain
 unverified. Neither an endpoint floor hit nor the native wall proxy
 can set the original movement flag; raised-side admission stays closed.
 
+#### Frozen stage boxes at the face-1130 refusal
+
+A read-only point comparison uses the source-compared stage2/main2
+collider trace and the staged tick-14–17 foot positions. Of the 16
+stage boxes in that snapshot, only descriptor 86 (stage owner 18)
+intersects these paths. At 17 the integrated foot point crosses the
+box's west face (X `765`) at about **93.4%** of the approach and ends
+about `0.198` units inside. The projection correction moves it
+back out. The complete start-to-projected foot path misses the box.
+The floor triangle's earlier below-face entry at about **62%** is a
+different surface and test.
+
+The verified box has flags `0x806` and belongs to lists `3B7C` and
+`417C`. `2D35C` skips a `3B7C` pair if either descriptor carries
+`0x800`, and `2D58C` also skips flagged `3B7C` targets. That rules
+out crediting this overlap as an ordinary solid-pair response.
+It does not rule out every later pass: `2DB58`, for example, uses
+`417C` targets with `477C` producers, and the initial snapshot does
+not establish live membership after movement. Nor does a foot point
+prove what the Borg's body volumes overlap. No `1DD` write or
+raised-side response is inferred.
+
+The repeatable offline probe accepts an existing numeric collider
+trace and its matching comparison receipt. Provide staged positions
+as `SEGMENT tick startX startY startZ integratedX integratedY
+integratedZ projectedX projectedY projectedZ` rows:
+
+```sh
+python3 -B -m tools.analyze.stage_box_contact COLLIDER_TRACE COMPARISON_JSON STAGED_SEGMENTS
+```
+
+The report separates approach, correction and start-to-projected
+travel. It checks frozen boxes only (17 other stage shapes were not
+tested here) and writes no input or game files. It supplies no
+movement permission.
+
 ### Direct drift after the expiry push
 
 The existing zero-timer fall can steer **after**, not during, the neutral
