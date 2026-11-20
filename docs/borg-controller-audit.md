@@ -159,6 +159,17 @@ To qualify the ordinary cycle, witness entry and release on both sides of the
 latch plus held depletion with exact source input, clock, meter and flag
 observations. Qualify floor and boarding behavior separately.
 
+The detached native boost component reuses shared meter debit/refill, but
+keeps the pre-selection refill, cruise/boost request, accepted-handler debit,
+cruise entry and phase-one latch clock separate. The meter HUD component
+returns only draw-ready and the source sample; it does not look up actors
+or draw. The native comparison matched **301** qualified source-fragment
+cases: 66 selector requests, 96 refill visits, 105 debits, six cruise
+entries, 16 clock steps and 12 HUD samples. A separate synthetic unit
+sequence checks the ordering through depletion and delayed refill. These
+components do not handle earlier action arbitration, live input, pose,
+contact, flight trajectory or actor admission.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

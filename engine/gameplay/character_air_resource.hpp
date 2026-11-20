@@ -59,6 +59,23 @@ inline bool character_air_point_gauge(const AirPointRules& rules,u8 used,bool ac
     *out=next;return true;
 }
 
+struct AirMeterGaugeReadout {
+    bool draw_ready=false;
+    f32 sample=0;
+    bool operator==(const AirMeterGaugeReadout&)const=default;
+};
+
+// Source meter-gauge sample, not opacity, a display lifetime, or a draw call.
+inline bool character_air_meter_gauge(s16 meter,s16 capacity,bool actor_suppressed,AirMeterGaugeReadout* out){
+    if(!out||capacity<=0||meter<0||meter>capacity)return false;
+    AirMeterGaugeReadout next;
+    if(!actor_suppressed){
+        const f32 ratio=f32(meter)/f32(capacity);
+        next.sample=1.f-ratio;next.draw_ready=next.sample!=0.f;
+    }
+    *out=next;return true;
+}
+
 inline s16 character_air_resource_narrow(s32 value){return std::bit_cast<s16>(u16(value));}
 //Shared5568C resource branch. Cached87 is the PREVIOUS accepted post-update's
 //airborne bit, not a newly sampled grounded flag or an animation classification.
