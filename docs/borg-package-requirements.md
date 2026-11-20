@@ -70,8 +70,10 @@ mapping does not select the same pose or outcome.
 Reserve **mechanical outcomes** as their own event bindings, not VFX/SFX.
 User examples guide the slots: Witch charge shots may buff allies, debuff
 enemies, invert controls or temporarily replace a target's form and moves;
-Hero transformations may have an expiry; a position-swap move needs an
-explicit two-actor exchange, distinct from
+Hero transformations may have an expiry; a position-swap move needs
+explicit participants and per-actor acceptance. The
+[Switching Ninja audit](borg-controller-audit.md#switching-ninja-contact-staged-position-exchange)
+distinguishes contact-staged destinations from atomic exchange or
 [Teleport Ninja's caster-only movement](borg-controller-audit.md#teleport-ninja-caster-movement-not-a-swap);
 Acceleration Ninja may combine a form
 change with an ongoing contact hit. The Death ICBM example needs impact-area

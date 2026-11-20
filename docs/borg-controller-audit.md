@@ -521,8 +521,8 @@ registrations and clears that bit on completion. This is not blanket
 collision immunity or a guarantee about travel distance or elapsed time.
 [Wiki leads: Teleport Ninja](https://gotchaforce.fandom.com/wiki/Teleport_Ninja?oldid=6693)
 and [Switching Ninja](https://gotchaforce.fandom.com/wiki/Switching_Ninja?oldid=6659).
-Switching Ninja `0009` dispatches separately; its swap outcome is not
-verified by this audit.
+Switching Ninja `0009` dispatches separately; see the
+[separate exchange audit](#switching-ninja-contact-staged-position-exchange).
 
 All **34 bounded source-fragment checks and four staged vector checks**
 passed. No live contact, charged Slash outcome, device input, or
@@ -536,6 +536,38 @@ publish a root. Mode-1 stock now shares the stock planner but adds the
 preset on each successful debit, preserving mode-0 behavior. The comparison
 matched **40 source-branch cases and 40 staged vector cases**. No directed
 normalization, phase scheduler, live contact, swap or actor is wired.
+
+## Switching Ninja: contact-staged position exchange
+
+Exact normal **Switching Ninja `GG4E08:0009/0`** is catalogue #115,
+AFS member 494. It shares Teleport Ninja's installer family but has an
+exact action/config override. [Wiki lead: Ninpo Change](https://gotchaforce.fandom.com/wiki/Switching_Ninja?oldid=6659)
+names the move; the exchange below is source-backed.
+
+- **Cast:** A conditioned X press selects the reviewed class action. A
+  later positive signed program event attempts one channel-2 debit. On
+  success the class requests a caster-owned type-20 object; neither the
+  cast nor its cached aim point is a hit or exchange.
+- **Contact:** The checked hit row 12 and receiver guards select the
+  **actual struck actor**, not the lock-on target. The resolver stages a
+  destination for each original slot from current positions at contact.
+  Incoming X/Z come from the other actor; incoming Y adds the other
+  actor's height reference minus one's own. Neither current root changes
+  at staging.
+- **Independent transfer:** Each actor's later callback can accept its own
+  leg. A busy or defeated actor can skip it. Mode 2 clamps the queued
+  X/Z to stage bounds, then writes current, previous and older position
+  samples before a separate terrain query. There is no paired preflight
+  or observed rollback. A successful leg does not prove the other ran.
+- **Ownership and health:** Relocation does not exchange slot ownership,
+  team, model, variant, HP or stock. The overall move is not HP- or
+  stock-neutral: the cast spends stock and the hit can damage the
+  recipient. The raw hit-row amount is 30, not verified final damage.
+
+All **43 bounded offline cases** matched, including staged busy legs,
+clamps, and copied history. Live contact, final terrain response, hit
+damage and complete interruption/rollback behavior remain unverified.
+No actor or swap was admitted.
 
 ## Package implications and next checks
 
