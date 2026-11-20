@@ -911,6 +911,24 @@ mode-0 stock and argument-43 beam request. It matched **169** source cases.
 The new mode-0 refill proposal requires an already armed stock clock and
 clears it at expiry. No live pose, contact, allocation or duel shot changed.
 
+## Sasuke: original neutral B and paid repeat
+
+Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
+An eligible close B takes priority over the neutral shot; unlike G-Red,
+Sasuke does not admit the shared charged-B request. The checked neutral
+shot is the no-target row, not every aiming context.
+
+| Boundary | Recovered source behavior |
+| --- | --- |
+| Pose | Selector 44 uses the same upper-action/lower-no-op pair as G-Red, but Sasuke requests upper program `2:0` and lower `2:9` separately. An already-pending cue makes Sasuke skip the checked VM call; G-Red calls its VM with a temporarily zero step instead. |
+| Release | The upper-pose cue and aim-or-timeout gate must both pass. Each paid release attempts **one** type-14 shuriken, argument **4**, not the native duel's provisional three-projectile fan. The shuriken carries the hit shape; Sasuke gets credit; the receiving collider determines the actual actor hit. |
+| Repeat and refill | In the checked grounded phase, held B can request another cycle after a check-only availability test and a positive local attempt count. Later release still needs its own cue and debit. Refill arms for 90 source units only when B stock empties; no projectile return was joined. |
+
+All **134 bounded offline cases** matched. Live pose timing, contact,
+damage, repeat length and interruption order remain unverified. The
+native duel's provisional shot policy is unchanged.
+[Wiki lead: Shuriken](https://gotchaforce.fandom.com/wiki/Sasuke?oldid=6766).
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

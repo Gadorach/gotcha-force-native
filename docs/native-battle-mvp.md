@@ -29,6 +29,9 @@ The [original G-Red neutral-B audit](borg-controller-audit.md#g-red-original-neu
 found a fresh-edge, pose- and stock-gated beam request, not this cooldown
 shot. The audit does not replace the provisional duel policy or verify
 a live shot-to-contact route.
+The [original Sasuke neutral-B audit](borg-controller-audit.md#sasuke-original-neutral-b-and-paid-repeat)
+likewise found one paid shuriken request per release rather than this
+prototype's three-projectile fan. That remains offline source evidence.
 
 ## Working desktop prototype
 
