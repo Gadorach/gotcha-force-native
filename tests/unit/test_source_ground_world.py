@@ -1102,6 +1102,23 @@ class SourceGroundWorldTests(unittest.TestCase):
                 if tick == 145:
                     self.assertIn("G-Red-position=-3719.20/10.00/-3264.03", result.stdout)
 
+    def test_rising_windup_relaunch_uses_the_paid_handoff(self):
+        for tick, phase, meter, lifts in (
+            (51, "DASH WIND-UP", 9200, 2), (52, "DASH WIND-UP", 8750, 2), (53, "RELAUNCH", 8600, 3),
+            (54, "FALLING", 8600, 3), (151, "TOUCHDOWN", 8600, 3), (152, "LANDING", 8600, 3),
+            (190, "IDLE", 10000, 3),
+        ):
+            with self.subTest(tick=tick):
+                result = self.run_host(["--demo-gred-walk-ledge-rising-windup-relaunch",
+                                        "--headless", "--frames", str(tick), "--no-audio"])
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn(f"practice-phase={phase}\n", result.stdout)
+                self.assertIn(f"practice-meter={meter}/10000 at accepted tick={tick}", result.stdout)
+                self.assertIn(f"relaunch-fall-pushes=5 relaunches={lifts} timer698=0.0 landings={int(tick>=151)}", result.stdout)
+                self.assertEqual("practice-windup-handoff=SHIFT/B RELAUNCH / NEUTRAL DASH" in result.stdout, tick == 52)
+                if tick == 190:
+                    self.assertIn("G-Red-position=-3781.10/10.00/-3260.83", result.stdout)
+
     def test_walk_ledge_expiry_relaunch_uses_the_ordinary_fall_after_the_push(self):
         for tick, phase, meter, cue in (
             (56, "LEDGE FALL / PUSH", 10000, "LEDGE TIMER 0 TICKS"),

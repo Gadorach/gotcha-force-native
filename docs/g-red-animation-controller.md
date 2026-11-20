@@ -1354,6 +1354,33 @@ wind-up on 48, one tick later. A soft **Up Arrow** on 47
 with Shift held only steers the relaunch. The practice guide
 shows the direct branch; scripted playback is unchanged.
 
+### Relaunch before the first active dash update
+
+`--gred-walk-ledge-rising-windup-relaunch` separately opts in
+to a neutral relaunch at the paid handoff. The source producer
+and native acceptance both require a plain five-tick wind-up
+entered directly from accepted, unsteered powered relaunch.
+The ledge clock must be zero and vertical speed positive
+through every wind-up update. A snap, push, earlier relaunch
+wind-up, or a climb that is no longer rising cannot supply
+that history. The handoff must already have spent 450.
+
+Follow the **Expiry Drift Push** inputs through **Shift+W on
+47**, release both on 48, and tap neutral **Shift** on **53**.
+The accepted tick-52 receipt shows **SHIFT/B RELAUNCH /
+NEUTRAL DASH**. The third relaunch spends 150 (8750 → 8600)
+and reaches the ordinary 18-unit vertical cap. It skips the
+50 active-entry charge, with zero active dash updates on the
+route. Falling resumes on 54; touchdown and landing are on
+151–152 before the meter recovers normally.
+
+The older Expiry Drift mode still refuses the exact tap on
+53. In that mode, neutral on 53 pays 50 and a fresh tap on
+54 can interrupt the already-active dash under the existing
+rules; it is not this handoff. Shift during wind-up and
+steered Shift at the new handoff remain outside the guide's
+admitted route. No contact permissions were added.
+
 ## Post-air zero698 falling push in the combined controller (GFMM9)
 
 `--source-ground-air-fall-push` / `--demo-source-ground-air-fall-push` separately

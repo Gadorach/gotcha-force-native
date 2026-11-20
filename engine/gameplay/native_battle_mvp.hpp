@@ -181,6 +181,7 @@ struct NativeBorgAirMotion {
     bool expiring_walk_windup_short=false; //The independently qualified five-tick variant.
     u8 expiring_snap_windup_step=0; //Sequence from the same-height snap, never a plain-entry history.
     bool timed_relaunch_floor_windup=false; //Uninterrupted flat-floor wind-up that entered directly from a timed descending relaunch snap.
+    bool rising_relaunch_windup=false; //Plain five-tick wind-up entered directly from neutral, powered ascent at zero698.
     bool operator==(const NativeBorgAirMotion&)const=default;
 };
 struct NativeBorgRelaunchMotion {
@@ -588,6 +589,18 @@ public:
                          expiring_snap_step=NormalGRedMovementDefinition::expiring_snap_windup_next(previous->expiring_snap_windup_step);
                  }
                  if(e.expiring_snap_windup_step!=expiring_snap_step)return false;
+                 bool rising_windup=false;
+                 if(behaviors.has(Behavior::RisingPlainWindupRelaunch)&&e.phase==15&&
+                    last_offer_.controller_timer698==0.f&&o.controller_timer698==0.f&&actor.vertical_speed>0.f&&o.vertical_speed>0.f){
+                     if(e.entry){
+                         const auto& lift=last_offer_.relaunch_motion;
+                         rising_windup=o.kind==NativeBorgMotionKind::AirDashWindupEntry&&
+                             e.timer568==NormalGRedMovementDefinition::rising_relaunch_windup_ticks&&
+                             prior==NativeBorgMotionKind::RelaunchActive&&lift&&!lift->direction&&
+                             lift->lower_after==3&&lift->upper_after==3;
+                     }else rising_windup=o.kind==NativeBorgMotionKind::AirDashWindup&&previous&&previous->rising_relaunch_windup;
+                 }
+                 if(e.rising_relaunch_windup!=rising_windup)return false;
                 bool timed_floor_lineage=false;
                 if(behaviors.has(Behavior::TimedSnapWindupRelaunch)&&e.phase==15&&o.air_dash_floor&&
                     native_borg_flat_surface(o.air_dash_floor->surface)&&o.controller_timer698){
@@ -758,8 +771,12 @@ public:
                       }
                        const auto entry_kind=relaunch_entry_push?NativeBorgMotionKind::RelaunchEntryPush:
                            relaunch_floor?NativeBorgMotionKind::RelaunchEntryFloor:NativeBorgMotionKind::RelaunchEntry;
-                       if(previous||(!air&&!jump)||(air&&air->phase!=16&&air->phase!=17&&
-                            !windup_push_handoff&&!timed_plain_handoff&&!expiry_plain_handoff&&!timed_floor_handoff&&!expiring_walk_handoff)||
+                        const bool rising_handoff=plain_handoff&&behaviors.has(Behavior::RisingPlainWindupRelaunch)&&
+                            air->rising_relaunch_windup&&air->resource_before-air->resource_after==meter.cost(AirMeterCharge::DashHandoff)&&
+                            last_offer_.controller_timer698==0.f&&o.controller_timer698==0.f&&actor.vertical_speed>0.f&&o.vertical_speed>0.f&&
+                            !e.direction&&o.facing==actor.facing;
+                        if(previous||(!air&&!jump)||(air&&air->phase!=16&&air->phase!=17&&
+                             !windup_push_handoff&&!timed_plain_handoff&&!expiry_plain_handoff&&!timed_floor_handoff&&!expiring_walk_handoff&&!rising_handoff)||
                         (jump&&(jump->phase!=6||(jump->ground_loss&&!controller_ground_loss_relaunch_policy)))||e.upper_before||
                         o.kind!=entry_kind||o.entry_vertical_delta!=15)return false;
                 }else if(!previous||e.lower_before!=previous->lower_after||e.upper_before!=previous->upper_after||
@@ -1457,7 +1474,7 @@ public:
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(NativeBorgMotionPolicy policy)const{
         NativeBorgMotionObservation observed;
         const auto& actor=actors_[0];
-          if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundTimedWalkReleaseDownPush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
+           if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundRisingPlainWindupRelaunch)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
         for(const auto& shot:projectiles_)if(shot.active)return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));

@@ -444,6 +444,15 @@ is still held on **47**, then release both on **48** to air dash.
 An earlier held Shift does not queue the relaunch. The scripted
 playback still takes the neutral route.
 
+For a separate paid-handoff guide, use
+`--gred-walk-ledge-rising-windup-relaunch --practice-start`.
+Follow the air-dash inputs above through **Shift+W on 47**,
+release both, then tap neutral **Shift on 53**. The wind-up's
+450 cost stays spent, but the relaunch replaces the first
+50-meter active dash update. Stay neutral on 53 to dash
+instead. Use `--demo-gred-walk-ledge-rising-windup-relaunch`
+for scripted playback of the relaunch branch.
+
 From **Standard**, advance the route four times for **Timed Landing
 Dash**, or five for **Direct Expiry Relaunch** (**Right** in the owned
 picker, **R** in the Force browser). On the accepted zero-timer push,
