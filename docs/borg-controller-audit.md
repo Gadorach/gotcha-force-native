@@ -1065,6 +1065,20 @@ identify a contact receiver. **132** bounded factory, dispatch and
 shape-owner comparisons matched, using the exact credited bank for
 shape operands. The playable duel still does not use them.
 
+#### Shared allocation prerequisite
+
+The physical bootstrap now activates the 512-cell class-3 bank and
+384-cell class-4 bank in the same typed group lists as class 2.
+Class 3 checks the shared descriptor count before the carrier bank;
+class 4 consumes no model descriptors. The rootless leases carry
+arena, index and generation, and FIFO reuse does not revive a stale
+lease. Standalone class 2 cannot create either bank.
+
+This checkpoint includes allocation and unbound release only. The
+isolated paid-trial test reaches a class-3 lease with one descriptor
+or the real capacity refusal. It installs no beam header or shape,
+does not populate the registry, and does not change the playable duel.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect
