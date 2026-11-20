@@ -58,6 +58,7 @@ struct GRedBeamSasukePostHitPlan {
     GRedBeamSasukeHealthPlan health;
     GRedBeamSasukeReactionPlan reaction;
     u32 credit_total418=0,receiver_total41c=0;
+    u8 credit_slot=255,receiver_slot=255;
     bool stat_write=false,request_ko_continuation=false;
 };
 // Detached ordinary after-hit proposal. Positive raw amount goes to
@@ -74,6 +75,7 @@ inline bool normal_gred_beam_sasuke_post_hit(NormalGRedNeutralBSource source,
        (health.receiver_flags1da&2u))return false;
     GRedBeamSasukePostHitPlan next;
     if(!normal_gred_beam_sasuke_health_from_tables(source,contact,health,sample,table,&next.health))return false;
+    next.credit_slot=source.slot;next.receiver_slot=health.receiver_slot;
     next.credit_total418=in.credit_total418;next.receiver_total41c=in.receiver_total41c;
     if(next.health.amount>0&&!health.scene_hp_hold1f){
         next.stat_write=true;next.credit_total418+=u32(next.health.amount);next.receiver_total41c+=u32(next.health.amount);

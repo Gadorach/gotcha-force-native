@@ -1280,6 +1280,25 @@ are numeric proposals, not a hitstun animation or measured reaction.
 The KO selector does not run the KO routine, team ledger, effects, or
 destruction.
 
+### Argument 43: ordinary KO ledger prefix
+
+For the same new zero crossing and exact direct opposing pair,
+the detached mode-0 `2F8DC` prefix reads the receiver's **runtime
+cost `4AA`**, not the raw or clamped HP debit. It conditionally
+charges the receiving team's `118` budget, clamps a nonpositive
+result to zero, and checks the separate signed reserve gate.
+A reserve decrement can name the scene's credit/receiver pair
+without exhausting the budget. The actor counts, cost totals
+and credit-team `+100` halfword retain their original widths.
+
+The headless KO alternative uses the verified ordinary normal
+Sasuke full-cost operand of 150 as its declared runtime cost:
+after `7 -> 0` HP the fixture budget goes `140 -> 0`, with credit
+on slot 0 and receiver on slot 1. **1,440** bounded ledger,
+reserve, credit and stat comparisons matched. This stops at
+the `2FB14` observer scan boundary. It does not publish a team
+budget, remove an actor, notify observers, or choose victory.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.

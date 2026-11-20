@@ -7,6 +7,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_fresh_pair.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_selected_hit.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_post_hit.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_ko_prefix.hpp"
 
 int main(int argc,char** argv){
     using namespace gf;
@@ -84,9 +85,20 @@ int main(int argc,char** argv){
     in.current1c6=7;
     if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&lethal)||!lethal.request_ko_continuation||
        lethal.health.current1c6||lethal.credit_total418!=119||lethal.reaction.visited)return 1;
+    GRedBeamSasukeKoInput ko_input;
+    ko_input.direct_mode_zero_declared=true;ko_input.credit_slot=0;ko_input.receiver_slot=1;
+    ko_input.credit_team88=0;ko_input.receiver_team88=1;ko_input.context32=0;
+    // Normal Sasuke's ordinary full-cost source operand. In a scene
+    // this must come from the receiving actor's runtime +4AA.
+    ko_input.receiver_cost4aa=150;ko_input.receiver_team_remaining118=140;ko_input.debit108=1;
+    GRedBeamSasukeKoPlan ko;
+    if(!normal_gred_beam_sasuke_ko_prefix(red,lethal,ko_input,&ko)||!ko.team_debited||
+       ko.receiver_team_remaining118||ko.credit_ko_cost420!=150||ko.scene_credit_b4!=0||ko.scene_receiver_b8!=1||
+       !ko.observer_scan_pending)return 1;
     in.current1c6=180;in.scene_hp_hold1f=true;
     if(!normal_gred_beam_sasuke_post_hit(red,selected.contact,in,sample,table,after,&held)||held.stat_write||
        held.health.write_health||!held.reaction.visited)return 1;
     std::puts("Separate moving shape-2 fixture: selected (-22,0,0), moved and rebuilt candidate matrix, proposed HP 180 -> 161.");
     std::puts("Moving post-hit alternatives: surviving counters kept separate; 7 -> 0 selects KO continuation; scene hold skips HP and stats.");
+    std::puts("Detached KO ledger: declared cost 150, team budget 140 -> 0, credited slot 0; observer scan not run.");
 }
