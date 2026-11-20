@@ -72,12 +72,11 @@ nothing, not the `-1` sentinel for an unavailable lane. Tables compare
   G-Red's meter. His [exact normal follow-up](#normal-sasuke-air-points-and-hud)
   distinguishes request, spend, ground reset and HUD update.
 - **Flight:** [Blue Striker's exact normal follow-up](#normal-blue-striker-cruise-boost-and-hud)
-  separates boost inactivity from ground recovery. Wing Soldier and Quick
-  Valkrie have offset floor probes, but minimum-hover-height contact and
-  reset behavior still need witnesses. Beam Satellite's ordinary idle and
-  disabled jump selectors do not prove fixed height or immunity to
-  displacement. [Wiki leads: Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425)
-  and [Beam Satellite](https://gotchaforce.fandom.com/wiki/Beam_Satellite?oldid=6725).
+  separates boost inactivity from ground recovery. The
+  [Wing Soldier and Quick Valkrie follow-up](#normal-wing-soldier-and-quick-valkrie-glide-and-contact)
+  separates a glide snap, logical landing and meter refill. Beam Satellite's
+  ordinary idle and disabled jump selectors do not prove fixed height or
+  immunity to displacement. [Wiki lead: Beam Satellite](https://gotchaforce.fandom.com/wiki/Beam_Satellite?oldid=6725).
 - **Pose and actions:** Roach has an empty local bank and sampled lane-control
   programs; Blue Striker and Beam Satellite have empty banks and null local
   program/descriptor roots. All three still dispatch class actions. Roach and
@@ -169,6 +168,30 @@ entries, 16 clock steps and 12 HUD samples. A separate synthetic unit
 sequence checks the ordering through depletion and delayed refill. These
 components do not handle earlier action arbitration, live input, pose,
 contact, flight trajectory or actor admission.
+
+## Normal Wing Soldier and Quick Valkrie: glide and contact
+
+Exact normal `GG4E08:0A00/0` and `GG4E08:0B00/0`, AFS members 647 and 658,
+install movement type 2 and resource policy 2. Their selector tables match
+byte-for-byte; their motion banks, sampled pose continuations and class
+actions do not. Neither report supplies an exact X Fly input-to-action path.
+[Wiki leads: Wing Soldier](https://gotchaforce.fandom.com/wiki/Wing_Soldier?oldid=6424)
+and [Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425).
+
+| Mechanism | Ordinary source finding |
+| --- | --- |
+| Glide request | From fall, held input and a clear lock can request 18 (`8006952C`) after earlier choices. Release can return certain glide selectors to fall, not every selector in the family. The ordinary generic air-dash request refuses type 2; this does not rule out class-owned transfers. |
+| Floor offset | The ordinary pose-offset producer writes `6D0 = 0` for both (`8004D1E8`). The shared floor snap still uses `floorY − 6D0`. This is a logical root operand, not a measurement of the rendered body above the floor. |
+| Snap and landing | Glide entry 18 installs a continuation that can select landing 7 after a valid snap. A transfer to steering 19 clears it; a snap without the continuation does not select landing. The landing entry (`80060228`), not the snap, clears airborne status and leaves `0x80` intact. |
+| Refill | Before selection, the shared type-2 branch holds both meter and delay while `0x80` is set. When clear, it decrements a nonzero delay or adds 2000 up to 10000 if delay was already zero. It does not test floor contact, landing, the logical airborne flag or the cached ground field. Neither the ordinary snap nor landing fills the meter. |
+
+The offline audit matched **282 source-fragment cases**, 141 per model.
+Stage planes and completion fields were supplied to the tested tails; no live
+surface query, animation clock, actor update or HUD draw was compared.
+Next, witness exact fall-to-glide contacts with and without a landing
+continuation, then trace each Borg's X Fly and any class-owned refill-inhibit
+writers separately. There is no general hover-height rule or new gameplay
+admission.
 
 ## Package implications and next checks
 

@@ -32,7 +32,10 @@ verified that refill checks boost inactivity before selector changes.
 This does not mean an open-flight actor never probes the floor. The [normal
 Sasuke follow-up](borg-controller-audit.md#normal-sasuke-air-points-and-hud) verified
 his three-point limit, the conditional zero-to-one wind-up write, the later
-grounded reset, and the HUD's hidden-at-zero-used rule. It did not establish
-dash height over a complete route, minimum-hover-height contact/reset, or
-fixed Fortress placement. Do not fill animation annotations or generalize
-G-Red's recovered profile from either table.
+grounded reset, and the HUD's hidden-at-zero-used rule. In the [Wing Soldier
+and Quick Valkrie follow-up](borg-controller-audit.md#normal-wing-soldier-and-quick-valkrie-glide-and-contact),
+the tested ordinary paths use zero floor offset. A snap can lead to grounding
+if it runs the landing continuation and landing state, but the meter does
+not reset on that event. Other hover-height producers, Fortress placement
+and Sasuke's dash height over a full route remain unverified. Do not fill
+animation annotations or generalize G-Red's recovered profile from these audits.
