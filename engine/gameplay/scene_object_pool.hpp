@@ -188,6 +188,19 @@ private:
     friend class BattlePreparationModels;
     friend class SceneModelBindings;
     friend class ScenePhysicalPools;
+    friend class NativeGRedClass3TrialBridge;
+    // The trial owner keeps the parent fields and provenance. This writes
+    // only the class3 header into the existing allocated record.
+    bool install_trial_beam_header(const SceneClass3Lease& lease){
+        if(!owns(lease))return false;
+        auto& record=storage_->class3.records[lease.index_];
+        auto& models=storage_->class3_models[lease.index_];
+        if(record.class02!=3||record.physical03!=3||record.group01!=9||record.kind83!=16||
+           record.active00||record.update0c_key||record.registration85!=255||models.header_installed||
+           models.descriptor_count99!=1||!storage_->class3_leases[lease.index_][0].current())return false;
+        models.header={2,43,0,0x800c3cdcu,0x800c4468u};
+        models.header_installed=true;record.update0c_key=models.header.update0c_key;record.active00=1;return true;
+    }
     bool owns(const SceneObjectLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneClass3Lease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneCollisionLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}

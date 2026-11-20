@@ -35,7 +35,8 @@ bool check(bool ok,const char* why){
     if(!ok)std::fprintf(stderr,"native neutral-B trial: %s (%s)\n",why,error.c_str());
     return ok;
 }
-enum class Capacity {NoAttempt,Available,NoDescriptor,NoCarrier,BothFull};
+enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull};
+constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125f,.875f,true};
 struct AllocationFixture {
     SceneDescriptorBootstrap models;
     ScenePhysicalPools physical;
@@ -71,7 +72,8 @@ struct AllocationFixture {
     bool finish(NativeGRedNeutralBTrial& source,NativeBattleMvp& world,NativeBattleMvpView& view,Capacity capacity,
                 const WeaponStockModeZeroState& after){
         using S=GRedClass3TrialStatus;
-        const auto expected=capacity==Capacity::Available?S::Allocated:capacity==Capacity::NoCarrier?S::NoCarrier:S::NoDescriptors;
+        const bool allocated=capacity==Capacity::Available||capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader;
+        const auto expected=allocated?S::Allocated:capacity==Capacity::NoCarrier?S::NoCarrier:S::NoDescriptors;
         const auto pool=physical.class2_pool();
         const auto descriptors=models.model_pool();
         const auto carrier_before=*pool->class3_snapshot();
@@ -99,6 +101,33 @@ struct AllocationFixture {
                       descriptors->snapshot()->free_count+1==descriptor_before.free_count&&
                       bridge.factory().propose_header&&bridge.factory().argument11==43,
                       "one rootless lease and descriptor; factory header is a proposal"))return false;
+            if(capacity==Capacity::InstallHeader){
+                if(!check(!bridge.install_trial_header(other_producer,world,view,&error)&&
+                          !pool->inspect(lease)->active00&&bridge.install_trial_header(source,world,view,&error)&&
+                          bridge.status()==S::HeaderInstalled,"only the exact current caster can install the trial header"))return false;
+                const auto* birth=bridge.installed_trial_birth(source,world,view);
+                if(!check(birth&&birth->parent8c_slot==0&&birth->credit90_slot==0&&birth->targets_c8_cc_null&&
+                          birth->copied.model94==0x0615&&birth->copied.render_index96==2&&birth->copied.resource_index97==4&&
+                          birth->copied.flags_d0==5&&birth->copied.scale_b8==.75f&&birth->copied.scale_b4==1.f&&
+                          birth->copied.physical_c0==1.125f&&birth->copied.relative_c4==.875f&&birth->scale58==std::array<f32,3>{1,1,1}&&
+                          pool->inspect(lease)->active00==1&&pool->inspect(lease)->registration85==255&&
+                          pool->class3_models(lease)->header_installed&&pool->class3_models(lease)->header==SceneObjectHeader{2,43,0,0x800c3cdcu,0x800c4468u},
+                          "real header and distinct cloned fields without a callback acknowledgement"))return false;
+                if(!check(!bridge.install_trial_header(source,world,view,&error)&&
+                          !bridge.release_uninitialized(&error)&&!pool->release(lease,&error)&&
+                          *pool->collision_snapshot()==shape_before&&descriptors->snapshot()->free_count+1==descriptor_before.free_count,
+                          "installed header refuses replay and rootless cleanup; class4 untouched"))return false;
+                physical.retire();
+                return check(!lease.current()&&!bridge.installed_trial_birth(source,world,view),
+                             "pool retirement revokes the header inspection without claiming source cleanup");
+            }
+            if(capacity==Capacity::StaleHeader){
+                NativeBorgSourcePose republished;
+                if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error)&&
+                          !bridge.install_trial_header(source,world,view,&error)&&!pool->inspect(lease)->active00,
+                          "same-tick republish invalidates the allocation's constructor gate"))return false;
+            }else if(!check(!bridge.install_trial_header(source,world,view,&error)&&!pool->inspect(lease)->active00,
+                            "lease cannot stand in for absent parent fields"))return false;
             return check(!bridge.try_once(source,world,view,&error)&&bridge.release_uninitialized(&error)&&
                          bridge.status()==S::Released&&!lease.current()&&!bridge.release_uninitialized(&error)&&
                          pool->class3_snapshot()->free_count==carrier_before.free_count&&
@@ -119,8 +148,12 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
     NativeBattleMvp world;
     NativeBorgAnimationSeed seed;
     NativeGRedNeutralBTrial source;
+    auto declared=trial_parent;
+    const bool supply=capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader;
     if(!check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
-              source.begin(files,art,ground,world,seed,library,rounds,&error),"fresh same-renderer native trial"))return false;
+              source.begin(files,art,ground,world,seed,library,rounds,&error,supply?&declared:nullptr),
+              "fresh same-renderer native trial"))return false;
+    declared={}; // only the trial's owned source-field sample may later be copied
     AllocationFixture allocation;
     if(capacity!=Capacity::NoAttempt&&(!allocation.bind(source,world,capacity)||
        !check(!allocation.bridge.try_once(source,world,view,&error),"unpaid frame cannot touch class3")))return false;
@@ -225,7 +258,8 @@ int main(int argc,char** argv){
               view.load(files,art,render,&error),"shared headless renderer and stage"))return 1;
     if(!trial(files,art,ground,view,library,5,false)||!trial(files,art,ground,view,library,1,false)||
        !trial(files,art,ground,view,library,5,true,Capacity::Available))return 1;
-    for(auto capacity:{Capacity::Available,Capacity::NoDescriptor,Capacity::NoCarrier,Capacity::BothFull})
+    for(auto capacity:{Capacity::Available,Capacity::InstallHeader,Capacity::StaleHeader,
+                       Capacity::NoDescriptor,Capacity::NoCarrier,Capacity::BothFull})
         if(!trial(files,art,ground,view,library,5,false,capacity))return 1;
-    std::printf("native neutral-B trial: %u checks PASS; one rootless class3 outcome, no beam header or child\n",checks);
+    std::printf("native neutral-B trial: %u checks PASS; paid class3 header, no initializer or child\n",checks);
 }

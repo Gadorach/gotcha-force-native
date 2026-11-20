@@ -25,8 +25,18 @@ int main(){
     check(!normal_gred_beam_first_dispatch(red,factory,1,0x0615,R::Unobserved,&init),"no dispatch after refusal");
     check(normal_gred_beam_factory_plan(red,paid,true,R::Allocated,&factory)&&factory.propose_header&&
         factory.active00==1&&factory.type10==2&&factory.argument11==43&&factory.parent_slot==3&&factory.credit_slot==3&&
-        factory.copied_model94==0x0615&&factory.update0c==0x800c3cdc&&factory.draw10c==0x800c4468,
-        "header proposal only on allocated sample");
+         factory.copied_model94==0x0615&&factory.update0c==0x800c3cdc&&factory.draw10c==0x800c4468,
+         "header proposal only on allocated sample");
+    GRedBeamFactoryParentFields parent{0x0615,5,2,0,0xa5,.75f,1.25f,1.5f,.25f,true};
+    GRedBeamFactoryBirthFields birth;
+    check(normal_gred_beam_factory_birth_fields(red,factory,parent,&birth)&&
+          birth.copied.flags_d0==0xa5&&birth.copied.render_index96==5&&birth.copied.resource_index97==2&&
+          birth.copied.scale_b8==.75f&&birth.copied.physical_c0==1.5f&&birth.copied.relative_c4==.25f&&
+          birth.scale58==std::array<f32,3>{1.25f,1.25f,1.25f}&&birth.targets_c8_cc_null&&
+          birth.parent8c_slot==3&&birth.credit90_slot==3,"exact direct constructor copies, with B4 alone filling the visual scale");
+    parent.declared_direct_no_target=false;
+    check(!normal_gred_beam_factory_birth_fields(red,factory,parent,&birth)&&birth.copied.flags_d0==0xa5,
+          "undeclared target custody leaves the prior proposal intact");
     check(normal_gred_beam_first_dispatch(red,factory,2,0x0615,R::Unobserved,&init)&&
         init.route==I::RetireCredit&&!init.request_shape&&init.phase18==2&&!init.lifetime1c,"defeated credit before init");
     check(normal_gred_beam_first_dispatch(red,factory,1,0x000a,R::Unobserved,&init)&&

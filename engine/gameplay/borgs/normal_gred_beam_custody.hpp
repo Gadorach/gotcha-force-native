@@ -40,6 +40,32 @@ inline bool normal_gred_beam_factory_plan(NormalGRedNeutralBSource source,const 
     *out=next;return true;
 }
 
+struct GRedBeamFactoryParentFields {
+    u16 model94=0;
+    u8 render_index96=255,resource_index97=255,team88=255,flags_d0=0;
+    f32 scale_b8=0,scale_b4=0,physical_c0=0,relative_c4=0;
+    bool declared_direct_no_target=false;
+};
+struct GRedBeamFactoryBirthFields {
+    GRedBeamFactoryParentFields copied;
+    std::array<f32,3> scale58{};
+    u8 parent8c_slot=255,credit90_slot=255;
+    bool targets_c8_cc_null=false;
+};
+// C3C48..C3CC0 copies the parent fields, with only B4 filling 58/5C/60.
+// Slot names describe the direct case; they are not source addresses or
+// an actor lifetime. The caller supplies the actor and allocation ownership.
+inline bool normal_gred_beam_factory_birth_fields(NormalGRedNeutralBSource source,const GRedBeamFactoryPlan& factory,
+    const GRedBeamFactoryParentFields& in,GRedBeamFactoryBirthFields* out){
+    if(!out||!source.reviewed()||!factory.propose_header||factory.active00!=1||factory.type10!=2||factory.argument11!=43||
+       factory.parent_slot!=source.slot||factory.credit_slot!=source.slot||factory.copied_model94!=source.model||
+       factory.call!=gred_beam_custody_detail::beam(source.slot)||factory.update0c!=0x800c3cdc||factory.draw10c!=0x800c4468||
+       !in.declared_direct_no_target||in.model94!=source.model||in.render_index96>=6||in.resource_index97>=6||in.team88!=0)return false;
+    for(f32 value:{in.scale_b8,in.scale_b4,in.physical_c0,in.relative_c4})
+        if(!std::isfinite(value)||value<=0||value>16)return false;
+    *out={in,{in.scale_b4,in.scale_b4,in.scale_b4},source.slot,source.slot,true};return true;
+}
+
 enum class GRedBeamInitRoute:u8 {RetireCredit,AwaitRegistration,RetireRegistration,MuzzleBranch};
 struct GRedBeamInitPlan {
     GRedBeamInitRoute route=GRedBeamInitRoute::RetireCredit;

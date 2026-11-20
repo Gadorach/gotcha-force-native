@@ -3,10 +3,10 @@
 #include "engine/gameplay/scene_physical_pools.hpp"
 
 namespace gf {
-enum class GRedClass3TrialStatus {AwaitPaidFrame,Failed,NoDescriptors,NoCarrier,Allocated,Released};
+enum class GRedClass3TrialStatus {AwaitPaidFrame,Failed,NoDescriptors,NoCarrier,Allocated,HeaderInstalled,Released};
 
-// Opt-in native lab bridge. A successful lease owns a class-3 cell and one
-// descriptor in the shared physical allocator, not an active projectile.
+// Opt-in native lab bridge. Owns a class-3 slot and its constructor fields,
+// but does not dispatch an initializer, create a child or register a callback.
 class NativeGRedClass3TrialBridge {
 public:
     NativeGRedClass3TrialBridge()=default;
@@ -55,6 +55,7 @@ public:
             if(!record||!models||record->class02!=3||record->kind83!=call.kind83||record->group01!=call.resolved_group||
                record->active00||models->header_installed||models->descriptor_count99!=call.descriptors)
                 return refuse(error,"allocated record does not match the rootless factory");
+            handoff_=std::move(handoff);
             status_=GRedClass3TrialStatus::Allocated;
         }
         factory_=factory;
@@ -65,6 +66,35 @@ public:
     // Read-only inspection; the factory plan is not an installed header.
     const SceneClass3Lease& lease()const{return lease_;}
     const GRedBeamFactoryPlan& factory()const{return factory_;}
+    bool install_trial_header(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                              const NativeBattleMvpView& view,std::string* error){
+        const auto pool=pool_.lock();
+        const auto owner=trial_.lock();
+        GRedBeamPoolCall call;
+        if(!pool||status_!=GRedClass3TrialStatus::Allocated||header_attempted_||!owner||
+           owner!=source.allocation_trial_owner(world)||world.paused()||!source.current(world)||
+           !handoff_.inspect(world,view,&call)||call!=factory_.call||!source.factory_parent_)
+            return refuse(error,"current paid caster, rootless carrier and declared parent fields required");
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedBeamFactoryBirthFields birth;
+        if(source.factory_parent_->model94!=world.actors()[0].model||
+           !normal_gred_beam_factory_birth_fields(red,factory_,*source.factory_parent_,&birth))
+            return refuse(error,"exact no-target parent fields required");
+        header_attempted_=true;
+        if(!pool->install_trial_beam_header(lease_))return refuse(error,"class3 header ownership refused");
+        birth_=birth;status_=GRedClass3TrialStatus::HeaderInstalled;
+        if(error)error->clear();
+        return true;
+    }
+    // The direct parent and credit are still the bound trial owner, not an
+    // inferred pointer from either numeric slot in the copied fields.
+    const GRedBeamFactoryBirthFields* installed_trial_birth(const NativeGRedNeutralBTrial& source,
+        const NativeBattleMvp& world,const NativeBattleMvpView& view)const{
+        const auto pool=pool_.lock();const auto owner=trial_.lock();GRedBeamPoolCall call;
+        if(!birth_||status_!=GRedClass3TrialStatus::HeaderInstalled||!pool||!pool->inspect(lease_)||
+           !owner||owner!=source.allocation_trial_owner(world)||!handoff_.inspect(world,view,&call))return nullptr;
+        return &*birth_;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -77,11 +107,13 @@ private:
         if(error)*error=std::string("G-Red class3 trial: ")+why;
         return false;
     }
-    bool bound_=false;
+    bool bound_=false,header_attempted_=false;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     std::weak_ptr<const NativeBorgMotionProducer> trial_;
     std::weak_ptr<SceneObjectPool> pool_;
     SceneClass3Lease lease_;
     GRedBeamFactoryPlan factory_;
+    NativeGRedTrialBeamHandoff handoff_;
+    std::optional<GRedBeamFactoryBirthFields> birth_;
 };
 }

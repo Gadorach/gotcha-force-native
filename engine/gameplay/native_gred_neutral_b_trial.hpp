@@ -41,7 +41,8 @@ class NativeGRedNeutralBTrial {
 public:
     bool begin(IFileSystem& files,const std::string& art,const std::string& ground_inputs,
                const NativeBattleMvp& world,const NativeBorgAnimationSeed& seed,
-               const GRedNeutralBLocalLibrary& library,s16 declared_rounds,std::string* error){
+               const GRedNeutralBLocalLibrary& library,s16 declared_rounds,std::string* error,
+               const GRedBeamFactoryParentFields* declared_factory_parent=nullptr){
         retire();
         if(!library.ready()||declared_rounds<1||declared_rounds>5||world.tick()||
            world.shots_spawned()||world.hits()||!stationary_duel(world))return fail(error,"fresh stationary world and declared trial stock required");
@@ -64,6 +65,9 @@ public:
                 return fail(error,"exact local idle lanes required");
         }
         stock_={declared_rounds,declared_rounds,180,0};
+        // MVP does not carry these source offsets. Keep an explicit owned
+        // lab sample; never infer one from the render matrices or the slot.
+        if(declared_factory_parent)factory_parent_=*declared_factory_parent;
         initial_=world.actors();ready_=true;if(error)error->clear();return true;
     }
     bool prepare(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& binding,
@@ -139,7 +143,7 @@ public:
         next.call_=request.call;handoff_taken_=true;
         *out=std::move(next);return true;
     }
-    void retire(){ready_=opening_=handoff_taken_=false;ground_.reject();pending_.reset();paid_.reset();}
+    void retire(){ready_=opening_=handoff_taken_=false;ground_.reject();pending_.reset();paid_.reset();factory_parent_.reset();}
 private:
     std::shared_ptr<const NativeBorgMotionProducer> allocation_trial_owner(const NativeBattleMvp& world)const{
         return ready_&&world.owns_motion_scope(ground_.world_scope_)?ground_.producer_:nullptr;
@@ -173,6 +177,7 @@ private:
     WeaponStockModeZeroState stock_;
     std::optional<Pending> pending_;
     std::optional<GRedNeutralBReleasePlan> paid_;
+    std::optional<GRedBeamFactoryParentFields> factory_parent_;
     f32 aim_clock_=30;
     bool ready_=false,opening_=false,handoff_taken_=false;
 };

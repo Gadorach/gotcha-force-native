@@ -1084,9 +1084,26 @@ banks are full, descriptor refusal wins. The host also checks rootless
 release and stale-lease refusal. **4,775** host checks passed in both
 native and sanitizer builds.
 
-The resulting factory header is still a proposal. No actor-field
-copy, class-4 child initialization, matrix read, or registry publication
-is implied by that lease. The playable duel is unchanged.
+#### Class-3 trial header
+
+The stationary trial can install the type-2/argument-43 header on its
+exact class-3 lease. It first verifies that the paid renderer
+publication and bound direct parent/credit owner are still current.
+It copies declared trial inputs for the source render/resource indices,
+team, `B8/B4/C0/C4` and `D0` fields; it does not guess those fields from
+the identity of the MVP actor or its matrix. Only `B4` fills the three
+visual-scale fields. `C8/CC` remain null in this scope.
+
+Republishing the same tick or leaving the parent inputs undeclared
+refuses the write. The installed header refuses rootless cleanup.
+The callback address is stored, but the initializer is not
+dispatched. No class-4 child, render registration, matrix read,
+registry publication, or duel behavior is added.
+
+**2,592** bounded constructor-copy comparisons matched the original
+code. The native trial passes **5,000** checks in normal and sanitizer
+builds, including missing or stale parent input and duplicate-write
+refusals.
 
 ### Argument 43: authored beam art
 
