@@ -793,6 +793,13 @@ hit outcomes, live interruption and effect lifetime remain unverified.
 [Wiki lead: Drop](https://gotchaforce.fandom.com/wiki/Death_Bomb?oldid=6657).
 No actor was admitted.
 
+The detached Death Bomb planner shares only the verified game-impact
+and terminal-consumer gates with Death ICBM. Entry code, ordinary
+fall steering, stockless Drop and history restore stay model-specific.
+It matched **191 bounded source cases**; all **142** preceding Death ICBM
+comparisons still match after sharing the gate. No live motion,
+world query, impact object, or damage is applied.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
