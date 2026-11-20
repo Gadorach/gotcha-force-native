@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include "engine/gameplay/neutral_shot_release_gate.hpp"
 #include "engine/gameplay/weapon_stock_mode_zero.hpp"
 
 namespace gf {
@@ -52,20 +53,12 @@ inline bool normal_gred_neutral_b_vm_step(NormalGRedNeutralBSource source,u8 pre
     if(!vm_step||!source.reviewed()||!std::isfinite(actor_step)||actor_step<0||actor_step>16)return false;
     *vm_step=pre_vm_event1cef?0.f:actor_step;return true;
 }
-struct GRedNeutralBReleaseGate {
-    u8 slot=0,phase540=1;
-    f32 aim_clock560=0;
-    bool release_due=false;
-};
+using GRedNeutralBReleaseGate=NeutralShotReleaseGate<NormalGRedNeutralBSource>;
 // After the VM/aim visit; uses the restored actor step and observes the
 // current cue. A timeout alone cannot fire. This isn't a VM or hit receipt.
 inline bool normal_gred_neutral_b_release_gate(NormalGRedNeutralBSource source,u8 post_vm_event1cef,
                                                bool aim_pass,f32 aim_clock560,f32 actor_step,GRedNeutralBReleaseGate* out){
-    if(!out||!source.reviewed()||!std::isfinite(aim_clock560)||aim_clock560< -8192.f||aim_clock560>30.f||
-       !std::isfinite(actor_step)||actor_step<0||actor_step>16)return false;
-    const f32 left=aim_pass?aim_clock560:f32(aim_clock560-actor_step);
-    const bool due=post_vm_event1cef&&(aim_pass||left<=0);
-    *out={source.slot,u8(due?2:1),left,due};return true;
+    return neutral_shot_release_gate(source,post_vm_event1cef,aim_pass,aim_clock560,actor_step,out);
 }
 struct GRedNeutralBReleasePlan {
     WeaponStockModeZeroState stock;

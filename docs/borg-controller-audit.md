@@ -929,6 +929,14 @@ damage, repeat length and interruption order remain unverified. The
 native duel's provisional shot policy is unchanged.
 [Wiki lead: Shuriken](https://gotchaforce.fandom.com/wiki/Sasuke?oldid=6766).
 
+The detached Sasuke planner shares only the post-VM aim/cue calculation
+with G-Red. The gate result types remain model-specific, and Sasuke keeps
+its own split pose requests, VM skip, attempt count, and grounded repeat
+or cleanup request. A refused debit still uses a local attempt, and a
+repeat request does not itself spend stock. **114** Sasuke source cases
+matched, and all **169** G-Red comparison cases still matched. No live
+allocator, VM, or contact handler is connected to this planner.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
