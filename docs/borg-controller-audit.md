@@ -818,6 +818,13 @@ animation/contact windows, final damage and interruption remain
 unverified. [Wiki lead: Ninpo Full Throttle](https://gotchaforce.fandom.com/wiki/Acceleration_Ninja?oldid=6692).
 No actor was admitted.
 
+The detached Acceleration Ninja helper proposes separate stance clocks,
+fresh-edge exits, trail updates, and actor-bound shape requests. Shape
+activation uses the reviewed lane's progress; a changed program or
+retiring carrier can remove the old shape independently. The native
+comparison matched **119** bounded cases. No live motion, VM, collider,
+damage, trail, or actor is published.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
