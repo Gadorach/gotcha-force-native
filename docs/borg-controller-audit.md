@@ -881,6 +881,12 @@ hit timing, close/air actions and interruption ordering remain unverified.
 [Wiki lead: Spirit Shot](https://gotchaforce.fandom.com/wiki/Kung-Fu_Master?oldid=6583).
 No actor gained admission.
 
+The detached Kung-Fu planner models the scoped request priority,
+check-only stock, exact release cue and separate hand presentation.
+The shared mode-1 refill visit preserves a negative overshoot when it
+restores the cap, unlike mode 0. It matched **121 bounded source cases**.
+No class VM, projectile allocation, hit test or actor update is wired.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
