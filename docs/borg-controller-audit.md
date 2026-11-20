@@ -1162,6 +1162,30 @@ zero HP skips the write, even if the amount was computed. This is a
 detached numeric proposal: live table selection, collider admission,
 credit statistics, reactions and KO dispatch are not joined.
 
+The local `GFDA` profile now supplies the nine coefficient rows for
+the declared level-zero, unbuffed 0/1-team scope. The bound entry
+selects factors from the declared HP **history**, force numerators
+and caps, difficulty, rank, and tier. It applies the source receiver
+projection (`max(0, history - 20)`) before choosing its HP row.
+History is separate from the HP value the writer would change. Missing
+tables or out-of-scope selectors refuse rather than substituting unit
+factors. The explicit zero branches still bypass table lookup.
+
+Run the detached amount fixture from the repository root with `DOL`
+set to the qualified executable:
+
+```sh
+work=$(mktemp -d)
+python3 -B -m tools.extract.gred_sasuke_damage "$DOL" "$work/ordinary.gfda"
+c++ -std=c++20 -O1 -I . tests/host/gred_sasuke_damage_replay.cpp -o "$work/damage-replay"
+"$work/damage-replay" "$work/ordinary.gfda"
+```
+
+The 600-byte profile stays local. The fixture still declares the
+ordered pair and scalar inputs; it reproduces `180 -> 161` without
+detecting an overlap or writing live HP. **1,178** comparisons matched
+the exact coefficient reads and bounded original HP fragments.
+
 ## Sasuke: original neutral B and paid repeat
 
 Exact normal **Sasuke `GG4E08:000A/0`** is catalogue #2, AFS member 495.
