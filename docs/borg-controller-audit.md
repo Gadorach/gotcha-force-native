@@ -117,6 +117,22 @@ ordinary ground launch → air relaunch → dash → landing witness. Keep exact
 stage contact, accepted input, both pose clocks, the used count and display
 state in the same trace before enabling Sasuke practice.
 
+The detached `normal_sasuke_air_relaunch_request` checks only the reviewed
+count-based leaves for falling, dash recovery and active dash. It emits a
+candidate selector without touching the count. The shared air-point entry
+component proposes changes only for an explicitly entered ascent, relaunch
+or dash wind-up. It models the zero seed as a policy, not a rule for every
+Borg. It uses the existing shared grounded recovery for the reset, and the
+gauge readout exposes draw-ready/remaining only, not fade, binding or draw
+state. No gameplay or picker code calls these new components.
+
+Native results matched the qualified source fragments on **258** cases:
+144 relaunch requests, ten entry writes, 72 ordinary recovery updates
+and 32 gauge observations. Inputs were synthetic, including cached-airborne
+samples, full or partial counts, and an actor-suppression bit. The comparison
+does not establish who owns the actual current actor, the input/pose/contact
+handoff, or how a gauge is drawn.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records

@@ -19,6 +19,46 @@ struct AirMeterRules {
         return limit==source_limit&&delay==source_delay&&increment==source_increment&&costs==source_costs;
     }
 };
+
+// Count-based movement uses the signed source byte at 747, not meter 736
+// or recovery delay 73A. Only bounded, nonnegative in-play counts are modeled.
+struct AirPointRules {
+    u8 limit=0;
+    bool seed_on_dash_windup=false;
+    constexpr bool accepts(u8 used)const{return limit&&limit<=127&&used<=limit;}
+    constexpr bool has_point(u8 used)const{return accepts(used)&&used<limit;}
+};
+enum class AirPointEntry:u8 {Ascent,Relaunch,DashWindup};
+
+// Compute a candidate for an explicitly entered lower state, not a request.
+// The caller still owns movement/pose acceptance and publication of 747.
+inline bool character_air_point_entry(const AirPointRules& rules,u8 used,AirPointEntry entry,u8* out){
+    if(!out||!rules.accepts(used))return false;
+    switch(entry){
+    case AirPointEntry::Ascent:case AirPointEntry::Relaunch:
+        if(!rules.has_point(used))return false;
+        *out=u8(used+1u);return true;
+    case AirPointEntry::DashWindup:
+        *out=(!used&&rules.seed_on_dash_windup)?1:used;return true;
+    }
+    return false;
+}
+
+struct AirPointGaugeReadout {
+    bool draw_ready=false;
+    u8 remaining=0; // only meaningful when draw-ready
+    bool operator==(const AirPointGaugeReadout&)const=default;
+};
+
+// Count-gauge producer's immediate readout, not cached animation/fade state,
+// ownership lookup, view gating, or a draw call.
+inline bool character_air_point_gauge(const AirPointRules& rules,u8 used,bool actor_suppressed,AirPointGaugeReadout* out){
+    if(!out||!rules.accepts(used))return false;
+    AirPointGaugeReadout next;
+    if(used&&!actor_suppressed)next={true,u8(rules.limit-used)};
+    *out=next;return true;
+}
+
 inline s16 character_air_resource_narrow(s32 value){return std::bit_cast<s16>(u16(value));}
 //Shared5568C resource branch. Cached87 is the PREVIOUS accepted post-update's
 //airborne bit, not a newly sampled grounded flag or an animation classification.
