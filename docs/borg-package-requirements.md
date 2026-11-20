@@ -217,6 +217,11 @@ shows why the entry cost, animation-gated commit, and guarded expiry return
 must be separate. The same actor can retain its selected variant while the
 form changes the movement limit and reinitializes stock. The full transfer and
 interruption rules still need their own evidence.
+The [Titan Robot audit](borg-controller-audit.md#normal-titan-robot-cyclic-form-and-the-separate-titan-tank)
+adds a contrasting completion-gated cycle, without an observed lifespan or
+transformation debit. Its internal tank form and retail Titan Tank must
+resolve to different selection identities; a shared-looking model or body
+bank does not substitute the other Borg's controller or moves.
 
 The [standalone forms check](borg-packages.md#standalone-gameplay-form-check)
 validates these declarations, including a temporary form's independent return

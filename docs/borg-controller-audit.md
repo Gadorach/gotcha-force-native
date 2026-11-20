@@ -305,6 +305,44 @@ steps, 32 rebind prefixes, two form-data observations and the timer seed.
 The helper does not run the stock owner, schedule an action, rebind pose or
 collision data, publish a form, or infer interrupted state transfer.
 
+## Normal Titan Robot: cyclic form and the separate Titan Tank
+
+| Source identity | Retail and form boundary |
+| --- | --- |
+| `GG4E08:0604/0` | Titan Robot, collection #166, AFS member 578. |
+| `0605`, carried normal wrapper | Titan Robot's in-battle tank form. It selects the second actor-data block in member 578 and is not a second collection entry or a color variant. |
+| `GG4E08:0619/0` | Retail Titan Tank, collection #66, AFS member 591. It has its own normal art and motion bank and a distinct X weapon route. |
+
+[Wiki leads: Titan Robot](https://gotchaforce.fandom.com/wiki/Titan_Robot?oldid=6455)
+and [Titan Tank](https://gotchaforce.fandom.com/wiki/Titan_Tank?oldid=6437)
+name the Transform and Javelin Shot moves; the identity and dispatcher
+distinctions above come from source data and branch checks.
+
+- **Selected cycle:** An admitted fresh conditioned X pulse goes through
+  group 2 and chooses class state 2 in both `0604` and `0605`. Neither ordinary
+  direction spends a transformation charge. Both checked floor-result
+  branches choose program `4:0` and the opposite model; the model ID is
+  staged in `548`, not a lifespan clock. Both directions wait for lower
+  completion before the in-place rebind. No Gold Hero-style expiry was
+  found on this cycle.
+- **Return exceptions:** An exact `0605` callback with `5E0 & 0x02000000`
+  requests `0604`; `0619` does not take that branch. A separate class
+  state-1 leaf can also rebind to `0604`, but its live trigger and
+  priority are not joined. Neither is evidence that all stagger or
+  defeat conditions revert the form.
+- **Controller and stock:** The cycle changes movement type **0 ↔ 1**,
+  disables Robot-only selector rows in tank form, and rebinds its own
+  pose inputs. The variant and actor storage survive the rebind prefix;
+  shared stock setup runs again from the destination data. Retail
+  `0619` uses a different X action and requests channel-2 stock debit
+  in the checked weapon leaf, not an X transformation.
+
+All **43 bounded offline cases** matched. They supplied contact and
+completion results, so they do not verify input priority in a live frame,
+full state transfer, actor/collider rebinding, interruption before commit,
+or the actual retail Tank projectile. Verify both directions and the
+flagged return independently; do not reuse the result for Proto Titan.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
@@ -317,8 +355,8 @@ heading. No missing row inherits another Borg's rules.
 Priorities are a normal Sasuke input/launch/dash/landing witness, an exact
 Blue Striker boost cycle, and independent Wing/Angel floor-height and
 Satellite placement traces. Then compare more same-tribe members and sample
-individual class action guards, stock and effects. Verify Gold Hero's live
-form handoff, other temporary forms, vehicle/robot toggles, copy effects, and
+individual class action guards, stock and effects. Verify Gold Hero's and
+Titan Robot's live form handoffs, other form transitions, copy effects, and
 Galactic Emperor's special starts independently.
 [Wiki lead: battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
 Battle fusion is a separate two-owner transition, not collection assembly.
