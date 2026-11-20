@@ -27,9 +27,10 @@ The current implementation work remains scoped to normal G-Red.
 - Transformations may change movement family. Which resource state survives a
   transformation, and which contact/boost producer owns it, remain unverified.
 
-The [representative source audit](borg-controller-audit.md) verified Blue
-Striker's refill gate when boost is inactive. The [normal Sasuke
-follow-up](borg-controller-audit.md#normal-sasuke-air-points-and-hud) verified
+The [normal Blue Striker follow-up](borg-controller-audit.md#normal-blue-striker-cruise-boost-and-hud)
+verified that refill checks boost inactivity before selector changes.
+This does not mean an open-flight actor never probes the floor. The [normal
+Sasuke follow-up](borg-controller-audit.md#normal-sasuke-air-points-and-hud) verified
 his three-point limit, the conditional zero-to-one wind-up write, the later
 grounded reset, and the HUD's hidden-at-zero-used rule. It did not establish
 dash height over a complete route, minimum-hover-height contact/reset, or

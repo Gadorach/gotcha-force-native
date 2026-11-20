@@ -71,13 +71,12 @@ nothing, not the `-1` sentinel for an unavailable lane. Tables compare
 - **Resources and contact:** Sasuke uses a three-point count, separate from
   G-Red's meter. His [exact normal follow-up](#normal-sasuke-air-points-and-hud)
   distinguishes request, spend, ground reset and HUD update.
-- **Flight:** Blue Striker's boost sets the flag used by its refill gate;
-  refill checks boost inactivity, not floor contact. Wing Soldier and Quick
-  Valkrie have offset floor probes, but the minimum-hover-height contact
-  and reset behavior still need witnesses. Beam Satellite's ordinary idle
-  and disabled jump selectors do not prove fixed height or immunity to
-  displacement. [Wiki leads: Blue Striker](https://gotchaforce.fandom.com/wiki/Blue_Striker?oldid=6731),
-  [Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425)
+- **Flight:** [Blue Striker's exact normal follow-up](#normal-blue-striker-cruise-boost-and-hud)
+  separates boost inactivity from ground recovery. Wing Soldier and Quick
+  Valkrie have offset floor probes, but minimum-hover-height contact and
+  reset behavior still need witnesses. Beam Satellite's ordinary idle and
+  disabled jump selectors do not prove fixed height or immunity to
+  displacement. [Wiki leads: Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425)
   and [Beam Satellite](https://gotchaforce.fandom.com/wiki/Beam_Satellite?oldid=6725).
 - **Pose and actions:** Roach has an empty local bank and sampled lane-control
   programs; Blue Striker and Beam Satellite have empty banks and null local
@@ -132,6 +131,33 @@ and 32 gauge observations. Inputs were synthetic, including cached-airborne
 samples, full or partial counts, and an actor-suppression bit. The comparison
 does not establish who owns the actual current actor, the input/pose/contact
 handoff, or how a gauge is drawn.
+
+## Normal Blue Striker: cruise, boost and HUD
+
+This follow-up is scoped to `GG4E08:0D00/0`, AFS member 672. Source movement
+type 3 and policy 1 are distinct observations: sharing policy 1 with G-Red
+does not imply the same refill gate. [Wiki lead: Blue Striker](https://gotchaforce.fandom.com/wiki/Blue_Striker?oldid=6731).
+
+| Event | Ordinary source branch |
+| --- | --- |
+| Enter boost | Cruise selects boost (28) from a fresh conditioned airborne press, clear input lock and positive meter (`80069860`). A held button without a new pulse is not a request. The upper state for these movement selectors is a no-op, not an unavailable lane. |
+| Stay in boost | Each lower boost-handler invocation calls the debit helper and sets the boost flag (`80063644`). Positive meter subtracts `50 × 5F4` and sets refill delay 16; the helper leaves already-empty meter and its delay alone. The phase clock starts at 30 source units and opens the exit latch, not an automatic timeout into cruise. |
+| Exit to cruise | The exit leaf requires the latch and then accepts release or a nonpositive meter (`800698C0`). Entering cruise (27) clears the boost flag. The earlier refill pass can still see the old boost flag on that update. |
+| Refill | Before selection, type 3 checks the boost flag, not ground or airborne status (`80055AA8`). Inactive passes decrement a nonzero delay without adding fuel, including the `1 → 0` pass. From delay 16, the first 16 eligible visits only count it down; the next can add 50 up to 10000. These are branch visits, not elapsed seconds or a guaranteed frame count. |
+| HUD | The meter gauge reads live meter and bound actor capacity (`80013CEC`). It submits `1 − f32(meter / capacity)` and is not draw-ready at full. Empty yields sample 1, subject to actor suppression and view gates. No pixel output was verified. |
+
+Cruise and boost both run vertical motion and can call the floor probe. A
+checked null-continuation snap adjusted Y without selecting landing or
+resetting the meter. That isolated response does not prove when a live
+contact occurs, fixed altitude, ordinary landing, or ally boarding.
+
+The qualified DOL audit matched **294 synthetic branch cases and one staged
+scalar sequence**. The staged sequence checked refill before entry, held
+depletion, exit after a supplied latch clock, 16 delay-only visits and the next
+increment. It did not run an actor frame, integrate a route or draw the HUD.
+To qualify the ordinary cycle, witness entry and release on both sides of the
+latch plus held depletion with exact source input, clock, meter and flag
+observations. Qualify floor and boarding behavior separately.
 
 ## Package implications and next checks
 
