@@ -825,6 +825,29 @@ retiring carrier can remove the old shape independently. The native
 comparison matched **119** bounded cases. No live motion, VM, collider,
 damage, trail, or actor is published.
 
+## Demon Samurai and Normal Samurai: shared slash, different shapes
+
+Exact normal **Demon Samurai `GG4E08:0701/0`** (#186, AFS member 607)
+and **Normal Samurai `GG4E08:0700/0`** share all 48 selector pairs and
+a three-use jump count. Some movement parameters differ, and the
+verified X route is not Normal Samurai's previously audited close B.
+
+Neutral X selects the shared slash driver without spending stock or
+changing model or variant. The driver uses each Borg's own record and
+programs. In the checked neutral route, program `4:1` requests group 7:
+**three actor-bound capsules** for Demon Samurai, **one actor-bound
+sphere** for Normal Samurai. Their later group-8 shape sets and visual
+cue timing also differ. A visual child or trail does not carry those
+hits; the collision resolver supplies the actual receiver, not the
+press-time aim target.
+
+The inspected control branches use posture, animation progress and
+fresh button edges. [Random Slash](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580)
+is the archive's move name; no RNG-based choice was verified in this
+route. All **249 bounded offline cases** matched. Live pose timing,
+contact, damage and interruption remain unverified. No actor gained
+admission.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
