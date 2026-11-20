@@ -18,7 +18,7 @@ struct WeaponStockPlan {
     bool operator==(const WeaponStockPlan&)const=default;
 };
 
-// Bounded modes 0/1/2 of the shared 6DBE0 operand branch. The caller owns the
+// Bounded modes 0/1 and the shared mode-2/3 clear branch of 6DBE0. The caller owns the
 // declared channel/mode. This does not tick a reload or mutate any live actor.
 inline bool weapon_stock_plan(const WeaponStockState& in,WeaponStockRefillMode mode,WeaponStockOperation operation,
                               s16 amount,WeaponStockPlan* out){

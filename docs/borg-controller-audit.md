@@ -680,6 +680,14 @@ pages provide the move names. All **169 bounded offline cases** matched.
 Registration and raw hit rows do not establish live overlap, final damage,
 or combo hit count. No action, live guard, or actor gained admission.
 
+The detached Knight/Samurai helpers separate the conditioned request, shield
+arming and launch, owner-stock hook, direct melee group, and presentation.
+The Knight launch carries a separate post-factory latch write; it does not
+assume the factory succeeded or refund stock. Samurai's visual request
+never replaces its actor-owned shapes. The native comparison matched
+**106 bounded cases** across requests, shield events/stock, and melee and
+presentation masks. No collider, stock or actor is changed live.
+
 ## Package implications and next checks
 
 The [controller sidecar](borg-packages.md#standalone-controller-check) records
