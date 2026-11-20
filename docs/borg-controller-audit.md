@@ -1076,6 +1076,30 @@ query outcomes. The proposals neither run the scene queries nor activate
 or remove shapes; targeted steering and modifier-dependent update tails
 remain out of scope.
 
+### Argument 43: stopping, hiding, and releasing the carrier
+
+The phase-1 stop writes `1D8`; that marks the class-4 child for its
+own `8A65C` retirement visit. It does not free the class-3 carrier.
+Phase 2 (`C426C`) dispatches by marker: 0 hides immediately; 1
+retracts `184` by the current speed without moving the position;
+2 drifts by the **stored** motion vector while raising the scalar
+speed and fading `B4`. This last branch updates visual scale but
+does not rewrite the physical `C0/C4`.
+
+Hiding writes phase 3 and clears `82`. On that update an existing
+late `C44A8` registration can still write the affine matrix, including
+the negative axial scale from the final retract. This is not active
+collider geometry. The later phase-3 callback is what asks `88E50` to
+unlink the carrier, drop its descriptor/registration and return the
+slot. No native allocation or release is acknowledged here.
+
+**3,841** bounded dispatcher cases matched, including **1,280**
+late-frame and child-stop checks. The comparison used aligned
+distance fixtures with host vector math and stopped at pool release.
+Live retirement must still join the actual child, callback
+registration, descriptor and carrier leases; none can be inferred
+from a phase, visibility byte, or matrix.
+
 ### Argument 43: static stage segment
 
 `84170` clips the current and previous endpoints separately, in X-then-Z

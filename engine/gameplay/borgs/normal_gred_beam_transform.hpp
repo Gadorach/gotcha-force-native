@@ -41,16 +41,12 @@ struct GRedBeamTransformPlan {
     Mat4 frame114;
     GRedBeamBasisRoute basis=GRedBeamBasisRoute::UpReference;
 };
-// C44A8 uses current20-origin174, not motion38. It tries the shared
-// 45EF4 mode 5/+Y recipe, then mode 4/+X. If neither writes columns,
-// the source still applies its explicit scales to the retained basis.
-// This is a numeric candidate, not a current scene or collider transform.
-inline bool normal_gred_beam_transform(NormalGRedNeutralBSource source,const GRedBeamFlightSample& flight,
-                                        const GRedBeamScalePlan& scale,const Mat4& prior114,GRedBeamTransformPlan* out){
+namespace gred_beam_transform_detail {
+inline bool build_frame(const GRedBeamFlightSample& flight,const std::array<f32,3>& scales,const Mat4& prior114,
+                        GRedBeamTransformPlan* out){
     using namespace source_intersection_detail;
-    using gred_beam_transform_detail::matrix;
-    if(!out||!source.reviewed()||!gred_beam_flight_detail::valid(flight)||!matrix(prior114)||
-       !valid(scale.scale58)||scale.scale58[0]<=0||scale.scale58[1]!=scale.scale58[0]||scale.scale58[2]<0)return false;
+    if(!out||!gred_beam_flight_detail::valid(flight)||!matrix(prior114)||!valid(scales)||
+       scales[0]<=0||scales[1]!=scales[0])return false;
     GRedBeamTransformPlan next;
     auto result=prior114;const auto direction=sub(flight.position20,flight.origin174);
     constexpr f32 threshold=bits_to_f32(0x2edbe6feu);
@@ -60,9 +56,19 @@ inline bool normal_gred_beam_transform(NormalGRedNeutralBSource source,const GRe
         if(!source_basis_detail::basis(4,direction,{1,0,0},threshold,&result,&built))return false;
         next.basis=built?GRedBeamBasisRoute::SideReference:GRedBeamBasisRoute::Retained;
     }
-    next.frame114=mat4_multiply(result,mat4_scale(scale.scale58.data()));
+    next.frame114=mat4_multiply(result,mat4_scale(scales.data()));
     for(unsigned i=0;i<3;++i)next.frame114.at(i,3)=flight.position20[i];
     if(!matrix(next.frame114))return false;
     *out=next;return true;
+}
+}
+// C44A8 uses current20-origin174, not motion38. It tries the shared
+// 45EF4 mode 5/+Y recipe, then mode 4/+X. If neither writes columns,
+// the source still applies its explicit scales to the retained basis.
+// This is a numeric candidate, not a current scene or collider transform.
+inline bool normal_gred_beam_transform(NormalGRedNeutralBSource source,const GRedBeamFlightSample& flight,
+                                         const GRedBeamScalePlan& scale,const Mat4& prior114,GRedBeamTransformPlan* out){
+    return source.reviewed()&&scale.scale58[2]>=0&&
+        gred_beam_transform_detail::build_frame(flight,scale.scale58,prior114,out);
 }
 }
