@@ -1015,11 +1015,20 @@ frame opens the shot; the fixture reaches the cue on native tick 17.
 Both a full-stock and last-round trial stop after that single request.
 Pause retains the last accepted pose and stock. A mismatched offer
 serial cannot publish the pending release, even if the same native
-position was accepted. The host trial covers **272** checks.
-This uses the shared pose owner and stock
-planner, but the trial is not in the duel, pickers or Story. It does
-not resolve a live target, continue recovery/reload, allocate a beam
-or collider, apply damage, or write a save.
+position was accepted.
+
+The paid trial can hand off allocator inputs once, only after the
+same accepted pose is published by the same current renderer. That
+handoff exposes class 3, group `8` resolved to `9`, kind `16`, and one
+descriptor for slot 0. It samples no bones and supplies no allocator
+outcome. Republishing the same tick invalidates the old handoff without
+making another available. The numeric stock readout is not a handoff.
+The host trial passes **327** checks in native and sanitizer builds.
+
+The trial uses the shared pose owner and stock planner, but is not in
+the duel, pickers or Story. It does not resolve a live target, continue
+recovery/reload, allocate a beam or collider, apply damage, or write
+a save.
 
 With the same local inputs and the exported `neutral-b.gfmp` above:
 

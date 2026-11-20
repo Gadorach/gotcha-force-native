@@ -172,11 +172,13 @@ public:
         source_pose_active_=true;source_frame_scope_=source.frame_scope;presentation_ready_=true;return true;
     }
     bool observe_source_world_matrices(const NativeBattleMvp& world,NativeGRedPracticeWorldMatrices* out)const{
-        if(!out||!ready_||!presentation_ready_||!source_pose_active_||!scene_.ready()||
-           last_tick_!=world.tick()||world_.matrices.size()<=7)return false;
-        const auto owned=source_frame_scope_.lock();const auto binding=scene_.instance_binding();
-        if(!owned||!binding||owned->binding_.lock()!=binding||!world.motion_receipt_current(owned->receipt_))return false;
+        if(!out||!current_source_frame(world)||world_.matrices.size()<=7)return false;
         *out={last_tick_,world_.matrices[0],world_.matrices[7]};return true;
+    }
+    bool source_pose_published(const NativeBattleMvp& world,const NativeBorgSourcePose& pose)const{
+        const auto published=current_source_frame(world);
+        return published&&pose.frame_scope.lock()==published&&pose.binding.lock()==scene_.instance_binding()&&
+            world.motion_receipt_current(pose.receipt);
     }
     std::weak_ptr<const CharacterModelBinding> render_binding()const{return scene_.instance_binding();}
     void upload(RenderEngine& render,u32 base){scene_.upload_textures_shared(render,base);}
@@ -192,6 +194,11 @@ public:
         return any;
     }
 private:
+    std::shared_ptr<const NativeBorgSourcePoseScope> current_source_frame(const NativeBattleMvp& world)const{
+        if(!ready_||!presentation_ready_||!source_pose_active_||!scene_.ready()||last_tick_!=world.tick())return {};
+        const auto owned=source_frame_scope_.lock();const auto binding=scene_.instance_binding();
+        return owned&&binding&&owned->binding_.lock()==binding&&world.motion_receipt_current(owned->receipt_)?owned:nullptr;
+    }
     bool sample(unsigned index,f64 time,bool loop,HsdBoneMotionSample* a,HsdBoneMotionSample* b,f32* fraction,std::string* error)const{
         const auto& clip=clips_[index];const u32 length=std::max(1u,u32(clip.end_frame)+1);
         const f64 frame=loop?std::fmod(time,length):std::min(time,f64(length-1));const u32 first=u32(frame);

@@ -42,7 +42,11 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
               source.begin(files,art,ground,world,seed,library,rounds,&error),"fresh same-renderer native trial"))return false;
     NativeGRedNeutralBTrialReadout state;
     NativeGRedPracticeWorldMatrices keys;
-    if(!check(!source.observe(world,&state)&&!view.observe_gred_source_world(world,&keys),"no accepted source frame at bind"))return false;
+    NativeGRedTrialBeamHandoff handoff;
+    GRedBeamPoolCall call;
+    if(!check(!source.observe(world,&state)&&!view.observe_gred_source_world(world,&keys)&&
+              !source.take_beam_handoff(world,view,&handoff)&&!handoff.inspect(world,view,&call),
+              "no accepted source frame or handoff at bind"))return false;
     const WeaponStockModeZeroState initial{rounds,rounds,180,0};
     const auto position=world.actors()[0].position;
     const auto facing=world.actors()[0].facing;
@@ -64,18 +68,22 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
                   !view.observe_gred_source_world(world,&keys),"accepted motion precedes pose publication"))return false;
         if(frame==17&&edit_final){
             return check(!source.commit(world,view.source_binding(),&error)&&!source.observe(world,&state)&&
-                         !source.commit(world,view.source_binding(),&error)&&!world.shots_spawned()&&!world.hits(),
+                         !source.commit(world,view.source_binding(),&error)&&!source.take_beam_handoff(world,view,&handoff)&&
+                         !handoff.inspect(world,view,&call)&&!world.shots_spawned()&&!world.hits(),
                          "foreign serial cannot publish a due debit or be retried");
         }
         NativeBorgSourcePose pose;
         if(!check(source.commit(world,view.source_binding(),&error)&&source.pose(world,&pose)&&
-                  view.update_source(world,pose,&error)&&view.observe_gred_source_world(world,&keys)&&keys.tick==frame&&
+                  !source.take_beam_handoff(world,view,&handoff),
+                  "matching movement receipt alone does not hand off a factory call"))return false;
+        if(!check(view.update_source(world,pose,&error)&&view.observe_gred_source_world(world,&keys)&&keys.tick==frame&&
                   source.observe(world,&state)&&state.tick==frame&&bool(state.paid)==(frame==17),
                   "exact native receipt owns both the staged pose and source stock result"))return false;
         if(!check(world.actors()[0].position==position&&world.actors()[0].facing==facing&&
                   world.actors()[0].health==world.config().health&&world.actors()[1].health==world.config().health&&
                   !world.shots_spawned()&&!world.hits(),"trial does not move the body, shoot or write HP"))return false;
-        if(frame<17&&!check(state.stock==initial,"no debit on opening or before the release cue"))return false;
+        if(frame<17&&!check(state.stock==initial&&!source.take_beam_handoff(world,view,&handoff),
+                            "no debit or handoff on opening or before the release cue"))return false;
     }
     const WeaponStockModeZeroState after{s16(rounds-1),rounds,180,rounds==1?180.f:0.f};
     const auto& paid=*state.paid;
@@ -86,8 +94,27 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
               !source.prepare(world,view.source_binding(),camera,&blocked,&error)&&
               !world.step({},false,&view)&&source.observe(world,&state)&&state.stock==after,
               "one debit, one accepted request, and no reentry or legacy fallback"))return false;
+    NativeBattleMvpView unpublished;
+    if(!check(world.set_paused(true)&&!source.take_beam_handoff(world,view,&handoff)&&world.set_paused(false)&&
+              !source.take_beam_handoff(world,unpublished,&handoff)&&!source.take_beam_handoff(world,view,nullptr)&&
+              source.take_beam_handoff(world,view,&handoff)&&handoff.inspect(world,view,&call)&&
+              call==GRedBeamPoolCall{3,8,9,16,1,false},
+              "exact paid frame hands off argument-43 allocator inputs once; no allocation result"))return false;
+    NativeGRedTrialBeamHandoff duplicate;
+    if(!check(!source.take_beam_handoff(world,view,&duplicate)&&!duplicate.inspect(world,view,&call)&&
+              handoff.inspect(world,view,&call)&&!world.shots_spawned(),
+              "checked-out request cannot be issued again"))return false;
+    if(rounds==5){
+        NativeBorgSourcePose accepted;
+        if(!check(source.pose(world,&accepted)&&view.update_source(world,accepted,&error)&&
+                  view.observe_gred_source_world(world,&keys)&&keys.tick==17&&
+                  !handoff.inspect(world,view,&call)&&call==GRedBeamPoolCall{3,8,9,16,1,false}&&
+                  !source.take_beam_handoff(world,view,&duplicate),
+                  "a same-tick republish does not revalidate the old handoff or issue another"))return false;
+    }
     source.retire();
-    return check(!source.observe(world,&state)&&!view.observe_gred_source_world(world,&keys),"retire revokes the accepted request and renderer observation");
+    return check(!source.observe(world,&state)&&!view.observe_gred_source_world(world,&keys)&&!handoff.inspect(world,view,&call),
+                 "retire revokes the accepted request and renderer observation");
 }
 }
 
@@ -110,5 +137,5 @@ int main(int argc,char** argv){
               view.load(files,art,render,&error),"shared headless renderer and stage"))return 1;
     if(!trial(files,art,ground,view,library,5,false)||!trial(files,art,ground,view,library,1,false)||
        !trial(files,art,ground,view,library,5,true))return 1;
-    std::printf("native neutral-B trial: %u checks PASS; scoped cue at tick 17, local stock only, no allocated beam\n",checks);
+    std::printf("native neutral-B trial: %u checks PASS; cue at tick 17 and one allocator handoff, no allocated beam\n",checks);
 }

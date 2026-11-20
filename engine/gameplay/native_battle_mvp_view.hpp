@@ -11,6 +11,9 @@ namespace gf {
 enum class PracticeBackScreen {Close,OwnedCollection,ForceBrowser};
 class NativeBattleMvpView final:public IBattleMvpTerrain {
 public:
+    NativeBattleMvpView()=default;
+    NativeBattleMvpView(const NativeBattleMvpView&)=delete;
+    NativeBattleMvpView& operator=(const NativeBattleMvpView&)=delete;
     void source_ground_controls(bool interactive){source_general_=true;source_interactive_=interactive;}
     void source_air_dash_floor_controls(){source_air_dash_floor_=true;}
     void source_windup_entry_floor_controls(){source_windup_entry_floor_=true;}
@@ -210,9 +213,17 @@ public:
     bool update_source(const NativeBattleMvp& world,const NativeBorgSourcePose& source,std::string* error){
         source_practice_frame_.reset();rendered_scope_.reset();
         if(!ready_||!world.motion_receipt_current(source.receipt)){borgs_[0].refuse_source_pose();if(error)*error="source view: stale/foreign native contact receipt";return false;}
+        if(source_publication_==std::numeric_limits<u64>::max()){borgs_[0].refuse_source_pose();if(error)*error="source view: publication exhausted";return false;}
         if(!borgs_[0].update_source_pose(world,source,error)||!borgs_[1].update(world.actors()[1],world.tick(),error))return false;
         if(source_practice_)source_practice_frame_=source.frame_scope;
-        rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();return true;
+        rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();++source_publication_;return true;
+    }
+    // Proves publication of the exact source frame without sampling any bones.
+    // A republish at the same tick has a distinct serial.
+    bool source_pose_publication(const NativeBattleMvp& world,const NativeBorgSourcePose& pose,u64* out)const{
+        if(!out||!ready_||!source_publication_||rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_)||
+           !borgs_[0].source_pose_published(world,pose))return false;
+        *out=source_publication_;return true;
     }
     bool observe_gred_source_world(const NativeBattleMvp& world,NativeGRedPracticeWorldMatrices* out)const{
         return ready_&&rendered_tick_==world.tick()&&world.owns_motion_scope(rendered_scope_)&&
@@ -403,6 +414,7 @@ private:
         }
     }
     bool ready_=false,source_general_=false,source_interactive_=false,source_vertical_jump_=false;u32 floor_hash_=0,rendered_tick_=0;std::weak_ptr<const NativeBorgMotionScope> rendered_scope_;
+    u64 source_publication_=0;
     s16 source_resource_=0;
     bool source_moving_jump_=false;
     bool source_air_dash_=false;

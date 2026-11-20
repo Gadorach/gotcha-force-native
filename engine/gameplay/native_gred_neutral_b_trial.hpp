@@ -1,5 +1,7 @@
 #pragma once
+#include "engine/gameplay/borgs/normal_gred_beam_custody.hpp"
 #include "engine/gameplay/borgs/normal_gred_neutral_b_visit.hpp"
+#include "engine/gameplay/native_battle_mvp_view.hpp"
 #include "engine/gameplay/native_gred_ground_dash_demo.hpp"
 
 namespace gf {
@@ -7,6 +9,21 @@ struct NativeGRedNeutralBTrialReadout {
     u32 tick=0;
     WeaponStockModeZeroState stock;
     std::optional<GRedNeutralBReleasePlan> paid;
+};
+// Inspection of the checked-out practice request. It does not authorize an
+// allocation, publish a constructor header or own an allocator result.
+class NativeGRedTrialBeamHandoff {
+public:
+    bool inspect(const NativeBattleMvp& world,const NativeBattleMvpView& view,GRedBeamPoolCall* out)const{
+        u64 observed=0;
+        if(!out||!publication_||!view.source_pose_publication(world,frame_,&observed)||observed!=publication_)return false;
+        *out=call_;return true;
+    }
+private:
+    friend class NativeGRedNeutralBTrial;
+    NativeBorgSourcePose frame_;
+    GRedBeamPoolCall call_;
+    u64 publication_=0;
 };
 
 // A single stationary, explicitly no-target practice shot through the actual
@@ -109,7 +126,19 @@ public:
         if(!ground_.pose(world,&frame))return false;
         *out={frame.receipt.tick(),stock_,paid_};return true;
     }
-    void retire(){ready_=opening_=false;ground_.reject();pending_.reset();paid_.reset();}
+    bool take_beam_handoff(const NativeBattleMvp& world,const NativeBattleMvpView& view,NativeGRedTrialBeamHandoff* out){
+        if(!out||!ready_||handoff_taken_||!paid_||world.paused()||!current(world))return false;
+        NativeGRedTrialBeamHandoff next;
+        if(!ground_.pose(world,&next.frame_)||!view.source_pose_publication(world,next.frame_,&next.publication_))return false;
+        GRedBeamFactoryPlan request;
+        // Keep the source order: carrier request first, then shape allocation,
+        // then matrix reads. An absent allocator is not a successful result.
+        if(!normal_gred_beam_factory_plan(source_,*paid_,true,GRedBeamPoolSample::Unobserved,&request)||request.propose_header)
+            return false;
+        next.call_=request.call;handoff_taken_=true;
+        *out=std::move(next);return true;
+    }
+    void retire(){ready_=opening_=handoff_taken_=false;ground_.reject();pending_.reset();paid_.reset();}
 private:
     static bool stable(const BattleMvpActor& actor){
         return actor.health&&actor.grounded&&!actor.movement_speed&&!actor.vertical_speed&&
@@ -141,6 +170,6 @@ private:
     std::optional<Pending> pending_;
     std::optional<GRedNeutralBReleasePlan> paid_;
     f32 aim_clock_=30;
-    bool ready_=false,opening_=false;
+    bool ready_=false,opening_=false,handoff_taken_=false;
 };
 }
