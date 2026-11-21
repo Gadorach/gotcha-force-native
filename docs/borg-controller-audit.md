@@ -1258,7 +1258,7 @@ entry is current, it samples logical key 2 of Sasuke's **native MVP pose**
 from the very same paid publication. The descriptor's local point
 `(0,-14,0)` supplies the center; its radius 22 uses a declared trial
 physical scale. This is not Sasuke's recovered source-controller pose,
-a class-4 receiver allocation, a `417C` entry, or a hit.
+a class-4 receiver allocation, or a hit on its own.
 
 The extended normal and sanitizer trials each passed **6,154** checks.
 The seed refuses foreign, stale or missing attack frames, and a later
@@ -1266,6 +1266,21 @@ class-4 allocation invalidates its inspection. Export from a local
 `pl000a.pzz` with
 `python3 -B -m tools.extract.gred_sasuke_receiver "$DOL" "$SASUKE_MEMBER" "$work/receiver.bin"`,
 then pass that file after the optional beam art in the trial command.
+
+#### Isolated two-body registry
+
+A separate trial step now copies that seed into a real class-4
+receiver in group `50`, with no model-descriptor charge. Binding 2
+and flag 2, with the stationary trial's clear suppression and timer
+fields, select `417C` and `117C`. Both refer to the same receiver
+lease, distinct from the class-4 beam in `477C`. The isolated two-body
+publication accepts only the exact allocation following the
+singleton attack frame. Unrelated topology changes, a foreign arena
+or a newer renderer publication cannot replace either lease.
+
+The extended native and sanitizer trials each passed **6,156** checks.
+These lists have no live contact consumer: no overlap is run, no
+damage is applied, and no playable scene is changed.
 
 ### Argument 43: authored beam art
 

@@ -43,6 +43,7 @@ struct Storage {
     std::vector<SceneClass3ModelFields> class3_models;
     std::vector<std::array<SceneDescriptorLease,8>> class3_leases;
     std::vector<std::optional<SceneTrialBeamShapeFields>> trial_beam_shapes;
+    std::vector<std::optional<ColliderSphereSeed>> trial_sasuke_bodies;
     u16 trial_scene_token=0;
     u64 collision_allocation_revision=0;
     bool current()const{return live&&descriptors&&descriptors->ready()&&descriptors->snapshot()==descriptor_identity;}
@@ -173,6 +174,11 @@ public:
     const ScenePhysicalBankSnapshot* collision_snapshot()const{return ready()&&storage_->collision.runtime_class==4?&storage_->collision:nullptr;}
     u64 collision_allocation_revision()const{return collision_snapshot()?storage_->collision_allocation_revision:0;}
     const ScenePhysicalRecord* inspect(const SceneCollisionLease& lease)const{return owns(lease)?&storage_->collision.records[lease.index_]:nullptr;}
+    const ColliderSphereSeed* trial_sasuke_body(const SceneCollisionLease& lease)const{
+        if(!owns(lease))return nullptr;
+        const auto& seed=storage_->trial_sasuke_bodies[lease.index_];
+        return seed?&*seed:nullptr;
+    }
     const SceneTrialBeamShapeFields* trial_beam_shape(const SceneCollisionLease& lease)const{
         if(!owns(lease))return nullptr;
         const auto& shape=storage_->trial_beam_shapes[lease.index_];
@@ -198,7 +204,7 @@ public:
         const auto index=u16(bank.free_head);auto& old=bank.records[index];
         if(old.generation==std::numeric_limits<u64>::max()||storage_->collision_allocation_revision==std::numeric_limits<u64>::max())
             return refuse("native generation overflow");
-        old=pop_physical(bank,selected,append,index);storage_->trial_beam_shapes[index].reset();
+        old=pop_physical(bank,selected,append,index);storage_->trial_beam_shapes[index].reset();storage_->trial_sasuke_bodies[index].reset();
         ++storage_->collision_allocation_revision;
         out->owner_=storage_;out->index_=index;out->generation_=old.generation;if(error)error->clear();return SceneObjectAcquire::Allocated;
     }
@@ -272,6 +278,14 @@ private:
         storage_->trial_scene_token=token;models.trial_token26c=token;models.trial_once1ca=1;models.trial_byte2ad=0;
         storage_->trial_beam_shapes[child.index_]->trial_phase10=phase;return true;
     }
+    bool install_trial_sasuke_body(const SceneCollisionLease& child,const ColliderSphereSeed& seed){
+        if(!owns(child))return false;
+        auto& body=storage_->collision.records[child.index_];
+        if(body.group01!=50||body.kind83!=26||body.active00||body.update0c_key||body.registration85!=255||
+           !seed.previous_radius8c||seed.sweep)return false;
+        storage_->trial_sasuke_bodies[child.index_]=seed;
+        body.active00=1;body.update0c_key=0x8008a65c;return true;
+    }
     bool owns(const SceneObjectLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneClass3Lease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneCollisionLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
@@ -293,6 +307,7 @@ private:
     bool initialize_collision_pool(u16 count){
         if(!ready()||storage_->collision.runtime_class!=-1||count!=384)return false;
         storage_->trial_beam_shapes.resize(count);
+        storage_->trial_sasuke_bodies.resize(count);
         initialize_physical(storage_->collision,4,count);return true;
     }
     static void initialize_physical(ScenePhysicalBankSnapshot& bank,u8 physical,u16 count){

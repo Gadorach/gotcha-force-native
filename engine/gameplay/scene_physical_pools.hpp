@@ -61,7 +61,15 @@ public:
 private:
     friend class BattlePreparationBootstrap;
     friend class NativeGRedClass3TrialBridge;
-    struct TrialAttackRegistry {SceneCollisionLease entry;u64 allocation_revision=0;};
+    struct TrialAttackRegistry {
+        SceneCollisionLease entry;u64 allocation_revision=0;
+        std::optional<SceneCollisionLease> receiver{};
+    };
+    static std::array<u16,10> trial_registry_counts(bool paired){
+        std::array<u16,10> counts{1}; // 477C
+        if(paired){counts[1]=1;counts[9]=1;} // 417C and 117C
+        return counts;
+    }
     // A complete singleton only in an isolated trial arena. No live roster,
     // stage, or other allocated shape may be skipped by this entry.
     bool publish_trial_attack_registry(const SceneCollisionLease& child){
@@ -87,8 +95,31 @@ private:
         const auto& registry=*storage_->trial_attack_registry;
         const auto& pool=*storage_->class2;
         if(!pool.trial_beam_shape(registry.entry)||pool.collision_allocation_revision()!=registry.allocation_revision||
-           storage_->scheduler.registry_counts!=std::array<u16,10>{1})return {};
+           (registry.receiver&&!pool.trial_sasuke_body(*registry.receiver))||
+           storage_->scheduler.registry_counts!=trial_registry_counts(registry.receiver.has_value()))return {};
         return registry.entry;
+    }
+    bool publish_trial_receiver_registry(const SceneCollisionLease& child){
+        if(!current()||storage_->actor_seeded||storage_->stage_seeded||!storage_->trial_attack_registry||
+           storage_->scheduler.registry_counts!=trial_registry_counts(false))return false;
+        auto& registry=*storage_->trial_attack_registry;
+        const auto& pool=*storage_->class2;
+        const auto* bank=pool.collision_snapshot();
+        const auto* body=pool.inspect(child);
+        const auto* lists=pool.snapshot();
+        const auto revision=pool.collision_allocation_revision();
+        if(registry.receiver||!revision||revision-1!=registry.allocation_revision||
+           !pool.trial_beam_shape(registry.entry)||!pool.trial_sasuke_body(child)||
+           !bank||bank->free_count+2u!=bank->records.size()||!body||body->active00!=1||body->group01!=50||!lists||
+           lists->group_heads[50]!=ScenePhysicalLink{4,child.index()}||lists->group_tails[50]!=ScenePhysicalLink{4,child.index()})
+            return false;
+        registry.receiver=child;registry.allocation_revision=revision;
+        storage_->scheduler.registry_counts=trial_registry_counts(true);
+        return true;
+    }
+    std::optional<SceneCollisionLease> current_trial_receiver_registry()const{
+        if(!current_trial_attack_registry())return {};
+        return storage_->trial_attack_registry->receiver;
     }
     //Fixed arena factory, NOT a free-list pop. 537A8 clears link4 in all six
     //cells. Source global free-count/head/tail metadata is retained but no longer

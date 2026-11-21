@@ -340,6 +340,41 @@ public:
                                                const NativeBattleMvpView& view,const ScenePhysicalPools& physical)const{
         return receiver_&&trial_attack_entry(source,world,view,physical)?&*receiver_:nullptr;
     }
+    bool publish_trial_receiver_registry_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                               const NativeBattleMvpView& view,ScenePhysicalPools& physical,
+                                               std::string* error){
+        const auto* seed=trial_receiver(source,world,view,physical);
+        const auto pool=pool_.lock();
+        const auto* recipe=physical.recipe();
+        if(!seed||seed->slot!=1||!pool||!recipe||recipe->class2_profile().kind(50)!=26||
+           world.paused()||receiver_registry_attempted_)
+            return refuse(error,"current body seed and bound receiver registry required");
+        // Body 9 uses binding 2 / flags 2. In this stationary trial the
+        // binding is enabled and the owner timer/suppression fields are clear.
+        CollisionRegistrationInput fields;
+        fields.presence_declared=fields.descriptor_declared=true;
+        fields.owner={true,true,1,0,0,0,0,1u<<2,0};
+        fields.descriptor_slot1=2;fields.descriptor_flags2=2;
+        CollisionRegistrationPlan membership;
+        constexpr unsigned wanted=(1u<<unsigned(CollisionRegistrationList::L117C))|
+                                  (1u<<unsigned(CollisionRegistrationList::L417C));
+        if(!collision_registration_plan(fields,&membership,error)||membership.lists!=wanted)return false;
+        receiver_registry_attempted_=true;
+        // A successful allocation invalidates the singleton revision. Only
+        // the exact handoff to the two-body frame may make it current again.
+        if(pool->acquire_collision(48,false,SceneObjectParentFields{0,1},&receiver_body_,error)!=SceneObjectAcquire::Allocated||
+           !pool->install_trial_sasuke_body(receiver_body_,seed->sphere)||!physical.publish_trial_receiver_registry(receiver_body_))
+            return refuse(error,"isolated receiver construction/publication refused");
+        if(error)error->clear();
+        return true;
+    }
+    std::optional<SceneCollisionLease> trial_receiver_entry(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                                            const NativeBattleMvpView& view,const ScenePhysicalPools& physical)const{
+        if(!trial_receiver(source,world,view,physical))return {};
+        const auto entry=physical.current_trial_receiver_registry();
+        if(!entry||entry->index()!=receiver_body_.index()||entry->generation()!=receiver_body_.generation())return {};
+        return entry;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -358,6 +393,7 @@ private:
     }
     bool bound_=false,header_attempted_=false,launch_attempted_=false,sphere_attempted_=false,activation_attempted_=false;
     bool registry_attempted_=false,registry_published_=false,receiver_attempted_=false;
+    bool receiver_registry_attempted_=false;
     u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;
@@ -365,6 +401,7 @@ private:
     std::weak_ptr<SceneObjectPool> pool_;
     SceneClass3Lease lease_;
     SceneCollisionLease shape_;
+    SceneCollisionLease receiver_body_;
     GRedBeamFactoryPlan factory_;
     GRedBeamInitPlan init_;
     NativeGRedTrialBeamHandoff handoff_;
