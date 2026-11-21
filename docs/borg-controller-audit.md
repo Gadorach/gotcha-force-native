@@ -1445,6 +1445,24 @@ Live retirement must still join the actual child, callback
 registration, descriptor and carrier leases; none can be inferred
 from a phase, visibility byte, or matrix.
 
+A later bounded source replay ran the **return writes**, not just
+the requests, after expiry of the same test carrier. The class-4
+child returns first; after the marker-2 drift/fade, the descriptor
+and then the class-3 carrier return. `89814` selects the physical
+pool row from byte `+3`, not the object's update group. It appends
+to that row's FIFO, updates the count, and clears the returned
+cell's activity and forward link. The descriptor uses a separate
+free list and returns to its head.
+
+Four combinations of empty and nonempty physical free lists
+reproduced byte-for-byte. On a fork of each replay, the original
+physical pop returned the older free cells before reissuing the
+same child and carrier, and the descriptor pop recovered the
+same descriptor. The parent replay supplied pool state, the stage
+miss, and the last lifetime count; the descriptor had no attached
+HSD resource. Reuse supplied a bounded zero-fill service. Native
+retirement and resource teardown remain unwired.
+
 ### Argument 43: static stage segment
 
 `84170` clips the current and previous endpoints separately, in X-then-Z
