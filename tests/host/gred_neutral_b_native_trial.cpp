@@ -296,9 +296,12 @@ struct AllocationFixture {
                          "extra collider refuses singleton registry without writes or later retry");
         }
         ScenePhysicalPools foreign_arena;
+        GRedTrialFlightPrefix flight;
+        flight.flight.speed44=-1;
         if(!check(!bridge.publish_trial_attack_registry_once(source,world,view,foreign_arena,&error)&&
                   !bridge.publish_trial_attack_registry_once(unrelated,world,view,physical,&error)&&
                   !bridge.trial_attack_entry(source,world,view,physical)&&
+                  !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                   bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
                   "only the matching paid trial and its bound arena publish 477C"))return false;
         const auto entry=bridge.trial_attack_entry(source,world,view,physical);
@@ -307,6 +310,23 @@ struct AllocationFixture {
                   *physical.scheduler()==registered&&
                   !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
                   "one exact child lease and source-ordered count; no duplicate admission"))return false;
+        const auto launch_frame=*carrier->trial_frame114;
+        const auto launched=launch->flight;
+        const auto seed_sphere=*shape->sphere_seed;
+        if(!check(!bridge.probe_trial_first_flight(unrelated,world,view,physical,&flight)&&
+                  !bridge.probe_trial_first_flight(source,world,view,foreign_arena,&flight)&&flight.flight.speed44==-1&&
+                  bridge.probe_trial_first_flight(source,world,view,physical,&flight),
+                  "only the current accepted carrier and attack registry can supply a flight prefix"))return false;
+        const auto traveled=source_basis_detail::length(source_intersection_detail::sub(flight.flight.position20,launched.position20));
+        if(!check(std::abs(traveled-80.f)<.001f&&std::abs(flight.flight.distance180-81.f)<.001f&&
+                  flight.flight.origin174==launched.origin174&&flight.flight.speed44==80.5f&&
+                  flight.active.route==GRedBeamActiveRoute::AwaitProximity&&flight.active.lifetime1c==300&&
+                  flight.active.phase18==1&&!flight.active.request_remove_shapes&&!flight.active.refresh_stage_distance,
+                  "first motion uses old speed and stops before an unobserved proximity visit"))return false;
+        if(!check(launch->flight.position20==launched.position20&&launch->flight.speed44==80&&
+                  carrier->trial_frame114==launch_frame&&shape->sphere_seed==seed_sphere&&
+                  *pool->collision_snapshot()==class4&&*physical.scheduler()==registered,
+                  "prefix writes no launch, carrier matrix, collider or registry fields"))return false;
         if(receiver_profile){
             const f32 scale=capacity==Capacity::PairOverlap?16.f:.75f;
             if(!check(!bridge.seed_trial_receiver_once(unrelated,world,view,physical,*receiver_profile,1,&error)&&
@@ -324,10 +344,12 @@ struct AllocationFixture {
                       "body 9 uses a distinct pose-derived center without registration or an extra collider"))return false;
         }
         if(capacity==Capacity::StaleRegistry){
+            flight.flight.speed44=-1;
             return check(pool->acquire_collision(48,false,{},&neighbor,&error)==SceneObjectAcquire::Allocated&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&pool->release(neighbor,&error)&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical)&&
                          !bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error)&&
+                         !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                          *physical.scheduler()==registered,
                          "changed class4 topology invalidates the entry without replay or count rollback");
         }
@@ -390,7 +412,9 @@ struct AllocationFixture {
                       "republish invalidates the paid-frame draw gate"))return false;
             GRedSasukeFreshPairPlan stale;
             stale.route=GRedSasukeFreshPairRoute::Suppressed;
+            flight.flight.speed44=-1;
             if(!check(!bridge.probe_trial_fresh_pair(source,world,view,physical,&stale)&&
+                      !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                        stale.route==GRedSasukeFreshPairRoute::Suppressed,
                        "a newer publication produces no replacement query result"))return false;
             render.begin_frame({});
@@ -557,6 +581,6 @@ int main(int argc,char** argv){
         if(argc==7&&!trial(files,art,ground,view,library,5,false,Capacity::PairOverlap,&attack,nullptr,&receiver))return 1;
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s%s, no hit or HP write\n",
-                checks,argc>=5?", class4 child and isolated attack registry":"",argc>=6?", authored beam draw":"",
+                checks,argc>=5?", class4 child, isolated attack registry and flight prefix":"",argc>=6?", authored beam draw":"",
                 argc==7?", isolated Sasuke fresh query":"");
 }

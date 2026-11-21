@@ -16,15 +16,18 @@ struct GRedTrialLaunch {
     GRedBeamFlightSample flight;
     GRedBeamScalePlan scale;
 };
+struct GRedTrialFlightPrefix {
+    GRedBeamFlightSample flight;
+    GRedBeamActivePlan active;
+};
 struct GRedTrialReceiverSeed {
     u8 slot=255;
     ColliderSphereSeed sphere;
     std::array<u8,24> hit_row{};
 };
 
-// Opt-in native lab bridge. Owns a class-3 slot and its constructor fields,
-// with a limited class-4 construction and launch visit. It does not
-// execute shape geometry, register a renderer callback or join collision.
+// Opt-in native lab bridge. Owns a carrier and its isolated class-4
+// launch shape; read-only probes never publish flight or a hit.
 class NativeGRedClass3TrialBridge {
 public:
     NativeGRedClass3TrialBridge()=default;
@@ -316,6 +319,22 @@ public:
         const auto entry=physical.current_trial_attack_registry();
         if(!entry||entry->index()!=shape_.index()||entry->generation()!=shape_.generation())return {};
         return entry;
+    }
+    // Evaluate the next untargeted motion prefix, without treating a body
+    // registration as the six-slot actor snapshot needed by 83714.
+    bool probe_trial_first_flight(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                  const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                                  GRedTrialFlightPrefix* out)const{
+        if(!out||world.paused()||!trial_attack_entry(source,world,view,physical)||
+           !launch_||!birth_||init_.route!=GRedBeamInitRoute::MuzzleBranch||init_.phase18!=1||
+           init_.lifetime1c!=300)return false;
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedTrialFlightPrefix next;
+        GRedBeamActiveInputs gates;
+        gates.lifetime1c=s16(init_.lifetime1c);
+        if(!normal_gred_beam_flight_prefix(red,birth_->targets_c8_cc_null,launch_->flight,&next.flight)||
+           !normal_gred_beam_active_plan(red,gates,&next.active))return false;
+        *out=next;return true;
     }
     bool seed_trial_receiver_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                    const NativeBattleMvpView& view,const ScenePhysicalPools& physical,

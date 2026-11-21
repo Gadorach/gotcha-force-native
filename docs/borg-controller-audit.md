@@ -1296,6 +1296,21 @@ hit count and HP unchanged. The native and sanitizer trials each
 passed **6,297** checks. No moving beam, live hit or playable combat
 has been wired by this query.
 
+#### First flight from the registered launch
+
+The read-only flight probe now starts from the current registered
+carrier's accepted launch rather than a detached muzzle fixture.
+The first untargeted step proposes a move of 80 source units and a
+speed of 80.5 for the next update. It stops at `AwaitProximity` with
+all 300 lifetime counts intact. The isolated collider registry is
+not the six-slot actor roster required by `83714`; the probe does
+not assume that roster, stage, or bounds are clear.
+
+The native and sanitizer trials each passed **6,306** checks,
+including refusal on stale registry or renderer publication. The
+probe changes no carrier matrix, sphere, or registry state and does
+not advance the live beam.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect
