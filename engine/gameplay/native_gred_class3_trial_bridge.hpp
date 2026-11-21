@@ -5,7 +5,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_art.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_receiver.hpp"
-#include "engine/gameplay/borgs/normal_gred_beam_sasuke_fresh_pair.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_swept_pair.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_shape_tail.hpp"
 #include "engine/gameplay/collider_sphere_shape.hpp"
 
@@ -20,6 +20,12 @@ struct GRedTrialLaunch {
 struct GRedTrialFlightPrefix {
     GRedBeamFlightSample flight;
     GRedBeamActivePlan active;
+};
+struct GRedTrialFirstSweep {
+    GRedBeamPhaseOnePlan visit;
+    GRedBeamScalePlan scale;
+    GRedBeamTransformPlan transform;
+    GRedBeamSweptShape shape;
 };
 struct GRedTrialReceiverSeed {
     u8 slot=255;
@@ -363,6 +369,41 @@ public:
         in.slots.declared=true; // six empty type-7 slots in this trial route
         return normal_gred_beam_phase_one_plan(red,in,source.trial_stage_grids(),bounds,out,error);
     }
+    // Clear, unmodified first visit only. C44A8's proposed matrix feeds
+    // the same registered child's 3A5E4 numeric path; no fields are written.
+    bool probe_trial_first_sweep(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                 const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                                 GRedTrialFirstSweep* out,std::string* error)const{
+        if(!out)return refuse(error,"first sweep output required");
+        GRedTrialFirstSweep next;
+        if(!probe_trial_first_phase_one(source,world,view,physical,&next.visit,error))return false;
+        if(next.visit.active.route!=GRedBeamActiveRoute::Continue)
+            return refuse(error,"stopped carrier has no first sweep");
+        const auto pool=pool_.lock();
+        const auto* child=pool?pool->trial_beam_shape(shape_):nullptr;
+        const auto* carrier=pool?pool->class3_models(lease_):nullptr;
+        GRedBeamShapeOperands operands;
+        if(!child||child->trial_phase10!=1||!child->sphere_seed||!child->sphere_seed->sweep||
+           !carrier||!carrier->trial_frame114||!trial_shape_operands(source,world,&operands))
+            return refuse(error,"current phase-one child and carrier matrix required");
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        // The stationary no-event fixture has no modifier flags. Its
+        // current B4 for this path is the scaled launch value.
+        const auto& seed=launch_->scale;
+        Mat4 prior;
+        std::copy_n(carrier->trial_frame114->begin(),12,prior.m);
+        if(!normal_gred_beam_scale_step(red,0,seed.reference188,seed.physical_c0,next.visit.flight.distance180,&next.scale)||
+           !normal_gred_beam_transform(red,next.visit.flight,next.scale,prior,&next.transform)||
+           next.transform.basis==GRedBeamBasisRoute::Retained)
+            return refuse(error,"unmodified scale or moving carrier matrix refused");
+        const auto& sweep=*child->sphere_seed->sweep;
+        const GRedBeamSweepSample sample{true,sweep.start8c,sweep.end98,next.transform.frame114,next.scale.physical_c0};
+        if(!normal_gred_beam_swept_shape(red,operands,sample,&next.shape))
+            return refuse(error,"moving sphere geometry refused");
+        *out=next;
+        if(error)error->clear();
+        return true;
+    }
     bool seed_trial_receiver_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                    const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
                                    const NormalSasukeBeamReceiverProfile& profile,f32 declared_c0,std::string* error){
@@ -430,17 +471,15 @@ public:
         const auto attack=trial_attack_entry(source,world,view,physical);
         const auto receiver=trial_receiver_entry(source,world,view,physical);
         const auto pool=pool_.lock();
-        if(!out||!attack||!receiver||!pool||!source.attack_profile_)return false;
+        if(!out||!attack||!receiver||!pool)return false;
         const auto* shape=pool->trial_beam_shape(*attack);
         const auto* body=pool->trial_sasuke_body(*receiver);
         const auto* models=pool->class3_models(lease_);
         if(!shape||!shape->sphere_seed||!shape->sphere_seed->sweep||shape->trial_phase10!=1||
            !body||!body->previous_radius8c||!models||!models->trial_token26c)return false;
         constexpr NormalGRedNeutralBSource red{0x0615,0,0};
-        GRedBeamInitPlan setup;
         GRedBeamShapeOperands operands;
-        if(!normal_gred_beam_first_dispatch(red,factory_,1,world.actors()[0].model,GRedBeamPoolSample::Unobserved,&setup)||
-           !normal_gred_beam_shape_operands(red,setup,source.attack_profile_->bank(),&operands))return false;
+        if(!trial_shape_operands(source,world,&operands))return false;
         GRedSasukeFreshPairInput in;
         in.opposing_direct_scope_declared=in.lists_declared=true;
         in.attack_list.lists=1u<<unsigned(CollisionRegistrationList::L477C);
@@ -463,6 +502,14 @@ public:
         status_=GRedClass3TrialStatus::Released;return true;
     }
 private:
+    bool trial_shape_operands(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                              GRedBeamShapeOperands* out)const{
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedBeamInitPlan setup;
+        return source.attack_profile_&&
+            normal_gred_beam_first_dispatch(red,factory_,1,world.actors()[0].model,GRedBeamPoolSample::Unobserved,&setup)&&
+            normal_gred_beam_shape_operands(red,setup,source.attack_profile_->bank(),out);
+    }
     bool first_flight_current(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                               const NativeBattleMvpView& view,const ScenePhysicalPools& physical)const{
         return !world.paused()&&launch_&&birth_&&init_.route==GRedBeamInitRoute::MuzzleBranch&&init_.phase18==1&&

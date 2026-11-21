@@ -1331,6 +1331,22 @@ native and sanitizer trials each passed **6,315** checks. This
 does not publish motion or lifetime, schedule another update, or
 establish a live scene owner for those object slots or stage bounds.
 
+#### First moving sphere proposal
+
+The bounded source replay placed `C44A8` on the `89554` callback
+pass, before the class-4 update and contact scan. The same child read
+the new carrier matrix and registered a kind-2 sweep. A stopped
+child instead requested unlink without reading that matrix.
+
+The native query now follows the same numeric order in the clear,
+unmodified no-event fixture. It builds a new carrier matrix from
+the first active flight proposal, then uses the accepted child's
+launch endpoints and the new matrix translation to propose a sweep.
+The physical radius stays fixed while the axial scale and broad
+radius grow. **6,321** checks passed in each of the native and
+sanitizer trials. This step does not publish the matrix or sweep,
+scan for a moving hit, or perform retirement.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect

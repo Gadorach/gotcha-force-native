@@ -300,11 +300,14 @@ struct AllocationFixture {
         flight.flight.speed44=-1;
         GRedBeamPhaseOnePlan phase_one;
         phase_one.active.lifetime1c=-1;
+        GRedTrialFirstSweep moving;
+        moving.shape.travel=-1;
         if(!check(!bridge.publish_trial_attack_registry_once(source,world,view,foreign_arena,&error)&&
                   !bridge.publish_trial_attack_registry_once(unrelated,world,view,physical,&error)&&
                   !bridge.trial_attack_entry(source,world,view,physical)&&
                   !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                   !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
+                  !bridge.probe_trial_first_sweep(source,world,view,physical,&moving,&error)&&moving.shape.travel==-1&&
                   bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
                   "only the matching paid trial and its bound arena publish 477C"))return false;
         const auto entry=bridge.trial_attack_entry(source,world,view,physical);
@@ -353,10 +356,24 @@ struct AllocationFixture {
                       pool->release(other_carrier,&error),
                       "unknown extra class-2 or class-3 allocation cannot stand in for the no-event trial"))return false;
         }
+        if(!check(!bridge.probe_trial_first_sweep(unrelated,world,view,physical,&moving,&error)&&
+                  !bridge.probe_trial_first_sweep(source,world,view,foreign_arena,&moving,&error)&&moving.shape.travel==-1&&
+                  bridge.probe_trial_first_sweep(source,world,view,physical,&moving,&error),
+                  "only the registered current phase-one child can supply the first moving sphere candidate"))return false;
+        const auto& swept=moving.shape;
+        if(!check(moving.visit.active.lifetime1c==299&&moving.visit.flight.position20==phase_one.flight.position20&&
+                  moving.scale.physical_c0==launch->scale.physical_c0&&moving.scale.relative_c4==1&&
+                  moving.scale.scale58[2]==moving.visit.flight.distance180/22.f&&moving.scale.scale58[2]>launch->scale.scale58[2]&&
+                  source_basis_detail::column(moving.transform.frame114,3)==phase_one.flight.position20&&
+                  seed_sphere.sweep&&swept.previous_d4==seed_sphere.sweep->start8c&&
+                  swept.start8c==seed_sphere.sweep->end98&&swept.previous_e0==swept.start8c&&swept.end98==phase_one.flight.position20&&
+                  std::abs(swept.travel-80.f)<.001f&&swept.radius88==seed_sphere.radius88&&
+                  swept.broad_radius7c==swept.radius88+swept.travel*.5f,
+                  "new matrix supplies the sweep end while launch history and physical radius remain separate"))return false;
         if(!check(launch->flight.position20==launched.position20&&launch->flight.speed44==80&&
                   carrier->trial_frame114==launch_frame&&shape->sphere_seed==seed_sphere&&
                   *pool->collision_snapshot()==class4&&*physical.scheduler()==registered,
-                  "prefix writes no launch, carrier matrix, collider or registry fields"))return false;
+                  "flight and sweep probes write no launch, carrier matrix, collider or registry fields"))return false;
         if(receiver_profile){
             const f32 scale=capacity==Capacity::PairOverlap?16.f:.75f;
             if(!check(!bridge.seed_trial_receiver_once(unrelated,world,view,physical,*receiver_profile,1,&error)&&
@@ -376,12 +393,14 @@ struct AllocationFixture {
         if(capacity==Capacity::StaleRegistry){
             flight.flight.speed44=-1;
             phase_one.active.lifetime1c=-1;
+            moving.shape.travel=-1;
             return check(pool->acquire_collision(48,false,{},&neighbor,&error)==SceneObjectAcquire::Allocated&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&pool->release(neighbor,&error)&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical)&&
                          !bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error)&&
                          !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                          !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
+                         !bridge.probe_trial_first_sweep(source,world,view,physical,&moving,&error)&&moving.shape.travel==-1&&
                          *physical.scheduler()==registered,
                          "changed class4 topology invalidates the entry without replay or count rollback");
         }
@@ -452,9 +471,11 @@ struct AllocationFixture {
             stale.route=GRedSasukeFreshPairRoute::Suppressed;
             flight.flight.speed44=-1;
             phase_one.active.lifetime1c=-1;
+            moving.shape.travel=-1;
             if(!check(!bridge.probe_trial_fresh_pair(source,world,view,physical,&stale)&&
                       !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                       !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
+                      !bridge.probe_trial_first_sweep(source,world,view,physical,&moving,&error)&&moving.shape.travel==-1&&
                        stale.route==GRedSasukeFreshPairRoute::Suppressed,
                        "a newer publication produces no replacement query result"))return false;
             render.begin_frame({});
@@ -621,6 +642,6 @@ int main(int argc,char** argv){
         if(argc==7&&!trial(files,art,ground,view,library,5,false,Capacity::PairOverlap,&attack,nullptr,&receiver))return 1;
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s%s, no hit or HP write\n",
-                checks,argc>=5?", class4 child, isolated attack registry and first active flight probe":"",argc>=6?", authored beam draw":"",
+                checks,argc>=5?", class4 child, isolated attack registry and first sweep probe":"",argc>=6?", authored beam draw":"",
                 argc==7?", isolated Sasuke fresh query":"");
 }
