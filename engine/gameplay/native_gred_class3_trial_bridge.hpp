@@ -2,6 +2,7 @@
 #include "engine/gameplay/native_gred_neutral_b_trial.hpp"
 #include "engine/gameplay/scene_physical_pools.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_shape_tail.hpp"
 #include "engine/gameplay/collider_sphere_shape.hpp"
 
 namespace gf {
@@ -215,6 +216,48 @@ public:
         const auto* shape=pool?pool->trial_beam_shape(shape_):nullptr;
         return shape&&shape->sphere_seed&&trial_launch(source,world,view)?&*shape->sphere_seed:nullptr;
     }
+    bool finish_trial_shape_activation_once(NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                            const NativeBattleMvpView& view,const ColliderGeometryProfile& geometry,
+                                            std::string* error){
+        const auto pool=pool_.lock();
+        if(!pool||world.paused()||activation_attempted_||!source.current(world)||!trial_sphere(source,world,view)||
+           !collider_geometry_profile_valid(geometry))
+            return refuse(error,"current sphere and qualified phase-0 geometry profile required");
+        const auto* record=pool->inspect(lease_);
+        const auto* models=pool->class3_models(lease_);
+        if(!record||!models||!models->trial_frame114||models->trial_token26c||
+           source.beam_activation_count404_!=0||!source.attack_profile_)return refuse(error,"fresh activation fields required");
+        activation_attempted_=true;
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedBeamInitPlan seed;
+        GRedBeamShapeOperands operands;
+        if(!normal_gred_beam_first_dispatch(red,factory_,1,world.actors()[0].model,GRedBeamPoolSample::Unobserved,&seed)||
+           !normal_gred_beam_shape_operands(red,seed,source.attack_profile_->bank(),&operands))
+            return refuse(error,"exact credited shape scope required");
+        Mat4 frame;
+        std::copy_n(models->trial_frame114->begin(),12,frame.m);
+        GRedBeamShapeTailInputs in;
+        in.activation.scene_token=pool->storage_->trial_scene_token;
+        in.activation.credit_count404=source.beam_activation_count404_;
+        in.after_shape0_init=in.null_copied_target_cc=true;
+        // This trial starts with clear suppression/disable/freeze and credit
+        // timer fields; they are not inferred for a live battle actor.
+        in.carrier.lifecycle_declared=true;
+        in.carrier.registration={true,true,record->active00,record->kind83};
+        in.credit={true,true,0,0};
+        GRedBeamShapeTailPlan next;
+        if(!normal_gred_beam_shape_tail(red,operands,in,geometry,frame,&next,error)||!next.activation_write||
+           !pool->publish_trial_beam_activation(lease_,shape_,in.activation.scene_token,next.activation.scene_token,next.phase10))
+            return refuse(error,"class4 phase and carrier token publication refused");
+        source.beam_activation_count404_=next.activation.credit_count404;
+        activation_=next;
+        if(error)error->clear();
+        return true;
+    }
+    const GRedBeamShapeTailPlan* trial_shape_activation(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                                      const NativeBattleMvpView& view)const{
+        return activation_&&trial_sphere(source,world,view)?&*activation_:nullptr;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -227,7 +270,7 @@ private:
         if(error)*error=std::string("G-Red class3 trial: ")+why;
         return false;
     }
-    bool bound_=false,header_attempted_=false,launch_attempted_=false,sphere_attempted_=false;
+    bool bound_=false,header_attempted_=false,launch_attempted_=false,sphere_attempted_=false,activation_attempted_=false;
     u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;
@@ -240,5 +283,6 @@ private:
     NativeGRedTrialBeamHandoff handoff_;
     std::optional<GRedBeamFactoryBirthFields> birth_;
     std::optional<GRedTrialLaunch> launch_;
+    std::optional<GRedBeamShapeTailPlan> activation_;
 };
 }

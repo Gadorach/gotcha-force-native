@@ -1174,8 +1174,20 @@ a separate previous radius at that offset.
 
 The trial publishes these fields once on the class-4 child.
 It refuses missing or stale carrier data and foreign trial owners.
-The **5,865** native and sanitizer checks do not grant an activation
-token, collision registry entry, contact callback, or live hit.
+
+#### Trial sphere activation
+
+After that seed, the stationary trial runs the qualified flag-1 tail.
+It updates the pool-scoped trial token (skipping zero on wrap), writes
+the carrier's `26C/1CA/2AD`, increments the exact credited trial's
+`404` count, and advances the child's phase to `1`. The launch uses
+clear trial suppression and freeze fields, not inferred live actor
+state. The token is separate from the carrier's allocation generation.
+
+The `477C` result is still a list-membership **proposal**: no registry
+pointer/count, contact, or HP is written. The exact shape and frame
+must remain current; a second visit cannot issue another token.
+The native and sanitizer trials each passed **5,872** checks.
 
 ### Argument 43: authored beam art
 

@@ -22,6 +22,8 @@ struct SceneClass3ModelFields {
     u8 descriptor_count99=0;std::array<u16,8> descriptor_indices{65535,65535,65535,65535,65535,65535,65535,65535};
     SceneObjectHeader header;bool header_installed=false;
     std::optional<std::array<f32,12>> trial_frame114;
+    u16 trial_token26c=0;
+    u8 trial_once1ca=0,trial_byte2ad=0;
     bool operator==(const SceneClass3ModelFields&)const=default;
 };
 struct SceneTrialBeamShapeFields {
@@ -31,6 +33,7 @@ struct SceneTrialBeamShapeFields {
     u16 descriptor_offset28=0,carrier_matrix_offset60=0;
     s16 start48=0,end4a=0;
     std::optional<ColliderSphereSeed> sphere_seed{};
+    u8 trial_phase10=0;
 };
 namespace scene_object_pool_detail {
 struct Storage {
@@ -40,6 +43,7 @@ struct Storage {
     std::vector<SceneClass3ModelFields> class3_models;
     std::vector<std::array<SceneDescriptorLease,8>> class3_leases;
     std::vector<std::optional<SceneTrialBeamShapeFields>> trial_beam_shapes;
+    u16 trial_scene_token=0;
     bool current()const{return live&&descriptors&&descriptors->ready()&&descriptors->snapshot()==descriptor_identity;}
 };
 }
@@ -250,6 +254,18 @@ private:
            shape->carrier_generation!=carrier.generation_||!storage_->class3_models[carrier.index_].trial_frame114||
            !sphere.sweep||sphere.previous_radius8c)return false;
         storage_->trial_beam_shapes[child.index_]->sphere_seed=sphere;return true;
+    }
+    bool publish_trial_beam_activation(const SceneClass3Lease& carrier,const SceneCollisionLease& child,
+                                       u16 previous_token,u16 token,u8 phase){
+        if(!owns(carrier)||previous_token!=storage_->trial_scene_token||phase!=1)return false;
+        const auto* shape=trial_beam_shape(child);
+        auto& models=storage_->class3_models[carrier.index_];
+        const u16 expected=u16(previous_token+1u);
+        if(!shape||!shape->sphere_seed||shape->trial_phase10||shape->carrier20!=ScenePhysicalLink{3,carrier.index_}||
+           shape->carrier_generation!=carrier.generation_||models.trial_once1ca||models.trial_token26c||
+           token!=(expected?expected:1))return false;
+        storage_->trial_scene_token=token;models.trial_token26c=token;models.trial_once1ca=1;models.trial_byte2ad=0;
+        storage_->trial_beam_shapes[child.index_]->trial_phase10=phase;return true;
     }
     bool owns(const SceneObjectLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneClass3Lease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}

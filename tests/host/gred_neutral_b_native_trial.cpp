@@ -37,6 +37,8 @@ bool check(bool ok,const char* why){
 }
 enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,Shape,ShapeFull,StaleShape,StaleMuzzle};
 constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125f,.875f,true};
+constexpr ColliderGeometryProfile geometry{{0,0x3f800000u,0x42480000u,0x3c8efa35u,0x42652ee1u,0x3fc90fdbu,
+                                             0x3f060a92u,0x3c23d70au},true};
 bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape||c==Capacity::StaleMuzzle;}
 struct AllocationFixture {
     SceneDescriptorBootstrap models;
@@ -131,7 +133,7 @@ struct AllocationFixture {
                 physical.retire();
                 return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
                              !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view)&&
-                             !bridge.trial_sphere(source,world,view),
+                             !bridge.trial_sphere(source,world,view)&&!bridge.trial_shape_activation(source,world,view),
                              "pool retirement revokes both leases without claiming source cleanup");
             }
             if(capacity==Capacity::StaleHeader){
@@ -161,6 +163,9 @@ struct AllocationFixture {
         const auto desc_before=*descriptors->snapshot();
         const auto shape_before=*pool->collision_snapshot();
         const auto scheduler=*physical.scheduler();
+        if(!check(!bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error)&&
+                  !pool->class3_models(bridge.lease())->trial_token26c,
+                  "activation cannot precede construction, matrix and sphere publication"))return false;
         if(!check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&
                   !bridge.trial_launch(source,world,view)&&!pool->class3_models(bridge.lease())->trial_frame114,
                   "a published actor pose and header cannot bypass class4 construction"))return false;
@@ -243,10 +248,25 @@ struct AllocationFixture {
                       sphere->center64,sphere->center64,sphere->center64,sphere->center64}&&
                   !bridge.initialize_trial_sphere_once(source,world,view,&error),
                   "physical C0 sets radius; four sweep endpoints replace the previous radius"))return false;
+        const auto* carrier=pool->class3_models(bridge.lease());
+        if(!check(!bridge.finish_trial_shape_activation_once(unrelated,world,view,geometry,&error)&&
+                  !bridge.finish_trial_shape_activation_once(source,world,view,{},&error)&&
+                  !carrier->trial_token26c&&!shape->trial_phase10&&
+                  bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error),
+                  "qualified phase-0 activation runs only for the current trial's seeded sphere"))return false;
+        const auto* active=bridge.trial_shape_activation(source,world,view);
+        if(!check(active&&active->phase10==1&&shape->trial_phase10==1&&active->activation_write&&
+                  active->activation.scene_token==1&&active->activation.credit_count404==1&&
+                  active->activation.beam_token26c==carrier->trial_token26c&&carrier->trial_token26c==1&&
+                  carrier->trial_once1ca==1&&carrier->trial_byte2ad==0&&
+                  active->registration_sampled&&!active->degenerate&&
+                  active->membership.lists==(1u<<unsigned(CollisionRegistrationList::L477C))&&
+                  !bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error),
+                  "one scene token, carrier latch and credit increment; 477C is a proposal only"))return false;
         return check(
                      *pool->collision_snapshot()==class4&&*descriptors->snapshot()==desc_before&&
                      *physical.scheduler()==scheduler&&!world.shots_spawned()&&!world.hits(),
-                     "sphere seed does not change allocation, registry or HP");
+                     "sphere seed and activation do not change allocation, registry or HP");
     }
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
@@ -379,5 +399,5 @@ int main(int argc,char** argv){
             if(!trial(files,art,ground,view,library,5,false,capacity,&attack))return 1;
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s, no collision admission\n",
-                checks,argc==5?", class4 child, carrier matrix and fresh sphere":"");
+                checks,argc==5?", class4 child, carrier matrix and fresh activation":"");
 }

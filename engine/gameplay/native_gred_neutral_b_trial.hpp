@@ -145,7 +145,7 @@ public:
         next.call_=request.call;handoff_taken_=true;
         *out=std::move(next);return true;
     }
-    void retire(){ready_=opening_=handoff_taken_=false;ground_.reject();pending_.reset();paid_.reset();factory_parent_.reset();attack_profile_.reset();}
+    void retire(){ready_=opening_=handoff_taken_=false;ground_.reject();pending_.reset();paid_.reset();factory_parent_.reset();attack_profile_.reset();beam_activation_count404_=0;}
 private:
     std::shared_ptr<const NativeBorgMotionProducer> allocation_trial_owner(const NativeBattleMvp& world)const{
         return ready_&&world.owns_motion_scope(ground_.world_scope_)?ground_.producer_:nullptr;
@@ -181,6 +181,7 @@ private:
     std::optional<GRedNeutralBReleasePlan> paid_;
     std::optional<GRedBeamFactoryParentFields> factory_parent_;
     std::optional<GRedBeamAttackProfile> attack_profile_;
+    u32 beam_activation_count404_=0; // fresh trial only; not a hit or stock counter
     f32 aim_clock_=30;
     bool ready_=false,opening_=false,handoff_taken_=false;
 };
