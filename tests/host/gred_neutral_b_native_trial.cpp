@@ -298,10 +298,13 @@ struct AllocationFixture {
         ScenePhysicalPools foreign_arena;
         GRedTrialFlightPrefix flight;
         flight.flight.speed44=-1;
+        GRedBeamPhaseOnePlan phase_one;
+        phase_one.active.lifetime1c=-1;
         if(!check(!bridge.publish_trial_attack_registry_once(source,world,view,foreign_arena,&error)&&
                   !bridge.publish_trial_attack_registry_once(unrelated,world,view,physical,&error)&&
                   !bridge.trial_attack_entry(source,world,view,physical)&&
                   !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
+                  !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
                   bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
                   "only the matching paid trial and its bound arena publish 477C"))return false;
         const auto entry=bridge.trial_attack_entry(source,world,view,physical);
@@ -323,6 +326,27 @@ struct AllocationFixture {
                   flight.active.route==GRedBeamActiveRoute::AwaitProximity&&flight.active.lifetime1c==300&&
                   flight.active.phase18==1&&!flight.active.request_remove_shapes&&!flight.active.refresh_stage_distance,
                   "first motion uses old speed and stops before an unobserved proximity visit"))return false;
+        if(!check(!bridge.probe_trial_first_phase_one(unrelated,world,view,physical,&phase_one,&error)&&
+                  !bridge.probe_trial_first_phase_one(source,world,view,foreign_arena,&phase_one,&error)&&
+                  world.set_paused(true)&&!bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&
+                  phase_one.active.lifetime1c==-1&&world.set_paused(false)&&
+                  bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error),
+                  "first active probe reads the current trial scene, not a foreign arena or paused frame"))return false;
+        std::array<f32,3> nudge{};
+        for(const auto& actor:world.actors()){
+            auto toward=source_intersection_detail::sub(actor.position,flight.flight.position20);
+            if(!check(source_basis_detail::length(toward)>150&&source_basis_detail::normalize(&toward),
+                      "proximity uses actor roots, not the receiving sphere"))return false;
+            for(unsigned i=0;i<3;++i)nudge[i]+=toward[i]*3;
+        }
+        if(!check(phase_one.active.route==GRedBeamActiveRoute::Continue&&phase_one.proximity.stop_slot==255&&
+                  phase_one.proximity.examined_mask==3&&phase_one.proximity.weight29c==3&&
+                  phase_one.flight.position20==gred_beam_flight_detail::advance(flight.flight.position20,nudge)&&
+                  phase_one.flight.distance180==flight.flight.distance180&&
+                  phase_one.stage_visited&&phase_one.stage.queried&&!phase_one.stage.surface.grid_code&&
+                  phase_one.stage.clipped_previous==launched.position20&&phase_one.stage.clipped_current==phase_one.flight.position20&&
+                  phase_one.bounds_visited&&phase_one.active.lifetime1c==299&&!phase_one.active.request_remove_shapes,
+                  "two far slots nudge the proposal before the real stage-grid miss and bounds check"))return false;
         if(!check(launch->flight.position20==launched.position20&&launch->flight.speed44==80&&
                   carrier->trial_frame114==launch_frame&&shape->sphere_seed==seed_sphere&&
                   *pool->collision_snapshot()==class4&&*physical.scheduler()==registered,
@@ -345,11 +369,13 @@ struct AllocationFixture {
         }
         if(capacity==Capacity::StaleRegistry){
             flight.flight.speed44=-1;
+            phase_one.active.lifetime1c=-1;
             return check(pool->acquire_collision(48,false,{},&neighbor,&error)==SceneObjectAcquire::Allocated&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&pool->release(neighbor,&error)&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical)&&
                          !bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error)&&
                          !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
+                         !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
                          *physical.scheduler()==registered,
                          "changed class4 topology invalidates the entry without replay or count rollback");
         }
@@ -377,6 +403,12 @@ struct AllocationFixture {
                        !bridge.probe_trial_fresh_pair(source,world,view,foreign_arena,&pair)&&
                        bridge.probe_trial_fresh_pair(source,world,view,physical,&pair),
                        "the fresh query consumes only the exact current registry pair"))return false;
+            GRedBeamPhaseOnePlan paired;
+            if(!check(bridge.probe_trial_first_phase_one(source,world,view,physical,&paired,&error)&&
+                      paired.active.route==phase_one.active.route&&paired.active.lifetime1c==phase_one.active.lifetime1c&&
+                      paired.proximity.examined_mask==phase_one.proximity.examined_mask&&
+                      paired.flight.position20==phase_one.flight.position20,
+                      "publishing a receiver collider does not change the separate proximity roster"))return false;
             using R=GRedSasukeFreshPairRoute;
             if(capacity==Capacity::PairOverlap){
                 if(!check(pair.route==R::Overlap&&pair.narrow_sampled&&pair.prefix.beam_receiver290==1&&
@@ -413,8 +445,10 @@ struct AllocationFixture {
             GRedSasukeFreshPairPlan stale;
             stale.route=GRedSasukeFreshPairRoute::Suppressed;
             flight.flight.speed44=-1;
+            phase_one.active.lifetime1c=-1;
             if(!check(!bridge.probe_trial_fresh_pair(source,world,view,physical,&stale)&&
                       !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
+                      !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
                        stale.route==GRedSasukeFreshPairRoute::Suppressed,
                        "a newer publication produces no replacement query result"))return false;
             render.begin_frame({});
@@ -581,6 +615,6 @@ int main(int argc,char** argv){
         if(argc==7&&!trial(files,art,ground,view,library,5,false,Capacity::PairOverlap,&attack,nullptr,&receiver))return 1;
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s%s, no hit or HP write\n",
-                checks,argc>=5?", class4 child, isolated attack registry and flight prefix":"",argc>=6?", authored beam draw":"",
+                checks,argc>=5?", class4 child, isolated attack registry and first active flight probe":"",argc>=6?", authored beam draw":"",
                 argc==7?", isolated Sasuke fresh query":"");
 }

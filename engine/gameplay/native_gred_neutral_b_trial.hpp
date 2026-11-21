@@ -167,6 +167,9 @@ private:
         }
         return true;
     }
+    std::array<const StihGrid*,3> trial_stage_grids()const{
+        return {&ground_.grids_[0],&ground_.grids_[1],&ground_.grids_[2]};
+    }
     static bool refuse(std::string* error,const char* why){
         if(error)*error=std::string("G-Red neutral-B trial: ")+why;
         return false;

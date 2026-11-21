@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/gameplay/native_gred_neutral_b_trial.hpp"
 #include "engine/gameplay/scene_physical_pools.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_phase_one.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_art.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_receiver.hpp"
@@ -325,9 +326,7 @@ public:
     bool probe_trial_first_flight(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                   const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
                                   GRedTrialFlightPrefix* out)const{
-        if(!out||world.paused()||!trial_attack_entry(source,world,view,physical)||
-           !launch_||!birth_||init_.route!=GRedBeamInitRoute::MuzzleBranch||init_.phase18!=1||
-           init_.lifetime1c!=300)return false;
+        if(!out||!first_flight_current(source,world,view,physical))return false;
         constexpr NormalGRedNeutralBSource red{0x0615,0,0};
         GRedTrialFlightPrefix next;
         GRedBeamActiveInputs gates;
@@ -335,6 +334,29 @@ public:
         if(!normal_gred_beam_flight_prefix(red,birth_->targets_c8_cc_null,launch_->flight,&next.flight)||
            !normal_gred_beam_active_plan(red,gates,&next.active))return false;
         *out=next;return true;
+    }
+    // Stationary MVP geometry only. Its two actors provide the trial
+    // positions, independently of which collider lists are populated.
+    bool probe_trial_first_phase_one(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                     const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                                     GRedBeamPhaseOnePlan* out,std::string* error)const{
+        const auto* controls=physical.controls();
+        if(!out||!controls||physical.actor_seed()||physical.stage_seed()||(controls->d1&1u)||
+           !first_flight_current(source,world,view,physical))
+            return refuse(error,"current isolated flight and trial scene controls required");
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        // These are the declared stage473 bench bounds, not live stage
+        // globals and not the MVP's movement bounds.
+        constexpr StageProjectileBounds bounds{{-4500,4500,-4500,4500,500,true},5000,true};
+        GRedBeamPhaseOneInputs in;
+        in.flight=launch_->flight;in.lifetime1c=s16(init_.lifetime1c);
+        // 8997C snapshots +20 to +2C before dispatch. This is the first
+        // active visit: fresh +29C and +1D9 have no prior work to carry.
+        in.previous2c=in.flight.position20;in.previous_declared=true;
+        in.null_target_c8=birth_->targets_c8_cc_null;
+        in.slots.declared=true;in.slots.selection_eb=controls->eb;
+        for(unsigned i=0;i<world.actors().size();++i)in.slots.slots[i]={true,true,world.actors()[i].position};
+        return normal_gred_beam_phase_one_plan(red,in,source.trial_stage_grids(),bounds,out,error);
     }
     bool seed_trial_receiver_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                    const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
@@ -436,6 +458,11 @@ public:
         status_=GRedClass3TrialStatus::Released;return true;
     }
 private:
+    bool first_flight_current(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                              const NativeBattleMvpView& view,const ScenePhysicalPools& physical)const{
+        return !world.paused()&&launch_&&birth_&&init_.route==GRedBeamInitRoute::MuzzleBranch&&init_.phase18==1&&
+            init_.lifetime1c==300&&trial_attack_entry(source,world,view,physical).has_value();
+    }
     bool world_frame_current(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                              const NativeBattleMvpView& view)const{
         return source.current(world)&&trial_launch(source,world,view);

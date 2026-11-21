@@ -1311,6 +1311,25 @@ including refusal on stale registry or renderer publication. The
 probe changes no carrier matrix, sphere, or registry state and does
 not advance the live beam.
 
+#### First active visit with trial actor and stage geometry
+
+A separate probe now evaluates `83714` using the two current
+stationary MVP actor positions in slots 0 and 1, not the collider
+centers or membership lists. The four other slots are empty in this
+fixture, not inferred empty in a retail battle. On a clear proximity
+result it uses the three already qualified stage473 grids, the launch
+position as the previous endpoint (`8997C`), and declared test bounds
+of X/Z ±4500 and top Y 5000.
+
+Both spawn fixtures visit two far slots and apply the weight-3 nudge
+before a stage segment miss and bounds check, proposing lifetime
+`300 -> 299` without recalculating distance for the nudge. Registering
+Sasuke's sphere does not change those results: even the exaggerated
+sphere that overlaps at launch does not make the actor root near.
+The native and sanitizer trials each passed **6,320** checks. This
+does not publish motion, decrement live lifetime, or schedule another
+update; it is not a qualified source-scene roster or stage owner.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect
