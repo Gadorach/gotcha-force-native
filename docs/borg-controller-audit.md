@@ -869,6 +869,36 @@ and visual-key requests. It matched **142 bounded source cases**. This
 does not run the class VM, generate world geometry, add damage, or
 alter the separate Normal Samurai close-B planner.
 
+### Follow-up: Soul Ball return and blade growth
+
+- **Demon Samurai `0701/0` — Soul Ball.** The player observes two souls
+  available by default and suspects B replenishes when the thrown souls
+  return to the Samurai's orbit after attacking. The bounded source
+  trace verified one B stock unit: the paid cue sets each clear owner
+  flag at `158/159`, the sampled timer visits do not refill it, and a
+  separate owner hook restores depleted B when both flags are clear.
+  The two souls are not evidence of two ammo units. Trace each flag's
+  producer through launch, actual contact, return to orbit, and
+  retirement or interruption before calling any of those events the
+  refill trigger. [Wiki move reference](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580).
+- **Demon Samurai `0701/0` and Akuma Samurai `0708/0` — blade growth.**
+  The player reports that Demon Samurai's blades extend slightly
+  whenever any Borg is destroyed while he is in play and suspects
+  Akuma Samurai shares the passive. The archived
+  [Demon Samurai](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580)
+  and [Akuma Samurai](https://gotchaforce.fandom.com/wiki/Akuma_Samurai?oldid=6720)
+  pages report this for both. No cap was found in play; that does
+  **not** establish unlimited growth. Verify the destruction event
+  and owner eligibility, then trace the increment and any clamp,
+  reset, or carry-over separately from rendered blade length,
+  collider reach, and damage.
+
+Akuma Samurai's checked B is a separate case: its paid cue requests
+type 2, key 59, and its mode-1 stock clock adds 300 per debit. The
+sampled owner hook did not perform Demon Samurai's two-clear-flags B
+return. The suspected shared passive does not establish shared ammo
+behavior.
+
 ## Kung-Fu Master: close-B priority and paid Spirit Shot
 
 Exact normal **Kung-Fu Master `GG4E08:0800/0`** is catalogue #41,
