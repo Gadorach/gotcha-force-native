@@ -4,6 +4,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_art.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_receiver.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_fresh_pair.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_shape_tail.hpp"
 #include "engine/gameplay/collider_sphere_shape.hpp"
 
@@ -374,6 +375,39 @@ public:
         const auto entry=physical.current_trial_receiver_registry();
         if(!entry||entry->index()!=receiver_body_.index()||entry->generation()!=receiver_body_.generation())return {};
         return entry;
+    }
+    // Query only. The isolated trial has no previous hits or suppressions.
+    // Neither overlap nor the proposed prefix publishes a hit or actor state.
+    bool probe_trial_fresh_pair(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                               const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                               GRedSasukeFreshPairPlan* out)const{
+        const auto attack=trial_attack_entry(source,world,view,physical);
+        const auto receiver=trial_receiver_entry(source,world,view,physical);
+        const auto pool=pool_.lock();
+        if(!out||!attack||!receiver||!pool||!source.attack_profile_)return false;
+        const auto* shape=pool->trial_beam_shape(*attack);
+        const auto* body=pool->trial_sasuke_body(*receiver);
+        const auto* models=pool->class3_models(lease_);
+        if(!shape||!shape->sphere_seed||!shape->sphere_seed->sweep||shape->trial_phase10!=1||
+           !body||!body->previous_radius8c||!models||!models->trial_token26c)return false;
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedBeamInitPlan setup;
+        GRedBeamShapeOperands operands;
+        if(!normal_gred_beam_first_dispatch(red,factory_,1,world.actors()[0].model,GRedBeamPoolSample::Unobserved,&setup)||
+           !normal_gred_beam_shape_operands(red,setup,source.attack_profile_->bank(),&operands))return false;
+        GRedSasukeFreshPairInput in;
+        in.opposing_direct_scope_declared=in.lists_declared=true;
+        in.attack_list.lists=1u<<unsigned(CollisionRegistrationList::L477C);
+        in.receiver_list.lists=(1u<<unsigned(CollisionRegistrationList::L117C))|
+                               (1u<<unsigned(CollisionRegistrationList::L417C));
+        auto& fields=in.contact_fields;
+        fields.receiver_model=world.actors()[1].model;
+        fields.receiver_slot=fields.receiver_credit_slot=1;fields.receiver_descriptor=9;fields.receiver_hit_row=0;
+        fields.beam_token26c=models->trial_token26c;
+        const auto& sphere=*shape->sphere_seed;
+        in.beam={true,shape->trial_phase10,0,sphere.center64,sphere.radius88,sphere.broad_radius7c};
+        in.body={true,1,0,body->center64,body->radius88,body->broad_radius7c};
+        return normal_gred_beam_sasuke_fresh_pair(red,operands,in,out);
     }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();

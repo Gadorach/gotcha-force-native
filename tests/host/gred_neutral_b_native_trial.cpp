@@ -36,7 +36,7 @@ bool check(bool ok,const char* why){
     return ok;
 }
 enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,
-                     Shape,ShapeFull,StaleShape,StaleMuzzle,RegistryOccupied,StaleRegistry};
+                     Shape,ShapeFull,StaleShape,StaleMuzzle,RegistryOccupied,StaleRegistry,PairOverlap};
 struct BeamDrawFixture {
     const NormalGRedBeamArtBank& art;
     RenderEngine& render;
@@ -45,7 +45,7 @@ constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125
 constexpr ColliderGeometryProfile geometry{{0,0x3f800000u,0x42480000u,0x3c8efa35u,0x42652ee1u,0x3fc90fdbu,
                                              0x3f060a92u,0x3c23d70au},true};
 bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape||
-    c==Capacity::StaleMuzzle||c==Capacity::RegistryOccupied||c==Capacity::StaleRegistry;}
+    c==Capacity::StaleMuzzle||c==Capacity::RegistryOccupied||c==Capacity::StaleRegistry||c==Capacity::PairOverlap;}
 struct AllocationFixture {
     SceneDescriptorBootstrap models;
     ScenePhysicalPools physical;
@@ -308,14 +308,15 @@ struct AllocationFixture {
                   !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
                   "one exact child lease and source-ordered count; no duplicate admission"))return false;
         if(receiver_profile){
+            const f32 scale=capacity==Capacity::PairOverlap?16.f:.75f;
             if(!check(!bridge.seed_trial_receiver_once(unrelated,world,view,physical,*receiver_profile,1,&error)&&
                       !bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error)&&
                       !bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,0,&error)&&
-                      bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,.75f,&error),
+                      bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,scale,&error),
                       "only exact current trial and positive declared scale can sample Sasuke's body"))return false;
             const auto* receiver=bridge.trial_receiver(source,world,view,physical);
-            if(!check(receiver&&receiver->slot==1&&receiver->sphere.radius88==16.5f&&
-                      receiver->sphere.previous_radius8c==16.5f&&!receiver->sphere.sweep&&
+            if(!check(receiver&&receiver->slot==1&&receiver->sphere.radius88==22.f*scale&&
+                      receiver->sphere.previous_radius8c==22.f*scale&&!receiver->sphere.sweep&&
                       receiver->sphere.center64==receiver->sphere.previous_center70&&
                       receiver->sphere.center64!=world.actors()[1].position&&
                       receiver->hit_row[1]==5&&*physical.scheduler()==registered&&*pool->collision_snapshot()==class4&&
@@ -330,10 +331,12 @@ struct AllocationFixture {
                          *physical.scheduler()==registered,
                          "changed class4 topology invalidates the entry without replay or count rollback");
         }
-        if(receiver_profile&&capacity==Capacity::Shape){
+        if(receiver_profile&&(capacity==Capacity::Shape||capacity==Capacity::PairOverlap)){
             const auto* seed=bridge.trial_receiver(source,world,view,physical);
+            GRedSasukeFreshPairPlan pair;
             if(!check(seed&&!bridge.publish_trial_receiver_registry_once(unrelated,world,view,physical,&error)&&
                       !bridge.publish_trial_receiver_registry_once(source,world,view,foreign_arena,&error)&&
+                      !bridge.probe_trial_fresh_pair(source,world,view,physical,&pair)&&
                       bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error),
                       "the current pose-derived body alone can join the bound two-body arena"))return false;
             const auto body_entry=bridge.trial_receiver_entry(source,world,view,physical);
@@ -348,6 +351,21 @@ struct AllocationFixture {
                       !bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error),
                       "distinct receiver lease fills 417C/117C and preserves the 477C attacker"))return false;
             class4=*pool->collision_snapshot();
+            if(!check(!bridge.probe_trial_fresh_pair(unrelated,world,view,physical,&pair)&&
+                       !bridge.probe_trial_fresh_pair(source,world,view,foreign_arena,&pair)&&
+                       bridge.probe_trial_fresh_pair(source,world,view,physical,&pair),
+                       "the fresh query consumes only the exact current registry pair"))return false;
+            using R=GRedSasukeFreshPairRoute;
+            if(capacity==Capacity::PairOverlap){
+                if(!check(pair.route==R::Overlap&&pair.narrow_sampled&&pair.prefix.beam_receiver290==1&&
+                          pair.prefix.credit_receiver290==1&&pair.prefix.beam_vector2a0==pair.point&&
+                          pair.prefix.receiver_tokens20c[0]==carrier->trial_token26c&&pair.prefix.beam_latch1d9==0x10,
+                          "close spawn and deliberately large declared scale produce a scoped overlap proposal"))return false;
+            }else if(!check(pair.route==R::BroadMiss&&!pair.narrow_sampled&&pair.prefix.beam_receiver290==255,
+                             "separated spawn misses without proposing contact"))return false;
+            if(!check(world.actors()[0].health==world.config().health&&world.actors()[1].health==world.config().health&&
+                      !world.hits()&&*physical.scheduler()==registered&&*pool->collision_snapshot()==class4,
+                      "query cannot commit HP, hits or registry changes"))return false;
         }
         if(draw_fixture&&capacity==Capacity::Shape){
             auto& render=draw_fixture->render;
@@ -370,6 +388,11 @@ struct AllocationFixture {
                       !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical)&&
                       !bridge.trial_receiver_entry(source,world,view,physical),
                       "republish invalidates the paid-frame draw gate"))return false;
+            GRedSasukeFreshPairPlan stale;
+            stale.route=GRedSasukeFreshPairRoute::Suppressed;
+            if(!check(!bridge.probe_trial_fresh_pair(source,world,view,physical,&stale)&&
+                       stale.route==GRedSasukeFreshPairRoute::Suppressed,
+                       "a newer publication produces no replacement query result"))return false;
             render.begin_frame({});
             if(!check(!bridge.draw_trial_beam(source,world,view,render,camera)&&render.end_frame(),
                       "stale same-tick publication submits no beam"))return false;
@@ -387,9 +410,11 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
     NativeBattleMvp world;
     NativeBorgAnimationSeed seed;
     NativeGRedNeutralBTrial source;
+    BattleMvpConfig config;
+    if(capacity==Capacity::PairOverlap)config.spawn={BattlePoint{-110,0},BattlePoint{110,0}};
     auto declared=trial_parent;
     const bool supply=capacity==Capacity::InstallHeader||capacity==Capacity::StaleHeader||shape_case(capacity);
-    if(!check(world.start({},&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
+    if(!check(world.start(config,&view)&&view.update(world,&error)&&view.source_seed(world,&seed)&&
               source.begin(files,art,ground,world,seed,library,rounds,&error,supply?&declared:nullptr,attack),
               "fresh same-renderer native trial"))return false;
     declared={}; // only the trial's owned source-field sample may later be copied
@@ -529,8 +554,9 @@ int main(int argc,char** argv){
                            Capacity::RegistryOccupied,Capacity::StaleRegistry})
             if(!trial(files,art,ground,view,library,5,false,capacity,&attack,argc>=6?&draw_fixture:nullptr,
                       argc==7?&receiver:nullptr))return 1;
+        if(argc==7&&!trial(files,art,ground,view,library,5,false,Capacity::PairOverlap,&attack,nullptr,&receiver))return 1;
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s%s, no hit or HP write\n",
                 checks,argc>=5?", class4 child and isolated attack registry":"",argc>=6?", authored beam draw":"",
-                argc==7?", isolated Sasuke receiver registry":"");
+                argc==7?", isolated Sasuke fresh query":"");
 }

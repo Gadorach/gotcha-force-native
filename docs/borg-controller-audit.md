@@ -1279,8 +1279,22 @@ singleton attack frame. Unrelated topology changes, a foreign arena
 or a newer renderer publication cannot replace either lease.
 
 The extended native and sanitizer trials each passed **6,156** checks.
-These lists have no live contact consumer: no overlap is run, no
-damage is applied, and no playable scene is changed.
+This registration step does not test overlap or apply damage.
+
+#### Isolated fresh-sphere query
+
+The read-only query passes the accepted `477C` beam and `417C`
+receiver to the existing exact-pair planner. It uses the shapes from
+the current leases and the accepted carrier token. A missing pair,
+foreign arena or newer renderer publication produces no result.
+
+The separated fixture reports a broad-phase miss. A close spawn
+with a deliberately enlarged Sasuke sphere exercises overlap and
+produces a proposed contact prefix. That scale is a test input, not
+a recovered retail value. Both routes leave the leases, registry,
+hit count and HP unchanged. The native and sanitizer trials each
+passed **6,297** checks. No moving beam, live hit or playable combat
+has been wired by this query.
 
 ### Argument 43: authored beam art
 
