@@ -407,9 +407,12 @@ struct AllocationFixture {
         if(receiver_profile&&(capacity==Capacity::Shape||capacity==Capacity::PairOverlap)){
             const auto* seed=bridge.trial_receiver(source,world,view,physical);
             GRedSasukeFreshPairPlan pair;
+            GRedSasukeMovingSelection selection;
+            selection.slot=77;
             if(!check(seed&&!bridge.publish_trial_receiver_registry_once(unrelated,world,view,physical,&error)&&
                       !bridge.publish_trial_receiver_registry_once(source,world,view,foreign_arena,&error)&&
                       !bridge.probe_trial_fresh_pair(source,world,view,physical,&pair)&&
+                      !bridge.probe_trial_first_moving_pair(source,world,view,physical,&selection,&error)&&selection.slot==77&&
                       bridge.publish_trial_receiver_registry_once(source,world,view,physical,&error),
                       "the current pose-derived body alone can join the bound two-body arena"))return false;
             const auto body_entry=bridge.trial_receiver_entry(source,world,view,physical);
@@ -442,9 +445,33 @@ struct AllocationFixture {
                           "close spawn and deliberately large declared scale produce a scoped overlap proposal"))return false;
             }else if(!check(pair.route==R::BroadMiss&&!pair.narrow_sampled&&pair.prefix.beam_receiver290==255,
                              "separated spawn misses without proposing contact"))return false;
+            if(!check(!bridge.probe_trial_first_moving_pair(unrelated,world,view,physical,&selection,&error)&&
+                      !bridge.probe_trial_first_moving_pair(source,world,view,foreign_arena,&selection,&error)&&selection.slot==77&&
+                      bridge.probe_trial_first_moving_pair(source,world,view,physical,&selection,&error),
+                      "moving query requires the same isolated registered pair as the fresh query"))return false;
+            if(capacity==Capacity::PairOverlap){
+                if(!check(selection.selected&&selection.slot==1&&!selection.order&&selection.moved_to_contact&&selection.refresh114&&
+                          selection.point==selection.contact.beam_vector2a0&&selection.contact.beam_receiver290==1&&
+                          selection.contact.credit_receiver290==1&&selection.contact.beam_latch1d9==0x10&&
+                          selection.contact.receiver_tokens20c[0]==carrier->trial_token26c&&
+                          selection.carrier.distance180==moving.visit.flight.distance180&&
+                          selection.end98==gred_beam_flight_detail::advance(swept.end98,selection.offset)&&
+                          source_basis_detail::column(selection.frame114,3)==selection.carrier.position20&&
+                          selection.frame114.at(0,3)!=moving.transform.frame114.at(0,3),
+                          "oversized close fixture proposes contact, displacement and a rebuilt matrix"))return false;
+                GRedSasukeMovingSelection repeat;
+                if(!check(bridge.probe_trial_first_moving_pair(source,world,view,physical,&repeat,&error)&&
+                          repeat.selected&&repeat.point==selection.point&&
+                          repeat.contact.receiver_tokens20c==selection.contact.receiver_tokens20c,
+                          "read-only query does not store the proposed receiver token"))return false;
+            }else if(!check(!selection.selected&&selection.slot==255&&!selection.refresh114&&
+                            selection.end98==swept.end98&&selection.carrier.position20==moving.visit.flight.position20&&
+                            selection.contact.beam_receiver290==255,
+                            "separated moving fixture proposes no contact or correction"))return false;
             if(!check(world.actors()[0].health==world.config().health&&world.actors()[1].health==world.config().health&&
-                      !world.hits()&&*physical.scheduler()==registered&&*pool->collision_snapshot()==class4,
-                      "query cannot commit HP, hits or registry changes"))return false;
+                      !world.hits()&&*physical.scheduler()==registered&&*pool->collision_snapshot()==class4&&
+                      carrier->trial_frame114==launch_frame&&shape->sphere_seed==seed_sphere,
+                      "queries cannot commit HP, hits, matrix, shape or registry changes"))return false;
         }
         if(draw_fixture&&capacity==Capacity::Shape){
             auto& render=draw_fixture->render;
@@ -469,6 +496,8 @@ struct AllocationFixture {
                       "republish invalidates the paid-frame draw gate"))return false;
             GRedSasukeFreshPairPlan stale;
             stale.route=GRedSasukeFreshPairRoute::Suppressed;
+            GRedSasukeMovingSelection stale_moving;
+            stale_moving.slot=77;
             flight.flight.speed44=-1;
             phase_one.active.lifetime1c=-1;
             moving.shape.travel=-1;
@@ -476,6 +505,7 @@ struct AllocationFixture {
                       !bridge.probe_trial_first_flight(source,world,view,physical,&flight)&&flight.flight.speed44==-1&&
                       !bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error)&&phase_one.active.lifetime1c==-1&&
                       !bridge.probe_trial_first_sweep(source,world,view,physical,&moving,&error)&&moving.shape.travel==-1&&
+                      !bridge.probe_trial_first_moving_pair(source,world,view,physical,&stale_moving,&error)&&stale_moving.slot==77&&
                        stale.route==GRedSasukeFreshPairRoute::Suppressed,
                        "a newer publication produces no replacement query result"))return false;
             render.begin_frame({});
@@ -643,5 +673,5 @@ int main(int argc,char** argv){
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s%s, no hit or HP write\n",
                 checks,argc>=5?", class4 child, isolated attack registry and first sweep probe":"",argc>=6?", authored beam draw":"",
-                argc==7?", isolated Sasuke fresh query":"");
+                argc==7?", isolated Sasuke fresh and moving queries":"");
 }

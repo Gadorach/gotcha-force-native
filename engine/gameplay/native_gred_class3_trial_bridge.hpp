@@ -5,7 +5,7 @@
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_art.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_sasuke_receiver.hpp"
-#include "engine/gameplay/borgs/normal_gred_beam_sasuke_swept_pair.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_selected_hit.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_shape_tail.hpp"
 #include "engine/gameplay/collider_sphere_shape.hpp"
 
@@ -466,8 +466,49 @@ public:
     // Query only. The isolated trial has no previous hits or suppressions.
     // Neither overlap nor the proposed prefix publishes a hit or actor state.
     bool probe_trial_fresh_pair(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
-                               const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
-                               GRedSasukeFreshPairPlan* out)const{
+                                const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                                GRedSasukeFreshPairPlan* out)const{
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        GRedBeamShapeOperands operands;
+        GRedSasukeFreshPairInput in;
+        return out&&sample_trial_pair(source,world,view,physical,&in)&&trial_shape_operands(source,world,&operands)&&
+            normal_gred_beam_sasuke_fresh_pair(red,operands,in,out);
+    }
+    // Query the first proposed sweep against the complete isolated receiver
+    // list. Contacts and C44A8 correction remain plans, not scheduler writes.
+    bool probe_trial_first_moving_pair(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                       const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                                       GRedSasukeMovingSelection* out,std::string* error)const{
+        GRedSasukeFreshPairInput registered;
+        GRedBeamShapeOperands operands;
+        if(!out||!sample_trial_pair(source,world,view,physical,&registered)||!trial_shape_operands(source,world,&operands))
+            return refuse(error,"current isolated attack and receiver entries required");
+        GRedTrialFirstSweep first;
+        if(!probe_trial_first_sweep(source,world,view,physical,&first,error))return false;
+        GRedSasukeMovingScanInput scan;
+        scan.complete_reviewed_list_declared=true; // exactly one owned receiver in the isolated 417C
+        scan.beam={true,first.shape.previous_d4,first.shape.previous_e0,first.transform.frame114,first.scale.physical_c0};
+        scan.carrier=first.visit.flight;scan.stored_scale=first.scale;
+        scan.contact_update100=0x800c44a8; // reviewed numeric correction, not a registered callback
+        GRedSasukeMovingReceiver receiver;
+        static_cast<GRedSasukeOrderedPairSample&>(receiver)=registered;
+        receiver.body=registered.body;
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        if(!normal_gred_beam_sasuke_select_moving(red,operands,scan,{&receiver,1},out))
+            return refuse(error,"first sweep selection refused");
+        if(error)error->clear();
+        return true;
+    }
+    bool release_uninitialized(std::string* error){
+        const auto pool=pool_.lock();
+        if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
+        status_=GRedClass3TrialStatus::Failed;factory_={};
+        if(!pool->release(lease_,error))return false;
+        status_=GRedClass3TrialStatus::Released;return true;
+    }
+private:
+    bool sample_trial_pair(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                           const NativeBattleMvpView& view,const ScenePhysicalPools& physical,GRedSasukeFreshPairInput* out)const{
         const auto attack=trial_attack_entry(source,world,view,physical);
         const auto receiver=trial_receiver_entry(source,world,view,physical);
         const auto pool=pool_.lock();
@@ -477,9 +518,6 @@ public:
         const auto* models=pool->class3_models(lease_);
         if(!shape||!shape->sphere_seed||!shape->sphere_seed->sweep||shape->trial_phase10!=1||
            !body||!body->previous_radius8c||!models||!models->trial_token26c)return false;
-        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
-        GRedBeamShapeOperands operands;
-        if(!trial_shape_operands(source,world,&operands))return false;
         GRedSasukeFreshPairInput in;
         in.opposing_direct_scope_declared=in.lists_declared=true;
         in.attack_list.lists=1u<<unsigned(CollisionRegistrationList::L477C);
@@ -492,16 +530,8 @@ public:
         const auto& sphere=*shape->sphere_seed;
         in.beam={true,shape->trial_phase10,0,sphere.center64,sphere.radius88,sphere.broad_radius7c};
         in.body={true,1,0,body->center64,body->radius88,body->broad_radius7c};
-        return normal_gred_beam_sasuke_fresh_pair(red,operands,in,out);
+        *out=in;return true;
     }
-    bool release_uninitialized(std::string* error){
-        const auto pool=pool_.lock();
-        if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
-        status_=GRedClass3TrialStatus::Failed;factory_={};
-        if(!pool->release(lease_,error))return false;
-        status_=GRedClass3TrialStatus::Released;return true;
-    }
-private:
     bool trial_shape_operands(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                               GRedBeamShapeOperands* out)const{
         constexpr NormalGRedNeutralBSource red{0x0615,0,0};

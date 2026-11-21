@@ -1347,6 +1347,24 @@ radius grow. **6,321** checks passed in each of the native and
 sanitizer trials. This step does not publish the matrix or sweep,
 scan for a moving hit, or perform retirement.
 
+#### Isolated moving-pair query
+
+The bounded source scan accepted the nearer eligible receiver,
+replaced it with the later list entry on an exact tie, and rejected
+the token on a repeat scan after contact. The receiver record and
+matrix in that replay were supplied; it did not establish a retail
+Sasuke constructor or the intervening coordinator passes.
+
+The native trial now queries its first proposed sweep against the
+sole current `417C` body. The separated fixture yields no selection.
+The close fixture still uses a deliberately enlarged Sasuke sphere:
+it proposes contact, a changed beam position, a rebuilt matrix, and
+the receiver token. Re-reading the query returns the same proposal
+because it writes none of those fields. Missing, foreign, or stale
+registrations cannot produce a replacement result. Native and
+sanitizer runs each passed **6,326** checks. No live contact,
+damage, retirement, or full-scene scan is published.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect
