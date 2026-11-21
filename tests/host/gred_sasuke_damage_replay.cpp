@@ -74,6 +74,24 @@ int main(int argc,char** argv){
     }
     std::printf("declared level-zero 0615/0 -> 000A/0: source-table amount %d, proposed HP %d -> %d\n",
         int(plan.amount),int(plan.previous1c8),int(plan.current1c6));
+    // Match the joined moving-contact source replay: the only changed
+    // factor input is team 1's Force history, not HP, scale or hit geometry.
+    auto full_force=sample;
+    full_force.receiver_force=full_force.receiver_force_cap;
+    GRedBeamSasukeTableIndices depleted_indices,full_indices;
+    GRedBeamSasukeHealthPlan full_plan,same_contact;
+    if(!normal_gred_beam_sasuke_table_indices(sample,&depleted_indices)||
+       !normal_gred_beam_sasuke_table_indices(full_force,&full_indices)||
+       depleted_indices.credit_hp!=0||depleted_indices.receiver_hp!=4||depleted_indices.credit_force!=31||
+       depleted_indices.receiver_force!=31||full_indices.credit_hp!=0||full_indices.receiver_hp!=4||
+       full_indices.credit_force!=31||full_indices.receiver_force!=0||
+       !normal_gred_beam_sasuke_health_from_tables(red,selected.contact,in,sample,table,&same_contact)||
+       same_contact.amount!=19||same_contact.current1c6!=161||
+       !normal_gred_beam_sasuke_health_from_tables(red,selected.contact,in,full_force,table,&full_plan)||
+       full_plan.amount!=20||!full_plan.write_health||full_plan.current1c6!=160||full_plan.previous1c8!=180||full_plan.reaches_zero){
+        std::fputs("receiver Force history did not reproduce the 19/20 damage split\n",stderr);return 1;
+    }
+    std::puts("Same moving contact and HP histories: receiver Force history 0/100 proposes 19; 100/100 proposes 20 (180 -> 160).");
     std::puts("Fresh sphere fixture: tangency at (22,0,0); one-unit gap and repeated token refused. No live HP was written.");
     GRedBeamSasukePostHitInput after;
     after.reviewed_post_contact_declared=true;after.credit_total418=100;after.receiver_total41c=30;

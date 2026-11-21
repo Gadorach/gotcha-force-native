@@ -1633,6 +1633,15 @@ History is separate from the HP value the writer would change. Missing
 tables or out-of-scope selectors refuse rather than substituting unit
 factors. The explicit zero branches still bypass table lookup.
 
+The joined original moving-contact replay used receiver **Force
+history `100/100`**, not `0/100`. With the same ordinary HP histories,
+scales, and other indices, that changes the receiver Force index from
+31 (coefficient `0.93`) to 0 (`1.0`). The same detached moving contact
+now reproduces both cases from GFDA: **19** at `0/100` (`180 -> 161`),
+**20** at `100/100` (`180 -> 160`). The bounded source replay also
+clamped a separate `7 -> 0` case. These are conditional outcomes, not
+damage constants or authority for an HP write in the native trial.
+
 Run the detached amount fixture from the repository root with `DOL`
 set to the qualified executable:
 
