@@ -3,6 +3,7 @@
 #include "engine/gameplay/scene_physical_pools.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_art.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_sasuke_receiver.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_shape_tail.hpp"
 #include "engine/gameplay/collider_sphere_shape.hpp"
 
@@ -13,6 +14,11 @@ struct GRedTrialLaunch {
     GRedBeamMuzzlePlan muzzle;
     GRedBeamFlightSample flight;
     GRedBeamScalePlan scale;
+};
+struct GRedTrialReceiverSeed {
+    u8 slot=255;
+    ColliderSphereSeed sphere;
+    std::array<u8,24> hit_row{};
 };
 
 // Opt-in native lab bridge. Owns a class-3 slot and its constructor fields,
@@ -310,6 +316,30 @@ public:
         if(!entry||entry->index()!=shape_.index()||entry->generation()!=shape_.generation())return {};
         return entry;
     }
+    bool seed_trial_receiver_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                   const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
+                                   const NormalSasukeBeamReceiverProfile& profile,f32 declared_c0,std::string* error){
+        if(receiver_attempted_||world.paused()||!profile.ready()||!std::isfinite(declared_c0)||
+           declared_c0<=0||declared_c0>16||!trial_attack_entry(source,world,view,physical))
+            return refuse(error,"current attack entry and exact Sasuke profile/scale required");
+        receiver_attempted_=true;
+        Mat4 key2;
+        GRedTrialReceiverSeed next;
+        if(!view.observe_sasuke_trial_key2(world,handoff_.frame_,handoff_.publication_,&key2)||
+           !profile.seed(key2,declared_c0,&next.sphere)||!next.sphere.previous_radius8c||next.sphere.sweep)
+            return refuse(error,"same-publication normal Sasuke key 2 and sphere required");
+        next.slot=1;
+        std::copy_n(profile.hit_row().data,next.hit_row.size(),next.hit_row.begin());
+        receiver_=next;
+        if(error)error->clear();
+        return true;
+    }
+    // This seed samples the MVP's Sasuke pose, not a recovered source
+    // controller. It is not a class4 body lease or a 417C entry.
+    const GRedTrialReceiverSeed* trial_receiver(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                               const NativeBattleMvpView& view,const ScenePhysicalPools& physical)const{
+        return receiver_&&trial_attack_entry(source,world,view,physical)?&*receiver_:nullptr;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -327,7 +357,7 @@ private:
         return false;
     }
     bool bound_=false,header_attempted_=false,launch_attempted_=false,sphere_attempted_=false,activation_attempted_=false;
-    bool registry_attempted_=false,registry_published_=false;
+    bool registry_attempted_=false,registry_published_=false,receiver_attempted_=false;
     u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;
@@ -341,6 +371,7 @@ private:
     std::optional<GRedBeamFactoryBirthFields> birth_;
     std::optional<GRedTrialLaunch> launch_;
     std::optional<GRedBeamShapeTailPlan> activation_;
+    std::optional<GRedTrialReceiverSeed> receiver_;
     AnimatedModelScene beam_art_;
 };
 }

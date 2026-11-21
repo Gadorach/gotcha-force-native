@@ -406,6 +406,13 @@ public:
         draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;
     }
 private:
+    friend class NativeGRedClass3TrialBridge;
+    bool observe_sasuke_trial_key2(const NativeBattleMvp& world,const NativeBorgSourcePose& paid_pose,
+                                   u64 publication,Mat4* out)const{
+        u64 current=0;
+        return source_pose_publication(world,paid_pose,&current)&&current==publication&&
+            borgs_[1].observe_receiver_key2(world.actors()[1],world.tick(),out);
+    }
     const char* practice_exit_hint()const{
         switch(source_practice_back_){
         case PracticeBackScreen::OwnedCollection:return "ESC COLLECTION";

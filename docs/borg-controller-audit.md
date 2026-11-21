@@ -1250,6 +1250,23 @@ The **6,142** native and sanitizer checks include these refusals.
 The receiver registry, scene-wide enumeration, contact, damage, and
 playable combat are not wired by this entry.
 
+#### Trial Sasuke receiver seed
+
+The optional receiver uses the exact normal `000A/0` collision bank,
+body 9 and hit row 0 (AFS member 495, block 2). Once the isolated attack
+entry is current, it samples logical key 2 of Sasuke's **native MVP pose**
+from the very same paid publication. The descriptor's local point
+`(0,-14,0)` supplies the center; its radius 22 uses a declared trial
+physical scale. This is not Sasuke's recovered source-controller pose,
+a class-4 receiver allocation, a `417C` entry, or a hit.
+
+The extended normal and sanitizer trials each passed **6,154** checks.
+The seed refuses foreign, stale or missing attack frames, and a later
+class-4 allocation invalidates its inspection. Export from a local
+`pl000a.pzz` with
+`python3 -B -m tools.extract.gred_sasuke_receiver "$DOL" "$SASUKE_MEMBER" "$work/receiver.bin"`,
+then pass that file after the optional beam art in the trial command.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect

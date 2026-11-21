@@ -54,6 +54,7 @@ struct AllocationFixture {
     std::vector<SceneClass3Lease> held_carriers;
     std::vector<SceneCollisionLease> held_shapes;
     const BeamDrawFixture* draw_fixture=nullptr;
+    const NormalSasukeBeamReceiverProfile* receiver_profile=nullptr;
 
     bool bind(NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,Capacity capacity){
         auto recipe=physical_pools_fixture::bytes();
@@ -147,7 +148,7 @@ struct AllocationFixture {
                 return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
                              !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view)&&
                              !bridge.trial_sphere(source,world,view)&&!bridge.trial_shape_activation(source,world,view)&&
-                             !bridge.trial_attack_entry(source,world,view,physical),
+                             !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical),
                              "pool retirement revokes both leases without claiming source cleanup");
             }
             if(capacity==Capacity::StaleHeader){
@@ -177,6 +178,9 @@ struct AllocationFixture {
         const auto desc_before=*descriptors->snapshot();
         const auto shape_before=*pool->collision_snapshot();
         const auto scheduler=*physical.scheduler();
+        if(receiver_profile&&!check(!bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,1,&error)&&
+                                    !bridge.trial_receiver(source,world,view,physical),
+                                    "no receiver seed without an accepted attack entry"))return false;
         if(!check(!bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error)&&
                   !pool->class3_models(bridge.lease())->trial_token26c&&
                   !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error)&&
@@ -302,10 +306,25 @@ struct AllocationFixture {
                   *physical.scheduler()==registered&&
                   !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
                   "one exact child lease and source-ordered count; no duplicate admission"))return false;
+        if(receiver_profile){
+            if(!check(!bridge.seed_trial_receiver_once(unrelated,world,view,physical,*receiver_profile,1,&error)&&
+                      !bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,0,&error)&&
+                      bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,.75f,&error),
+                      "only exact current trial and positive declared scale can sample Sasuke's body"))return false;
+            const auto* receiver=bridge.trial_receiver(source,world,view,physical);
+            if(!check(receiver&&receiver->slot==1&&receiver->sphere.radius88==16.5f&&
+                      receiver->sphere.previous_radius8c==16.5f&&!receiver->sphere.sweep&&
+                      receiver->sphere.center64==receiver->sphere.previous_center70&&
+                      receiver->sphere.center64!=world.actors()[1].position&&
+                      receiver->hit_row[1]==5&&*physical.scheduler()==registered&&*pool->collision_snapshot()==class4&&
+                      !bridge.seed_trial_receiver_once(source,world,view,physical,*receiver_profile,1,&error),
+                      "body 9 uses a distinct pose-derived center without registration or an extra collider"))return false;
+        }
         if(capacity==Capacity::StaleRegistry){
             return check(pool->acquire_collision(48,false,{},&neighbor,&error)==SceneObjectAcquire::Allocated&&
                          !bridge.trial_attack_entry(source,world,view,physical)&&pool->release(neighbor,&error)&&
-                         !bridge.trial_attack_entry(source,world,view,physical)&&*physical.scheduler()==registered,
+                         !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical)&&
+                         *physical.scheduler()==registered,
                          "changed class4 topology invalidates the entry without replay or count rollback");
         }
         if(draw_fixture&&capacity==Capacity::Shape){
@@ -326,7 +345,7 @@ struct AllocationFixture {
                       "same accepted carrier submits two authored meshes through RenderEngine"))return false;
             NativeBorgSourcePose republished;
             if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error)&&
-                      !bridge.trial_attack_entry(source,world,view,physical),
+                      !bridge.trial_attack_entry(source,world,view,physical)&&!bridge.trial_receiver(source,world,view,physical),
                       "republish invalidates the paid-frame draw gate"))return false;
             render.begin_frame({});
             if(!check(!bridge.draw_trial_beam(source,world,view,render,camera)&&render.end_frame(),
@@ -340,7 +359,8 @@ struct AllocationFixture {
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
            const GRedNeutralBLocalLibrary& library,s16 rounds,bool edit_final,Capacity capacity=Capacity::NoAttempt,
-           const GRedBeamAttackProfile* attack=nullptr,const BeamDrawFixture* draw_fixture=nullptr){
+           const GRedBeamAttackProfile* attack=nullptr,const BeamDrawFixture* draw_fixture=nullptr,
+           const NormalSasukeBeamReceiverProfile* receiver_profile=nullptr){
     NativeBattleMvp world;
     NativeBorgAnimationSeed seed;
     NativeGRedNeutralBTrial source;
@@ -352,6 +372,7 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
     declared={}; // only the trial's owned source-field sample may later be copied
     AllocationFixture allocation;
     allocation.draw_fixture=draw_fixture;
+    allocation.receiver_profile=receiver_profile;
     if(capacity!=Capacity::NoAttempt&&(!allocation.bind(source,world,capacity)||
        !check(!allocation.bridge.try_once(source,world,view,&error),"unpaid frame cannot touch class3")))return false;
     NativeGRedNeutralBTrialReadout state;
@@ -438,7 +459,8 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
 
 int main(int argc,char** argv){
     using namespace gf;
-    if(argc<4||argc>6){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR GROUND_INPUTS_DIR NEUTRAL_B_GFMP [BEAM_SHAPE [BEAM_ART]]\n",argv[0]);return 2;}
+    if(argc<4||argc>7){std::fprintf(stderr,
+        "usage: %s MVP_ASSET_DIR GROUND_INPUTS_DIR NEUTRAL_B_GFMP [BEAM_SHAPE [BEAM_ART [SASUKE_RECEIVER]]]\n",argv[0]);return 2;}
     const std::string art=argv[1],ground=argv[2];
     std::array<std::string,6> names{art+"/g-red.hsd",art+"/g-red.prefix",art+"/g-red.pose",
                                    art+"/g-red.motions",argv[3],ground+"/pose-height.gfhc"};
@@ -466,13 +488,26 @@ int main(int argc,char** argv){
         if(!check(!altered.load({data.data(),data.size()})&&!altered.ready()&&attack.ready(),
                   "changed hit row cannot replace the owned attack profile"))return 1;
         NormalGRedBeamArtBank beam_bank;
-        if(argc==6&&(!check(files.read(argv[5],data)&&beam_bank.load({data.data(),data.size()},&error),
+        if(argc>=6&&(!check(files.read(argv[5],data)&&beam_bank.load({data.data(),data.size()},&error),
                             "exact common beam art bank")))return 1;
+        NormalSasukeBeamReceiverProfile receiver;
+        if(argc==7){
+            if(!check(files.read(argv[6],data)&&receiver.load({data.data(),data.size()},&error),"exact Sasuke receiving bank"))return 1;
+            Mat4 key2;
+            ColliderSphereSeed sphere;
+            data.back()^=1;
+            NormalSasukeBeamReceiverProfile altered;
+            if(!check(!altered.load({data.data(),data.size()},&error)&&!altered.ready()&&
+                      receiver.seed(key2,.5f,&sphere)&&sphere.radius88==11&&sphere.center64==std::array<f32,3>{0,-14,0},
+                      "altered row refused; owned profile applies the authored local point"))return 1;
+        }
         const BeamDrawFixture draw_fixture{beam_bank,render};
         for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape,Capacity::StaleMuzzle,
                            Capacity::RegistryOccupied,Capacity::StaleRegistry})
-            if(!trial(files,art,ground,view,library,5,false,capacity,&attack,argc==6?&draw_fixture:nullptr))return 1;
+            if(!trial(files,art,ground,view,library,5,false,capacity,&attack,argc>=6?&draw_fixture:nullptr,
+                      argc==7?&receiver:nullptr))return 1;
     }
-    std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s, no hit or HP write\n",
-                checks,argc>=5?", class4 child and isolated attack registry":"",argc==6?", authored beam draw":"");
+    std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s%s, no hit or HP write\n",
+                checks,argc>=5?", class4 child and isolated attack registry":"",argc>=6?", authored beam draw":"",
+                argc==7?", sampled Sasuke body":"");
 }

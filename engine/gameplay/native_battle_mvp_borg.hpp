@@ -194,6 +194,14 @@ public:
         return any;
     }
 private:
+    friend class NativeBattleMvpView;
+    bool observe_receiver_key2(const BattleMvpActor& actor,u32 tick,Mat4* out)const{
+        if(!out||!ready_||!presentation_ready_||!scene_.ready()||source_pose_active_||
+           model_id_!=0x000a||actor.model!=model_id_||!actor.health||actor.source_ground_motion||
+           tick!=last_tick_||actor.position!=last_position_||actor.facing!=last_facing_||
+           actor.upper_body_yaw!=last_aim_yaw_||world_.matrices.size()<=2)return false;
+        *out=world_.matrices[2];return true;
+    }
     std::shared_ptr<const NativeBorgSourcePoseScope> current_source_frame(const NativeBattleMvp& world)const{
         if(!ready_||!presentation_ready_||!source_pose_active_||!scene_.ready()||last_tick_!=world.tick())return {};
         const auto owned=source_frame_scope_.lock();const auto binding=scene_.instance_binding();

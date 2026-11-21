@@ -21,6 +21,7 @@ public:
     }
 private:
     friend class NativeGRedNeutralBTrial;
+    friend class NativeGRedClass3TrialBridge;
     NativeBorgSourcePose frame_;
     GRedBeamPoolCall call_;
     u64 publication_=0;
