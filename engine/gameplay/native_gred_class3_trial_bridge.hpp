@@ -322,7 +322,7 @@ public:
         return entry;
     }
     // Evaluate the next untargeted motion prefix, without treating a body
-    // registration as the six-slot actor snapshot needed by 83714.
+    // registration as the six-slot type-7 object snapshot read by 83714.
     bool probe_trial_first_flight(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                   const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
                                   GRedTrialFlightPrefix* out)const{
@@ -335,15 +335,21 @@ public:
            !normal_gred_beam_active_plan(red,gates,&next.active))return false;
         *out=next;return true;
     }
-    // Stationary MVP geometry only. Its two actors provide the trial
-    // positions, independently of which collider lists are populated.
+    // No-event stationary trial only. 83714 reads scene type-7 object
+    // slots, not the combatant roster or either collider list.
     bool probe_trial_first_phase_one(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                      const NativeBattleMvpView& view,const ScenePhysicalPools& physical,
                                      GRedBeamPhaseOnePlan* out,std::string* error)const{
         const auto* controls=physical.controls();
-        if(!out||!controls||physical.actor_seed()||physical.stage_seed()||(controls->d1&1u)||
+        if(!out||!controls||controls->eb||physical.actor_seed()||physical.stage_seed()||(controls->d1&1u)||
            !first_flight_current(source,world,view,physical))
             return refuse(error,"current isolated flight and trial scene controls required");
+        const auto pool=pool_.lock();
+        const auto* objects=pool?pool->snapshot():nullptr;
+        const auto* carriers=pool?pool->class3_snapshot():nullptr;
+        if(!objects||objects->free_count!=objects->records.size()||!carriers||
+           carriers->free_count+1u!=carriers->records.size())
+            return refuse(error,"no-event trial requires only the accepted carrier");
         constexpr NormalGRedNeutralBSource red{0x0615,0,0};
         // These are the declared stage473 bench bounds, not live stage
         // globals and not the MVP's movement bounds.
@@ -354,8 +360,7 @@ public:
         // active visit: fresh +29C and +1D9 have no prior work to carry.
         in.previous2c=in.flight.position20;in.previous_declared=true;
         in.null_target_c8=birth_->targets_c8_cc_null;
-        in.slots.declared=true;in.slots.selection_eb=controls->eb;
-        for(unsigned i=0;i<world.actors().size();++i)in.slots.slots[i]={true,true,world.actors()[i].position};
+        in.slots.declared=true; // six empty type-7 slots in this trial route
         return normal_gred_beam_phase_one_plan(red,in,source.trial_stage_grids(),bounds,out,error);
     }
     bool seed_trial_receiver_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,

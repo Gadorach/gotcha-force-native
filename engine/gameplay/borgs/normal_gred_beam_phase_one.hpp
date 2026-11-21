@@ -17,7 +17,7 @@ struct GRedBeamProximityPlan {
     f32 weight29c=0;
     u8 examined_mask=0,stop_slot=255;
 };
-// 83714: six declared scene slots, not actor/collider receipts. A nonzero
+// 83714: six declared type-7 scene object slots, not actors or colliders. A nonzero
 // scene mask filters slots. After the first far slot the same weight is
 // used for every later contribution; all directions use the old position.
 // A later near stop keeps that weight write but discards the nudge sum.

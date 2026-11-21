@@ -1303,32 +1303,33 @@ carrier's accepted launch rather than a detached muzzle fixture.
 The first untargeted step proposes a move of 80 source units and a
 speed of 80.5 for the next update. It stops at `AwaitProximity` with
 all 300 lifetime counts intact. The isolated collider registry is
-not the six-slot actor roster required by `83714`; the probe does
-not assume that roster, stage, or bounds are clear.
+not the six-slot object table read by `83714`; the probe does not
+assume those slots, stage, or bounds are clear.
 
 The native and sanitizer trials each passed **6,306** checks,
 including refusal on stale registry or renderer publication. The
 probe changes no carrier matrix, sphere, or registry state and does
 not advance the live beam.
 
-#### First active visit with trial actor and stage geometry
+#### First active visit in the no-event trial
 
-A separate probe now evaluates `83714` using the two current
-stationary MVP actor positions in slots 0 and 1, not the collider
-centers or membership lists. The four other slots are empty in this
-fixture, not inferred empty in a retail battle. On a clear proximity
-result it uses the three already qualified stage473 grids, the launch
-position as the previous endpoint (`8997C`), and declared test bounds
-of X/Z ±4500 and top Y 5000.
+`83714` reads the six **type-7 object slots** at scene `+60/+68`,
+not the battle actors or collider registry. The 12-case bounded
+source replay verified the reset, type-7 owner publication and
+identity-checked clearing. In the reviewed no-event G-Red/Sasuke
+case, the slots and selection mask `EB` remained clear. Separate
+source cases exercised selection and expiry; the native probe
+does not claim those paths.
 
-Both spawn fixtures visit two far slots and apply the weight-3 nudge
-before a stage segment miss and bounds check, proposing lifetime
-`300 -> 299` without recalculating distance for the nudge. Registering
-Sasuke's sphere does not change those results: even the exaggerated
-sphere that overlaps at launch does not make the actor root near.
-The native and sanitizer trials each passed **6,320** checks. This
-does not publish motion, decrement live lifetime, or schedule another
-update; it is not a qualified source-scene roster or stage owner.
+The native probe now leaves all six slots empty in this fixture
+and rejects unknown extra allocations or a nonzero selection mask.
+It no longer uses actor roots as a substitute. Both spawns produce
+no nudge, miss the three qualified stage473 grids and clear the
+declared bounds (X/Z ±4500, top Y 5000), proposing `300 -> 299`.
+Publishing Sasuke's collider has no effect on that result. The
+native and sanitizer trials each passed **6,315** checks. This
+does not publish motion or lifetime, schedule another update, or
+establish a live scene owner for those object slots or stage bounds.
 
 ### Argument 43: authored beam art
 
@@ -1432,7 +1433,7 @@ Neither scene fixture is a live beam trace.
 
 ### Argument 43: detached phase-one stop chain
 
-The `83714` helper visits six scene slots in order. It reads position
+The `83714` helper visits six type-7 object slots in order. It reads position
 only for an enabled, non-null slot passing the scene's optional bitmask.
 The first far slot increases the nudge weight by 3, capped at 100.
 Every far contribution uses the same post-motion beam position and

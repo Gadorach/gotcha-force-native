@@ -332,21 +332,27 @@ struct AllocationFixture {
                   phase_one.active.lifetime1c==-1&&world.set_paused(false)&&
                   bridge.probe_trial_first_phase_one(source,world,view,physical,&phase_one,&error),
                   "first active probe reads the current trial scene, not a foreign arena or paused frame"))return false;
-        std::array<f32,3> nudge{};
-        for(const auto& actor:world.actors()){
-            auto toward=source_intersection_detail::sub(actor.position,flight.flight.position20);
-            if(!check(source_basis_detail::length(toward)>150&&source_basis_detail::normalize(&toward),
-                      "proximity uses actor roots, not the receiving sphere"))return false;
-            for(unsigned i=0;i<3;++i)nudge[i]+=toward[i]*3;
-        }
         if(!check(phase_one.active.route==GRedBeamActiveRoute::Continue&&phase_one.proximity.stop_slot==255&&
-                  phase_one.proximity.examined_mask==3&&phase_one.proximity.weight29c==3&&
-                  phase_one.flight.position20==gred_beam_flight_detail::advance(flight.flight.position20,nudge)&&
+                  !phase_one.proximity.examined_mask&&!phase_one.proximity.weight29c&&
+                  phase_one.proximity.position20==flight.flight.position20&&phase_one.flight.position20==flight.flight.position20&&
                   phase_one.flight.distance180==flight.flight.distance180&&
                   phase_one.stage_visited&&phase_one.stage.queried&&!phase_one.stage.surface.grid_code&&
                   phase_one.stage.clipped_previous==launched.position20&&phase_one.stage.clipped_current==phase_one.flight.position20&&
                   phase_one.bounds_visited&&phase_one.active.lifetime1c==299&&!phase_one.active.request_remove_shapes,
-                  "two far slots nudge the proposal before the real stage-grid miss and bounds check"))return false;
+                  "empty type-7 slots do not nudge or stop the beam before the stage-grid miss and bounds check"))return false;
+        if(capacity==Capacity::Shape){
+            GRedBeamPhaseOnePlan blocked;
+            blocked.active.lifetime1c=-1;
+            SceneObjectLease other_object;
+            SceneClass3Lease other_carrier;
+            if(!check(pool->acquire(-1,false,0,{},&other_object,&error)==SceneObjectAcquire::Allocated&&
+                      !bridge.probe_trial_first_phase_one(source,world,view,physical,&blocked,&error)&&blocked.active.lifetime1c==-1&&
+                      pool->release(other_object,&error)&&
+                      pool->acquire_class3(-1,false,0,&other_carrier,&error)==SceneObjectAcquire::Allocated&&
+                      !bridge.probe_trial_first_phase_one(source,world,view,physical,&blocked,&error)&&blocked.active.lifetime1c==-1&&
+                      pool->release(other_carrier,&error),
+                      "unknown extra class-2 or class-3 allocation cannot stand in for the no-event trial"))return false;
+        }
         if(!check(launch->flight.position20==launched.position20&&launch->flight.speed44==80&&
                   carrier->trial_frame114==launch_frame&&shape->sphere_seed==seed_sphere&&
                   *pool->collision_snapshot()==class4&&*physical.scheduler()==registered,
@@ -408,7 +414,7 @@ struct AllocationFixture {
                       paired.active.route==phase_one.active.route&&paired.active.lifetime1c==phase_one.active.lifetime1c&&
                       paired.proximity.examined_mask==phase_one.proximity.examined_mask&&
                       paired.flight.position20==phase_one.flight.position20,
-                      "publishing a receiver collider does not change the separate proximity roster"))return false;
+                      "publishing a receiver collider does not populate the separate type-7 slots"))return false;
             using R=GRedSasukeFreshPairRoute;
             if(capacity==Capacity::PairOverlap){
                 if(!check(pair.route==R::Overlap&&pair.narrow_sampled&&pair.prefix.beam_receiver290==1&&
