@@ -1205,6 +1205,14 @@ vertices), with no textures or provisional billboard. This verifies
 the record's draw path, not a screenshot, live carrier, material
 update schedule, or collision.
 
+The stationary native trial also has an optional authored launch draw.
+It takes the exact current carrier matrix from the paid trial and
+submits both meshes through `AnimatedModelScene` and `RenderEngine`.
+A foreign trial, a same-tick republish, or a retired carrier cannot
+draw the prepared model. This is an explicit trial draw at material
+frame zero, not source callback registration, flight, or collision.
+The extended native and sanitizer trials each passed **5,881** checks.
+
 Given the local `efct.pzz` extracted from the original AFS:
 
 ```sh
@@ -1213,6 +1221,9 @@ python3 -B -m tools.extract.gred_beam_art "$EFCT" "$work/beam.hsd"
 c++ -std=c++20 -O1 -I . tests/host/gred_beam_art.cpp -o "$work/gred-beam-art"
 "$work/gred-beam-art" "$work/beam.hsd"
 ```
+
+To include the native launch draw, pass `"$work/beam.hsd"` after the
+optional beam-shape path in the `neutral-b-trial` command above.
 
 ### Argument 43: untargeted flight prefix and lifetime
 

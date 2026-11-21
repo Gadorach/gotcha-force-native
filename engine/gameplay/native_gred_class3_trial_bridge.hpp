@@ -2,6 +2,7 @@
 #include "engine/gameplay/native_gred_neutral_b_trial.hpp"
 #include "engine/gameplay/scene_physical_pools.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
+#include "engine/gameplay/borgs/normal_gred_beam_art.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_shape_tail.hpp"
 #include "engine/gameplay/collider_sphere_shape.hpp"
 
@@ -187,6 +188,31 @@ public:
            !installed_trial_birth(source,world,view))return nullptr;
         return &*launch_;
     }
+    // Draw the exact launch pose through the shared model renderer. This is
+    // an opt-in observation, not source callback registration or flight.
+    bool prepare_trial_beam_art(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                const NativeBattleMvpView& view,const NormalGRedBeamArtBank& bank,
+                                std::string* error){
+        if(beam_art_.ready()||!bank.ready()||!world_frame_current(source,world,view))
+            return refuse(error,"current launch and qualified common effect art required");
+        const auto pool=pool_.lock();
+        const auto* models=pool?pool->class3_models(lease_):nullptr;
+        if(!models||!models->trial_frame114||models->descriptor_count99!=1)
+            return refuse(error,"current carrier descriptor and matrix required");
+        Mat4 frame;
+        std::copy_n(models->trial_frame114->begin(),12,frame.m);
+        constexpr NormalGRedNeutralBSource red{0x0615,0,0};
+        AnimatedModelScene next;
+        if(!bank.prepare(red,birth_->copied.team88,&next,error)||!next.set_root_world(frame,error))return false;
+        next.set_enabled(true);beam_art_=std::move(next);
+        if(error)error->clear();
+        return true;
+    }
+    unsigned draw_trial_beam(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                             const NativeBattleMvpView& view,RenderEngine& render,const Camera& camera){
+        if(!beam_art_.ready()||!world_frame_current(source,world,view))return 0;
+        return beam_art_.draw(render,camera);
+    }
     bool initialize_trial_sphere_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
                                        const NativeBattleMvpView& view,std::string* error){
         const auto pool=pool_.lock();
@@ -266,6 +292,10 @@ public:
         status_=GRedClass3TrialStatus::Released;return true;
     }
 private:
+    bool world_frame_current(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                             const NativeBattleMvpView& view)const{
+        return source.current(world)&&trial_launch(source,world,view);
+    }
     static bool refuse(std::string* error,const char* why){
         if(error)*error=std::string("G-Red class3 trial: ")+why;
         return false;
@@ -284,5 +314,6 @@ private:
     std::optional<GRedBeamFactoryBirthFields> birth_;
     std::optional<GRedTrialLaunch> launch_;
     std::optional<GRedBeamShapeTailPlan> activation_;
+    AnimatedModelScene beam_art_;
 };
 }

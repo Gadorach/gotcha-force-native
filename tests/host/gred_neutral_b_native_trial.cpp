@@ -36,6 +36,10 @@ bool check(bool ok,const char* why){
     return ok;
 }
 enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,Shape,ShapeFull,StaleShape,StaleMuzzle};
+struct BeamDrawFixture {
+    const NormalGRedBeamArtBank& art;
+    RenderEngine& render;
+};
 constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125f,.875f,true};
 constexpr ColliderGeometryProfile geometry{{0,0x3f800000u,0x42480000u,0x3c8efa35u,0x42652ee1u,0x3fc90fdbu,
                                              0x3f060a92u,0x3c23d70au},true};
@@ -47,6 +51,7 @@ struct AllocationFixture {
     std::vector<SceneDescriptorLease> held_descriptors;
     std::vector<SceneClass3Lease> held_carriers;
     std::vector<SceneCollisionLease> held_shapes;
+    const BeamDrawFixture* draw_fixture=nullptr;
 
     bool bind(NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,Capacity capacity){
         auto recipe=physical_pools_fixture::bytes();
@@ -131,6 +136,12 @@ struct AllocationFixture {
                           "installed header refuses replay and rootless cleanup; class4 untouched"))return false;
                 if(!finish_shape(source,world,view,capacity))return false;
                 physical.retire();
+                if(draw_fixture){
+                    auto& render=draw_fixture->render;
+                    render.begin_frame({});
+                    if(!check(!bridge.draw_trial_beam(source,world,view,render,Camera{})&&render.end_frame(),
+                              "retired carrier cannot submit prepared beam geometry"))return false;
+                }
                 return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
                              !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view)&&
                              !bridge.trial_sphere(source,world,view)&&!bridge.trial_shape_activation(source,world,view),
@@ -263,6 +274,29 @@ struct AllocationFixture {
                   active->membership.lists==(1u<<unsigned(CollisionRegistrationList::L477C))&&
                   !bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error),
                   "one scene token, carrier latch and credit increment; 477C is a proposal only"))return false;
+        if(draw_fixture&&capacity==Capacity::Shape){
+            auto& render=draw_fixture->render;
+            if(!check(!bridge.prepare_trial_beam_art(unrelated,world,view,draw_fixture->art,&error)&&
+                      !bridge.prepare_trial_beam_art(source,world,view,NormalGRedBeamArtBank{},&error)&&
+                      bridge.prepare_trial_beam_art(source,world,view,draw_fixture->art,&error),
+                      "only a current launch and exact effect bank can prepare the shared art"))return false;
+            // Frame the recorded launch point from the side, without
+            // changing the matrix, pose, or simulation camera.
+            Camera camera;
+            for(unsigned i=0;i<3;++i)camera.target[i]=launch->flight.position20[i];
+            camera.eye[0]=camera.target[0]+140;camera.eye[1]=camera.target[1]+95;camera.eye[2]=camera.target[2]+222;
+            camera.viewport_width=640;camera.viewport_height=480;
+            render.begin_frame({});
+            if(!check(!bridge.draw_trial_beam(unrelated,world,view,render,camera)&&
+                      bridge.draw_trial_beam(source,world,view,render,camera)==2&&render.end_frame(),
+                      "same accepted carrier submits two authored meshes through RenderEngine"))return false;
+            NativeBorgSourcePose republished;
+            if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error),
+                      "republish invalidates the paid-frame draw gate"))return false;
+            render.begin_frame({});
+            if(!check(!bridge.draw_trial_beam(source,world,view,render,camera)&&render.end_frame(),
+                      "stale same-tick publication submits no beam"))return false;
+        }
         return check(
                      *pool->collision_snapshot()==class4&&*descriptors->snapshot()==desc_before&&
                      *physical.scheduler()==scheduler&&!world.shots_spawned()&&!world.hits(),
@@ -271,7 +305,7 @@ struct AllocationFixture {
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
            const GRedNeutralBLocalLibrary& library,s16 rounds,bool edit_final,Capacity capacity=Capacity::NoAttempt,
-           const GRedBeamAttackProfile* attack=nullptr){
+           const GRedBeamAttackProfile* attack=nullptr,const BeamDrawFixture* draw_fixture=nullptr){
     NativeBattleMvp world;
     NativeBorgAnimationSeed seed;
     NativeGRedNeutralBTrial source;
@@ -282,6 +316,7 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
               "fresh same-renderer native trial"))return false;
     declared={}; // only the trial's owned source-field sample may later be copied
     AllocationFixture allocation;
+    allocation.draw_fixture=draw_fixture;
     if(capacity!=Capacity::NoAttempt&&(!allocation.bind(source,world,capacity)||
        !check(!allocation.bridge.try_once(source,world,view,&error),"unpaid frame cannot touch class3")))return false;
     NativeGRedNeutralBTrialReadout state;
@@ -368,7 +403,7 @@ bool trial(Files& files,const std::string& art,const std::string& ground,NativeB
 
 int main(int argc,char** argv){
     using namespace gf;
-    if(argc!=4&&argc!=5){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR GROUND_INPUTS_DIR NEUTRAL_B_GFMP [BEAM_SHAPE]\n",argv[0]);return 2;}
+    if(argc<4||argc>6){std::fprintf(stderr,"usage: %s MVP_ASSET_DIR GROUND_INPUTS_DIR NEUTRAL_B_GFMP [BEAM_SHAPE [BEAM_ART]]\n",argv[0]);return 2;}
     const std::string art=argv[1],ground=argv[2];
     std::array<std::string,6> names{art+"/g-red.hsd",art+"/g-red.prefix",art+"/g-red.pose",
                                    art+"/g-red.motions",argv[3],ground+"/pose-height.gfhc"};
@@ -388,16 +423,20 @@ int main(int argc,char** argv){
     for(auto capacity:{Capacity::Available,Capacity::InstallHeader,Capacity::StaleHeader,
                        Capacity::NoDescriptor,Capacity::NoCarrier,Capacity::BothFull})
         if(!trial(files,art,ground,view,library,5,false,capacity))return 1;
-    if(argc==5){
+    if(argc>=5){
         std::vector<u8> data;
         GRedBeamAttackProfile attack,altered;
         if(!check(files.read(argv[4],data)&&attack.load({data.data(),data.size()}),"exact credited slot-2 bank and hit row"))return 1;
         data.back()^=1;
         if(!check(!altered.load({data.data(),data.size()})&&!altered.ready()&&attack.ready(),
                   "changed hit row cannot replace the owned attack profile"))return 1;
+        NormalGRedBeamArtBank beam_bank;
+        if(argc==6&&(!check(files.read(argv[5],data)&&beam_bank.load({data.data(),data.size()},&error),
+                            "exact common beam art bank")))return 1;
+        const BeamDrawFixture draw_fixture{beam_bank,render};
         for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape,Capacity::StaleMuzzle})
-            if(!trial(files,art,ground,view,library,5,false,capacity,&attack))return 1;
+            if(!trial(files,art,ground,view,library,5,false,capacity,&attack,argc==6?&draw_fixture:nullptr))return 1;
     }
-    std::printf("native neutral-B trial: %u checks PASS; class3 header%s, no collision admission\n",
-                checks,argc==5?", class4 child, carrier matrix and fresh activation":"");
+    std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s, no collision admission\n",
+                checks,argc>=5?", class4 child, carrier matrix and fresh activation":"",argc==6?", authored beam draw":"");
 }
