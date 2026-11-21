@@ -59,16 +59,29 @@ attack definitions, keep these identifiers independent:
 
 The action record separates **button**, **activation**, **guard/priority**
 and **action kind** (melee, projectile, special, no action). Ammo stock,
-refill pattern and replenishment timer are separate values. This allows
-range-dependent melee versus shot, charge and release branches, and an
-explicit no-op when no action is eligible. It does not infer an input priority.
+refill pattern, trigger and replenishment timer are separate values. The
+player-observed common ammo rule is **replenishment after depletion**:
+spending the last unit arms the move's delay; spending earlier units
+does not start it. Stock stays empty until the eligible timer expires.
+Verify the trigger and delay for each exact move and context; do not
+assign one cooldown per Borg, infer a delay from capacity, or convert
+source timer units directly into wall-clock time. Moves that share a
+stock channel use its verified rules, not independent invented timers.
+
+The action record allows range-dependent melee versus shot, charge and release
+branches, and an explicit no-op when no action is eligible. It does not infer
+an input priority.
 The [Gunman and Beta II audit](borg-controller-audit.md#revolver-gunman-and-death-borg-beta-ii-shared-movement-distinct-shots)
 illustrates why input admission, a pose release event, stock debit, and
 actor-owned outcome publication must remain separate. The same movement
 mapping does not select the same pose or outcome.
-The [Roach audit](borg-controller-audit.md#roach-one-use-jump-control-only-programs-and-bomb-stock)
-also shows why replenishment can depend on an owned object's retirement,
-not a generic elapsed reload timer.
+Use **replenishment** for ordinary stock recovery and **refund** for a
+proven reversal of a debit, such as an explicit allocation-failure branch.
+An object- or owner-triggered **stock return** is also distinct; the
+[Roach audit](borg-controller-audit.md#roach-one-use-jump-control-only-programs-and-bomb-stock)
+shows an explicit retirement return instead of generic timed replenishment.
+Neither a failed allocation nor a retired object implies a return on its
+own. Gradual refill and other exceptions require their own evidence.
 
 Reserve **mechanical outcomes** as their own event bindings, not VFX/SFX.
 User examples guide the slots: Witch charge shots may buff allies, debuff

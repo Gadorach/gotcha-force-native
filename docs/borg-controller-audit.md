@@ -7,6 +7,21 @@ Several representatives that share a prefix differ in movement type, resource po
 pose data or class actions. **Tribe is not a controller key.** These are
 static source comparisons, not 20 recovered playable controllers.
 
+## Ammunition audit convention
+
+The player reports a common pattern: an ammunition move starts its
+own replenishment delay when the last unit is spent, not on each shot.
+The checked shared mode-0 helpers (`6DBE0` debit, `6DD38` refill) support
+that pattern: partial debits do not arm the clock, and an armed timer
+restores stock at expiry. This does not qualify every move's mode,
+delay, pause gate, or timing in a live scene. Verify those separately
+for the actual move, stock channel, and installed form.
+
+In this audit a **refund** reverses a debit on an explicit branch.
+A **stock return** from a child or owner callback is not proof of a
+timed replenishment rule; likewise, “no refund on allocation failure”
+does not imply that ordinary timed replenishment is disabled.
+
 ## Scope and representatives
 
 Checked the qualified initialized `GG4E08` DOL revision used by the existing
