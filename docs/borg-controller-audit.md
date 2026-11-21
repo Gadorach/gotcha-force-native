@@ -872,26 +872,41 @@ alter the separate Normal Samurai close-B planner.
 ### Follow-up: Soul Ball return and blade growth
 
 - **Demon Samurai `0701/0` — Soul Ball.** The player observes two souls
-  available by default and suspects B replenishes when the thrown souls
-  return to the Samurai's orbit after attacking. The bounded source
-  trace verified one B stock unit: the paid cue sets each clear owner
-  flag at `158/159`, the sampled timer visits do not refill it, and a
-  separate owner hook restores depleted B when both flags are clear.
-  The two souls are not evidence of two ammo units. Trace each flag's
-  producer through launch, actual contact, return to orbit, and
-  retirement or interruption before calling any of those events the
-  refill trigger. [Wiki move reference](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580).
+  available by default, and the source setup (`F60A0`) attempts two
+  indexed orbit children. One B stock unit gates both: the paid cue
+  sets each clear `158/159` flag, and the orbit callback can advance
+  that flag from 1 to 2 and request an outbound child. When the
+  outbound child's return countdown completes, `15A35C` clears
+  its own flag and asks for removal. The separate `1226D0` owner hook
+  restores B when both flags are clear, not on the ammunition timer.
+  The outbound allocation-refusal path clears its flag too. A
+  successful enemy hit is not required by the checked return tail;
+  the actual target, contact, and interrupted-return branches still
+  need separate verification. [Wiki move reference](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580).
 - **Demon Samurai `0701/0` and Akuma Samurai `0708/0` — blade growth.**
   The player reports that Demon Samurai's blades extend slightly
   whenever any Borg is destroyed while he is in play and suspects
   Akuma Samurai shares the passive. The archived
   [Demon Samurai](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580)
   and [Akuma Samurai](https://gotchaforce.fandom.com/wiki/Akuma_Samurai?oldid=6720)
-  pages report this for both. No cap was found in play; that does
-  **not** establish unlimited growth. Verify the destruction event
-  and owner eligibility, then trace the increment and any clamp,
-  reset, or carry-over separately from rendered blade length,
-  collider reach, and damage.
+  pages report this for both. The checked zero-HP defeat branch
+  (`2C6D8`) scans the six slots for active, positive-HP `0701` and
+  `0708` actors without a team check and requests a separate incoming
+  soul effect for each. The request is not an award: the child's
+  arrival branch (`1595A0`) increments `15A` when its distance to the
+  parent is at most 30 source units.
+
+  Both models' shared blade update (`122770`) caps the normal
+  `15A` scalar at **100**, starting from a constructor seed of **1**.
+  The two extension fields move toward it in 0.1 steps from below;
+  separate numeric fields receive their own base value plus
+  `300 ×` the capped scalar. The cap is on this internal value, not on
+  elapsed deaths or a measured blade length. Rendering, collider
+  reach, live damage, and carry-over have not been verified.
+
+The follow-up passed **678 bounded source checks** across orbit
+dispatch, outbound return flag clearing, incoming arrival, and the
+cap and derived fields. It did not execute a complete battle.
 
 Akuma Samurai's checked B is a separate case: its paid cue requests
 type 2, key 59, and its mode-1 stock clock adds 300 per debit. The
