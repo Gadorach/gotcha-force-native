@@ -44,6 +44,7 @@ struct Storage {
     std::vector<std::array<SceneDescriptorLease,8>> class3_leases;
     std::vector<std::optional<SceneTrialBeamShapeFields>> trial_beam_shapes;
     u16 trial_scene_token=0;
+    u64 collision_allocation_revision=0;
     bool current()const{return live&&descriptors&&descriptors->ready()&&descriptors->snapshot()==descriptor_identity;}
 };
 }
@@ -170,6 +171,7 @@ public:
         push_physical(bank,lease.index_);if(error)error->clear();return true;
     }
     const ScenePhysicalBankSnapshot* collision_snapshot()const{return ready()&&storage_->collision.runtime_class==4?&storage_->collision:nullptr;}
+    u64 collision_allocation_revision()const{return collision_snapshot()?storage_->collision_allocation_revision:0;}
     const ScenePhysicalRecord* inspect(const SceneCollisionLease& lease)const{return owns(lease)?&storage_->collision.records[lease.index_]:nullptr;}
     const SceneTrialBeamShapeFields* trial_beam_shape(const SceneCollisionLease& lease)const{
         if(!owns(lease))return nullptr;
@@ -194,16 +196,19 @@ public:
         auto& bank=storage_->collision;
         if(!bank.free_count){if(error)error->clear();return SceneObjectAcquire::NoObjects;}
         const auto index=u16(bank.free_head);auto& old=bank.records[index];
-        if(old.generation==std::numeric_limits<u64>::max())return refuse("native generation overflow");
+        if(old.generation==std::numeric_limits<u64>::max()||storage_->collision_allocation_revision==std::numeric_limits<u64>::max())
+            return refuse("native generation overflow");
         old=pop_physical(bank,selected,append,index);storage_->trial_beam_shapes[index].reset();
+        ++storage_->collision_allocation_revision;
         out->owner_=storage_;out->index_=index;out->generation_=old.generation;if(error)error->clear();return SceneObjectAcquire::Allocated;
     }
     bool release(const SceneCollisionLease& lease,std::string* error){
         if(!owns(lease)){if(error)*error="scene collision pool: foreign/stale lease";return false;}
         auto& bank=storage_->collision;const auto& r=bank.records[lease.index_];
         if(r.active00||r.update0c_key||r.registration85!=255){if(error)*error="scene collision pool: unbound allocation required";return false;}
+        if(storage_->collision_allocation_revision==std::numeric_limits<u64>::max()){if(error)*error="scene collision pool: allocation revision exhausted";return false;}
         if(r.group01!=-1)unlink_group(unsigned(r.group01),r.free_next4,r.group_next8);
-        push_physical(bank,lease.index_);if(error)error->clear();return true;
+        push_physical(bank,lease.index_);++storage_->collision_allocation_revision;if(error)error->clear();return true;
     }
     bool ready()const{return storage_&&storage_->current();}bool requires_scene_allocation_join()const{return true;}
     void retire(){if(storage_)storage_->live=false;storage_.reset();attempted_=true;} //native invalidation, not source bulk cleanup/descriptors-free ACK

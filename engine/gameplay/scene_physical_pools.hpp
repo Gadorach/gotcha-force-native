@@ -5,6 +5,7 @@
 #include "engine/gameplay/scene_physical_fields.hpp"
 #include "engine/gameplay/battle_fixed_slots.hpp"
 #include "engine/assets/battle_stage_seed.hpp"
+#include <optional>
 namespace gf {
 //Class2/3/4 share an allocation owner, not constructors or current frame data.
 struct BattleStageSeedState {u8 phase00=0,draw08=0;u32 stage=0;std::array<f32,3> translation10{};f32 high34=0,low68=0;std::array<f32,4> bounds38_44{},expanded48_54{};};
@@ -59,6 +60,36 @@ public:
     void retire(){storage_.reset();attempted_=true;} //native invalidation, NOT source SDK/object bulk cleanup
 private:
     friend class BattlePreparationBootstrap;
+    friend class NativeGRedClass3TrialBridge;
+    struct TrialAttackRegistry {SceneCollisionLease entry;u64 allocation_revision=0;};
+    // A complete singleton only in an isolated trial arena. No live roster,
+    // stage, or other allocated shape may be skipped by this entry.
+    bool publish_trial_attack_registry(const SceneCollisionLease& child){
+        if(!current()||storage_->actor_seeded||storage_->stage_seeded||storage_->trial_attack_registry||
+           storage_->scheduler.registry_counts!=std::array<u16,10>{})return false;
+        const auto& pool=*storage_->class2;
+        const auto* bank=pool.collision_snapshot();
+        const auto* body=pool.inspect(child);
+        const auto* shape=pool.trial_beam_shape(child);
+        const auto* lists=pool.snapshot();
+        if(!bank||!body||!shape||!shape->sphere_seed||shape->trial_phase10!=1||body->active00!=1||
+           body->group01!=49||bank->free_count+1u!=bank->records.size()||!lists||
+           lists->group_heads[49]!=ScenePhysicalLink{4,child.index()}||
+           lists->group_tails[49]!=ScenePhysicalLink{4,child.index()})return false;
+        storage_->trial_attack_registry=TrialAttackRegistry{child,pool.collision_allocation_revision()};
+        // Count array follows the clear order (477C first); list enum uses
+        // ascending list addresses (477C last).
+        storage_->scheduler.registry_counts[0]=1;
+        return true;
+    }
+    std::optional<SceneCollisionLease> current_trial_attack_registry()const{
+        if(!current()||!storage_->trial_attack_registry)return {};
+        const auto& registry=*storage_->trial_attack_registry;
+        const auto& pool=*storage_->class2;
+        if(!pool.trial_beam_shape(registry.entry)||pool.collision_allocation_revision()!=registry.allocation_revision||
+           storage_->scheduler.registry_counts!=std::array<u16,10>{1})return {};
+        return registry.entry;
+    }
     //Fixed arena factory, NOT a free-list pop. 537A8 clears link4 in all six
     //cells. Source global free-count/head/tail metadata is retained but no longer
     //describes an available generic actor free-list; no class0 allocator exists.
@@ -75,7 +106,7 @@ private:
         storage_->stage=s;storage_->stage_seeded=true;if(error)error->clear();return true;
     }
     std::weak_ptr<ScenePhysicalControlFields> control_binding()const{if(!current())return {};return storage_->controls;}
-    struct Storage {ScenePhysicalPoolsProfile profile;std::shared_ptr<SceneDescriptorPool> domain;std::weak_ptr<SceneArchivePool> archives;std::shared_ptr<SceneObjectPool> class2;std::array<ScenePhysicalBankSnapshot,8> banks;ScenePhysicalSchedulerSnapshot scheduler;std::shared_ptr<ScenePhysicalControlFields> controls;BattleFixedSlotPlan actors;BattleStageSeedState stage;bool actor_seeded=false,stage_seeded=false;~Storage(){if(class2)class2->retire();}};
+    struct Storage {ScenePhysicalPoolsProfile profile;std::shared_ptr<SceneDescriptorPool> domain;std::weak_ptr<SceneArchivePool> archives;std::shared_ptr<SceneObjectPool> class2;std::array<ScenePhysicalBankSnapshot,8> banks;ScenePhysicalSchedulerSnapshot scheduler;std::optional<TrialAttackRegistry> trial_attack_registry;std::shared_ptr<ScenePhysicalControlFields> controls;BattleFixedSlotPlan actors;BattleStageSeedState stage;bool actor_seeded=false,stage_seeded=false;~Storage(){if(class2)class2->retire();}};
     std::unique_ptr<Storage> storage_;bool attempted_=false;
 };
 } // namespace gf

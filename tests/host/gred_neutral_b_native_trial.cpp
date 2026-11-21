@@ -35,7 +35,8 @@ bool check(bool ok,const char* why){
     if(!ok)std::fprintf(stderr,"native neutral-B trial: %s (%s)\n",why,error.c_str());
     return ok;
 }
-enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,Shape,ShapeFull,StaleShape,StaleMuzzle};
+enum class Capacity {NoAttempt,Available,InstallHeader,StaleHeader,NoDescriptor,NoCarrier,BothFull,
+                     Shape,ShapeFull,StaleShape,StaleMuzzle,RegistryOccupied,StaleRegistry};
 struct BeamDrawFixture {
     const NormalGRedBeamArtBank& art;
     RenderEngine& render;
@@ -43,7 +44,8 @@ struct BeamDrawFixture {
 constexpr GRedBeamFactoryParentFields trial_parent{0x0615,2,4,0,5,.75f,1.f,1.125f,.875f,true};
 constexpr ColliderGeometryProfile geometry{{0,0x3f800000u,0x42480000u,0x3c8efa35u,0x42652ee1u,0x3fc90fdbu,
                                              0x3f060a92u,0x3c23d70au},true};
-bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape||c==Capacity::StaleMuzzle;}
+bool shape_case(Capacity c){return c==Capacity::Shape||c==Capacity::ShapeFull||c==Capacity::StaleShape||
+    c==Capacity::StaleMuzzle||c==Capacity::RegistryOccupied||c==Capacity::StaleRegistry;}
 struct AllocationFixture {
     SceneDescriptorBootstrap models;
     ScenePhysicalPools physical;
@@ -144,7 +146,8 @@ struct AllocationFixture {
                 }
                 return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
                              !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view)&&
-                             !bridge.trial_sphere(source,world,view)&&!bridge.trial_shape_activation(source,world,view),
+                             !bridge.trial_sphere(source,world,view)&&!bridge.trial_shape_activation(source,world,view)&&
+                             !bridge.trial_attack_entry(source,world,view,physical),
                              "pool retirement revokes both leases without claiming source cleanup");
             }
             if(capacity==Capacity::StaleHeader){
@@ -175,7 +178,9 @@ struct AllocationFixture {
         const auto shape_before=*pool->collision_snapshot();
         const auto scheduler=*physical.scheduler();
         if(!check(!bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error)&&
-                  !pool->class3_models(bridge.lease())->trial_token26c,
+                  !pool->class3_models(bridge.lease())->trial_token26c&&
+                  !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error)&&
+                  !bridge.trial_attack_entry(source,world,view,physical),
                   "activation cannot precede construction, matrix and sphere publication"))return false;
         if(!check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&
                   !bridge.trial_launch(source,world,view)&&!pool->class3_models(bridge.lease())->trial_frame114,
@@ -189,7 +194,7 @@ struct AllocationFixture {
             return check(!bridge.initialize_trial_shape_once(source,world,view,&error)&&
                          *pool->collision_snapshot()==shape_before&&bridge.shape_status()==GRedTrialShapeStatus::NotAttempted,
                          "stale header or absent credited bank refuses before allocation");
-        const bool success=capacity==Capacity::Shape||capacity==Capacity::StaleMuzzle;
+        const bool success=capacity!=Capacity::ShapeFull;
         if(!check(bridge.initialize_trial_shape_once(source,world,view,&error)&&
                   bridge.shape_status()==(success?GRedTrialShapeStatus::Constructed:GRedTrialShapeStatus::NoSlot)&&
                   *descriptors->snapshot()==desc_before&&*physical.scheduler()==scheduler&&!world.shots_spawned(),
@@ -274,6 +279,35 @@ struct AllocationFixture {
                   active->membership.lists==(1u<<unsigned(CollisionRegistrationList::L477C))&&
                   !bridge.finish_trial_shape_activation_once(source,world,view,geometry,&error),
                   "one scene token, carrier latch and credit increment; 477C is a proposal only"))return false;
+        if(!check(*pool->collision_snapshot()==class4&&*descriptors->snapshot()==desc_before&&*physical.scheduler()==scheduler,
+                  "sphere seed and activation do not change allocation or registry"))return false;
+        SceneCollisionLease neighbor;
+        if(capacity==Capacity::RegistryOccupied){
+            return check(pool->acquire_collision(-1,false,{},&neighbor,&error)==SceneObjectAcquire::Allocated&&
+                         !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error)&&
+                         *physical.scheduler()==scheduler&&pool->release(neighbor,&error)&&
+                         !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error)&&
+                         !bridge.trial_attack_entry(source,world,view,physical),
+                         "extra collider refuses singleton registry without writes or later retry");
+        }
+        ScenePhysicalPools foreign_arena;
+        if(!check(!bridge.publish_trial_attack_registry_once(source,world,view,foreign_arena,&error)&&
+                  !bridge.publish_trial_attack_registry_once(unrelated,world,view,physical,&error)&&
+                  !bridge.trial_attack_entry(source,world,view,physical)&&
+                  bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
+                  "only the matching paid trial and its bound arena publish 477C"))return false;
+        const auto entry=bridge.trial_attack_entry(source,world,view,physical);
+        auto registered=scheduler;registered.registry_counts[0]=1;
+        if(!check(entry&&entry->current()&&entry->index()==lease.index()&&entry->generation()==lease.generation()&&
+                  *physical.scheduler()==registered&&
+                  !bridge.publish_trial_attack_registry_once(source,world,view,physical,&error),
+                  "one exact child lease and source-ordered count; no duplicate admission"))return false;
+        if(capacity==Capacity::StaleRegistry){
+            return check(pool->acquire_collision(48,false,{},&neighbor,&error)==SceneObjectAcquire::Allocated&&
+                         !bridge.trial_attack_entry(source,world,view,physical)&&pool->release(neighbor,&error)&&
+                         !bridge.trial_attack_entry(source,world,view,physical)&&*physical.scheduler()==registered,
+                         "changed class4 topology invalidates the entry without replay or count rollback");
+        }
         if(draw_fixture&&capacity==Capacity::Shape){
             auto& render=draw_fixture->render;
             if(!check(!bridge.prepare_trial_beam_art(unrelated,world,view,draw_fixture->art,&error)&&
@@ -291,7 +325,8 @@ struct AllocationFixture {
                       bridge.draw_trial_beam(source,world,view,render,camera)==2&&render.end_frame(),
                       "same accepted carrier submits two authored meshes through RenderEngine"))return false;
             NativeBorgSourcePose republished;
-            if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error),
+            if(!check(source.pose(world,&republished)&&view.update_source(world,republished,&error)&&
+                      !bridge.trial_attack_entry(source,world,view,physical),
                       "republish invalidates the paid-frame draw gate"))return false;
             render.begin_frame({});
             if(!check(!bridge.draw_trial_beam(source,world,view,render,camera)&&render.end_frame(),
@@ -299,8 +334,8 @@ struct AllocationFixture {
         }
         return check(
                      *pool->collision_snapshot()==class4&&*descriptors->snapshot()==desc_before&&
-                     *physical.scheduler()==scheduler&&!world.shots_spawned()&&!world.hits(),
-                     "sphere seed and activation do not change allocation, registry or HP");
+                     *physical.scheduler()==registered&&!world.shots_spawned()&&!world.hits(),
+                     "isolated registry writes neither geometry, descriptors nor HP");
     }
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
@@ -434,9 +469,10 @@ int main(int argc,char** argv){
         if(argc==6&&(!check(files.read(argv[5],data)&&beam_bank.load({data.data(),data.size()},&error),
                             "exact common beam art bank")))return 1;
         const BeamDrawFixture draw_fixture{beam_bank,render};
-        for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape,Capacity::StaleMuzzle})
+        for(auto capacity:{Capacity::Shape,Capacity::ShapeFull,Capacity::StaleShape,Capacity::StaleMuzzle,
+                           Capacity::RegistryOccupied,Capacity::StaleRegistry})
             if(!trial(files,art,ground,view,library,5,false,capacity,&attack,argc==6?&draw_fixture:nullptr))return 1;
     }
-    std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s, no collision admission\n",
-                checks,argc>=5?", class4 child, carrier matrix and fresh activation":"",argc==6?", authored beam draw":"");
+    std::printf("native neutral-B trial: %u checks PASS; class3 header%s%s, no hit or HP write\n",
+                checks,argc>=5?", class4 child and isolated attack registry":"",argc==6?", authored beam draw":"");
 }

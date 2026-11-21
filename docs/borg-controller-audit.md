@@ -1184,10 +1184,26 @@ the carrier's `26C/1CA/2AD`, increments the exact credited trial's
 clear trial suppression and freeze fields, not inferred live actor
 state. The token is separate from the carrier's allocation generation.
 
-The `477C` result is still a list-membership **proposal**: no registry
-pointer/count, contact, or HP is written. The exact shape and frame
-must remain current; a second visit cannot issue another token.
+At this step `477C` is only a list-membership **proposal**: the
+activation visit writes no registry pointer/count, contact, or HP.
+The shape and frame must remain current; a second visit cannot issue
+another token.
 The native and sanitizer trials each passed **5,872** checks.
+
+#### Isolated trial attack registry
+
+A separate publication accepts that `477C` membership only in the
+bound trial arena, with no seeded roster or stage and exactly one
+allocated class-4 body. It stores the actual child lease and writes
+one count in the `8A28C` clear-order slot for `477C`. Neither a foreign
+arena nor an extra unbound collider can stand in for the singleton.
+A later class-4 allocation change invalidates inspection even if
+the extra cell is freed. The renderer receipt must also still match;
+republishing the same tick does not renew it.
+
+The **6,142** native and sanitizer checks include these refusals.
+The receiver registry, scene-wide enumeration, contact, damage, and
+playable combat are not wired by this entry.
 
 ### Argument 43: authored beam art
 

@@ -284,6 +284,32 @@ public:
                                                       const NativeBattleMvpView& view)const{
         return activation_&&trial_sphere(source,world,view)?&*activation_:nullptr;
     }
+    bool publish_trial_attack_registry_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                             const NativeBattleMvpView& view,ScenePhysicalPools& physical,
+                                             std::string* error){
+        const auto pool=pool_.lock();
+        const auto* activated=trial_shape_activation(source,world,view);
+        if(!pool||pool!=physical.class2_pool()||world.paused()||registry_attempted_||!source.current(world)||
+           !activated||!activated->registration_sampled||activated->degenerate||
+           activated->membership.lists!=(1u<<unsigned(CollisionRegistrationList::L477C)))
+            return refuse(error,"current trial attack membership and matching arena required");
+        registry_attempted_=true;
+        if(!physical.publish_trial_attack_registry(shape_))return refuse(error,"isolated registry publication refused");
+        registry_published_=true;
+        if(error)error->clear();
+        return true;
+    }
+    // Read-only: callers cannot substitute a copied numeric slot or use
+    // this inspection to infer the receiver list or admit a hit.
+    std::optional<SceneCollisionLease> trial_attack_entry(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                                          const NativeBattleMvpView& view,const ScenePhysicalPools& physical)const{
+        const auto pool=pool_.lock();
+        if(!registry_published_||!pool||pool!=physical.class2_pool()||!source.current(world)||
+           !trial_shape_activation(source,world,view))return {};
+        const auto entry=physical.current_trial_attack_registry();
+        if(!entry||entry->index()!=shape_.index()||entry->generation()!=shape_.generation())return {};
+        return entry;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -301,6 +327,7 @@ private:
         return false;
     }
     bool bound_=false,header_attempted_=false,launch_attempted_=false,sphere_attempted_=false,activation_attempted_=false;
+    bool registry_attempted_=false,registry_published_=false;
     u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;
