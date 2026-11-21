@@ -130,7 +130,8 @@ struct AllocationFixture {
                 if(!finish_shape(source,world,view,capacity))return false;
                 physical.retire();
                 return check(!lease.current()&&!bridge.shape_lease().current()&&!bridge.installed_trial_birth(source,world,view)&&
-                             !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view),
+                             !bridge.trial_shape_hit_row(source,world,view).data&&!bridge.trial_launch(source,world,view)&&
+                             !bridge.trial_sphere(source,world,view),
                              "pool retirement revokes both leases without claiming source cleanup");
             }
             if(capacity==Capacity::StaleHeader){
@@ -194,6 +195,8 @@ struct AllocationFixture {
         const auto* body=pool->inspect(lease);
         const auto* shape=pool->trial_beam_shape(lease);
         const auto hit=bridge.trial_shape_hit_row(source,world,view);
+        if(!check(!bridge.initialize_trial_sphere_once(source,world,view,&error)&&!bridge.trial_sphere(source,world,view),
+                  "constructed child cannot sample a missing carrier transform"))return false;
         if(!check(lease.current()&&body&&shape&&body->group01==49&&body->kind83==26&&body->active00==1&&
                      body->update0c_key==0x8008a65c&&shape->carrier20==ScenePhysicalLink{3,bridge.lease().index()}&&
                      shape->carrier_generation==bridge.lease().generation()&&shape->self5c==ScenePhysicalLink{4,lease.index()}&&
@@ -228,10 +231,22 @@ struct AllocationFixture {
                   launch->scale.relative_c4==1&&std::abs(launch->scale.physical_c0-1.082251f)<.0001f&&
                   std::array<f32,3>{(*frame)[3],(*frame)[7],(*frame)[11]}==launch->flight.position20,
                   "key 7 muzzle, key 0 bearing, unit advance, and carrier-owned affine translation"))return false;
-        return check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&
+        if(!check(!bridge.seed_trial_muzzle_once(source,world,view,&error)&&
+                  !bridge.initialize_trial_sphere_once(unrelated,world,view,&error)&&
+                  bridge.initialize_trial_sphere_once(source,world,view,&error),
+                  "only the current trial can seed the child from the carrier's frame"))return false;
+        const auto* sphere=bridge.trial_sphere(source,world,view);
+        const f32 radius=20.f*launch->scale.physical_c0;
+        if(!check(sphere&&sphere==&*shape->sphere_seed&&sphere->radius88==radius&&sphere->broad_radius7c==radius&&
+                  sphere->center64==launch->flight.position20&&sphere->previous_center70==sphere->center64&&
+                  !sphere->previous_radius8c&&sphere->sweep==ColliderSphereSweepSeed{
+                      sphere->center64,sphere->center64,sphere->center64,sphere->center64}&&
+                  !bridge.initialize_trial_sphere_once(source,world,view,&error),
+                  "physical C0 sets radius; four sweep endpoints replace the previous radius"))return false;
+        return check(
                      *pool->collision_snapshot()==class4&&*descriptors->snapshot()==desc_before&&
                      *physical.scheduler()==scheduler&&!world.shots_spawned()&&!world.hits(),
-                     "launch is one-shot and changes no child, descriptors, scheduler or HP");
+                     "sphere seed does not change allocation, registry or HP");
     }
 };
 bool trial(Files& files,const std::string& art,const std::string& ground,NativeBattleMvpView& view,
@@ -364,5 +379,5 @@ int main(int argc,char** argv){
             if(!trial(files,art,ground,view,library,5,false,capacity,&attack))return 1;
     }
     std::printf("native neutral-B trial: %u checks PASS; class3 header%s, no collision admission\n",
-                checks,argc==5?", class4 child and carrier launch matrix":"");
+                checks,argc==5?", class4 child, carrier matrix and fresh sphere":"");
 }

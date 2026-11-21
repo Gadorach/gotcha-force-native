@@ -1161,6 +1161,22 @@ It does not consume it as collider geometry, write the registry,
 register a beam render callback, or add a playable duel shot.
 The native and sanitizer trials both passed **5,861** checks.
 
+#### Trial sphere seed
+
+The constructed child now samples `114` from its exact carrier
+generation and descriptor 15 from the credited trial's bank.
+The numeric `3A4B8` seed transforms the descriptor center and
+uses **carrier `C0`**, not axial scale, for the physical radius.
+For this flag-1 sphere, the source overwrites `8C` with the first
+sweep endpoint. Both endpoints and their previous copies start at
+the same center; unlike a plain sphere, this record does not retain
+a separate previous radius at that offset.
+
+The trial publishes these fields once on the class-4 child.
+It refuses missing or stale carrier data and foreign trial owners.
+The **5,865** native and sanitizer checks do not grant an activation
+token, collision registry entry, contact callback, or live hit.
+
 ### Argument 43: authored beam art
 
 The argument row has `+42 = 0`: `C3D2C` selects the common effect

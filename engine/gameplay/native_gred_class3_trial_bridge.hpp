@@ -2,6 +2,7 @@
 #include "engine/gameplay/native_gred_neutral_b_trial.hpp"
 #include "engine/gameplay/scene_physical_pools.hpp"
 #include "engine/gameplay/borgs/normal_gred_beam_transform.hpp"
+#include "engine/gameplay/collider_sphere_shape.hpp"
 
 namespace gf {
 enum class GRedClass3TrialStatus {AwaitPaidFrame,Failed,NoDescriptors,NoCarrier,Allocated,HeaderInstalled,Released};
@@ -185,6 +186,35 @@ public:
            !installed_trial_birth(source,world,view))return nullptr;
         return &*launch_;
     }
+    bool initialize_trial_sphere_once(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                       const NativeBattleMvpView& view,std::string* error){
+        const auto pool=pool_.lock();
+        const auto* launch=trial_launch(source,world,view);
+        if(!pool||!launch||world.paused()||sphere_attempted_||!source.current(world)||!source.attack_profile_)
+            return refuse(error,"current carrier frame and child required before sphere init");
+        const auto* shape=pool->trial_beam_shape(shape_);
+        const auto* models=pool->class3_models(lease_);
+        if(!shape||!models||!models->trial_frame114||shape->carrier_matrix_offset60!=0x114||
+           shape->descriptor_offset28!=0xf50||shape->credit_slot24!=0)return refuse(error,"exact beam sphere binding required");
+        sphere_attempted_=true;
+        CharacterCollisionBank bank;
+        CharacterCollisionDescriptor descriptor;
+        Mat4 frame;
+        std::copy_n(models->trial_frame114->begin(),12,frame.m);
+        ColliderSphereSeed next;
+        if(!bank.load(source.attack_profile_->bank(),error)||!bank.descriptor(CharacterCollisionTable::Attack,15,&descriptor,error)||
+           descriptor.flags2!=1||!collider_sphere_seed(descriptor,frame,launch->scale.physical_c0,&next)||
+           !next.sweep||next.previous_radius8c)return refuse(error,"exact flag-1 sphere seed refused");
+        if(!pool->publish_trial_beam_sphere(lease_,shape_,next))return refuse(error,"class4 sphere publication refused");
+        if(error)error->clear();
+        return true;
+    }
+    const ColliderSphereSeed* trial_sphere(const NativeGRedNeutralBTrial& source,const NativeBattleMvp& world,
+                                          const NativeBattleMvpView& view)const{
+        const auto pool=pool_.lock();
+        const auto* shape=pool?pool->trial_beam_shape(shape_):nullptr;
+        return shape&&shape->sphere_seed&&trial_launch(source,world,view)?&*shape->sphere_seed:nullptr;
+    }
     bool release_uninitialized(std::string* error){
         const auto pool=pool_.lock();
         if(!pool||status_!=GRedClass3TrialStatus::Allocated)return refuse(error,"no rootless allocation to release");
@@ -197,7 +227,7 @@ private:
         if(error)*error=std::string("G-Red class3 trial: ")+why;
         return false;
     }
-    bool bound_=false,header_attempted_=false,launch_attempted_=false;
+    bool bound_=false,header_attempted_=false,launch_attempted_=false,sphere_attempted_=false;
     u8 shape_kind_=255;
     GRedClass3TrialStatus status_=GRedClass3TrialStatus::AwaitPaidFrame;
     GRedTrialShapeStatus shape_status_=GRedTrialShapeStatus::NotAttempted;

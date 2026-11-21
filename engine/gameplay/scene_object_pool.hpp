@@ -2,6 +2,7 @@
 #include "engine/assets/scene_object_pool.hpp"
 #include "engine/gameplay/scene_descriptor_pool.hpp"
 #include "engine/gameplay/scene_physical_links.hpp"
+#include "engine/gameplay/collider_sphere_shape.hpp"
 #include <cmath>
 #include <optional>
 namespace gf {
@@ -29,6 +30,7 @@ struct SceneTrialBeamShapeFields {
     u8 credit_slot24=255,selector14=0,parameter11=0;
     u16 descriptor_offset28=0,carrier_matrix_offset60=0;
     s16 start48=0,end4a=0;
+    std::optional<ColliderSphereSeed> sphere_seed{};
 };
 namespace scene_object_pool_detail {
 struct Storage {
@@ -239,6 +241,15 @@ private:
            !models.header_installed||models.trial_frame114)return false;
         for(f32 value:frame)if(!std::isfinite(value)||std::abs(value)>1e7f)return false;
         models.trial_frame114=frame;return true;
+    }
+    bool publish_trial_beam_sphere(const SceneClass3Lease& carrier,const SceneCollisionLease& child,
+                                   const ColliderSphereSeed& sphere){
+        if(!owns(carrier))return false;
+        const auto* shape=trial_beam_shape(child);
+        if(!shape||shape->sphere_seed||shape->carrier20!=ScenePhysicalLink{3,carrier.index_}||
+           shape->carrier_generation!=carrier.generation_||!storage_->class3_models[carrier.index_].trial_frame114||
+           !sphere.sweep||sphere.previous_radius8c)return false;
+        storage_->trial_beam_shapes[child.index_]->sphere_seed=sphere;return true;
     }
     bool owns(const SceneObjectLease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
     bool owns(const SceneClass3Lease& lease)const{return ready()&&lease.owner_.lock()==storage_&&lease.current();}
