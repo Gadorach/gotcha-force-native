@@ -18,6 +18,8 @@ struct BorgPackageManifest {
     BorgIdentity identity;
     std::string model,animations,rules,animation_map;
     std::string catalog{},preview{};
+    unsigned version=1;
+    std::string gameplay{};
     bool operator==(const BorgPackageManifest&)const=default;
 };
 struct BorgPackageEntry {
@@ -84,8 +86,11 @@ template<std::size_t N> bool split_fields(std::string_view text,std::array<std::
 // mode validation.
 inline bool borg_package_read_manifest(std::string_view text,BorgPackageManifest* out){
     if(!out||text.size()>kBorgManifestBytes)return false;
-    if(borg_package_detail::line(text)!="GFBORG 1")return false;
+    const auto header=borg_package_detail::line(text);
+    const bool capability_manifest=header=="GFBORG 2";
+    if(!capability_manifest&&header!="GFBORG 1")return false;
     BorgPackageManifest next;
+    next.version=capability_manifest?2:1;
     while(!text.empty()){
         const auto row=borg_package_detail::line(text);
         if(row.empty()||row.starts_with('#'))continue;
@@ -94,12 +99,20 @@ inline bool borg_package_read_manifest(std::string_view text,BorgPackageManifest
         const auto key=row.substr(0,equals),value=row.substr(equals+1);
         auto* target=key=="id"?&next.identity.id:key=="name"?&next.identity.name:key=="model"?&next.model:
             key=="animations"?&next.animations:key=="rules"?&next.rules:key=="animation-map"?&next.animation_map:
-            key=="catalog"?&next.catalog:key=="preview"?&next.preview:nullptr;
+            key=="catalog"?&next.catalog:key=="preview"?&next.preview:key=="gameplay"&&capability_manifest?&next.gameplay:nullptr;
         if(!target||!target->empty()||value.empty())return false;
         if(!(key=="id"?borg_package_id_valid(value):key=="name"?display_name_valid(value,96):borg_package_asset_path_valid(value)))return false;
         *target=value;
     }
-    if(next.identity.id.empty()||next.identity.name.empty()||next.model.empty()||next.animations.empty()||next.rules.empty())return false;
+    if(next.identity.id.empty()||next.identity.name.empty())return false;
+    if(capability_manifest){
+        // A catalogue-only package must not invent art or executable rules
+        // to appear in the catalog. Preview and rules still need their body.
+        if(next.catalog.empty()||
+           (next.model.empty()&&(!next.animations.empty()||!next.preview.empty()))||
+           (next.animations.empty()&&(!next.rules.empty()||!next.animation_map.empty()||
+                                      (!next.model.empty()&&next.preview.empty()))))return false;
+    }else if(next.model.empty()||next.animations.empty()||next.rules.empty())return false;
     *out=std::move(next);return true;
 }
 }

@@ -55,9 +55,12 @@ inline BorgPackageCatalog scan_borg_packages(const std::filesystem::path& root){
         if(!borg_package_scan_detail::read(folder,&manifest)){
             result.issues.push_back({name,{},BorgPackageIssueKind::InvalidManifest});continue;
         }
-        const bool has_files=borg_package_scan_detail::local_file(folder,manifest.model)&&
-            borg_package_scan_detail::local_file(folder,manifest.animations)&&borg_package_scan_detail::local_file(folder,manifest.rules)&&
-            (manifest.animation_map.empty()||borg_package_scan_detail::local_file(folder,manifest.animation_map));
+        const auto present=[&](const std::string& path){
+            return path.empty()||borg_package_scan_detail::local_file(folder,path);
+        };
+        // A lost catalogue/preview is unavailable capability, not evidence
+        // that the known stable package identity was removed from a save.
+        const bool has_files=present(manifest.model)&&present(manifest.animations)&&present(manifest.rules)&&present(manifest.animation_map);
         candidates.push_back({{name,std::move(manifest)},has_files});
     }
     if(error)return failure(Status::Unavailable);

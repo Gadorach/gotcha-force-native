@@ -8,6 +8,11 @@ struct NativeBorgStaticSurface {
     f32 height=0;std::array<f32,3> normal{0,1,0};u32 triangle=0;
     bool operator==(const NativeBorgStaticSurface&)const=default;
 };
+struct NativeBorgStageProjectileHit {
+    bool hit=false;
+    f32 fraction=0; // along the original centre segment, not its clipped subinterval
+    u8 layer=0;u32 triangle=0;
+};
 //Shared native MVP contact policy, NOT recovered original solid/body response.
 class IBattleMvpTerrain {
 public:
@@ -15,6 +20,8 @@ public:
     virtual bool height(f32 x,f32 z,f32 current_y,f32* out)const=0;
     //Height-only providers deliberately cannot authorize selected-plane pushes.
     virtual bool static_surface(f32,f32,f32,NativeBorgStaticSurface*)const{return false;}
+    virtual bool supports_projectile_stage()const{return false;}
+    virtual bool projectile_stage(const std::array<f32,3>&,const std::array<f32,3>&,NativeBorgStageProjectileHit*)const{return false;}
     virtual bool coplanar_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&)const{return false;}
     virtual bool gentle_slope_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&)const{return false;}
     virtual bool inclined_ledge_crossing(u32,u32,const std::array<f32,3>&,const std::array<f32,3>&,f32)const{return false;}

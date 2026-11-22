@@ -119,6 +119,39 @@ keeps starting grants, progression, crystal assembly and battle-only results
 apart. Prose-only requirements such as encounter/unlock conditions are not
 discarded just because an infobox lacks a field; neither check executes them.
 
+### Observed attacks with secondary emitters and anchor paths
+
+For retail behavior, the evidence order is **original game asset/code
+recovery and verified original execution → archived wiki and guides →
+player recollection**. Apply original findings only to the exact scope
+observed; a decoded asset alone does not prove a live rule. If the
+wiki and guides disagree, preserve the disagreement for verification.
+The reports below are leads, not recovered operands. Do not infer
+timings, stock counts, child lifetimes or eligibility from recollection.
+
+| Actor or action | Reported behavior | Runtime distinction to preserve |
+| --- | --- | --- |
+| Command Girl `0306/0`; Sasuke `000A/0`; Normal Ninja `0000/0` | Command Girl has a fast travelling beam that explodes on hitting a target. Sasuke and Normal Ninja throw arcing X bombs that can explode on a target or the environment. | Travel shape and speed, direct hit, and blast trigger are independent. An explosive definition can require actor contact or also accept a qualified floor/static-stage hit. The [current stage-impact test](borg-gameplay-api.md#static-stage-impacts) does not cover live props. Don't infer the exact Command Girl button from the description alone. |
+| Cyber Girl Super `0305/0` and Cyber Girl Hyper `030A/0` | Guns start visibly mounted on the Borg's back and inactive. A deployment cycle precedes their ability to fire; deployed guns hover above and behind the Borg and fire in coordination with its main shots. Hyper's archive also describes a target-surrounding route. | Distinguish mounted/inactive, deploying, and active emitter states. Only the accepted activation boundary can subscribe to the main release; mounted and deploying guns cannot fire. The [owner-following emitter pilot](borg-gameplay-api.md#owner-following-emitters) begins at the activation marker and doesn't render or simulate the attached deployment cycle. Exact transitions and any target-seeking phase still need separate evidence. |
+| Double Ninja `0003/0` | A duplicate performs the main actor's actions, including duplicated projectile releases, **without another stock debit**. | A duplicate actor is not just an extra muzzle. Separate motion/action mirroring, collision/targetability, emitted objects, stock and credit. Share an accepted action/release, not another raw button edge that would pay again. Verify interruption and lifetime before admitting it as a live actor. |
+| Arrow Ninja `0002/0` | The supplied Move List reports a temporary tether around the struck Borg's position and possible overlapping tethers. A separate recollection describes a placed terrain anchor and a later shot. | Prioritize the guide's recipient-centred tether as the recovery lead. The [stage-contact anchor pilot](borg-gameplay-api.md#stage-contact-anchors) demonstrates an authored alternative, not a verified retail action. Exact links, eligible teams, travel and break policies remain separate. |
+| Wire Gunner `0103/0` | X stores anchors in world space, including midair, as the actor moves. A successful charged B drags its recipient along that set in **reverse deployment order**, newest to oldest. | An ordered, owner-scoped anchor sequence is not one selected floor point, a single tether, or a path sorted by distance. Record an accepted placement per anchor and seal the exact sequence used by the hit; don't replace it if the caster later places a new anchor. |
+| Wire Girl `0301/0` | Places an ordered set of anchors but keeps the link on herself, so she can rewind the path to escape. | Reuse anchor storage and reverse traversal, not Wire Gunner's hit recipient or charged-B ingress. The caller owns an explicit self link; the engine still validates travel, interruption and cleanup. |
+
+Anchor placement and movement are different requests. A free-space point may
+be valid with no floor, but it doesn't grant a body permission to travel
+through obstructions. For the first anchor-path test, check uneven spacing,
+off-floor points, partial-path refusal, restart, and reverse order; verify
+the actor stops at the last accepted location rather than teleporting to
+the oldest anchor. Keep consumed X stock, the anchor set, the hit carrier,
+and the subsequent link lifetime separate. Exact action timing, reuse,
+collision masks and break conditions remain to be recovered.
+The [ordered self-rewind pilot](borg-gameplay-api.md#ordered-anchors-and-self-rewind)
+tests self placement and reverse traversal. The
+[recipient rewind pilot](borg-gameplay-api.md#hit-triggered-recipient-rewind)
+separately seals an owner set at launch and admits movement only from
+accepted contact. Recording a midair point does not yet permit travel to it.
+
 ### Variants and progression
 
 - A complete declaration resolves, per variant, its model/rig compatibility,
@@ -356,6 +389,7 @@ such feature.
 | Slice | Established | Not established |
 | --- | --- | --- |
 | Native package plumbing | `borgs/` discovery, the [standalone installed picker and body preview](borg-packages.md#read-only-installed-borg-picker), a [read-only owned package collection](borg-packages.md#read-only-owned-collection), scoped recovery, a [read-only retail/package Force browser](borg-packages.md#browse-a-saved-force) with explicit overlaps, and [qualified normal G-Red practice](borg-packages.md#qualified-normal-g-red-practice-package) from an installed package, exact saved copy, or [one unambiguous saved Force slot](borg-packages.md#practice-one-saved-force-slot). | General package actors, level/XP storage for packaged instances, mixed inventory editing, retail recovery UI integration and battle-mode admission. |
+| Executable package test | [Borg API Battle Test](borg-gameplay-api.md) admits a bounded two-actor encounter with exact package visuals, an executable action/stock/projectile subset, and an authored hit modifier. Normal G-Red keeps his qualified movement subset; projectile delivery is test-authored. | Full retail controllers, other variants/forms, generalized actions and contact, save-backed selection and Story/Challenge admission. |
 | Original normal G-Red | Model/rig and motion data, classified pose references, recovered ordered walk/dash/jump/relaunch/fall/landing subset with measured meter and selected contacts. Opt-in inclined dash departure and scoped continued walking ledge-fall pushes. Existing normal-pair render, spec and native duel paths. | Full animation-controller map, original combat/weapon/auxiliary/effect dispatch, other variants, and broader ledge and steep-contact routes. |
 | Original normal Sasuke | Renderable in the duel with the existing fallback prototype selection, and separate per-Borg raw previews. | Verified Sasuke behavior/program mapping from the displayed jump gauge or G-Red's labels. Three air-jump points and dash-height behavior remain observations to verify. |
 | Other Borgs and variants | Original catalogue/icon/spec and model-bundle readers cover data beyond the playable normal pair. | Parsing/cataloguing a row does not prove its animation lanes, combat, transformations, variant effects, and modes are ready. Unreviewed and edited-Borg refusals stay intact. |

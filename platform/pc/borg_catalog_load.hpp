@@ -158,8 +158,10 @@ inline bool load_borg_preview_files(const std::filesystem::path& root,const Borg
             if(kind!=BorgVariantAssetKind::Inherit&&kind!=BorgVariantAssetKind::None)
                 return fail("separate or unresolved texture and material overrides cannot be rendered in this preview");
         }
-        if(!resolve(BorgVariantAssetRole::Preview,&preview_file)||!resolve(BorgVariantAssetRole::Model,&model_file)||
-           !resolve(BorgVariantAssetRole::Animations,&motions_file))return fail("variant preview, model or motion declaration is unavailable");
+        if(!resolve(BorgVariantAssetRole::Preview,&preview_file)||!resolve(BorgVariantAssetRole::Model,&model_file))
+            return fail("variant preview or model declaration is unavailable");
+        if(row->asset(BorgVariantAssetRole::Animations).kind==BorgVariantAssetKind::None)motions_file={};
+        else if(!resolve(BorgVariantAssetRole::Animations,&motions_file))return fail("variant motion declaration is unavailable");
     }
     if(preview_file.empty())return fail("no preview profile declared");
     BorgPackagePreviewFiles next;next.identity=card.identity;
@@ -168,10 +170,11 @@ inline bool load_borg_preview_files(const std::filesystem::path& root,const Borg
     if(!read_local(folder,preview_file,kBorgPreviewProfileBytes,&profile)||
        !borg_read_preview_profile(profile,&next.profile))return fail("missing or unsupported preview profile");
     if(next.profile.variant!=variant)return fail("preview profile does not match the selected variant");
+    if(next.profile.static_body!=motions_file.empty())return fail("preview motion declaration and static/clip binding disagree");
     if(!read_local(folder,model_file,16u<<20,&next.model)||
-       !read_local(folder,motions_file,32u<<20,&next.motions)||
+       (!next.profile.static_body&&!read_local(folder,motions_file,32u<<20,&next.motions))||
        !read_local(folder,next.profile.rig_prefix,1u<<16,&next.rig_prefix)||
-       !read_local(folder,next.profile.pose_profile,1u<<16,&next.pose_profile))return fail("missing, linked or oversized preview asset");
+       (!next.profile.whole_body&&!read_local(folder,next.profile.pose_profile,1u<<16,&next.pose_profile)))return fail("missing, linked or oversized preview asset");
     *out=std::move(next);if(error)error->clear();return true;
 }
 }

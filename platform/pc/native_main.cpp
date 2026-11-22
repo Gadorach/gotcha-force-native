@@ -38,6 +38,7 @@
 #include "engine/gameplay/session.hpp"
 #include "engine/assets/battle_test_config.hpp"
 #include "engine/gameplay/battle_test_view.hpp"
+#include "engine/gameplay/borg_control_selector.hpp"
 #include "engine/gameplay/native_battle_mvp_view.hpp"
 #include "engine/gameplay/native_gred_ground_dash_demo.hpp"
 #include "engine/gameplay/native_animation_mosaic.hpp"
@@ -63,6 +64,7 @@
 #include "platform/pc/borg_force_browse.hpp"
 #include "platform/pc/borg_move_load.hpp"
 #include "platform/pc/borg_practice_load.hpp"
+#include "platform/pc/borg_gameplay_load.hpp"
 #include "platform/pc/borg_spawn_load.hpp"
 #include "platform/pc/gred_practice_input.hpp"
 #include "platform/pc/sdl_platform.hpp"
@@ -82,12 +84,16 @@ struct Options {
     bool list_borgs = false;
     bool browse_borgs=false,demo_borg_browser=false,browse_owned_borgs=false;
     bool browse_force=false;
+    bool borg_controls=false,demo_borg_controls=false;
+    bool demo_package_battle=false,trace_package_battle=false;
+    std::string battle_borg,against_borg,against_variant;
+    unsigned package_battle_distance=0;
     bool practice_from_picker=false;
     std::string selected_save_root,retail_force_catalogue;
     gf::u64 selected_account=0,selected_save=0,recovery_notice=0,inspect_force=0,owned_instance=0,placement_force=0,placement_slot=0;
     gf::u64 browse_force_slot=0;
     std::string check_borg_catalog,check_borg_moves,check_borg_spawn,check_borg_effects,check_borg_forms,check_borg_fusions,
-        check_borg_acquisition,check_borg_variants,check_borg_controllers,preview_borg,practice_borg,borg_variant;
+        check_borg_acquisition,check_borg_variants,check_borg_controllers,preview_borg,preview_clip,practice_borg,borg_variant;
     std::optional<gf::pc::BorgOwnedPracticeRequest> owned_practice;
     std::optional<gf::pc::BorgForcePracticeRequest> force_practice;
     bool menu = false;
@@ -225,6 +231,22 @@ bool parse(int argc, char** argv, Options* options) {
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--headless") options->headless = true;
+        else if(arg=="--borg-controls"||arg=="--demo-borg-controls"){
+            if(options->borg_controls)return false;
+            options->borg_controls=true;options->demo_borg_controls=arg=="--demo-borg-controls";
+        }
+        else if(arg=="--battle-borg"||arg=="--against-borg"||arg=="--against-variant"){
+            auto& value=arg=="--battle-borg"?options->battle_borg:arg=="--against-borg"?options->against_borg:options->against_variant;
+            if(++i>=argc||!value.empty()||!(arg=="--against-variant"?gf::borg_catalog_variant_id_valid(argv[i]):gf::borg_package_id_valid(argv[i])))return false;
+            value=argv[i];
+        }
+        else if(arg=="--demo-package-battle")options->demo_package_battle=true;
+        else if(arg=="--trace-package-battle")options->trace_package_battle=true;
+        else if(arg=="--package-battle-distance"){
+            gf::u64 value=0;
+            if(++i>=argc||options->package_battle_distance||!id(argv[i],&value)||value<90||value>1200)return false;
+            options->package_battle_distance=unsigned(value);
+        }
         else if (arg == "--list-borgs") options->list_borgs = true;
         else if(arg=="--practice-start"){
             if(options->gred_practice_start)return false;
@@ -291,6 +313,9 @@ bool parse(int argc, char** argv, Options* options) {
         }else if(arg=="--preview-borg"){
             if(++i>=argc||!options->preview_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->preview_borg=argv[i];
+        }else if(arg=="--preview-clip"){
+            if(++i>=argc||!options->preview_clip.empty()||!gf::borg_catalog_variant_id_valid(argv[i]))return false;
+            options->preview_clip=argv[i];
         }else if(arg=="--practice-borg"){
             if(++i>=argc||!options->practice_borg.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->practice_borg=argv[i];
@@ -620,7 +645,8 @@ bool parse(int argc, char** argv, Options* options) {
                           "       gf_native --gred-movement --practice-borg NAMESPACE:ID --borg-variant normal\n"
                           "       gf_native --gred-movement --practice-owned-borg ROOT ACCOUNT SAVE INSTANCE\n"
                           "       gf_native --gred-movement --practice-force-slot ROOT ACCOUNT SAVE FORCE SLOT [--retail-catalog FILE]\n"
-                         "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
+                          "       gf_native --demo-gred-movement [--frames N] [--no-audio]\n"
+                          "       gf_native --borg-controls | --demo-borg-controls [--no-audio]\n"
                          "       gf_native --check-borg-moves NAMESPACE:ID\n"
                          "       gf_native --check-borg-spawn NAMESPACE:ID\n"
                          "       gf_native --check-borg-controllers NAMESPACE:ID\n"
@@ -635,7 +661,8 @@ bool parse(int argc, char** argv, Options* options) {
                          "       gf_native --place-owned-borg ROOT ACCOUNT SAVE FORCE SLOT [--owned-instance INSTANCE] [--retail-catalog FILE]\n"
                           "       gf_native --inspect-borg-force ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
                           "       gf_native --browse-borg-force ROOT ACCOUNT SAVE FORCE [--force-slot SLOT] [--retail-catalog FILE]\n"
-                         "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--headless] [--frames N]\n");
+                          "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--preview-clip ID] [--headless] [--frames N]\n"
+                          "       gf_native --battle-borg NAMESPACE:ID --against-borg NAMESPACE:ID [--demo-package-battle] [--trace-package-battle]\n");
             return false;
         }
     }
@@ -648,7 +675,21 @@ bool parse(int argc, char** argv, Options* options) {
        !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
        !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
        !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||options->animation_page||options->animation_borg))return false;
-    if(!options->borg_variant.empty()&&options->preview_borg.empty()&&options->practice_borg.empty())return false;
+    if(!options->borg_variant.empty()&&options->preview_borg.empty()&&options->practice_borg.empty()&&options->battle_borg.empty())return false;
+    if(options->battle_borg.empty()!=options->against_borg.empty())return false;
+    if(options->battle_borg.empty()){
+        if(options->demo_package_battle||options->trace_package_battle||options->package_battle_distance||!options->against_variant.empty())return false;
+    }else{
+        if(options->battle_mvp||options->test_battle||options->borg_controls||options->menu||options->animation_mosaic||
+           options->browse_borgs||!options->selected_save_root.empty()||options->owned_practice||options->force_practice||
+           !options->practice_borg.empty()||!options->preview_borg.empty()||options->list_borgs||options->probe_texture>=0||
+           options->demo_input||options->demo_option||options->demo_credits||
+           !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
+           !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
+           !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||!options->check_borg_controllers.empty())return false;
+        if(options->demo_package_battle&&!options->frames&&!options->seconds)options->frames=150;
+    }
+    if(!options->preview_clip.empty()&&options->preview_borg.empty())return false;
     const unsigned practice_sources=unsigned(!options->practice_borg.empty())+unsigned(options->owned_practice.has_value())+
         unsigned(options->force_practice.has_value());
     if(practice_sources>1||(!options->practice_borg.empty()&&options->borg_variant.empty())||
@@ -683,7 +724,15 @@ bool parse(int argc, char** argv, Options* options) {
     if(!options->animation_motion_profile.empty()&&options->animation_programs.empty())return false;
     if(options->demo_source_ground&&(options->demo_battle_mvp||options->demo_locomotion))return false;
     if(options->gred_practice_start&&(!options->gred_practice||!options->source_ground_interactive))return false;
-    if(!options->source_ground_assets.empty()&&!options->demo_source_ground)return false;
+    if(!options->source_ground_assets.empty()&&!options->demo_source_ground&&!options->borg_controls&&options->battle_borg.empty())return false;
+    if(options->borg_controls&&(options->battle_mvp||options->test_battle||options->menu||!options->preview_borg.empty()||
+       options->animation_mosaic||options->browse_borgs||options->list_borgs||!options->selected_save_root.empty()||
+       options->demo_input||options->demo_option||options->demo_credits||options->probe_texture>=0||
+       !options->check_borg_catalog.empty()||!options->check_borg_moves.empty()||!options->check_borg_spawn.empty()||
+       !options->check_borg_effects.empty()||!options->check_borg_forms.empty()||!options->check_borg_fusions.empty()||
+       !options->check_borg_acquisition.empty()||!options->check_borg_variants.empty()||!options->check_borg_controllers.empty()||
+       options->width<440||options->width>4096||options->height<320||options->height>4096))return false;
+    if(options->demo_borg_controls&&!options->frames&&!options->seconds)options->frames=144;
     if (options->headless && options->frames == 0) options->frames = 3;
     return true;
 }
@@ -849,10 +898,332 @@ int run_battle_test(gf::Context& context,gf::RenderEngine& render,const Options&
     render.shutdown();return 0;
 }
 
+int run_borg_controls(gf::Context& context,gf::RenderEngine& render,const Options& options){
+    gf::NativeBattleMvp world;gf::NativeBattleMvpView view;gf::NativeGRedGroundDashDemo source;
+    gf::BorgControlSelector selector;gf::InputRouter router;gf::pc::GRedPracticeInput practice_input;
+    std::string error;
+    auto fail=[&](const char* stage){
+        gf::log_error(context,"borg-controls","%s: %s",stage,error.c_str());render.shutdown();return 2;
+    };
+    if(!view.load(context.files(),options.battle_mvp_assets,render,&error))return fail("scene load failed");
+    const auto input_assets=options.source_ground_assets.empty()?"local/content/source-gred-ground-v9":options.source_ground_assets;
+    unsigned selected=0,frame=0;bool stopped=false,paused=false,restart_held=false,pause_held=false,captured=false;
+    bool pointer_held=false,motion_failed=false;
+    std::array<bool,2> moved{},airborne{};
+    unsigned switches=0;
+    auto reset=[&](unsigned next){
+        gf::BattleMvpConfig config;config.solo_model=gf::BorgControlSelector::entries[next].model;
+        view.reset_control_test_pose();
+        source.reject();
+        if(!world.start(config,&view)||!view.update(world,&error))return false;
+        if(config.solo_model==0x0615){
+            gf::NativeBorgAnimationSeed seed;
+            if(!view.source_seed(world,&seed)||!source.bind(context.files(),options.battle_mvp_assets,input_assets,
+               world,seed,&error,gf::NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush))return false;
+        }
+        selected=next;stopped=paused=false;practice_input={};
+        gf::log_info(context,"borg-controls","active=%04x actors=%u (%s); no opponent or combat",
+                     unsigned(config.solo_model),world.actor_count(),next?"provisional MVP":"recovered movement subset");
+        return true;
+    };
+    if(!reset(0))return fail("initial actor refused");
+    const auto started=context.clock().monotonic_ns();auto previous=started;gf::u64 phase=0;
+    while(context.window().pump_events()&&!context.window().should_close()){
+        const auto now=context.clock().monotonic_ns();
+        if(options.seconds&&now-started>=gf::u64(options.seconds)*1000000000ull)break;
+        context.input().pump();const auto& snapshot=context.input().snapshot();
+        auto pad=router.route(snapshot,0);auto pointer=snapshot.pointer;
+        pointer.left_pressed|=pointer.left&&!pointer_held;pointer_held=pointer.left;
+        unsigned logical_w=options.width,logical_h=options.height;
+        context.window().logical_size(&logical_w,&logical_h);
+        pointer.x=logical_w?gf::s32(gf::s64(pointer.x)*options.width/logical_w):-1;
+        pointer.y=logical_h?gf::s32(gf::s64(pointer.y)*options.height/logical_h):-1;
+        if(snapshot.quit||pad.quit_requested)break;
+        if(options.demo_borg_controls){
+            pad={};pointer={};pointer.within_window=true;pointer.x=32;
+            if(frame==58||frame==119){pointer.y=30;pointer.left_pressed=true;}
+            if(frame==62||frame==123){pointer.y=frame==62?94:62;pointer.left_pressed=true;}
+            if(frame>=4&&frame<13)pad.dpad_up=true;
+            if(frame>=16&&frame<29)pad.b=true;
+            if(frame==4){pad.stick_y=-95;pad.dpad_up=false;}
+            if(frame>=70&&frame<82)pad.stick_x=65;
+            if(frame==73)pad.l=true;
+            if(frame>=86&&frame<99)pad.b=true;
+        }
+        const auto next=selector.select(pointer);
+        const bool restart=pad.y&&!restart_held,pause=pad.start&&!pause_held;
+        restart_held=pad.y;pause_held=pad.start;
+        const bool changed=next&&*next!=selected;
+        const bool reset_actor=changed||restart;
+        if(reset_actor&&!reset(next.value_or(selected)))return fail("actor switch refused");
+        switches+=unsigned(changed);
+        if(pause&&!reset_actor&&!stopped)paused=!paused;
+        unsigned steps=1;
+        if(!options.headless&&!options.demo_borg_controls){
+            phase+=(now>=previous?std::min<gf::u64>(now-previous,250000000):0)*60;
+            steps=unsigned(std::min<gf::u64>(phase/1000000000ull,8));phase%=1000000000ull;
+        }
+        previous=now;
+        const bool running=!selector.open()&&!paused&&!stopped&&!reset_actor&&!pause;
+        if(!running){steps=0;phase=0;}
+        // Strip combat and session buttons before either movement controller.
+        pad.a=pad.x=pad.y=pad.start=false;
+        if(!selected){
+            pad.l=pad.trigger_l_pressed=false;
+            practice_input.sample(pad,source.practice_flick_direction(pad),running);
+        }
+        while(steps--){
+            const auto before=world.actors()[0].position;
+            const auto movement=gf::NativeBattleMvpView::movement_frame(world,options.width,options.height);
+            error.clear();
+            if(!selected){
+                auto input=pad;practice_input.take(input);
+                gf::NativeGRedGroundInput mapped;gf::NativeBorgMotionOffer offer;
+                if(!source.map_input(input,&mapped,&error))break;
+                if(!source.prepare(world,view.source_binding(),movement,mapped.x,mapped.y,mapped.held,&offer,&error)||
+                   !world.step({},false,&view,nullptr,&movement,&offer)){
+                    source.reject();stopped=motion_failed=true;
+                    gf::log_info(context,"borg-controls","motion refused at tick %u: %s",world.tick(),error.c_str());
+                    break;
+                }
+                gf::NativeBorgSourcePose pose;
+                if(!source.commit(world,view.source_binding(),&error)||!source.pose(world,&pose)||
+                   !view.update_source(world,pose,&error))return fail("source pose transaction failed");
+            }else if(!world.step({pad,{}},false,&view,nullptr,&movement)||!view.update(world,&error))return fail("MVP movement failed");
+            moved[selected]|=before!=world.actors()[0].position;
+            airborne[selected]|=!world.actors()[0].grounded;
+        }
+        const auto readout=!selected?"FLIGHT "+std::to_string(source.resource())+"/10000   SOLO / NO COMBAT":
+                                   std::string("SOLO / NO COMBAT");
+        render.begin_frame({frame,.15f,.21f,.3f});render.reset_arena();
+        const auto draws=view.draw(render,world,options.width,options.height,&error);
+        const auto ui=selector.draw(render,selected,options.width,options.height,paused,stopped,readout);
+        render.end_frame();
+        if(!draws||!ui)return fail("draw failed");
+        if(!captured)captured=capture_if_requested(context,options,frame);
+        render.present();context.advance_frame();++frame;
+        if(options.frames&&frame>=options.frames)break;
+    }
+    gf::log_info(context,"borg-controls","frames=%u actors=%u switches=%u moved=%u/%u airborne=%u/%u shots=%u hits=%u",
+                 frame,world.actor_count(),switches,unsigned(moved[0]),unsigned(moved[1]),
+                 unsigned(airborne[0]),unsigned(airborne[1]),world.shots_spawned(),world.hits());
+    const bool smoke_failed=options.demo_borg_controls&&options.frames>=144&&frame>=144&&
+        (switches!=2||!moved[0]||!moved[1]||!airborne[0]||!airborne[1]||motion_failed);
+    render.shutdown();return smoke_failed?2:0;
+}
+
 struct PickerPracticeHandoff {
     gf::u64 session_started=0;
     bool captured=false;
 };
+
+int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Options& options,
+                       const std::array<gf::pc::BorgBattlePackageFiles,2>& packages){
+    using namespace gf;
+    NativeBattleMvp world;NativeBattleMvpView view;NativeGRedGroundDashDemo source;
+    BattleMvpConfig config;std::string error;
+    for(unsigned i=0;i<2;++i)config.packages[i]=packages[i].definition;
+    if(options.package_battle_distance){
+        const auto scale=f32(options.package_battle_distance)/std::hypot(config.spawn[0].x-config.spawn[1].x,config.spawn[0].z-config.spawn[1].z);
+        for(auto& spawn:config.spawn){spawn.x*=scale;spawn.z*=scale;}
+    }
+    const bool source_movement=config.packages[0]->movement==BorgBattleMovement::NormalGRed;
+    const bool demo_held_b=std::any_of(config.packages[0]->moves.begin(),config.packages[0]->moves.end(),
+        [](const auto& move){return move.button==BorgBattleButton::B&&move.held_fire.has_value();});
+    const auto inputs=options.source_ground_assets.empty()?"local/content/source-gred-ground-v9":options.source_ground_assets;
+    const auto practice=packages[0].gred.views();
+    auto fail=[&](const char* reason){
+        gf::log_error(context,"package-battle","%s: %s",reason,error.c_str());render.shutdown();return 2;
+    };
+    if(!view.load_packages(context.files(),options.battle_mvp_assets,render,config.packages,
+                          {packages[0].visuals(),packages[1].visuals()},&error,inputs))return fail("asset binding refused");
+    gf::pc::GRedPracticeInput practice_input;
+    BorgMovementAudio movement_audio;
+    const std::array<const BorgMovementSoundBank*,2> sound_banks{&packages[0].movement_sounds,&packages[1].movement_sounds};
+    const bool has_sounds=std::any_of(sound_banks.begin(),sound_banks.end(),[](const auto* bank){
+        return std::any_of(bank->begin(),bank->end(),[](const auto& clip){return !clip.empty();});
+    });
+    const bool audible=has_sounds&&!options.no_audio&&!options.headless&&context.audio().open(kBorgMovementSampleRate,2);
+    struct CloseMovementAudio {IAudioBackend* device;~CloseMovementAudio(){if(device)device->close();}}
+        close_movement_audio{audible?&context.audio():nullptr};
+    std::vector<s16> movement_pcm;
+    u64 movement_audio_frames=0;
+    auto restart=[&](){
+        source.reject();view.reset_control_test_pose();practice_input={};
+        movement_audio.reset();if(audible)context.audio().discard_queued();
+        if(!world.start(config,&view)){
+            error="v1 source G-Red requires slot 1 against an explicit stationary package; check placement and definitions";
+            return false;
+        }
+        if(!view.update(world,&error))return false;
+        if(source_movement){
+            NativeBorgAnimationSeed seed;
+            if(!view.source_seed(world,&seed)||!source.bind(context.files(),options.battle_mvp_assets,inputs,
+               world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush,&practice))return false;
+        }
+        return true;
+    };
+    if(!restart())return fail("actor admission refused");
+    for(unsigned i=0;i<2;++i)gf::log_info(context,"package-battle","slot=%u id=%s variant=%s moves=%zu",
+        i,packages[i].identity.id.c_str(),config.packages[i]->variant.c_str(),config.packages[i]->moves.size());
+    gf::log_info(context,"package-battle","native test combat, not retail-equivalent; arrows move, WASD/trigger dash, Shift jump, Space B, E X, Q restart");
+    constexpr std::array kinds{"start","marker","debit","stock-refused","refill","emit","emit-refused","interrupt","complete","hit","retire",
+        "modifier-applied","modifier-refused","modifier-expired","pull-queued","pull-applied","pull-refused","pull-cancelled",
+        "button-release","repeat","repeat-stock-refused","melee-armed","melee-refused","melee-retired",
+        "held-fire-start","held-fire-cadence","held-fire-stop","blast-triggered","blast-hit","projectile-contact",
+        "projectile-landed","detonation","stock-returned","guidance-bound","guidance-ended",
+        "guard-armed","guard-blocked","guard-broken","guard-retired","stage-impact","emitter-deployed","emitter-deploy-refused",
+        "emitter-fired","emitter-fire-refused","emitter-retired","anchor-placed","anchor-refused","rewind-queued","rewind-reached",
+        "rewind-completed","rewind-stopped","anchor-path-sealed","rewind-refused","anchor-planted","tap","double-tap","anchor-fallback",
+        "socket-launch","socket-refused"};
+    struct Origins final:IBorgBattleOrigins {
+        explicit Origins(const NativeBattleMvpView& observed):view(observed){}
+        const NativeBattleMvpView& view;
+        const CharacterLocalPose* source_local=nullptr;
+        bool socket(unsigned owner,const BattleMvpActor& actor,u32 tick,u8 move,u16 frame,const BorgBattleSocket& spec,
+                    BattleMvpVec* out)const override{
+            return view.package_socket(owner,actor,tick,move,frame,spec,owner==0?source_local:nullptr,out);
+        }
+    } origins(view);
+    InputRouter router;std::array<GamePadState,2> previous{};std::array<BorgBattleInputs,2> action_input{};
+    const auto action_bits=[](const GamePadState& pad){return u8((pad.a?BorgBattleInputs::b:0)|(pad.x?BorgBattleInputs::x:0));};
+    const bool demo_guard_x=std::any_of(config.packages[1]->moves.begin(),config.packages[1]->moves.end(),
+        [](const auto& move){return move.button==BorgBattleButton::X&&move.guard.has_value();});
+    const bool demo_emitters=std::any_of(config.packages[0]->moves.begin(),config.packages[0]->moves.end(),
+        [](const auto& move){return move.button==BorgBattleButton::X&&!move.emitters.empty();});
+    const bool demo_wire_carrier=std::any_of(config.packages[0]->projectiles.begin(),config.packages[0]->projectiles.end(),
+        [](const auto& shot){return shot.rewind_hit.has_value();});
+    const bool demo_anchor_projectile=std::any_of(config.packages[0]->projectiles.begin(),config.packages[0]->projectiles.end(),
+        [](const auto& shot){return shot.plant_on_stage!=255;});
+    const bool demo_anchor_double_tap=std::any_of(config.packages[0]->moves.begin(),config.packages[0]->moves.end(),
+        [](const auto& move){return move.button==BorgBattleButton::X&&move.activation==BorgBattleActivation::DoubleTap;});
+    const auto start=context.clock().monotonic_ns();auto last=start;u64 phase=0;
+    unsigned frame=0,restarts=0,total_shots=0,total_hits=0;
+    unsigned max_flight=0;
+    bool captured=false,paused=false,first_hit=false,after_restart_hit=false,moved=false,airborne=false;
+    std::array<u8,2> previous_cues{};
+    while(context.window().pump_events()&&!context.window().should_close()){
+        const auto now=context.clock().monotonic_ns();
+        if(options.seconds&&now-start>=u64(options.seconds)*1000000000ull)break;
+        context.input().pump();const auto& snapshot=context.input().snapshot();
+        std::array<GamePadState,2> pads{router.route(snapshot,0),router.route(snapshot,1)};
+        if(snapshot.quit||pads[0].quit_requested)break;
+        if(options.demo_package_battle){
+            pads={};pads[0].a=(frame>=6&&frame<43)||frame==93;pads[0].x=frame==41||(frame>=126&&frame<138);
+            if(demo_held_b)pads[0].a|=(frame>=47&&frame<55)||(frame>93&&frame<123);
+            if(demo_guard_x)pads[1].x=frame==12||frame==98;
+            if(demo_emitters){pads[0].x=frame==2||frame==90;pads[0].a=frame==18||frame==45||frame==109;}
+            if(!config.packages[0]->anchor_sets.empty()){
+                pads[0].a=frame==4||frame==93;
+                pads[0].x=frame==18||frame==27||(frame>=38&&frame<48)||(frame>=126&&frame<138);
+                pads[0].dpad_right|=frame>=23&&frame<32;
+            }
+            if(demo_wire_carrier){
+                pads[0].a=frame==4||frame==93||(frame>=45&&frame<55)||(frame>=111&&frame<123);
+                pads[0].x=frame==23||frame==32;
+                pads[0].b=frame>=70&&frame<75;
+            }
+            if(demo_anchor_projectile){
+                pads[0].x=frame==23;
+                pads[0].a=frame==4||frame==93||(frame>=39&&frame<49)||(frame>=126&&frame<138);
+            }
+            if(demo_anchor_double_tap)
+                pads[0].x=frame==18||frame==29||frame==44||frame==47||frame==127||frame==130;
+            pads[0].y=frame==85;pads[0].dpad_right=frame>=2&&frame<=4;
+            pads[0].b=frame>=56&&frame<=60;
+            if(config.packages[0]->air_jump_points)pads[0].b|=frame==64||frame==70||frame==104;
+            if(config.packages[0]->flight_ticks)pads[0].b=(frame>=51&&frame<85)||(frame>=98&&frame<134);
+        }
+        const bool reset=pads[0].y&&!previous[0].y,pause=pads[0].start&&!previous[0].start;
+        for(unsigned i=0;i<2;++i){
+            auto& input=action_input[i];
+            const auto current=action_bits(pads[i]),prior=action_bits(previous[i]);
+            if(const auto pressed=u8(current&~prior);pressed)input.pressed=pressed; // don't merge separate press samples
+            input.released=u8((input.released|u8(prior&~current))&~current);
+            input.held=current;
+        }
+        previous=pads;
+        if(reset){
+            total_shots+=world.shots_spawned();total_hits+=world.hits();if(!restart())return fail("restart refused");
+            ++restarts;paused=false;
+            previous_cues={};
+        }else if(pause){
+            paused=!paused;
+            if(!world.set_paused(paused))return fail("pause refused");
+            if(audible)context.audio().discard_queued();
+        }
+        unsigned steps=1;
+        if(!options.headless&&!options.demo_package_battle){
+            phase+=std::min<u64>(now>=last?now-last:0,250000000)*60;
+            steps=unsigned(std::min<u64>(phase/1000000000ull,8));phase%=1000000000ull;
+        }
+        last=now;
+        const bool running=!paused&&!reset&&!pause&&world.result()==BattleMvpResult::Fighting;
+        if(!running){action_input={};steps=0;phase=0;}
+        for(auto& pad:pads)pad.a=pad.x=pad.y=pad.start=false;
+        if(source_movement)practice_input.sample(pads[0],source.practice_flick_direction(pads[0]),running);
+        while(steps--&&world.result()==BattleMvpResult::Fighting){
+            const auto before=world.actors()[0].position;
+            const auto movement=NativeBattleMvpView::movement_frame(world,options.width,options.height);
+            if(source_movement){
+                auto input=pads[0];practice_input.take(input);NativeGRedGroundInput mapped;NativeBorgMotionOffer offer;
+                if(!source.map_input(input,&mapped,&error)||
+                   !source.prepare(world,view.source_binding(),movement,mapped.x,mapped.y,mapped.held,&offer,&error)){
+                    source.reject();return fail("recovered movement refused; no provisional fallback");
+                }
+                origins.source_local=source.prepared_local(world,offer);
+                const bool advanced=origins.source_local&&world.step({},false,&view,nullptr,&movement,&offer,action_input,&origins);
+                origins.source_local=nullptr;
+                if(!advanced){source.reject();return fail("recovered movement refused; no provisional fallback");}
+                NativeBorgSourcePose pose;
+                if(!source.commit(world,view.source_binding(),&error)||!source.pose(world,&pose)||!view.update_source(world,pose,&error))
+                    return fail("accepted source pose was not published");
+            }else if(!world.step(pads,false,&view,nullptr,&movement,nullptr,action_input,&origins)||!view.update(world,&error))
+                return fail("authored battle update refused");
+            for(auto& input:action_input)input.pressed=input.released=0;
+            moved|=before!=world.actors()[0].position;airborne|=!world.actors()[0].grounded;
+            max_flight=std::max(max_flight,unsigned(world.actors()[0].package_flight_used));
+            if(audible&&movement_audio.visit(world,sound_banks,&movement_pcm)&&!movement_pcm.empty()&&
+               context.audio().frames_available()<kBorgMovementAudioFrames*3&&
+               context.audio().try_submit(movement_pcm.data(),movement_pcm.size()/2))
+                movement_audio_frames+=movement_pcm.size()/2;
+            for(unsigned i=0;i<world.actor_count();++i){
+                const auto cues=world.actors()[i].package_movement_cues;
+                if(options.trace_package_battle&&cues!=previous_cues[i]&&
+                   (!config.packages[i]->movement_fx.empty()||config.packages[i]->air_jump_points))
+                    gf::log_info(context,"borg-fx","round=%u tick=%u actor=%u cues=%u",restarts,world.tick(),i,unsigned(cues));
+                previous_cues[i]=cues;
+            }
+            for(const auto& e:world.package_events()){
+                if((e.kind==BorgBattleEventKind::Hit||e.kind==BorgBattleEventKind::BlastHit)&&e.actor==0&&e.recipient==1)
+                    (restarts?after_restart_hit:first_hit)=true;
+                if(!options.trace_package_battle)continue;
+                const auto& moves=config.packages[e.actor]->moves;
+                const char* reason=e.kind==BorgBattleEventKind::PullRefused||e.kind==BorgBattleEventKind::PullCancelled||
+                    e.kind==BorgBattleEventKind::RewindStopped||e.kind==BorgBattleEventKind::RewindRefused?
+                    borg_battle_pull_reason(e.value):nullptr;
+                gf::log_info(context,"borg-api","round=%u tick=%u actor=%u move=%s event=%s frame=%u object=%u recipient=%u value=%u%s%s",
+                    restarts,e.tick,unsigned(e.actor),e.move<moves.size()?moves[e.move].id.c_str():"-",
+                    kinds[unsigned(e.kind)],unsigned(e.frame),e.object,unsigned(e.recipient),unsigned(e.value),
+                    reason?" reason=":"",reason?reason:"");
+            }
+        }
+        render.begin_frame({frame,.15f,.21f,.3f});render.reset_arena();
+        const auto draws=view.draw(render,world,options.width,options.height,&error);render.end_frame();
+        if(!draws)return fail("draw failed");
+        if(!captured)captured=capture_if_requested(context,options,frame);
+        render.present();context.advance_frame();++frame;if(options.frames&&frame>=options.frames)break;
+    }
+    gf::log_info(context,"package-battle","frames=%u actors=%u restarts=%u moved=%u airborne=%u shots=%u hits=%u",
+        frame,world.actor_count(),restarts,unsigned(moved),unsigned(airborne),total_shots+world.shots_spawned(),total_hits+world.hits());
+    if(options.trace_package_battle&&has_sounds)
+        gf::log_info(context,"borg-audio","device=%s frames-accepted=%llu",audible?"open":"off",
+            static_cast<unsigned long long>(movement_audio_frames));
+    if(options.trace_package_battle&&config.packages[0]->flight_ticks)
+        gf::log_info(context,"package-flight","peak=%u cap=%u",max_flight,unsigned(config.packages[0]->flight_ticks));
+    const bool smoke=options.demo_package_battle&&frame>=150;
+    render.shutdown();return smoke&&(!moved||!airborne||restarts!=1||!first_hit||!after_restart_hit)?2:0;
+}
 
 int run_battle_mvp(gf::Context& context,gf::RenderEngine& render,const Options& options,
                    const gf::pc::BorgPracticeFiles* package=nullptr,const gf::pc::BorgOwnedPractice* owned=nullptr,
@@ -2617,8 +2988,27 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
                Inputs::view(files.pose_profile),Inputs::view(files.motions),render,&error)){
             gf::log_error(context,"borg-preview","load failed: %s",error.c_str());render.shutdown();return 2;
         }
-        gf::log_info(context,"borg-preview","%s variant=%s idle=%u:%u; body preview only, no actor or gameplay rules",
-            files.identity.id.c_str(),files.profile.variant.c_str(),unsigned(files.profile.idle_group),unsigned(files.profile.idle_choice));
+        unsigned chosen=0;
+        if(files.profile.static_body&&!options.preview_clip.empty()){
+            gf::log_error(context,"borg-preview","this variant declares a static body with no animation clips");
+            mosaic.close_package_preview(render);render.shutdown();return 2;
+        }
+        if(!options.preview_clip.empty()&&options.preview_clip!="idle"){
+            const auto next=std::find_if(files.profile.clips.begin(),files.profile.clips.end(),
+                [&](const auto& clip){return clip.id==options.preview_clip;});
+            if(next==files.profile.clips.end()){
+                gf::log_error(context,"borg-preview","clip %s is not declared for this variant",options.preview_clip.c_str());
+                mosaic.close_package_preview(render);render.shutdown();return 2;
+            }
+            chosen=unsigned(next-files.profile.clips.begin())+1;
+            if(!mosaic.select(0,chosen,render,&error)){
+                gf::log_error(context,"borg-preview","clip selection refused: %s",error.c_str());
+                mosaic.close_package_preview(render);render.shutdown();return 2;
+            }
+        }
+        gf::log_info(context,"borg-preview","%s variant=%s clip=%s (%u/%u); body preview only, no actor or gameplay rules",
+            files.identity.id.c_str(),files.profile.variant.c_str(),chosen?files.profile.clips[chosen-1].id.c_str():
+                files.profile.static_body?"none":"idle",chosen+1,mosaic.page_count());
     }else if(!mosaic.load(context.files(),options.battle_mvp_assets,render,options.animation_columns,options.animation_rows,&error)||
        (!options.animation_programs.empty()&&!mosaic.load_source_programs(context.files(),options.animation_programs,options.animation_height_profile,render,&error))||
        (!options.animation_motion_profile.empty()&&!mosaic.load_source_motion(context.files(),options.animation_motion_profile,render,&error))||
@@ -2682,6 +3072,14 @@ int main(int argc, char** argv) {
        unsigned(!options.check_borg_forms.empty())+unsigned(!options.check_borg_fusions.empty())+
        unsigned(!options.check_borg_acquisition.empty())+unsigned(!options.check_borg_variants.empty())>1)return 2;
     const auto borg_packages=gf::pc::scan_borg_packages("borgs");
+    std::array<gf::pc::BorgBattlePackageFiles,2> battle_packages;
+    if(!options.battle_borg.empty()){
+        std::string error;
+        if(!gf::pc::load_borg_battle_package("borgs",borg_packages,options.battle_borg,options.borg_variant,&battle_packages[0],&error)||
+           !gf::pc::load_borg_battle_package("borgs",borg_packages,options.against_borg,options.against_variant,&battle_packages[1],&error)){
+            std::fprintf(stderr,"Borg Battle Test: %s\n",error.c_str());return 2;
+        }
+    }
     gf::pc::BorgPracticeFiles practice_package;
     std::unique_ptr<gf::pc::BorgOwnedPractice> owned_practice;
     const gf::pc::BorgPracticeFiles* package=nullptr;
@@ -2781,11 +3179,12 @@ int main(int argc, char** argv) {
                 std::string("air-jumps:")+(row.air_jump_points?std::to_string(*row.air_jump_points):"unresolved"):
                 std::string(resources[unsigned(row.air_resource)]);
             std::printf("%s\tform=%s\tsource=%s\tsource-movement-type=%s\tselector-family=%s\tmovement=%s\tcontact=%s"
-                "\tair-resource=%s\trecovery=%s\tmotion-bank=%s\tpose=%s\tactions=%s\tevidence=%s\n",
+                 "\tair-resource=%s\trecovery=%s\tmotion-bank=%s\tpose=%s\tactions=%s\tevidence=%s\tadd-on=%s\n",
                 row.variant.c_str(),row.form.c_str(),row.source.c_str(),type.c_str(),row.selector_family.c_str(),
                 movements[unsigned(row.movement)].data(),contacts[unsigned(row.contact)].data(),air.c_str(),
                 recoveries[unsigned(row.recovery)].data(),banks[unsigned(row.motion_bank)].data(),
-                poses[unsigned(row.pose)].data(),actions[unsigned(row.actions)].data(),evidence[unsigned(row.evidence)].data());
+                 poses[unsigned(row.pose)].data(),actions[unsigned(row.actions)].data(),evidence[unsigned(row.evidence)].data(),
+                 gf::borg_controller_add_on_name(row.add_on).data());
         }
         std::puts("Controller declarations validated; provenance not authenticated and gameplay not loaded.");
         return 0;
@@ -2885,7 +3284,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::IFileSystem> headless_files;
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
-    if(options.headless&&(options.test_battle||options.battle_mvp||options.animation_mosaic||!options.preview_borg.empty()||
+    if(options.headless&&(options.test_battle||options.battle_mvp||options.borg_controls||!options.battle_borg.empty()||options.animation_mosaic||!options.preview_borg.empty()||
        options.browse_borgs||!options.selected_save_root.empty())){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
@@ -2907,7 +3306,8 @@ int main(int argc, char** argv) {
                               options.browse_owned_borgs?"Owned Borg Collection":
                               !options.selected_save_root.empty()?"Borg Save Recovery":
                               options.browse_borgs?"Installed Borg Picker":!options.preview_borg.empty()?"Borg Package Preview":
-                              options.animation_mosaic?"Borg Animation Mosaic":"Gotcha Force", false, !options.animation_export.empty()},
+                                options.animation_mosaic?"Borg Animation Mosaic":options.borg_controls?"Borg Control Test":
+                                !options.battle_borg.empty()?"Borg API Battle Test":"Gotcha Force", false, !options.animation_export.empty()},
                              renderer.get(), &error);
         if (!backends.complete()) {
             std::fprintf(stderr, "platform initialization failed: %s\n",
@@ -2931,6 +3331,8 @@ int main(int argc, char** argv) {
     }
     gf::log_info(context, "host", "backend=%s", render.capabilities().name.c_str());
     if(options.test_battle)return run_battle_test(context,render,options);
+    if(!options.battle_borg.empty())return run_package_battle(context,render,options,battle_packages);
+    if(options.borg_controls)return run_borg_controls(context,render,options);
     if(options.battle_mvp)return run_battle_mvp(context,render,options,package,owned_practice.get());
     if(force_browser)return run_borg_force_browser(context,render,options,borg_packages,*force_browser);
     if(options.browse_borgs||options.browse_owned_borgs)return run_borg_browser(context,render,options,borg_packages);

@@ -79,6 +79,7 @@ struct NativeGRedPracticeWorldMatrices {u32 tick=0;Mat4 key0,key7;};
 class NativeBattleMvpBorg {
 public:
     bool load(u16 model,ByteView hsd,ByteView prefix,ByteView pose,ByteView motions,std::string* error){
+        package_profile_.reset();
         ready_=presentation_ready_=source_pose_active_=false;source_frame_scope_.reset();model_id_=0;world_={};displayed_={};blend_from_={};blend_remaining_={};
         const u32 expected=model==0x615?0xe2b4439au:model==10?0xeab3632au:0;
         if(!expected||!scene_.load(hsd,prefix,pose,error))return false;
@@ -109,8 +110,50 @@ public:
         if(torso_==kHsdNoBone){if(error)*error="native MVP: upper-body root missing";return false;}
         model_id_=model;ready_=true;last_tick_=std::numeric_limits<u32>::max();return true;
     }
+    bool load_package(std::shared_ptr<const BorgGameplayProfile> profile,ByteView hsd,ByteView prefix,ByteView pose,
+                      ByteView motions,std::string* error){
+        auto fail=[&](std::string why){ready_=false;if(error)*error=std::move(why);return false;};
+        if(!profile||!borg_gameplay_profile_valid(*profile))return fail("Borg gameplay: missing or invalid definition");
+        const auto movement=profile->movement;
+        if(movement==BorgBattleMovement::NormalGRed){
+            if(!load(0x0615,hsd,prefix,pose,motions,error))return false;
+        }else{
+            reset_control_test_pose();ready_=false;model_id_=0;world_={};displayed_={};
+            if(!scene_.load(hsd,prefix,pose,error)||!character_motion_bank_load(motions,&bank_,error))return false;
+            for(unsigned i=0;i<(movement==BorgBattleMovement::Stationary?1u:4u);++i)
+                if(!load_package_clip(profile->locomotion[i],&package_locomotion_[i],error))return false;
+            // The authored movement component uses discrete raw clips; it
+            // neither inherits a retail lane map nor looks up a retail ID.
+            torso_=kHsdNoBone;
+            const auto& rig=scene_.rig();
+            for(unsigned j=rig.cuts[0];j<rig.cuts[1];++j){
+                const auto bone=rig.order[j],parent=rig.binding.bones[bone].parent;
+                if(parent!=kHsdNoBone&&std::find(rig.order.begin()+rig.cuts[0],rig.order.begin()+rig.cuts[1],parent)==rig.order.begin()+rig.cuts[1]){
+                    if(torso_!=kHsdNoBone){torso_=kHsdNoBone;break;}
+                    torso_=bone;
+                }
+            }
+        }
+        if(!profile->moves.empty()&&(!(scene_.rig().lane_mask&1u)||scene_.rig().cuts[0]==scene_.rig().cuts[1]))
+            return fail("Borg gameplay: action clips require a bound upper lane");
+        if(profile->moves.size()>package_moves_.size())return fail("Borg gameplay: action clip budget");
+        for(unsigned i=0;i<profile->moves.size();++i){
+            const auto& move=profile->moves[i];
+            if(!load_package_clip(move.clip,&package_moves_[i],error)||
+               package_moves_[i].end_frame<f32(move.pose_start+move.last_marker()))
+                return fail("Borg gameplay: unavailable action clip or active frame outside clip for "+move.id);
+        }
+        for(const auto& shot:profile->projectiles)
+            if(shot.socket&&shot.socket->bone>=scene_.rig().binding.bones.size())
+                return fail("Borg gameplay: unbound origin bone for "+shot.id);
+        for(const auto& fx:profile->movement_fx)
+            if(fx.bone>=scene_.rig().binding.bones.size())
+                return fail("Borg gameplay: unbound movement effect bone for "+fx.id);
+        package_profile_=std::move(profile);ready_=true;return true;
+    }
     bool update(const BattleMvpActor& actor,u32 tick,std::string* error){
         if(!ready_||actor.model!=model_id_||actor.source_ground_motion){presentation_ready_=false;if(error)*error="native Borg: accepted source pose required for source movement";return false;}
+        if(package_profile_&&package_profile_->movement!=BorgBattleMovement::NormalGRed)return update_package(actor,tick,error);
         const auto motion=native_borg_select_motion(actor,map_);const unsigned base=unsigned(motion);
         const unsigned upper=actor.attack_ticks?2:base;
         if(presentation_ready_&&scene_.ready()&&tick==last_tick_&&base==base_&&upper==upper_&&actor.position==last_position_&&actor.facing==last_facing_&&actor.upper_body_yaw==last_aim_yaw_)return true;
@@ -155,6 +198,10 @@ public:
         *out={scene_.rig(),displayed_,scene_.instance_binding(),tick,0,0,actor.position,actor.facing,{}};return true;
     }
     void refuse_source_pose(){presentation_ready_=false;}
+    void reset_control_test_pose(){
+        presentation_ready_=false;source_pose_active_=false;source_frame_scope_.reset();
+        last_tick_=std::numeric_limits<u32>::max();
+    }
     bool update_source_pose(const NativeBattleMvp& accepted,const NativeBorgSourcePose& source,std::string* error){
         const auto& actor=accepted.actors()[0];const auto tick=accepted.tick();
         presentation_ready_=false;
@@ -167,8 +214,15 @@ public:
         }
         CharacterPoseFrame frame;CharacterWorldPose world;
         const auto root=mat4_multiply(mat4_translation(actor.position.data()),mat4_rotation_y(std::atan2(actor.facing.x,actor.facing.z)));
-        if(!character_pose_initial_frame(scene_.rig(),root,&frame,error)||!character_pose_direct_world(scene_.rig(),owned->local_,frame,&world,error)||!scene_.set_world_pose(world,{},error))return false;
-        world_=std::move(world);displayed_=owned->local_;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=0;
+        CharacterLocalPose overlay;
+        const auto* local=&owned->local_;
+        if(!character_pose_initial_frame(scene_.rig(),root,&frame,error))return false;
+        if(actor.package_move!=BorgBattleActionState::none){
+            overlay=*local;local=&overlay;
+            if(!apply_package_action(actor,&overlay,&frame,error))return false;
+        }
+        if(!character_pose_direct_world(scene_.rig(),*local,frame,&world,error)||!scene_.set_world_pose(world,{},error))return false;
+        world_=std::move(world);displayed_=*local;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;
         source_pose_active_=true;source_frame_scope_=source.frame_scope;presentation_ready_=true;return true;
     }
     bool observe_source_world_matrices(const NativeBattleMvp& world,NativeGRedPracticeWorldMatrices* out)const{
@@ -187,6 +241,21 @@ public:
         if(!ready_||!presentation_ready_||(source_pose_active_&&source_frame_scope_.expired())||!scene_.ready()||!out||bone>=world_.matrices.size())return false;
         mat4_transform_point(world_.matrices[bone],offset.data(),out->data());return true;
     }
+    bool package_socket(const BattleMvpActor& actor,u32 tick,u8 move,u16 frame,const BorgBattleSocket& spec,
+                        const CharacterLocalPose* accepted_movement,BattleMvpVec* out)const{
+        if(!out||!ready_||!package_profile_||actor.model!=model_id_||!presentation_ready_||tick!=last_tick_+1u||
+           spec.bone>=scene_.rig().binding.bones.size()||
+           bool(accepted_movement)!=(package_profile_->movement==BorgBattleMovement::NormalGRed))return false;
+        auto candidate=actor;candidate.package_move=move;candidate.package_frame=frame;
+        candidate.upper_body_yaw=native_borg_aim_delta(actor.facing,actor.aim_facing);
+        CharacterLocalPose local;CharacterWorldPose world;
+        if(accepted_movement){
+            local=*accepted_movement;
+            if(!compose_package_world(candidate,local,&world,nullptr))return false;
+        }else if(!sample_package_local(candidate,package_clock(candidate,tick),&local,nullptr)||
+                !compose_package_world(candidate,local,&world,nullptr))return false;
+        mat4_transform_point(world.matrices[spec.bone],spec.local.data(),out->data());return true;
+    }
     bool bounds(BattleMvpVec* low,BattleMvpVec* high)const{
         if(!ready_||!presentation_ready_||(source_pose_active_&&source_frame_scope_.expired())||!low||!high||!scene_.ready())return false;
         *low={1e7f,1e7f,1e7f};*high={-1e7f,-1e7f,-1e7f};bool any=false;
@@ -195,6 +264,58 @@ public:
     }
 private:
     friend class NativeBattleMvpView;
+    bool load_package_clip(BorgBattleClip choice,HsdBoneMotionClip* out,std::string* error)const{
+        CharacterMotionSelection selected;
+        if(!character_motion_select(bank_,choice.group,choice.choice,&selected,error)||selected.fallback){
+            if(error)*error="Borg gameplay: exact clip required; no fallback";
+            return false;
+        }
+        return hsd_bone_motion_load(selected.archive,scene_.rig().binding,out,error);
+    }
+    bool apply_package_action(const BattleMvpActor& actor,CharacterLocalPose* local,CharacterPoseFrame* frame,std::string* error)const{
+        if(actor.package_move==BorgBattleActionState::none)return true;
+        if(!package_profile_||actor.package_move>=package_profile_->moves.size())return false;
+        const auto& clip=package_moves_[actor.package_move];HsdBoneMotionSample sample;
+        const auto start=package_profile_->moves[actor.package_move].pose_start;
+        if(!hsd_bone_motion_sample(clip,std::min(u32(clip.end_frame),u32(start)+actor.package_frame),&sample,error))return false;
+        const auto& rig=scene_.rig();
+        std::array<CharacterPoseLane,4> lanes;for(auto& lane:lanes)lane.current=&sample;
+        CharacterLocalPose attack;
+        if(!character_pose_sample(rig,lanes,&attack,error))return false;
+        for(unsigned i=rig.cuts[0];i<rig.cuts[1];++i)local->bones[rig.order[i]]=attack.bones[rig.order[i]];
+        if(torso_!=kHsdNoBone)frame->extra_angles[torso_][1]=std::bit_cast<s16>(u16(s32(std::lround(actor.upper_body_yaw*32768.f/3.14159265359f))));
+        return true;
+    }
+    static unsigned package_locomotion_role(const BattleMvpActor& actor){
+        return actor.dash_ticks?3:!actor.grounded?2:actor.movement_speed>.05f?1:0;
+    }
+    u32 package_clock(const BattleMvpActor& actor,u32 tick)const{
+        if(last_tick_==std::numeric_limits<u32>::max()||tick<last_tick_||package_locomotion_role(actor)!=base_)return 0;
+        return clock_+tick-last_tick_;
+    }
+    bool sample_package_local(const BattleMvpActor& actor,u32 clock,CharacterLocalPose* out,std::string* error)const{
+        const unsigned role=package_locomotion_role(actor);
+        const auto& clip=package_locomotion_[role];const u32 length=u32(clip.end_frame)+1;
+        HsdBoneMotionSample sample;
+        if(!hsd_bone_motion_sample(clip,role<2?clock%length:std::min(clock,length-1),&sample,error))return false;
+        std::array<CharacterPoseLane,4> lanes;for(auto& lane:lanes)lane.current=&sample;
+        return character_pose_sample(scene_.rig(),lanes,out,error);
+    }
+    bool compose_package_world(const BattleMvpActor& actor,CharacterLocalPose& local,CharacterWorldPose* out,std::string* error)const{
+        CharacterPoseFrame frame;
+        const auto root=mat4_multiply(mat4_translation(actor.position.data()),mat4_rotation_y(std::atan2(actor.facing.x,actor.facing.z)));
+        return character_pose_initial_frame(scene_.rig(),root,&frame,error)&&apply_package_action(actor,&local,&frame,error)&&
+            character_pose_direct_world(scene_.rig(),local,frame,out,error);
+    }
+    bool update_package(const BattleMvpActor& actor,u32 tick,std::string* error){
+        presentation_ready_=false;
+        const auto role=package_locomotion_role(actor);const auto clock=package_clock(actor,tick);
+        CharacterLocalPose local;
+        if(!sample_package_local(actor,clock,&local,error)||!compose_package_world(actor,local,&world_,error)||
+           !scene_.set_world_pose(world_,{},error))return false;
+        displayed_=std::move(local);base_=role;clock_=clock;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;
+        source_pose_active_=false;source_frame_scope_.reset();presentation_ready_=true;return true;
+    }
     bool observe_receiver_key2(const BattleMvpActor& actor,u32 tick,Mat4* out)const{
         if(!out||!ready_||!presentation_ready_||!scene_.ready()||source_pose_active_||
            model_id_!=0x000a||actor.model!=model_id_||!actor.health||actor.source_ground_motion||
@@ -218,5 +339,8 @@ private:
     CharacterLocalPose displayed_;std::array<CharacterLocalPose,4> blend_from_;std::array<f32,4> blend_remaining_{};
     u16 model_id_=0;u8 torso_=kHsdNoBone;unsigned base_=0,upper_=0;u32 clock_=0,attack_clock_=0,last_tick_=0;bool ready_=false,presentation_ready_=false,source_pose_active_=false;BattleMvpVec last_position_{};BattlePoint last_facing_{};f32 last_aim_yaw_=0;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_frame_scope_;
+    std::shared_ptr<const BorgGameplayProfile> package_profile_;
+    std::array<HsdBoneMotionClip,4> package_locomotion_;
+    std::array<HsdBoneMotionClip,kBorgBattleMoves> package_moves_;
 };
 }

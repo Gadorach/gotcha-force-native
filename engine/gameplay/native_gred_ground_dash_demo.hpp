@@ -554,8 +554,11 @@ public:
             //Native target-center proxy for the source horizontal target-hitpoint
             //distance. This is explicit harness policy, not original target ACK.
             const auto& target=world.actors()[1];
-            if(!target.health)return fail(error,"live native target required");
-            s.steering.distance75c=std::hypot(observed.position[0]-target.position[0],observed.position[2]-target.position[2]);s.steering.distance_declared=true;
+            if(!target.health&&!world.config().solo_model)return fail(error,"live native target required");
+            // Solo preview uses the far steering band as explicit native tuning,
+            // not as an original no-target result or an invisible actor.
+            s.steering.distance75c=world.config().solo_model?motion_.dash_steering[1]:
+                std::hypot(observed.position[0]-target.position[0],observed.position[2]-target.position[2]);s.steering.distance_declared=true;
             GRedDashSteering steering;
             if(!gred_ground_dash_steer(motion_,s.steering,&steering))return fail(error,"source steering refused");
             s.steering=steering;s.body=steering.body72;s.motion.travel5ae=steering.travel5ae;
@@ -619,6 +622,13 @@ public:
             candidate->offer.recovery_completion=proof;candidate->recovery_completion=std::move(proof);
         }
         *out=candidate->offer;pending_=std::move(candidate);return true;
+    }
+    // Borrowed only during the caller's synchronous world.step. This local
+    // pose may be composed at the root that step accepts, not at an unaccepted
+    // proposal or a previous render publication.
+    const CharacterLocalPose* prepared_local(const NativeBattleMvp& world,const NativeBorgMotionOffer& offer)const{
+        return ready_&&pending_&&offer.serial==pending_->offer.serial&&offer.producer.lock()==producer_&&
+            world.motion_observation_current(offer.observed)?&pending_->local:nullptr;
     }
     bool commit(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,std::string* error){
         NativeBorgMotionReceipt receipt;
@@ -1019,10 +1029,11 @@ private:
         GRedGroundDashOrderedState initial{s.dash,s.dash_recovery546,s.dash_exit545};GRedGroundDashOrderedPlan plan;
         if(!gred_ground_dash_ordered_plan(motion_,initial,before,control_before,&plan))return refuse("plan/forced-continuation refused");
         auto steer=[&](f32 speed){
-            const auto& actor=world.actors()[0];const auto& target=world.actors()[1];if(!target.health)return false;
+            const auto& actor=world.actors()[0];const auto& target=world.actors()[1];if(!target.health&&!world.config().solo_model)return false;
             s.steering.body72=s.body;s.steering.camera5b0=frame.camera5b0;s.steering.speed44=speed;
             s.steering.direction57c=s.dash.direction_class;s.steering.coarse57d=s.dash.coarse57d;
-            s.steering.distance75c=std::hypot(actor.position[0]-target.position[0],actor.position[2]-target.position[2]);
+            s.steering.distance75c=world.config().solo_model?motion_.dash_steering[1]:
+                std::hypot(actor.position[0]-target.position[0],actor.position[2]-target.position[2]);
             s.steering.distance_declared=true;GRedDashSteering next;
             if(!gred_ground_dash_steer(motion_,s.steering,&next))return false;
             s.steering=next;s.body=next.body72;s.motion.travel5ae=next.travel5ae;return true;

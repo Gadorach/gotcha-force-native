@@ -1,5 +1,9 @@
 # Normal Borg controller audit: one per retail tribe
 
+Retail evidence precedence is original game recovery (scoped to what was
+decoded or exercised), then archived wiki and guides, then player
+recollection. Authored fixtures establish expressibility, not retail behavior.
+
 The first pass found **eight movement-selector prefixes and 20 distinct
 class-main callbacks** in a sample of one normal Borg from each retail tribe.
 Eleven representatives share Sasuke's first 32 selector pairs byte-for-byte.
@@ -480,6 +484,22 @@ the reload clock. The native comparison matched **114 bounded cases**:
 16 action requests, 14 release gates, 16 projectile requests, eight repeat
 checks and 60 stock cases. No live stock, actor or projectile is published.
 
+## Gatling Gunner: held B gate
+
+The saved **360 bounded checks** for normal `GG4E08:0102/0` cover the
+ordinary grounded B prefix and repeat gate, not a continuous firing trace.
+After the neutral release, the sampled branch checks **held B**, an
+expired repeat clock, and stock availability. That check doesn't debit;
+another shot still needs its later authored cue, aim approval or local
+timeout, and one channel-0 debit. The checked level-index-0 B row starts
+with 100 stock and seeds its 480-unit refill on depletion.
+
+The user observed a rising firing rate and a stop on release. The saved
+checks supplied arrival at the positive cue and don't establish elapsed
+intervals, release during a pending cue, or the spin carried across a
+quick re-press. Keep the authored Rotary Scout cadence separate; it isn't
+a reconstruction of this retail action.
+
 ## Patra Witch and Angel Nurse: distinct X contact outcomes
 
 Exact normal **Patra Witch `GG4E08:0902/0`** (#48, AFS 636) and
@@ -780,9 +800,13 @@ selector table and class branch, not an alternate name or variant.
 | Interruption | Defeat already advanced to lifecycle 2 blocks the later impact hook. It does not prove that defeat cancels an area object already created, or that competing hits always resolve in the same order. The area's collider, lifetime and actual recipients belong to separate services. |
 
 All **161 bounded offline cases** matched using supplied scene/contact
-operands. Live flight, scene placement, contact priority, final area
-coverage and damage remain unverified. [Wiki lead: Death ICBM](https://gotchaforce.fandom.com/wiki/Death_ICBM?oldid=6658).
-No game actor was admitted.
+operands. A separate original scene check followed the type-73 area object
+through collider publication, hit, and cleanup: the first sphere radius was
+**87.5**, and one recipient went from **4,000 HP to 1,474** (2,526 damage).
+The result is scoped to that recipient and does not establish universal
+coverage or a 100%-HP rule. Live flight, scene placement, and contact priority
+are not joined to that check. No native game actor was admitted.
+[Wiki lead: Death ICBM](https://gotchaforce.fandom.com/wiki/Death_ICBM?oldid=6658).
 
 The detached Death ICBM helper reuses verified type-3 scalar flight steps
 with Blue Striker, keeps contact-query order explicit, and separates the
@@ -1866,6 +1890,12 @@ All **134 bounded offline cases** matched. Live pose timing, contact,
 damage, repeat length and interruption order remain unverified. The
 native duel's provisional shot policy is unchanged.
 [Wiki lead: Shuriken](https://gotchaforce.fandom.com/wiki/Sasuke?oldid=6766).
+
+Static readback of the qualified DOL's type-14 argument-4 row
+(`802D39B0 + 4 × 52`) gives logical caster key **7** and local offset
+**(-50, 0, 20)**. The package test samples that socket on its accepted
+upper `3:0` throw pose (starting at source frame 7). The authored cue
+and rendering do not establish live retail pose timing or launch bearings.
 
 The detached Sasuke planner shares only the post-VM aim/cue calculation
 with G-Red. The gate result types remain model-specific, and Sasuke keeps

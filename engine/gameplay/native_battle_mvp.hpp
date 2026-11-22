@@ -7,11 +7,14 @@
 #include <limits>
 #include <optional>
 #include <memory>
+#include <span>
+#include <utility>
 #include "engine/input/input_map.hpp"
 #include "engine/gameplay/battle_swept_circle.hpp"
 #include "engine/gameplay/native_borg_movement.hpp"
 #include "engine/gameplay/native_borg_contact.hpp"
 #include "engine/gameplay/borgs/normal_gred_movement.hpp"
+#include "engine/gameplay/borg_gameplay.hpp"
 #include "engine/core/source_surface_push.hpp"
 namespace gf {
 using BattleMvpVec=std::array<f32,3>;
@@ -30,12 +33,46 @@ struct BattleMvpActor {
     unsigned takeoff_ticks=0,dash_ticks=0,dash_duration=0,dash_cooldown=0,air_dashes_used=0;
     bool dash_airborne=false;BattlePoint dash_direction{};BattleMvpDashDirection dash_motion=BattleMvpDashDirection::Forward;
     bool source_ground_motion=false; //historical name: source-owned motion requires an explicit source-pose consumer
+    u8 package_move=BorgBattleActionState::none;
+    u16 package_frame=0;
+    u32 package_damage_serial=0;
+    u8 package_movement_cues=0;
+    u8 package_air_points_used=0;
+    u16 package_flight_used=0;
 };
+class IBorgBattleOrigins {
+public:
+    virtual ~IBorgBattleOrigins()=default;
+    virtual bool socket(unsigned owner,const BattleMvpActor& actor,u32 tick,u8 move,u16 frame,
+                        const BorgBattleSocket& spec,BattleMvpVec* out)const=0;
+};
+struct BattleMvpAnchor {BattleMvpVec position{};u32 id=0;};
+struct BattleMvpAnchorPath {std::array<BattleMvpAnchor,kBorgBattleAnchors> points{};u8 count=0;};
 struct BattleMvpProjectile {
     bool active=false;u32 id=0;u8 owner=0;BattleMvpWeapon weapon=BattleMvpWeapon::Bullet;
     BattleMvpVec position{},previous{},velocity{};unsigned life=0;bool landed=false;
+    // Optional API-authored payload used by the same battle object pool.
+    u16 package_damage=0;f32 package_gravity=0,package_radius=0;
+    u8 package_move=255;BorgProjectileFloor package_floor=BorgProjectileFloor::Ignore;
+    u16 package_walk_percent=0,package_walk_ticks=0;
+    u16 package_pull_units=0;
+    bool from_package=false,package_ignore_actors=false;
+    std::optional<BorgBattleBlast> package_blast{};
+    u8 package_projectile=255;
+    u8 package_return_stock=255; // paid channel captured only on successful allocation
+    BattlePoint package_guide_point{};
+    u8 package_guide_target=255;
+    u16 package_guide_ticks=0;
+    u32 package_emitter=0; // nonzero for a synchronized child volley; actor still owns credit
+    BattleMvpAnchorPath package_rewind_path{};
+    BorgProjectileLook package_look{};
+    u32 born_tick=0;
 };
-struct BattleMvpImpact {BattleMvpVec position{};unsigned ticks=0;bool explosion=false;};
+struct BattleMvpImpact {BattleMvpVec position{};unsigned ticks=0;bool explosion=false;f32 radius=0;};
+struct BattleMvpEmitter {
+    u32 id=0;BattleMvpVec position{};
+    u16 remaining=0;u8 deployment_move=BorgBattleActionState::none;
+};
 struct BattleMvpConfig {
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
     unsigned health=100;
@@ -45,6 +82,9 @@ struct BattleMvpConfig {
     //Native-only static-floor query reference, NOT an air spawn or recovered
     //actor constructor. Default0 preserves the ordinary MVP's selection.
     std::array<f32,2> spawn_query_y{};
+    // Standalone control lab only. Zero keeps the existing duel unchanged.
+    u16 solo_model=0;
+    std::array<std::shared_ptr<const BorgGameplayProfile>,2> packages{};
 };
 class NativeBattleMvp;
 class NativeBorgMotionScope {
@@ -266,35 +306,65 @@ class NativeBattleMvp {
 public:
     static constexpr unsigned tick_rate=60,max_projectiles=128;
     bool start(const BattleMvpConfig& config={},const IBattleMvpTerrain* terrain=nullptr){
+        if(config.solo_model&&config.solo_model!=0x0615&&config.solo_model!=0x000a)return false;
         for(f32 v:{config.arena_half,config.actor_radius,config.actor_height,config.move_speed,config.jump_speed,config.gravity,config.step_height})if(!std::isfinite(v)||v<=0)return false;
         if(config.arena_half>10000||config.actor_radius*4>=config.arena_half||config.actor_height>1000||config.move_speed>config.actor_radius||config.jump_speed>50||config.gravity<.05f||config.gravity>10||config.step_height>config.actor_height||!config.health||config.health>10000)return false;
         for(f32 v:{config.ground_acceleration,config.ground_braking,config.air_acceleration,config.turn_per_tick})if(!std::isfinite(v)||v<=0)return false;
         if(config.ground_acceleration>config.move_speed*2||config.ground_braking>config.move_speed*2||config.air_acceleration>config.ground_acceleration||config.turn_per_tick>3.141593f)return false;
         if(!std::isfinite(config.dash_speed)||config.dash_speed<config.move_speed||config.dash_speed>config.actor_radius||!config.dash_duration||config.dash_duration>60||config.dash_cooldown<config.dash_duration||config.dash_cooldown>600||config.air_dashes>4)return false;
+        const bool package=bool(config.packages[0]);
+        if(package!=bool(config.packages[1])||(package&&config.solo_model))return false;
+        if(package&&(config.packages[1]->movement==BorgBattleMovement::NormalGRed||
+           (config.packages[0]->movement==BorgBattleMovement::NormalGRed&&config.packages[1]->movement!=BorgBattleMovement::Stationary)))return false;
         NativeBattleMvp next;next.config_=config;
-        for(unsigned i=0;i<2;++i){
+        if(package)for(unsigned i=0;i<2;++i){
+            const auto& p=*config.packages[i];
+            if(!borg_gameplay_profile_valid(p))return false;
+            if(std::any_of(p.projectiles.begin(),p.projectiles.end(),[](const auto& shot){
+                return shot.floor==BorgProjectileFloor::StageRetire;
+            })&&(!terrain||!terrain->supports_projectile_stage()))return false;
+            next.package_actions_[i].reset(p);
+        }
+        const unsigned count=config.solo_model?1u:2u;
+        for(unsigned i=0;i<count;++i){
             const auto p=config.spawn[i];if(!std::isfinite(p.x)||!std::isfinite(p.z)||std::abs(p.x)>config.arena_half-config.actor_radius||std::abs(p.z)>config.arena_half-config.actor_radius)return false;
             if(!std::isfinite(config.spawn_query_y[i])||std::abs(config.spawn_query_y[i])>20000)return false;
-            auto& actor=next.actors_[i];actor.model=i?0x000a:0x0615;actor.position={p.x,0,p.z};actor.health=config.health;
+            auto& actor=next.actors_[i];actor.model=package?
+                (config.packages[i]->movement==BorgBattleMovement::NormalGRed?0x0615:0):
+                config.solo_model?config.solo_model:i?0x000a:0x0615;
+            actor.position={p.x,0,p.z};actor.health=package?config.packages[i]->health:config.health;
             if(!floor(terrain,p.x,p.z,config.spawn_query_y[i],&actor.position[1]))return false;
         }
-        const f32 dx=config.spawn[0].x-config.spawn[1].x,dz=config.spawn[0].z-config.spawn[1].z;
-        if(dx*dx+dz*dz<=4*config.actor_radius*config.actor_radius)return false;
-        next.face(0);next.face(1);for(auto& actor:next.actors_)actor.aim_facing=actor.facing;
+        if(config.solo_model){
+            next.actors_[1].health=0;
+            next.actors_[0].facing={0,-1};
+        }else{
+            const f32 dx=config.spawn[0].x-config.spawn[1].x,dz=config.spawn[0].z-config.spawn[1].z;
+            if(dx*dx+dz*dz<=4*config.actor_radius*config.actor_radius)return false;
+            next.face(0);next.face(1);
+        }
+        for(unsigned i=0;i<count;++i)next.actors_[i].aim_facing=next.actors_[i].facing;
         next.motion_scope_=std::shared_ptr<const NativeBorgMotionScope>(new NativeBorgMotionScope(this));
         next.ready_=true;*this=next;return true;
     }
     //One fixed60Hz tick. A/B/X = primary/jump/secondary, Y = restart,
     //L = ground/air dash, Start = pause. Second-pad control is available without AI.
-    bool step(std::array<GamePadState,2> pads,bool opponent_ai=true,const IBattleMvpTerrain* terrain=nullptr,const std::array<std::optional<BattleMvpVec>,2>* muzzles=nullptr,const NativeBorgMovementFrame* player_frame=nullptr,const NativeBorgMotionOffer* source_offer=nullptr){
+    bool step(std::array<GamePadState,2> pads,bool opponent_ai=true,const IBattleMvpTerrain* terrain=nullptr,const std::array<std::optional<BattleMvpVec>,2>* muzzles=nullptr,const NativeBorgMovementFrame* player_frame=nullptr,const NativeBorgMotionOffer* source_offer=nullptr,
+              const std::array<BorgBattleInputs,2>& package_input={},const IBorgBattleOrigins* origins=nullptr){
         if(!ready_||tick_==std::numeric_limits<u32>::max())return false;
+        const bool solo=config_.solo_model!=0;
+        const bool package=bool(config_.packages[0]);
+        if(package&&opponent_ai)return false; // inputs supplied by Battle Test
+        if((!package&&package_input!=std::array<BorgBattleInputs,2>{})||!package_input[0].valid()||!package_input[1].valid())return false;
+        if(solo&&(opponent_ai||pads[1]!=GamePadState{}))return false;
         if(player_frame&&!native_borg_movement_frame_valid(*player_frame))return false;
         if(muzzles)for(unsigned i=0;i<2;++i)if((*muzzles)[i])for(f32 v:*(*muzzles)[i])if(!std::isfinite(v)||std::abs(v)>1e5f)return false;
         const auto human=pads[0];
         if(human.y&&!previous_[0].y){const auto config=config_;if(!start(config,terrain))return false;previous_[0]=human;return true;}
-        if(human.start&&!previous_[0].start){paused_=!paused_;previous_=pads;return true;}
+        if(human.start&&!previous_[0].start){set_paused(!paused_);previous_=pads;return true;}
         if(paused_||result_!=BattleMvpResult::Fighting){previous_=pads;return true;}
-        if(actors_[0].source_ground_motion&&!source_offer)return false; //no implicit legacy-controller fallback
+        if(!source_offer&&(actors_[0].source_ground_motion||config_.solo_model==0x0615||
+            (package&&config_.packages[0]->movement==BorgBattleMovement::NormalGRed)))return false; //no legacy fallback
         NativeBorgContactResult source_contact;
         if(source_offer){
             const auto& o=*source_offer;const auto& actor=actors_[0];const auto& other=actors_[1];
@@ -419,12 +489,12 @@ public:
                 (native_borg_motion_relaunch_entry(o.kind)?(o.entry_vertical_delta<=0||o.entry_vertical_delta>50):o.entry_vertical_delta!=0))return false;
             if(opponent_ai||!motion_observation_current(o.observed)||!o.serial||
                (!vertical&&(!actor.grounded||actor.vertical_speed!=0||o.vertical_speed!=0))||
-               actor.attack_ticks||actor.hit_flash||actor.dash_ticks||other.attack_ticks||
-               !other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}||pads[1]!=GamePadState{}||
+                actor.attack_ticks||actor.hit_flash||actor.dash_ticks||
+                (!solo&&(other.attack_ticks||!other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}))||pads[1]!=GamePadState{}||
                pads[0].a||pads[0].b||pads[0].x||pads[1].a||pads[1].b||pads[1].x||
                (!vertical&&o.action!=BattleMvpAction::Idle&&o.action!=BattleMvpAction::Move&&o.action!=BattleMvpAction::GroundDash)||
                !std::isfinite(o.facing.x)||!std::isfinite(o.facing.z)||std::abs(std::hypot(o.facing.x,o.facing.z)-1)>.001f)return false;
-            for(const auto& shot:projectiles_)if(shot.active)return false;
+             for(const auto& shot:projectiles_)if(shot.active&&(!package||!shot.from_package||shot.owner!=0))return false;
             for(auto value:o.proposed_position)if(!std::isfinite(value)||std::abs(value)>1e5f)return false;
             const BattlePoint delta{o.proposed_position[0]-actor.position[0],o.proposed_position[2]-actor.position[2]};
             if(std::hypot(delta.x,delta.z)>config_.actor_radius)return false; //native endpoint-terrain budget
@@ -1379,14 +1449,26 @@ public:
         if(opponent_ai)pads[1]=ai_input();
         //Preflight terrain before mutating a tick. A missing grid is not floor0.
         std::array<f32,2> ground{};
-        for(unsigned i=0;i<2;++i)if(!floor(terrain,actors_[i].position[0],actors_[i].position[2],actors_[i].position[1],&ground[i]))return false;
+        for(unsigned i=0;i<actor_count();++i)if(!floor(terrain,actors_[i].position[0],actors_[i].position[2],actors_[i].position[1],&ground[i]))return false;
         ++tick_;
+        package_event_count_=0;
+        const std::array<bool,2> previously_grounded{actors_[0].grounded,actors_[1].grounded};
+        std::array<bool,2> airborne_jump{};
+        const std::array<bool,2> package_interrupted{actors_[0].hit_flash!=0,actors_[1].hit_flash!=0};
+        std::array<bool,2> pulled{};
+        if(package)for(unsigned i=0;i<2;++i){
+            const bool jump=pads[i].b&&!previous_[i].b;
+            const bool pulled_now=consume_package_pull(i,terrain,jump);
+            const bool rewound=consume_package_rewind(i,terrain,jump||pulled_now);
+            pulled[i]=pulled_now||rewound;
+        }
         for(auto& effect:impacts_)if(effect.ticks)--effect.ticks;
-        for(unsigned i=0;i<2;++i){
+        for(unsigned i=0;i<actor_count();++i){
             auto& actor=actors_[i];if(!actor.health){actor.action=BattleMvpAction::Defeated;continue;}
             for(auto& cooldown:actor.cooldown)if(cooldown)--cooldown;
             if(actor.attack_ticks)--actor.attack_ticks;
             if(actor.hit_flash)--actor.hit_flash;
+            if(pulled[i])continue; // one accepted movement for this actor visit
             if(i==0&&source_offer){
                 actor.position=source_contact.position;actor.velocity=source_contact.actual_delta;actor.facing=source_offer->facing;
                 actor.movement_speed=std::hypot(actor.velocity.x,actor.velocity.z);actor.travel_distance+=actor.movement_speed;
@@ -1394,18 +1476,37 @@ public:
                 actor.takeoff_ticks=actor.landing_ticks=actor.dash_ticks=actor.dash_cooldown=actor.air_dashes_used=0;actor.dash_airborne=false;
                 actor.move_forward=actor.movement_speed?(actor.velocity.x*actor.facing.x+actor.velocity.z*actor.facing.z)/actor.movement_speed:0;
                 actor.move_right=actor.movement_speed?(-actor.velocity.x*actor.facing.z+actor.velocity.z*actor.facing.x)/actor.movement_speed:0;
-                actor.aim_facing=native_borg_direction({actor.position[0],actor.position[2]},{actors_[1].position[0],actors_[1].position[2]},actor.facing);actor.upper_body_yaw=0;
+                actor.aim_facing=solo?actor.facing:native_borg_direction({actor.position[0],actor.position[2]},{actors_[1].position[0],actors_[1].position[2]},actor.facing);actor.upper_body_yaw=0;
                 continue;
             }
             actor.source_ground_motion=false;
+            const auto* definition=config_.packages[i].get();
+            if(definition&&definition->movement==BorgBattleMovement::Stationary)continue;
+            const auto& modifier=walk_modifiers_[i];
+            const f32 walk=definition?definition->walk*(modifier.ticks?f32(modifier.percent)/100.f:1.f):config_.move_speed;
+            const f32 jump=definition?definition->jump:config_.jump_speed;
+            const f32 dash_speed=definition?definition->dash:config_.dash_speed;
             if(actor.landing_ticks)--actor.landing_ticks;
             if(actor.takeoff_ticks)--actor.takeoff_ticks;
             if(actor.dash_cooldown)--actor.dash_cooldown;
             if(actor.dash_ticks)--actor.dash_ticks;
-            if(actor.grounded&&pads[i].b&&!previous_[i].b){actor.grounded=false;actor.vertical_speed=config_.jump_speed;actor.takeoff_ticks=BattleMvpActor::takeoff_duration;actor.landing_ticks=0;actor.dash_ticks=0;actor.air_dashes_used=0;}
+            if(pads[i].b&&!previous_[i].b){
+                if(actor.grounded){
+                    actor.grounded=false;actor.vertical_speed=jump;actor.takeoff_ticks=BattleMvpActor::takeoff_duration;
+                    actor.landing_ticks=actor.dash_ticks=actor.air_dashes_used=0;
+                    actor.package_air_points_used=definition&&definition->air_jump_points?1:0;
+                }else if(definition&&actor.package_air_points_used<definition->air_jump_points){
+                    ++actor.package_air_points_used;actor.vertical_speed=jump;actor.dash_ticks=0;
+                    airborne_jump[i]=true;
+                }
+            }
             if(!actor.grounded){
+                if(definition&&pads[i].b&&actor.package_flight_used<definition->flight_ticks&&!actor.dash_ticks){
+                    actor.vertical_speed=std::max(actor.vertical_speed,definition->flight_lift);
+                    ++actor.package_flight_used;
+                }
                 if(!(actor.dash_ticks&&actor.dash_airborne)){actor.position[1]+=actor.vertical_speed;actor.vertical_speed-=config_.gravity;}
-                if(actor.position[1]<=ground[i]){actor.position[1]=ground[i];actor.vertical_speed=0;actor.grounded=true;actor.landing_ticks=BattleMvpActor::landing_duration;actor.takeoff_ticks=0;actor.dash_ticks=0;actor.air_dashes_used=0;}
+                if(actor.position[1]<=ground[i]){actor.position[1]=ground[i];actor.vertical_speed=0;actor.grounded=true;actor.landing_ticks=BattleMvpActor::landing_duration;actor.takeoff_ticks=0;actor.dash_ticks=0;actor.air_dashes_used=0;actor.package_air_points_used=0;actor.package_flight_used=0;}
             }
             f32 x=axis(pads[i].stick_x),z=axis(pads[i].stick_y);
             x+=f32(pads[i].dpad_right)-f32(pads[i].dpad_left);z+=f32(pads[i].dpad_down)-f32(pads[i].dpad_up);unit(x,z,false);
@@ -1426,14 +1527,14 @@ public:
                     const auto dash=actor.dash_direction;const f32 front=dash.x*actor.facing.x+dash.z*actor.facing.z,side=-dash.x*actor.facing.z+dash.z*actor.facing.x;
                     actor.dash_motion=std::abs(side)>std::abs(front)?(side<0?BattleMvpDashDirection::Left:BattleMvpDashDirection::Right):(front<0?BattleMvpDashDirection::Backward:BattleMvpDashDirection::Forward);
                 }
-                actor.velocity={actor.dash_direction.x*config_.dash_speed,actor.dash_direction.z*config_.dash_speed};
+                actor.velocity={actor.dash_direction.x*dash_speed,actor.dash_direction.z*dash_speed};
             }
             else{
                 //All burst exits (expiry, jump, landing, collision or ledge) return
                 //to the same bounded controller, not a flight of leftover dash speed.
                 const f32 speed=std::hypot(actor.velocity.x,actor.velocity.z);
-                if(speed>config_.move_speed){actor.velocity.x*=config_.move_speed/speed;actor.velocity.z*=config_.move_speed/speed;}
-                actor.velocity=native_borg_velocity(actor.velocity,{direction.x*config_.move_speed,direction.z*config_.move_speed},actor.grounded?(has_input?config_.ground_acceleration:config_.ground_braking):config_.air_acceleration);
+                if(speed>walk){actor.velocity.x*=walk/speed;actor.velocity.z*=walk/speed;}
+                actor.velocity=native_borg_velocity(actor.velocity,{direction.x*walk,direction.z*walk},actor.grounded?(has_input?config_.ground_acceleration:config_.ground_braking):config_.air_acceleration);
             }
             const bool was_dashing=actor.dash_ticks!=0;
             const auto& other=actors_[1-i];
@@ -1441,21 +1542,63 @@ public:
             if(!native_borg_resolve_contact({actor.position,other.position,actor.velocity,config_.arena_half,config_.actor_radius,config_.actor_height,config_.step_height,actor.grounded,other.health!=0},terrain,&contact)){ready_=false;return false;}
             actor.position=contact.position;actor.grounded=contact.grounded;actor.velocity=contact.actual_delta;
             actor.movement_speed=std::hypot(actor.velocity.x,actor.velocity.z);actor.travel_distance+=actor.movement_speed;
-            if(actor.dash_ticks&&(contact.terrain_blocked||contact.body_hit||actor.movement_speed<config_.dash_speed*.99f||(!actor.grounded&&!actor.dash_airborne)))actor.dash_ticks=0;
+            if(actor.dash_ticks&&(contact.terrain_blocked||contact.body_hit||actor.movement_speed<dash_speed*.99f||(!actor.grounded&&!actor.dash_airborne)))actor.dash_ticks=0;
             const bool moving=actor.movement_speed>.05f;
             if(moving&&has_input&&!was_dashing)actor.facing=native_borg_turn(actor.facing,actor.velocity,config_.turn_per_tick);
-            actor.aim_facing=native_borg_direction({actor.position[0],actor.position[2]},{actors_[1-i].position[0],actors_[1-i].position[2]},actor.facing);
+            actor.aim_facing=solo?actor.facing:native_borg_direction({actor.position[0],actor.position[2]},{actors_[1-i].position[0],actors_[1-i].position[2]},actor.facing);
             const f32 speed=std::max(actor.movement_speed,.0001f);
             actor.move_forward=(actor.velocity.x*actor.facing.x+actor.velocity.z*actor.facing.z)/speed;
             actor.move_right=(-actor.velocity.x*actor.facing.z+actor.velocity.z*actor.facing.x)/speed;
-            if(pads[i].a&&!actor.cooldown[0])fire(i,false,muzzles);
-            if(pads[i].x&&!actor.cooldown[1])fire(i,true,muzzles);
+            if(!solo&&!package&&pads[i].a&&!actor.cooldown[0])fire(i,false,muzzles);
+            if(!solo&&!package&&pads[i].x&&!actor.cooldown[1])fire(i,true,muzzles);
             if(actor.attack_ticks)actor.upper_body_yaw=native_borg_aim_delta(actor.facing,actor.aim_facing);
             else actor.upper_body_yaw+=std::clamp(-actor.upper_body_yaw,-.2f,.2f);
             actor.action=actor.dash_ticks?(actor.dash_airborne?BattleMvpAction::AirDash:BattleMvpAction::GroundDash):!actor.grounded?BattleMvpAction::Jump:actor.landing_ticks?BattleMvpAction::Land:actor.attack_ticks?BattleMvpAction::Attack:moving?BattleMvpAction::Move:BattleMvpAction::Idle;
         }
+        if(package)for(unsigned i=0;i<2;++i){
+            auto& actor=actors_[i];
+            u8 cues=0;
+            if(previously_grounded[i]&&!actor.grounded&&actor.vertical_speed>0)cues|=u8(BorgMovementCue::Takeoff);
+            if(!previously_grounded[i]&&actor.grounded)cues|=u8(BorgMovementCue::Landing);
+            if(!actor.grounded&&actor.vertical_speed>0)cues|=u8(BorgMovementCue::Rise);
+            if((airborne_jump[i]&&!actor.grounded)||(i==0&&source_offer&&native_borg_motion_relaunch_entry(source_offer->kind)))
+                cues|=u8(BorgMovementCue::AirJump);
+            actor.package_movement_cues=cues;
+        }
+        if(package)for(unsigned i=0;i<2;++i)step_package_emitters(i);
+        if(package)for(unsigned i=0;i<2;++i){
+            auto& actor=actors_[i];auto& action=package_actions_[i];
+            if(!actor.health)continue;
+            auto& modifier=walk_modifiers_[i];
+            if(modifier.ticks&&!--modifier.ticks){
+                record_package(BorgBattleEventKind::ModifierExpired,modifier.owner,modifier.move,0,modifier.object,0,u8(i));
+                modifier={};
+            }
+            actor.aim_facing=native_borg_direction({actor.position[0],actor.position[2]},
+                {actors_[1-i].position[0],actors_[1-i].position[2]},actor.facing);
+            const auto& other=actors_[1-i];
+            const auto range=other.health?std::optional{std::hypot(other.position[0]-actor.position[0],
+                                                                    other.position[2]-actor.position[2])}:std::nullopt;
+            u8 available_anchors=0;
+            for(unsigned set=0;set<kBorgBattleAnchorSets;++set)
+                if(anchor_paths_[i][set].count)available_anchors|=u8(1u<<set);
+            action.visit(*config_.packages[i],package_input[i],actor.grounded,package_interrupted[i],
+                [&](const auto& shot,u8 move,u8 return_stock){return emit_package(i,move,shot,return_stock,origins);},
+                [&](auto kind,u8 move,u16 frame,u32 object,u16 value){
+                    record_package(kind,i,move,frame,object,value);
+                    if(kind==BorgBattleEventKind::Emitted)emit_package_followers(i,move,frame);
+                },range,available_anchors);
+            actor.package_move=action.move;actor.package_frame=action.frame;
+            if(action.move!=BorgBattleActionState::none)actor.upper_body_yaw=native_borg_aim_delta(actor.facing,actor.aim_facing);
+        }
+        if(package)for(unsigned i=0;i<2;++i)deploy_package_emitters(i);
+        if(package)for(unsigned i=0;i<2;++i)visit_package_anchor_markers(i);
+        if(package)for(unsigned i=0;i<2;++i)step_package_guard(i);
+        if(package)for(unsigned i=0;i<2;++i)step_package_melee(i);
+        if(package)for(unsigned i=0;i<2;++i)step_package_detonation(i,terrain);
         for(auto& shot:projectiles_)if(shot.active){
             shot.previous=shot.position;
+            if(shot.from_package){step_package_shot(shot,terrain);continue;}
             if(shot.weapon==BattleMvpWeapon::Bomb){
                 if(!shot.landed){for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k];shot.velocity[1]-=config_.gravity*.65f;
                     f32 y=0;if(!floor(terrain,shot.position[0],shot.position[2],shot.position[1],&y)){ready_=false;return false;}
@@ -1471,8 +1614,27 @@ public:
             }
             if(std::abs(shot.position[0])>config_.arena_half+300||std::abs(shot.position[2])>config_.arena_half+300||shot.position[1]<-10000)shot.active=false;
         }
-        for(auto& actor:actors_)if(!actor.health)actor.action=BattleMvpAction::Defeated;
-        if(!actors_[0].health||!actors_[1].health)result_=!actors_[0].health?(!actors_[1].health?BattleMvpResult::Draw:BattleMvpResult::SasukeWins):BattleMvpResult::GRedWins;
+        if(!solo){
+            for(unsigned i=0;i<2;++i)if(auto& actor=actors_[i];!actor.health){
+                actor.action=BattleMvpAction::Defeated;
+                walk_modifiers_[i]={};
+                if(package&&actor.package_move!=BorgBattleActionState::none){
+                    record_package(BorgBattleEventKind::Interrupted,i,actor.package_move,actor.package_frame,0,0);
+                    package_actions_[i].cancel_action();
+                    actor.package_move=BorgBattleActionState::none;actor.package_frame=0;
+                }
+            }
+            if(!actors_[0].health||!actors_[1].health){
+                result_=!actors_[0].health?(!actors_[1].health?BattleMvpResult::Draw:BattleMvpResult::SasukeWins):BattleMvpResult::GRedWins;
+                for(unsigned i=0;i<2;++i)if(const auto request=std::exchange(pull_requests_[i],{});request.object)
+                    record_package(BorgBattleEventKind::PullCancelled,i,request.move,0,request.object,
+                        u16(BorgBattlePullRefusal::RoundEnded),request.recipient);
+                for(unsigned i=0;i<2;++i)retire_package_melee(i);
+                for(unsigned i=0;i<2;++i)retire_package_guard(i);
+                for(unsigned i=0;i<2;++i)for(auto& emitter:emitters_[i])retire_package_emitter(i,emitter,2);
+                for(unsigned i=0;i<2;++i)if(rewinds_[i].id)finish_package_rewind(i,BorgBattlePullRefusal::RoundEnded);
+            }
+        }
         if(source_offer){
             last_offer_=*source_offer;last_receipt_.scope_=motion_scope_;last_receipt_.tick_=tick_;last_receipt_.serial_=source_offer->serial;
             last_receipt_.position_=actors_[0].position;last_receipt_.facing_=actors_[0].facing;last_receipt_.contact_=source_contact;
@@ -1482,13 +1644,20 @@ public:
         previous_=pads;return true;
     }
     bool ready()const{return ready_;}bool paused()const{return paused_;}u32 tick()const{return tick_;}
+    unsigned actor_count()const{return !ready_?0u:config_.solo_model?1u:2u;}
     bool set_paused(bool paused){
         if(!ready_)return false;
+        if(paused!=paused_)for(auto& action:package_actions_)action.discard_input();
         paused_=paused;return true;
     }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
+    const auto& emitters()const{return emitters_;}
+    const auto& anchor_paths()const{return anchor_paths_;}
     const BattleMvpConfig& config()const{return config_;}BattleMvpResult result()const{return result_;}
     u32 shots_spawned()const{return shots_;}u32 hits()const{return hits_;}
+    std::span<const BorgBattleEvent> package_events()const{return {package_events_.data(),package_event_count_};}
+    const BorgBattleActionState& package_action(unsigned slot)const{return package_actions_.at(slot);}
+    unsigned maximum_health(unsigned slot)const{return config_.packages.at(slot)?config_.packages[slot]->health:config_.health;}
     bool observe_motion(NativeBorgMotionObservation* out)const{
         if(!out||!ready_||paused_||result_!=BattleMvpResult::Fighting||!motion_scope_||motion_scope_->owner_!=this||
            actors_[0].model!=NormalGRedMovementDefinition::model||!actors_[0].health)return false;
@@ -1539,6 +1708,529 @@ public:
             receipt.grounded_==actors_[0].grounded&&receipt.vertical_speed_==actors_[0].vertical_speed;
     }
 private:
+    void record_package(BorgBattleEventKind kind,unsigned actor,u8 move,u16 frame,u32 object,u16 value,u8 recipient=255){
+        if(package_event_count_<package_events_.size())
+            package_events_[package_event_count_++]={kind,tick_,object,u8(actor),move,recipient,frame,value};
+    }
+    void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,const BattleMvpVec& position){
+        const auto amount=u16(std::min(actors_[recipient].health,unsigned(damage_value)));
+        damage(recipient,amount);impact(position,false);
+        record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);
+    }
+    void retire_package_guard(unsigned defender){
+        const auto window=std::exchange(guard_windows_[defender],{});
+        if(window.move!=BorgBattleActionState::none)
+            record_package(BorgBattleEventKind::GuardRetired,defender,window.move,window.frame,0,window.remaining);
+    }
+    void step_package_guard(unsigned defender){
+        const auto& action=package_actions_[defender];
+        const auto* spec=action.move==BorgBattleActionState::none?nullptr:&config_.packages[defender]->moves[action.move].guard;
+        if(!actors_[defender].health||!spec||!*spec||action.frame<(*spec)->first||action.frame>(*spec)->last){
+            retire_package_guard(defender);return;
+        }
+        auto& window=guard_windows_[defender];
+        if(action.frame==(*spec)->first){
+            window={action.move,(*spec)->contacts,action.frame};
+            record_package(BorgBattleEventKind::GuardArmed,defender,action.move,action.frame,0,window.remaining);
+        }else window.frame=action.frame;
+    }
+    bool try_package_guard(u8 defender,u8 attacker,BorgBattleAttackKind kind,BattlePoint toward_source,u32 object){
+        auto& window=guard_windows_[defender];
+        if(!window.remaining||!actors_[defender].health)return false;
+        const auto& spec=*config_.packages[defender]->moves[window.move].guard;
+        if(!(spec.mask&u8(kind)))return false;
+        const auto heading=actors_[defender].facing;
+        const f32 length=std::hypot(toward_source.x,toward_source.z);
+        if(length<=.0001f||heading.x*toward_source.x+heading.z*toward_source.z<std::cos(spec.half_angle)*length)
+            return false;
+        --window.remaining;
+        record_package(BorgBattleEventKind::GuardBlocked,defender,window.move,window.frame,object,window.remaining,attacker);
+        if(!window.remaining)
+            record_package(BorgBattleEventKind::GuardBroken,defender,window.move,window.frame,object,0,attacker);
+        return true;
+    }
+    void retire_package_melee(unsigned owner){
+        const auto window=std::exchange(melee_windows_[owner],{});
+        if(window.object)record_package(BorgBattleEventKind::MeleeRetired,owner,window.move,window.frame,window.object,0);
+    }
+    void step_package_melee(unsigned owner){
+        const auto& action=package_actions_[owner];
+        const auto& actor=actors_[owner];const u8 recipient=u8(1-owner);const auto& other=actors_[recipient];
+        auto& window=melee_windows_[owner];
+        const auto* move=action.move==BorgBattleActionState::none?nullptr:&config_.packages[owner]->moves[action.move];
+        if(!actor.health||!move||!move->melee||action.frame<move->melee->first||action.frame>move->melee->last){
+            retire_package_melee(owner);return;
+        }
+        const auto& shape=*move->melee;
+        if(action.frame==shape.first){
+            if(next_id_==std::numeric_limits<u32>::max()){
+                record_package(BorgBattleEventKind::MeleeRefused,owner,action.move,action.frame,0,0);return;
+            }
+            window={++next_id_,action.move,action.frame,false};
+            record_package(BorgBattleEventKind::MeleeArmed,owner,action.move,action.frame,window.object,0);
+        }
+        if(!window.object||window.move!=action.move)return;
+        window.frame=action.frame;
+        if(window.hit||!other.health)return;
+        // Actor-bound planar capsule in the current body basis, checked
+        // against the same destination body/height proxy as a projectile.
+        // No aim ray, animation mesh, target lock or inventory write.
+        const f32 height=actor.position[1]+shape.height;
+        if(height+shape.half_height<other.position[1]||height-shape.half_height>other.position[1]+config_.actor_height)return;
+        const f32 x=other.position[0]-actor.position[0],z=other.position[2]-actor.position[2];
+        if(x*actor.facing.x+z*actor.facing.z<0)return;
+        f32 t=0;
+        if(!battle_swept_hit({actor.position[0],actor.position[2]},{actor.facing.x*shape.reach,actor.facing.z*shape.reach},
+                            {other.position[0],other.position[2]},config_.actor_radius+shape.radius,&t))return;
+        window.hit=true;
+        if(try_package_guard(recipient,u8(owner),BorgBattleAttackKind::Melee,{-x,-z},window.object))return;
+        accept_package_hit(owner,recipient,action.move,action.frame,window.object,shape.damage,
+            {actor.position[0]+actor.facing.x*shape.reach*t,height,actor.position[2]+actor.facing.z*shape.reach*t});
+    }
+    void queue_package_pull(const BattleMvpProjectile& shot,u8 recipient,const BattleMvpVec& observed_position){
+        auto& next=pull_requests_[shot.owner];
+        if(next.object){
+            record_package(BorgBattleEventKind::PullRefused,shot.owner,shot.package_move,0,shot.id,
+                u16(BorgBattlePullRefusal::AlreadyQueued),recipient);
+            return;
+        }
+        next={{observed_position[0],observed_position[2]},shot.id,shot.package_pull_units,shot.package_move,recipient};
+        record_package(BorgBattleEventKind::PullQueued,shot.owner,shot.package_move,0,shot.id,shot.package_pull_units,recipient);
+    }
+    bool consume_package_pull(unsigned owner,const IBattleMvpTerrain* terrain,bool jump){
+        // The round owns both actor slots until restart. This pending request
+        // is never exported or resolvable against a replacement world.
+        const auto request=std::exchange(pull_requests_[owner],{});
+        if(!request.object)return false;
+        auto refuse=[&](BorgBattlePullRefusal why){
+            record_package(BorgBattleEventKind::PullRefused,owner,request.move,0,request.object,u16(why),request.recipient);
+            return false;
+        };
+        auto& actor=actors_[owner];
+        if(config_.packages[owner]->movement!=BorgBattleMovement::Grounded||!actor.health||!actor.grounded||
+           actor.vertical_speed||actor.dash_ticks||actor.landing_ticks||actor.hit_flash||jump)
+            return refuse(BorgBattlePullRefusal::OwnerBusy);
+        const f32 x=request.destination.x-actor.position[0],z=request.destination.z-actor.position[2],distance=std::hypot(x,z);
+        if(distance<=.01f)return refuse(BorgBattlePullRefusal::NoTravel);
+        const auto scale=std::min(1.f,f32(request.units)/distance);
+        const BattlePoint delta{x*scale,z*scale};
+        bool accepted=false;
+        const auto reason=apply_package_flat_step(owner,delta,terrain,&accepted);
+        if(!accepted)return refuse(reason);
+        record_package(BorgBattleEventKind::PullApplied,owner,request.move,0,request.object,
+            u16(std::lround(actor.movement_speed)),request.recipient);
+        return true;
+    }
+    BorgBattlePullRefusal apply_package_flat_step(unsigned owner,BattlePoint delta,const IBattleMvpTerrain* terrain,bool* accepted){
+        auto& actor=actors_[owner];*accepted=false;
+        // Shared grounded motion acceptance for short pulled/rewound steps.
+        // Do not authorize a slope, ledge drop or unknown support here.
+        for(f32 at:{.5f,1.f}){
+            f32 y=0;
+            if(!floor(terrain,actor.position[0]+delta.x*at,actor.position[2]+delta.z*at,actor.position[1],&y))
+                return BorgBattlePullRefusal::SupportUnavailable;
+            if(std::abs(y-actor.position[1])>.01f)return BorgBattlePullRefusal::TerrainOrBody;
+        }
+        const auto& other=actors_[1-owner];NativeBorgContactResult result;
+        if(!native_borg_resolve_contact({actor.position,other.position,delta,config_.arena_half,config_.actor_radius,
+            config_.actor_height,config_.step_height,true,other.health!=0},terrain,&result))
+            return BorgBattlePullRefusal::SupportUnavailable;
+        if(!result.grounded||result.terrain_blocked||result.body_hit||result.bounds_hit||result.slid)
+            return BorgBattlePullRefusal::TerrainOrBody;
+        const f32 speed=std::hypot(result.actual_delta.x,result.actual_delta.z);
+        if(speed<=.0001f)return BorgBattlePullRefusal::NoTravel;
+        actor.position=result.position;
+        actor.velocity={}; //do not carry the forced step as momentum into later input
+        actor.movement_speed=speed;
+        actor.travel_distance+=actor.movement_speed;
+        actor.move_forward=(result.actual_delta.x*actor.facing.x+result.actual_delta.z*actor.facing.z)/actor.movement_speed;
+        actor.move_right=(-result.actual_delta.x*actor.facing.z+result.actual_delta.z*actor.facing.x)/actor.movement_speed;
+        actor.action=BattleMvpAction::Move;
+        *accepted=true;return BorgBattlePullRefusal::NoTravel; // reason is used only on refusal
+    }
+    void visit_package_anchor_markers(unsigned owner){
+        const auto& action=package_actions_[owner];const auto& actor=actors_[owner];
+        if(!actor.health||action.move==BorgBattleActionState::none)return;
+        const auto& profile=*config_.packages[owner];
+        for(const auto& marker:profile.moves[action.move].anchors)if(marker.frame==action.frame){
+            auto& path=anchor_paths_[owner][marker.set];auto& winding=rewinds_[owner];
+            const bool rewind=marker.rewind_speed!=0;
+            if(winding.id||next_id_==std::numeric_limits<u32>::max()||
+               (rewind?!path.count:path.count>=profile.anchor_sets[marker.set].capacity)){
+                record_package(BorgBattleEventKind::AnchorRefused,owner,action.move,action.frame,0,marker.set);continue;
+            }
+            if(rewind){
+                winding={++next_id_,path,marker.rewind_speed,action.move,u8(owner),actor.package_damage_serial};
+                path={}; // the exact accepted set moves into the independent traversal
+                record_package(BorgBattleEventKind::RewindQueued,owner,action.move,action.frame,winding.id,winding.path.count);
+                continue;
+            }
+            if(marker.cost){
+                auto& stock=package_actions_[owner].stocks[marker.stock];WeaponStockModeZeroPlan debit;
+                if(!weapon_stock_mode_zero_plan(stock,WeaponStockOperation::Debit,marker.cost,&debit)||!debit.accepted){
+                    record_package(BorgBattleEventKind::StockRefused,owner,action.move,action.frame,0,u16(stock.current));continue;
+                }
+                stock=debit.state;record_package(BorgBattleEventKind::StockSpent,owner,action.move,action.frame,0,u16(stock.current));
+            }
+            append_package_anchor(owner,action.move,action.frame,path,actor.position);
+        }
+    }
+    void append_package_anchor(unsigned owner,u8 move,u16 frame,BattleMvpAnchorPath& path,const BattleMvpVec& position){
+        const auto id=++next_id_;
+        path.points[path.count++]={position,id};
+        record_package(BorgBattleEventKind::AnchorPlaced,owner,move,frame,id,path.count);
+    }
+    void plant_package_anchor(const BattleMvpProjectile& shot){
+        const auto& profile=*config_.packages[shot.owner];
+        const auto set=profile.projectiles[shot.package_projectile].plant_on_stage;
+        if(set==255)return;
+        auto& path=anchor_paths_[shot.owner][set];
+        const auto& point=shot.position;
+        if(!actors_[shot.owner].health||rewinds_[shot.owner].id||next_id_==std::numeric_limits<u32>::max()||
+           path.count>=profile.anchor_sets[set].capacity||std::abs(point[0])>config_.arena_half||
+           std::abs(point[2])>config_.arena_half){
+            record_package(BorgBattleEventKind::AnchorRefused,shot.owner,shot.package_move,0,shot.id,set);
+            return;
+        }
+        append_package_anchor(shot.owner,shot.package_move,0,path,point);
+        record_package(BorgBattleEventKind::AnchorPlanted,shot.owner,shot.package_move,0,shot.id,path.count);
+    }
+    void finish_package_rewind(unsigned owner,std::optional<BorgBattlePullRefusal> reason={}){
+        const auto current=std::exchange(rewinds_[owner],{});
+        record_package(reason?BorgBattleEventKind::RewindStopped:BorgBattleEventKind::RewindCompleted,
+            current.issuer,current.move,0,current.id,reason?u16(*reason):0,u8(owner));
+    }
+    bool consume_package_rewind(unsigned owner,const IBattleMvpTerrain* terrain,bool busy){
+        auto& current=rewinds_[owner];if(!current.id)return false;
+        auto& actor=actors_[owner];
+        if(busy||!actor.health||!actor.grounded||actor.vertical_speed||actor.dash_ticks||actor.landing_ticks||
+           (current.issuer==owner?actor.hit_flash!=0:actor.package_damage_serial!=current.damage_serial)){
+            finish_package_rewind(owner,BorgBattlePullRefusal::OwnerBusy);return false;
+        }
+        while(current.path.count){
+            const auto& point=current.path.points[current.path.count-1];
+            if(std::abs(point.position[1]-actor.position[1])>.01f){
+                finish_package_rewind(owner,BorgBattlePullRefusal::TerrainOrBody);return false;
+            }
+            const BattlePoint delta{point.position[0]-actor.position[0],point.position[2]-actor.position[2]};
+            const auto length=std::hypot(delta.x,delta.z);
+            if(length>.001f){
+                const f32 scale=std::min(1.f,f32(current.speed)/length);
+                bool accepted=false;
+                const auto reason=apply_package_flat_step(owner,{delta.x*scale,delta.z*scale},terrain,&accepted);
+                if(!accepted){finish_package_rewind(owner,reason);return false;}
+                if(scale==1){
+                    --current.path.count;
+                    record_package(BorgBattleEventKind::RewindReached,current.issuer,current.move,0,point.id,current.path.count,u8(owner));
+                    if(!current.path.count)finish_package_rewind(owner);
+                }
+                return true;
+            }
+            --current.path.count;
+            record_package(BorgBattleEventKind::RewindReached,current.issuer,current.move,0,point.id,current.path.count,u8(owner));
+        }
+        finish_package_rewind(owner);return false;
+    }
+    u32 emit_package(unsigned owner,u8 move,const BorgBattleProjectileDefinition& definition,u8 return_stock,const IBorgBattleOrigins* origins){
+        const auto& actor=actors_[owner];auto aim=actor.aim_facing;
+        BattleMvpVec muzzle{actor.position[0]+aim.x*(config_.actor_radius+12),
+            actor.position[1]+config_.actor_height*.6f,actor.position[2]+aim.z*(config_.actor_radius+12)};
+        f32 additional_rise=0;
+        const auto frame=package_actions_[owner].frame;
+        if(definition.socket){
+            const auto& spec=*definition.socket;
+            if(!origins||!origins->socket(owner,actor,tick_,move,frame,spec,&muzzle)||
+               !std::all_of(muzzle.begin(),muzzle.end(),[](f32 x){return std::isfinite(x)&&std::abs(x)<=1e5f;})){
+                record_package(BorgBattleEventKind::SocketRefused,owner,move,frame,0,spec.bone);return 0;
+            }
+            const auto& target=actors_[1-owner];
+            if(target.health){
+                aim=native_borg_direction({muzzle[0],muzzle[2]},{target.position[0],target.position[2]},aim);
+                if(spec.aim_height){
+                    const f32 distance=std::max(1.f,std::hypot(target.position[0]-muzzle[0],target.position[2]-muzzle[2]));
+                    additional_rise=std::clamp(definition.speed*(target.position[1]+config_.actor_height*.5f-muzzle[1])/distance,
+                                               -definition.speed,definition.speed);
+                }
+            }
+        }
+        auto* path=definition.rewind_hit?&anchor_paths_[owner][definition.rewind_hit->set]:nullptr;
+        if(path&&!path->count)return 0;
+        const u32 first=allocate_package_volley(owner,move,definition,muzzle,aim,return_stock,0,path,additional_rise);
+        if(first&&definition.socket)
+            record_package(BorgBattleEventKind::SocketLaunch,owner,move,frame,first,definition.socket->bone);
+        if(first&&path){
+            record_package(BorgBattleEventKind::AnchorPathSealed,owner,move,package_actions_[owner].frame,first,path->count);
+            *path={};
+        }
+        return first;
+    }
+    u32 allocate_package_volley(unsigned owner,u8 move,const BorgBattleProjectileDefinition& definition,
+                                const BattleMvpVec& muzzle,BattlePoint aim,u8 return_stock,u32 emitter=0,
+                                const BattleMvpAnchorPath* rewind_path=nullptr,f32 additional_rise=0){
+        unsigned free=0;for(const auto& shot:projectiles_)free+=!shot.active;
+        if(!definition.count||free<definition.count||next_id_>std::numeric_limits<u32>::max()-definition.count)return 0;
+        const u8 target=u8(1-owner);const auto& observed=actors_[target];
+        const u32 first=next_id_+1;unsigned n=0;
+        for(auto& shot:projectiles_)if(!shot.active){
+            const f32 angle=(f32(n)-f32(definition.count-1)*.5f)*definition.spread;
+            const f32 c=std::cos(angle),s=std::sin(angle);
+            shot={true,++next_id_,u8(owner),definition.visual==BorgAttackVisual::Beam?BattleMvpWeapon::EnergyBeam:
+                  definition.visual==BorgAttackVisual::Shuriken?BattleMvpWeapon::Shuriken:BattleMvpWeapon::Bullet,
+                  muzzle,muzzle,{definition.speed*(aim.x*c-aim.z*s),definition.rise+additional_rise,definition.speed*(aim.z*c+aim.x*s)},definition.lifetime,false,
+                   definition.damage,definition.gravity,definition.radius,move,definition.floor,
+                   definition.walk_percent,definition.walk_ticks,definition.pull_units,true,definition.ignore_actors,definition.blast,
+                   u8(&definition-config_.packages[owner]->projectiles.data()),return_stock};
+            shot.package_emitter=emitter;
+            shot.package_look=definition.look.value_or(BorgProjectileLook{});shot.born_tick=tick_;
+            if(rewind_path)shot.package_rewind_path=*rewind_path;
+            if(definition.guidance&&observed.health){
+                shot.package_guide_point={observed.position[0],observed.position[2]};
+                shot.package_guide_target=target;shot.package_guide_ticks=definition.guidance->ticks;
+            }
+            ++shots_;if(++n==definition.count)break;
+        }
+        return first;
+    }
+    static BattleMvpVec emitter_position(const BattleMvpActor& actor,const BorgBattleEmitter& spec){
+        const auto& h=actor.facing;
+        return {actor.position[0]+h.z*spec.side-h.x*spec.behind,actor.position[1]+spec.height,
+                actor.position[2]-h.x*spec.side-h.z*spec.behind};
+    }
+    void retire_package_emitter(unsigned owner,BattleMvpEmitter& slot,u16 reason){
+        if(slot.id)record_package(BorgBattleEventKind::EmitterRetired,owner,slot.deployment_move,0,slot.id,reason);
+        slot={};
+    }
+    void step_package_emitters(unsigned owner){
+        const auto& actor=actors_[owner];const auto& rules=config_.packages[owner]->emitters;
+        for(unsigned i=0;i<rules.size();++i)if(auto& slot=emitters_[owner][i];slot.id){
+            if(!actor.health)retire_package_emitter(owner,slot,2);
+            else if(!--slot.remaining)retire_package_emitter(owner,slot,1);
+            else slot.position=emitter_position(actor,rules[i]);
+        }
+    }
+    void deploy_package_emitters(unsigned owner){
+        const auto& action=package_actions_[owner];const auto& actor=actors_[owner];
+        if(!actor.health||action.move==BorgBattleActionState::none)return;
+        const auto& profile=*config_.packages[owner];
+        for(const auto& marker:profile.moves[action.move].emitters)if(marker.frame==action.frame){
+            auto& slot=emitters_[owner][marker.emitter];
+            if(slot.id||next_id_==std::numeric_limits<u32>::max()){
+                record_package(BorgBattleEventKind::EmitterDeployRefused,owner,action.move,action.frame,slot.id,marker.emitter);
+                continue;
+            }
+            const auto& rule=profile.emitters[marker.emitter];
+            slot={++next_id_,emitter_position(actor,rule),rule.lifetime,action.move};
+            record_package(BorgBattleEventKind::EmitterDeployed,owner,action.move,action.frame,slot.id,marker.emitter);
+        }
+    }
+    void emit_package_followers(unsigned owner,u8 move,u16 frame){
+        const auto& profile=*config_.packages[owner];const auto& actor=actors_[owner];
+        const auto& other=actors_[1-owner];
+        // Follows an accepted allocation, never raw input or another child's
+        // emission; allocation may independently refuse with no stock changes.
+        for(unsigned i=0;i<profile.emitters.size();++i){
+            const auto& spec=profile.emitters[i];const auto& slot=emitters_[owner][i];
+            if(!slot.id||spec.watches!=move)continue;
+            const auto& attack=profile.projectiles[spec.projectile];
+            const auto aim=other.health?native_borg_direction({slot.position[0],slot.position[2]},
+                {other.position[0],other.position[2]},actor.aim_facing):actor.aim_facing;
+            const auto first=allocate_package_volley(owner,move,attack,slot.position,aim,255,slot.id);
+            record_package(first?BorgBattleEventKind::EmitterFired:BorgBattleEventKind::EmitterFireRefused,
+                owner,move,frame,first?first:slot.id,first?attack.count:0);
+        }
+    }
+    enum class PackageRetirement:u16 {None,Actor,Floor,UnknownFloor,Expired,Outside,Remote,Guard,Stage,UnknownStage};
+    void trigger_package_blast(const BattleMvpProjectile& shot,PackageRetirement why){
+        if(!shot.package_blast)return;
+        const auto& blast=*shot.package_blast;
+        if(!((why==PackageRetirement::Actor&&(blast.trigger==BorgBlastTrigger::Actor||blast.trigger==BorgBlastTrigger::Impact))||
+             (why==PackageRetirement::Floor&&(blast.trigger==BorgBlastTrigger::Floor||blast.trigger==BorgBlastTrigger::Impact))||
+             (why==PackageRetirement::Stage&&(blast.trigger==BorgBlastTrigger::Stage||blast.trigger==BorgBlastTrigger::Impact))||
+             (why==PackageRetirement::Expired&&blast.trigger==BorgBlastTrigger::Expiry)||
+             (why==PackageRetirement::Remote&&blast.trigger==BorgBlastTrigger::Remote)))return;
+        // One immediate query, not a resident field, and no damage is attached
+        // to the presentation ring. Sample the current body centres in order.
+        record_package(BorgBattleEventKind::BlastTriggered,shot.owner,shot.package_move,0,shot.id,u16(why));
+        impact(shot.position,true,f32(blast.radius));
+        const f32 radius_squared=f32(blast.radius)*f32(blast.radius);
+        for(u8 i=0;i<actors_.size();++i){
+            const auto& actor=actors_[i];
+            if(!actor.health||(i==shot.owner&&!blast.include_owner))continue;
+            const f32 x=actor.position[0]-shot.position[0],y=actor.position[1]+config_.actor_height*.5f-shot.position[1],
+                      z=actor.position[2]-shot.position[2];
+            if(x*x+y*y+z*z>radius_squared)continue;
+            if(try_package_guard(i,shot.owner,BorgBattleAttackKind::Blast,{-x,-z},shot.id))continue;
+            const auto amount=u16(std::min(actor.health,unsigned(blast.damage)));
+            damage(i,amount);
+            record_package(BorgBattleEventKind::BlastHit,shot.owner,shot.package_move,0,shot.id,amount,i);
+        }
+    }
+    void retire_package_shot(BattleMvpProjectile& shot,PackageRetirement reason){
+        trigger_package_blast(shot,reason);
+        shot.active=false;
+        shot.package_rewind_path={};
+        record_package(BorgBattleEventKind::Retired,shot.owner,shot.package_move,0,shot.id,u16(reason));
+        const auto channel=std::exchange(shot.package_return_stock,u8(255));
+        if(channel==255||!actors_[shot.owner].health)return;
+        const auto& profile=*config_.packages[shot.owner];
+        const auto disposition=profile.projectiles[shot.package_projectile].stock_return;
+        if(!((disposition==BorgProjectileReturn::Actor&&reason==PackageRetirement::Actor)||
+             (disposition==BorgProjectileReturn::Floor&&reason==PackageRetirement::Floor)||
+             (disposition==BorgProjectileReturn::Expiry&&reason==PackageRetirement::Expired)||
+             (disposition==BorgProjectileReturn::Stage&&reason==PackageRetirement::Stage)||
+             (disposition==BorgProjectileReturn::Remote&&reason==PackageRetirement::Remote)))return;
+        auto& stock=package_actions_[shot.owner].stocks[channel];
+        const auto previous=stock.current;
+        if(weapon_stock_return_one(stock,s16(profile.stocks[channel].capacity),&stock)&&stock.current!=previous)
+            record_package(BorgBattleEventKind::StockReturned,shot.owner,shot.package_move,0,shot.id,u16(stock.current));
+    }
+    static bool package_shot_supported(const BattleMvpProjectile& shot,const IBattleMvpTerrain* terrain){
+        f32 support=0;
+        return floor(terrain,shot.position[0],shot.position[2],shot.position[1],&support)&&std::abs(support-shot.position[1])<=.01f;
+    }
+    void step_package_detonation(unsigned owner,const IBattleMvpTerrain* terrain){
+        const auto& action=package_actions_[owner];
+        if(!actors_[owner].health||action.move==BorgBattleActionState::none)return;
+        const auto& marker=config_.packages[owner]->moves[action.move].detonation;
+        if(!marker||marker->frame!=action.frame)return;
+        const auto matches=[&](const BattleMvpProjectile& shot){
+            return shot.active&&shot.from_package&&shot.owner==owner&&shot.package_projectile==marker->projectile&&
+                   shot.package_blast&&shot.package_blast->trigger==BorgBlastTrigger::Remote&&
+                   (!marker->landed_only||shot.landed)&&(!shot.landed||package_shot_supported(shot,terrain));
+        };
+        const auto count=std::count_if(projectiles_.begin(),projectiles_.end(),matches);
+        record_package(BorgBattleEventKind::Detonation,owner,action.move,action.frame,0,u16(count));
+        // Accepted set belongs to this marker; a blast may defeat its owner
+        // without cancelling the other charges already selected by the same marker.
+        for(auto& shot:projectiles_)if(matches(shot))retire_package_shot(shot,PackageRetirement::Remote);
+    }
+    void step_package_shot(BattleMvpProjectile& shot,const IBattleMvpTerrain* terrain){
+        if(shot.landed){
+            if(!package_shot_supported(shot,terrain))
+                retire_package_shot(shot,PackageRetirement::UnknownFloor);
+            else if(!--shot.life)retire_package_shot(shot,PackageRetirement::Expired);
+            return;
+        }
+        step_package_guidance(shot);
+        // Exact segment versus finite cylinder in this native test policy.
+        // Intersect horizontal interval with the vertical interval, not just
+        // the height at the first horizontal crossing.
+        const u8 recipient=u8(1-shot.owner);const auto& actor=actors_[recipient];
+        f32 t=0,leave=1;
+        bool hit=actor.health!=0&&!shot.package_ignore_actors;
+        const f32 low=actor.position[1]-shot.package_radius,high=actor.position[1]+config_.actor_height+shot.package_radius;
+        if(shot.velocity[1]!=0){
+            const auto a=(low-shot.position[1])/shot.velocity[1],b=(high-shot.position[1])/shot.velocity[1];
+            t=std::max(0.f,std::min(a,b));leave=std::min(1.f,std::max(a,b));hit&=t<=leave;
+        }else hit&=shot.position[1]>=low&&shot.position[1]<=high;
+        if(hit){
+            if(try_package_guard(recipient,shot.owner,BorgBattleAttackKind::Shot,{-shot.velocity[0],-shot.velocity[2]},shot.id)){
+                impact(shot.position,false);
+                retire_package_shot(shot,PackageRetirement::Guard);
+                return;
+            }
+            f32 fraction=0;
+            const BattlePoint start{shot.position[0]+shot.velocity[0]*t,shot.position[2]+shot.velocity[2]*t};
+            const BattlePoint delta{shot.velocity[0]*(leave-t),shot.velocity[2]*(leave-t)};
+            hit=battle_swept_hit(start,delta,{actor.position[0],actor.position[2]},config_.actor_radius+shot.package_radius,&fraction);
+            t=std::lerp(t,leave,fraction);
+        }
+        f32 endpoint_y=shot.position[1]+shot.velocity[1],surface=0;
+        auto retire=PackageRetirement::None;
+        u8 stage_layer=0;
+        if(shot.package_floor==BorgProjectileFloor::StageRetire){
+            const BattleMvpVec end{shot.position[0]+shot.velocity[0],endpoint_y,shot.position[2]+shot.velocity[2]};
+            NativeBorgStageProjectileHit surface_hit;
+            if(!terrain||!terrain->supports_projectile_stage()||!terrain->projectile_stage(shot.position,end,&surface_hit)||
+               (surface_hit.hit&&(!std::isfinite(surface_hit.fraction)||surface_hit.fraction<0||surface_hit.fraction>1||
+                                  !surface_hit.layer||surface_hit.layer>3))){
+                retire_package_shot(shot,PackageRetirement::UnknownStage);
+                return;
+            }
+            if(surface_hit.hit&&(!hit||surface_hit.fraction<=t)){
+                t=surface_hit.fraction;hit=false;retire=PackageRetirement::Stage;stage_layer=surface_hit.layer;
+            }
+        }else if(shot.package_floor!=BorgProjectileFloor::Ignore){
+            if(!floor(terrain,shot.position[0]+shot.velocity[0],shot.position[2]+shot.velocity[2],shot.position[1],&surface)){
+                retire=PackageRetirement::UnknownFloor;hit=false; // unknown support; no fabricated floor
+            }else if(endpoint_y<=surface){
+                const f32 floor_t=shot.velocity[1]<0?std::clamp((surface-shot.position[1])/shot.velocity[1],0.f,1.f):0.f;
+                if(!hit||t>=floor_t){t=floor_t;retire=PackageRetirement::Floor;hit=false;}
+            }
+        }
+        if(retire!=PackageRetirement::UnknownFloor)
+            for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k]*(hit||retire!=PackageRetirement::None?t:1.f);
+        shot.velocity[1]-=shot.package_gravity;
+        if(hit){
+            if(shot.package_damage)accept_package_hit(shot.owner,recipient,shot.package_move,0,shot.id,shot.package_damage,shot.position);
+            else record_package(BorgBattleEventKind::ProjectileContact,shot.owner,shot.package_move,0,shot.id,0,recipient);
+            if(shot.package_walk_ticks){
+                const bool apply=actor.health&&config_.packages[recipient]->movement==BorgBattleMovement::Grounded;
+                if(apply)walk_modifiers_[recipient]={shot.package_walk_ticks,shot.package_walk_percent,shot.owner,shot.package_move,shot.id};
+                record_package(apply?BorgBattleEventKind::ModifierApplied:BorgBattleEventKind::ModifierRefused,
+                    shot.owner,shot.package_move,0,shot.id,shot.package_walk_percent,recipient);
+            }
+            if(shot.package_pull_units)queue_package_pull(shot,recipient,actor.position);
+            if(shot.package_rewind_path.count)queue_package_recipient_rewind(shot,recipient);
+            retire=PackageRetirement::Actor;
+        }else if(retire==PackageRetirement::Stage){
+            record_package(BorgBattleEventKind::StageImpact,shot.owner,shot.package_move,0,shot.id,stage_layer);
+            plant_package_anchor(shot);
+            impact(shot.position,false);
+        }else if(retire==PackageRetirement::Floor){
+            if(shot.package_floor==BorgProjectileFloor::Land){
+                f32 support=0;
+                if(!floor(terrain,shot.position[0],shot.position[2],shot.previous[1],&support)||std::abs(support-surface)>.01f)
+                    retire=PackageRetirement::UnknownFloor;
+                else{
+                    shot.position[1]=support;shot.velocity={};shot.landed=true;retire=PackageRetirement::None;
+                    record_package(BorgBattleEventKind::ProjectileLanded,shot.owner,shot.package_move,0,shot.id,0);
+                }
+            }else impact(shot.position,false);
+        }
+        if(retire==PackageRetirement::None){
+            if(std::abs(shot.position[0])>config_.arena_half+300||std::abs(shot.position[2])>config_.arena_half+300||shot.position[1]<-10000)
+                retire=PackageRetirement::Outside;
+            else if(!--shot.life)retire=PackageRetirement::Expired;
+        }
+        if(retire!=PackageRetirement::None)retire_package_shot(shot,retire);
+    }
+    void step_package_guidance(BattleMvpProjectile& shot){
+        if(!shot.package_guide_ticks)return;
+        const auto& spec=*config_.packages[shot.owner]->projectiles[shot.package_projectile].guidance;
+        const auto recipient=shot.package_guide_target;
+        const auto& target=actors_[recipient];
+        // Slots are stable within this two-actor round; restart discards the
+        // entire projectile pool. This is an aim observation, not a hit.
+        if(spec.target==BorgGuidanceTarget::Tracking&&!target.health){
+            shot.package_guide_ticks=0;
+            record_package(BorgBattleEventKind::GuidanceEnded,shot.owner,shot.package_move,0,shot.id,2,recipient);
+            return;
+        }
+        if(shot.package_guide_ticks==spec.ticks)
+            record_package(BorgBattleEventKind::GuidanceBound,shot.owner,shot.package_move,0,shot.id,unsigned(spec.target),recipient);
+        const BattlePoint goal=spec.target==BorgGuidanceTarget::Tracking?
+            BattlePoint{target.position[0],target.position[2]}:shot.package_guide_point;
+        const auto toward=native_borg_direction({shot.position[0],shot.position[2]},goal,{0,0});
+        if(toward!=BattlePoint{}){
+            const auto direction=native_borg_turn({shot.velocity[0],shot.velocity[2]},toward,spec.turn);
+            const auto speed=std::hypot(shot.velocity[0],shot.velocity[2]);
+            shot.velocity[0]=direction.x*speed;shot.velocity[2]=direction.z*speed;
+        }
+        if(!--shot.package_guide_ticks)
+            record_package(BorgBattleEventKind::GuidanceEnded,shot.owner,shot.package_move,0,shot.id,1,recipient);
+    }
+    void queue_package_recipient_rewind(const BattleMvpProjectile& shot,u8 recipient){
+        const auto& actor=actors_[recipient];auto& current=rewinds_[recipient];
+        if(!actor.health||current.id||config_.packages[recipient]->movement!=BorgBattleMovement::Grounded){
+            record_package(BorgBattleEventKind::RewindRefused,shot.owner,shot.package_move,0,shot.id,
+                u16(BorgBattlePullRefusal::OwnerBusy),recipient);
+            return;
+        }
+        const auto& policy=*config_.packages[shot.owner]->projectiles[shot.package_projectile].rewind_hit;
+        current={shot.id,shot.package_rewind_path,policy.speed,shot.package_move,shot.owner,actor.package_damage_serial};
+        record_package(BorgBattleEventKind::RewindQueued,shot.owner,shot.package_move,0,shot.id,current.path.count,recipient);
+    }
     static f32 axis(s32 value){return f32(std::clamp(value,-128,127))/(value<0?128.f:127.f);}
     static void unit(f32& x,f32& z,bool always){const f32 length=std::sqrt(x*x+z*z);if(length>0&&(always||length>1)){x/=length;z/=length;}}
     static bool floor(const IBattleMvpTerrain* terrain,f32 x,f32 z,f32 current,f32* out){if(!terrain){*out=0;return true;}return terrain->height(x,z,current,out)&&std::isfinite(*out)&&std::abs(*out)<=20000;}
@@ -1564,12 +2256,26 @@ private:
             for(auto& shot:projectiles_)if(!shot.active){shot={true,++next_id_,u8(owner),weapon,muzzle,muzzle,{speed*(aim.x*c-aim.z*s),pitch,speed*(aim.z*c+aim.x*s)},weapon==BattleMvpWeapon::Bomb?70u:120u,false};++shots_;break;}}
         actor.cooldown[secondary?1:0]=weapon==BattleMvpWeapon::Bomb?120:weapon==BattleMvpWeapon::EnergyBeam?18:24;actor.attack_ticks=10;
     }
-    void damage(unsigned target,unsigned amount){auto& actor=actors_[target];actor.health-=std::min(actor.health,amount);actor.hit_flash=8;++hits_;}
-    void impact(const BattleMvpVec& position,bool explosion){impacts_[impact_cursor_]={position,18,explosion};impact_cursor_=(impact_cursor_+1)%impacts_.size();}
+    void damage(unsigned target,unsigned amount){auto& actor=actors_[target];actor.health-=std::min(actor.health,amount);actor.hit_flash=8;actor.package_damage_serial=++hits_;}
+    void impact(const BattleMvpVec& position,bool explosion,f32 radius=0){impacts_[impact_cursor_]={position,18,explosion,radius};impact_cursor_=(impact_cursor_+1)%impacts_.size();}
     BattleMvpConfig config_;std::array<BattleMvpActor,2> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
     std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
     BattleMvpResult result_=BattleMvpResult::Fighting;bool ready_=false,paused_=false;
     std::shared_ptr<const NativeBorgMotionScope> motion_scope_;NativeBorgMotionOffer last_offer_;NativeBorgMotionReceipt last_receipt_;
     std::weak_ptr<const NativeBorgMotionProducer> motion_producer_;
+    std::array<BorgBattleActionState,2> package_actions_{};
+    struct WalkModifier {u16 ticks=0,percent=0;u8 owner=0,move=255;u32 object=0;};
+    std::array<WalkModifier,2> walk_modifiers_{};
+    struct PendingPull {BattlePoint destination;u32 object=0;u16 units=0;u8 move=255,recipient=255;};
+    std::array<PendingPull,2> pull_requests_{};
+    struct MeleeWindow {u32 object=0;u8 move=255;u16 frame=0;bool hit=false;};
+    std::array<MeleeWindow,2> melee_windows_{};
+    struct GuardWindow {u8 move=BorgBattleActionState::none,remaining=0;u16 frame=0;};
+    std::array<GuardWindow,2> guard_windows_{};
+    std::array<std::array<BattleMvpEmitter,kBorgBattleEmitters>,2> emitters_{};
+    struct Rewind {u32 id=0;BattleMvpAnchorPath path;u8 speed=0,move=255,issuer=255;u32 damage_serial=0;};
+    std::array<Rewind,2> rewinds_{};
+    std::array<std::array<BattleMvpAnchorPath,kBorgBattleAnchorSets>,2> anchor_paths_{};
+    std::array<BorgBattleEvent,max_projectiles*9+64> package_events_{};std::size_t package_event_count_=0;
 };
 }

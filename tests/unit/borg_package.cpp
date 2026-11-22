@@ -101,7 +101,50 @@ int main(){
         check(!pc::scan_borg_packages(root).find("test:missing"),"asset symlinks do not count as package files");
     }
     check(pc::scan_borg_packages(root/"Other/borg.manifest").status==BorgPackageScanStatus::Unavailable,
-        "non-directory root is distinct from missing");
+         "non-directory root is distinct from missing");
+    const std::string manifest_v2="GFBORG 2\nid=test:metadata\nname=Metadata\ncatalog=catalog.txt\n";
+    check(borg_package_read_manifest(manifest_v2,&parsed)&&parsed.version==2&&parsed.model.empty()&&parsed.rules.empty(),
+        "a metadata-only package does not need fabricated art or controller files");
+    for(auto row:{"model=body.hsd\n","rules=preview.txt\n","preview=preview.txt\n"})
+        check(!borg_package_read_manifest(manifest_v2+row,&parsed),"partial capability manifests refuse");
+    check(borg_package_read_manifest(manifest_v2+"model=body.hsd\nanimations=body.motions\npreview=preview.txt\n",&parsed)&&
+        parsed.rules.empty(),"preview capability needs a complete body but not rules");
+    check(borg_package_read_manifest(manifest_v2+"model=body.hsd\npreview=preview.txt\n",&parsed)&&parsed.animations.empty(),
+        "static body may omit an animation bank");
+    check(!borg_package_read_manifest(manifest_v2+"model=body.hsd\npreview=preview.txt\nrules=playable.txt\n",&parsed),
+        "a static body without motion cannot declare gameplay rules");
+    const auto capability_root=temp.path/"capabilities";
+    fs::create_directories(capability_root/"Renamed metadata");
+    write(capability_root/"Renamed metadata/borg.manifest",manifest_v2);
+    auto capabilities=pc::scan_borg_packages(capability_root);
+    check(capabilities.find("test:metadata")&&capabilities.issues.empty(),
+        "catalogue capability still has a known identity while its catalogue is unavailable");
+    const auto static_folder=capability_root/"Renamed metadata";
+    const std::string static_manifest=manifest_v2+"model=body.hsd\npreview=preview.txt\n";
+    const std::string static_preview="GFBORG-PREVIEW 2\nmodel-format=hsd-whole-body-v1\n"
+        "variant=normal\nrig-prefix=body.prefix\n";
+    write(static_folder/"borg.manifest",static_manifest);
+    write(static_folder/"catalog.txt","GFBORG-CATALOG 1\ndescription=Static example.\ntribe=none\n"
+        "default-variant=normal\nvariant=normal|Normal|10|placeholder\nvariant=other|Other|10|placeholder\n");
+    write(static_folder/"body.hsd","model");
+    write(static_folder/"body.prefix","prefix");
+    write(static_folder/"preview.txt",static_preview+"idle=none\n");
+    capabilities=pc::scan_borg_packages(capability_root);
+    pc::BorgPackagePreviewFiles static_files;std::string preview_error;
+    const auto load_static=[&](std::string_view variant){
+        return pc::load_borg_preview_files(capability_root,capabilities,"test:metadata",variant,&static_files,&preview_error);
+    };
+    check(load_static("normal")&&static_files.profile.static_body&&static_files.motions.empty()&&static_files.pose_profile.empty(),
+        "static preview loader requires no fabricated motion or pose bytes");
+    check(!load_static("other")&&static_files.profile.variant=="normal",
+        "another variant cannot fall through to the static base");
+    write(static_folder/"preview.txt",static_preview+"idle=0:0\n");
+    check(!load_static("normal")&&static_files.profile.static_body,"animated binding without a bank refuses atomically");
+    write(static_folder/"preview.txt",static_preview+"idle=none\n");
+    write(static_folder/"body.motions","motion");
+    write(static_folder/"borg.manifest",static_manifest+"animations=body.motions\n");
+    capabilities=pc::scan_borg_packages(capability_root);
+    check(!load_static("normal"),"static binding refuses a declared motion bank");
 
     BorgCatalogCard card;std::string diagnostic;catalog=pc::scan_borg_packages(root);
     check(!pc::load_borg_catalog_card(root,catalog,"test:ant",&card,&diagnostic)&&

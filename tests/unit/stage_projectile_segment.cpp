@@ -7,14 +7,15 @@ namespace {
 void check(bool ok,const char* why){
     if(!ok){std::fprintf(stderr,"stage projectile segment: %s\n",why);std::abort();}
 }
-std::vector<gf::u8> grid(gf::f32 y){
+std::vector<gf::u8> grid(gf::f32 y,bool wall=false){
     using namespace gf;
     using challenge_battle_spawn_fixture::p32;
     std::vector<u8> b(108);
     p32(b,0,0x53544948);p32(b,4,u32(b.size()));p32(b,8,500);p32(b,12,500);p32(b,16,1);p32(b,20,1);
     p32(b,32,32);p32(b,36,44);p32(b,40,36);p32(b,44,0);p32(b,48,0xffffffffu);
     const f32 fields[]={0,y,0,0,y,500,500,y,0,0,1,0,-y};
-    for(unsigned i=0;i<13;++i)p32(b,56+i*4,f32_to_bits(fields[i]));
+    const f32 wall_fields[]={y,0,0,y,500,0,y,0,500,1,0,0,-y};
+    for(unsigned i=0;i<13;++i)p32(b,56+i*4,f32_to_bits(wall?wall_fields[i]:fields[i]));
     return b;
 }
 }
@@ -49,5 +50,10 @@ int main(){
     grids[1]=nullptr;
     check(!stage_projectile_segment(grids,p,{30,30,30},{30,30,30},&out,&error)&&!out.queried,
         "missing grid cannot masquerade as a trivial miss");
+    const auto wall=grid(20,true);
+    check(inputs[1].load({wall.data(),wall.size()},&error),"vertical STIH triangle");
+    grids[1]=&inputs[1];
+    check(stage_projectile_segment(grids,p,{80,30,30},{10,30,30},&out,&error)&&
+        out.surface.grid_code==2&&out.position==V{20,30,30},"wall contact is not dependent on a floor-height crossing");
     std::puts("stage projectile segment: detached endpoint clips and ordered grid hits PASS");
 }

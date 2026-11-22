@@ -13,6 +13,14 @@ enum class BorgControllerBank:u8 {Unresolved,None,Local};
 enum class BorgControllerPose:u8 {Unresolved,None,ClipBased,ControlOnly,ClassOwned};
 enum class BorgControllerActions:u8 {Unresolved,None,ClassOwned};
 enum class BorgControllerEvidence:u8 {Unresolved,Authored,SourceAudit};
+enum class BorgControllerAddOn:u8 {Unresolved,None,TeleportNinjaHistory,SwitchingNinjaExchange,DeathIcbmImpact};
+
+struct BorgControllerSourceKey {
+    std::string_view disc;
+    u16 model=0;
+    u8 variant=0;
+    bool operator==(const BorgControllerSourceKey&)const=default;
+};
 
 // Explicit variant/form metadata, not a runtime controller. A selector family
 // is an opaque comparison label, never a selector table or an inherited rule.
@@ -27,6 +35,7 @@ struct BorgControllerDefinition {
     BorgControllerPose pose=BorgControllerPose::Unresolved;
     BorgControllerActions actions=BorgControllerActions::Unresolved;
     BorgControllerEvidence evidence=BorgControllerEvidence::Unresolved;
+    BorgControllerAddOn add_on=BorgControllerAddOn::Unresolved;
 };
 
 struct BorgControllerProfile {
@@ -48,6 +57,25 @@ inline constexpr std::array<std::string_view,3> banks{"unresolved","none","local
 inline constexpr std::array<std::string_view,5> poses{"unresolved","none","clip-based","control-only","class-owned"};
 inline constexpr std::array<std::string_view,3> actions{"unresolved","none","class-owned"};
 inline constexpr std::array<std::string_view,3> evidence{"unresolved","authored","source-audit"};
+struct AddOnSpec {
+    std::string_view name;
+    BorgControllerSourceKey source;
+};
+inline constexpr std::array<AddOnSpec,5> add_ons{{
+    {"unresolved",{}},{"none",{}},
+    {"normal-teleport-ninja-history",{"GG4E08",0x0005,0}},
+    {"normal-switching-ninja-exchange",{"GG4E08",0x0009,0}},
+    {"normal-death-icbm-impact",{"GG4E08",0x0d06,0}}
+}};
+inline const AddOnSpec* add_on_spec(BorgControllerAddOn kind){
+    const auto index=unsigned(kind);
+    return index<add_ons.size()?&add_ons[index]:nullptr;
+}
+inline bool read_add_on(std::string_view text,BorgControllerAddOn* out){
+    const auto it=std::find_if(add_ons.begin(),add_ons.end(),[&](const auto& spec){return spec.name==text;});
+    if(it==add_ons.end())return false;
+    *out=BorgControllerAddOn(it-add_ons.begin());return true;
+}
 
 template<class T,std::size_t N> bool read_label(std::string_view value,const std::array<std::string_view,N>& names,T* out){
     const auto it=std::find(names.begin(),names.end(),value);
@@ -58,12 +86,23 @@ template<class T,std::size_t N> bool read_label(std::string_view value,const std
 inline bool id(std::string_view value){
     return borg_catalog_variant_id_valid(value)&&value!="none"&&value!="unresolved"&&value!="inherit";
 }
-inline bool source(std::string_view value){
-    if(value=="none"||value=="unresolved")return true;
-    if(value.size()<13||value.size()>15||value[6]!=':'||value[11]!='/'||!borg_catalog_detail::source_code(value.substr(7,4)))return false;
-    for(char c:value.substr(0,6))if(!((c>='A'&&c<='Z')||(c>='0'&&c<='9')))return false;
+inline std::optional<BorgControllerSourceKey> source_key(std::string_view value){
+    if(value.size()<13||value.size()>15||value[6]!=':'||value[11]!='/'||
+       !borg_catalog_detail::source_code(value.substr(7,4)))return {};
+    const auto disc=value.substr(0,6);
+    for(char c:disc)if(!((c>='A'&&c<='Z')||(c>='0'&&c<='9')))return {};
     u32 variant=0;
-    return borg_catalog_detail::unsigned_field(value.substr(12),255,&variant);
+    if(!borg_catalog_detail::unsigned_field(value.substr(12),255,&variant))return {};
+    u16 model=0;
+    const auto end=value.data()+11;
+    const auto parsed=std::from_chars(value.data()+7,end,model,16);
+    if(parsed.ec!=std::errc{}||parsed.ptr!=end)return {};
+    return BorgControllerSourceKey{disc,model,u8(variant)};
+}
+inline bool add_on_scope(const BorgControllerDefinition& row){
+    const auto* spec=add_on_spec(row.add_on);
+    return spec&&(spec->source.disc.empty()||
+        (row.variant=="normal"&&row.form=="none"&&source_key(row.source)==spec->source));
 }
 inline bool air_resource(std::string_view value,BorgControllerDefinition* row){
     if(value.starts_with("air-jumps:")){
@@ -74,17 +113,27 @@ inline bool air_resource(std::string_view value,BorgControllerDefinition* row){
 }
 }
 
+inline std::string_view borg_controller_add_on_name(BorgControllerAddOn kind){
+    const auto* spec=borg_controller_detail::add_on_spec(kind);
+    return spec?spec->name:std::string_view{};
+}
+
 inline bool borg_read_controller_profile(std::string_view text,BorgControllerProfile* out){
-    if(!out||text.size()>kBorgControllerProfileBytes||borg_package_detail::line(text)!="GFBORG-CONTROLLERS 1")return false;
+    if(!out||text.size()>kBorgControllerProfileBytes)return false;
+    const auto header=borg_package_detail::line(text);
+    const bool extended=header=="GFBORG-CONTROLLERS 2";
+    if(!extended&&header!="GFBORG-CONTROLLERS 1")return false;
     using namespace borg_controller_detail;
-    constexpr std::array<std::string_view,11> fields{
+    constexpr std::array<std::string_view,12> fields{
         "source","source-movement-type","selector-family","movement","contact","air-resource",
-        "recovery","motion-bank","pose","actions","evidence"};
+        "recovery","motion-bank","pose","actions","evidence","add-on"};
+    const auto field_count=extended?fields.size():fields.size()-1;
+    const auto field_end=fields.begin()+field_count;
     BorgControllerProfile next;std::array<bool,fields.size()> seen{};
     auto complete=[&](){
         if(next.definitions.empty())return true;
         const auto& row=next.definitions.back();
-        return std::all_of(seen.begin(),seen.end(),[](bool bit){return bit;})&&
+        return std::all_of(seen.begin(),seen.begin()+field_count,[](bool bit){return bit;})&&add_on_scope(row)&&
             (row.evidence!=BorgControllerEvidence::SourceAudit||(row.source!="none"&&row.source!="unresolved"))&&
             (row.air_resource!=BorgControllerAirResource::None||row.recovery==BorgControllerRecovery::None||
                 row.recovery==BorgControllerRecovery::Unresolved);
@@ -102,14 +151,14 @@ inline bool borg_read_controller_profile(std::string_view text,BorgControllerPro
             BorgControllerDefinition row;row.variant=parts[0];row.form=parts[1];
             next.definitions.push_back(std::move(row));seen={};continue;
         }
-        const auto field=std::find(fields.begin(),fields.end(),key);
-        if(next.definitions.empty()||field==fields.end())return false;
+        const auto field=std::find(fields.begin(),field_end,key);
+        if(next.definitions.empty()||field==field_end)return false;
         const auto i=unsigned(field-fields.begin());
         if(seen[i])return false;
         seen[i]=true;
         auto& row=next.definitions.back();
         switch(i){
-        case 0:if(!source(value))return false;row.source=value;break;
+        case 0:if(value!="none"&&value!="unresolved"&&!source_key(value))return false;row.source=value;break;
         case 1:if(!borg_catalog_detail::optional_number(value,255,0,&row.source_movement_type))return false;break;
         case 2:if(!(id(value)||value=="none"||value=="unresolved"))return false;row.selector_family=value;break;
         case 3:if(!read_label(value,movements,&row.movement))return false;break;
@@ -120,6 +169,7 @@ inline bool borg_read_controller_profile(std::string_view text,BorgControllerPro
         case 8:if(!read_label(value,poses,&row.pose))return false;break;
         case 9:if(!read_label(value,actions,&row.actions))return false;break;
         case 10:if(!read_label(value,evidence,&row.evidence))return false;break;
+        case 11:if(!read_add_on(value,&row.add_on))return false;break;
         }
     }
     if(next.definitions.empty()||!complete())return false;

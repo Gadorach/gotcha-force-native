@@ -49,35 +49,53 @@ public:
         }
         ready_=true;return prepare_page(render,error);
     }
-    // A single explicitly mapped package body clip uses the same rendering and
-    // evaluation paths as the mosaic. It cannot request source programs or
-    // construct a gameplay actor.
+    // One package body, with explicitly mapped in-place clips. Changing clips
+    // keeps the same decoded rig and texture owner. No gameplay actor.
     bool load_package_preview(const BorgIdentity& identity,const BorgPreviewProfile& profile,
                               ByteView model,ByteView prefix,ByteView pose,ByteView motions,
                               RenderEngine& render,std::string* error,bool returnable=false){
         if(render.frame_in_progress()){if(error)*error="package preview can only load between frames";return false;}
         if(!close_package_preview(render)){if(error)*error="package preview textures still owned";return false;}
         ready_=source_programs_=source_handlers_=false;package_preview_=true;
+        package_static_=profile.static_body;
         package_returnable_=returnable;
         cells_.clear();sources_={};selected_=page_=0;columns_=rows_=1;
         clock_=yaw_=0;paused_=false;speed_=.5f;previous_={};
+        auto fail=[&](const char* message){
+            if(message&&error)*error=message;
+            close_package_preview(render);return false;
+        };
         if(!borg_package_id_valid(identity.id)||!display_name_valid(identity.name,96)||!borg_catalog_variant_id_valid(profile.variant)||
+           !borg_preview_clips_valid(profile)||
            !prefix.data||!prefix.size||
-           prefix.size>(1u<<16)||!pose.data||!pose.size||pose.size>(1u<<16)){
-            if(error)*error="package preview: invalid identity or rig assets";
-            return false;
-        }
+           prefix.size>(1u<<16)||pose.size>(1u<<16)||
+           (profile.whole_body?pose.size!=0:!pose.data||!pose.size)||
+           (profile.static_body?motions.size!=0:!motions.data||!motions.size))
+            return fail("package preview: invalid identity, clip table or rig assets");
         auto& source=sources_[0];source.name=preview_label(identity.name);
         if(source.name.empty())source.name=preview_label(identity.id);
         package_variant_=preview_label(profile.variant);
-        source.prefix.assign(prefix.data,prefix.data+prefix.size);source.pose.assign(pose.data,pose.data+pose.size);
-        if(!source.bank.load(model,error,true)||!character_motion_bank_load(motions,&source.motions,error))return false;
-        CharacterMotionSelection selected;
-        if(!character_motion_select(source.motions,profile.idle_group,profile.idle_choice,&selected,error)||selected.fallback){
-            if(error)*error="package preview: declared idle clip missing; fallback is not allowed";
-            return false;
-        }
-        source.entries.push_back({0,selected.index,profile.idle_group,profile.idle_choice,false,{}});
+        source.prefix.assign(prefix.data,prefix.data+prefix.size);
+        if(!source.bank.load(model,error,true))return fail(nullptr);
+        if(profile.whole_body){
+            if(!whole_body_profile(model,prefix,&source.pose,error))return fail(nullptr);
+        }else source.pose.assign(pose.data,pose.data+pose.size);
+        if(!profile.static_body&&!character_motion_bank_load(motions,&source.motions,error))return fail(nullptr);
+        auto add=[&](const BorgPreviewClip& clip){
+            CharacterMotionSelection selected;
+            if(!character_motion_select(source.motions,clip.group,clip.choice,&selected,error)||selected.fallback){
+                if(error)*error="package preview: declared "+clip.id+" clip missing; fallback is not allowed";
+                return false;
+            }
+            source.entries.push_back({unsigned(source.entries.size()),selected.index,clip.group,clip.choice,false,{}});
+            package_clip_labels_.push_back(clip.id);
+            return true;
+        };
+        if(profile.static_body){
+            source.entries.push_back({});
+            package_clip_labels_.push_back("static-body");
+        }else if(!add({"idle",profile.idle_group,profile.idle_choice}))return fail(nullptr);
+        for(const auto& clip:profile.clips)if(!add(clip))return fail(nullptr);
         ready_=prepare_page(render,error);
         if(!ready_)close_package_preview(render);
         return ready_;
@@ -89,7 +107,7 @@ public:
         for(unsigned i=0;i<package_texture_count_;++i)
             if(!render.release_texture(package_texture_base_+i))return false;
         package_texture_count_=0;package_texture_owner_=nullptr;
-        cells_.clear();sources_={};package_preview_=package_returnable_=false;
+        cells_.clear();sources_={};package_clips_.clear();package_clip_labels_.clear();package_preview_=package_static_=package_returnable_=false;
         return true;
     }
     //Explicit source-timeline inspection only. No input admission, root-motion
@@ -139,17 +157,19 @@ public:
     bool step(const GamePadState& pad,f32 seconds,RenderEngine& render,std::string* error){
         if(!ready_||!std::isfinite(seconds)||seconds<0)return false;
         bool changed=false;
-        if(!package_preview_){
-            if(!source_programs_&&((pad.dpad_up&&!previous_.dpad_up)||(pad.dpad_down&&!previous_.dpad_down))){selected_=1-selected_;page_=0;changed=true;}
-            if(pad.dpad_right&&!previous_.dpad_right){page_=(page_+1)%page_count();changed=true;}
-            if(pad.dpad_left&&!previous_.dpad_left){page_=(page_+page_count()-1)%page_count();changed=true;}
+        unsigned borg=selected_,page=page_;
+        if(!package_preview_&&!source_programs_&&((pad.dpad_up&&!previous_.dpad_up)||(pad.dpad_down&&!previous_.dpad_down))){
+            borg=1-selected_;page=0;changed=true;
         }
+        const auto count=std::max(1u,(unsigned(sources_[borg].entries.size())+columns_*rows_-1)/(columns_*rows_));
+        if(pad.dpad_right&&!previous_.dpad_right){page=(page+1)%count;changed|=page!=page_;}
+        if(pad.dpad_left&&!previous_.dpad_left){page=(page+count-1)%count;changed|=page!=page_;}
         if(pad.a&&!previous_.a)paused_=!paused_;
         if(pad.x&&!previous_.x)speed_=std::min(4.f,speed_*2);
         if(pad.y&&!previous_.y)speed_=std::max(.125f,speed_*.5f);
         if(pad.z&&!previous_.z)yaw_=std::fmod(yaw_+1.57079632679f,6.28318530718f);
         previous_=pad;
-        if(changed&&!prepare_page(render,error))return false;
+        if(changed&&!select(borg,page,render,error))return false;
         if(!paused_)clock_+=std::min(seconds,.25f)*60*speed_;
         for(auto& cell:cells_)if(cell->valid&&!evaluate(*cell,clock_,&cell->error)){
             cell->valid=false;if(source_programs_||package_preview_){if(error)*error=(package_preview_?"package preview: ":"source program mosaic: ")+cell->error;ready_=false;return false;}
@@ -185,11 +205,13 @@ public:
         else std::snprintf(heading,sizeof heading,"%s - %s - PAGE %u/%u - %u %s",source_handlers_?"VM + DASH HANDLER REPLAY":source_programs_?"SOURCE PROGRAM REPLAY":"ANIMATION MOSAIC",sources_[selected_].name.c_str(),page_+1,page_count(),unsigned(sources_[selected_].entries.size()),source_programs_?"PROGRAMS":"CLIPS");
         draws+=text_.draw(render,heading,12,10,title);
         TextRenderer::Style small;small.scale=1;
-        draws+=text_.draw(render,package_preview_?(package_returnable_?"SHIFT/B BACK  SPACE PAUSE  Q/E SPEED  Z ROTATE":
-            "SPACE PAUSE  Q/E SPEED  Z ROTATE"):source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
+        draws+=text_.draw(render,package_static_?(package_returnable_?"SHIFT/B BACK  Z ROTATE":"Z ROTATE"):
+            package_preview_?(package_returnable_?"SHIFT/B BACK  LEFT/RIGHT CLIP  SPACE PAUSE  Q/E SPEED  Z ROTATE":
+            "LEFT/RIGHT CLIP  SPACE PAUSE  Q/E SPEED  Z ROTATE"):source_programs_?"LEFT/RIGHT PAGE  SPACE PAUSE  Q/E SPEED  Z ROTATE":"LEFT/RIGHT PAGE  UP/DOWN BORG  SPACE PAUSE  Q/E SPEED  Z ROTATE",12,34,small);
         char mode[160];
-        if(package_preview_)std::snprintf(mode,sizeof mode,"VARIANT %s - ONE DECLARED IDLE CLIP - %.3gX %s",
-            package_variant_.c_str(),double(speed_),paused_?"PAUSED":"LOOPING");
+        if(package_static_)std::snprintf(mode,sizeof mode,"VARIANT %s - STATIC BODY - NO CLIP DECLARED",package_variant_.c_str());
+        else if(package_preview_)std::snprintf(mode,sizeof mode,"VARIANT %s - CLIP %u/%u - %.3gX %s",
+            package_variant_.c_str(),page_+1,page_count(),double(speed_),paused_?"PAUSED":"LOOPING");
         else std::snprintf(mode,sizeof mode,"%s - %.3gX %s",
             source_handlers_?"HELD-INPUT DASH HOLDS/TIMERS - 96-TICK WINDOW - FINISH POSE HELD":
             source_programs_?"VM WAITS/CONTROLS IN PLACE - 96-TICK REPLAY WINDOW":"BODY CLIPS IN PLACE - 10000+ IDS ARE SHARED CLIPS",
@@ -199,18 +221,31 @@ public:
             if(source_handlers_&&cell.entry.choice>=27&&cell.entry.choice<=30)
                 std::snprintf(label,sizeof label,"P%u T%u F%.0f C%u %s",cell.entry.choice,cell.program_tick,double(cell.vm.state().lanes[1].motion.frame),cell.vm.state().actor.control1[0],cell.dash.selector==0?"DONE":cell.dash.selector==13?"ACTIVE":"RECOVER");
             else if(source_programs_)std::snprintf(label,sizeof label,"P%u:%u T%u CONTROL%u",cell.entry.group,cell.entry.choice,cell.program_tick,cell.vm.state().actor.control1[0]);
-            else if(package_preview_)std::snprintf(label,sizeof label,"DECLARED IDLE G%u C%u",cell.entry.group,cell.entry.choice);
+            else if(package_static_)std::snprintf(label,sizeof label,"STATIC BODY");
+            else if(package_preview_)std::snprintf(label,sizeof label,"%s G%u C%u",preview_label(package_clip_labels_[page_]).c_str(),cell.entry.group,cell.entry.choice);
             else std::snprintf(label,sizeof label,"%04u  G%u C%u%s",cell.entry.id,cell.entry.group,cell.entry.choice,cell.entry.common?" SHARED":"");
             draws+=text_.draw(render,label,x,y,title);
             if(!cell.valid)draws+=text_.draw(render,source_programs_?"UNSUPPORTED PROGRAM - NOT IDLE FALLBACK":"UNSUPPORTED CLIP - NOT IDLE FALLBACK",x,y-14,small);
         }
-        draws+=text_.draw(render,package_preview_?"DECLARED BODY IDLE ONLY - NO ACTOR, GAMEPLAY RULES OR EFFECTS.":source_programs_?"SOURCE PROGRAM TIMELINES ONLY - NO GAMEPLAY INPUT, PHYSICS, ROOT INTEGRATION OR ATTACK EFFECTS.":"CLASSIFY BY BORG + NUMBER. IDS KEEP RAW GROUP/CLIP METADATA; NO UNIVERSAL LOCOMOTION MAP ASSUMED.",12,height-24,small);
+        draws+=text_.draw(render,package_preview_?"PACKAGE BODY ONLY - NO ACTOR, GAMEPLAY RULES OR EFFECTS.":source_programs_?"SOURCE PROGRAM TIMELINES ONLY - NO GAMEPLAY INPUT, PHYSICS, ROOT INTEGRATION OR ATTACK EFFECTS.":"CLASSIFY BY BORG + NUMBER. IDS KEEP RAW GROUP/CLIP METADATA; NO UNIVERSAL LOCOMOTION MAP ASSUMED.",12,height-24,small);
         render.state()=saved;return draws;
     }
     unsigned page()const{return page_;}unsigned borg()const{return selected_;}
     bool select(unsigned borg,unsigned page,RenderEngine& render,std::string* error){
         if(!ready_||borg>=sources_.size()||(source_programs_&&borg)||page>=(sources_[borg].entries.size()+columns_*rows_-1)/(columns_*rows_)){if(error)*error="animation mosaic: Borg/page out of range";return false;}
-        if(package_preview_)return true; // only the already prepared one-cell view is valid
+        if(package_preview_){
+            if(render.frame_in_progress()||cells_.size()!=1||(!package_static_&&page>=package_clips_.size())||
+               (package_texture_owner_&&package_texture_owner_!=&render)){
+                if(error)*error="package preview: current renderer between frames required";
+                return false;
+            }
+            if(page==page_)return true;
+            auto& cell=*cells_.front();
+            // Clip bindings were all verified at load. Keep textures and rig.
+            page_=page;clock_=0;cell.entry=sources_[0].entries[page];
+            if(!evaluate(cell,0,error)){ready_=cell.valid=false;return false;}
+            return true;
+        }
         selected_=borg;page_=page;return prepare_page(render,error);
     }
     unsigned page_count()const{return std::max(1u,(unsigned(sources_[selected_].entries.size())+columns_*rows_-1)/(columns_*rows_));}
@@ -220,15 +255,31 @@ public:
         return {s32(cell%columns_)*tile_width+8,76+s32(cell/columns_)*tile_height+8,tile_width-16,tile_height-48};
     }
     std::vector<NativeAnimationPreview> page_previews()const{
-        std::vector<NativeAnimationPreview> result;for(const auto& cell:cells_)result.push_back({cell->entry,source_programs_?95.f:cell->clip.end_frame,cell->valid,cell->error,source_programs_});return result;
+        std::vector<NativeAnimationPreview> result;for(const auto& cell:cells_)result.push_back({cell->entry,source_programs_?95.f:package_static_?0.f:raw_clip(*cell).end_frame,cell->valid,cell->error,source_programs_});return result;
     }
     void sample_phase(f32 phase){
-        for(auto& cell:cells_)if(cell->valid&&!evaluate(*cell,std::clamp(phase,0.f,.999999f)*(source_programs_?96.f:std::max(1.f,std::floor(cell->clip.end_frame)+1)),&cell->error))cell->valid=false;
+        for(auto& cell:cells_)if(cell->valid&&!evaluate(*cell,std::clamp(phase,0.f,.999999f)*(source_programs_?96.f:package_static_?1.f:std::max(1.f,std::floor(raw_clip(*cell).end_frame)+1)),&cell->error))cell->valid=false;
     }
 private:
     struct Source {std::string name;std::vector<u8> prefix,pose,model_bytes;HsdRecordAnimationBank bank;CharacterMotionBank motions,common;std::vector<NativeAnimationEntry> entries;};
     struct Cell {NativeAnimationEntry entry;CharacterModelScene model;HsdBoneMotionClip clip;CharacterProgramVm vm;CharacterProgramHeightControl height;GRedGroundDashState dash;f32 speed=0,change=0;unsigned program_tick=0;std::string error;bool valid=false,program_started=false;std::array<f32,3> centre{0,90,0};f32 radius=120;};
+    const HsdBoneMotionClip& raw_clip(const Cell& cell)const{return package_preview_?package_clips_[page_]:cell.clip;}
     static ByteView view(const std::vector<u8>& bytes){return {bytes.data(),bytes.size()};}
+    static bool whole_body_profile(ByteView model,ByteView prefix,std::vector<u8>* out,std::string* error){
+        HsdModelBones bones;
+        if(!hsd_bones_load(prefix,model,&bones,error))return false;
+        // Presentation-only: one lane animates the complete exact logical rig
+        // without mirroring. This is NOT an inferred gameplay lane layout.
+        const unsigned n=unsigned(bones.bones.size()),order=32,mirror=order+n,identities=(mirror+n+3)&~3u;
+        if(n<2||n>kHsdMaxCharacterBones){if(error)*error="whole-body preview: rig size unsupported";return false;}
+        out->assign(identities+n*4,0);auto* p=out->data();
+        store_be32(p,0x47464350);store_be16(p+4,1);store_be16(p+6,u16(n));
+        p[8]=1;p[9]=p[10]=p[11]=u8(n);
+        store_be32(p+12,order);store_be32(p+16,mirror);store_be32(p+20,identities);
+        store_be32(p+24,u32(out->size()));store_be32(p+28,bones.root_offset);
+        for(unsigned i=0;i<n;++i){p[order+i]=p[mirror+i]=u8(i);store_be32(p+identities+i*4,bones.bones[i].joint_offset);}
+        return true;
+    }
     // The small diagnostic font is ASCII/uppercase only. This changes the
     // drawn label, not the catalog name or the variant/identity key.
     static std::string preview_label(std::string_view text){
@@ -282,9 +333,17 @@ private:
                 character_pose_initial_frame(cell.model.rig(),mat4_rotation_y(yaw_),&pose,error)&&
                 character_pose_direct_world(cell.model.rig(),local,pose,&world,error)&&cell.model.set_world_pose(world,{},error);
         }
-        const u32 length=std::max(1u,u32(cell.clip.end_frame)+1);const f64 frame=std::fmod(clock,length);const u32 time=u32(frame);const f32 fraction=f32(frame-time);
-        HsdBoneMotionSample a,b;if(!hsd_bone_motion_sample(cell.clip,time,&a,error))return false;
-        if(fraction>0&&!hsd_bone_motion_sample(cell.clip,(time+1)%length,&b,error))return false;
+        if(package_static_){
+            CharacterLocalPose local;CharacterPoseFrame pose;CharacterWorldPose world;
+            const auto& rig=cell.model.rig();
+            return character_pose_initial_local(rig,&local,error)&&
+                character_pose_initial_frame(rig,mat4_rotation_y(yaw_),&pose,error)&&
+                character_pose_direct_world(rig,local,pose,&world,error)&&cell.model.set_world_pose(world,{},error);
+        }
+        const auto& clip=raw_clip(cell);
+        const u32 length=std::max(1u,u32(clip.end_frame)+1);const f64 frame=std::fmod(clock,length);const u32 time=u32(frame);const f32 fraction=f32(frame-time);
+        HsdBoneMotionSample a,b;if(!hsd_bone_motion_sample(clip,time,&a,error))return false;
+        if(fraction>0&&!hsd_bone_motion_sample(clip,(time+1)%length,&b,error))return false;
         std::array<CharacterPoseLane,4> lanes;for(auto& lane:lanes){lane.current=fraction>0?&b:&a;if(fraction>0){lane.previous=&a;lane.previous_weight=1-fraction;}}
         CharacterLocalPose local;CharacterPoseFrame pose;CharacterWorldPose world;
         return character_pose_sample(cell.model.rig(),lanes,&local,error)&&character_pose_initial_frame(cell.model.rig(),mat4_rotation_y(yaw_),&pose,error)&&character_pose_direct_world(cell.model.rig(),local,pose,&world,error)&&cell.model.set_world_pose(world,{},error);
@@ -294,7 +353,16 @@ private:
         for(unsigned i=first;i<last;++i){
             auto cell=std::make_unique<Cell>();cell->entry=source.entries[i];const auto& bank=cell->entry.common?source.common:source.motions;
             cell->valid=cell->model.load_with_record_bank(source.bank,view(source.prefix),view(source.pose),&cell->error);
-            if(cell->valid&&!source_programs_){const auto& bytes=bank.archives[cell->entry.archive];cell->valid=hsd_bone_motion_load(view(bytes),cell->model.rig().binding,&cell->clip,&cell->error);}
+            if(cell->valid&&package_preview_&&!package_static_){
+                for(const auto& entry:source.entries){
+                    HsdBoneMotionClip clip;
+                    if(!hsd_bone_motion_load(view(bank.archives[entry.archive]),cell->model.rig().binding,&clip,&cell->error)){
+                        cell->error="invalid "+package_clip_labels_[entry.id]+" clip: "+cell->error;
+                        cell->valid=false;break;
+                    }
+                    package_clips_.push_back(std::move(clip));
+                }
+            }else if(cell->valid&&!source_programs_&&!package_static_){const auto& bytes=bank.archives[cell->entry.archive];cell->valid=hsd_bone_motion_load(view(bytes),cell->model.rig().binding,&cell->clip,&cell->error);}
             if(cell->valid)cell->valid=evaluate(*cell,0,&cell->error);
             if((source_programs_||package_preview_)&&!cell->valid){if(error)*error=(package_preview_?"package preview: ":"source program mosaic: ")+cell->error;ready_=false;return false;}
             if(cell->valid){
@@ -329,8 +397,10 @@ private:
     }
     std::array<Source,2> sources_;std::vector<std::unique_ptr<Cell>> cells_;TextRenderer text_;std::vector<Vertex> panels_;
     CharacterProgramAsset program_asset_;CharacterPoseHeightProfile program_height_;CharacterMotionDriver program_driver_;bool source_programs_=false;
-    CharacterMovementProfile program_motion_;bool source_handlers_=false,package_preview_=false;
+    CharacterMovementProfile program_motion_;bool source_handlers_=false,package_preview_=false,package_static_=false;
     std::string package_variant_;
+    std::vector<HsdBoneMotionClip> package_clips_;
+    std::vector<std::string> package_clip_labels_;
     static constexpr u32 package_texture_base_=65000;
     unsigned package_texture_count_=0;
     RenderEngine* package_texture_owner_=nullptr;

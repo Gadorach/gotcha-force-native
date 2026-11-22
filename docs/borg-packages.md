@@ -19,9 +19,15 @@ borgs/
       movement.map
 ```
 
-`borg.manifest` is UTF-8, starts with `GFBORG 1`, and lists package-relative
-files. `animation-map` is optional: it supplies a mapping when a compatible
-animation bank does not already identify its clips by their engine roles.
+`borg.manifest` is UTF-8 and lists package-relative files. `GFBORG 1`
+requires the body, animation bank and rules paths. `GFBORG 2` requires
+a catalogue path and permits metadata-only or preview-only packages:
+an animated preview needs a model and animation bank; a static preview
+can declare a model and preview profile without a bank. An animation
+map or rules path still requires both model and bank. Omitted capabilities
+do not acquire fallback art or gameplay. `animation-map` is optional:
+it supplies a mapping when a compatible animation bank does not
+already identify its clips by their engine roles.
 
 ```text
 GFBORG 1
@@ -39,8 +45,9 @@ manifests claiming the same ID are both rejected. Relative asset paths cannot
 escape the package, and symlink directories or assets are not followed.
 
 `gf_native --list-borgs` lists discovered IDs and names without starting the
-renderer. Discovery currently validates the manifest and the presence of its
-files, **not their contents**. The listed extensions are examples, not a claim
+renderer. Discovery validates the manifest and the presence of declared body,
+motion and rules files, **not their contents**. Catalogue and preview
+capabilities are checked when opened. The listed extensions are examples, not a claim
 that the host can import those formats or use those rules today. The packages
 do not grant ownership, enter the retail or battle pickers, or create actors
 at discovery time.
@@ -312,6 +319,35 @@ declarations without opening model or animation data, running gameplay rules,
 or touching saves. It does not change practice or battle admission. See the
 [representative controller audit](borg-controller-audit.md) for evidence and
 limits; the metadata is not an animation map.
+
+#### Built-in controller add-ons
+
+`GFBORG-CONTROLLERS 2` adds a required `add-on=` field to each row.
+Version 1 remains readable and leaves this field `unresolved`; `none`
+explicitly means no add-on. Normal matching-source rows with `forms=none`
+can name these reviewed portable planners:
+
+| Add-on | Exact normal source | Scope |
+|---|---|---|
+| `normal-teleport-ninja-history` | `GG4E08:0005/0` | Caster history movement, not an exchange. |
+| `normal-switching-ninja-exchange` | `GG4E08:0009/0` | Stages independent destination legs from actual contact, not aim or a direct position write. |
+| `normal-death-icbm-impact` | `GG4E08:0D06/0` | Guarded area-object request and separate self-defeat. Does not specify area coverage or a universal HP percentage. |
+
+These are names of engine-compiled portable add-ons, not package-provided
+executables, plugins, or paths. The binding requires a caller-owned
+observation of the exact source, package, variant, form and slot before
+it can return a detached planner. A metadata claim or successful preview
+supplies no actor authority. Runtime placement, effects, collision,
+recipient selection, damage and cleanup remain shared engine work.
+
+`python3 -m tools.extract.portable_borg_add_ons 0009 borgs/switching-ninja`
+creates a local metadata-only example. Use `0005` or `0d06` for the other
+two. Pass `--member /path/to/pl0009.pzz` to include its exact reviewed
+normal body and local motion bank. Use the matching original member
+(`pl0005.pzz` or `pl0d06.pzz`) for the other two. The exporter verifies
+the normal wrapper and bank before creating output. In either case these
+packages have no live controller rules. No package files or game assets
+are included in Git.
 
 ### Standalone moves check
 
@@ -650,7 +686,7 @@ declarations.
 
 ## Standalone body preview
 
-For one default variant with compatible HSD assets, add `preview=preview.txt`
+For a variant with compatible HSD assets, add `preview=preview.txt`
 to the manifest. `model` and `animations` now name the HSD model and motion
 bank for that variant. The extra sidecar gives the existing pose system the
 two rig inputs and an explicit raw `group:entry` binding for idle:
@@ -681,7 +717,43 @@ otherwise fall back to a default. Materials and formats are not inferred.
 This does not import glTF, load rules or effects, alter the
 classifier, or grant battle capability.
 
+For more clips on that exact variant, use `GFBORG-PREVIEW 2` and append
+up to seven `clip=ID|GROUP:ENTRY` rows (for example, `clip=walk|0:1`).
+Keep `idle`; its label is reserved. Switch clips with **Left/Right** or
+open a named clip with `--preview-clip ID`. Every binding is checked
+before display, and clip changes reuse the same rig and textures.
+The bindings are for inspection, not movement or attack arbitration.
+
+Version 2 also accepts `model-format=hsd-whole-body-v1`. This uses the
+same renderer and the wrapper's logical skeleton, with a single preview
+lane for the whole body instead of a `pose-profile` file. It does not
+reconstruct the original gameplay lanes. `idle=none` is valid only in
+this format, with no `clip` rows and no selected animation bank. That
+renders the body's initial pose without pretending it has an idle
+animation. Exact normal Death ICBM uses this static mode; exact normal
+Teleport Ninja and Switching Ninja each declare `idle`, `walk` and
+`dash-0` from their local bank.
+
+From the prepared local MVP art, the first two portable model packages
+can be generated without modifying their inputs:
+
+```sh
+python3 -m tools.extract.portable_borg_preview g-red borgs/normal-g-red \
+    --practice local/content/source-gred-ground-v9
+python3 -m tools.extract.portable_borg_preview sasuke borgs/normal-sasuke
+gf_native --preview-borg gg4e08:000a --preview-clip dash-0
+```
+
+The optional G-Red practice pack reuses his existing exact admission
+check. It is not general Battle Test admission. Sasuke's exported
+package is preview-only; it does not silently acquire his MVP controller.
+Both exporters refuse to overwrite existing output directories.
+
 ## Connecting discovery to gameplay and saves
+
+The first executable package slice is available in
+[Borg API Battle Test](borg-gameplay-api.md). Its `gameplay=` capability is
+separate from controller review metadata, body previews, and saved practice.
 
 - Use one catalog in the collection, Borg picker, Challenge and Story. Keep
   discovery, asset/behavior validation, save ownership, and availability in a

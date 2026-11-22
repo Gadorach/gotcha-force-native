@@ -143,6 +143,23 @@ public:
         return true;
     }
 
+    // Four swept blades with a bright centre; visual only, never a hit shape.
+    static bool shuriken(const Camera& camera,const f32 world[3],f32 size,f32 spin,Tint tint,std::vector<Vertex>& out){
+        f32 x=0,y=0,depth=0;
+        if(!camera.project(world,&x,&y,&depth))return false;
+        const auto radius=camera.size_scale(size,depth)*.5f;
+        if(!(radius>0))return false;
+        for(unsigned arm=0;arm<4;++arm){
+            const f32 angle=spin+f32(arm)*1.57079632679f;
+            const auto point=[&](f32 r,f32 offset,Tint color){
+                push(out,x+r*radius*std::cos(angle+offset),y+r*radius*std::sin(angle+offset),depth,color);
+            };
+            point(0,0,{255,250,255,tint.a});point(.36f,-.46f,tint);point(1,.2f,tint);
+            point(0,0,{255,250,255,tint.a});point(1,.2f,tint);point(.42f,.72f,tint);
+        }
+        return true;
+    }
+
     // Filled disc in screen space around a projected world point: a triangle
     // fan, used for the menu's seal markers so they read as discs rather than
     // squares. Depth comes from the projected centre, like the reticle.
