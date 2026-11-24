@@ -80,8 +80,9 @@ def prepare(roster, executable, stage, output, *, practice=None, movement_sfx=No
         raise ValueError("expected a roster ledger object")
     shots = ledger.get("authored_basic_shot_test_ids",[])
     melee = ledger.get("authored_basic_melee_test_ids",[])
+    short_range = ledger.get("authored_short_range_test_ids",[])
     held = ledger.get("authored_held_fire_test_ids",[])
-    if ledger.get("revision")!="GG4E08" or not all(isinstance(group,list) for group in (shots,melee,held)):
+    if ledger.get("revision")!="GG4E08" or not all(isinstance(group,list) for group in (shots,melee,short_range,held)):
         raise ValueError("expected a qualified local roster ledger")
     ids = shots+melee+held
     if (not 1<=len(ids)<=206 or any(not isinstance(id,str) or not re.fullmatch(r"gg4e08:[0-9a-f]{4}",id) for id in ids) or
@@ -144,7 +145,8 @@ def prepare(roster, executable, stage, output, *, practice=None, movement_sfx=No
     with (output/"show-attacks.sh").open("x") as f:
         f.write(starter+f'borg=${{1:-{default}}}\nif [ "$#" -gt 0 ]; then shift; fi\n'
                 'case "$borg" in\n'
-                +("  "+"|".join(melee)+') set -- --package-battle-distance 90 "$@" ;;\n' if melee else "")
+                +("  "+"|".join(melee+short_range)+') set -- --package-battle-distance 90 "$@" ;;\n'
+                   if (melee or short_range) else "")
                 +'esac\n'+command+' --demo-package-battle --trace-package-battle "$@"\n')
     for file in ("play.sh","show-attacks.sh"):
         (output/file).chmod(0o755)

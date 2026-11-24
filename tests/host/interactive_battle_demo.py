@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansion=False, girl_worm=False, reflection_bodies=False,
           close_expansion=False, blue_ninja=False, robot_diver=False, wing_valkyrie=False, robot_bomber=False,
           ground_close=False, wire_shuriken=False, late_close=False, tank_shot=False, paired_ground=False,
-          single_ground_shot=False, dragon_breath=False):
+          single_ground_shot=False, dragon_breath=False, roach_bomb=False):
     def launch(script,*args):
         cmd=[str(root/script),*args]
         if not opengl:
@@ -229,6 +229,26 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
             if (len(counts)!=150 or "0" in counts or "shots=0 hits=2" not in trace or
                     trace.count("event=melee-armed ")!=2 or "event=debit " in trace):
                 raise ValueError(f"{stable} did not draw or accept both stockless contacts\n"+trace)
+    if roach_bomb:
+        stable="gg4e08:0f05"
+        rules=(root/f"borgs/gg4e08-0f05/gameplay.txt").read_text()
+        for line in ("body-motion=static-grounded","stock=mine-stock|3|on-return",
+                     "projectile=mine|bullet|1|1|0|1|0|16|70|0|land-on-floor",
+                     "blast=mine|expiry|310|12|opponent","bomb-proximity=mine|150|30|blast",
+                     "return-stock=mine|expiry-or-proximity","move=mine|b|10|grounded|28|none",
+                     "release=mine|12|mine-stock|1|mine"):
+            if line not in rules:
+                raise ValueError(f"{stable} lost its authored bomb policy: {line}")
+        trace=launch("show-attacks.sh",stable,"--frames","150","--no-audio")
+        if ("event=debit " not in trace or "event=projectile-landed " not in trace or
+                "event=bomb-proximity " not in trace or
+                not re.search(r"event=blast-hit .* value=12\b",trace) or
+                not re.search(r"event=stock-returned .* value=3\b",trace) or
+                "event=retire " not in trace):
+            raise ValueError(f"{stable} did not place, arm, blast or return its bomb stock\n"+trace)
+        bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
+        if not bodies or "0" in bodies:
+            raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if ground_close:
         for id,clip,start in (("0209",1,8),("0302",0,0),("0306",0,0),("0808",30,0),("0904",6,0),("090b",6,0)):
             stable=f"gg4e08:{id}"
@@ -581,9 +601,10 @@ if __name__=="__main__":
     p.add_argument("--paired-ground",action="store_true")
     p.add_argument("--single-ground-shot",action="store_true")
     p.add_argument("--dragon-breath",action="store_true")
+    p.add_argument("--roach-bomb",action="store_true")
     args=p.parse_args()
     check(args.root.resolve(strict=True),opengl=args.opengl,equipped=args.equipped,trailing=args.trailing,
           knight_expansion=args.knight_expansion,girl_worm=args.girl_worm,reflection_bodies=args.reflection_bodies,
           close_expansion=args.close_expansion,blue_ninja=args.blue_ninja,robot_diver=args.robot_diver,
           wing_valkyrie=args.wing_valkyrie,robot_bomber=args.robot_bomber,ground_close=args.ground_close,
-          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath)
+          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb)

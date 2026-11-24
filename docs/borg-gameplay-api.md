@@ -965,6 +965,12 @@ still follows its own policy. Loss of support during the tail, or
 expiry before landing, does not blast or return stock. This delay is
 authored and does not emulate Roach's full area-object handoff.
 
+The Roach pilot (`0f05`) uses this bomb shape with the source type-5
+area row's radius-310 group-3 sphere, a 150-unit proximity radius and an
+authored 30/70 arm/lifetime, cap three and return on expiry or
+proximity. The source's 300-tick timer, scene receiver and ownership
+return are recorded, not claimed.
+
 `blast-children=carrier|child projectile` requests a radial volley
 only when the carrier's actual blast runs. The child definition
 supplies count, rise, speed, gravity, contact and appearance, but must

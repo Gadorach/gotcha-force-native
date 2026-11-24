@@ -1523,7 +1523,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 183 of 206. The remaining 23 are no longer a
+Battle Test now covers 184 of 206. The remaining 22 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1598,34 +1598,18 @@ classification:
 - **Unsettled classification** (`0004` Acceleration Ninja): its B-shot
   program clip `3:11` binds strictly but requests no projectile, so it is
   either a melee or a buff and must not be guessed.
-- **Resolved but unrouted** (`0f05` Roach): its record now binds. Its B-shot
-  row (`state 0`, `substate 0`, selector 45, callback `801E7F28`) dispatches
-  through `803929A8`; the state-1 handler `801E7F74` calls the shared paid
-  release `8006DBE0`, then `801FAD10` and sound `235`, then allocates a child
-  via `8008893C` and initializes it with callbacks `801F8108`/`801F840C`,
-  parent field `+0x8C`. It is a child effect, not a projectile, so it needs
-  the child-actor capability below.
-
-  The private Roach receipt already covers the paid carrier, timer/contact
-  latch, area-key-26 request, capped return and physical release. Its
-  `remaining` list still names *child/area-key-26 lifecycle and receiver
-  outcome*, and the retry scope records that `80085E00` returns a declared
-  refusal without receiver or damage.
-
-  Static tracing now maps the area object itself: `80085E00` allocates a
-  second child (callbacks `80086048`/`80086504`, key 26, parent `+0x90`).
-  Its phase table `802DA544` runs phase 0 proximity through
-  `8008AE10`/`8008AE3C` → `8008AE60` (the six-slot query and table
-  `802C4760`), phase 5 shape bind through `8008AFF0`, and phase 3 release
-  through `80088E50`. None of those functions applies damage; the hit is
-  the scene's attack-shape overlap, which the harness does not execute.
-
-  The area row for key 26 is `record=22, group=3, parameter=4,
-  material=0, cue=12` (the Dragon cohort uses `group=60, parameter=1`).
-  Record 22 and cue 12 are the shared impact visual/sound; the group-3
-  common-collision shape is not decoded here. The row does not carry the
-  damage value, so the receiver remains unresolved and an authored bomb or
-  field cannot claim the source damage.
+- **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
+  `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
+  creates the type-5 area child at `80085E00` (phase table `802DA544`,
+  six-slot proximity `8008AE60`, shape handoff `8008AFF0`, release
+  `80088E50`). The area row is `record=22, group=3, parameter=4,
+  material=0, cue=12`; the common-collision group 3 is a radius-310
+  sphere. The native bomb controller already owns the same exits, so the
+  pilot binds the exact row/debit/pose/stock and authors a 30-tick arm,
+  70-tick lifetime, 310-unit blast, 12 damage and 150-unit proximity
+  radius. The source 300-tick timer, scene receiver and ownership return
+  are recorded, not claimed. Stock is capped at three and returned on
+  expiry or proximity.
 
 Next passes should prefer a shared capability (X moves in the scripted
 showcase, breath/area, child ownership) over one-off per-Borg exceptions,

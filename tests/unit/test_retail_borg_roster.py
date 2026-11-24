@@ -17,6 +17,7 @@ from tools.analyze import retail_tank_shot as tanks
 from tools.analyze import retail_paired_ground_shot as ground_pairs
 from tools.analyze import retail_single_ground_shot as single_shots
 from tools.analyze import retail_breath_dragon as breath
+from tools.analyze import retail_roach_bomb as roach_bomb
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_knight_melee as knight
 from tools.analyze import retail_samurai_melee as samurai
@@ -176,6 +177,34 @@ class RosterFormatTests(unittest.TestCase):
         self.assertIn(b"release=breath-dive|8|breath-stock|1|dive\n",dive_rules)
         self.assertNotIn(b"breath-sweep",dive_rules)
         self.assertEqual(dive_receipt["native_dive"]["origin_joint"],12)
+
+    def test_roach_reimplements_the_placed_area_as_a_native_bomb(self):
+        joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]
+        row={"state":0,"substate":0,"selector":45,"handler_pair":[61,0],
+             "class_callback_candidate":"801E7F28"}
+        actions={"profiles":[{"config":"803929C8","context_table":"80392BA0","main_handler":"801E7EF0",
+                              "program_and_descriptor_roots":["802BD54C","802BD65E","00000000","00000000"],
+                              "groups":[{"group":"B-shot","rows":[row]}]}]}
+        rules,pose,receipt=roach_bomb.battle_test(joints,actions,[60])
+        for line in ("body-motion=static-grounded","stock=mine-stock|3|on-return",
+                     "projectile=mine|bullet|1|1|0|1|0|16|70|0|land-on-floor",
+                     "blast=mine|expiry|310|12|opponent","bomb-proximity=mine|150|30|blast",
+                     "return-stock=mine|expiry-or-proximity","move=mine|b|10|grounded|28|none",
+                     "release=mine|12|mine-stock|1|mine"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(len(pose),44)
+        self.assertEqual(receipt["source_area"]["blast_radius"],310)
+        self.assertEqual(receipt["source_area"]["stock_cap"],3)
+        self.assertEqual(receipt["source_debit"]["site"],"8006DBE0")
+        self.assertFalse(receipt["retail_behavior_verified"])
+        bad=dict(row,selector=44)
+        actions["profiles"][0]["groups"][0]["rows"]=[bad]
+        with self.assertRaisesRegex(ValueError,"neutral B row"):
+            roach_bomb.battle_test(joints,actions,[60])
+        actions["profiles"][0]["groups"][0]["rows"]=[row]
+        bad_actions={"profiles":[dict(actions["profiles"][0],config="00000000")]}
+        with self.assertRaisesRegex(ValueError,"installer profile"):
+            roach_bomb.battle_test(joints,bad_actions,[60])
 
     def test_cannon_beam_uses_its_charged_x_context_and_appends_to_the_volley(self):
         lines=cannon_beam.lines([500,200,200,0,240])

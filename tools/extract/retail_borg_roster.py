@@ -37,6 +37,7 @@ from tools.analyze import retail_tank_shot as tanks
 from tools.analyze import retail_paired_ground_shot as ground_pairs
 from tools.analyze import retail_single_ground_shot as single_shots
 from tools.analyze import retail_breath_dragon as breath
+from tools.analyze import retail_roach_bomb as roach
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_equipment_visuals as equipment
 from tools.analyze import retail_gatling_held_fire as gatling
@@ -802,11 +803,12 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     pair_pilot = basic_shot and row.model in ground_pairs.ROUTES
     single_shot_pilot = basic_shot and row.model in single_shots.MODELS
     breath_pilot = basic_shot and row.model in breath.MODELS
+    roach_pilot = basic_shot and row.model==roach.MODEL
     shot_pilot = basic_shot and (row.model in BASIC_SHOT_COHORT or cruise_pilot or clocked_pilot or static_ground_pilot or
                                 dragon_pilot or worm_pilot or tank_pilot or pair_pilot or single_shot_pilot or breath_pilot)
     held_pilot = basic_shot and row.model==gatling.MODEL
     melee_pilot = basic_melee and row.model in knight.PILOTS
-    pilot = shot_pilot or melee_pilot or held_pilot
+    pilot = shot_pilot or roach_pilot or melee_pilot or held_pilot
     # The test package is explicitly normal-only. Keep other models' exact
     # alternate declarations and copy the pilot's wrappers as offline assets.
     source_variants = source_variants and not pilot
@@ -902,6 +904,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     actions = action_candidates(dol, installer, row.model)
     if linker is not None:
         linker.attach(actions,row.model,clips,joints,index_action_entries=action_clips,installer=installer)
+    roach_source = roach.battle_test(joints,actions,level[0]) if roach_pilot else None
     prior_close=tuple(x for x in action_preview_candidates(actions) if x["action_group"]=="B-close") if (
         action_clips and (row.model in knight.LANCES or row.model in samurai.MODELS or row.model in ninja.MODELS or
                           row.model in wings.MODELS or row.model in grounded.MODELS)) else ()
@@ -995,6 +998,10 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         gameplay,pose,battle_receipt=knight.melee_battle_test(
             row.model,joints,candidates,pace,level[0],source,clip_metadata=loop_metadata,mounts=mounts,
             body_material=("immutable-highlight" if row.model==bombers.REMOTE else None))
+        files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
+        manifest += "gameplay=gameplay.txt\n"
+    elif roach_source is not None:
+        gameplay,pose,battle_receipt=roach_source
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         manifest += "gameplay=gameplay.txt\n"
     elif shot_pilot:
@@ -1198,6 +1205,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         summary["lab_ground_pace"]=pace
     if battle_receipt:
         summary["basic_melee_battle_test" if melee_pilot else "held_fire_battle_test" if held_pilot else "basic_shot_battle_test"]=battle_receipt
+    if roach_source is not None:
+        summary["roach_bomb_source"]=battle_receipt
     files["source-index.json"] = json_line(summary)
     files["borg.manifest"] = manifest.encode("ascii")  # publish last
     return files, summary
@@ -1359,6 +1368,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         basic_shot_ids = []
         basic_melee_ids = []
         held_fire_ids = []
+        short_range_ids = []
         knight_catalogue = {}
         samurai_catalogue = {}
         ninja_catalogue = {}
@@ -1436,6 +1446,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
                 basic_melee_ids.append(summary["id"])
             if "held_fire_battle_test" in summary:
                 held_fire_ids.append(summary["id"])
+            if "roach_bomb_source" in summary:
+                short_range_ids.append(summary["id"])
             cues = action_sfx_index(summary["action_candidates"],tone_banks)
             if cues:
                 action_sound_catalogue[summary["id"]] = cues
@@ -1518,6 +1530,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         if basic_shot:
             shared_index["authored_basic_shot_test_ids"]=basic_shot_ids
             shared_index["authored_held_fire_test_ids"]=held_fire_ids
+            shared_index["authored_short_range_test_ids"]=short_range_ids
         if basic_melee:
             shared_index["authored_basic_melee_test_ids"]=basic_melee_ids
         with (output / "roster-extraction.json").open("xb") as ledger:
