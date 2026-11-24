@@ -1625,8 +1625,13 @@ classification:
   own scope excludes the damage/HP step: it observes the published
   receiver shape lists, not the amount. A Roach adaptation would bind the
   group-3 radius-310 sphere and the area child's shape handoff and show
-  which lists receive it. The authored 12 damage remains the playable
-  value until the separate damage owner is ported.
+  which lists receive it.
+
+  The damage owner entry is now located: `8003D358` checks the scene
+  flag at `scene+0x1F` and the actor byte at `actor+0x83`, writes a type
+  to `actor+0x1C8`, then stores `HP - r4` at `actor+0x1C6`. The remaining
+  join is the pair-scan result to that `r4` amount. The authored 12
+  damage remains the playable value until that join is executed.
 
 Next passes should prefer a shared capability (X moves in the scripted
 showcase, breath/area, child ownership) over one-off per-Borg exceptions,
