@@ -1619,7 +1619,12 @@ classification:
   `802C4760`), phase 5 shape bind through `8008AFF0`, and phase 3 release
   through `80088E50`. None of those functions applies damage; the hit is
   the scene's attack-shape overlap, which the harness does not execute.
-  That is why the receiver remains unresolved and why an authored bomb or
+
+  The area row for key 26 is `record=22, group=3, parameter=4,
+  material=0, cue=12` (the Dragon cohort uses `group=60, parameter=1`).
+  Record 22 and cue 12 are the shared impact visual/sound; the group-3
+  common-collision shape is not decoded here. The row does not carry the
+  damage value, so the receiver remains unresolved and an authored bomb or
   field cannot claim the source damage.
 
 Next passes should prefer a shared capability (X moves in the scripted
