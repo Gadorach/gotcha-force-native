@@ -1,0 +1,5 @@
+GFBORG-CATALOG 1
+description=Original Jump Stick example.
+tribe=none
+default-variant=normal
+variant=normal|Normal|100|placeholder

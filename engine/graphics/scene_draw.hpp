@@ -10,6 +10,7 @@
 
 #include "engine/core/backends.hpp"
 #include "engine/graphics/camera.hpp"
+#include "engine/graphics/projected_triangle.hpp"
 #include "engine/graphics/render_engine.hpp"
 
 namespace gf {
@@ -159,6 +160,32 @@ public:
         }
         return true;
     }
+    static bool energy_orb(const Camera& camera,const f32 world[3],f32 size,f32 spin,Tint tint,std::vector<Vertex>& out){
+        std::size_t first=0,count=0;
+        if(!disc(camera,world,size*.5f,16,{tint.r,tint.g,tint.b,135},out,&first,&count))return false;
+        disc(camera,world,size*.32f,12,tint,out,&first,&count);
+        return shuriken(camera,world,size*.62f,spin,{255,244,255,200},out);
+    }
+    static bool beam_ribbon(const Camera& camera,const f32 start[3],const f32 delta[3],f32 width,Tint tint,std::vector<Vertex>& out){
+        Camera::Basis basis;
+        if(!camera.basis(&basis)||!std::isfinite(width)||width<=0)return false;
+        const f32 toward[3]={basis.eye[0]-start[0],basis.eye[1]-start[1],basis.eye[2]-start[2]};
+        f32 side[3]={delta[1]*toward[2]-delta[2]*toward[1],delta[2]*toward[0]-delta[0]*toward[2],
+                     delta[0]*toward[1]-delta[1]*toward[0]};
+        const f32 magnitude=std::hypot(side[0],side[1],side[2]);
+        if(!std::isfinite(magnitude))return false;
+        for(unsigned i=0;i<3;++i)side[i]=(magnitude>.001f?side[i]/magnitude:basis.right[i])*(width*.5f);
+        const auto begin=out.size();
+        const auto vertex=[&](f32 along,f32 across){
+            Vertex v{};v.x=start[0]+along*delta[0]+across*side[0];
+            v.y=start[1]+along*delta[1]+across*side[1];v.z=start[2]+along*delta[2]+across*side[2];
+            v.r=tint.r;v.g=tint.g;v.b=tint.b;v.a=tint.a;return v;
+        };
+        const auto a=vertex(0,-1),b=vertex(0,1),c=vertex(1,1),d=vertex(1,-1);
+        const Vertex first[]={a,b,c},second[]={a,c,d};
+        project_triangle(camera,basis,first,out);project_triangle(camera,basis,second,out);
+        return begin!=out.size();
+    }
 
     // Filled disc in screen space around a projected world point: a triangle
     // fan, used for the menu's seal markers so they read as discs rather than
@@ -204,6 +231,22 @@ public:
         }
         *count = out.size() - *first;
         return true;
+    }
+
+    static void ground_ring(const Camera& camera,const f32 world[3],f32 radius,f32 thickness,
+                            unsigned segments,Tint tint,std::vector<Vertex>& out){
+        if(!(radius>0)||!(thickness>0)||segments<3)return;
+        const f32 inner=std::max(0.f,radius-thickness);
+        for(unsigned i=0;i<segments;++i){
+            const auto project=[&](unsigned index,f32 extent,std::array<f32,3>* point){
+                const f32 angle=6.2831853f*f32(index)/f32(segments);
+                const f32 pos[]{world[0]+extent*std::cos(angle),world[1],world[2]+extent*std::sin(angle)};
+                return camera.project(pos,&(*point)[0],&(*point)[1],&(*point)[2]);
+            };
+            std::array<f32,3> a,b,c,d;
+            if(project(i,radius,&a)&&project(i+1,radius,&b)&&project(i+1,inner,&c)&&project(i,inner,&d))
+                quad(out,a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2],d[0],d[1],d[2],tint);
+        }
     }
 
     static void quad(std::vector<Vertex>& out, f32 x0, f32 y0, f32 z0, f32 x1, f32 y1, f32 z1,

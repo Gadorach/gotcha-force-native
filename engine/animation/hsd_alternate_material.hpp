@@ -7,6 +7,13 @@ struct AttachmentAlternateState {
     u32 joint_flags=0,dobj_flags=0,render_mode=0;bool has_pe=false;
     std::array<u8,12> pe{};f32 alpha=1;
 };
+//07C54/08F18 alone preserves alpha. Actor alternates additionally run07CAC.
+inline bool attachment_translucent_apply(const AttachmentAlternateState& input,AttachmentAlternateState* out,std::string* error){
+    if(!out||(input.joint_flags&0x1000u)){if(error)*error="attachment translucent: destination/instance branch";return false;}
+    auto next=input;next.joint_flags=(input.joint_flags|0x20080000u)&~0x50140000u;next.dobj_flags=(input.dobj_flags|4u)&~10u;next.render_mode=(input.render_mode|0x60002001u)&~0x400au;
+    if(next.has_pe){next.pe[0]&=u8(~0x20u);next.pe[9]=7;}
+    *out=next;if(error)error->clear();return true;
+}
 inline bool attachment_alternate_apply(const AttachmentAlternateProfile& p,const AttachmentAlternateState& input,
                                        AttachmentAlternateState* out,std::string* error){
     if(out)*out={};
@@ -14,8 +21,7 @@ inline bool attachment_alternate_apply(const AttachmentAlternateProfile& p,const
         if(error)*error="attachment alternate: profile/destination/instance branch";
         return false;
     }
-    auto next=input;next.joint_flags=(input.joint_flags|p.words[0])&~p.words[1];next.dobj_flags=(input.dobj_flags|p.words[2])&~p.words[3];next.render_mode=(input.render_mode|p.words[4])&~p.words[5];
-    if(next.has_pe){next.pe[0]=u8(next.pe[0]&~p.words[6]);next.pe[9]=u8(p.words[7]);}
+    AttachmentAlternateState next;if(!attachment_translucent_apply(input,&next,error))return false;
     next.alpha=p.alpha;*out=next;if(error)error->clear();return true;
 }
 inline bool attachment_alternate_properties(const HsdMeshProperties& base,const AttachmentAlternateState& state,HsdMeshProperties* out,std::string* error){

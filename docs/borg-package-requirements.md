@@ -6,6 +6,9 @@ a new manifest schema or an integration plan already in effect**. The existing
 contents or make a Borg selectable. “Self-contained” means one directory owns
 the Borg-specific data and declares any dependencies on shared content. It does
 not ship a second renderer, physics engine, controller VM, or copy of the menus.
+The [release architecture](architecture-directions.md) applies this boundary
+to every retail Borg as well as authored content. Port recovered rules into
+executable package definitions for actual use; keep source evidence separate.
 
 ## Identity and classification
 
@@ -133,6 +136,14 @@ timings, stock counts, child lifetimes or eligibility from recollection.
 | --- | --- | --- |
 | Command Girl `0306/0`; Sasuke `000A/0`; Normal Ninja `0000/0` | Command Girl has a fast travelling beam that explodes on hitting a target. Sasuke and Normal Ninja throw arcing X bombs that can explode on a target or the environment. | Travel shape and speed, direct hit, and blast trigger are independent. An explosive definition can require actor contact or also accept a qualified floor/static-stage hit. The [current stage-impact test](borg-gameplay-api.md#static-stage-impacts) does not cover live props. Don't infer the exact Command Girl button from the description alone. |
 | Cyber Girl Super `0305/0` and Cyber Girl Hyper `030A/0` | Guns start visibly mounted on the Borg's back and inactive. A deployment cycle precedes their ability to fire; deployed guns hover above and behind the Borg and fire in coordination with its main shots. Hyper's archive also describes a target-surrounding route. | Distinguish mounted/inactive, deploying, and active emitter states. Only the accepted activation boundary can subscribe to the main release; mounted and deploying guns cannot fire. The [owner-following emitter pilot](borg-gameplay-api.md#owner-following-emitters) begins at the activation marker and doesn't render or simulate the attached deployment cycle. Exact transitions and any target-seeking phase still need separate evidence. |
+| Beam Gunner `0104/0` | X replaces his normal gun with a larger cannon, then restores the gun after the beam. Player reports that aiming stops at launch commitment: a target can move off the line, but obstacles cannot block it. Destructible props in that line may still take damage. The supplied Move List confirms pass-through and reports a muzzle dead zone against some nearby Borgs. | Separate aim acquisition and aim commitment, warm-up, overlap, terrain occlusion, prop eligibility, and muzzle offset. A prop can receive damage without shortening the beam. Never substitute the tracked target for an actual contact. |
+| G-Red `0615/0`, Neo G-Red `0629/0`, G-Black `062A/0` | Player reports the same obstacle-pass-through and committed aiming for these charged beams, with shorter launch windows, and close movement similarity between Neo G-Red and G-Black. | Reuse aim, beam, and motion primitives if qualified, with per-package conditions and timing. Bounded recovery associates the type-32 beam with charged B for G-Red and Neo G-Red, but with a distinct charged-X branch for G-Black; G-Black's checked charged-B route requests type 89 instead. Preserve the naming/input discrepancy and don't copy Neo G-Red's motion table wholesale. |
+| Dragon Borgs (exact moves to verify); Ultimate Cannon `0C04/0` | Player reports a second family: fire along the initial aim, then steer the active beam slowly. Some more powerful beams have a larger diameter. Exposure is sustained: brief overlap deals less damage, and recovery invulnerability can prevent damage even inside the beam. | A sustained beam needs its own active clock, a bounded steerable heading, explicit collision width and a separate visual width. Test contact and damage eligibility anew at the authored damage cadence; leaving the beam or becoming invulnerable must not accrue damage to apply later. Verify input source, steering rates, damage interval, immunity rules and per-move overrides. Do not derive width from power or assign these rules to an entire tribe. |
+| Dragon elemental shots | Player distinguishes the regular elemental ball and its spawned bullets from the charged sustained beam. The Move List describes the B projectile and the sustained flame/ice laser listed under X; button/charge terminology needs an exact per-Borg join. | Keep the carrier's launch, impact, child emissions and stock separate from the beam. A contact child under a breath visual is not evidence of visible bullets from the elemental ball. |
+| Flying Saucer `0D03/0` (UFO); Death Head `0505/0` | Player reports a small beam sweeping quickly along a straight, target-aligned path, leaving explosions where it touches terrain. | Separate the committed sweep path, beam sample and accepted terrain contact. Explosions along a sweep are not ordinary beam clipping or DPS exposure; distinguish visual-only impact from a damaging blast and verify spacing, owner, and recipients. |
+| Roach `0F05/0` | The supplied Move List describes the primary B bomb as delayed or proximity-triggered. The [source follow-up](borg-controller-audit.md#roachs-bomb-timer-and-proximity-are-separate-exits) distinguishes timeout, contact latch, and proximity termination. | Fuse, proximity eligibility, area request, credited stock return, and physical retirement are separate. Do not add a second timed move or give all exits the same blast without evidence. |
+
+| Neo G-Red `0629/0`; G-Red `0615/0` | Player reports a back-mounted sword moves to Neo G-Red's hand for X, extending reach compared with G-Red's fist charge. In melee range the lunge homes; otherwise it follows the Borg's facing when the move was accepted. The supplied Move List confirms the sword lunge and the fist charge as distinct presentations, but does not identify the range gate or prove identical mechanics. | Render-only equipment transfer, actor-bound melee reach, and the launch direction decision must be separately declared. Snapshot facing, not camera heading or the later target. Verify the homing gate, its timing and reuse of the shared lunge before binding them; an animated weapon does not create an emitter or a hitbox. |
 | Double Ninja `0003/0` | A duplicate performs the main actor's actions, including duplicated projectile releases, **without another stock debit**. | A duplicate actor is not just an extra muzzle. Separate motion/action mirroring, collision/targetability, emitted objects, stock and credit. Share an accepted action/release, not another raw button edge that would pay again. Verify interruption and lifetime before admitting it as a live actor. |
 | Arrow Ninja `0002/0` | The supplied Move List reports a temporary tether around the struck Borg's position and possible overlapping tethers. A separate recollection describes a placed terrain anchor and a later shot. | Prioritize the guide's recipient-centred tether as the recovery lead. The [stage-contact anchor pilot](borg-gameplay-api.md#stage-contact-anchors) demonstrates an authored alternative, not a verified retail action. Exact links, eligible teams, travel and break policies remain separate. |
 | Wire Gunner `0103/0` | X stores anchors in world space, including midair, as the actor moves. A successful charged B drags its recipient along that set in **reverse deployment order**, newest to oldest. | An ordered, owner-scoped anchor sequence is not one selected floor point, a single tether, or a path sorted by distance. Record an accepted placement per anchor and seal the exact sequence used by the hit; don't replace it if the caster later places a new anchor. |
@@ -151,6 +162,79 @@ tests self placement and reverse traversal. The
 [recipient rewind pilot](borg-gameplay-api.md#hit-triggered-recipient-rewind)
 separately seals an owner set at launch and admits movement only from
 accepted contact. Recording a midair point does not yet permit travel to it.
+
+### Authored fallout and visibility effects
+
+- **Fragmentation:** An accepted blast may request bounded child
+  projectiles with independent appearance, contact and damage. A
+  child that wasn't allocated can't hit. Parent blast, child
+  allocation, stock return and credit remain separate. This is an
+  authored capability, not a retail claim.
+- **Smoke:** Treat a cloud as an owned, time-bounded world volume.
+  Rendering it, querying whether it blocks a particular viewer's
+  line of sight, and suppressing lock acquisition or breaking an
+  existing lock are separate policies. Decide explicitly whether
+  either lock rule applies; neither should make an obstruction solid
+  or erase an already committed aim line.
+- **Ink:** A confirmed recipient can receive a time-bounded,
+  view-local texture overlay. Declare coverage, opacity, fading and
+  view ownership independently of any mechanical effect. A separate
+  validated accuracy modifier may alter an eligible weapon's launch
+  aim or spread; it must not be inferred from the overlay or affect
+  another player's controls. Keep acquisition, spread, visual
+  obstruction, damage, and expiry independently testable.
+
+The authored API implements fragmentation and a smoke-volume pilot
+with optional denial of new direct aim samples, plus a recipient-only
+ink overlay. A separate blast status can deflect opted-in direct
+projectile releases; the visual overlay alone never does. Smoke does
+not break existing locks.
+
+### Projectile and movement fields are not smoke
+
+| Exact Borg | Evidence and separate bindings |
+| --- | --- |
+| Jack `080E/0`, Jelly Scope | The player describes a fixed sphere placed around the caster that slows opponents and passing weapons, including beams, and often breaks their existing lock. The supplied Move List confirms a sphere that slows entering enemies, and the original X probe requests type **58/key 1**. Traversal slowdown, guidance cancellation, team/filter policy and refresh on exit remain to be traced. Do not implement it as an opacity or line-of-sight modifier. |
+| Jet Hero `0A01/0`, Power Scope | The player reports that ammunition or beams entering the field deal double damage. The supplied Move List confirms a temporary red sphere in front that increases shot size and damage; the archived wiki specifically says double power. The original charged-B cue at cursor **19** requests type **3/key 0** without spending. The exact damage multiplier, any beam participation, size/collision relation, ownership filters, and stacking/re-entry remain unverified in original execution. |
+
+Static follow-through of Jet Hero's type-3/key-0 constructor finds
+logical **key 3** and local origin **`(0, 0, 100)`** in the table
+read by `800857D4 → 80085854`. This is an initial transformed
+placement operand, not proof that the original volume stays fixed.
+The static startup path seeds forward speed **80** and subtracts
+**4** per checked callback before the next phase. Those are source
+operands, not native tick tuning or evidence of when crossing effects
+start. Authored fields can choose fixed placement, an accepted bone
+anchor, or horizontal `field-drift`. None qualifies retail travel
+or the active contact rule.
+
+Jack's type-58/key-1 follow-up executed two constructor branches and
+the accepted branch's next anchor prefix. With supplied group
+acceptance the source requests **group 9**, initializes a **1140**
+count, and samples logical **key 12** at local offset `(0, 0, 0)`.
+With another supplied current key matrix, the active update samples
+that key again and writes the new position. Group refusal instead
+enters phase 2 without the anchor visit. This narrows the player's
+fixed-position account: at least the checked active prefix follows
+the source key, but the whole lifetime and later detach rules are
+not joined. Authored fields can now combine `field-follow` and
+`field-socket` to follow an accepted logical bone. Nothing assigns
+the observed retail key or clock to a live Jack package yet.
+
+For authored fields keep placement, lifetime, owner/team eligibility,
+actor entry and projectile crossing distinct. A crossing should be
+tested on the actual segment, not the shot's aim target. Declare how
+slowdown behaves inside and after exit, whether an existing guidance
+binding is retained, and whether a damage boost is once per field,
+repeatable, or capped. Keep visual size separate from collision size
+and the boost separate from falling smoke, view-local ink, and damage
+acceptance. The [authored power-field pilot](borg-gameplay-api.md#projectile-power-fields)
+covers ordinary projectile crossing and one non-stacking direct-damage
+boost. The [registered field API](borg-gameplay-api.md#registered-battle-fields)
+puts boost, slowdown and guidance cancellation on one placed object
+with individually scoped effects. The two-actor pilot also supports
+temporary shortened or boosted resident beam segments. Exact retail
+timings, ownership filters and live team-play remain unqualified.
 
 ### Variants and progression
 
@@ -388,7 +472,7 @@ such feature.
 
 | Slice | Established | Not established |
 | --- | --- | --- |
-| Native package plumbing | `borgs/` discovery, the [standalone installed picker and body preview](borg-packages.md#read-only-installed-borg-picker), a [read-only owned package collection](borg-packages.md#read-only-owned-collection), scoped recovery, a [read-only retail/package Force browser](borg-packages.md#browse-a-saved-force) with explicit overlaps, and [qualified normal G-Red practice](borg-packages.md#qualified-normal-g-red-practice-package) from an installed package, exact saved copy, or [one unambiguous saved Force slot](borg-packages.md#practice-one-saved-force-slot). | General package actors, level/XP storage for packaged instances, mixed inventory editing, retail recovery UI integration and battle-mode admission. |
+| Native package plumbing | `borgs/` discovery, the [installed Collection and body preview](borg-packages.md#read-only-installed-borg-collection), a [read-only owned package collection](borg-packages.md#read-only-owned-collection), scoped recovery, a [read-only retail/package Force browser](borg-packages.md#browse-a-saved-force) with explicit overlaps, and [qualified normal G-Red practice](borg-packages.md#qualified-normal-g-red-practice-package) from an installed package, exact saved copy, or [one unambiguous saved Force slot](borg-packages.md#practice-one-saved-force-slot). | General package actors, level/XP storage for packaged instances, mixed inventory editing, retail recovery UI integration and battle-mode admission. |
 | Executable package test | [Borg API Battle Test](borg-gameplay-api.md) admits a bounded two-actor encounter with exact package visuals, an executable action/stock/projectile subset, and an authored hit modifier. Normal G-Red keeps his qualified movement subset; projectile delivery is test-authored. | Full retail controllers, other variants/forms, generalized actions and contact, save-backed selection and Story/Challenge admission. |
 | Original normal G-Red | Model/rig and motion data, classified pose references, recovered ordered walk/dash/jump/relaunch/fall/landing subset with measured meter and selected contacts. Opt-in inclined dash departure and scoped continued walking ledge-fall pushes. Existing normal-pair render, spec and native duel paths. | Full animation-controller map, original combat/weapon/auxiliary/effect dispatch, other variants, and broader ledge and steep-contact routes. |
 | Original normal Sasuke | Renderable in the duel with the existing fallback prototype selection, and separate per-Borg raw previews. | Verified Sasuke behavior/program mapping from the displayed jump gauge or G-Red's labels. Three air-jump points and dash-height behavior remain observations to verify. |

@@ -73,12 +73,15 @@ public:
            (profile.static_body?motions.size!=0:!motions.data||!motions.size))
             return fail("package preview: invalid identity, clip table or rig assets");
         auto& source=sources_[0];source.name=preview_label(identity.name);
+        source.mounts=profile.mounts;
+        source.origins=profile.origins;
         if(source.name.empty())source.name=preview_label(identity.id);
         package_variant_=preview_label(profile.variant);
         source.prefix.assign(prefix.data,prefix.data+prefix.size);
-        if(!source.bank.load(model,error,true))return fail(nullptr);
+        // No material animation or authored stage light bindings in this view.
+        if(!source.bank.load(model,error,true,HsdStaticMaterialPolicy::BodyInspection))return fail(nullptr);
         if(profile.whole_body){
-            if(!whole_body_profile(model,prefix,&source.pose,error))return fail(nullptr);
+            if(!character_pose_whole_body_profile(model,prefix,&source.pose,error))return fail(nullptr);
         }else source.pose.assign(pose.data,pose.data+pose.size);
         if(!profile.static_body&&!character_motion_bank_load(motions,&source.motions,error))return fail(nullptr);
         auto add=[&](const BorgPreviewClip& clip){
@@ -89,6 +92,7 @@ public:
             }
             source.entries.push_back({unsigned(source.entries.size()),selected.index,clip.group,clip.choice,false,{}});
             package_clip_labels_.push_back(clip.id);
+            package_clip_candidates_.push_back(clip.candidate);
             return true;
         };
         if(profile.static_body){
@@ -107,7 +111,9 @@ public:
         for(unsigned i=0;i<package_texture_count_;++i)
             if(!render.release_texture(package_texture_base_+i))return false;
         package_texture_count_=0;package_texture_owner_=nullptr;
-        cells_.clear();sources_={};package_clips_.clear();package_clip_labels_.clear();package_preview_=package_static_=package_returnable_=false;
+        cells_.clear();sources_={};package_clips_.clear();package_clip_labels_.clear();package_clip_candidates_.clear();
+        origin_selection_.reset();origin_submitted_=false;
+        package_preview_notice_=false;package_preview_=package_static_=package_returnable_=false;
         return true;
     }
     //Explicit source-timeline inspection only. No input admission, root-motion
@@ -156,6 +162,7 @@ public:
     void sync_input(const GamePadState& pad){previous_=pad;}
     bool step(const GamePadState& pad,f32 seconds,RenderEngine& render,std::string* error){
         if(!ready_||!std::isfinite(seconds)||seconds<0)return false;
+        origin_submitted_=false;
         bool changed=false;
         unsigned borg=selected_,page=page_;
         if(!package_preview_&&!source_programs_&&((pad.dpad_up&&!previous_.dpad_up)||(pad.dpad_down&&!previous_.dpad_down))){
@@ -169,14 +176,21 @@ public:
         if(pad.y&&!previous_.y)speed_=std::max(.125f,speed_*.5f);
         if(pad.z&&!previous_.z)yaw_=std::fmod(yaw_+1.57079632679f,6.28318530718f);
         previous_=pad;
-        if(changed&&!select(borg,page,render,error))return false;
+        if(changed&&!select(borg,page,render,error)){
+            if(!package_preview_||!ready_||page>=package_clip_candidates_.size()||!package_clip_candidates_[page])return false;
+            package_preview_notice_=true;
+            if(error)error->clear();
+        }
         if(!paused_)clock_+=std::min(seconds,.25f)*60*speed_;
         for(auto& cell:cells_)if(cell->valid&&!evaluate(*cell,clock_,&cell->error)){
             cell->valid=false;if(source_programs_||package_preview_){if(error)*error=(package_preview_?"package preview: ":"source program mosaic: ")+cell->error;ready_=false;return false;}
         }
         return true;
     }
-    unsigned draw(RenderEngine& render,s32 width,s32 height){
+    unsigned draw(RenderEngine& render,s32 width,s32 height,unsigned* body_submissions=nullptr){
+        if(body_submissions)*body_submissions=0;
+        package_frame_error_.clear();
+        origin_submitted_=false;
         if(!ready_||width<200||height<200)return 0;
         const auto saved=render.state();const auto* old=render.scene_lighting();const bool had=old!=nullptr;const auto old_light=had?*old:SceneLighting{};
         SceneLighting light;light.declared=true;SceneLight ambient;ambient.colour[0]=ambient.colour[1]=ambient.colour[2]=210;ambient.colour[3]=255;light.lights.push_back(ambient);
@@ -187,19 +201,47 @@ public:
         render.state()={};render.state().depth_test=render.state().depth_write=false;render.state().cull_backface=false;render.state().blend_src=5;render.state().blend_dst=6;Mat4 identity;render.upload_matrix(0,identity.m);panels_.clear();
         for(unsigned i=0;i<cells_.size();++i){const f32 x=f32((i%columns_)*tile_width),y=f32(top+(i/columns_)*tile_height);ScreenDraw::textured_quad(panels_,x+3,y+3,x+tile_width-3,y+tile_height-3,0,0,0,1,1,{33,40,51,255});}
         unsigned draws=0;if(!panels_.empty()){const auto start=render.append_vertices(panels_.data(),panels_.size());draws+=render.draw(Primitive::Triangles,start,u32(panels_.size()))?1:0;}
+        std::optional<Camera> package_camera;
+        const auto origin=package_origin_world();
+        if(package_preview_&&cells_.size()==1&&cells_.front()->valid){
+            const auto tile=preview_bounds(width,height,0);
+            Camera camera;camera.viewport_x=tile[0];camera.viewport_y=tile[1];camera.viewport_width=tile[2];camera.viewport_height=tile[3];
+            camera.target[2]=0;camera.eye[0]=1.3f;camera.eye[1]=.7f;camera.eye[2]=3;
+            camera.fov_y_degrees=42;camera.near_plane=1;camera.far_plane=65536;
+            std::array<f32,3> low,high;
+            if(cells_.front()->model.bounds(&low,&high)){
+                // Include the selected point, not all candidates, in the fit.
+                if(origin)for(unsigned k=0;k<3;++k){
+                    low[k]=std::min(low[k],(*origin)[k]);high[k]=std::max(high[k],(*origin)[k]);
+                }
+                if(camera_fit_bounds(camera,low,high,8,45000))package_camera=camera;
+            }
+            if(!package_camera)package_frame_error_="body or selected point outside inspection framing budget";
+        }
+        unsigned body=0;
         for(u8 pass:{u8(1),u8(4),u8(2)}){
             if(!render.begin_model_pass(pass))return 0;
             for(unsigned i=0;i<cells_.size();++i)if(cells_[i]->valid){
+                if(package_preview_){
+                    if(package_camera)body+=cells_[i]->model.draw(render,*package_camera);
+                    continue;
+                }
                 const auto& cell=*cells_[i];const auto bounds=preview_bounds(width,height,i);Camera camera;camera.viewport_x=bounds[0];camera.viewport_y=bounds[1];camera.viewport_width=bounds[2];camera.viewport_height=bounds[3];
                 camera.target[0]=cell.centre[0];camera.target[1]=cell.centre[1];camera.target[2]=cell.centre[2];
                 camera.eye[0]=cell.centre[0]+cell.radius*1.3f;camera.eye[1]=cell.centre[1]+cell.radius*.7f;camera.eye[2]=cell.centre[2]+cell.radius*3;
                 camera.fov_y_degrees=42;camera.near_plane=1;camera.far_plane=5000;
-                draws+=cells_[i]->model.draw(render,camera);
+                body+=cells_[i]->model.draw(render,camera);
             }
             if(!render.end_model_pass())return 0;
         }
+        if(body_submissions)*body_submissions=body;
+        draws+=body;
         if(had)render.set_scene_lighting(old_light);else render.clear_scene_lighting();
         render.state()={};render.state().depth_test=render.state().depth_write=false;render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;render.state().cull_backface=false;
+        if(body&&package_camera&&origin){
+            origin_submitted_=draw_origin_marker(render,*package_camera,*origin);
+            draws+=unsigned(origin_submitted_);
+        }
         TextRenderer::Style title;title.scale=2;char heading[192];
         if(package_preview_)std::snprintf(heading,sizeof heading,"PACKAGE BODY PREVIEW - %s",sources_[0].name.c_str());
         else std::snprintf(heading,sizeof heading,"%s - %s - PAGE %u/%u - %u %s",source_handlers_?"VM + DASH HANDLER REPLAY":source_programs_?"SOURCE PROGRAM REPLAY":"ANIMATION MOSAIC",sources_[selected_].name.c_str(),page_+1,page_count(),unsigned(sources_[selected_].entries.size()),source_programs_?"PROGRAMS":"CLIPS");
@@ -216,6 +258,10 @@ public:
             source_handlers_?"HELD-INPUT DASH HOLDS/TIMERS - 96-TICK WINDOW - FINISH POSE HELD":
             source_programs_?"VM WAITS/CONTROLS IN PLACE - 96-TICK REPLAY WINDOW":"BODY CLIPS IN PLACE - 10000+ IDS ARE SHARED CLIPS",
             double(speed_),paused_?"PAUSED":"LOOPING");draws+=text_.draw(render,mode,12,50,small);
+        if(origin_selection_){
+            const auto& marker=sources_[0].origins[*origin_selection_];
+            draws+=text_.draw(render,"ORIGIN "+preview_label(marker.id)+"   JOINT "+std::to_string(marker.joint)+"   POINT ONLY",12,62,small);
+        }
         for(unsigned i=0;i<cells_.size();++i){
             const auto& cell=*cells_[i];const s32 x=s32((i%columns_)*tile_width)+10,y=top+s32((i/columns_)*tile_height)+tile_height-34;char label[128];
             if(source_handlers_&&cell.entry.choice>=27&&cell.entry.choice<=30)
@@ -227,10 +273,46 @@ public:
             draws+=text_.draw(render,label,x,y,title);
             if(!cell.valid)draws+=text_.draw(render,source_programs_?"UNSUPPORTED PROGRAM - NOT IDLE FALLBACK":"UNSUPPORTED CLIP - NOT IDLE FALLBACK",x,y-14,small);
         }
-        draws+=text_.draw(render,package_preview_?"PACKAGE BODY ONLY - NO ACTOR, GAMEPLAY RULES OR EFFECTS.":source_programs_?"SOURCE PROGRAM TIMELINES ONLY - NO GAMEPLAY INPUT, PHYSICS, ROOT INTEGRATION OR ATTACK EFFECTS.":"CLASSIFY BY BORG + NUMBER. IDS KEEP RAW GROUP/CLIP METADATA; NO UNIVERSAL LOCOMOTION MAP ASSUMED.",12,height-24,small);
+        draws+=text_.draw(render,package_preview_?
+            (!body?"BODY DRAW REFUSED - NO SUBSTITUTE MODEL.":package_preview_notice_?
+                "CANDIDATE UNSUPPORTED - CURRENT CLIP UNCHANGED.":!sources_[0].mounts.empty()?
+                "FIXED PART MOUNTS - NO ACTOR OR PART STATE.":"PACKAGE BODY ONLY - NO ACTOR, GAMEPLAY RULES OR EFFECTS."):
+            source_programs_?"SOURCE PROGRAM TIMELINES ONLY - NO GAMEPLAY INPUT, PHYSICS, ROOT INTEGRATION OR ATTACK EFFECTS.":"CLASSIFY BY BORG + NUMBER. IDS KEEP RAW GROUP/CLIP METADATA; NO UNIVERSAL LOCOMOTION MAP ASSUMED.",12,height-24,small);
         render.state()=saved;return draws;
     }
     unsigned page()const{return page_;}unsigned borg()const{return selected_;}
+    bool select_package_origin(std::string_view id,RenderEngine& render,std::string* error){
+        if(!ready_||!package_preview_||render.frame_in_progress()||
+           (package_texture_owner_&&package_texture_owner_!=&render)){
+            if(error)*error="package preview: current body and renderer between frames required";
+            return false;
+        }
+        const auto& origins=sources_[0].origins;
+        const auto found=std::find_if(origins.begin(),origins.end(),[&](const auto& o){return o.id==id;});
+        if(found==origins.end()){
+            if(error)*error="package preview: origin is not declared for this exact look";
+            return false;
+        }
+        origin_selection_=std::size_t(found-origins.begin());origin_submitted_=false;
+        if(error)error->clear();
+        return true;
+    }
+    std::optional<std::array<f32,3>> package_origin_world()const{
+        if(!ready_||!package_preview_||!origin_selection_||cells_.size()!=1||!cells_.front()->valid||
+           !cells_.front()->model.ready())return std::nullopt;
+        const auto& src=sources_[0].origins[*origin_selection_];
+        const auto& world=cells_.front()->preview_world;
+        if(src.joint>=world.size())return std::nullopt;
+        std::array<f32,3> point;
+        mat4_transform_point(world[src.joint],src.point.data(),point.data());
+        for(auto v:point)if(!std::isfinite(v)||std::abs(v)>1e7f)return std::nullopt;
+        return point;
+    }
+    bool package_origin_submitted()const{return origin_submitted_;}
+    std::string package_draw_error()const{
+        if(!package_frame_error_.empty())return package_frame_error_;
+        return package_preview_&&cells_.size()==1?cells_.front()->model.error():std::string{};
+    }
     bool select(unsigned borg,unsigned page,RenderEngine& render,std::string* error){
         if(!ready_||borg>=sources_.size()||(source_programs_&&borg)||page>=(sources_[borg].entries.size()+columns_*rows_-1)/(columns_*rows_)){if(error)*error="animation mosaic: Borg/page out of range";return false;}
         if(package_preview_){
@@ -241,9 +323,20 @@ public:
             }
             if(page==page_)return true;
             auto& cell=*cells_.front();
-            // Clip bindings were all verified at load. Keep textures and rig.
+            if(!package_static_&&!package_clips_[page].loaded){
+                const auto& archive=sources_[0].motions.archives[sources_[0].entries[page].archive];
+                if(!package_clip_candidates_[page]||
+                   !hsd_bone_motion_load(view(archive),cell.model.rig().binding,&package_clips_[page],
+                                         error,HsdBoneMotionLoadMode::InspectAuthoredLoop)){
+                    if(error)*error="package preview: unsupported candidate "+package_clip_labels_[page]+": "+*error;
+                    return false;
+                }
+            }
+            // A candidate binds only after successful validation. Keep the same textures and rig.
             page_=page;clock_=0;cell.entry=sources_[0].entries[page];
+            origin_submitted_=false;
             if(!evaluate(cell,0,error)){ready_=cell.valid=false;return false;}
+            package_preview_notice_=false;
             return true;
         }
         selected_=borg;page_=page;return prepare_page(render,error);
@@ -258,28 +351,37 @@ public:
         std::vector<NativeAnimationPreview> result;for(const auto& cell:cells_)result.push_back({cell->entry,source_programs_?95.f:package_static_?0.f:raw_clip(*cell).end_frame,cell->valid,cell->error,source_programs_});return result;
     }
     void sample_phase(f32 phase){
+        origin_submitted_=false;
         for(auto& cell:cells_)if(cell->valid&&!evaluate(*cell,std::clamp(phase,0.f,.999999f)*(source_programs_?96.f:package_static_?1.f:std::max(1.f,std::floor(raw_clip(*cell).end_frame)+1)),&cell->error))cell->valid=false;
     }
 private:
-    struct Source {std::string name;std::vector<u8> prefix,pose,model_bytes;HsdRecordAnimationBank bank;CharacterMotionBank motions,common;std::vector<NativeAnimationEntry> entries;};
-    struct Cell {NativeAnimationEntry entry;CharacterModelScene model;HsdBoneMotionClip clip;CharacterProgramVm vm;CharacterProgramHeightControl height;GRedGroundDashState dash;f32 speed=0,change=0;unsigned program_tick=0;std::string error;bool valid=false,program_started=false;std::array<f32,3> centre{0,90,0};f32 radius=120;};
-    const HsdBoneMotionClip& raw_clip(const Cell& cell)const{return package_preview_?package_clips_[page_]:cell.clip;}
-    static ByteView view(const std::vector<u8>& bytes){return {bytes.data(),bytes.size()};}
-    static bool whole_body_profile(ByteView model,ByteView prefix,std::vector<u8>* out,std::string* error){
-        HsdModelBones bones;
-        if(!hsd_bones_load(prefix,model,&bones,error))return false;
-        // Presentation-only: one lane animates the complete exact logical rig
-        // without mirroring. This is NOT an inferred gameplay lane layout.
-        const unsigned n=unsigned(bones.bones.size()),order=32,mirror=order+n,identities=(mirror+n+3)&~3u;
-        if(n<2||n>kHsdMaxCharacterBones){if(error)*error="whole-body preview: rig size unsupported";return false;}
-        out->assign(identities+n*4,0);auto* p=out->data();
-        store_be32(p,0x47464350);store_be16(p+4,1);store_be16(p+6,u16(n));
-        p[8]=1;p[9]=p[10]=p[11]=u8(n);
-        store_be32(p+12,order);store_be32(p+16,mirror);store_be32(p+20,identities);
-        store_be32(p+24,u32(out->size()));store_be32(p+28,bones.root_offset);
-        for(unsigned i=0;i<n;++i){p[order+i]=p[mirror+i]=u8(i);store_be32(p+identities+i*4,bones.bones[i].joint_offset);}
+    struct Source {std::string name;std::vector<u8> prefix,pose,model_bytes;HsdRecordAnimationBank bank;CharacterMotionBank motions,common;std::vector<NativeAnimationEntry> entries;std::vector<CharacterPreviewMount> mounts;std::vector<BorgPreviewOrigin> origins;};
+    struct Cell {NativeAnimationEntry entry;CharacterModelScene model;HsdBoneMotionClip clip;CharacterProgramVm vm;CharacterProgramHeightControl height;GRedGroundDashState dash;f32 speed=0,change=0;unsigned program_tick=0;std::string error;bool valid=false,program_started=false;std::array<f32,3> centre{0,90,0};f32 radius=120;std::vector<Mat4> preview_world;};
+    static bool draw_origin_marker(RenderEngine& render,const Camera& camera,const std::array<f32,3>& point){
+        f32 x,y;
+        if(!camera.project(point.data(),&x,&y,nullptr)||!std::isfinite(x)||!std::isfinite(y))return false;
+        const auto radius=std::clamp(std::min(camera.viewport_width,camera.viewport_height)*.025f,4.f,12.f);
+        if(x-radius<camera.viewport_x||y-radius<camera.viewport_y||
+           x+radius>camera.viewport_x+camera.viewport_width||y+radius>camera.viewport_y+camera.viewport_height)return false;
+        std::vector<Vertex> marker;marker.reserve(30);
+        auto rect=[&](f32 x0,f32 y0,f32 x1,f32 y1,Tint tint){
+            ScreenDraw::textured_quad(marker,x+x0,y+y0,x+x1,y+y1,0,0,0,1,1,tint);
+        };
+        const Tint outline{35,24,8,255},ink{255,222,96,255};
+        rect(-radius,-2,radius,2,outline);rect(-2,-radius,2,radius,outline);
+        rect(-radius,-1,radius,1,ink);rect(-1,-radius,1,radius,ink);
+        rect(-2,-2,2,2,{255,255,255,255});
+        Mat4 identity;if(!render.upload_matrix(0,identity.m))return false;
+        const auto first=render.append_vertices(marker.data(),marker.size());
+        return render.draw(Primitive::Triangles,first,u32(marker.size()));
+    }
+    bool publish_pose(Cell& cell,CharacterWorldPose&& world,std::string* error){
+        if(!cell.model.set_world_pose(world,{},error))return false;
+        if(package_preview_&&!sources_[0].origins.empty())cell.preview_world=std::move(world.matrices);
         return true;
     }
+    const HsdBoneMotionClip& raw_clip(const Cell& cell)const{return package_preview_?package_clips_[page_]:cell.clip;}
+    static ByteView view(const std::vector<u8>& bytes){return {bytes.data(),bytes.size()};}
     // The small diagnostic font is ASCII/uppercase only. This changes the
     // drawn label, not the catalog name or the variant/identity key.
     static std::string preview_label(std::string_view text){
@@ -331,14 +433,14 @@ private:
             CharacterLocalPose local;CharacterPoseFrame pose;CharacterWorldPose world;
             return program_driver_.compose_local_pose(motions,&local,error)&&
                 character_pose_initial_frame(cell.model.rig(),mat4_rotation_y(yaw_),&pose,error)&&
-                character_pose_direct_world(cell.model.rig(),local,pose,&world,error)&&cell.model.set_world_pose(world,{},error);
+                character_pose_direct_world(cell.model.rig(),local,pose,&world,error)&&publish_pose(cell,std::move(world),error);
         }
         if(package_static_){
             CharacterLocalPose local;CharacterPoseFrame pose;CharacterWorldPose world;
             const auto& rig=cell.model.rig();
             return character_pose_initial_local(rig,&local,error)&&
                 character_pose_initial_frame(rig,mat4_rotation_y(yaw_),&pose,error)&&
-                character_pose_direct_world(rig,local,pose,&world,error)&&cell.model.set_world_pose(world,{},error);
+                character_pose_direct_world(rig,local,pose,&world,error)&&publish_pose(cell,std::move(world),error);
         }
         const auto& clip=raw_clip(cell);
         const u32 length=std::max(1u,u32(clip.end_frame)+1);const f64 frame=std::fmod(clock,length);const u32 time=u32(frame);const f32 fraction=f32(frame-time);
@@ -346,17 +448,26 @@ private:
         if(fraction>0&&!hsd_bone_motion_sample(clip,(time+1)%length,&b,error))return false;
         std::array<CharacterPoseLane,4> lanes;for(auto& lane:lanes){lane.current=fraction>0?&b:&a;if(fraction>0){lane.previous=&a;lane.previous_weight=1-fraction;}}
         CharacterLocalPose local;CharacterPoseFrame pose;CharacterWorldPose world;
-        return character_pose_sample(cell.model.rig(),lanes,&local,error)&&character_pose_initial_frame(cell.model.rig(),mat4_rotation_y(yaw_),&pose,error)&&character_pose_direct_world(cell.model.rig(),local,pose,&world,error)&&cell.model.set_world_pose(world,{},error);
+        return character_pose_sample(cell.model.rig(),lanes,&local,error)&&character_pose_initial_frame(cell.model.rig(),mat4_rotation_y(yaw_),&pose,error)&&character_pose_direct_world(cell.model.rig(),local,pose,&world,error)&&publish_pose(cell,std::move(world),error);
     }
     bool prepare_page(RenderEngine& render,std::string* error){
         cells_.clear();clock_=0;const auto& source=sources_[selected_];const unsigned first=page_*columns_*rows_,last=std::min(unsigned(source.entries.size()),first+columns_*rows_);
         for(unsigned i=first;i<last;++i){
             auto cell=std::make_unique<Cell>();cell->entry=source.entries[i];const auto& bank=cell->entry.common?source.common:source.motions;
-            cell->valid=cell->model.load_with_record_bank(source.bank,view(source.prefix),view(source.pose),&cell->error);
+            cell->valid=package_preview_?
+                cell->model.load_preview_with_record_bank(source.bank,view(source.prefix),view(source.pose),&cell->error,
+                                                           CharacterModelScene::Inspection::Strict,source.mounts):
+                cell->model.load_with_record_bank(source.bank,view(source.prefix),view(source.pose),&cell->error);
+            if(cell->valid&&package_preview_&&std::any_of(source.origins.begin(),source.origins.end(),
+                    [&](const auto& o){return o.joint>=cell->model.rig().binding.bones.size();})){
+                cell->error="origin joint missing from exact rig";cell->valid=false;
+            }
             if(cell->valid&&package_preview_&&!package_static_){
                 for(const auto& entry:source.entries){
                     HsdBoneMotionClip clip;
-                    if(!hsd_bone_motion_load(view(bank.archives[entry.archive]),cell->model.rig().binding,&clip,&cell->error)){
+                    if(!package_clip_candidates_[entry.id]&&
+                       !hsd_bone_motion_load(view(bank.archives[entry.archive]),cell->model.rig().binding,&clip,&cell->error,
+                                              HsdBoneMotionLoadMode::InspectAuthoredLoop)){
                         cell->error="invalid "+package_clip_labels_[entry.id]+" clip: "+cell->error;
                         cell->valid=false;break;
                     }
@@ -398,9 +509,13 @@ private:
     std::array<Source,2> sources_;std::vector<std::unique_ptr<Cell>> cells_;TextRenderer text_;std::vector<Vertex> panels_;
     CharacterProgramAsset program_asset_;CharacterPoseHeightProfile program_height_;CharacterMotionDriver program_driver_;bool source_programs_=false;
     CharacterMovementProfile program_motion_;bool source_handlers_=false,package_preview_=false,package_static_=false;
-    std::string package_variant_;
+    std::string package_variant_,package_frame_error_;
+    std::optional<std::size_t> origin_selection_;
+    bool origin_submitted_=false;
     std::vector<HsdBoneMotionClip> package_clips_;
     std::vector<std::string> package_clip_labels_;
+    std::vector<bool> package_clip_candidates_;
+    bool package_preview_notice_=false;
     static constexpr u32 package_texture_base_=65000;
     unsigned package_texture_count_=0;
     RenderEngine* package_texture_owner_=nullptr;

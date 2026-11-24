@@ -32,7 +32,7 @@ int main(){
     PackageBorgSaveStore seed(*backend);PackageBorgRoster ignored;
     check(seed.load(&ignored)==PackageBorgLoad::Missing&&seed.write(original),"owned fixture instances");
     BorgPackageCatalog catalog;catalog.status=BorgPackageScanStatus::Complete;
-    catalog.discovered.push_back({"ant",{{"lab:ant","Clockwork Ant"},{},{},{},{}}});
+    catalog.discovered.push_back({"ant",{{"lab:ant","Clockwork Ant"},{},{},{},{},"catalog.txt"}});
     BorgCatalogSnapshot ant;ant.package=catalog.discovered[0];
     const std::string prefix="GFBORG-CATALOG 1\ndescription=Test.\ntribe=none\ndefault-variant=normal\n"
         "variant=normal|Normal|100|unresolved\n";
@@ -65,7 +65,7 @@ int main(){
     headless::Render renderer;RenderEngine render(renderer);
     check(render.initialize({640,480,false,true,"Package Placement"},nullptr,nullptr),"shared renderer");
     BorgInstalledBrowser browser;BorgInstalledBrowserView view;
-    check(browser.open_owned(catalog,original),"owned fixture for placement presentation");
+    check(browser.open_collection(catalog,{ant},{},&original),"shared owned Collection for placement presentation");
     BorgPlacementPanel panel{0,1,{},&placement.offer()->owned,placement.offer()->declared_cost,false,false,false};
     render.begin_frame({0,.05f,.07f,.09f});render.reset_arena();
     const auto draws=view.draw(render,640,480,browser,{},false,false,"Selected Save",&panel);render.end_frame();

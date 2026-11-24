@@ -7,7 +7,7 @@ namespace gf {
 inline bool editor_pointer_plane(const Camera& camera,f32 x,f32 y,std::array<f32,3>* out){
     if(out)*out={};
     Camera::Basis b;if(!out||!camera.basis(&b)||!std::isfinite(x)||!std::isfinite(y))return false;
-    const auto nx=(x/camera.viewport_width*2-1)*b.aspect*b.tan_half_fov,ny=(1-y/camera.viewport_height*2)*b.tan_half_fov;
+    const auto nx=((x-camera.viewport_x)/camera.viewport_width*2-1)*b.aspect*b.tan_half_fov,ny=(1-(y-camera.viewport_y)/camera.viewport_height*2)*b.tan_half_fov;
     f32 direction[3];for(unsigned i=0;i<3;++i)direction[i]=b.forward[i]+nx*b.right[i]+ny*b.up[i];
     if(std::abs(direction[1])<1e-6)return false;
     const auto distance=-camera.eye[1]/direction[1];if(distance<=0||distance>camera.far_plane)return false;

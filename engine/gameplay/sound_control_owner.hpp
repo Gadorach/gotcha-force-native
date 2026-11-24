@@ -5,6 +5,8 @@
 // proof. An unimplemented effect request invalidates output instead of dry sum.
 #include <limits>
 #include <memory>
+#include <optional>
+#include <algorithm>
 #include <span>
 #include <vector>
 #include "engine/gameplay/option_settings.hpp"
@@ -12,10 +14,12 @@
 #include "engine/gameplay/sound_voice_parameters.hpp"
 namespace gf {
 namespace sound_control_owner_detail {
-struct Scope {};
+struct Scope {mutable bool music_claimed=false;};
+struct BattleFlags {u8 field3b36=0,field3b37=0,field3e3c=0;bool operator==(const BattleFlags&)const=default;};
 struct Data {
     OptionSettings settings;u64 revision=1;bool disabled=false,muted=false;
     std::vector<u8> banks;
+    std::optional<BattleFlags> battle_flags;
 };
 }
 struct SoundControlFrameInput {
@@ -31,6 +35,8 @@ public:
     bool same_owner(const SoundControlSnapshot& other)const{
         const auto scope=scope_.lock();return scope&&scope==other.scope_.lock();
     }
+    const sound_control_owner_detail::BattleFlags* battle_flags()const{return live()&&data_->battle_flags?&*data_->battle_flags:nullptr;}
+    std::optional<u8> bgm_index()const{return live()?std::optional<u8>{data_->settings.volume[0]}:std::nullopt;}
     bool commands(StartupSoundCommandObservation* out,std::string* error)const{
         if(out)*out={};
         if(!out||!live())return fail(error,"live control owner/output required");
@@ -56,6 +62,7 @@ public:
     }
 private:
     friend class SoundControlOwner;
+    friend class MusicRequestOwner;
     static bool fail(std::string* error,const char* why){if(error)*error=std::string("sound control snapshot: ")+why;return false;}
     std::weak_ptr<const sound_control_owner_detail::Scope> scope_;
     std::shared_ptr<const sound_control_owner_detail::Data> data_;
@@ -88,6 +95,19 @@ public:
         if(!ready())return fail(error,"ready owner required");
         if(data_->muted==value){if(error)error->clear();return true;}
         auto next=*data_;next.muted=value;return publish(std::move(next),error);
+    }
+    std::optional<u8> initial_program_gain(u8 bank,u8 program)const{
+        if(!ready()||program>=128||std::find(data_->banks.begin(),data_->banks.end(),bank)==data_->banks.end())return std::nullopt;
+        return u8(127);
+    }
+    //52990→F0920→F0F64→ED5E0(0,1,127), thenF0A34/F0A60.
+    //This owner initializes all program gains to127 and exposes no mutation of
+    //them; ED5E0's equal-value branch performs no dirty-word store. Do not use
+    //this narrow operation to acknowledge an arbitrary gain/effect backend.
+    bool initialize_battle_controls(std::string* error){
+        if(initial_program_gain(0,1)!=127)return fail(error,"current bank0 initial program gains required");
+        auto next=*data_;next.battle_flags=sound_control_owner_detail::BattleFlags{};
+        return publish(std::move(next),error);
     }
     // This is an output-effect slot0/1, NOT graphics auxiliary IDs40/41. No new
     // unsupported effect is silently accepted with a fabricated empty getter.

@@ -125,9 +125,9 @@ public:
     }
 private:
     bool load_impl(ByteView model,const CharacterPoseRig& rig,const CharacterProgramAsset& profile,
-                    std::span<const CharacterMotionClipBinding> clips,const CharacterLocalPose* initial_pose,std::string* error,bool frozen_target=false,const std::array<s8,2>* model_bones=nullptr,bool directional_transitions=false){
+                    std::span<const CharacterMotionClipBinding> clips,const CharacterLocalPose* initial_pose,std::string* error,bool frozen_target=false,const std::array<s8,2>* model_bones=nullptr,bool directional_transitions=false,bool request_prefix=false){
         library_.reset();auto fail=[&](const char* why){if(error)*error=std::string("character motion driver: ")+why;return false;};
-        if(!model.data||model.size>(4u<<20)||!character_pose_detail::rig(rig)||!character_program_detail::valid_impl(profile,initial_pose!=nullptr,frozen_target&&profile.control_flow)||
+        if(!model.data||model.size>(4u<<20)||!character_pose_detail::rig(rig)||!character_program_detail::valid_impl(profile,initial_pose!=nullptr,frozen_target&&profile.control_flow,request_prefix)||
            profile.lane_mask!=rig.lane_mask||character_program_model_hash(model)!=profile.model_hash||clips.empty()||clips.size()>64)return fail("model/rig/profile/clip binding");
         if(initial_pose&&!character_pose_detail::local(rig,*initial_pose))return fail("explicit initial local pose required");
         if(model_bones)for(auto bone:*model_bones)if(bone< -1||(bone>=0&&unsigned(bone)>=rig.binding.bones.size()))return fail("directional model-selection bone");
@@ -155,6 +155,9 @@ private:
         auto next=std::make_shared<character_motion_driver_detail::Library>();next->rig=rig;next->profile=profile;next->clips.assign(clips.begin(),clips.end());next->transitions=initial_pose!=nullptr;next->frozen_target=frozen_target;if(model_bones){next->directional=true;next->model_bones=*model_bones;next->directional_transitions=directional_transitions;}if(initial_pose)next->initial_pose=*initial_pose;library_=std::move(next);return true;
     }
 public:
+    bool load_request_prefix(ByteView model,const CharacterPoseRig& rig,const CharacterProgramAsset& profile,std::span<const CharacterMotionClipBinding> clips,const CharacterLocalPose& initial,const std::array<s8,2>& model_bones,std::string* error){
+        return load_impl(model,rig,profile,clips,&initial,error,true,&model_bones,true,true);
+    }
     const CharacterMotionSnapshot* snapshot(const CharacterProgramMotion& motion)const{
         const auto* s=dynamic_cast<const CharacterMotionSnapshot*>(motion.context.get());
         return library_&&s&&s->library_==library_&&character_motion_driver_detail::same(motion,s->observed_)?s:nullptr;
@@ -187,7 +190,7 @@ public:
     bool matches_program(const CharacterProgramAsset& p)const{
         if(!library_)return false;
         const auto& a=library_->profile;
-        if(a.model_hash!=p.model_hash||a.lane_mask!=p.lane_mask||a.default_models!=p.default_models||a.control_flow!=p.control_flow||a.programs.size()!=p.programs.size()||a.descriptors.size()!=p.descriptors.size())return false;
+        if(a.model_hash!=p.model_hash||a.lane_mask!=p.lane_mask||a.default_models!=p.default_models||a.control_flow!=p.control_flow||a.request_prefix_only!=p.request_prefix_only||a.programs.size()!=p.programs.size()||a.descriptors.size()!=p.descriptors.size())return false;
         for(unsigned i=0;i<a.programs.size();++i)if(a.programs[i].group!=p.programs[i].group||a.programs[i].choice!=p.programs[i].choice||a.programs[i].bytes!=p.programs[i].bytes)return false;
         for(unsigned i=0;i<a.descriptors.size();++i)if(a.descriptors[i].group!=p.descriptors[i].group||a.descriptors[i].choice!=p.descriptors[i].choice||a.descriptors[i].bytes!=p.descriptors[i].bytes)return false;
         return true;

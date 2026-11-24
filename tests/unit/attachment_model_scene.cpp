@@ -25,6 +25,12 @@ int main(){
     check(scene.load({data.data(),data.size()},0,&error)&&scene.asset().meshes.size()==1&&!scene.ready(),"published single-joint rigid record loads without body wrapper and does not publish constructor pose");
     check(scene.asset().scene.joints[0].flags==0x10050180&&(scene.asset().scene.joints[0].flags&0xe00)==0,"TEXGEN100 is not billboard200; immutable original flags kept");
     check(scene.draw(render,camera)==0,"no draw before supplied transform");
+    HsdRecordAnimationBank prepared;check(prepared.load({data.data(),data.size()},&error,true),"owned decoded source bank");
+    AttachmentModelBank shared;check(shared.load_prepared(prepared,&error)&&shared.same_source(prepared),"prepared bank retains exact source identity");
+    HsdJointInstanceBank roots;const std::array<u16,1> record{0};check(roots.construct_normal_records(prepared,record,&error),"owned prepared root metadata");
+    HsdJointInstanceOwner root;check(roots.take_instance(0,&root,&error)&&!root.world_current()&&!root.world_receipt().live(),"prepared roots cannot mint a published-world lifetime receipt");
+    AttachmentModelScene scoped;check(!scoped.load_published_static(shared,prepared,root,&error)&&!scoped.ready(),"published hierarchy entry refuses constructor-only metadata");
+    HsdRecordAnimationBank equal;check(equal.load({data.data(),data.size()},&error,true)&&!shared.same_source(equal),"equal bank bytes do not substitute an independent source owner");
     AttachmentBoneTransform transform;transform.valid=true;transform.world.at(0,3)=3;ActorFadeMaterial material{{16,32,64},true};
     check(scene.set_world_fade(transform,material,false,&error)&&scene.ready(),"normal fade-bound explicit matrix accepted");
     check(scene.world_geometry().world_vertices[0][0].position[0]==2,"root authored translation1 is REPLACED, not added to supplied world");
@@ -32,6 +38,10 @@ int main(){
     check(recorder.calls.size()==1&&recorder.calls[0].post_rgb_add==std::array<u8,3>{16,32,64},"shared fade addition survives texture-lighting draw packet");
     check(scene.asset().scene.meshes[0].generated_uv_required&&scene.asset().scene.meshes[0].texture_matrix_required,"source texgen requirements not cleared on immutable asset");
     check(scene.set_world_fade(transform,material,false,&error)&&scene.world_geometry().world_vertices[0][0].position[0]==2,"repeated transforms do not accumulate");
+    check(scene.set_world_static(transform,&error)&&scene.world_geometry().world_vertices[0][0].position[0]==2,"static rigid publication uses the same world/skin evaluator");
+    render.begin_frame({});render.reset_arena();check(scene.draw(render,camera)==1&&render.end_frame(),"static rigid model draws through shared renderer");
+    check(recorder.calls.size()==1&&recorder.calls[0].post_rgb_add==std::array<u8,3>{},"static publication clears prior actor fade instead of inheriting it");
+    transform.world.at(3,0)=1;check(!scene.set_world_static(transform,&error)&&!scene.ready(),"non-affine static world refuses");transform.world.at(3,0)=0;
     check(!scene.set_world_fade(transform,material,true,&error)&&!scene.ready()&&scene.draw(render,camera)==0,"alternate style refuses: render-mode changes cannot be replaced with alpha only");
     material.source_class=false;check(!scene.set_world_fade(transform,material,false,&error),"unknown material class refuses");material.source_class=true;
     transform.valid=false;check(!scene.set_world_fade(transform,material,false,&error),"unpublished transform refuses");transform.valid=true;

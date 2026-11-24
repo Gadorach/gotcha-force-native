@@ -1,0 +1,10 @@
+GFSTORY 1
+id=example:workshop-story
+name=Workshop Story
+start=arrival
+node=arrival|text.arrival|180|680|example:workshop-trials|round-one
+node=practice|text.second-try|410|380|example:workshop-trials|round-one
+node=ending|text.ending|840|320|none|none
+edge=arrival|win|practice
+edge=practice|win|ending
+edge=practice|loss|arrival

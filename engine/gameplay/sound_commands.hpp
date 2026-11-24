@@ -13,4 +13,12 @@ inline bool sound_command_plan(const SoundCommandBanks& banks,const StartupSound
     };
     return startup_sound_commands_detail::plan_bound(banks.profile(),resolve,input,observation,calls,out,error);
 }
+//F03C0(null,cue)→EFC04 uses the same chain/staging kernel but does not read
+//the global disabled gate. OPTION gain still applies exactly once.
+inline bool sound_null_owner_command_plan(const SoundCommandBanks& banks,const StartupSoundCommandQueue& input,StartupSoundCommandObservation observation,
+        s16 cue,StartupSoundCommandPlan* out,std::string* error){
+    observation.gate_declared=true;observation.disabled=0;
+    StartupSoundScalarCommand call;call.cue=cue;call.volume=127;call.pan=64;call.pitch=8192;
+    return sound_command_plan(banks,input,observation,std::span(&call,1),out,error);
+}
 } // namespace gf

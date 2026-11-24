@@ -1,23 +1,36 @@
 #pragma once
+#include "engine/assets/borg_trailing_chain.hpp"
+#include "engine/assets/borg_reflection_policy.hpp"
+#include "engine/assets/character_preview_mount.hpp"
+#include "engine/assets/borg_cruise_boost.hpp"
 #include <optional>
 #include "engine/assets/borg_catalog_profile.hpp"
 #include <cmath>
 
 namespace gf {
 inline constexpr unsigned kBorgBattleMoves=8,kBorgBattleStocks=8,kBorgBattleAttacks=16,kBorgBattleReleases=8,kBorgBattleVolley=8;
+inline constexpr unsigned kBorgStockCapacity=255,kBorgReleaseFollowups=5;
+inline constexpr unsigned kBorgReleaseSounds=8;
 inline constexpr unsigned kBorgBattlePullUnits=40;
 inline constexpr unsigned kBorgBattleEmitters=4;
 inline constexpr unsigned kBorgBattleAnchorSets=2,kBorgBattleAnchors=8;
 inline constexpr unsigned kBorgBattleMovementFx=8;
+inline constexpr unsigned kBorgBattlePartAnimations=8;
+inline constexpr unsigned kBorgBattlePartSlots=4;
+inline constexpr unsigned kBorgBattlePartRecords=12;
 inline constexpr unsigned kBorgBattleHoldTicks=600,kBorgBattleRepeatCycles=16;
 inline constexpr std::size_t kBorgGameplayBytes=16u<<10;
 enum class BorgBattleMovement:u8 {Grounded,NormalGRed,Stationary};
 enum class BorgBattleButton:u8 {B,X};
 enum class BorgBattleContext:u8 {Any,Grounded,Airborne};
 enum class BorgBattleActivation:u8 {Press,ReleaseWindow,Tap,DoubleTap};
-enum class BorgAttackVisual:u8 {Bullet,Beam,Shuriken};
+enum class BorgAttackVisual:u8 {Bullet,Beam,Shuriken,Orb};
 struct BorgBattleSocket {u8 bone=0;std::array<f32,3> local{};bool aim_height=false;};
 struct BorgProjectileLook {u16 size=0;std::array<u8,3> rgb{};};
+struct BorgProjectileRecordLook {u16 record=0,scale_percent=100;};
+inline constexpr unsigned kBorgProjectileTrailSamples=5;
+struct BorgProjectileRecordTrail {u16 record=0,scale_percent=100;u8 count=0,interval=0;};
+struct BorgProjectileAnimation {f32 spin=0;u16 pulse_period=0;u8 pulse_percent=0;};
 enum class BorgMovementCue:u8 {Takeoff=1,AirJump=2,Landing=4,Rise=8};
 inline constexpr std::array<std::string_view,4> kBorgMovementCueNames{"takeoff","air-jump","landing","rise"};
 enum class BorgMovementLook:u8 {Jet,Puff};
@@ -25,11 +38,34 @@ struct BorgMovementFx {
     std::string id;BorgMovementCue event=BorgMovementCue::Takeoff;BorgMovementLook style=BorgMovementLook::Puff;
     u8 bone=0,duration=0;u16 size=0;std::array<f32,3> local{};
 };
-enum class BorgProjectileFloor:u8 {Ignore,Retire,Land,StageRetire};
+struct BorgWalkPulse {u16 stride=0,start=0,end=0,height=0,ticks=0,damage=0;};
+enum class BorgProjectileFloor:u8 {Ignore,Retire,Land,StageRetire,StageClip};
+inline bool borg_projectile_uses_stage(BorgProjectileFloor floor){
+    return floor==BorgProjectileFloor::StageRetire||floor==BorgProjectileFloor::StageClip;
+}
 enum class BorgBlastTrigger:u8 {Actor,Floor,Impact,Expiry,Remote,Stage};
-enum class BorgProjectileReturn:u8 {None,Actor,Floor,Expiry,Remote,Stage};
+enum class BorgProjectileReturn:u8 {None,Actor,Floor,Expiry,Remote,Stage,ExpiryOrProximity};
 enum class BorgGuidanceTarget:u8 {Snapshot,Tracking};
 struct BorgBattleGuidance {BorgGuidanceTarget target=BorgGuidanceTarget::Snapshot;f32 turn=0;u16 ticks=0;};
+struct BorgSustainedBeam {u16 length=0,interval=0;f32 turn=0;};
+struct BorgBeamSweep {u16 travel=0,drop=0,impact_radius=0;};
+struct BorgBombProximity {u16 radius=0,arming=0;bool blast=false;};
+struct BorgBombAttraction {u16 radius=0;f32 acceleration=0,cap=0;};
+struct BorgSmoke {u16 radius=0,ticks=0;bool block_aim=false;};
+struct BorgInkOverlay {u16 ticks=0;u8 coverage=0,opacity=0;};
+struct BorgBlastAccuracy {u16 ticks=0;f32 radians=0;};
+struct BorgFlightChildren {u8 projectile=255,count=0;u16 first=0,interval=0;};
+enum class BorgImpactLane:u8 {Actor,Floor,Stage};
+struct BorgImpactRecord {BorgImpactLane lane=BorgImpactLane::Actor;u16 record=0,scale_percent=100,ticks=0,end_scale=0;};
+struct BorgImpactSound {BorgImpactLane lane=BorgImpactLane::Actor;std::string path;};
+struct BorgImpactChildren {u8 projectile=255;BorgImpactLane lane=BorgImpactLane::Actor;bool radial=false;};
+struct BorgImpactPattern {
+    BorgImpactLane lane=BorgImpactLane::Stage;
+    u16 count=0,interval=0,radius=0,advance=0,arms=0,first_delay=0;
+    f32 degrees=0;
+};
+struct BorgImpactTrail : BorgImpactPattern {u16 mark_size=0,mark_ticks=0;};
+struct BorgImpactHazard : BorgImpactPattern {u16 hit_radius=0,height=0,ticks=0,damage=0,first_query=0;};
 struct BorgBattleRewindHit {u8 set=0,speed=0,fallback=255;};
 struct BorgBattleBlast {
     BorgBlastTrigger trigger=BorgBlastTrigger::Actor;
@@ -39,6 +75,7 @@ struct BorgBattleBlast {
 struct BorgBattleClip {u8 group=0,choice=0;};
 struct BorgBattleStockDefinition {
     std::string id;u16 capacity=0,refill_ticks=0; // zero is explicit return-only stock
+    bool add_on_debit=false;
 };
 struct BorgBattleProjectileDefinition {
     std::string id;BorgAttackVisual visual=BorgAttackVisual::Bullet;
@@ -50,11 +87,46 @@ struct BorgBattleProjectileDefinition {
     std::optional<BorgBattleBlast> blast;
     BorgProjectileReturn stock_return=BorgProjectileReturn::None;
     std::optional<BorgBattleGuidance> guidance;
+    std::optional<BorgSustainedBeam> sustained;
+    std::optional<BorgBeamSweep> beam_sweep;
+    std::optional<BorgBombProximity> proximity;
+    std::optional<BorgBombAttraction> attraction;
+    std::optional<BorgSmoke> smoke;
+    std::optional<BorgInkOverlay> ink;
+    std::optional<BorgBlastAccuracy> accuracy;
+    bool accuracy_sensitive=false;
+    u16 fuse_tail=0;
+    u8 blast_children=255;
+    std::optional<BorgFlightChildren> flight_children;
+    std::optional<BorgImpactChildren> impact_children;
+    std::optional<BorgImpactTrail> impact_trail;
+    std::optional<BorgImpactHazard> impact_hazard;
+    bool impact_world_space=false;
     std::optional<BorgBattleRewindHit> rewind_hit;
     u8 plant_on_stage=255;
     std::optional<BorgBattleSocket> socket;
     std::optional<BorgProjectileLook> look;
+    std::optional<BorgProjectileRecordLook> record_look;
+    std::optional<BorgProjectileRecordTrail> record_trail;
+    std::optional<BorgImpactRecord> impact_record;
+    std::optional<BorgImpactSound> impact_sound;
+    std::optional<BorgProjectileAnimation> animation;
+    bool launch_body_heading=false;
+    std::string launch_sound;
 };
+inline bool borg_impact_lane_reachable(const BorgBattleProjectileDefinition& attack,BorgImpactLane lane){
+    switch(lane){
+    case BorgImpactLane::Actor:return !attack.ignore_actors;
+    case BorgImpactLane::Floor:return attack.floor==BorgProjectileFloor::Retire;
+    case BorgImpactLane::Stage:return attack.floor==BorgProjectileFloor::StageRetire;
+    }
+    return false;
+}
+inline bool borg_impact_pattern_valid(const BorgBattleProjectileDefinition& a,const BorgImpactPattern& p){
+    return !a.sustained&&borg_impact_lane_reachable(a,p.lane)&&p.count&&p.count<=32&&p.interval&&p.interval<=30&&
+           p.first_delay<=120&&p.advance<=80&&u32(p.radius)+u32(p.count)*p.advance<=1200&&
+           std::isfinite(p.degrees)&&std::abs(p.degrees)<=180&&p.arms&&p.arms<=8;
+}
 inline bool borg_projectile_return_reachable(const BorgBattleProjectileDefinition& attack,BorgProjectileReturn reason){
     switch(reason){
     case BorgProjectileReturn::None:case BorgProjectileReturn::Expiry:return true;
@@ -62,6 +134,7 @@ inline bool borg_projectile_return_reachable(const BorgBattleProjectileDefinitio
     case BorgProjectileReturn::Floor:return attack.floor==BorgProjectileFloor::Retire;
     case BorgProjectileReturn::Remote:return attack.blast&&attack.blast->trigger==BorgBlastTrigger::Remote;
     case BorgProjectileReturn::Stage:return attack.floor==BorgProjectileFloor::StageRetire;
+    case BorgProjectileReturn::ExpiryOrProximity:return attack.proximity.has_value();
     }
     return false;
 }
@@ -76,8 +149,16 @@ inline bool borg_blast_trigger_reachable(const BorgBattleProjectileDefinition& a
     }
     return false;
 }
-struct BorgBattleRelease {u16 frame=0;u8 stock=255,cost=0,projectile=0;};
-struct BorgBattleDetonation {u16 frame=0;u8 projectile=0;bool landed_only=false;};
+struct BorgBattleRelease {
+    u16 frame=0;u8 stock=255,cost=0,projectile=0;
+    std::array<u8,kBorgReleaseFollowups> followups{};
+    u8 count=0;
+    bool return_pair=false;
+    std::string debit_sound{};
+};
+struct BorgBattleEntryStock {u8 stock=255,minimum=0;};
+struct BorgReleaseAimGate {u16 frame=0,timeout=0;f32 half_angle=0;};
+struct BorgBattleDetonation {u16 frame=0;u8 projectile=0;bool landed_only=false,first_eligible=false;};
 struct BorgBattleHeldFire {
     u8 stock=255,cost=0,projectile=0;
     u16 warmup=0,slow_interval=0,fast_interval=0,cooldown=0;
@@ -99,13 +180,79 @@ struct BorgBattleEmitter {
     u16 lifetime=0;
 };
 struct BorgBattleEmitterDeploy {u16 frame=0;u8 emitter=0;};
-struct BorgBattleAnchorSet {std::string id;u8 capacity=0;};
-struct BorgBattleAnchorMarker {u16 frame=0;u8 set=0,stock=255,cost=0,rewind_speed=0;};
+struct BorgPowerField {
+    u16 frame=0,radius=0,ticks=0,damage_percent=100,visual_percent=100;
+    f32 forward=0,height=0;
+};
+struct BorgSlowField {
+    u16 frame=0,radius=0,ticks=0,actor_percent=100,shot_percent=100;
+    f32 forward=0,height=0;
+    bool break_guidance=false;
+};
+enum class BorgFieldShape:u8 {Sphere,Box};
+enum class BorgFieldScope:u8 {All,Enemies,Allies,Source};
+enum class BorgFieldEffectKind:u8 {ActorSpeed,ShotSpeed,ShotDamage,ShotSize,BreakGuidance};
+struct BorgFieldEffect {BorgFieldEffectKind kind;BorgFieldScope scope;u16 value;};
+struct BorgFieldShotPull {BorgFieldScope scope=BorgFieldScope::Enemies;f32 acceleration=0;};
+struct BorgFieldPullPoint {f32 forward=0,height=0;u16 minimum=0;};
+struct BorgFieldActorPull {
+    BorgFieldScope scope=BorgFieldScope::Enemies;f32 step=0,half_angle=0;
+    std::optional<BorgFieldPullPoint> point;
+    bool repel=false;
+};
+struct BorgFieldCoreDamage {BorgFieldScope scope=BorgFieldScope::Enemies;u16 radius=0,damage=0,interval=0;};
+struct BorgFieldDrift {f32 speed=0,deceleration=0;bool active_while_moving=false;};
+struct BorgFieldSlot {std::string id;bool on_ready=false;};
+inline constexpr unsigned kBorgFieldEffects=8,kBorgFieldTextureSide=32,kBorgFieldTextureBytes=32*32*4;
+struct BorgField {
+    u16 frame=0,ticks=0;
+    f32 forward=0,height=0;
+    BorgFieldShape shape=BorgFieldShape::Sphere;
+    std::array<u16,3> extent{};
+    std::array<u8,4> tint{};
+    std::vector<BorgFieldEffect> effects;
+    std::string texture;
+    bool follow=false;
+    std::optional<BorgBattleSocket> socket;
+    std::optional<BorgFieldShotPull> shot_pull;
+    std::optional<BorgFieldCoreDamage> core_damage;
+    std::optional<BorgFieldActorPull> actor_pull;
+    std::optional<BorgFieldDrift> drift{};
+    std::optional<BorgFieldSlot> slot{};
+};
+struct BorgAnchorFence {u16 radius=0,damage=0,ticks=0;u8 recoil=0;};
+struct BorgBattleAnchorSet {std::string id;u8 capacity=0;std::optional<BorgAnchorFence> fence{};bool return_on_reach=false;};
+struct BorgBattleAnchorMarker {
+    u16 frame=0;u8 set=0,stock=255,cost=0,rewind_speed=0;f32 forward=0,height=0;
+};
+struct BorgBattlePartSpin {u8 bone=0,axis=0;u16 period=0;bool reverse=false;};
+struct BorgBattlePartMotion {u8 bone=0;BorgBattleClip clip;u16 first=0,count=0;};
+struct BorgBattlePartScroll {u8 bone=0,axis=0;u16 period=0;bool reverse=false;};
+struct BorgBattlePartPose {std::array<f32,3> offset{},degrees{};};
+enum class BorgPartBasis:u8 {Bone,WorldZyx,BoneZyx};
+struct BorgBattlePartSlot {
+    std::string id;u8 bone=0;u16 record=0;std::optional<BorgBattlePartPose> pose;
+    std::array<u16,3> turn_step{}; // binary angle units per visible pose update; zero snaps
+    BorgPartBasis basis=BorgPartBasis::Bone;
+    std::optional<BorgBattlePartSpin> mount_spin; // only axis, period and direction are used
+};
+struct BorgBattlePartSwap {
+    u8 slot=0;u16 first=0,last=0,record=0;
+    std::optional<BorgBattlePartPose> pose;
+    std::optional<u8> bone;
+};
+enum class BorgPartMaterialPlayback:u8 {Once,Loop,Sample};
+struct BorgBattlePartMaterial {u16 record=0,clip=0,first=0,last=0;BorgPartMaterialPlayback playback=BorgPartMaterialPlayback::Once;};
 struct BorgBattleMove {
     std::string id;BorgBattleButton button=BorgBattleButton::B;BorgBattleContext context=BorgBattleContext::Any;
     u16 priority=0,duration=0;BorgBattleClip clip;
+    bool static_pose=false;
     u16 pose_start=0;
+    bool pose_authored_loop_window=false;
+    std::optional<u16> aim_lock;
     std::vector<BorgBattleRelease> releases;
+    std::optional<BorgBattleEntryStock> entry_stock{};
+    std::optional<BorgReleaseAimGate> release_gate{};
     BorgBattleActivation activation=BorgBattleActivation::Press;
     u16 minimum_hold=0,maximum_hold=0,tap_window=0;
     u8 hold_cycles=0; // maximum total cycles including entry, zero means no repeat
@@ -115,41 +262,100 @@ struct BorgBattleMove {
     std::optional<BorgBattleDetonation> detonation;
     std::optional<BorgBattleGuard> guard;
     std::vector<BorgBattleEmitterDeploy> emitters;
+    std::optional<BorgPowerField> power_field;
+    std::optional<BorgSlowField> slow_field;
+    std::optional<BorgField> field;
     std::vector<BorgBattleAnchorMarker> anchors;
+    std::vector<BorgBattlePartSpin> part_spins;
+    std::vector<BorgBattlePartMotion> part_motions;
+    std::vector<BorgBattlePartScroll> part_scrolls;
+    std::vector<BorgBattlePartSwap> part_swaps;
     unsigned last_marker()const{
         if(held_fire)return duration-1; // every frame in the presentation loop must exist
         unsigned deploy=0;
         for(const auto& marker:emitters)deploy=std::max<unsigned>(deploy,marker.frame);
         for(const auto& marker:anchors)deploy=std::max<unsigned>(deploy,marker.frame);
         return std::max<unsigned>({releases.empty()?0u:unsigned(releases.back().frame),melee?melee->last:0u,deploy,
-                                   detonation?detonation->frame:0u,guard?guard->last:0u});
+                                    detonation?detonation->frame:0u,guard?guard->last:0u,power_field?power_field->frame:0u,
+                                    slow_field?slow_field->frame:0u,field?field->frame:0u});
     }
 };
 struct BorgGameplayProfile {
     std::string variant,rig_prefix,pose_profile;
+    std::string impact_record_bank;
     BorgBattleMovement movement=BorgBattleMovement::Grounded;
+    bool record_zero_body=false;
+    bool body_immutable_highlight=false;
+    std::vector<CharacterPreviewMount> body_mounts;
+    std::vector<BorgZeroReflection> zero_reflections;
+    u16 animated_translation_percent=100;
+    std::optional<BorgTrailingChainSpec> trailing_chain;
+    bool idle_authored_loop=false;
+    bool walk_authored_loop=false;
+    bool static_cruise_body=false;
+    bool static_grounded_body=false;
+    bool dash_disabled=false;
     u16 health=0;f32 walk=0,jump=0,dash=0;
+    u16 beam_recovery=0;
     u8 air_jump_points=0;
     f32 flight_lift=0;u16 flight_ticks=0;
+    std::optional<BorgCruiseBoost> cruise{};
+    std::optional<BorgBattleClip> cruise_entry;
     // idle, walk, airborne, dash; stationary only uses idle. Source movement
     // supplies all lower-body poses itself.
     std::array<BorgBattleClip,4> locomotion{};
+    std::array<std::optional<BorgBattleClip>,3> directional_dash{}; // back, left, right
+    std::optional<BorgBattleClip> air_dash_clip;
+    std::optional<BorgBattleClip> takeoff_clip,landing_clip;
+    u16 air_dash_start=0;
+    bool air_dash_disabled=false;
     std::vector<BorgBattleStockDefinition> stocks;
     std::vector<BorgBattleProjectileDefinition> projectiles;
     std::vector<BorgBattleMove> moves;
+    std::vector<BorgBattlePartSlot> part_slots;
+    std::vector<u16> static_part_hierarchies;
+    std::vector<BorgBattlePartMaterial> part_materials;
     std::vector<BorgBattleEmitter> emitters;
     std::vector<BorgBattleAnchorSet> anchor_sets;
     std::vector<BorgMovementFx> movement_fx;
+    std::optional<BorgWalkPulse> walk_pulse;
     std::array<std::string,4> movement_sound{};
+    bool static_body()const{return static_cruise_body||static_grounded_body;}
 };
+inline const BorgBattlePartSwap* borg_part_active_swap(u8 index,const BorgBattleMove* active,u16 frame){
+    if(active)for(const auto& swap:active->part_swaps)
+        if(swap.slot==index&&frame>=swap.first&&frame<=swap.last)return &swap;
+    return nullptr;
+}
+inline u16 borg_part_record(const BorgBattlePartSlot& slot,u8 index,const BorgBattleMove* active,u16 frame){
+    const auto* swap=borg_part_active_swap(index,active,frame);
+    return swap?swap->record:slot.record;
+}
+inline const BorgBattlePartPose* borg_part_pose(const BorgBattlePartSlot& slot,const BorgBattlePartSwap* swap){
+    return swap&&swap->pose?&*swap->pose:slot.pose?&*slot.pose:nullptr;
+}
+inline u8 borg_part_bone(const BorgBattlePartSlot& slot,const BorgBattlePartSwap* swap){
+    return swap&&swap->bone?*swap->bone:slot.bone;
+}
+inline u16 borg_part_material_phase(const BorgBattlePartMaterial& clip,u32 age){
+    const u32 span=u32(clip.last)-clip.first;
+    return u16(clip.playback==BorgPartMaterialPlayback::Loop?age%(span+1):std::min(age,span));
+}
 inline bool borg_battle_emission_valid(const BorgGameplayProfile& p,u8 stock,u8 cost,u8 projectile){
-    if(projectile>=p.projectiles.size()||(cost?(stock>=p.stocks.size()||cost>p.stocks[stock].capacity):stock!=255))return false;
+    if(projectile>=p.projectiles.size()||(cost?(stock>=p.stocks.size()||cost>p.stocks[stock].capacity||
+       (p.stocks[stock].add_on_debit&&cost!=1)):stock!=255))return false;
     const auto& shot=p.projectiles[projectile];
     const bool returns=shot.stock_return!=BorgProjectileReturn::None;
     const bool return_only=cost&&!p.stocks[stock].refill_ticks;
     // Each successfully created carrier may return exactly one paid unit.
     return returns==return_only&&(!returns||cost==shot.count)&&
         (!shot.rewind_hit||shot.rewind_hit->fallback==255||!return_only);
+}
+inline bool borg_battle_release_valid(const BorgGameplayProfile& p,const BorgBattleRelease& r){
+    if(!r.return_pair)return borg_battle_emission_valid(p,r.stock,r.cost,r.projectile);
+    return r.count==1&&r.cost==1&&r.stock<p.stocks.size()&&p.stocks[r.stock].capacity==1&&!p.stocks[r.stock].refill_ticks&&
+           borg_battle_emission_valid(p,255,0,r.projectile)&&borg_battle_emission_valid(p,255,0,r.followups[0])&&
+           p.projectiles[r.projectile].count==1&&p.projectiles[r.followups[0]].count==1;
 }
 namespace borg_gameplay_detail {
 inline bool id(std::string_view text){
@@ -180,7 +386,7 @@ template<class Rows> unsigned index(const Rows& rows,std::string_view id){
 inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     const auto clip=[](BorgBattleClip c){return c.group<16&&c.choice<128;};
     const auto finite=[](f32 n,f32 lo,f32 hi){return std::isfinite(n)&&n>=lo&&n<=hi;};
-    if(!borg_gameplay_detail::id(p.variant)||!p.health||p.health>10000||unsigned(p.movement)>2||
+    if(!borg_gameplay_detail::id(p.variant)||!p.health||p.health>10000||p.beam_recovery>120||unsigned(p.movement)>2||
        p.moves.size()>kBorgBattleMoves||p.stocks.size()>kBorgBattleStocks||p.projectiles.size()>kBorgBattleAttacks||
        p.emitters.size()>kBorgBattleEmitters||
        p.anchor_sets.size()>kBorgBattleAnchorSets||(!p.anchor_sets.empty()&&p.movement!=BorgBattleMovement::Grounded)||
@@ -189,41 +395,149 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
        (p.flight_ticks?(p.movement!=BorgBattleMovement::Grounded||p.air_jump_points||p.flight_ticks>120||
                         !finite(p.flight_lift,2,16)):p.flight_lift!=0)||
        p.moves.empty()!=(p.movement==BorgBattleMovement::Stationary))return false;
-    if(p.movement==BorgBattleMovement::Grounded&&(!finite(p.walk,1,16)||!finite(p.jump,2,24)||!finite(p.dash,p.walk,32)))return false;
+    if(p.movement==BorgBattleMovement::Grounded&&(!finite(p.walk,.4f,16)||!finite(p.jump,2,24)||!finite(p.dash,p.walk,32)))return false;
+    if((p.record_zero_body||p.idle_authored_loop)&&p.movement==BorgBattleMovement::NormalGRed)return false;
+    if(p.body_immutable_highlight&&p.movement==BorgBattleMovement::NormalGRed)return false;
+    if((!p.body_mounts.empty()&&!p.record_zero_body)||!character_preview_mounts_valid(p.body_mounts))return false;
+    if((!p.zero_reflections.empty()&&!p.record_zero_body)||!borg_zero_reflections_valid(p.zero_reflections))return false;
+    if(p.animated_translation_percent<25||p.animated_translation_percent>200||
+       (p.animated_translation_percent!=100&&(!p.record_zero_body||p.static_body()||p.cruise||
+                                                p.movement!=BorgBattleMovement::Grounded)))return false;
+    if(p.trailing_chain&&(!p.record_zero_body||p.movement!=BorgBattleMovement::Grounded||p.cruise||
+                         !borg_trailing_chain_valid(*p.trailing_chain)))return false;
+    if(p.walk_authored_loop&&(p.movement!=BorgBattleMovement::Grounded||p.static_body()||p.cruise_entry))return false;
+    if(p.static_body()&&((p.static_cruise_body&&p.static_grounded_body)||bool(p.cruise)!=p.static_cruise_body||
+                        p.movement!=BorgBattleMovement::Grounded||p.idle_authored_loop||
+                        !p.part_slots.empty()||!p.part_materials.empty()))return false;
+    if(p.cruise_entry&&(!p.cruise||p.static_body()||!clip(*p.cruise_entry)||p.idle_authored_loop||
+                        !p.part_slots.empty()||!p.part_materials.empty()))return false;
+    if(p.dash_disabled&&(p.movement!=BorgBattleMovement::Grounded||p.cruise||p.static_body()))return false;
+    const bool directional=std::any_of(p.directional_dash.begin(),p.directional_dash.end(),[](const auto& c){return c.has_value();});
+    if((directional||p.air_dash_clip||p.air_dash_disabled)&&
+       (p.movement!=BorgBattleMovement::Grounded||p.cruise||p.static_body()||p.dash_disabled))return false;
+    if((p.air_dash_disabled&&p.air_dash_clip)||(!p.air_dash_clip&&p.air_dash_start)||p.air_dash_start>600||
+       (p.air_dash_clip&&!clip(*p.air_dash_clip)))return false;
+    for(const auto& c:p.directional_dash)if(c&&!clip(*c))return false;
+    if((p.takeoff_clip||p.landing_clip)&&(p.movement!=BorgBattleMovement::Grounded||p.cruise||p.static_body()))return false;
+    for(const auto& c:{p.takeoff_clip,p.landing_clip})if(c&&!clip(*c))return false;
+    if(const auto& c=p.cruise;c&&(p.movement!=BorgBattleMovement::Grounded||p.air_jump_points||p.flight_ticks||p.walk_pulse||
+        !borg_cruise_boost_valid(*c)))return false;
+    if(const auto& q=p.walk_pulse;q&&(p.movement!=BorgBattleMovement::Grounded||q->stride<16||q->stride>800||
+       q->start<4||q->end<=q->start||q->end>300||!q->height||q->height>150||!q->ticks||q->ticks>60||
+       !q->damage||q->damage>10000))return false;
     if(p.movement==BorgBattleMovement::Stationary&&(!p.stocks.empty()||!p.projectiles.empty()))return false;
+    if((!p.impact_record_bank.empty()&&!borg_package_asset_path_valid(p.impact_record_bank))||
+       p.impact_record_bank.empty()!=std::none_of(p.projectiles.begin(),p.projectiles.end(),[](const auto& a){return a.impact_record.has_value();}))
+        return false;
     for(const auto& c:p.locomotion)if(!clip(c))return false;
-    for(const auto& s:p.stocks)if(!s.capacity||s.capacity>99||s.refill_ticks>3600)return false;
-    for(const auto& a:p.projectiles)
-        if(unsigned(a.visual)>2||unsigned(a.floor)>3||!a.count||a.count>kBorgBattleVolley||!finite(a.speed,1,140)||
+    for(const auto& s:p.stocks)if(!s.capacity||s.capacity>kBorgStockCapacity||s.refill_ticks>3600||(s.add_on_debit&&!s.refill_ticks))return false;
+    for(const auto& a:p.projectiles){
+        if(const auto& s=a.impact_sound;s&&(a.sustained||!borg_impact_lane_reachable(a,s->lane)||
+                                         !borg_package_asset_path_valid(s->path)))return false;
+        if(const auto& r=a.impact_record;r&&(a.sustained||!borg_impact_lane_reachable(a,r->lane)||
+                !r->record||r->record>=256||!r->scale_percent||r->scale_percent>400||!r->ticks||r->ticks>120||
+                r->end_scale>400||(r->end_scale&&r->ticks<2)))return false;
+        if(!a.launch_sound.empty()&&!borg_package_asset_path_valid(a.launch_sound))return false;
+        if(a.record_look&&(!a.record_look->record||a.record_look->record>=32||!a.record_look->scale_percent||
+                          a.record_look->scale_percent>400||a.visual!=BorgAttackVisual::Orb||a.look||a.animation||a.sustained))
+            return false;
+        if(const auto& t=a.record_trail;t&&(!a.record_look||!t->record||t->record>=32||!t->scale_percent||
+            t->scale_percent>400||!t->count||t->count>kBorgProjectileTrailSamples||!t->interval||t->interval>30))
+            return false;
+        if(unsigned(a.visual)>3||unsigned(a.floor)>4||(!a.sustained&&a.floor==BorgProjectileFloor::StageClip)||
+           (a.launch_body_heading&&(a.sustained||(a.socket&&a.socket->aim_height)))||
+           (a.beam_sweep&&(!a.sustained||a.sustained->turn||a.floor!=BorgProjectileFloor::StageClip||
+                           (a.socket&&a.socket->aim_height)||a.lifetime<2||
+                           a.beam_sweep->travel<1||a.beam_sweep->travel>2400||a.beam_sweep->drop<1||
+                           a.beam_sweep->drop>=a.sustained->length||!a.beam_sweep->impact_radius||a.beam_sweep->impact_radius>180))||
+           (a.proximity&&(a.floor!=BorgProjectileFloor::Land||a.count!=1||!a.ignore_actors||!a.blast||
+                         a.blast->trigger!=BorgBlastTrigger::Expiry||a.guidance||!a.proximity->radius||
+                         a.proximity->radius>600||a.proximity->arming>=a.lifetime))||
+           (a.attraction&&(!a.proximity||a.attraction->radius<=a.proximity->radius||a.attraction->radius>1800||
+                           !finite(a.attraction->acceleration,.125f,8.f)||
+                           !finite(a.attraction->cap,a.attraction->acceleration,32.f)))||
+           (a.fuse_tail&&(a.fuse_tail>120||a.floor!=BorgProjectileFloor::Land||a.count!=1||!a.ignore_actors||
+                          !a.blast||a.blast->trigger!=BorgBlastTrigger::Expiry))||
+           (a.blast_children!=255&&(!a.blast||a.blast_children>=p.projectiles.size()))||
+           (a.flight_children&&(a.sustained||a.count!=1||a.lifetime<3||a.flight_children->projectile>=p.projectiles.size()||
+              !a.flight_children->first||!a.flight_children->interval||!a.flight_children->count||a.flight_children->count>8||
+              u32(a.flight_children->first)+u32(a.flight_children->count-1)*a.flight_children->interval>=a.lifetime-1u))||
+            (a.impact_children&&(a.sustained||a.count!=1||a.impact_children->projectile>=p.projectiles.size()||
+              !borg_impact_lane_reachable(a,a.impact_children->lane)))||
+            (a.impact_trail&&(!borg_impact_pattern_valid(a,*a.impact_trail)||
+              !a.impact_trail->mark_size||a.impact_trail->mark_size>180||!a.impact_trail->mark_ticks||a.impact_trail->mark_ticks>30))||
+            (a.impact_hazard&&(!borg_impact_pattern_valid(a,*a.impact_hazard)||!a.impact_hazard->hit_radius||
+              a.impact_hazard->hit_radius>180||a.impact_hazard->height>600||!a.impact_hazard->ticks||
+              a.impact_hazard->ticks>60||!a.impact_hazard->damage||a.impact_hazard->damage>10000||a.impact_hazard->first_query>60))||
+            (a.impact_world_space&&!a.impact_trail&&!a.impact_hazard)||
+           (a.smoke&&(!a.blast||a.smoke->radius<8||a.smoke->radius>600||!a.smoke->ticks||a.smoke->ticks>600))||
+           (a.ink&&(!a.blast||!a.blast->damage||!a.ink->ticks||a.ink->ticks>300||
+                    a.ink->coverage<10||a.ink->coverage>80||!a.ink->opacity))||
+           (a.accuracy&&(!a.blast||!a.blast->damage||!a.accuracy->ticks||a.accuracy->ticks>300||
+                         !finite(a.accuracy->radians,.01f,.45f)))||
+           (a.accuracy_sensitive&&(a.sustained||a.guidance||a.ignore_actors||!a.damage))||
+           !a.count||a.count>kBorgBattleVolley||!finite(a.speed,1,140)||
+           (a.sustained&&(a.visual!=BorgAttackVisual::Beam||a.count!=1||a.rise||a.gravity||a.spread||!a.damage||
+            (a.floor!=BorgProjectileFloor::Ignore&&a.floor!=BorgProjectileFloor::StageClip)||a.ignore_actors||a.blast||a.guidance||a.rewind_hit||a.pull_units||
+            a.walk_ticks||a.stock_return!=BorgProjectileReturn::None||a.plant_on_stage!=255||
+            a.sustained->length<40||a.sustained->length>2400||!a.sustained->interval||a.sustained->interval>a.lifetime||
+            !finite(a.sustained->turn,0,.25f)))||
            (a.socket&&(a.socket->bone>=32||!std::all_of(a.socket->local.begin(),a.socket->local.end(),
                                                      [&](f32 v){return finite(v,-500,500); })))||
            (a.look&&(!a.look->size||a.look->size>180))||
+           (a.animation&&(!finite(a.animation->spin,-2,2)||a.animation->pulse_period>240||a.animation->pulse_percent>75||
+               (bool(a.animation->pulse_period)!=bool(a.animation->pulse_percent))||
+               (a.animation->spin&&a.visual!=BorgAttackVisual::Shuriken&&a.visual!=BorgAttackVisual::Orb)))||
            !finite(a.rise,-100,100)||!finite(a.gravity,0,8)||!finite(a.spread,0,.8f)||!finite(a.radius,1,60)||
-           !a.lifetime||a.lifetime>600||(!a.damage&&!a.blast&&a.plant_on_stage==255&&!a.rewind_hit)||a.damage>10000||
+            !a.lifetime||a.lifetime>600||
+             (!a.damage&&!a.blast&&a.plant_on_stage==255&&!a.rewind_hit&&!a.flight_children&&!a.impact_children&&
+              !a.impact_trail&&!a.impact_hazard)||a.damage>10000||
            (a.ignore_actors&&(a.damage||a.walk_ticks||a.pull_units))||!borg_projectile_return_reachable(a,a.stock_return)||
            (a.guidance&&(unsigned(a.guidance->target)>1||!finite(a.guidance->turn,.001f,1.f)||
                         !a.guidance->ticks||a.guidance->ticks>a.lifetime))||
-           (a.rewind_hit&&(p.movement!=BorgBattleMovement::Grounded||a.ignore_actors||a.pull_units||
-                         a.count!=1||!a.rewind_hit->speed||a.rewind_hit->speed>16||a.rewind_hit->set>=p.anchor_sets.size()||
+            (a.rewind_hit&&(p.movement!=BorgBattleMovement::Grounded||a.ignore_actors||a.pull_units||
+                          a.count!=1||!a.rewind_hit->speed||a.rewind_hit->speed>16||a.rewind_hit->set>=p.anchor_sets.size()||
+                          p.anchor_sets[a.rewind_hit->set].fence||p.anchor_sets[a.rewind_hit->set].return_on_reach||
                          (a.rewind_hit->fallback!=255&&(a.rewind_hit->fallback>=p.projectiles.size()||
-                          p.projectiles[a.rewind_hit->fallback].rewind_hit||p.projectiles[a.rewind_hit->fallback].plant_on_stage!=255||
+                           p.projectiles[a.rewind_hit->fallback].sustained||p.projectiles[a.rewind_hit->fallback].rewind_hit||
+                           p.projectiles[a.rewind_hit->fallback].plant_on_stage!=255||
                           p.projectiles[a.rewind_hit->fallback].stock_return!=BorgProjectileReturn::None))))||
            (a.plant_on_stage!=255&&(a.plant_on_stage>=p.anchor_sets.size()||a.floor!=BorgProjectileFloor::StageRetire||
                                    a.rewind_hit||a.count!=1))||
-           (a.blast&&(!a.blast->radius||a.blast->radius>1200||!a.blast->damage||a.blast->damage>10000||
+            (a.blast&&(!a.blast->radius||a.blast->radius>1200||(!a.blast->damage&&!a.smoke)||a.blast->damage>10000||
                       (a.blast->include_owner&&p.movement==BorgBattleMovement::NormalGRed)||
                       !borg_blast_trigger_reachable(a,a.blast->trigger)))||
            a.pull_units>kBorgBattlePullUnits||(a.pull_units&&p.movement!=BorgBattleMovement::Grounded)||
-           (a.walk_ticks?(a.walk_ticks>600||a.walk_percent<25||a.walk_percent>200):a.walk_percent!=0))return false;
+            (a.walk_ticks?(a.walk_ticks>600||a.walk_percent<25||a.walk_percent>200):a.walk_percent!=0))return false;
+        const auto valid_child=[](const auto& child){
+             return !(child.blast_children!=255||child.flight_children||child.impact_children||child.impact_hazard||child.blast||child.smoke||
+                child.sustained||child.socket||child.guidance||child.proximity||
+               child.rewind_hit||child.plant_on_stage!=255||child.stock_return!=BorgProjectileReturn::None||
+                child.ignore_actors||!child.damage||child.launch_body_heading);
+        };
+        if(a.blast_children!=255){
+            const auto& child=p.projectiles[a.blast_children];
+            if(!valid_child(child)||child.count<2||child.spread)return false;
+        }
+        if(a.flight_children&&!valid_child(p.projectiles[a.flight_children->projectile]))return false;
+        if(a.impact_children){
+            const auto& child=p.projectiles[a.impact_children->projectile];
+            if(!valid_child(child)||(a.impact_children->radial&&(child.count<2||child.spread)))return false;
+        }
+    }
     for(const auto& e:p.emitters){
-        if(e.watches>=p.moves.size()||e.projectile>=p.projectiles.size()||
+        if(e.watches>=p.moves.size()||e.projectile>=p.projectiles.size()||p.projectiles[e.projectile].sustained||
            (p.moves[e.watches].releases.empty()&&!p.moves[e.watches].held_fire)||
            p.projectiles[e.projectile].stock_return!=BorgProjectileReturn::None||
            p.projectiles[e.projectile].rewind_hit||p.projectiles[e.projectile].plant_on_stage!=255||p.projectiles[e.projectile].socket||
+           p.projectiles[e.projectile].launch_body_heading||
            !finite(e.side,-120,120)||!finite(e.height,0,240)||!finite(e.behind,0,180)||!e.lifetime||e.lifetime>600)
             return false;
     }
-    for(const auto& set:p.anchor_sets)if(!set.capacity||set.capacity>kBorgBattleAnchors)return false;
+    for(const auto& set:p.anchor_sets)
+        if(!set.capacity||set.capacity>kBorgBattleAnchors||
+           (set.fence&&(set.return_on_reach||set.capacity<2||!set.fence->radius||set.fence->radius>120||!set.fence->damage||
+                        set.fence->damage>10000||!set.fence->ticks||set.fence->ticks>600||set.fence->recoil>40)))return false;
     for(const auto& path:p.movement_sound)if(!path.empty()&&
         (p.movement==BorgBattleMovement::Stationary||!borg_package_asset_path_valid(path)))return false;
     for(const auto& fx:p.movement_fx){
@@ -233,9 +547,64 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            !std::all_of(fx.local.begin(),fx.local.end(),[&](f32 x){return finite(x,-500,500);}))return false;
     }
     std::array<const BorgBattleMove*,2> gestures{};
+    if(p.part_slots.size()>kBorgBattlePartSlots)return false;
+    const auto part_pose_valid=[&](const auto& pose){
+        if(pose)for(unsigned axis=0;axis<3;++axis)
+            if(!finite(pose->offset[axis],-1000,1000)||!finite(pose->degrees[axis],-180,180))return false;
+        return true;
+    };
+    for(unsigned i=0;i<p.part_slots.size();++i){
+        const auto& part=p.part_slots[i];
+        if(!borg_gameplay_detail::id(part.id)||part.bone>=32||part.record>255||!part_pose_valid(part.pose)||
+           unsigned(part.basis)>unsigned(BorgPartBasis::BoneZyx))return false;
+        for(auto step:part.turn_step)if(step>8192)return false;
+        if(part.mount_spin&&(!part.record||part.mount_spin->axis>2||part.mount_spin->period<2||part.mount_spin->period>240))
+            return false;
+        for(unsigned j=0;j<i;++j)if(p.part_slots[j].id==part.id)return false;
+    }
+    if(p.static_part_hierarchies.size()>kBorgBattlePartRecords)return false;
+    for(unsigned i=0;i<p.static_part_hierarchies.size();++i){
+        const auto record=p.static_part_hierarchies[i];
+        if(!record||record>255||std::count(p.static_part_hierarchies.begin(),p.static_part_hierarchies.end(),record)!=1||
+           std::any_of(p.part_materials.begin(),p.part_materials.end(),[record](const auto& m){return m.record==record;})||
+           std::none_of(p.part_slots.begin(),p.part_slots.end(),[record](const auto& s){return s.record==record;}))return false;
+    }
+    if(p.part_materials.size()>kBorgBattlePartRecords)return false;
+    for(unsigned i=0;i<p.part_materials.size();++i){
+        const auto& part=p.part_materials[i];
+        if(!part.record||part.record>255||part.clip>255||unsigned(part.playback)>2||part.first>part.last||part.last>600||
+           part.last-part.first>=240||((part.first==part.last)!=(part.playback==BorgPartMaterialPlayback::Sample)))return false;
+        for(unsigned j=0;j<i;++j)if(p.part_materials[j].record==part.record)return false;
+        bool used=false;
+        for(const auto& slot:p.part_slots)used|=slot.record==part.record;
+        for(const auto& move:p.moves)for(const auto& swap:move.part_swaps)used|=swap.record==part.record;
+        if(!used)return false;
+    }
+    unsigned release_sound_count=0;
     for(const auto& m:p.moves){
+        if(m.pose_authored_loop_window&&(m.static_pose||!p.record_zero_body||p.movement!=BorgBattleMovement::Grounded))return false;
+        if((p.static_body()&&!m.static_pose)||(m.static_pose&&(m.pose_start||!m.part_motions.empty()||
+           !m.part_spins.empty()||!m.part_scrolls.empty()||!m.part_swaps.empty())))return false;
+        if(p.cruise_entry&&(!m.static_pose||m.context!=BorgBattleContext::Airborne))return false;
+        if(p.static_grounded_body&&m.context!=BorgBattleContext::Grounded)return false;
+        // A pose-free move may keep ordinary locomotion only as a plain paid
+        // projectile, or as a field-only action: the placed field is the
+        // visible executable marker and the body keeps its locomotion pose.
+        if(m.static_pose&&!p.static_cruise_body&&
+           (p.movement!=BorgBattleMovement::Grounded||(m.releases.empty()&&!m.field)||m.held_fire||m.melee||
+            m.detonation||m.guard||!m.emitters.empty()||m.power_field||m.slow_field||!m.anchors.empty()||
+            (m.field&&!m.releases.empty())||
+            std::any_of(m.releases.begin(),m.releases.end(),[](const auto& r){return !r.cost;})))return false;
+        if(m.entry_stock&&(m.entry_stock->stock>=p.stocks.size()||!m.entry_stock->minimum||
+           m.entry_stock->minimum>p.stocks[m.entry_stock->stock].capacity))return false;
+        if(const auto& g=m.release_gate;g&&(
+           m.held_fire||m.hold_cycles||m.aim_lock||m.melee||m.guard||m.field||m.power_field||m.slow_field||
+           m.detonation||!m.anchors.empty()||!m.emitters.empty()||m.releases.size()!=1||
+           m.releases[0].frame!=g->frame||!g->timeout||g->timeout>120||
+           !finite(g->half_angle,.01f,1.5707964f)))return false;
         const bool multi=m.activation==BorgBattleActivation::Tap||m.activation==BorgBattleActivation::DoubleTap;
-        if(m.duration<2||m.duration>600||(m.releases.empty()&&!m.melee&&!m.held_fire&&!m.detonation&&!m.guard&&m.emitters.empty()&&m.anchors.empty())||
+        if(m.duration<2||m.duration>600||(m.releases.empty()&&!m.melee&&!m.held_fire&&!m.detonation&&!m.guard&&!m.power_field&&
+           !m.slow_field&&!m.field&&m.emitters.empty()&&m.anchors.empty())||
            m.releases.size()>kBorgBattleReleases||
            unsigned(m.button)>1||unsigned(m.context)>2||!clip(m.clip)||m.pose_start>600||
            !finite(m.entry_range,0,1200)||
@@ -244,13 +613,39 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
              multi?(m.minimum_hold||!m.maximum_hold||m.maximum_hold>60||!m.tap_window||m.tap_window>60):
                    (m.minimum_hold||m.maximum_hold||m.tap_window))||
            (m.hold_cycles&&(m.hold_cycles<2||m.hold_cycles>kBorgBattleRepeatCycles||m.activation!=BorgBattleActivation::Press||m.melee||
-                             m.releases.size()!=1||!m.releases.front().cost)))return false;
+                            m.releases.size()!=1||!m.releases.front().cost)))return false;
+        if(m.part_spins.size()+m.part_motions.size()+m.part_scrolls.size()>kBorgBattlePartAnimations)return false;
+        std::array<u8,32> axes{};
+        for(const auto& spin:m.part_spins){
+            if(!spin.bone||spin.bone>=32||spin.axis>2||spin.period<2||spin.period>240||
+               (axes[spin.bone]&(1u<<spin.axis)))return false;
+            axes[spin.bone]|=u8(1u<<spin.axis);
+        }
+        u32 animated=0;
+        for(const auto& part:m.part_motions){
+            if(!part.bone||part.bone>=32||!clip(part.clip)||part.first>600||part.count<2||part.count>240||
+               (animated&(1u<<part.bone)))return false;
+            animated|=1u<<part.bone;
+        }
+        axes={};
+        for(const auto& scroll:m.part_scrolls){
+            if(scroll.bone>=32||scroll.axis>1||scroll.period<2||scroll.period>240||
+               (axes[scroll.bone]&(1u<<scroll.axis)))return false;
+            axes[scroll.bone]|=u8(1u<<scroll.axis);
+        }
+        u32 swapped=0;
+        for(const auto& swap:m.part_swaps){
+            if(swap.slot>=p.part_slots.size()||swap.first>swap.last||swap.last>=m.duration||
+               swap.record>255||(swapped&(1u<<swap.slot))||(swap.pose&&(!swap.record||!part_pose_valid(swap.pose)))||
+               (swap.bone&&(!swap.record||*swap.bone>=32)))return false;
+            swapped|=1u<<swap.slot;
+        }
         if(m.held_fire){
             const auto& h=*m.held_fire;
             if(!m.releases.empty()||m.melee||m.detonation||m.guard||!m.emitters.empty()||!m.anchors.empty()||
                m.activation!=BorgBattleActivation::Press||m.hold_cycles||
                !h.warmup||h.warmup>600||!h.fast_interval||h.fast_interval>h.slow_interval||h.slow_interval>600||
-               h.cooldown>600||!borg_battle_emission_valid(p,h.stock,h.cost,h.projectile))return false;
+               h.cooldown>600||!borg_battle_emission_valid(p,h.stock,h.cost,h.projectile)||p.projectiles[h.projectile].sustained)return false;
         }
         if(multi){
             auto& other=gestures[unsigned(m.button)];
@@ -267,8 +662,11 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
         unsigned previous_anchor=0;
         for(const auto& a:m.anchors){
             if(a.frame<=previous_anchor||a.frame>=m.duration||a.set>=p.anchor_sets.size()||
-               a.rewind_speed>16||(a.rewind_speed&&a.cost)||
-               (a.cost?(a.stock>=p.stocks.size()||!p.stocks[a.stock].refill_ticks||a.cost>p.stocks[a.stock].capacity):a.stock!=255))
+               a.rewind_speed>16||(a.rewind_speed&&(a.cost||a.forward||a.height||p.anchor_sets[a.set].fence))||
+               !finite(a.forward,-400,400)||!finite(a.height,-120,400)||
+                (a.cost?(a.stock>=p.stocks.size()||a.cost>p.stocks[a.stock].capacity||
+                 (p.anchor_sets[a.set].return_on_reach?(p.stocks[a.stock].refill_ticks||a.cost!=1):
+                    (!p.stocks[a.stock].refill_ticks||(p.stocks[a.stock].add_on_debit&&a.cost!=1)))):a.stock!=255))
                 return false;
             previous_anchor=a.frame;
         }
@@ -284,14 +682,83 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
             if(!shot.blast||shot.blast->trigger!=BorgBlastTrigger::Remote||
                (d.landed_only&&shot.floor!=BorgProjectileFloor::Land))return false;
         }
+        if(m.power_field){
+            const auto& field=*m.power_field;
+            if(!field.frame||field.frame>=m.duration||field.radius<8||field.radius>600||!field.ticks||field.ticks>600||
+               field.damage_percent<100||field.damage_percent>300||field.visual_percent<100||field.visual_percent>200||
+               (field.damage_percent==100&&field.visual_percent==100)||
+               !finite(field.forward,-500,500)||!finite(field.height,-300,500)||m.hold_cycles||m.held_fire)
+                return false;
+        }
+        if(m.slow_field){
+            const auto& field=*m.slow_field;
+            if(!field.frame||field.frame>=m.duration||field.radius<8||field.radius>600||!field.ticks||field.ticks>600||
+               field.actor_percent<25||field.actor_percent>100||field.shot_percent<25||field.shot_percent>100||
+               (field.actor_percent==100&&field.shot_percent==100&&!field.break_guidance)||
+               !finite(field.forward,-500,500)||!finite(field.height,-300,500)||m.hold_cycles||m.held_fire||m.power_field)
+                return false;
+        }
+        if(m.field){
+            const auto& f=*m.field;
+            if(m.power_field||m.slow_field||m.held_fire||m.hold_cycles||!f.frame||f.frame>=m.duration||
+               !f.ticks||f.ticks>600||!finite(f.forward,-500,500)||!finite(f.height,-300,500)||
+               unsigned(f.shape)>1||!f.tint[3]||(!f.texture.empty()&&!borg_package_asset_path_valid(f.texture))||
+               (f.socket&&(f.forward||f.height||f.socket->aim_height||f.socket->bone>=32||
+                 !std::all_of(f.socket->local.begin(),f.socket->local.end(),[&](f32 x){return finite(x,-500,500);})))||
+               (f.effects.empty()&&!f.shot_pull&&!f.core_damage&&!f.actor_pull)||f.effects.size()>kBorgFieldEffects)return false;
+            for(auto extent:f.extent)if(extent<8||extent>600||(f.shape==BorgFieldShape::Sphere&&extent!=f.extent[0]))return false;
+            if(f.shot_pull&&(unsigned(f.shot_pull->scope)>3||!finite(f.shot_pull->acceleration,.125f,16.f)))return false;
+            if(f.drift&&(f.follow||!finite(f.drift->speed,.25f,100.f)||!finite(f.drift->deceleration,.25f,f.drift->speed)||
+                std::ceil(f.drift->speed/f.drift->deceleration)>=f.ticks||
+                std::ceil(f.drift->speed/f.drift->deceleration)>120))return false;
+            if(f.slot&&(!borg_gameplay_detail::id(f.slot->id)||
+               (f.slot->on_ready&&(!f.drift||f.drift->active_while_moving))))return false;
+            if(f.actor_pull&&(unsigned(f.actor_pull->scope)>3||!finite(f.actor_pull->step,.125f,16.f)||
+               !finite(f.actor_pull->half_angle,0,1.5707964f)))return false;
+            if(f.actor_pull&&f.actor_pull->point){
+                const auto& point=*f.actor_pull->point;
+                if(!finite(point.forward,-2000,2000)||!finite(point.height,-600,600)||point.minimum>600)return false;
+            }
+            if(const auto& core=f.core_damage;core&&(unsigned(core->scope)>3||!core->radius||
+               core->radius>*std::min_element(f.extent.begin(),f.extent.end())||!core->damage||core->damage>10000||
+               !core->interval||core->interval>=f.ticks||
+               (p.movement==BorgBattleMovement::NormalGRed&&core->scope!=BorgFieldScope::Enemies)))return false;
+            u32 seen=0;
+            for(const auto& e:f.effects){
+                if(unsigned(e.kind)>4||unsigned(e.scope)>3)return false;
+                const auto bit=1u<<(4*unsigned(e.kind)+unsigned(e.scope));
+                if(seen&bit)return false;
+                seen|=bit;
+                const unsigned lo=e.kind==BorgFieldEffectKind::BreakGuidance?0:
+                                   e.kind>=BorgFieldEffectKind::ShotDamage?100:25;
+                const unsigned hi=e.kind==BorgFieldEffectKind::BreakGuidance?0:
+                                   e.kind==BorgFieldEffectKind::ShotDamage?300:
+                                   e.kind==BorgFieldEffectKind::ShotSpeed?100:200;
+                if(e.value<lo||e.value>hi||e.value==100)return false;
+            }
+        }
         if(m.melee){
             const auto& a=*m.melee;
             if(!a.first||a.last<a.first||a.last>=m.duration||!a.damage||a.damage>10000||
                !finite(a.reach,1,220)||!finite(a.radius,1,40)||!finite(a.height,-200,200)||!finite(a.half_height,1,100))return false;
         }
+        if(m.aim_lock&&(m.releases.empty()||*m.aim_lock>m.releases.front().frame||m.held_fire||m.melee))return false;
         unsigned prior=0;
         for(const auto& r:m.releases){
-            if(r.frame<=prior||r.frame>=m.duration||!borg_battle_emission_valid(p,r.stock,r.cost,r.projectile))return false;
+            if(r.frame<=prior||r.frame>=m.duration||!borg_battle_release_valid(p,r))return false;
+            if(!r.debit_sound.empty()&&(!r.cost||++release_sound_count>kBorgReleaseSounds||
+                                       !borg_package_asset_path_valid(r.debit_sound)))return false;
+            if(m.release_gate&&p.projectiles[r.projectile].sustained)return false;
+            if(r.count>r.followups.size())return false;
+            if(r.count&&(!r.cost||p.projectiles[r.projectile].rewind_hit||p.projectiles[r.projectile].sustained))return false;
+            for(unsigned i=0;i<r.count;++i){
+                const auto extra=r.followups[i];
+                if(!borg_battle_emission_valid(p,255,0,extra)||p.projectiles[extra].rewind_hit||p.projectiles[extra].sustained)
+                    return false;
+            }
+            if(m.aim_lock&&p.projectiles[r.projectile].guidance)return false;
+            if(const auto& shot=p.projectiles[r.projectile];shot.sustained&&
+               (m.releases.size()!=1||m.hold_cycles||m.aim_lock||m.melee||shot.lifetime>m.duration-r.frame))return false;
             prior=r.frame;
         }
     }
@@ -314,6 +781,10 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     if(!out||text.size()>kBorgGameplayBytes||borg_package_detail::line(text)!="GFBORG-GAMEPLAY 1")
         return fail("expected bounded GFBORG-GAMEPLAY 1");
     struct ReleaseRef {unsigned line;std::string move,stock,projectile;u16 frame=0,cost=0;};
+    struct EntryStockRef {unsigned line;std::string move,stock;u16 minimum;};
+    struct ReleaseGateRef {unsigned line;std::string move;BorgReleaseAimGate spec;};
+    struct AdditionalReleaseRef {unsigned line;std::string move,projectile;u16 frame=0;bool legacy=false;};
+    struct ReleasePairRef {unsigned line;std::string move;u16 frame=0;};
     struct HitRef {unsigned line;std::string projectile;bool pull=false;u16 amount=0,ticks=0;};
     struct InputRef {unsigned line;std::string move;BorgBattleActivation activation;u16 first=0,second=0;};
     struct MeleeRef {unsigned line;std::string move;BorgBattleMelee shape;};
@@ -327,14 +798,62 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct EmitterRef {unsigned line;std::string watches,projectile;BorgBattleEmitter spec;};
     struct DeployRef {unsigned line;std::string move,emitter;u16 frame=0;};
     struct AnchorRef {unsigned line;std::string move,set,stock;BorgBattleAnchorMarker marker;};
+    struct AnchorOffsetRef {unsigned line;std::string move;u16 frame;f32 forward,height;};
+    struct AnchorFenceRef {unsigned line;std::string set;BorgAnchorFence spec;};
     struct RewindHitRef {unsigned line;std::string projectile,set;u8 speed;};
     struct StageAnchorRef {unsigned line;std::string projectile,set;};
     struct AnchorFallbackRef {unsigned line;std::string projectile,fallback;};
     struct SocketRef {unsigned line;std::string projectile;BorgBattleSocket spec;};
     struct LookRef {unsigned line;std::string projectile;BorgProjectileLook spec;};
+    struct RecordLookRef {unsigned line;std::string projectile;BorgProjectileRecordLook spec;};
+    struct RecordTrailRef {unsigned line;std::string projectile;BorgProjectileRecordTrail spec;};
+    struct ImpactRecordRef {unsigned line;std::string projectile;BorgImpactRecord spec;};
+    struct ImpactRecordGrowthRef {unsigned line;std::string projectile;u16 end;};
+    struct ImpactSoundRef {unsigned line;std::string projectile;BorgImpactSound spec;};
     struct PoseStartRef {unsigned line;std::string move;u16 frame;};
+    struct SustainedRef {unsigned line;std::string projectile;BorgSustainedBeam spec;};
+    struct BeamSweepRef {unsigned line;std::string projectile;BorgBeamSweep spec;};
+    struct ProximityRef {unsigned line;std::string projectile;BorgBombProximity spec;};
+    struct AttractionRef {unsigned line;std::string projectile;BorgBombAttraction spec;};
+    struct FuseTailRef {unsigned line;std::string projectile;u16 ticks;};
+    struct BlastChildrenRef {unsigned line;std::string projectile,child;};
+    struct FlightChildrenRef {unsigned line;std::string projectile,child;BorgFlightChildren spec;};
+    struct ImpactChildrenRef {unsigned line;std::string projectile,child;BorgImpactChildren spec;};
+    struct ImpactTrailRef {unsigned line;std::string projectile;BorgImpactTrail spec;};
+    struct ImpactHazardRef {unsigned line;std::string projectile;BorgImpactHazard spec;};
+    struct ImpactTimingRef {unsigned line;std::string projectile;u16 trail=0,hazard=0,query=0;};
+    struct SmokeRef {unsigned line;std::string projectile;BorgSmoke spec;};
+    struct InkRef {unsigned line;std::string projectile;BorgInkOverlay spec;};
+    struct AccuracyRef {unsigned line;std::string projectile;BorgBlastAccuracy spec;};
+    struct PowerFieldRef {unsigned line;std::string move;BorgPowerField spec;};
+    struct SlowFieldRef {unsigned line;std::string move;BorgSlowField spec;};
+    struct FieldRef {unsigned line;std::string move;BorgField spec;};
+    struct FieldEffectRef {unsigned line;std::string move;BorgFieldEffect spec;};
+    struct FieldShotPullRef {unsigned line;std::string move;BorgFieldShotPull spec;};
+    struct FieldDriftRef {unsigned line;std::string move;BorgFieldDrift spec;};
+    struct FieldSlotRef {unsigned line;std::string move;BorgFieldSlot spec;};
+    struct FieldActorPullRef {unsigned line;std::string move;BorgFieldActorPull spec;};
+    struct FieldPullPointRef {unsigned line;std::string move;BorgFieldPullPoint spec;};
+    struct FieldCoreDamageRef {unsigned line;std::string move;BorgFieldCoreDamage spec;};
+    struct FieldTextureRef {unsigned line;std::string move,path;};
+    struct FieldSocketRef {unsigned line;std::string move;BorgBattleSocket socket;};
+    struct ProjectileAnimationRef {unsigned line;std::string projectile;BorgProjectileAnimation spec;};
+    struct PartSpinRef {unsigned line;std::string move;BorgBattlePartSpin spec;};
+    struct PartMotionRef {unsigned line;std::string move;BorgBattlePartMotion spec;};
+    struct PartScrollRef {unsigned line;std::string move;BorgBattlePartScroll spec;};
+    struct PartSwapRef {unsigned line;std::string move,slot;BorgBattlePartSwap spec;};
+    struct PartPoseRef {unsigned line;std::string move,slot;BorgBattlePartPose spec;};
+    struct PartTurnRef {unsigned line;std::string slot;std::array<u16,3> step;};
+    struct PartBasisRef {unsigned line;std::string slot;BorgPartBasis basis;};
+    struct MountSpinRef {unsigned line;std::string slot;BorgBattlePartSpin spec;};
+    struct PartBoneRef {unsigned line;std::string move,slot;u8 bone;};
     struct GuidanceRef {unsigned line;std::string projectile;BorgBattleGuidance spec;};
     std::vector<ReleaseRef> refs;
+    std::vector<EntryStockRef> entry_stocks;
+    std::vector<ReleaseGateRef> release_gates;
+    std::vector<std::pair<unsigned,std::string>> add_on_debit_stocks;
+    std::vector<AdditionalReleaseRef> additional_releases;
+    std::vector<ReleasePairRef> release_pairs;
     std::vector<HitRef> hits;
     std::vector<InputRef> inputs;
     std::vector<MeleeRef> melee;
@@ -343,20 +862,90 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<BlastRef> blasts;
     std::vector<ActorContactRef> passes;
     std::vector<DetonationRef> detonations;
+    std::vector<std::pair<unsigned,std::string>> first_detonations;
     std::vector<ReturnRef> returns;
     std::vector<GuardRef> guards;
     std::vector<EmitterRef> emitters;
     std::vector<DeployRef> deployments;
     std::vector<AnchorRef> anchors;
+    std::vector<AnchorOffsetRef> anchor_offsets;
+    std::vector<AnchorFenceRef> anchor_fences;
+    std::vector<std::pair<unsigned,std::string>> anchor_returns;
+    std::vector<std::pair<std::string,u8>> fence_recoils;
     std::vector<RewindHitRef> rewind_hits;
     std::vector<StageAnchorRef> stage_anchors;
     std::vector<AnchorFallbackRef> anchor_fallbacks;
     std::vector<SocketRef> sockets;
+    struct LaunchSoundRef {unsigned line;std::string projectile,path;};
+    std::vector<LaunchSoundRef> launch_sounds;
+    struct ReleaseSoundRef {unsigned line;std::string move,path;u16 frame;};
+    std::vector<ReleaseSoundRef> release_sounds;
+    std::vector<std::pair<unsigned,std::string>> body_launches;
     std::vector<LookRef> looks;
+    std::vector<RecordLookRef> record_looks;
+    std::vector<RecordTrailRef> record_trails;
+    std::vector<ImpactRecordRef> impact_records;
+    std::vector<ImpactRecordGrowthRef> impact_record_growth;
+    std::vector<ImpactSoundRef> impact_sounds;
     std::vector<PoseStartRef> starts;
+    std::vector<std::pair<unsigned,std::string>> pose_loop_windows;
+    std::vector<PoseStartRef> aim_locks;
+    std::vector<SustainedRef> sustained;
+    std::vector<BeamSweepRef> beam_sweeps;
+    std::vector<ProximityRef> proximities;
+    std::vector<AttractionRef> attractions;
+    std::vector<FuseTailRef> fuse_tails;
+    std::vector<BlastChildrenRef> blast_children;
+    std::vector<FlightChildrenRef> flight_children;
+    std::vector<ImpactChildrenRef> impact_children;
+    std::vector<ImpactTrailRef> impact_trails;
+    std::vector<ImpactHazardRef> impact_hazards;
+    std::vector<ImpactTimingRef> impact_timings;
+    std::vector<std::pair<unsigned,std::string>> impact_world_space;
+    std::vector<SmokeRef> smoke;
+    std::vector<InkRef> ink;
+    std::vector<AccuracyRef> accuracy;
+    std::vector<std::pair<unsigned,std::string>> accuracy_sensitive;
+    std::vector<PowerFieldRef> power_fields;
+    std::vector<SlowFieldRef> slow_fields;
+    std::vector<FieldRef> fields;
+    std::vector<FieldEffectRef> field_effects;
+    std::vector<FieldShotPullRef> field_shot_pulls;
+    std::vector<FieldDriftRef> field_drifts;
+    std::vector<FieldSlotRef> field_slots;
+    std::vector<FieldActorPullRef> field_actor_pulls;
+    std::vector<FieldPullPointRef> field_pull_points;
+    std::vector<std::pair<unsigned,std::string>> field_repulsions;
+    std::vector<FieldCoreDamageRef> field_core_damage;
+    std::vector<FieldTextureRef> field_textures;
+    std::vector<FieldSocketRef> field_sockets;
+    std::vector<std::pair<unsigned,std::string>> field_follows;
+    std::vector<ProjectileAnimationRef> animations;
+    std::vector<PartSpinRef> spins;
+    std::vector<PartMotionRef> part_motions;
+    std::vector<PartScrollRef> scrolls;
+    std::vector<PartSwapRef> swaps;
+    std::vector<PartPoseRef> part_poses;
+    std::vector<PartTurnRef> part_turns;
+    std::vector<PartBasisRef> part_bases;
+    std::vector<MountSpinRef> mount_spins;
+    std::vector<PartBoneRef> part_bones;
     std::vector<GuidanceRef> guidance;
     BorgGameplayProfile next;bool has_movement=false;
     unsigned locomotion=0;
+    const auto field_scope=[](std::string_view text,BorgFieldScope* out){
+        constexpr std::array<std::string_view,4> scopes{"all","enemies","allies","source"};
+        const auto it=std::find(scopes.begin(),scopes.end(),text);
+        if(it==scopes.end())return false;
+        *out=BorgFieldScope(it-scopes.begin());return true;
+    };
+    const auto impact_pattern=[&](const auto& a,BorgImpactPattern& spec){
+        if(a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage")return false;
+        spec.lane=a[1]=="actor"?BorgImpactLane::Actor:a[1]=="floor"?BorgImpactLane::Floor:BorgImpactLane::Stage;
+        return number(a[2],1,32,&spec.count)&&number(a[3],1,30,&spec.interval)&&
+               number(a[4],0,1200,&spec.radius)&&number(a[5],0,80,&spec.advance)&&
+               scalar(a[6],-180,180,&spec.degrees)&&number(a[7],1,8,&spec.arms);
+    };
     while(!text.empty()){
         ++line;const auto row=borg_package_detail::line(text);
         if(row.empty()||row.starts_with('#'))continue;
@@ -367,8 +956,70 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             auto& dest=key=="variant"?next.variant:key=="rig-prefix"?next.rig_prefix:next.pose_profile;
             if(!dest.empty()||!(key=="variant"?id(value):borg_package_asset_path_valid(value)))return fail("invalid or duplicate identity/rig field");
             dest=value;
+        }else if(key=="body-motion"){
+            if(next.static_body()||(value!="static-cruise"&&value!="static-grounded"))return fail("invalid or duplicate static body policy");
+            next.static_cruise_body=value=="static-cruise";next.static_grounded_body=value=="static-grounded";
+        }else if(key=="idle-loop"){
+            if(next.idle_authored_loop||value!="authored-bit")return fail("invalid or duplicate idle loop policy");
+            next.idle_authored_loop=true;
+        }else if(key=="walk-loop"){
+            if(next.walk_authored_loop||value!="authored-bit")return fail("invalid or duplicate walk loop policy");
+            next.walk_authored_loop=true;
+        }else if(key=="body-record"){
+            if(next.record_zero_body||value!="0")return fail("only explicit record-zero body binding is supported");
+            next.record_zero_body=true;
+        }else if(key=="body-material"){
+            if(next.body_immutable_highlight||value!="immutable-highlight")
+                return fail("invalid or duplicate body material policy");
+            next.body_immutable_highlight=true;
+        }else if(key=="animated-translation-percent"){
+            u16 percent=0;
+            if(next.animated_translation_percent!=100||!number(value,25,200,&percent)||percent==100)
+                return fail("invalid or duplicate animated translation scale");
+            next.animated_translation_percent=percent;
+        }else if(key=="zero-reflection"){
+            std::array<std::string_view,2> fields;
+            BorgZeroReflection policy;
+            if(next.zero_reflections.size()>=kBorgZeroReflectionMeshes||!split_fields(value,&fields)||!number(fields[1],1,64,&policy.count))
+                return fail("invalid zero-reflection policy or extent");
+            const auto offset=fields[0];const auto parsed=std::from_chars(offset.data(),offset.data()+offset.size(),policy.pobj,16);
+            if(parsed.ec!=std::errc{}||parsed.ptr!=offset.data()+offset.size()||!borg_zero_reflection_valid(policy))
+                return fail("invalid zero-reflection PObj offset");
+            next.zero_reflections.push_back(policy);
+        }else if(key=="body-mount"){
+            std::array<std::string_view,5> fields;
+            u16 record=0,bone=0;
+            if(next.body_mounts.size()>=kCharacterPreviewMounts||!split_fields(value,&fields)||
+               !number(fields[0],1,31,&record)||!number(fields[1],0,31,&bone))
+                return fail("invalid body mount");
+            CharacterPreviewMount mount{u8(record),u8(bone)};
+            for(unsigned i=0;i<3;++i){
+                const auto field=fields[i+2];s32 offset=0;
+                const auto parsed=std::from_chars(field.data(),field.data()+field.size(),offset);
+                if(parsed.ec!=std::errc{}||parsed.ptr!=field.data()+field.size()||offset< -4096||offset>4096)
+                    return fail("invalid body mount offset");
+                mount.offset[i]=s16(offset);
+            }
+            next.body_mounts.push_back(mount);
+        }else if(key=="trailing-chain"){
+            BorgTrailingChainSpec spec;
+            if(next.trailing_chain)return fail("duplicate trailing-chain");
+            auto bones=value;
+            while(true){
+                const auto separator=bones.find('|');
+                u16 bone=0;
+                if(spec.count==spec.bones.size()||!number(bones.substr(0,separator),1,31,&bone))
+                    return fail("invalid trailing-chain bone");
+                spec.bones[spec.count++]=u8(bone);
+                if(separator==std::string_view::npos)break;
+                bones.remove_prefix(separator+1);
+            }
+            if(!borg_trailing_chain_valid(spec))return fail("trailing-chain needs three to eight distinct bones");
+            next.trailing_chain=spec;
         }else if(key=="health"){
             if(next.health||!number(value,1,10000,&next.health))return fail("invalid or duplicate health");
+        }else if(key=="beam-recovery"){
+            if(next.beam_recovery||!number(value,1,120,&next.beam_recovery))return fail("invalid or duplicate beam recovery");
         }else if(key=="powered-flight"){
             std::array<std::string_view,2> a;
             if(next.flight_ticks||!split_fields(value,&a)||!scalar(a[0],2,16,&next.flight_lift)||
@@ -384,44 +1035,272 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             else if(value=="stationary-v1")next.movement=BorgBattleMovement::Stationary;
             else{
                 std::array<std::string_view,4> a;
-                if(!split_fields(value,&a)||a[0]!="grounded-v1"||!scalar(a[1],1,16,&next.walk)||
+                if(!split_fields(value,&a)||a[0]!="grounded-v1"||!scalar(a[1],.4f,16,&next.walk)||
                    !scalar(a[2],2,24,&next.jump)||!scalar(a[3],next.walk,32,&next.dash))return fail("unsupported movement or walk/jump/dash values");
+            }
+        }else if(key=="takeoff-clip"||key=="landing-clip"){
+            auto& slot=key=="takeoff-clip"?next.takeoff_clip:next.landing_clip;
+            BorgBattleClip bound;
+            if(slot||!clip(value,&bound))return fail("invalid or duplicate jump transition clip");
+            slot=bound;
+        }else if(key=="dash-back"||key=="dash-left"||key=="dash-right"){
+            auto& slot=next.directional_dash[key=="dash-back"?0:key=="dash-left"?1:2];
+            BorgBattleClip bound;
+            if(slot||!clip(value,&bound))return fail("invalid or duplicate directional dash clip");
+            slot=bound;
+        }else if(key=="air-dash"){
+            if(next.air_dash_disabled||next.air_dash_clip)return fail("duplicate air dash policy");
+            if(value=="none")next.air_dash_disabled=true;
+            else{
+                std::array<std::string_view,2> a;BorgBattleClip bound;
+                if(!split_fields(value,&a)||!clip(a[0],&bound)||!number(a[1],0,600,&next.air_dash_start))
+                    return fail("invalid air dash clip or authored start");
+                next.air_dash_clip=bound;
             }
         }else if(key=="idle"||key=="walk"||key=="air"||key=="dash"){
             const unsigned at=key=="idle"?0:key=="walk"?1:key=="air"?2:3;
             if((locomotion&(1u<<at))||!clip(value,&next.locomotion[at]))return fail("invalid or duplicate locomotion clip");
             locomotion|=1u<<at;
+        }else if(key=="dash-policy"){
+            if(next.dash_disabled||value!="disabled")return fail("invalid or duplicate dash policy");
+            next.dash_disabled=true;
+        }else if(key=="cruise-boost"){
+            BorgCruiseBoost c;
+            if(next.cruise||!borg_read_cruise_boost(value,&c))return fail("invalid or duplicate cruise-boost");
+            next.cruise=c;
+        }else if(key=="cruise-entry"){
+            BorgBattleClip entry;
+            if(next.cruise_entry||!clip(value,&entry))return fail("invalid or duplicate cruise-entry clip");
+            next.cruise_entry=entry;
+        }else if(key=="stock-clock"){
+            std::array<std::string_view,2> a;
+            if(add_on_debit_stocks.size()>=kBorgBattleStocks||!split_fields(value,&a)||!id(a[0])||a[1]!="add-on-debit")
+                return fail("invalid stock-clock binding");
+            add_on_debit_stocks.emplace_back(line,std::string(a[0]));
         }else if(key=="stock"){
             std::array<std::string_view,3> a;BorgBattleStockDefinition s;
             if(!split_fields(value,&a)||!id(a[0])||index(next.stocks,a[0])!=next.stocks.size()||
-               next.stocks.size()>=kBorgBattleStocks||!number(a[1],1,99,&s.capacity)||
+               next.stocks.size()>=kBorgBattleStocks||!number(a[1],1,kBorgStockCapacity,&s.capacity)||
                (a[2]!="on-return"&&!number(a[2],1,3600,&s.refill_ticks)))
                 return fail("invalid or duplicate stock");
             s.id=a[0];next.stocks.push_back(std::move(s));
         }else if(key=="projectile"){
             std::array<std::string_view,11> a;BorgBattleProjectileDefinition p;u16 count=0;
             if(!split_fields(value,&a)||!id(a[0])||index(next.projectiles,a[0])!=next.projectiles.size()||
-               next.projectiles.size()>=kBorgBattleAttacks||(a[1]!="bullet"&&a[1]!="beam"&&a[1]!="shuriken")||
+               next.projectiles.size()>=kBorgBattleAttacks||(a[1]!="bullet"&&a[1]!="beam"&&a[1]!="shuriken"&&a[1]!="orb")||
                !number(a[2],1,kBorgBattleVolley,&count)||
                !scalar(a[3],1,140,&p.speed)||!scalar(a[4],-100,100,&p.rise)||!scalar(a[5],0,8,&p.gravity)||
                !scalar(a[6],0,.8f,&p.spread)||!scalar(a[7],1,60,&p.radius)||!number(a[8],1,600,&p.lifetime)||
-               !number(a[9],0,10000,&p.damage)||(a[10]!="ignore-floor"&&a[10]!="stop-on-floor"&&a[10]!="land-on-floor"&&a[10]!="stop-on-stage"))
+               !number(a[9],0,10000,&p.damage)||(a[10]!="ignore-floor"&&a[10]!="stop-on-floor"&&a[10]!="land-on-floor"&&
+                                                a[10]!="stop-on-stage"&&a[10]!="clip-on-stage"))
                 return fail("invalid or duplicate projectile");
-            p.id=a[0];p.visual=a[1]=="beam"?BorgAttackVisual::Beam:a[1]=="shuriken"?BorgAttackVisual::Shuriken:BorgAttackVisual::Bullet;
+            p.id=a[0];p.visual=a[1]=="beam"?BorgAttackVisual::Beam:a[1]=="shuriken"?BorgAttackVisual::Shuriken:
+                a[1]=="orb"?BorgAttackVisual::Orb:BorgAttackVisual::Bullet;
             p.count=u8(count);p.floor=a[10]=="land-on-floor"?BorgProjectileFloor::Land:
                 a[10]=="stop-on-floor"?BorgProjectileFloor::Retire:
-                a[10]=="stop-on-stage"?BorgProjectileFloor::StageRetire:BorgProjectileFloor::Ignore;
+                 a[10]=="stop-on-stage"?BorgProjectileFloor::StageRetire:
+                 a[10]=="clip-on-stage"?BorgProjectileFloor::StageClip:BorgProjectileFloor::Ignore;
             next.projectiles.push_back(std::move(p));
         }else if(key=="blast"){
             std::array<std::string_view,5> a;BorgBattleBlast spec;
             if(blasts.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
                (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage"&&a[1]!="impact"&&a[1]!="expiry"&&a[1]!="remote")||
-               !number(a[2],1,1200,&spec.radius)||!number(a[3],1,10000,&spec.damage)||
+               !number(a[2],1,1200,&spec.radius)||!number(a[3],0,10000,&spec.damage)||
                (a[4]!="opponent"&&a[4]!="all"))return fail("invalid blast trigger, radius, damage or recipients");
             spec.trigger=a[1]=="actor"?BorgBlastTrigger::Actor:a[1]=="floor"?BorgBlastTrigger::Floor:
                 a[1]=="impact"?BorgBlastTrigger::Impact:a[1]=="expiry"?BorgBlastTrigger::Expiry:
                 a[1]=="stage"?BorgBlastTrigger::Stage:BorgBlastTrigger::Remote;
             spec.include_owner=a[4]=="all";blasts.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field"){
+            std::array<std::string_view,13> a;BorgField spec;
+            if(fields.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,599,&spec.frame)||(a[2]!="sphere"&&a[2]!="box")||
+               !number(a[6],1,600,&spec.ticks)||!scalar(a[7],-500,500,&spec.forward)||!scalar(a[8],-300,500,&spec.height))
+                return fail("invalid field binding");
+            spec.shape=a[2]=="sphere"?BorgFieldShape::Sphere:BorgFieldShape::Box;
+            for(unsigned i=0;i<3;++i)if(!number(a[3+i],8,600,&spec.extent[i]))return fail("invalid field extent");
+            for(unsigned i=0;i<4;++i){u16 n=0;if(!number(a[9+i],i==3?1:0,255,&n))return fail("invalid field colour/opacity");spec.tint[i]=u8(n);}
+            fields.push_back({line,std::string(a[0]),std::move(spec)});
+        }else if(key=="walk-pulse"){
+            std::array<std::string_view,6> a;BorgWalkPulse spec;
+            if(next.walk_pulse||!split_fields(value,&a)||!number(a[0],16,800,&spec.stride)||
+               !number(a[1],4,299,&spec.start)||!number(a[2],u16(spec.start+1),300,&spec.end)||
+               !number(a[3],1,150,&spec.height)||!number(a[4],1,60,&spec.ticks)||!number(a[5],1,10000,&spec.damage))
+                return fail("invalid or duplicate walk-pulse");
+            next.walk_pulse=spec;
+        }else if(key=="field-slot"){
+            std::array<std::string_view,3> a;
+            if(field_slots.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
+               (a[2]!="on-place"&&a[2]!="on-ready"))return fail("invalid field-slot");
+            field_slots.push_back({line,std::string(a[0]),{std::string(a[1]),a[2]=="on-ready"}});
+        }else if(key=="field-drift"){
+            std::array<std::string_view,4> a;BorgFieldDrift spec;
+            if(field_drifts.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !scalar(a[1],.25f,100.f,&spec.speed)||!scalar(a[2],.25f,spec.speed,&spec.deceleration)||
+               (a[3]!="active"&&a[3]!="after-stop"))return fail("invalid field-drift");
+            spec.active_while_moving=a[3]=="active";
+            field_drifts.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-actor-polarity"){
+            std::array<std::string_view,2> a;
+            if(field_repulsions.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="away")
+                return fail("invalid field-actor-polarity");
+            field_repulsions.emplace_back(line,std::string(a[0]));
+        }else if(key=="field-actor-pull-point"){
+            std::array<std::string_view,4> a;BorgFieldPullPoint spec;
+            if(field_pull_points.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !scalar(a[1],-2000,2000,&spec.forward)||!scalar(a[2],-600,600,&spec.height)||
+               !number(a[3],0,600,&spec.minimum))return fail("invalid field-actor-pull-point");
+            field_pull_points.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-actor-pull"){
+            std::array<std::string_view,4> a;BorgFieldActorPull spec;
+            if(field_actor_pulls.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !field_scope(a[1],&spec.scope)||!scalar(a[2],.125f,16.f,&spec.step)||
+               !scalar(a[3],0,1.5707964f,&spec.half_angle))return fail("invalid field-actor-pull");
+            field_actor_pulls.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-shot-pull"){
+            std::array<std::string_view,3> a;BorgFieldShotPull spec;
+            if(field_shot_pulls.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !field_scope(a[1],&spec.scope)||!scalar(a[2],.125f,16.f,&spec.acceleration))return fail("invalid field-shot-pull");
+            field_shot_pulls.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-core-damage"){
+            std::array<std::string_view,5> a;BorgFieldCoreDamage spec;
+            if(field_core_damage.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !field_scope(a[1],&spec.scope)||!number(a[2],1,600,&spec.radius)||
+               !number(a[3],1,10000,&spec.damage)||!number(a[4],1,599,&spec.interval))return fail("invalid field-core-damage");
+            field_core_damage.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-effect"){
+            constexpr std::array<std::string_view,5> kinds{"actor-speed","shot-speed","shot-damage","shot-size","break-guidance"};
+            std::array<std::string_view,4> a;u16 amount=0;BorgFieldScope scope;
+            if(field_effects.size()>=kBorgBattleMoves*kBorgFieldEffects||!split_fields(value,&a)||!id(a[0])||
+               !number(a[3],0,300,&amount))return fail("invalid field-effect binding");
+            const auto kind=std::find(kinds.begin(),kinds.end(),a[1]);
+            if(kind==kinds.end()||!field_scope(a[2],&scope))return fail("unknown field effect or scope");
+            field_effects.push_back({line,std::string(a[0]),{BorgFieldEffectKind(kind-kinds.begin()),scope,amount}});
+        }else if(key=="field-socket"){
+            std::array<std::string_view,5> a;BorgBattleSocket spec;u16 bone=0;
+            if(field_sockets.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!number(a[1],0,31,&bone))
+                return fail("invalid field-socket binding");
+            for(unsigned k=0;k<3;++k)if(!scalar(a[k+2],-500,500,&spec.local[k]))return fail("invalid field-socket offset");
+            spec.bone=u8(bone);field_sockets.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-follow"){
+            std::array<std::string_view,2> a;
+            if(field_follows.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="source")
+                return fail("invalid field-follow binding");
+            field_follows.emplace_back(line,std::string(a[0]));
+        }else if(key=="field-texture"){
+            std::array<std::string_view,2> a;
+            if(field_textures.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !borg_package_asset_path_valid(a[1]))return fail("invalid field-texture binding");
+            field_textures.push_back({line,std::string(a[0]),std::string(a[1])});
+        }else if(key=="slow-field"){
+            std::array<std::string_view,9> a;BorgSlowField spec;
+            if(slow_fields.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,599,&spec.frame)||!number(a[2],8,600,&spec.radius)||!number(a[3],1,600,&spec.ticks)||
+               !scalar(a[4],-500,500,&spec.forward)||!scalar(a[5],-300,500,&spec.height)||
+               !number(a[6],25,100,&spec.actor_percent)||!number(a[7],25,100,&spec.shot_percent)||
+               (a[8]!="keep-guidance"&&a[8]!="break-guidance"))return fail("invalid slow-field binding");
+            spec.break_guidance=a[8]=="break-guidance";
+            slow_fields.push_back({line,std::string(a[0]),spec});
+        }else if(key=="power-field"){
+            std::array<std::string_view,8> a;BorgPowerField spec;
+            if(power_fields.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,599,&spec.frame)||!number(a[2],8,600,&spec.radius)||!number(a[3],1,600,&spec.ticks)||
+               !scalar(a[4],-500,500,&spec.forward)||!scalar(a[5],-300,500,&spec.height)||
+               !number(a[6],100,300,&spec.damage_percent)||!number(a[7],100,200,&spec.visual_percent))
+                return fail("invalid power-field binding");
+            power_fields.push_back({line,std::string(a[0]),spec});
+        }else if(key=="blast-accuracy"){
+            std::array<std::string_view,3> a;BorgBlastAccuracy spec;
+            if(accuracy.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,300,&spec.ticks)||!scalar(a[2],.01f,.45f,&spec.radians))
+                return fail("invalid blast-accuracy binding");
+            accuracy.push_back({line,std::string(a[0]),spec});
+        }else if(key=="accuracy-sensitive"){
+            if(accuracy_sensitive.size()>=kBorgBattleAttacks||!id(value))return fail("invalid accuracy-sensitive binding");
+            accuracy_sensitive.emplace_back(line,std::string(value));
+        }else if(key=="blast-ink"){
+            std::array<std::string_view,4> a;BorgInkOverlay spec;u16 coverage=0,opacity=0;
+            if(ink.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,300,&spec.ticks)||!number(a[2],10,80,&coverage)||!number(a[3],1,255,&opacity))
+                return fail("invalid blast-ink binding");
+            spec.coverage=u8(coverage);spec.opacity=u8(opacity);ink.push_back({line,std::string(a[0]),spec});
+        }else if(key=="blast-smoke"){
+            std::array<std::string_view,4> a;BorgSmoke spec;
+            if(smoke.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],8,600,&spec.radius)||!number(a[2],1,600,&spec.ticks)||
+               (a[3]!="visual"&&a[3]!="block-aim"))return fail("invalid blast-smoke binding");
+            spec.block_aim=a[3]=="block-aim";smoke.push_back({line,std::string(a[0]),spec});
+        }else if(key=="impact-pattern-timing"){
+            std::array<std::string_view,4> a;ImpactTimingRef r{line,{}};
+            if(impact_timings.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],0,120,&r.trail)||!number(a[2],0,120,&r.hazard)||!number(a[3],0,60,&r.query)||
+               !(r.trail||r.hazard||r.query))return fail("invalid impact-pattern-timing binding");
+            r.projectile=a[0];impact_timings.push_back(std::move(r));
+        }else if(key=="impact-pattern-space"){
+            std::array<std::string_view,2> a;
+            if(impact_world_space.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||a[1]!="world")
+                return fail("invalid impact-pattern-space binding");
+            impact_world_space.emplace_back(line,std::string(a[0]));
+        }else if(key=="impact-trail"){
+            std::array<std::string_view,10> a;BorgImpactTrail spec;
+            if(impact_trails.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!impact_pattern(a,spec)||
+               !number(a[8],1,180,&spec.mark_size)||!number(a[9],1,30,&spec.mark_ticks))
+                return fail("invalid impact-trail binding");
+            impact_trails.push_back({line,std::string(a[0]),spec});
+        }else if(key=="impact-hazard"){
+            std::array<std::string_view,12> a;BorgImpactHazard spec;
+            if(impact_hazards.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!impact_pattern(a,spec)||
+               !number(a[8],1,180,&spec.hit_radius)||!number(a[9],0,600,&spec.height)||
+               !number(a[10],1,60,&spec.ticks)||!number(a[11],1,10000,&spec.damage))
+                return fail("invalid impact-hazard binding");
+            impact_hazards.push_back({line,std::string(a[0]),spec});
+        }else if(key=="impact-children"){
+            std::array<std::string_view,4> a;BorgImpactChildren spec;
+            if(impact_children.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
+               (a[2]!="actor"&&a[2]!="floor"&&a[2]!="stage")||(a[3]!="forward"&&a[3]!="radial"))
+                return fail("invalid impact-children binding");
+            spec.lane=a[2]=="actor"?BorgImpactLane::Actor:a[2]=="floor"?BorgImpactLane::Floor:BorgImpactLane::Stage;
+            spec.radial=a[3]=="radial";impact_children.push_back({line,std::string(a[0]),std::string(a[1]),spec});
+        }else if(key=="flight-children"){
+            std::array<std::string_view,5> a;BorgFlightChildren spec;u16 count=0;
+            if(flight_children.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
+               !number(a[2],1,598,&spec.first)||!number(a[3],1,598,&spec.interval)||!number(a[4],1,8,&count))
+                return fail("invalid flight-children binding");
+            spec.count=u8(count);flight_children.push_back({line,std::string(a[0]),std::string(a[1]),spec});
+        }else if(key=="blast-children"){
+            std::array<std::string_view,2> a;
+            if(blast_children.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!id(a[1]))
+                return fail("invalid blast-children binding");
+            blast_children.push_back({line,std::string(a[0]),std::string(a[1])});
+        }else if(key=="bomb-fuse-tail"){
+            std::array<std::string_view,2> a;u16 ticks=0;
+            if(fuse_tails.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,120,&ticks))
+                return fail("invalid bomb-fuse-tail binding");
+            fuse_tails.push_back({line,std::string(a[0]),ticks});
+        }else if(key=="bomb-attraction"){
+            std::array<std::string_view,4> a;BorgBombAttraction spec;
+            if(attractions.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,1800,&spec.radius)||!scalar(a[2],.125f,8,&spec.acceleration)||!scalar(a[3],spec.acceleration,32,&spec.cap))
+                return fail("invalid bomb-attraction binding");
+            attractions.push_back({line,std::string(a[0]),spec});
+        }else if(key=="bomb-proximity"){
+            std::array<std::string_view,4> a;BorgBombProximity spec;
+            if(proximities.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,600,&spec.radius)||!number(a[2],0,599,&spec.arming)||
+               (a[3]!="blast"&&a[3]!="retire"))return fail("invalid bomb-proximity binding");
+            spec.blast=a[3]=="blast";proximities.push_back({line,std::string(a[0]),spec});
+        }else if(key=="beam-sweep"){
+            std::array<std::string_view,4> a;BorgBeamSweep spec;
+            if(beam_sweeps.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,2400,&spec.travel)||!number(a[2],1,2399,&spec.drop)||!number(a[3],1,180,&spec.impact_radius))
+                return fail("invalid beam-sweep binding");
+            beam_sweeps.push_back({line,std::string(a[0]),spec});
+        }else if(key=="sustained-beam"){
+            std::array<std::string_view,4> a;BorgSustainedBeam spec;
+            if(sustained.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],40,2400,&spec.length)||!number(a[2],1,600,&spec.interval)||!scalar(a[3],0,.25f,&spec.turn))
+                return fail("invalid sustained-beam binding");
+            sustained.push_back({line,std::string(a[0]),spec});
         }else if(key=="guidance"){
             std::array<std::string_view,4> a;BorgBattleGuidance spec;
             if(guidance.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
@@ -432,10 +1311,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         }else if(key=="return-stock"){
             std::array<std::string_view,2> a;
             if(returns.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
-               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage"&&a[1]!="expiry"&&a[1]!="remote"))
+               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage"&&a[1]!="expiry"&&a[1]!="remote"&&a[1]!="expiry-or-proximity"))
                 return fail("invalid stock-return disposition");
             returns.push_back({line,std::string(a[0]),a[1]=="actor"?BorgProjectileReturn::Actor:
-                a[1]=="floor"?BorgProjectileReturn::Floor:a[1]=="expiry"?BorgProjectileReturn::Expiry:
+                 a[1]=="floor"?BorgProjectileReturn::Floor:a[1]=="expiry"?BorgProjectileReturn::Expiry:
+                 a[1]=="expiry-or-proximity"?BorgProjectileReturn::ExpiryOrProximity:
                 a[1]=="stage"?BorgProjectileReturn::Stage:BorgProjectileReturn::Remote});
         }else if(key=="actor-contact"){
             std::array<std::string_view,2> a;
@@ -463,6 +1343,16 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                 a[1]=="landing"?BorgMovementCue::Landing:BorgMovementCue::Rise;
             spec.style=a[2]=="jet"?BorgMovementLook::Jet:BorgMovementLook::Puff;spec.bone=u8(bone);spec.duration=u8(life);
             next.movement_fx.push_back(std::move(spec));
+        }else if(key=="release-sound"){
+            std::array<std::string_view,3> a;u16 frame=0;
+            if(release_sounds.size()>=kBorgReleaseSounds||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,600,&frame)||!borg_package_asset_path_valid(a[2]))return fail("invalid release sound binding");
+            release_sounds.push_back({line,std::string(a[0]),std::string(a[2]),frame});
+        }else if(key=="launch-sound"){
+            std::array<std::string_view,2> a;
+            if(launch_sounds.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!borg_package_asset_path_valid(a[1]))
+                return fail("invalid launch-sound projectile or path");
+            launch_sounds.push_back({line,std::string(a[0]),std::string(a[1])});
         }else if(key=="origin"){
             std::array<std::string_view,6> a;BorgBattleSocket spec;u16 bone=0;
             if(sockets.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!number(a[1],0,31,&bone)||
@@ -470,6 +1360,133 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                (a[5]!="fixed"&&a[5]!="target-height"))
                 return fail("invalid launch bone or local offset");
             spec.bone=u8(bone);spec.aim_height=a[5]=="target-height";sockets.push_back({line,std::string(a[0]),spec});
+        }else if(key=="projectile-animation"){
+            std::array<std::string_view,4> a;BorgProjectileAnimation spec;u16 pulse=0;
+            if(animations.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !scalar(a[1],-2,2,&spec.spin)||!number(a[2],0,240,&spec.pulse_period)||!number(a[3],0,75,&pulse)||
+               (bool(spec.pulse_period)!=bool(pulse)))return fail("invalid projectile animation");
+            spec.pulse_percent=u8(pulse);animations.push_back({line,std::string(a[0]),spec});
+        }else if(key=="part-motion"){
+            std::array<std::string_view,5> a;BorgBattlePartMotion spec;u16 bone=0;
+            if(part_motions.size()>=kBorgBattleMoves*kBorgBattlePartAnimations||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,31,&bone)||!clip(a[2],&spec.clip)||!number(a[3],0,600,&spec.first)||
+               !number(a[4],2,240,&spec.count))return fail("invalid part-motion binding");
+            spec.bone=u8(bone);part_motions.push_back({line,std::string(a[0]),spec});
+        }else if(key=="part-spin"){
+            std::array<std::string_view,5> a;BorgBattlePartSpin spec;u16 bone=0;
+            if(spins.size()>=kBorgBattleMoves*kBorgBattlePartAnimations||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,31,&bone)||(a[2]!="x"&&a[2]!="y"&&a[2]!="z")||
+               !number(a[3],2,240,&spec.period)||(a[4]!="forward"&&a[4]!="reverse"))
+                return fail("invalid part-spin bone, axis or period");
+            spec.bone=u8(bone);spec.axis=a[2]=="x"?0:a[2]=="y"?1:2;spec.reverse=a[4]=="reverse";
+            spins.push_back({line,std::string(a[0]),spec});
+        }else if(key=="part-swap-bone"){
+            std::array<std::string_view,3> a;u16 bone=0;
+            if(part_bones.size()>=kBorgBattleMoves*kBorgBattlePartSlots||!split_fields(value,&a)||
+               !id(a[0])||!id(a[1])||!number(a[2],0,31,&bone))return fail("invalid part-swap-bone binding");
+            part_bones.push_back({line,std::string(a[0]),std::string(a[1]),u8(bone)});
+        }else if(key=="part-hierarchy"){
+            u16 record=0;
+            if(next.static_part_hierarchies.size()>=kBorgBattlePartRecords||!number(value,1,255,&record)||
+               std::find(next.static_part_hierarchies.begin(),next.static_part_hierarchies.end(),record)!=next.static_part_hierarchies.end())
+                return fail("invalid or duplicate static part hierarchy");
+            next.static_part_hierarchies.push_back(record);
+        }else if(key=="part-mount-spin"){
+            std::array<std::string_view,4> a;BorgBattlePartSpin spin;
+            if(mount_spins.size()>=kBorgBattlePartSlots||!split_fields(value,&a)||!id(a[0])||
+               (a[1]!="x"&&a[1]!="y"&&a[1]!="z")||!number(a[2],2,240,&spin.period)||(a[3]!="forward"&&a[3]!="reverse"))
+                return fail("invalid part mount spin");
+            spin.axis=a[1]=="x"?0:a[1]=="y"?1:2;spin.reverse=a[3]=="reverse";
+            mount_spins.push_back({line,std::string(a[0]),spin});
+        }else if(key=="part-basis"){
+            std::array<std::string_view,2> a;
+            if(part_bases.size()>=kBorgBattlePartSlots||!split_fields(value,&a)||!id(a[0])||
+               (a[1]!="world-zyx"&&a[1]!="bone-zyx"))
+                return fail("invalid part-basis");
+            part_bases.push_back({line,std::string(a[0]),a[1]=="world-zyx"?BorgPartBasis::WorldZyx:BorgPartBasis::BoneZyx});
+        }else if(key=="part-turn"){
+            std::array<std::string_view,4> a;std::array<u16,3> step{};
+            if(part_turns.size()>=kBorgBattlePartSlots||!split_fields(value,&a)||!id(a[0]))return fail("invalid part-turn slot");
+            for(unsigned axis=0;axis<3;++axis)
+                if(!number(a[1+axis],0,8192,&step[axis]))return fail("invalid part-turn step");
+            if(step==std::array<u16,3>{})return fail("part-turn requires a nonzero step");
+            part_turns.push_back({line,std::string(a[0]),step});
+        }else if(key=="part-pose"||key=="part-swap-pose"){
+            std::array<std::string_view,7> a;
+            std::array<std::string_view,8> b;
+            const bool swap=key=="part-swap-pose";
+            if(part_poses.size()>=(kBorgBattleMoves+1)*kBorgBattlePartSlots||
+               !(swap?split_fields(value,&b):split_fields(value,&a)))return fail("invalid part-pose fields");
+            const auto* fields=swap?b.data()+1:a.data();
+            if(!id(fields[0])||(swap&&!id(b[0])))return fail("invalid part-pose target");
+            BorgBattlePartPose pose;
+            for(unsigned axis=0;axis<3;++axis)
+                if(!scalar(fields[1+axis],-1000,1000,&pose.offset[axis])||!scalar(fields[4+axis],-180,180,&pose.degrees[axis]))
+                    return fail("invalid part-pose offset or angle");
+            part_poses.push_back({line,swap?std::string(b[0]):std::string{},std::string(fields[0]),pose});
+        }else if(key=="part-material"){
+            std::array<std::string_view,5> a;BorgBattlePartMaterial spec;
+            if(next.part_materials.size()>=kBorgBattlePartRecords||!split_fields(value,&a)||
+               !number(a[0],1,255,&spec.record)||!number(a[1],0,255,&spec.clip)||
+               !number(a[2],0,600,&spec.first)||!number(a[3],spec.first,600,&spec.last)||
+               (a[4]!="once"&&a[4]!="loop"&&a[4]!="sample"))return fail("invalid part-material binding");
+            spec.playback=a[4]=="loop"?BorgPartMaterialPlayback::Loop:a[4]=="sample"?BorgPartMaterialPlayback::Sample:BorgPartMaterialPlayback::Once;
+            next.part_materials.push_back(spec);
+        }else if(key=="part-record"){
+            std::array<std::string_view,3> a;BorgBattlePartSlot part;u16 bone=0;
+            if(next.part_slots.size()>=kBorgBattlePartSlots||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],0,31,&bone)||!number(a[2],0,255,&part.record))
+                return fail("invalid part-record slot");
+            part.id=a[0];part.bone=u8(bone);next.part_slots.push_back(std::move(part));
+        }else if(key=="part-swap"){
+            std::array<std::string_view,5> a;BorgBattlePartSwap spec;
+            if(swaps.size()>=kBorgBattleMoves*kBorgBattlePartSlots||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
+               !number(a[2],0,600,&spec.first)||!number(a[3],spec.first,600,&spec.last)||!number(a[4],0,255,&spec.record))
+                return fail("invalid part-swap window");
+            swaps.push_back({line,std::string(a[0]),std::string(a[1]),spec});
+        }else if(key=="part-scroll"){
+            std::array<std::string_view,5> a;BorgBattlePartScroll spec;u16 bone=0;
+            if(scrolls.size()>=kBorgBattleMoves*kBorgBattlePartAnimations||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],0,31,&bone)||(a[2]!="u"&&a[2]!="v")||!number(a[3],2,240,&spec.period)||
+               (a[4]!="forward"&&a[4]!="reverse"))return fail("invalid part-scroll binding");
+            spec.bone=u8(bone);spec.axis=a[2]=="u"?0:1;spec.reverse=a[4]=="reverse";
+            scrolls.push_back({line,std::string(a[0]),spec});
+        }else if(key=="impact-sound"){
+            std::array<std::string_view,3> a;
+            if(impact_sounds.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage")||!borg_package_asset_path_valid(a[2]))
+                return fail("invalid impact sound");
+            const auto lane=a[1]=="floor"?BorgImpactLane::Floor:a[1]=="stage"?BorgImpactLane::Stage:BorgImpactLane::Actor;
+            impact_sounds.push_back({line,std::string(a[0]),{lane,std::string(a[2])}});
+        }else if(key=="impact-record-bank"){
+            if(!next.impact_record_bank.empty()||!borg_package_asset_path_valid(value))return fail("invalid or duplicate impact record archive");
+            next.impact_record_bank=value;
+        }else if(key=="impact-record-growth"){
+            std::array<std::string_view,2> a;u16 end=0;
+            if(impact_record_growth.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,400,&end))
+                return fail("invalid impact record growth");
+            impact_record_growth.push_back({line,std::string(a[0]),end});
+        }else if(key=="impact-record"){
+            std::array<std::string_view,5> a;BorgImpactRecord spec;
+            if(impact_records.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage")||!number(a[2],1,255,&spec.record)||
+               !number(a[3],1,400,&spec.scale_percent)||!number(a[4],1,120,&spec.ticks))return fail("invalid impact record");
+            spec.lane=a[1]=="floor"?BorgImpactLane::Floor:a[1]=="stage"?BorgImpactLane::Stage:BorgImpactLane::Actor;
+            impact_records.push_back({line,std::string(a[0]),spec});
+        }else if(key=="projectile-record-trail"){
+            std::array<std::string_view,5> a;BorgProjectileRecordTrail spec;u16 count=0,interval=0;
+            if(record_trails.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,31,&spec.record)||!number(a[2],1,kBorgProjectileTrailSamples,&count)||
+               !number(a[3],1,30,&interval)||!number(a[4],1,400,&spec.scale_percent))
+                return fail("invalid projectile record trail");
+            spec.count=u8(count);spec.interval=u8(interval);
+            record_trails.push_back({line,std::string(a[0]),spec});
+        }else if(key=="projectile-record"){
+            std::array<std::string_view,3> a;BorgProjectileRecordLook spec;
+            if(record_looks.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,31,&spec.record)||!number(a[2],1,400,&spec.scale_percent))
+                return fail("invalid projectile record");
+            record_looks.push_back({line,std::string(a[0]),spec});
         }else if(key=="look"){
             std::array<std::string_view,5> a;BorgProjectileLook spec;u16 r=0,g=0,b=0;
             if(looks.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,180,&spec.size)||
@@ -504,10 +1521,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             std::array<std::string_view,6> a;BorgBattleMove m;
             if(!split_fields(value,&a)||!id(a[0])||index(next.moves,a[0])!=next.moves.size()||next.moves.size()>=kBorgBattleMoves||
                (a[1]!="b"&&a[1]!="x")||!number(a[2],0,1024,&m.priority)||
-               (a[3]!="any"&&a[3]!="grounded"&&a[3]!="airborne")||!number(a[4],2,600,&m.duration)||!clip(a[5],&m.clip)||
+               (a[3]!="any"&&a[3]!="grounded"&&a[3]!="airborne")||!number(a[4],2,600,&m.duration)||
+               (a[5]!="none"&&!clip(a[5],&m.clip))||
                std::any_of(next.moves.begin(),next.moves.end(),[&](const auto& move){return move.priority==m.priority;}))
                 return fail("invalid move or ambiguous priority");
             m.id=a[0];m.button=a[1]=="b"?BorgBattleButton::B:BorgBattleButton::X;
+            m.static_pose=a[5]=="none";
             m.context=a[3]=="grounded"?BorgBattleContext::Grounded:a[3]=="airborne"?BorgBattleContext::Airborne:BorgBattleContext::Any;
             next.moves.push_back(std::move(m));
         }else if(key=="melee"){
@@ -518,11 +1537,43 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !scalar(a[5],-200,200,&shape.height)||!scalar(a[6],1,100,&shape.half_height)||
                !number(a[7],1,10000,&shape.damage))return fail("invalid melee window or geometry");
             melee.push_back({line,std::string(a[0]),shape});
+        }else if(key=="aim-lock"){
+            std::array<std::string_view,2> a;u16 frame=0;
+            if(aim_locks.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!number(a[1],0,599,&frame))
+                return fail("invalid aim-lock marker");
+            aim_locks.push_back({line,std::string(a[0]),frame});
         }else if(key=="pose-start"){
             std::array<std::string_view,2> a;u16 frame=0;
             if(starts.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,600,&frame))
                 return fail("invalid pose start");
             starts.push_back({line,std::string(a[0]),frame});
+        }else if(key=="pose-loop-window"){
+            std::array<std::string_view,2> a;
+            if(pose_loop_windows.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="authored-bit")
+                return fail("invalid pose loop window");
+            pose_loop_windows.emplace_back(line,std::string(a[0]));
+        }else if(key=="anchor-return"){
+            std::array<std::string_view,2> a;
+            if(anchor_returns.size()>=kBorgBattleAnchorSets||!split_fields(value,&a)||!id(a[0])||a[1]!="on-reach")
+                return fail("invalid anchor-return binding");
+            anchor_returns.emplace_back(line,std::string(a[0]));
+        }else if(key=="anchor-fence"){
+            std::array<std::string_view,4> a;BorgAnchorFence spec;
+            if(anchor_fences.size()>=kBorgBattleAnchorSets||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,120,&spec.radius)||!number(a[2],1,10000,&spec.damage)||!number(a[3],1,600,&spec.ticks))
+                return fail("invalid anchor-fence binding");
+            anchor_fences.push_back({line,std::string(a[0]),spec});
+        }else if(key=="fence-recoil"){
+            std::array<std::string_view,2> a;u16 amount=0;
+            if(fence_recoils.size()>=kBorgBattleAnchorSets||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,40,&amount))return fail("invalid fence-recoil binding");
+            fence_recoils.emplace_back(std::string(a[0]),u8(amount));
+        }else if(key=="place-anchor-offset"){
+            std::array<std::string_view,4> a;AnchorOffsetRef r{line,{},0,0,0};
+            if(anchor_offsets.size()>=kBorgBattleMoves*kBorgBattleAnchors||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,599,&r.frame)||!scalar(a[2],-400,400,&r.forward)||!scalar(a[3],-120,400,&r.height))
+                return fail("invalid place-anchor-offset binding");
+            r.move=a[0];anchor_offsets.push_back(std::move(r));
         }else if(key=="anchor-set"){
             std::array<std::string_view,2> a;u16 cap=0;
             if(next.anchor_sets.size()>=kBorgBattleAnchorSets||!split_fields(value,&a)||!id(a[0])||
@@ -589,11 +1640,43 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !number(a[6],1,spec.slow_interval,&spec.fast_interval)||!number(a[7],0,600,&spec.cooldown))
                 return fail("invalid held-fire stock, cadence or cooldown");
             spec.cost=u8(cost);held_fire.push_back({line,std::string(a[0]),std::string(a[1]),std::string(a[3]),spec});
+        }else if(key=="detonation-policy"){
+            std::array<std::string_view,2> a;
+            if(first_detonations.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="first-eligible")
+                return fail("invalid detonation-policy");
+            first_detonations.emplace_back(line,std::string(a[0]));
         }else if(key=="detonate"){
             std::array<std::string_view,4> a;u16 frame=0;
             if(detonations.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,599,&frame)||
                !id(a[2])||(a[3]!="any"&&a[3]!="landed"))return fail("invalid detonation marker or selector");
             detonations.push_back({line,std::string(a[0]),std::string(a[2]),frame,a[3]=="landed"});
+        }else if(key=="release-aim-gate"){
+            std::array<std::string_view,4> a;BorgReleaseAimGate g;
+            if(release_gates.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,599,&g.frame)||!scalar(a[2],.01f,1.5707964f,&g.half_angle)||
+               !number(a[3],1,120,&g.timeout))return fail("invalid release-aim-gate");
+            release_gates.push_back({line,std::string(a[0]),g});
+        }else if(key=="entry-stock"){
+            std::array<std::string_view,3> a;u16 minimum=0;
+            if(entry_stocks.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
+               !number(a[2],1,99,&minimum))return fail("invalid entry-stock binding");
+            entry_stocks.push_back({line,std::string(a[0]),std::string(a[1]),minimum});
+        }else if(key=="launch-heading"){
+            std::array<std::string_view,2> a;
+            if(body_launches.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||a[1]!="body")
+                return fail("invalid launch-heading binding");
+            body_launches.emplace_back(line,std::string(a[0]));
+        }else if(key=="release-return"){
+            std::array<std::string_view,3> a;u16 frame=0;
+            if(release_pairs.size()>=kBorgBattleMoves*kBorgBattleReleases||!split_fields(value,&a)||
+               !id(a[0])||!number(a[1],1,599,&frame)||a[2]!="all-retired")return fail("invalid release return binding");
+            release_pairs.push_back({line,std::string(a[0]),frame});
+        }else if(key=="release-extra"||key=="release-followup"){
+            std::array<std::string_view,3> a;u16 frame=0;
+            if(!split_fields(value,&a)||!id(a[0])||!id(a[2])||!number(a[1],1,599,&frame)||
+               additional_releases.size()>=kBorgBattleMoves*kBorgBattleReleases*kBorgReleaseFollowups)
+                return fail("invalid release follow-up binding");
+            additional_releases.push_back({line,std::string(a[0]),std::string(a[2]),frame,key=="release-extra"});
         }else if(key=="release"){
             std::array<std::string_view,5> a;u16 frame=0,cost=0;
             if(!split_fields(value,&a)||!id(a[0])||(!id(a[2])&&a[2]!="none")||!id(a[4])||
@@ -606,10 +1689,24 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     const auto movement=next.movement;
     if(movement==BorgBattleMovement::NormalGRed){
         if(locomotion||!next.rig_prefix.empty()||!next.pose_profile.empty())return fail("G-Red adapter uses the qualified practice rig and locomotion");
-    }else if(next.rig_prefix.empty()||next.pose_profile.empty()||locomotion!=(movement==BorgBattleMovement::Stationary?1u:15u))
+    }else if(next.rig_prefix.empty()||next.pose_profile.empty()||
+             locomotion!=((next.static_body()||next.cruise_entry)?0u:movement==BorgBattleMovement::Stationary?1u:next.dash_disabled?7u:15u))
         return fail("exact rig and locomotion clip bindings required");
     if(next.moves.empty()!=(movement==BorgBattleMovement::Stationary))return fail("only a stationary target has no moves");
     if(movement==BorgBattleMovement::Stationary&&(!next.stocks.empty()||!next.projectiles.empty()))return fail("stationary target cannot declare stock or attacks");
+    for(const auto& [at,projectile]:body_launches){
+        line=at;const auto pi=index(next.projectiles,projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].launch_body_heading)
+            return fail("launch-heading needs one declared projectile");
+        next.projectiles[pi].launch_body_heading=true;
+    }
+    for(const auto& [at,id]:add_on_debit_stocks){
+        line=at;
+        const auto stock=index(next.stocks,id);
+        if(stock==next.stocks.size()||!next.stocks[stock].refill_ticks||next.stocks[stock].add_on_debit)
+            return fail("stock-clock needs one timed stock pool");
+        next.stocks[stock].add_on_debit=true;
+    }
     for(const auto& h:hits){
         line=h.line;const auto pi=index(next.projectiles,h.projectile);
         if(pi==next.projectiles.size())return fail("unknown hit-effect projectile");
@@ -663,6 +1760,170 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             return fail("blast trigger cannot occur under the projectile's contact policy");
         next.projectiles[pi].blast=r.spec;
     }
+    for(const auto& r:proximities){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].proximity)return fail("unknown projectile or duplicate bomb proximity");
+        next.projectiles[pi].proximity=r.spec;
+    }
+    for(const auto& r:attractions){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].attraction)return fail("unknown projectile or duplicate bomb attraction");
+        next.projectiles[pi].attraction=r.spec;
+    }
+    for(const auto& r:fuse_tails){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].fuse_tail)return fail("unknown projectile or duplicate bomb fuse tail");
+        next.projectiles[pi].fuse_tail=r.ticks;
+    }
+    for(const auto& r:blast_children){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile),ci=index(next.projectiles,r.child);
+        if(pi==next.projectiles.size()||ci==next.projectiles.size()||next.projectiles[pi].blast_children!=255)
+            return fail("unknown projectile or duplicate blast children");
+        next.projectiles[pi].blast_children=u8(ci);
+    }
+    for(const auto& r:flight_children){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile),ci=index(next.projectiles,r.child);
+        if(pi==next.projectiles.size()||ci==next.projectiles.size()||next.projectiles[pi].flight_children)
+            return fail("unknown projectile or duplicate flight children");
+        auto spec=r.spec;spec.projectile=u8(ci);next.projectiles[pi].flight_children=spec;
+    }
+    for(const auto& r:impact_children){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile),ci=index(next.projectiles,r.child);
+        if(pi==next.projectiles.size()||ci==next.projectiles.size()||next.projectiles[pi].impact_children)
+            return fail("unknown projectile or duplicate impact children");
+        auto spec=r.spec;spec.projectile=u8(ci);next.projectiles[pi].impact_children=spec;
+    }
+    for(const auto& r:impact_trails){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].impact_trail)
+            return fail("unknown projectile or duplicate impact trail");
+        next.projectiles[pi].impact_trail=r.spec;
+    }
+    for(const auto& r:impact_hazards){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].impact_hazard)
+            return fail("unknown projectile or duplicate impact hazard");
+        next.projectiles[pi].impact_hazard=r.spec;
+    }
+    for(const auto& r:impact_timings){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size())return fail("unknown projectile in impact-pattern-timing");
+        auto& a=next.projectiles[pi];
+        if((r.trail&&!a.impact_trail)||((r.hazard||r.query)&&!a.impact_hazard)||
+           (a.impact_trail&&a.impact_trail->first_delay)||
+           (a.impact_hazard&&(a.impact_hazard->first_delay||a.impact_hazard->first_query)))
+            return fail("duplicate impact-pattern-timing or undeclared impact pattern");
+        if(a.impact_trail)a.impact_trail->first_delay=r.trail;
+        if(a.impact_hazard){a.impact_hazard->first_delay=r.hazard;a.impact_hazard->first_query=r.query;}
+    }
+    for(const auto& [at,projectile]:impact_world_space){
+        line=at;const auto pi=index(next.projectiles,projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].impact_world_space||
+           (!next.projectiles[pi].impact_trail&&!next.projectiles[pi].impact_hazard))
+            return fail("impact-pattern-space needs one binding to a declared impact pattern");
+        next.projectiles[pi].impact_world_space=true;
+    }
+    for(const auto& r:smoke){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].smoke)return fail("unknown projectile or duplicate blast smoke");
+        next.projectiles[pi].smoke=r.spec;
+    }
+    for(const auto& r:ink){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].ink)return fail("unknown projectile or duplicate blast ink");
+        next.projectiles[pi].ink=r.spec;
+    }
+    for(const auto& r:accuracy){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].accuracy)return fail("unknown projectile or duplicate blast accuracy");
+        next.projectiles[pi].accuracy=r.spec;
+    }
+    for(const auto& [at,shot]:accuracy_sensitive){
+        line=at;const auto pi=index(next.projectiles,shot);
+        if(pi==next.projectiles.size()||next.projectiles[pi].accuracy_sensitive)return fail("unknown or duplicate accuracy-sensitive projectile");
+        next.projectiles[pi].accuracy_sensitive=true;
+    }
+    for(const auto& r:power_fields){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].power_field)return fail("unknown move or duplicate power field");
+        next.moves[mi].power_field=r.spec;
+    }
+    for(const auto& r:slow_fields){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].slow_field)return fail("unknown move or duplicate slow field");
+        next.moves[mi].slow_field=r.spec;
+    }
+    for(auto& r:fields){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].field)return fail("unknown move or duplicate field");
+        next.moves[mi].field=std::move(r.spec);
+    }
+    for(const auto& r:field_effects){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->effects.size()>=kBorgFieldEffects)
+            return fail("field-effect needs a field with available effect slots");
+        next.moves[mi].field->effects.push_back(r.spec);
+    }
+    for(const auto& r:field_shot_pulls){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->shot_pull)
+            return fail("field-shot-pull needs one binding to a declared field");
+        next.moves[mi].field->shot_pull=r.spec;
+    }
+    for(const auto& r:field_drifts){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->drift)
+            return fail("field-drift needs one declared field");
+        next.moves[mi].field->drift=r.spec;
+    }
+    for(const auto& r:field_slots){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->slot)
+            return fail("field-slot needs one declared field");
+        next.moves[mi].field->slot=r.spec;
+    }
+    for(const auto& r:field_actor_pulls){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->actor_pull)
+            return fail("field-actor-pull needs one binding to a declared field");
+        next.moves[mi].field->actor_pull=r.spec;
+    }
+    for(const auto& r:field_pull_points){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||!next.moves[mi].field->actor_pull||
+           next.moves[mi].field->actor_pull->point)return fail("field-actor-pull-point needs one declared actor pull");
+        next.moves[mi].field->actor_pull->point=r.spec;
+    }
+    for(const auto& [at,move]:field_repulsions){
+        line=at;const auto mi=index(next.moves,move);
+        if(mi==next.moves.size()||!next.moves[mi].field||!next.moves[mi].field->actor_pull||
+           next.moves[mi].field->actor_pull->repel)return fail("field-actor-polarity needs one declared actor pull");
+        next.moves[mi].field->actor_pull->repel=true;
+    }
+    for(const auto& r:field_core_damage){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->core_damage)
+            return fail("field-core-damage needs one binding to a declared field");
+        next.moves[mi].field->core_damage=r.spec;
+    }
+    for(const auto& r:field_textures){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||!next.moves[mi].field->texture.empty())
+            return fail("field-texture needs one field and one local texture");
+        next.moves[mi].field->texture=r.path;
+    }
+    for(const auto& [at,move]:field_follows){
+        line=at;const auto mi=index(next.moves,move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->follow)
+            return fail("field-follow needs one explicitly declared field");
+        next.moves[mi].field->follow=true;
+    }
+    for(const auto& r:field_sockets){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->socket)
+            return fail("field-socket needs one explicitly declared field");
+        next.moves[mi].field->socket=r.socket;
+    }
     for(const auto& r:returns){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);
         if(pi==next.projectiles.size()||next.projectiles[pi].stock_return!=BorgProjectileReturn::None)
@@ -670,6 +1931,16 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         auto& shot=next.projectiles[pi];
         if(!borg_projectile_return_reachable(shot,r.reason))return fail("stock return cannot occur under the projectile's lifetime policy");
         shot.stock_return=r.reason;
+    }
+    for(const auto& r:sustained){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].sustained)return fail("unknown projectile or duplicate sustained beam");
+        next.projectiles[pi].sustained=r.spec;
+    }
+    for(const auto& r:beam_sweeps){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].beam_sweep)return fail("unknown projectile or duplicate beam sweep");
+        next.projectiles[pi].beam_sweep=r.spec;
     }
     for(const auto& r:guidance){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);
@@ -683,15 +1954,132 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(mi==next.moves.size()||next.moves[mi].pose_start)return fail("unknown move or duplicate pose start");
         next.moves[mi].pose_start=r.frame;
     }
+    for(const auto& [source,move]:pose_loop_windows){
+        line=source;const auto mi=index(next.moves,move);
+        if(mi==next.moves.size()||next.moves[mi].pose_authored_loop_window)
+            return fail("unknown move or duplicate pose loop window");
+        next.moves[mi].pose_authored_loop_window=true;
+    }
+    for(const auto& r:aim_locks){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].aim_lock)return fail("unknown move or duplicate aim-lock marker");
+        next.moves[mi].aim_lock=r.frame;
+    }
     for(const auto& r:sockets){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);
         if(pi==next.projectiles.size()||next.projectiles[pi].socket)return fail("unknown projectile or duplicate origin");
         next.projectiles[pi].socket=r.spec;
     }
+    for(const auto& r:launch_sounds){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||!next.projectiles[pi].launch_sound.empty())
+            return fail("unknown projectile or duplicate launch sound");
+        next.projectiles[pi].launch_sound=r.path;
+    }
     for(const auto& r:looks){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);
         if(pi==next.projectiles.size()||next.projectiles[pi].look)return fail("unknown projectile or duplicate look");
         next.projectiles[pi].look=r.spec;
+    }
+    for(const auto& r:record_looks){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].record_look)return fail("unknown projectile or duplicate record");
+        next.projectiles[pi].record_look=r.spec;
+    }
+    for(const auto& r:record_trails){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].record_trail)return fail("unknown projectile or duplicate record trail");
+        next.projectiles[pi].record_trail=r.spec;
+    }
+    for(const auto& r:impact_records){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].impact_record)return fail("unknown projectile or duplicate impact record");
+        next.projectiles[pi].impact_record=r.spec;
+    }
+    for(const auto& r:impact_record_growth){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||!next.projectiles[pi].impact_record||next.projectiles[pi].impact_record->end_scale||
+           next.projectiles[pi].impact_record->ticks<2)return fail("impact record growth requires a unique visual lasting at least two ticks");
+        next.projectiles[pi].impact_record->end_scale=r.end;
+    }
+    for(const auto& r:impact_sounds){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].impact_sound)return fail("unknown projectile or duplicate impact sound");
+        next.projectiles[pi].impact_sound=r.spec;
+    }
+    for(const auto& r:animations){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].animation)return fail("unknown projectile or duplicate animation");
+        const auto style=next.projectiles[pi].visual;
+        if(r.spec.spin&&style!=BorgAttackVisual::Shuriken&&style!=BorgAttackVisual::Orb)
+            return fail("projectile style has no visible rotation");
+        next.projectiles[pi].animation=r.spec;
+    }
+    for(const auto& r:spins){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].part_spins.size()>=kBorgBattlePartAnimations)
+            return fail("unknown move or part-spin budget");
+        next.moves[mi].part_spins.push_back(r.spec);
+    }
+    for(const auto& r:part_motions){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].part_spins.size()+next.moves[mi].part_motions.size()>=kBorgBattlePartAnimations)
+            return fail("unknown move or decorative animation budget");
+        next.moves[mi].part_motions.push_back(r.spec);
+    }
+    for(const auto& r:scrolls){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size())return fail("unknown move for part-scroll");
+        auto& move=next.moves[mi];
+        if(move.part_spins.size()+move.part_motions.size()+move.part_scrolls.size()>=kBorgBattlePartAnimations)
+            return fail("decorative animation budget");
+        move.part_scrolls.push_back(r.spec);
+    }
+    for(const auto& r:swaps){
+        line=r.line;const auto mi=index(next.moves,r.move),si=index(next.part_slots,r.slot);
+        if(mi==next.moves.size()||si==next.part_slots.size())return fail("unknown move or part-swap slot");
+        auto spec=r.spec;spec.slot=u8(si);next.moves[mi].part_swaps.push_back(spec);
+    }
+    for(const auto& r:part_poses){
+        line=r.line;const auto si=index(next.part_slots,r.slot);
+        if(si==next.part_slots.size())return fail("unknown part-pose slot");
+        auto* target=&next.part_slots[si].pose;
+        if(!r.move.empty()){
+            const auto mi=index(next.moves,r.move);
+            if(mi==next.moves.size())return fail("unknown part-swap-pose move");
+            auto& entries=next.moves[mi].part_swaps;
+            const auto bound=std::find_if(entries.begin(),entries.end(),[si](const auto& spec){return spec.slot==si;});
+            if(bound==entries.end()||!bound->record)return fail("part-swap-pose requires a visible swap");
+            target=&bound->pose;
+        }
+        if(*target)return fail("duplicate part pose");
+        *target=r.spec;
+    }
+    for(const auto& r:part_turns){
+        line=r.line;const auto si=index(next.part_slots,r.slot);
+        if(si==next.part_slots.size()||next.part_slots[si].turn_step!=std::array<u16,3>{})
+            return fail("unknown or duplicate part-turn slot");
+        next.part_slots[si].turn_step=r.step;
+    }
+    for(const auto& r:part_bases){
+        line=r.line;const auto si=index(next.part_slots,r.slot);
+        if(si==next.part_slots.size()||next.part_slots[si].basis!=BorgPartBasis::Bone)
+            return fail("unknown or duplicate part-basis slot");
+        next.part_slots[si].basis=r.basis;
+    }
+    for(const auto& r:mount_spins){
+        line=r.line;const auto si=index(next.part_slots,r.slot);
+        if(si==next.part_slots.size()||next.part_slots[si].mount_spin||!next.part_slots[si].record)
+            return fail("part mount spin needs one visible slot");
+        next.part_slots[si].mount_spin=r.spec;
+    }
+    for(const auto& r:part_bones){
+        line=r.line;const auto mi=index(next.moves,r.move),si=index(next.part_slots,r.slot);
+        if(mi==next.moves.size()||si==next.part_slots.size())return fail("unknown part-swap-bone move or slot");
+        auto& entries=next.moves[mi].part_swaps;
+        const auto bound=std::find_if(entries.begin(),entries.end(),[si](const auto& spec){return spec.slot==si;});
+        if(bound==entries.end()||!bound->record||bound->bone)return fail("part-swap-bone requires one visible swap");
+        bound->bone=r.bone;
     }
     for(const auto& ref:refs){
         line=ref.line;
@@ -702,9 +2090,49 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
            (!m.releases.empty()&&m.releases.back().frame>=ref.frame)||
            (ref.cost&&ref.cost>next.stocks[si].capacity))return fail("release order, action window or stock cost");
         const BorgBattleRelease release{ref.frame,u8(ref.cost?si:255),u8(ref.cost),u8(pi)};
-        if(!borg_battle_emission_valid(next,release.stock,release.cost,release.projectile))
-            return fail("stock return requires one unit from return-only stock per carrier");
         m.releases.push_back(release);
+    }
+    for(const auto& ref:release_sounds){
+        line=ref.line;const auto mi=index(next.moves,ref.move);
+        if(mi==next.moves.size())return fail("unresolved move for release sound");
+        auto& releases=next.moves[mi].releases;
+        const auto r=std::find_if(releases.begin(),releases.end(),[&](const auto& release){return release.frame==ref.frame;});
+        if(r==releases.end()||!r->cost||!r->debit_sound.empty())return fail("release sound requires one paid marker");
+        r->debit_sound=ref.path;
+    }
+    std::array<unsigned,kBorgBattleMoves> legacy_followups{};
+    for(const auto& ref:additional_releases){
+        line=ref.line;const auto mi=index(next.moves,ref.move),pi=index(next.projectiles,ref.projectile);
+        if(mi==next.moves.size()||pi==next.projectiles.size())return fail("unresolved move or projectile for release-extra");
+        auto& releases=next.moves[mi].releases;
+        const auto r=std::find_if(releases.begin(),releases.end(),[&](const auto& release){return release.frame==ref.frame;});
+        if(r==releases.end()||!r->cost)return fail("release follow-up requires one paid marker");
+        const auto mask=1u<<unsigned(r-releases.begin());
+        if((legacy_followups[mi]&mask)||(ref.legacy&&r->count)||r->count==r->followups.size())
+            return fail("mixed, duplicate or excessive release follow-ups");
+        if(ref.legacy)legacy_followups[mi]|=mask;
+        r->followups[r->count++]=u8(pi);
+    }
+    for(const auto& ref:release_pairs){
+        line=ref.line;const auto mi=index(next.moves,ref.move);
+        if(mi==next.moves.size())return fail("unknown move for release return");
+        auto& releases=next.moves[mi].releases;
+        const auto r=std::find_if(releases.begin(),releases.end(),[&](const auto& release){return release.frame==ref.frame;});
+        if(r==releases.end()||r->return_pair)return fail("release return needs one declared marker");
+        r->return_pair=true;
+        if(!borg_battle_release_valid(next,*r))return fail("grouped return requires a one-unit return-only pool and two single projectiles");
+    }
+    for(const auto& r:entry_stocks){
+        line=r.line;
+        const auto mi=index(next.moves,r.move),si=index(next.stocks,r.stock);
+        if(mi==next.moves.size()||si==next.stocks.size()||next.moves[mi].entry_stock||
+           r.minimum>next.stocks[si].capacity)return fail("unknown, duplicate or unreachable entry-stock binding");
+        next.moves[mi].entry_stock=BorgBattleEntryStock{u8(si),u8(r.minimum)};
+    }
+    for(const auto& r:release_gates){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].release_gate)return fail("release-aim-gate needs one declared move");
+        next.moves[mi].release_gate=r.spec;
     }
     for(const auto& r:ranges){
         line=r.line;const auto move=index(next.moves,r.move);
@@ -755,6 +2183,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             return fail("duplicate or incompatible detonation marker");
         m.detonation=BorgBattleDetonation{d.frame,u8(pi),d.landed_only};
     }
+    for(const auto& [at,move]:first_detonations){
+        line=at;const auto mi=index(next.moves,move);
+        if(mi==next.moves.size()||!next.moves[mi].detonation||next.moves[mi].detonation->first_eligible)
+            return fail("detonation-policy needs one declared detonation");
+        next.moves[mi].detonation->first_eligible=true;
+    }
     for(const auto& g:guards){
         line=g.line;const auto mi=index(next.moves,g.move);
         if(mi==next.moves.size())return fail("unknown guard move");
@@ -782,17 +2216,43 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             return fail("duplicate or incompatible deployment marker");
         m.emitters.push_back({d.frame,u8(ei)});
     }
+    for(const auto& [at,set]:anchor_returns){
+        line=at;const auto si=index(next.anchor_sets,set);
+        if(si==next.anchor_sets.size()||next.anchor_sets[si].return_on_reach)return fail("anchor-return needs one declared set");
+        next.anchor_sets[si].return_on_reach=true;
+    }
     for(auto& a:anchors){
         line=a.line;
         const auto mi=index(next.moves,a.move),si=index(next.anchor_sets,a.set),pi=index(next.stocks,a.stock);
         if(mi==next.moves.size()||si==next.anchor_sets.size()||(a.marker.cost&&(pi==next.stocks.size()||
-           !next.stocks[pi].refill_ticks||a.marker.cost>next.stocks[pi].capacity)))return fail("unresolved anchor marker or stock pool");
+           a.marker.cost>next.stocks[pi].capacity)))return fail("unresolved anchor marker or stock pool");
         auto& m=next.moves[mi];
         if(m.held_fire||m.hold_cycles||m.anchors.size()>=kBorgBattleAnchors||a.marker.frame>=m.duration||
            (!m.anchors.empty()&&a.marker.frame<=m.anchors.back().frame))return fail("duplicate or incompatible anchor marker");
         a.marker.set=u8(si);a.marker.stock=u8(a.marker.cost?pi:255);m.anchors.push_back(a.marker);
     }
-    for(const auto& m:next.moves)if(m.releases.empty()&&!m.melee&&!m.held_fire&&!m.detonation&&!m.guard&&m.emitters.empty()&&m.anchors.empty())
+    for(const auto& r:anchor_fences){
+        line=r.line;const auto si=index(next.anchor_sets,r.set);
+        if(si==next.anchor_sets.size()||next.anchor_sets[si].fence)return fail("anchor-fence needs one declared anchor set");
+        next.anchor_sets[si].fence=r.spec;
+    }
+    for(const auto& [set,recoil]:fence_recoils){
+        const auto si=index(next.anchor_sets,set);
+        if(si==next.anchor_sets.size()||!next.anchor_sets[si].fence||next.anchor_sets[si].fence->recoil)
+            return fail("fence-recoil needs one declared fence");
+        next.anchor_sets[si].fence->recoil=recoil;
+    }
+    for(const auto& r:anchor_offsets){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size())return fail("unknown place-anchor-offset move");
+        auto& a=next.moves[mi].anchors;
+        const auto marker=std::find_if(a.begin(),a.end(),[&](const auto& m){return m.frame==r.frame;});
+        if(marker==a.end()||marker->rewind_speed||marker->forward||marker->height||(!r.forward&&!r.height))
+            return fail("place-anchor-offset needs one placement marker and nonzero offset");
+        marker->forward=r.forward;marker->height=r.height;
+    }
+    for(const auto& m:next.moves)if(m.releases.empty()&&!m.melee&&!m.held_fire&&!m.detonation&&!m.guard&&!m.power_field&&
+        !m.slow_field&&!m.field&&m.emitters.empty()&&m.anchors.empty())
         return fail("move needs an executable marker or behavior: "+m.id);
     if(!borg_gameplay_profile_valid(next))return fail("invalid executable definition");
     *out=std::move(next);if(error)error->clear();return true;

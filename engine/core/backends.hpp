@@ -212,6 +212,9 @@ struct FrameDesc {
     f32 clear_r = 0.0f;
     f32 clear_g = 0.0f;
     f32 clear_b = 0.0f;
+    // Opt in when the screen lays out in actual drawable pixels. Otherwise
+    // keep the renderer's configured reference size for legacy callers.
+    bool drawable_coordinates = false;
 };
 
 struct RenderCapabilities {

@@ -4,7 +4,7 @@ namespace gf {
 struct BattleMvpMotionChoice {u8 group=0,choice=0;bool operator==(const BattleMvpMotionChoice&)const=default;};
 enum class NativeBorgMotion:u8 {
     Idle,Walk,WeaponNeutral,LegacyJump,DashForward,DashBackward,DashLeft,DashRight,
-    Takeoff,AirHold,Apex,Fall,Land,AirDash,Count
+    Takeoff,AirHold,Apex,Fall,Land,AirDash,LabAirWindup,LabAirRecovery,LabGlideEntry,LabGlide,LabCruise,LabBoost,Count
 };
 struct NativeBorgMotionMap {
     std::array<BattleMvpMotionChoice,unsigned(NativeBorgMotion::Count)> clips{};
@@ -31,19 +31,21 @@ inline NativeBorgMotionMap native_borg_motion_map(u16 model){
     }
     return map;
 }
+inline NativeBorgMotion native_borg_ground_dash_motion(BattleMvpDashDirection direction){
+    return direction==BattleMvpDashDirection::Backward?NativeBorgMotion::DashBackward:
+        direction==BattleMvpDashDirection::Left?NativeBorgMotion::DashLeft:
+        direction==BattleMvpDashDirection::Right?NativeBorgMotion::DashRight:NativeBorgMotion::DashForward;
+}
 inline NativeBorgMotion native_borg_select_motion(const BattleMvpActor& actor,const NativeBorgMotionMap& map){
     if(map.user_classified){
-        if(actor.dash_ticks)return actor.dash_airborne?NativeBorgMotion::AirDash:
-            actor.dash_motion==BattleMvpDashDirection::Backward?NativeBorgMotion::DashBackward:
-            actor.dash_motion==BattleMvpDashDirection::Left?NativeBorgMotion::DashLeft:
-            actor.dash_motion==BattleMvpDashDirection::Right?NativeBorgMotion::DashRight:NativeBorgMotion::DashForward;
+        if(actor.dash_ticks)return actor.dash_airborne?NativeBorgMotion::AirDash:native_borg_ground_dash_motion(actor.dash_motion);
         if(!actor.grounded)return actor.takeoff_ticks?NativeBorgMotion::Takeoff:actor.vertical_speed>2?NativeBorgMotion::AirHold:actor.vertical_speed>=-2?NativeBorgMotion::Apex:NativeBorgMotion::Fall;
         if(actor.landing_ticks)return NativeBorgMotion::Land;
     }else{if(!actor.grounded)return NativeBorgMotion::LegacyJump;if(actor.landing_ticks)return NativeBorgMotion::Idle;}
     return actor.movement_speed>.05f?NativeBorgMotion::Walk:NativeBorgMotion::Idle;
 }
 inline bool native_borg_motion_loops(NativeBorgMotion motion){
-    return motion==NativeBorgMotion::Idle||motion==NativeBorgMotion::Walk||motion==NativeBorgMotion::AirHold||motion==NativeBorgMotion::Fall||motion==NativeBorgMotion::LegacyJump;
+    return motion==NativeBorgMotion::Idle||motion==NativeBorgMotion::Walk||motion==NativeBorgMotion::AirHold||motion==NativeBorgMotion::Fall||motion==NativeBorgMotion::LegacyJump||motion==NativeBorgMotion::LabGlide;
 }
 //Short classified phases must reach their last pose inside the gameplay window.
 //These timings/blends are native presentation policy, not original frame rates.

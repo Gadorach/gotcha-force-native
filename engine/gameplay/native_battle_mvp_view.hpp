@@ -1,5 +1,8 @@
 #pragma once
 #include "engine/assets/borg_practice_profile.hpp"
+#include "engine/assets/stage_package.hpp"
+#include "engine/assets/stage_view_fade.hpp"
+#include "engine/gameplay/animated_model_scene.hpp"
 #include "engine/gameplay/stage_inclined_ledge.hpp"
 #include "engine/gameplay/native_battle_mvp_borg.hpp"
 #include "engine/gameplay/attachment_model_scene.hpp"
@@ -7,10 +10,25 @@
 #include "engine/gameplay/stage_projectile_segment.hpp"
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/graphics/text.hpp"
+#include "engine/graphics/ink_splatter.hpp"
 #include "engine/core/backends.hpp"
 namespace gf {
 enum class PracticeBackScreen {Close,OwnedCollection,ForceBrowser};
-struct BorgBattleVisualAssets {ByteView model,prefix,pose,motions;};
+struct BorgBattleVisualAssets {
+    ByteView model,prefix,pose,motions;
+    std::array<ByteView,kBorgBattleMoves> field_texture{};
+    ByteView impact_record_bank{};
+};
+inline bool borg_impact_record_fade_supported(const HsdMeshProperties& mesh){
+    if(mesh.hidden)return true;
+    const u32 alpha=(mesh.render_mode>>13)&3u;
+    const u32 alpha_source=alpha?alpha:(mesh.render_mode&3u);
+    // The authored fade only admits a material-bearing alpha lane that affects
+    // RGB blending, never a write to depth or a replacement render policy.
+    return alpha_source!=2&&mesh.colour_write&&mesh.blend&&mesh.blend_src==5&&(mesh.blend_dst==2||mesh.blend_dst==6)&&
+           !mesh.depth_write&&(mesh.texture==kHsdNoTexture||mesh.texture_stage_inactive||
+                               mesh.texture_alpha_mode==0||mesh.texture_alpha_mode==3);
+}
 class NativeBattleMvpView final:public IBattleMvpTerrain {
 public:
     NativeBattleMvpView()=default;
@@ -140,7 +158,8 @@ public:
     void source_vertical_jump_controls(s16 resource,bool moving=false,bool air_dash=false,bool relaunch=false,bool dash_jump=false,bool landing_interrupt=false,bool surface=false,bool steep=false,bool fall_surface=false,bool recovery_surface=false,bool source_windup=false,bool active_surface=false,bool relaunch_surface=false,bool entry_surface=false,bool relaunch_floor=false){source_vertical_jump_=true;source_moving_jump_=moving;source_air_dash_=air_dash;source_relaunch_=relaunch;source_dash_jump_=dash_jump;source_landing_interrupt_=landing_interrupt;source_surface_=surface;source_steep_=steep;source_fall_surface_=fall_surface;source_recovery_surface_=recovery_surface;source_windup_surface_=source_windup;source_active_surface_=active_surface;source_relaunch_surface_=relaunch_surface;source_relaunch_entry_surface_=entry_surface;source_relaunch_floor_=relaunch_floor;source_resource_=resource;}
     bool load(IFileSystem& files,const std::string& directory,RenderEngine& render,std::string* error,
               const NativeGRedPracticeAssets* practice=nullptr){
-        ready_=false;projectile_stage_ready_=false;source_practice_package_=false;source_practice_owned_instance_=0;source_practice_force_slot_={};
+        clear_stage();
+        source_practice_package_=false;source_practice_owned_instance_=0;source_practice_force_slot_={};
         source_practice_frame_.reset();
         if(practice&&!practice->qualified()){if(error)*error="unqualified packaged practice view inputs";return false;}
         auto read=[&](const std::string& name,std::vector<u8>* out){u64 size=0;const auto path=directory+"/"+name;if(!files.file_size(path,&size)||!size||size>(32u<<20)||!files.read(path,*out)||out->size()!=size){if(error)*error="native MVP: missing/oversized asset "+path;return false;}return true;};
@@ -161,7 +180,7 @@ public:
     bool load_packages(IFileSystem& files,const std::string& directory,RenderEngine& render,
                        const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions,
                        const std::array<BorgBattleVisualAssets,2>& assets,std::string* error,const std::string& stage_collision={}){
-        ready_=false;projectile_stage_ready_=false;source_practice_frame_.reset();rendered_scope_.reset();
+        clear_stage();
         auto read=[&](const std::string& name,std::vector<u8>* out){
             u64 size=0;const auto path=directory+"/"+name;
             if(files.file_size(path,&size)&&size&&size<=(32u<<20)&&files.read(path,*out)&&out->size()==size)return true;
@@ -169,28 +188,223 @@ public:
             return false;
         };
         if(!load_stage(read,render,error))return false;
-        bool needs_stage=false;
-        for(const auto& def:definitions)if(def)for(const auto& shot:def->projectiles)
-            needs_stage|=shot.floor==BorgProjectileFloor::StageRetire;
-        if(needs_stage&&!bind_projectile_stage(files,stage_collision,error))return false;
+        if(needs_projectile_stage(definitions)&&!bind_projectile_stage(files,directory,stage_collision,error))return false;
+        if(files.exists(directory+"/view-fade.txt")){
+            std::vector<u8> bytes;u64 length=0;const auto path=directory+"/view-fade.txt";
+            if(floor_hash_==source_floor_hash_||stage_bank_.hash()==source_stage_hash_||
+               !files.file_size(path,&length)||!length||length>4096||!files.read(path,bytes)||bytes.size()!=length){
+                if(error)*error="stage viewport fade: authored local descriptor required";
+                return false;
+            }
+            if(!bind_stage_fades(render,{reinterpret_cast<const char*>(bytes.data()),bytes.size()},error))return false;
+        }
+        return bind_package_borgs(render,definitions,assets,error);
+    }
+    bool load_provisional_walk(IFileSystem& files,const std::string& directory,RenderEngine& render,
+                               ByteView model,ByteView prefix,ByteView motions,
+                               const std::array<BattleMvpMotionChoice,2>& roles,const BattleMvpConfig& config,std::string* error,
+                               const ProvisionalBorgJumpClips* jump=nullptr,std::span<const CharacterPreviewMount> mounts={},
+                               const ProvisionalBorgDashClips* dash=nullptr,const ProvisionalBorgAirDashClips* air_dash=nullptr,
+                                const ProvisionalBorgGlideClips* glide=nullptr,const BattleMvpMotionChoice* cruise_entry=nullptr){
+        if(render.frame_in_progress()||!config.provisional_walk||
+           config.provisional_jump!=bool(jump)||config.provisional_ground_dash!=bool(dash)||
+           config.provisional_air_dash!=bool(air_dash)||config.provisional_glide!=bool(glide)){
+            if(error)*error="movement lab: matching configuration between frames required";
+            return false;
+        }
+        const bool replacing=provisional_walk_view_&&ready_;
+        if(!replacing)clear_stage();
+        auto read=[&](const std::string& name,std::vector<u8>* out){
+            u64 size=0;const auto path=directory+"/"+name;
+            if(files.file_size(path,&size)&&size&&size<=(32u<<20)&&files.read(path,*out)&&out->size()==size)return true;
+            if(error)*error="walk lab: missing or oversized stage asset "+path;
+            return false;
+        };
+        if(!replacing&&!load_stage(read,render,error))return false;
+        NativeBattleMvpBorg next;
+        if(!next.load_provisional_walk(model,prefix,motions,roles,error,jump,mounts,dash,air_dash,glide,
+                                       bool(config.provisional_cruise),cruise_entry))return false;
+        // Qualify the initial pose on this same retained stage before replacing
+        // any live body state or consuming one of the two private texture ranges.
+        NativeBattleMvp probe;
+        ready_=true;
+        if(!probe.start(config,this)||!next.update(probe.actors()[0],probe.tick(),error)){
+            ready_=replacing;
+            if(error&&error->empty())*error="movement lab: initial body pose refused";
+            return false;
+        }
+        const auto textures=next.scene_.asset().scene.textures.size();
+        const auto next_slot=replacing?1u-walk_texture_slot_:0u;
+        const auto next_base=walk_texture_base_+1024u*next_slot;
+        if(textures>1024){ready_=replacing;if(error)*error="movement lab: texture budget";return false;}
+        for(u32 i=0;i<textures;++i)if(render.texture_is_shared(next_base+i)){
+            ready_=replacing;if(error)*error="movement lab: private texture range unavailable";return false;
+        }
+        if(next.scene_.upload_textures(render,next_base)!=textures){
+            for(u32 i=0;i<textures;++i)render.release_texture(next_base+i);
+            ready_=replacing;if(error)*error="movement lab: body texture upload refused";return false;
+        }
+        if(replacing)for(u32 i=0;i<walk_textures_;++i)render.release_texture(walk_texture_base_+1024u*walk_texture_slot_+i);
+        borgs_[0]=std::move(next);walk_texture_slot_=next_slot;walk_textures_=unsigned(textures);
+        provisional_jump_view_=jump!=nullptr;provisional_dash_view_=dash!=nullptr;provisional_air_dash_view_=air_dash!=nullptr;
+        provisional_glide_view_=glide!=nullptr;
+        provisional_cruise_view_=bool(config.provisional_cruise);
+        provisional_walk_view_=ready_=true;return true;
+    }
+    // Bind only the selected stage. No package path is consulted at runtime or
+    // on restart; the renderer and collision queries own the accepted data.
+    bool bind_stage(const StagePackageSnapshot& stage,RenderEngine& render,std::string* error){
+        const auto fail=[&](const char* reason){if(error)*error=reason;return false;};
+        if(source_practice_)return fail("unsupported portable stage mode: source movement practice has its own stage");
+        clear_stage();
+        if(!stage.valid())return fail("malformed stage snapshot");
+        const auto model=stage.asset(StageAsset::Model),floor=stage.asset(StageAsset::Floor);
+        if(character_program_model_hash(floor)==source_floor_hash_||character_program_model_hash(model)==source_stage_hash_)
+            return fail("unsupported portable stage: pinned retail stage inputs require the exact legacy qualification");
+        if(!load_stage(model,floor,render,error))return false;
+        if(floor_.cell_size_x()!=500||floor_.cell_size_z()!=500)
+            return fail("unsupported portable stage floor: expected a 500-unit STIH grid");
+        const auto declaration=stage.asset(StageAsset::ProjectileStage);
+        if(declaration.size){
+            const auto secondary=stage.asset(StageAsset::Secondary),tertiary=stage.asset(StageAsset::Tertiary);
+            const auto source_grid=[&](ByteView bytes){
+                const auto hash=character_program_model_hash(bytes);
+                return std::find(source_grid_hashes_.begin(),source_grid_hashes_.end(),hash)!=source_grid_hashes_.end();
+            };
+            if(source_grid(secondary)||source_grid(tertiary))
+                return fail("unsupported portable stage: pinned retail projectile grids require the exact legacy qualification");
+            if(!bind_authored_projectile_stage(declaration,{secondary,tertiary},error))return false;
+        }
+        const auto fade=stage.asset(StageAsset::ViewFade);
+        if(fade.size&&!bind_stage_fades(render,{reinterpret_cast<const char*>(fade.data),fade.size},error))return false;
+        if(render.shared_texture_upload_failed())return fail("stage texture upload failed");
+        stage_manifest_=stage.manifest;
+        if(error)error->clear();
+        return true;
+    }
+    std::string_view stage_id()const{return stage_manifest_?stage_manifest_->id:std::string_view{};}
+    // Preflight can resolve physical placement before copying any Borg
+    // presentation or starting a world. start() still owns initial facing and
+    // the final atomic admission of the duel.
+    bool configure_stage_duel(std::string_view id,const std::array<std::string_view,2>& marker_ids,
+                              BattleMvpConfig* config,std::string* error)const{
+        const auto fail=[&](std::string reason){if(error)*error=std::move(reason);return false;};
+        if(!config||!stage_manifest_||id!=stage_manifest_->id)return fail("exact bound stage ID required");
+        if(config->solo())return fail("unsupported portable stage mode: only two-actor placement is available");
+        if(marker_ids[0]==marker_ids[1])return fail("stage spawn markers must be distinct");
+        auto next=*config;next.arena_half=stage_manifest_->arena_half;
+        if(!std::isfinite(next.actor_radius)||next.actor_radius<=0||4*next.actor_radius>=next.arena_half)
+            return fail("stage arena is too small for the native duel body bounds");
+        for(unsigned i=0;i<marker_ids.size();++i){
+            const auto* marker=stage_manifest_->spawn(marker_ids[i]);
+            if(!marker)return fail("missing stage spawn marker: "+std::string(marker_ids[i]));
+            const auto& p=marker->query;
+            if(std::abs(p[0])>next.arena_half-next.actor_radius||std::abs(p[2])>next.arena_half-next.actor_radius)
+                return fail("stage spawn outside arena body bounds: "+marker->id);
+            f32 support=0;
+            if(!height(p[0],p[2],p[1],&support)||!std::isfinite(support)||std::abs(support)>20000)
+                return fail("stage spawn has no supported floor: "+marker->id);
+            next.spawn[i]={p[0],p[2]};next.spawn_query_y[i]=p[1];
+        }
+        const auto dx=next.spawn[0].x-next.spawn[1].x,dz=next.spawn[0].z-next.spawn[1].z;
+        if(dx*dx+dz*dz<=4*next.actor_radius*next.actor_radius)return fail("stage spawn markers overlap the duel bodies");
+        *config=std::move(next);if(error)error->clear();return true;
+    }
+    bool load_packages(RenderEngine& render,const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions,
+                       const std::array<BorgBattleVisualAssets,2>& assets,std::string* error){
+        ready_=false;
+        if(!stage_manifest_){
+            if(error)*error="exact portable stage binding required";
+            return false;
+        }
+        for(const auto& def:definitions)if(def&&def->movement==BorgBattleMovement::NormalGRed){
+            if(error)*error="unsupported portable stage movement: normal G-Red requires the exact legacy stage";
+            return false;
+        }
+        if(needs_projectile_stage(definitions)&&!projectile_stage_ready_){
+            if(error)*error="unsupported stage projectile capability: declare projectile-stage, secondary and tertiary";
+            return false;
+        }
+        return bind_package_borgs(render,definitions,assets,error);
+    }
+private:
+    bool bind_package_borgs(RenderEngine& render,const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions,
+                            const std::array<BorgBattleVisualAssets,2>& assets,std::string* error){
+        projectile_records_={};
+        impact_record_scenes_={};
+        u32 next_projectile_texture=118000;
+        const auto bind_record=[&](AnimatedModelScene& scene,const HsdRecordAnimationBank& bank,u16 record,bool fade=false){
+            if(!scene.load_compact_static(bank,record,error)||!scene.request(0,0,error))return false;
+            const auto& meshes=scene.asset()->meshes;
+            if(fade&&!std::all_of(meshes.begin(),meshes.end(),borg_impact_record_fade_supported)){
+                if(error)*error="Borg Battle Test: impact growth requires material-alpha blending without depth writes";
+                return false;
+            }
+            scene.set_enabled(true);scene.set_untextured_billboards(true);
+            const auto count=scene.asset()->textures.size();
+            if(count>2048||next_projectile_texture+count>120048||
+               scene.upload_textures_shared(render,next_projectile_texture)!=count){
+                if(error)*error="Borg Battle Test: effect record texture budget or upload";
+                return false;
+            }
+            next_projectile_texture+=u32(count);return true;
+        };
         for(unsigned i=0;i<2;++i){
             const auto& a=assets[i];
             if(!borgs_[i].load_package(definitions[i],a.model,a.prefix,a.pose,a.motions,error))return false;
             borgs_[i].upload(render,10000+i*2000);
+            HsdRecordAnimationBank projectile_bank,impact_bank;
+            for(u8 j=0;j<definitions[i]->projectiles.size();++j){
+                if(const auto& effect=definitions[i]->projectiles[j].impact_record;effect){
+                    if(!impact_bank.records()&&!impact_bank.load(a.impact_record_bank,error,true))return false;
+                    auto& entry=impact_record_scenes_[i][j];entry.scale_percent=effect->scale_percent;
+                    entry.end_scale=effect->end_scale;entry.ticks=effect->ticks;
+                    if(!bind_record(entry.scene,impact_bank,effect->record,effect->end_scale!=0))return false;
+                }
+                const auto& look=definitions[i]->projectiles[j].record_look;
+                if(!look)continue;
+                if(!projectile_bank.records()&&!projectile_bank.load(a.model,error,true))return false;
+                auto& entry=projectile_records_[i][j];entry.scale_percent=look->scale_percent;
+                if(!bind_record(entry.scene,projectile_bank,look->record))return false;
+                if(const auto& t=definitions[i]->projectiles[j].record_trail;t){
+                    entry.trail.emplace();entry.trail_scale=t->scale_percent;entry.trail_capacity=t->count;
+                    if(!bind_record(*entry.trail,projectile_bank,t->record))return false;
+                }
+            }
+            for(unsigned m=0;m<definitions[i]->moves.size();++m){
+                const auto& field=definitions[i]->moves[m].field;
+                if(!field||field->texture.empty())continue;
+                const auto tex=a.field_texture[m];
+                if(tex.size!=kBorgFieldTextureBytes||!tex.data||
+                   !render.upload_texture_shared(field_texture(i,m),{kBorgFieldTextureSide,kBorgFieldTextureSide,tex.data,0,0,true})){
+                    if(error)*error="Borg Battle Test: field texture needs a local 32x32 RGBA8 image";
+                    return false;
+                }
+            }
+        }
+        bool needs_ink=false;
+        for(const auto& def:definitions)if(def)for(const auto& shot:def->projectiles)needs_ink|=shot.ink.has_value();
+        if(needs_ink){
+            const auto rgba=ink_splatter_rgba();
+            if(!render.upload_texture_shared(ink_texture_,{kInkSplatterSize,kInkSplatterSize,rgba.data(),0,0,true})){
+                if(error)*error="Borg Battle Test: ink splatter upload failed";
+                return false;
+            }
+            ink_ready_=true;
         }
         ready_=!render.shared_texture_upload_failed();return ready_;
     }
-    bool supports_projectile_stage()const override{return ready_&&projectile_stage_ready_;}
+public:
+    bool supports_projectile_stage()const override{return (ready_||stage_manifest_)&&projectile_stage_ready_;}
     bool projectile_stage(const BattleMvpVec& start,const BattleMvpVec& end,NativeBorgStageProjectileHit* out)const override{
         if(!out||!supports_projectile_stage())return false;
-        constexpr StageRayParameters bounds{-10000,9999,-10000,9999,500,true};
         StageProjectileSegment hit;
-        if(!stage_projectile_segment({&floor_,&projectile_grids_[0],&projectile_grids_[1]},bounds,end,start,&hit,nullptr)||
+        if(!stage_projectile_segment({&floor_,&projectile_grids_[0],&projectile_grids_[1]},projectile_bounds_,end,start,&hit,nullptr)||
            hit.surface.nearest.excluded_bounds)return false;
         NativeBorgStageProjectileHit next;
         if(hit.surface.grid_code){
             // The parked face remains outside this native acceptance seam.
-            if(hit.surface.grid_code==1&&hit.surface.nearest.triangle==1130)return false;
+            if(projectile_source_stage_&&hit.surface.grid_code==1&&hit.surface.nearest.triangle==1130)return false;
             f64 numerator=0,denominator=0;
             for(unsigned i=0;i<3;++i){
                 const f64 delta=f64(end[i])-start[i];
@@ -224,14 +438,22 @@ public:
         return ready_&&stage_ground_trace_floor_approach(floor_,face,start,end,out);
     }
     bool static_surface(f32 x,f32 z,f32 current_y,NativeBorgStaticSurface* out)const override{
-        if(!ready_||!out)return false;
+        const bool authored=stage_manifest_.has_value();
+        if((!ready_&&!authored)||!out)return false;
+        if(authored&&(x<floor_.minimum_x()||z<floor_.minimum_z()))return false;
         const StageGroundParameters p{-100000,100000,500,0,-.5f,20000,-20000,true};std::span<const u32> refs;
         const std::array<f32,3> point{x,current_y,z};if(!stage_ground_detail::cell(floor_,p,point,&refs))return false;
         bool found=false,below=false;f32 best=-20000,lowest=20000;
         NativeBorgStaticSurface selected{-20000},low{20000};
         for(u32 index:refs){const auto& triangle=floor_.triangles()[index];std::array<f32,2> delta;f32 y=0;
+            if(authored){
+                const auto& a=triangle.vertices[0];const auto& b=triangle.vertices[1];const auto& c=triangle.vertices[2];
+                const auto area=(f64(b[0])-a[0])*(f64(c[2])-a[2])-(f64(b[2])-a[2])*(f64(c[0])-a[0]);
+                if(triangle.plane[1]<=0||area>=0)continue;
+            }
             if(!stage_ground_detail::projected(triangle,point,false,&delta))continue;
             if(!stage_ground_detail::height(triangle,delta,&y))return false;
+            if(authored&&std::abs(y)>20000)continue;
             const NativeBorgStaticSurface candidate{y,{triangle.plane[0],triangle.plane[1],triangle.plane[2]},index};
             //Tie metadata is last-wins, like the source paired query; height's
             //numeric max/min behavior remains unchanged for ordinary MVP users.
@@ -242,9 +464,12 @@ public:
     }
     bool update(const NativeBattleMvp& world,std::string* error){
         source_practice_frame_.reset();rendered_scope_.reset();
-        if(!ready_||!world.ready())return false;
+        if(!ready_||!world.ready()||world.config().provisional_walk!=provisional_walk_view_||
+           world.config().provisional_jump!=provisional_jump_view_||world.config().provisional_ground_dash!=provisional_dash_view_||
+           world.config().provisional_air_dash!=provisional_air_dash_view_||world.config().provisional_glide!=provisional_glide_view_||
+           bool(world.config().provisional_cruise)!=provisional_cruise_view_)return false;
         for(unsigned i=0;i<world.actor_count();++i)
-            if(!borgs_[model_slot(world,i)].update(world.actors()[i],world.tick(),error))return false;
+            if(!borgs_[model_slot(world,i)].update(world.actors()[i],world.tick(),error,this))return false;
         rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();publish_movement_fx(world);
         return true;
     }
@@ -252,6 +477,7 @@ public:
         for(auto& borg:borgs_)borg.reset_control_test_pose();
         source_practice_frame_.reset();rendered_scope_.reset();
         movement_pulses_={};
+        for(auto& obstacle:stage_fades_)obstacle.views={};
     }
     bool source_seed(const NativeBattleMvp& world,NativeBorgAnimationSeed* out)const{
         if(!ready_||!world.ready()||!out||rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_)||!borgs_[0].animation_seed(world.actors()[0],world.tick(),out))return false;
@@ -332,32 +558,161 @@ public:
     static NativeBorgMovementFrame movement_frame(const NativeBattleMvp& world,s32 width,s32 height){
         const auto camera=camera_for(world,width,height);NativeBorgMovementFrame frame;native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);return frame;
     }
-    unsigned draw(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,std::string* error,bool practice_input_refused=false){
-        if(!ready_||!world.ready()||width<=0||height<=0)return 0;
-        const auto camera=source_practice_&&source_practice_close_camera_?close_practice_camera(world,width,height):camera_for(world,width,height);
+    std::optional<NativeBorgMotion> provisional_motion(const NativeBattleMvp& world)const{
+        if(!provisional_walk_view_||!world.ready()||rendered_tick_!=world.tick()||
+           !world.owns_motion_scope(rendered_scope_)||!borgs_[0].presentation_ready_)return std::nullopt;
+        if(borgs_[0].provisional_animated_cruise_&&world.actors()[0].package_boosting)return NativeBorgMotion::LabBoost;
+        return NativeBorgMotion(borgs_[0].base_);
+    }
+    unsigned draw(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,std::string* error,
+                  bool practice_input_refused=false,unsigned viewer=0,const Camera* viewer_camera=nullptr){
+        projectile_record_draws_=0;
+        projectile_trail_draws_=0;
+        impact_record_draws_=0;
+        package_part_draws_={};
+        package_body_draws_={};
+        if(!ready_||!world.ready()||width<=0||height<=0||viewer>=world.actor_count())return 0;
+        if(world.config().provisional_walk!=provisional_walk_view_||world.config().provisional_jump!=provisional_jump_view_||
+           world.config().provisional_ground_dash!=provisional_dash_view_||
+           world.config().provisional_air_dash!=provisional_air_dash_view_||
+           world.config().provisional_glide!=provisional_glide_view_||
+           bool(world.config().provisional_cruise)!=provisional_cruise_view_||
+           (provisional_walk_view_&&(rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_))))return 0;
+        auto camera=viewer_camera?*viewer_camera:
+            source_practice_&&source_practice_close_camera_?close_practice_camera(world,width,height):
+            viewer==1?camera_for_actors(world.actors()[1],world.actors()[0],width,height):camera_for(world,width,height);
+        camera.viewport_width=width;camera.viewport_height=height;
+        if(provisional_walk_view_&&!viewer_camera&&!fit_walk_camera(camera,error))return 0;
+        if(!viewer_camera&&world.config().packages[0]&&world.actor_count()==2){
+            for(unsigned i=0;i<world.actor_count();++i)if(world.actors()[i].health){
+                BattleMvpVec bottom{},top{};
+                const auto& body=borgs_[model_slot(world,i)].scene_;
+                if(body.bounds(&bottom,&top)&&!camera_dolly_to_fit_bounds(camera,bottom,top)){
+                    if(error)*error="native Battle Test: posed Borg bounds exceed the combat camera domain";
+                    return 0;
+                }
+            }
+        }
         unsigned draws=0;
+        bool replace_default=false;
+        for(auto& obstacle:stage_fades_){
+            const auto& spec=obstacle.profile;auto& fade=obstacle.views[viewer];
+            if(spec.gate==StageViewFadeGate::Occlusion){
+                const std::array eye{camera.eye[0],camera.eye[1],camera.eye[2]},target{camera.target[0],camera.target[1],camera.target[2]};
+                fade.update_gate(spec,stage_view_fade_occludes(spec,eye,target),world.tick());
+            }else fade.update(spec,world.actors()[viewer].position,world.tick());
+            replace_default|=spec.normal==2;
+            if(fade.alpha<1&&!obstacle.faded.replace_static_alpha(fade.alpha,error))return 0;
+        }
         const SceneLighting* old=render.scene_lighting();const bool had=old!=nullptr;const SceneLighting saved=had?*old:SceneLighting{};
         SceneLighting light;light.declared=true;SceneLight ambient;ambient.colour[0]=ambient.colour[1]=ambient.colour[2]=180;ambient.colour[3]=255;light.lights.push_back(ambient);
         SceneLight sun;sun.flags=5;sun.colour[0]=sun.colour[1]=sun.colour[2]=190;sun.colour[3]=255;sun.position[0]=-1;sun.position[1]=2;sun.position[2]=1;light.lights.push_back(sun);
         if(!render.set_scene_lighting(light))return 0;
+        unsigned actor_draws=0;
         for(u8 pass:{u8(1),u8(4),u8(2)}){
             if(!render.begin_model_pass(pass))return 0;
-            for(auto& model:stage_)draws+=model.draw(render,camera);
+            draws+=stage_[0].draw(render,camera);
+            if(!replace_default)draws+=stage_[1].draw(render,camera);
+            for(auto& obstacle:stage_fades_){
+                if(obstacle.views[viewer].alpha<1)draws+=obstacle.faded.draw(render,camera);
+                else draws+=(obstacle.profile.normal==2?stage_[1]:obstacle.normal).draw(render,camera);
+            }
             for(unsigned i=0;i<world.actor_count();++i)
-                if(world.actors()[i].health)draws+=borgs_[model_slot(world,i)].draw(render,camera);
+                if(world.actors()[i].health)actor_draws+=borgs_[model_slot(world,i)].draw(render,camera,&package_part_draws_[i],&package_body_draws_[i]);
             if(!render.end_model_pass()){if(error)*error="native MVP model pass failed";return 0;}
         }
+        draws+=actor_draws;
         if(had)render.set_scene_lighting(saved);else render.clear_scene_lighting();
-        if(world.actor_count()==1)return draws;
+        for(unsigned i=0;i<world.actor_count();++i){
+            const auto& profile=world.config().packages[i];
+            const auto& body=borgs_[model_slot(world,i)].scene_;
+            if(world.actors()[i].health&&profile&&!profile->zero_reflections.empty()&&!body.error().empty()){
+                if(error)*error=body.error();
+                return 0;
+            }
+        }
+        if(world.actor_count()==1){
+            if(!world.config().provisional_walk)return draws;
+            if(!actor_draws){
+                if(error)*error=borgs_[0].scene_.error().empty()?"walk lab: body did not draw":borgs_[0].scene_.error();
+                return 0;
+            }
+            const auto state=render.state();render.state()={};render.state().blend=true;
+            render.state().blend_src=5;render.state().blend_dst=6;
+            TextRenderer::Style style;style.scale=width>=640?2:1;
+            std::string hint=provisional_cruise_view_?(borgs_[0].provisional_animated_cruise_?
+                "PROVISIONAL CRUISE LAB / ENTRY CLIP\nARROWS STEER   SHIFT BOOST":
+                "PROVISIONAL CRUISE LAB / STATIC BODY\nARROWS STEER   SHIFT BOOST"):
+                "PROVISIONAL MOVEMENT LAB / ONE BORG\nARROWS WALK";
+            if(provisional_jump_view_)hint+="   SHIFT JUMP";
+            if(provisional_dash_view_||provisional_air_dash_view_)hint+="   L DASH";
+            hint+="\nQ RESTART   ENTER PAUSE";
+            if(provisional_air_dash_view_)hint+="\nONE AIR BURST PER AIRTIME";
+            if(provisional_glide_view_)hint+="\nHOLD SHIFT WHILE FALLING TO GLIDE";
+            if(world.config().provisional_ground_pace)hint+="\nSOURCE-RELATIVE PACE / NOT RETAIL SPEED";
+            if(provisional_cruise_view_){
+                const auto& actor=world.actors()[0];
+                hint+="\nBOOST "+std::to_string(actor.package_boost_meter.value736)+"/"+
+                    std::to_string(world.config().provisional_cruise->capacity)+"   NO COMBAT OR SAVES";
+            }else hint+="\nNO BOOST, COMBAT OR SAVES";
+            const s32 lines=5+unsigned(provisional_air_dash_view_||provisional_glide_view_)+unsigned(bool(world.config().provisional_ground_pace));
+            draws+=text_.draw(render,hint,24,std::max(8,height-lines*text_.line_height(style)),style);
+            render.state()=state;
+            return draws;
+        }
         const auto state=render.state();render.state()={};render.state().depth_test=true;render.state().depth_write=false;render.state().cull_backface=false;render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;Mat4 identity;render.upload_matrix(0,identity.m);geometry_.clear();
         for(const auto& shot:world.projectiles())if(shot.active){
+            if(shot.from_package&&shot.owner<projectile_records_.size()){
+                auto& records=projectile_records_[shot.owner];
+                if(auto it=records.find(shot.package_projectile);it!=records.end()){
+                    auto& visual=it->second;
+                    const auto position_record=[&](AnimatedModelScene& scene,const BattleMvpVec& position,u16 percent){
+                        const f32 scale=f32(percent)*.01f;
+                        const f32 xyz[]{scale,scale,scale};
+                        return scene.set_root_world(mat4_multiply(mat4_translation(position.data()),mat4_scale(xyz)),error);
+                    };
+                    if(visual.trail)for(unsigned j=0;j<shot.record_trail_count;++j){
+                        const auto slot=(shot.record_trail_cursor+visual.trail_capacity-shot.record_trail_count+j)%visual.trail_capacity;
+                        if(!position_record(*visual.trail,shot.record_trail_positions[slot],visual.trail_scale)){
+                            render.state()=state;return 0;
+                        }
+                        const auto submitted=visual.trail->draw(render,camera);
+                        projectile_trail_draws_+=submitted;draws+=submitted;
+                    }
+                    if(!position_record(visual.scene,shot.position,visual.scale_percent)){
+                        render.state()=state;
+                        return 0;
+                    }
+                    const auto submitted=visual.scene.draw(render,camera);
+                    projectile_record_draws_+=submitted;draws+=submitted;
+                    continue; // A declared record never falls back to a procedural orb.
+                }
+            }
             const Tint colour=shot.package_look.size?Tint{shot.package_look.rgb[0],shot.package_look.rgb[1],shot.package_look.rgb[2],255}:
                 shot.from_package&&shot.landed?Tint{255,210,80,255}:
                 shot.owner?Tint{120,180,255,255}:Tint{255,100,65,255};
-            const f32 size=shot.package_look.size?f32(shot.package_look.size):
+            const auto visual=borg_projectile_visual_sample(shot,world.tick());
+            const f32 base_size=shot.package_look.size?f32(shot.package_look.size):
                 shot.weapon==BattleMvpWeapon::Bomb?28:shot.weapon==BattleMvpWeapon::EnergyBeam?18:12;
+            const f32 size=base_size*visual.scale;
+            if(shot.sustained){
+                const auto ribbon=[&](f32 first,f32 last,f32 width){
+                    if(last<=first)return;
+                    auto start=shot.position,segment=shot.velocity;
+                    for(unsigned i=0;i<3;++i){start[i]+=shot.velocity[i]*first;segment[i]*=last-first;}
+                    ScreenDraw::beam_ribbon(camera,start.data(),segment.data(),width,colour,geometry_);
+                };
+                const auto split=shot.beam_power_visual>100?std::min(shot.beam_fraction,shot.beam_power_entry):shot.beam_fraction;
+                ribbon(0,split,size);
+                ribbon(split,shot.beam_fraction,size*shot.beam_power_visual*.01f);
+                continue;
+            }
             if(shot.from_package&&shot.weapon==BattleMvpWeapon::Shuriken){
-                ScreenDraw::shuriken(camera,shot.position.data(),size,f32((world.tick()-shot.born_tick)%90u)*.36f,colour,geometry_);
+                ScreenDraw::shuriken(camera,shot.position.data(),size,visual.angle,colour,geometry_);
+                continue;
+            }
+            if(shot.from_package&&shot.weapon==BattleMvpWeapon::Orb){
+                ScreenDraw::energy_orb(camera,shot.position.data(),size,visual.angle,colour,geometry_);
                 continue;
             }
             std::size_t first=0,count=0;ScreenDraw::billboard(camera,shot.position.data(),size,colour,geometry_,&first,&count);
@@ -367,16 +722,88 @@ public:
             std::size_t first=0,count=0;
             ScreenDraw::billboard(camera,emitter.position.data(),18,{112,225,255,255},geometry_,&first,&count);
         }
+        for(const auto& cloud:world.smoke_clouds())if(cloud.parent){
+            const auto age=world.tick()-cloud.born;
+            const f32 radius=cloud.spec.radius;
+            const u8 alpha=u8(38+70*(1.f-std::min(1.f,f32(age)/cloud.spec.ticks)));
+            std::size_t first=0,count=0;
+            for(unsigned i=0;i<5;++i){
+                const f32 a=f32(i)*2.39996323f;
+                const BattleMvpVec centre{cloud.centre[0]+radius*.4f*std::cos(a),
+                    cloud.centre[1]+radius*.15f*f32(i%3),cloud.centre[2]+radius*.4f*std::sin(a)};
+                ScreenDraw::disc(camera,centre.data(),radius*.7f,12,{150,158,170,alpha},geometry_,&first,&count);
+            }
+        }
+        for(const auto& field:world.fields())if(field.id&&field.spec.texture.empty()){
+            const auto& c=field.spec.tint;const Tint tint{c[0],c[1],c[2],c[3]};
+            const auto& r=field.spec.extent;
+            if(field.spec.shape==BorgFieldShape::Box){
+                const f32 half[]{f32(r[0]),f32(r[1]),f32(r[2])};
+                ScreenDraw::box(render,camera,field.centre.data(),half,tint,geometry_);
+            }else{
+                std::size_t first=0,count=0;
+                ScreenDraw::disc(camera,field.centre.data(),r[0],24,tint,geometry_,&first,&count);
+                ScreenDraw::ring(camera,field.centre.data(),r[0],4,24,{c[0],c[1],c[2],u8(std::min(255,2*int(c[3])))},geometry_,&first,&count);
+            }
+        }
+        for(const auto& link:world.fence_links()){
+            const BattleMvpVec delta{link.end[0]-link.start[0],link.end[1]-link.start[1],link.end[2]-link.start[2]};
+            ScreenDraw::beam_ribbon(camera,link.start.data(),delta.data(),5,{100,222,255,230},geometry_);
+        }
         for(const auto& owned:world.anchor_paths())for(const auto& path:owned)for(unsigned i=0;i<path.count;++i){
             std::size_t first=0,count=0;
             ScreenDraw::ring(camera,path.points[i].position.data(),14,3,12,{135,245,188,255},geometry_,&first,&count);
         }
         draw_movement_fx(world,camera);
+        for(const auto& wave:world.walk_pulses())if(wave.id){
+            auto origin=wave.origin;origin[1]+=2.f;
+            const auto alpha=u8(224u*(wave.spec.ticks-(world.tick()-wave.born))/wave.spec.ticks);
+            ScreenDraw::ground_ring(camera,origin.data(),wave.radius(world.tick()),7,24,{255,183,86,alpha},geometry_);
+        }
         for(const auto& impact:world.impacts())if(impact.ticks){std::size_t first=0,count=0;ScreenDraw::ring(camera,impact.position.data(),
             impact.radius?impact.radius:impact.explosion?140:28,impact.radius?std::min(12.f,impact.radius*.25f):impact.explosion?12:5,
-            16,{255,210,70,u8(impact.ticks*14)},geometry_,&first,&count);}
+             16,{255,210,70,u8(252u*impact.ticks/impact.total_ticks)},geometry_,&first,&count);}
+        for(const auto& effect:world.impact_records())if(effect.ticks){
+            auto& records=impact_record_scenes_[effect.owner];
+            const auto it=records.find(effect.projectile);
+            if(it==records.end()){
+                if(error)*error="Borg Battle Test: impact record not bound";
+                render.state()=state;return 0;
+            }
+            auto& visual=it->second;
+            const auto sample=borg_impact_record_appearance(visual.scale_percent,visual.end_scale,visual.ticks,effect.ticks);
+            const f32 xyz[]{sample.scale,sample.scale,sample.scale};
+            if(!visual.scene.set_root_world(mat4_multiply(mat4_translation(effect.position.data()),mat4_scale(xyz)),error)){
+                render.state()=state;return 0;
+            }
+            if(visual.end_scale&&!visual.scene.multiply_static_alpha(sample.alpha,error)){
+                render.state()=state;return 0;
+            }
+            const auto submitted=visual.scene.draw(render,camera);
+            impact_record_draws_+=submitted;draws+=submitted;
+        }
         if(!geometry_.empty()){const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;}
+        for(const auto& field:world.fields())if(field.id&&!field.spec.texture.empty()){
+            f32 x=0,y=0,z=0;
+            if(!camera.project(field.centre.data(),&x,&y,&z))continue;
+            const auto& c=field.spec.tint;const auto& r=field.spec.extent;
+            const f32 dx=camera.size_scale(r[0],z),dy=camera.size_scale(r[1],z);
+            geometry_.clear();ScreenDraw::textured_quad(geometry_,x-dx,y-dy,x+dx,y+dy,z,0,0,1,1,{c[0],c[1],c[2],c[3]});
+            render.state().texture=field_texture(field.owner,field.move);
+            const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;
+        }
         render.state()={};render.state().depth_test=render.state().depth_write=false;render.state().blend=true;render.state().blend_src=5;render.state().blend_dst=6;render.state().cull_backface=false;render.upload_matrix(0,identity.m);geometry_.clear();
+        if(ink_ready_)if(const auto* ink=world.ink_overlay(viewer)){
+            const f32 scale=f32(ink->spec.coverage)*.01f;
+            const f32 x=f32(camera.viewport_x)+width*.5f,y=f32(camera.viewport_y)+height*.5f;
+            const f32 area_w=width*scale*.5f,area_h=height*scale*.5f;
+            const u8 alpha=u8(u32(ink->spec.opacity)*(ink->spec.ticks-(world.tick()-ink->born))/ink->spec.ticks);
+            ScreenDraw::textured_quad(geometry_,x-area_w,y-area_h,x+area_w,y+area_h,0,0,0,1,1,{255,255,255,alpha});
+            render.state().texture=ink_texture_;
+            const auto first=render.append_vertices(geometry_.data(),geometry_.size());
+            draws+=render.draw(Primitive::Triangles,first,u32(geometry_.size()))?1:0;
+            render.state().texture=0;geometry_.clear();
+        }
         for(unsigned i=0;i<2;++i){const f32 x=i?f32(width)-310:24;ScreenDraw::textured_quad(geometry_,x,24,x+286,42,0,0,0,1,1,{35,35,45,230});ScreenDraw::textured_quad(geometry_,x,24,x+286*f32(world.actors()[i].health)/world.maximum_health(i),42,0,0,0,1,1,i?Tint{100,170,255,255}:Tint{255,100,70,255});}
         const auto practice=practice_readout(world);
         if(practice&&width>=200&&height>=190){
@@ -483,7 +910,14 @@ public:
             if(!source_practice_start_label_.empty())status+="\n"+source_practice_start_label_;
         }
         const bool package=bool(world.config().packages[0]);
-        if(package)status="PACKAGE BATTLE TEST / TEST COMBAT\nSPACE B   E X   SHIFT JUMP   Q RESTART";
+        if(package){
+            const auto& moves=world.config().packages[viewer]->moves;
+            const bool has_x=std::any_of(moves.begin(),moves.end(),[](const auto& move){return move.button==BorgBattleButton::X;});
+            const bool has_b=std::any_of(moves.begin(),moves.end(),[](const auto& move){return move.button==BorgBattleButton::B;});
+            status=std::string("PACKAGE BATTLE TEST / TEST COMBAT\n")+
+                (has_b?"SPACE B":"B NOT IMPLEMENTED")+"   Q RESTART\n"+
+                (has_x?"E: X MOVE":"X NOT IMPLEMENTED");
+        }
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(
             world.result()==BattleMvpResult::GRedWins?(package?"PLAYER 1 WINS":"G-RED WINS"):
             world.result()==BattleMvpResult::SasukeWins?(package?"PLAYER 2 WINS":"SASUKE WINS"):"DRAW")+" - Q TO RESTART";
@@ -492,7 +926,30 @@ public:
             s32(1+std::count(status.begin(),status.end(),'\n'))*text_.line_height(style)):height-80;
         draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;
     }
+    unsigned projectile_record_draws()const{return projectile_record_draws_;}
+    unsigned package_part_draws(unsigned actor)const{return actor<package_part_draws_.size()?package_part_draws_[actor]:0;}
+    unsigned package_body_draws(unsigned actor)const{return actor<package_body_draws_.size()?package_body_draws_[actor]:0;}
+    const BorgTrailingChain* package_trailing_chain(const NativeBattleMvp& world,unsigned actor)const{
+        if(actor>=world.actor_count()||rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_))return nullptr;
+        const auto& borg=borgs_[model_slot(world,actor)];
+        return borg.presentation_ready_&&borg.trailing_chain_.tip()?&borg.trailing_chain_:nullptr;
+    }
+    unsigned projectile_trail_draws()const{return projectile_trail_draws_;}
+    unsigned impact_record_draws()const{return impact_record_draws_;}
+    std::optional<f32> stage_view_alpha(unsigned viewer,u16 record=2)const{
+        if(viewer>=2)return {};
+        for(const auto& obstacle:stage_fades_)if(obstacle.profile.normal==record&&obstacle.views[viewer].sampled)
+            return obstacle.views[viewer].alpha;
+        return {};
+    }
 private:
+    bool fit_walk_camera(Camera& camera,std::string* error)const{
+        BattleMvpVec low,high;
+        if(!borgs_[0].scene_.bounds(&low,&high)){if(error)*error="walk lab: current body bounds required";return false;}
+        // Camera-relative travel still uses the original camera frame.
+        if(!camera_fit_bounds(camera,low,high,550,12000)){if(error)*error="walk lab: body framing budget";return false;}
+        return true;
+    }
     struct MovementPulse {BattleMvpVec position{};u32 born=0;bool active=false;};
     void publish_movement_fx(const NativeBattleMvp& world){
         for(unsigned slot=0;slot<world.actor_count();++slot){
@@ -539,25 +996,110 @@ private:
             }
         }
     }
-    bool bind_projectile_stage(IFileSystem& files,const std::string& directory,std::string* error){
+    static bool needs_projectile_stage(const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions){
+        for(const auto& def:definitions)if(def)for(const auto& shot:def->projectiles)
+            if(borg_projectile_uses_stage(shot.floor)||shot.attraction.has_value())return true;
+        return false;
+    }
+    bool bind_projectile_stage(IFileSystem& files,const std::string& arena,const std::string& directory,std::string* error){
         auto refuse=[&](){if(error)*error="stage projectile collision requires the qualified matching stage and all three st42 grids";return false;};
-        if(directory.empty()||floor_hash_!=0x0d913901u||stage_bank_.hash()!=0xbdf8e542u)return refuse();
+        projectile_source_stage_=false;
+        const bool source_floor=floor_hash_==source_floor_hash_,source_model=stage_bank_.hash()==source_stage_hash_;
+        const auto descriptor=arena+"/projectile-stage.gfsr";
+        const auto read=[&](const std::string& path,std::size_t cap,std::vector<u8>* out){
+            u64 size=0;return files.file_size(path,&size)&&size&&size<=cap&&files.read(path,*out)&&out->size()==size;
+        };
         constexpr std::array names{"secondary.stih","tertiary.stih"};
-        constexpr std::array<u32,2> hashes{0x01859c01u,0xfe083e8fu};
-        for(unsigned i=0;i<names.size();++i){
-            const auto path=directory+"/"+names[i];u64 size=0;std::vector<u8> bytes;
-            if(!files.file_size(path,&size)||!size||size>(16u<<20)||!files.read(path,bytes)||bytes.size()!=size||
-               character_program_model_hash({bytes.data(),bytes.size()})!=hashes[i]||
-               !projectile_grids_[i].load({bytes.data(),bytes.size()},error))return refuse();
+        // Never let an authored declaration broaden the parked retail query
+        // or mix the pinned retail floor/model with authored grids.
+        if(source_floor||source_model){
+            if(!source_floor||!source_model||directory.empty()||files.exists(descriptor))return refuse();
+            for(unsigned i=0;i<names.size();++i){
+                std::vector<u8> bytes;
+                if(!read(directory+"/"+names[i],16u<<20,&bytes)||
+                   character_program_model_hash({bytes.data(),bytes.size()})!=source_grid_hashes_[i]||
+                   !projectile_grids_[i].load({bytes.data(),bytes.size()},error))return refuse();
+            }
+            projectile_bounds_={-10000,9999,-10000,9999,500,true};projectile_source_stage_=true;
+            projectile_stage_ready_=true;return true;
         }
-        projectile_stage_ready_=true;return true;
+        if(!files.exists(descriptor))return refuse();
+        std::vector<u8> declaration;
+        std::array<std::vector<u8>,2> bytes;
+        if(!read(descriptor,48,&declaration))return refuse_authored_projectile_stage(error);
+        std::array<ByteView,2> grids;
+        for(unsigned i=0;i<names.size();++i){
+            if(!read(arena+"/"+names[i],16u<<20,&bytes[i]))return refuse_authored_projectile_stage(error);
+            grids[i]={bytes[i].data(),bytes[i].size()};
+        }
+        return bind_authored_projectile_stage({declaration.data(),declaration.size()},grids,error);
+    }
+    static bool refuse_authored_projectile_stage(std::string* error){
+        if(error)*error="authored stage projectile collision: expected bounded local GFSR and matching 500-unit grids";
+        return false;
+    }
+    bool bind_authored_projectile_stage(ByteView declaration,const std::array<ByteView,2>& grids,std::string* error){
+        StageRayParameters bounds;
+        if(!stage_ray_parameters_load(declaration,&bounds,error))return refuse_authored_projectile_stage(error);
+        const auto covered=[&](const StihGrid& grid){
+            return grid.cell_size_x()==500&&grid.cell_size_z()==500&&bounds.min_x>=grid.minimum_x()&&bounds.min_z>=grid.minimum_z()&&
+                bounds.max_x<f64(grid.minimum_x())+500.*grid.cells_x()&&bounds.max_z<f64(grid.minimum_z())+500.*grid.cells_z();
+        };
+        if(!covered(floor_))return refuse_authored_projectile_stage(error);
+        for(unsigned i=0;i<grids.size();++i)
+            if(!projectile_grids_[i].load(grids[i],error)||!covered(projectile_grids_[i]))return refuse_authored_projectile_stage(error);
+        projectile_bounds_=bounds;projectile_stage_ready_=true;return true;
+    }
+    bool bind_stage_fades(RenderEngine& render,std::string_view text,std::string* error){
+        std::vector<StageViewFadeProfile> profiles;
+        if(!stage_view_fades_load(text,&profiles,error))return false;
+        std::vector<StageViewObstacle> pending;
+        pending.reserve(profiles.size());
+        AttachmentModelBank bank;
+        for(const auto& profile:profiles){
+            auto& obstacle=pending.emplace_back();obstacle.profile=profile;
+            AttachmentBoneTransform root;root.valid=true;
+            if(profile.normal!=2){
+                if((!bank.ready()&&!bank.load_prepared(stage_bank_,error))||
+                   !obstacle.normal.load_shared(bank,profile.normal,error)||!obstacle.normal.set_world_static(root,error))return false;
+                obstacle.normal.upload_textures_shared(render,1000);
+            }
+            HsdRecordAnimationTables tables;
+            if(!stage_bank_.animation_tables(profile.alternate,&tables)||tables.joint||tables.material||tables.shape){
+                if(error)*error="stage viewport fade: alternate record must be static";
+                return false;
+            }
+            if(!obstacle.faded.load_compact_static(stage_bank_,profile.alternate,error))return false;
+            const auto* asset=obstacle.faded.asset();
+            if(!asset||asset->joints.size()!=1||!std::all_of(asset->meshes.begin(),asset->meshes.end(),
+                [](const auto& mesh){return (mesh.render_mode&0x60000000u)==0x60000000u&&mesh.blend&&!mesh.depth_write&&mesh.depth_test;})){
+                if(error)*error="stage viewport fade: static depth-tested translucent alternate required";
+                return false;
+            }
+            obstacle.faded.set_enabled(true);
+            if(!obstacle.faded.set_root_world(root.world,error)||!obstacle.faded.request(0,0,error))return false;
+            obstacle.faded.upload_textures_shared(render,1000);
+        }
+        stage_fades_=std::move(pending);return true;
     }
     template<class Read>
     bool load_stage(Read read,RenderEngine& render,std::string* error){
-        std::vector<u8> stage,floor_bytes;
-        if(!read("stage.hsd",&stage)||!read("floor.stih",&floor_bytes)||
-           !floor_.load({floor_bytes.data(),floor_bytes.size()},error)||!stage_bank_.load({stage.data(),stage.size()},error,true))return false;
-        floor_hash_=2166136261u;for(u8 byte:floor_bytes)floor_hash_=(floor_hash_^byte)*16777619u;
+        std::vector<u8> stage,floor;
+        return read("stage.hsd",&stage)&&read("floor.stih",&floor)&&
+            load_stage({stage.data(),stage.size()},{floor.data(),floor.size()},render,error);
+    }
+    void clear_stage(){
+        ready_=false;provisional_walk_view_=provisional_jump_view_=provisional_dash_view_=provisional_air_dash_view_=provisional_glide_view_=provisional_cruise_view_=false;projectile_stage_ready_=false;projectile_source_stage_=false;
+        source_practice_frame_.reset();rendered_scope_.reset();
+        stage_manifest_.reset();
+        ink_ready_=false;
+        stage_fades_.clear();
+        projectile_records_={};
+        impact_record_scenes_={};
+    }
+    bool load_stage(ByteView stage,ByteView floor,RenderEngine& render,std::string* error){
+        if(!floor_.load(floor,error)||!stage_bank_.load(stage,error,true))return false;
+        floor_hash_=character_program_model_hash(floor);
         AttachmentModelBank geometry;if(!geometry.load_prepared(stage_bank_,error))return false;
         AttachmentBoneTransform root;root.valid=true;
         for(unsigned i=0;i<2;++i){
@@ -584,6 +1126,19 @@ private:
         }
     }
     bool ready_=false,source_general_=false,source_interactive_=false,source_vertical_jump_=false;u32 floor_hash_=0,rendered_tick_=0;std::weak_ptr<const NativeBorgMotionScope> rendered_scope_;
+    bool provisional_walk_view_=false,provisional_jump_view_=false,provisional_dash_view_=false,provisional_air_dash_view_=false,
+         provisional_glide_view_=false,provisional_cruise_view_=false;
+    struct ProjectileRecordDraw {AnimatedModelScene scene;std::optional<AnimatedModelScene> trail;
+                                 u16 scale_percent=100,trail_scale=100;u8 trail_capacity=0;};
+    std::array<std::map<u8,ProjectileRecordDraw>,2> projectile_records_;
+    struct ImpactRecordDraw {AnimatedModelScene scene;u16 scale_percent=100,end_scale=0,ticks=0;};
+    std::array<std::map<u8,ImpactRecordDraw>,2> impact_record_scenes_;
+    unsigned projectile_record_draws_=0;
+    unsigned projectile_trail_draws_=0;
+    unsigned impact_record_draws_=0;
+    std::array<unsigned,2> package_part_draws_{},package_body_draws_{};
+    static constexpr u32 walk_texture_base_=76000;
+    unsigned walk_texture_slot_=0,walk_textures_=0;
     u64 source_publication_=0;
     s16 source_resource_=0;
     bool source_moving_jump_=false;
@@ -638,8 +1193,23 @@ private:
     u64 source_practice_owned_instance_=0;
     std::array<unsigned,2> source_practice_force_slot_{};
     std::string source_practice_start_label_;
+    std::optional<StagePackageManifest> stage_manifest_;
     StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
+    struct StageViewObstacle {
+        StageViewFadeProfile profile;
+        std::array<StageViewFadeState,2> views{};
+        AttachmentModelScene normal;
+        AnimatedModelScene faded;
+    };
+    std::vector<StageViewObstacle> stage_fades_;
+    static constexpr u32 ink_texture_=30000;
+    static constexpr u32 field_texture(unsigned owner,unsigned move){return 30200+owner*32+move;}
+    bool ink_ready_=false;
+    static constexpr u32 source_floor_hash_=0x0d913901u,source_stage_hash_=0xbdf8e542u;
+    static constexpr std::array<u32,2> source_grid_hashes_{0x01859c01u,0xfe083e8fu};
     std::array<StihGrid,2> projectile_grids_;
+    StageRayParameters projectile_bounds_;
+    bool projectile_source_stage_=false;
     bool projectile_stage_ready_=false;
     std::array<std::array<MovementPulse,kBorgBattleMovementFx>,2> movement_pulses_{};
 };

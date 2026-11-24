@@ -31,14 +31,14 @@ public:
     bool load(const BattleCharacterResourceRow& row,u8 variant,ByteView bundle,std::string* error){
         *this={};auto fail=[&](const char* why){if(error)*error=std::string("battle character resource: ")+why;return false;};
         if(variant>=row.variants||row.variants!=6||row.actor_bytes!=432||bundle.size!=row.bytes||!challenge_native_bundle_valid(bundle)||bundle.be32(8)!=row.slots||row.slots<10||row.slots>32||challenge_payload_hash(bundle)!=row.hash)return fail("native identity/variant/slot extent");
-        std::array<Range,4> ranges{};std::size_t at=16+8*row.slots;
-        for(unsigned i=0;i<row.slots;++i){const std::size_t n=bundle.be32(20+8*i);for(unsigned role=0;role<4;++role)if(i==(role==0?0u:role==1?2u:role==2?3u:4u+variant))ranges[role]={at,n};at+=n;}
+        std::array<Range,4> ranges{};std::array<Range,32> blocks{};std::size_t at=16+8*row.slots;
+        for(unsigned i=0;i<row.slots;++i){const std::size_t n=bundle.be32(20+8*i);blocks[i]={at,n};for(unsigned role=0;role<4;++role)if(i==(role==0?0u:role==1?2u:role==2?3u:4u+variant))ranges[role]={at,n};at+=n;}
         if(ranges[0].size<row.actor_bytes||(ranges[2].size&&ranges[2].size<64)||ranges[3].size<36)return fail("character/motion/model role extent");
         const ByteView wrapper{bundle.data+ranges[3].at,ranges[3].size};const u32 model_at=wrapper.be32(0);
         if(model_at<4||(model_at&3)||!wrapper.contains(model_at,32))return fail("declared model wrapper offset");
         const u32 model_bytes=wrapper.be32(model_at);
         if(model_bytes<32||model_bytes>(16u<<20)||!wrapper.contains(model_at,model_bytes))return fail("declared HSD extent");
-        bytes_=std::make_shared<const std::vector<u8>>(bundle.data,bundle.data+bundle.size);row_=row;variant_=variant;ranges_=ranges;model_at_=model_at;model_bytes_=model_bytes;ready_=true;if(error)error->clear();return true;
+        bytes_=std::make_shared<const std::vector<u8>>(bundle.data,bundle.data+bundle.size);row_=row;variant_=variant;ranges_=ranges;blocks_=blocks;model_at_=model_at;model_bytes_=model_bytes;ready_=true;if(error)error->clear();return true;
     }
     bool ready()const{return ready_;}const BattleCharacterResourceRow& selection()const{return row_;}u8 variant()const{return variant_;}
     ByteView actor_data()const{return role(0,row_.actor_bytes);}ByteView battle_data()const{return role(1);}ByteView motion_bank()const{return role(2);}ByteView model_wrapper()const{return role(3);}
@@ -47,9 +47,12 @@ public:
     ByteView model_prefix()const{const auto b=role(3);return b.data?ByteView{b.data,model_at_}:ByteView{};}
     ByteView model_hsd()const{const auto b=role(3);return b.data?ByteView{b.data+model_at_,model_bytes_}:ByteView{};}
     std::size_t bytes()const{return bytes_?bytes_->size():0;}
+    //Immutable decoded block extent. A zero-length block is absent source data,
+    //not a destination allocation or a successfully published resource pointer.
+    ByteView block(unsigned index)const{if(!ready_||!bytes_||index>=row_.slots||!blocks_[index].size)return {};const auto& r=blocks_[index];return {bytes_->data()+r.at,r.size};}
 private:
     struct Range {std::size_t at=0,size=0;};
     ByteView role(unsigned index,std::size_t limit=0)const{if(!ready_||!bytes_||index>=4)return {};const auto& r=ranges_[index];return {bytes_->data()+r.at,limit?limit:r.size};}
-    std::shared_ptr<const std::vector<u8>> bytes_;std::array<Range,4> ranges_{};BattleCharacterResourceRow row_;u32 model_at_=0,model_bytes_=0;u8 variant_=0;bool ready_=false;
+    std::shared_ptr<const std::vector<u8>> bytes_;std::array<Range,4> ranges_{};std::array<Range,32> blocks_{};BattleCharacterResourceRow row_;u32 model_at_=0,model_bytes_=0;u8 variant_=0;bool ready_=false;
 };
 } // namespace gf

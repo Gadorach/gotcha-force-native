@@ -18,6 +18,11 @@ struct HsdModelBones {
     std::vector<u8> preorder_slots;
     std::vector<HsdModelBone> bones; // indexed by logical slot, NOT HSD traversal
     bool loaded=false;
+    bool root_at_block_zero=false; // an explicitly relocated record root, not a missing slot
+    bool has_identity(std::size_t slot)const{
+        return slot<bones.size()&&(bones[slot].joint_offset!=0||
+               (root_at_block_zero&&slot==0&&root_offset==0));
+    }
 };
 inline bool hsd_bones_load(ByteView prefix,ByteView archive,HsdModelBones* out,std::string* error){
     if(out)*out={};
@@ -45,17 +50,25 @@ inline bool hsd_bones_load(ByteView prefix,ByteView archive,HsdModelBones* out,s
     }
     u32 table=0,record=0,root=0;
     if(!found||!r.ptr(scene,&table)||!table||!r.ptr(table,&record)||!record||
-       !r.has(record,12)||!r.ptr(record,&root)||!root)return fail("missing published model record0");
+        !r.has(record,12)||!r.required_relocated_offset(record,&root))return fail("missing published model record0");
     struct Node{u32 offset,parent,child,next;};
-    std::vector<Node> nodes;std::vector<std::pair<u32,u32>> stack{{root,0}};
+    std::vector<Node> nodes;std::vector<std::pair<u32,u32>> stack{{root,kHsdNoJoint}};
     HsdModelBones candidate;candidate.root_offset=root;
     std::array<bool,kHsdMaxCharacterBones> used{};
+    auto link=[&](u32 at,u32* out){
+        if(!r.ptr(at,out))return false;
+        if(*out==0){
+            if(std::binary_search(r.fields.begin(),r.fields.end(),at))return false;
+            *out=kHsdNoJoint;
+        }
+        return true;
+    };
     while(!stack.empty()){
         const auto [at,parent]=stack.back();stack.pop_back();
         if(nodes.size()>=kHsdMaxCharacterBones)return fail("bone budget");
         for(const auto& n:nodes)if(n.offset==at)return fail("cycle/shared joint identity");
         u32 klass=0,child=0,next=0;
-        if(!r.has(at,0x40)||!r.ptr(at,&klass)||klass||!r.ptr(at+8,&child)||!r.ptr(at+12,&next)||
+        if(!r.has(at,0x40)||!link(at,&klass)||klass!=kHsdNoJoint||!link(at+8,&child)||!link(at+12,&next)||
            !r.finite(r.block,at+0x2c,3))return fail("joint descriptor/class/translation");
         // Instance loading changes child ownership; do not pretend descriptor
         // traversal is runtime traversal for that path.
@@ -65,10 +78,11 @@ inline bool hsd_bones_load(ByteView prefix,ByteView archive,HsdModelBones* out,s
         const u8 slot=prefix.data[order+ordinal];
         if(slot>=kHsdMaxCharacterBones||used[slot])return fail("negative/out-of-budget/duplicate logical slot");
         used[slot]=true;candidate.preorder_slots.push_back(slot);nodes.push_back({at,parent,child,next});
-        if(next)stack.push_back({next,parent});
-        if(child)stack.push_back({child,at});
+        if(next!=kHsdNoJoint)stack.push_back({next,parent});
+        if(child!=kHsdNoJoint)stack.push_back({child,at});
     }
     const std::size_t count=nodes.size();
+    if(root==0&&candidate.preorder_slots.front()!=0)return fail("block-zero root must bind logical slot zero");
     if(!prefix.contains(records,count*4)||!prefix.contains(order,count)||
        (records<order+count&&order<records+count*4))return fail("table extent/overlap");
     for(std::size_t i=0;i<count;++i)if(!used[i])return fail("sparse logical slots unsupported");
@@ -89,6 +103,6 @@ inline bool hsd_bones_load(ByteView prefix,ByteView archive,HsdModelBones* out,s
         for(unsigned k=0;k<3;++k)bone.translation[k]=r.block.bef32(node.offset+0x2c+k*4);
         // Input record byte3 is deliberately ignored: 80067E18 writes slot there.
     }
-    candidate.loaded=true;*out=std::move(candidate);return true;
+    candidate.root_at_block_zero=root==0;candidate.loaded=true;*out=std::move(candidate);return true;
 }
 } // namespace gf

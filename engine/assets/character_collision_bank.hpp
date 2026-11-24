@@ -12,6 +12,22 @@ struct CharacterCollisionDescriptor {
     std::array<u8,80> source{};u8 shape=0,binding1=0;u16 flags2=0,parameter4=0,field0a=0;s16 start6=0,end8=0;std::array<f32,3> local_point{};bool declared=false;
     f32 scalar(unsigned offset)const{return offset<=76&&!(offset&3)?ByteView{source.data(),source.size()}.bef32(offset):0.f;}
 };
+inline bool character_collision_descriptor(ByteView b,CharacterCollisionDescriptor* out,std::string* error){
+    if(out)*out={};
+    auto fail=[&](const char* why){if(error)*error=std::string("character collision descriptor: ")+why;return false;};
+    if(!out||!b.contains(0,80)||b.size!=80)return fail("exact source record required");
+    CharacterCollisionDescriptor d;d.shape=b.data[0];d.binding1=b.data[1];d.flags2=b.be16(2);d.parameter4=b.be16(4);d.start6=std::bit_cast<s16>(b.be16(6));d.end8=std::bit_cast<s16>(b.be16(8));d.field0a=b.be16(10);if(d.shape>=6)return fail("source dispatch type outside six captured handlers");
+    for(unsigned i=0;i<3;++i){d.local_point[i]=b.bef32(12+4*i);if(!std::isfinite(d.local_point[i])||std::abs(d.local_point[i])>1e7f)return fail("local point numeric domain");}
+    std::copy_n(b.data,80,d.source.begin());d.declared=true;*out=d;if(error)error->clear();return true;
+}
+//Shared signed body-header reader. Construction binds source offsets and does
+//not interpret shape geometry or copy an unrelated attack-program table.
+inline bool character_collision_body_ids(ByteView bytes,std::vector<u8>* out,std::string* error){
+    if(out)out->clear();
+    if(!out||!bytes.contains(0,32)){if(error)*error="character collision body: header extent";return false;}
+    std::vector<u8> ids;for(unsigned i=0;i<32;++i){const u8 id=bytes.data[i];if(id&0x80u)break;if(id>=32||!bytes.contains(0x20+80u*id,80)){if(error)*error="character collision body: source row extent";return false;}ids.push_back(id);}
+    *out=std::move(ids);if(error)error->clear();return true;
+}
 //Normal character slot2:8AB30/8AC80 use signed header IDs and80-byte descriptors.
 //Unused descriptors/tails remain RAW; only an explicitly requested descriptor is
 //validated as a numeric shape input. No collider allocation/lifetime/actor ACK.
@@ -21,18 +37,14 @@ public:
         *this={};auto fail=[&](const char* why){if(error)*error=std::string("character collision bank: ")+why;return false;};
         if(!bytes.data||bytes.size!=7840)return fail("exact normal slot2 extent required");
         auto list=[&](unsigned at,unsigned limit,unsigned entries,std::vector<u8>* out){for(unsigned i=0;i<limit;++i){const u8 id=bytes.data[at+i];if(id&0x80u)break;if(id>=entries)return false;out->push_back(id);}return true;};
-        CharacterCollisionBank next;if(!list(0,32,32,&next.body_))return fail("body signed ID outside32 descriptors");
+        CharacterCollisionBank next;if(!character_collision_body_ids(bytes,&next.body_,error))return false;
         for(unsigned group=0;group<32;++group)if(!list(0xa20+4*group,4,64,&next.attacks_[group]))return fail("attack signed ID outside64 descriptors");
         std::copy_n(bytes.data,bytes.size,next.source_.begin());next.loaded_=true;*this=std::move(next);if(error)error->clear();return true;
     }
     bool ready()const{return loaded_;}std::span<const u8> body_ids()const{return body_;}std::span<const u8> attack_ids(unsigned group)const{return loaded_&&group<32?std::span<const u8>(attacks_[group]):std::span<const u8>{};}
     ByteView source_record(CharacterCollisionTable table,unsigned index)const{if(!loaded_||(table!=CharacterCollisionTable::Body&&table!=CharacterCollisionTable::Attack)||index>=(table==CharacterCollisionTable::Body?32u:64u))return {};return {source_.data()+(table==CharacterCollisionTable::Body?0x20u:0xaa0u)+80*index,80};}
     bool descriptor(CharacterCollisionTable table,unsigned index,CharacterCollisionDescriptor* out,std::string* error)const{
-        if(out)*out={};
-        auto fail=[&](const char* why){if(error)*error=std::string("character collision descriptor: ")+why;return false;};const auto b=source_record(table,index);if(!out||!b.data)return fail("loaded source record required");
-        CharacterCollisionDescriptor d;d.shape=b.data[0];d.binding1=b.data[1];d.flags2=b.be16(2);d.parameter4=b.be16(4);d.start6=std::bit_cast<s16>(b.be16(6));d.end8=std::bit_cast<s16>(b.be16(8));d.field0a=b.be16(10);if(d.shape>=6)return fail("source dispatch type outside six captured handlers");
-        for(unsigned i=0;i<3;++i){d.local_point[i]=b.bef32(12+4*i);if(!std::isfinite(d.local_point[i])||std::abs(d.local_point[i])>1e7f)return fail("local point numeric domain");}
-        std::copy_n(b.data,80,d.source.begin());d.declared=true;*out=d;if(error)error->clear();return true;
+        return character_collision_descriptor(source_record(table,index),out,error);
     }
 private:std::array<u8,7840> source_{};std::vector<u8> body_;std::array<std::vector<u8>,32> attacks_;bool loaded_=false;
 };

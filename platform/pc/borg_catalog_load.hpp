@@ -1,10 +1,12 @@
 #pragma once
+#include "engine/assets/borg_movement_pcm.hpp"
 #include "engine/assets/borg_catalog_profile.hpp"
 #include "engine/assets/borg_preview_profile.hpp"
 #include "engine/assets/borg_variant_profile.hpp"
 #include "platform/pc/borg_package_scan.hpp"
 
 namespace gf::pc {
+enum class BorgCatalogLoadIssue {Unavailable,NotDeclared,Missing,Invalid,Unsupported};
 namespace borg_catalog_detail {
 inline bool current_folder(const std::filesystem::path& root,const BorgPackageEntry& package,
                            std::filesystem::path* out,std::string* error){
@@ -20,13 +22,45 @@ inline bool current_folder(const std::filesystem::path& root,const BorgPackageEn
     *out=folder;return true;
 }
 inline bool read_profile(const std::filesystem::path& root,const BorgPackageEntry& package,
-                         std::filesystem::path* folder,BorgCatalogProfile* out,std::string* error){
-    if(package.manifest.catalog.empty()){if(error)*error="no catalogue profile declared";return false;}
+                         std::filesystem::path* folder,BorgCatalogProfile* out,std::string* error,
+                         BorgCatalogLoadIssue* issue=nullptr){
+    if(issue)*issue=BorgCatalogLoadIssue::Unavailable;
+    if(package.manifest.catalog.empty()){
+        if(issue)*issue=BorgCatalogLoadIssue::NotDeclared;
+        if(error)*error="no catalogue profile declared";
+        return false;
+    }
     if(!current_folder(root,package,folder,error))return false;
+    const auto& path=package.manifest.catalog;
+    if(issue&&borg_package_asset_path_valid(path)){
+        auto current=*folder;
+        const std::filesystem::path local=path;
+        for(auto it=local.begin();it!=local.end();){
+            current/=*it++;
+            std::error_code ec;const auto status=std::filesystem::symlink_status(current,ec);
+            if(ec==std::errc::no_such_file_or_directory||status.type()==std::filesystem::file_type::not_found){
+                *issue=BorgCatalogLoadIssue::Missing;break;
+            }
+            if(ec)break;
+            if(it==local.end()||!std::filesystem::is_directory(status)){
+                *issue=BorgCatalogLoadIssue::Invalid;break;
+            }
+        }
+    }
     std::string bytes;
-    if(!borg_package_scan_detail::read_local(*folder,package.manifest.catalog,kBorgCatalogProfileBytes,&bytes)||
-       !borg_catalog_read_profile(bytes,out)){
-        if(error)*error="missing or invalid catalogue profile";
+    const bool read=borg_package_scan_detail::read_local(*folder,path,kBorgCatalogProfileBytes,&bytes);
+    if(!read||!borg_catalog_read_profile(bytes,out)){
+        if(issue&&read){
+            std::string_view input=bytes,header=borg_package_detail::line(input);
+            constexpr std::string_view prefix="GFBORG-CATALOG ";
+            if(header.starts_with(prefix)){
+                header.remove_prefix(prefix.size());
+                if(header!="1"&&header!="2"&&!header.empty()&&std::all_of(header.begin(),header.end(),[](char c){return c>='0'&&c<='9';}))
+                    *issue=BorgCatalogLoadIssue::Unsupported;
+            }
+        }
+        if(error)*error=issue&&*issue==BorgCatalogLoadIssue::Unsupported?
+            "unsupported catalogue profile version":"missing or invalid catalogue profile";
         return false;
     }
     return true;
@@ -47,6 +81,43 @@ inline bool read_variants(const std::filesystem::path& folder,const BorgCatalogP
     }
     *out=std::move(next);if(error)error->clear();return true;
 }
+inline void bind_preview_paths(const std::filesystem::path& folder,BorgCatalogSnapshot& snapshot){
+    const auto& catalogue=snapshot.profile;
+    const auto& manifest=snapshot.package.manifest;
+    BorgVariantProfile overrides;
+    std::string overrides_error;
+    const bool has_overrides=catalogue.details&&
+        catalogue.details->references[unsigned(BorgDefinitionFacet::VariantOverrides)].kind==BorgDefinitionReferenceKind::LocalFile;
+    if(has_overrides)read_variants(folder,catalogue,&overrides,&overrides_error);
+    for(const auto& variant:catalogue.variants){
+        const bool base=variant.id==catalogue.default_variant;
+        BorgCatalogPreviewBinding binding{variant.id,base?manifest.preview:std::string{},manifest.model,manifest.animations,overrides_error};
+        const auto* row=overrides.find(variant.id);
+        if(binding.error.empty()&&!base&&(!row||row->asset(BorgVariantAssetRole::Preview).kind!=BorgVariantAssetKind::LocalFile))
+            binding.error="nondefault variant needs its own declared preview profile";
+        if(binding.error.empty()&&row){
+            auto resolve=[&](BorgVariantAssetRole role,std::string& path){
+                const auto& ref=row->asset(role);
+                if(ref.kind==BorgVariantAssetKind::LocalFile){path=ref.file;return true;}
+                if(ref.kind==BorgVariantAssetKind::Inherit)return true;
+                path.clear();return false;
+            };
+            const bool preview=resolve(BorgVariantAssetRole::Preview,binding.preview);
+            const bool model=resolve(BorgVariantAssetRole::Model,binding.model);
+            for(auto role:{BorgVariantAssetRole::Textures,BorgVariantAssetRole::Materials}){
+                const auto kind=row->asset(role).kind;
+                if(kind!=BorgVariantAssetKind::Inherit&&kind!=BorgVariantAssetKind::None)
+                    binding.error="separate or unresolved texture and material overrides cannot be rendered in this preview";
+            }
+            if(binding.error.empty()&&(!preview||!model))binding.error="variant preview or model declaration is unavailable";
+            if(row->asset(BorgVariantAssetRole::Animations).kind==BorgVariantAssetKind::None)binding.motions.clear();
+            else if(!resolve(BorgVariantAssetRole::Animations,binding.motions)&&binding.error.empty())
+                binding.error="variant motion declaration is unavailable";
+        }
+        if(binding.error.empty()&&binding.preview.empty())binding.error="no preview profile declared";
+        snapshot.preview_bindings.push_back(std::move(binding));
+    }
+}
 inline bool read_icon(const std::filesystem::path& folder,const BorgCatalogVariant& variant,
                       std::optional<TplImage>* out,std::string* error){
     if(variant.placeholder_icon()){out->reset();return true;}
@@ -64,12 +135,15 @@ inline bool read_icon(const std::filesystem::path& folder,const BorgCatalogVaria
 }
 }
 inline bool load_borg_catalog_snapshot(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
-                                       std::string_view id,BorgCatalogSnapshot* out,std::string* error){
+                                        std::string_view id,BorgCatalogSnapshot* out,std::string* error,
+                                        BorgCatalogLoadIssue* issue=nullptr){
+    if(issue)*issue=BorgCatalogLoadIssue::Unavailable;
     const auto* package=scanned.status==BorgPackageScanStatus::Complete?scanned.find(id):nullptr;
     if(!out||!package){if(error)*error="a uniquely discovered Borg ID is required";return false;}
     BorgCatalogSnapshot next;next.package=*package;
     std::filesystem::path folder;
-    if(!borg_catalog_detail::read_profile(root,*package,&folder,&next.profile,error))return false;
+    if(!borg_catalog_detail::read_profile(root,*package,&folder,&next.profile,error,issue))return false;
+    borg_catalog_detail::bind_preview_paths(folder,next);
     *out=std::move(next);if(error)error->clear();return true;
 }
 inline bool load_borg_variant_icon(const std::filesystem::path& root,const BorgCatalogSnapshot& snapshot,
@@ -102,13 +176,26 @@ inline bool load_borg_catalog_card(const std::filesystem::path& root,const BorgP
 struct BorgPackagePreviewFiles {
     BorgIdentity identity;
     BorgPreviewProfile profile;
-    std::string model,rig_prefix,pose_profile,motions;
+    std::string model,rig_prefix,pose_profile,motions,landing_pcm;
     static ByteView view(const std::string& data){return {reinterpret_cast<const u8*>(data.data()),data.size()};}
 };
 struct BorgVariantInspection {
     BorgIdentity identity;
     BorgVariantProfile profile;
 };
+// Enumeration may read the bounded declaration without reading model, rig,
+// motion or audio bytes. Admission still rereads the declaration and assets.
+inline bool read_borg_preview_declaration(const std::filesystem::path& root,const BorgCatalogSnapshot& snapshot,
+                                         const BorgCatalogPreviewBinding& binding,BorgPreviewProfile* out){
+    if(!out||!binding.error.empty()||!snapshot.profile.find(binding.variant))return false;
+    std::filesystem::path folder;
+    if(!borg_catalog_detail::current_folder(root,snapshot.package,&folder,nullptr))return false;
+    std::string text;BorgPreviewProfile profile;
+    if(!borg_package_scan_detail::read_local(folder,binding.preview,kBorgPreviewProfileBytes,&text)||
+       !borg_read_preview_profile(text,&profile)||profile.variant!=binding.variant||
+       profile.static_body!=binding.motions.empty())return false;
+    *out=std::move(profile);return true;
+}
 inline bool load_borg_variant_inspection(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
                                          std::string_view id,BorgVariantInspection* out,std::string* error){
     const auto* package=scanned.status==BorgPackageScanStatus::Complete?scanned.find(id):nullptr;
@@ -127,54 +214,40 @@ inline bool load_borg_variant_inspection(const std::filesystem::path& root,const
     }
     *out=std::move(next);return true;
 }
-inline bool load_borg_preview_files(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
-                                    std::string_view id,std::string_view requested_variant,BorgPackagePreviewFiles* out,std::string* error){
-    auto fail=[&](const char* why){if(error)*error=why;return false;};
+inline bool load_borg_preview_files(const std::filesystem::path& root,const BorgCatalogSnapshot& snapshot,
+                                      std::string_view variant,BorgPackagePreviewFiles* out,std::string* error,
+                                      bool lab_audio=false){
+    auto fail=[&](std::string_view why){if(error)*error=why;return false;};
     if(!out)return fail("preview output required");
-    BorgCatalogCard card;
-    if(!load_borg_catalog_card(root,scanned,id,&card,error))return false;
-    const auto& package=*scanned.find(id);
-    const auto& catalogue=card.profile;
-    const std::string_view variant=requested_variant.empty()?std::string_view(catalogue.default_variant):requested_variant;
-    if(!catalogue.find(variant))return fail("undeclared preview variant");
+    if(!borg_catalog_variant_id_valid(variant)||!snapshot.profile.find(variant))return fail("undeclared preview variant");
+    const auto& bindings=snapshot.preview_bindings;
+    const auto binding=std::find_if(bindings.begin(),bindings.end(),[&](const auto& b){return b.variant==variant;});
+    if(binding==bindings.end())return fail("no pinned preview declaration for variant");
+    if(!binding->error.empty())return fail(binding->error);
     std::filesystem::path folder;
-    if(!borg_catalog_detail::current_folder(root,package,&folder,error))return false;
-    std::string_view preview_file=package.manifest.preview,model_file=package.manifest.model,motions_file=package.manifest.animations;
-    BorgVariantProfile overrides;
-    const bool has_overrides=catalogue.details&&
-        catalogue.details->references[unsigned(BorgDefinitionFacet::VariantOverrides)].kind==BorgDefinitionReferenceKind::LocalFile;
-    if(has_overrides&&!borg_catalog_detail::read_variants(folder,catalogue,&overrides,error))return false;
-    const auto* row=overrides.find(variant);
-    if(variant!=catalogue.default_variant&&(!row||row->asset(BorgVariantAssetRole::Preview).kind!=BorgVariantAssetKind::LocalFile))
-        return fail("nondefault variant needs its own declared preview profile");
-    if(row){
-        auto resolve=[&](BorgVariantAssetRole role,std::string_view* path){
-            const auto& ref=row->asset(role);
-            if(ref.kind==BorgVariantAssetKind::LocalFile){*path=ref.file;return true;}
-            return ref.kind==BorgVariantAssetKind::Inherit;
-        };
-        for(auto role:{BorgVariantAssetRole::Textures,BorgVariantAssetRole::Materials}){
-            const auto kind=row->asset(role).kind;
-            if(kind!=BorgVariantAssetKind::Inherit&&kind!=BorgVariantAssetKind::None)
-                return fail("separate or unresolved texture and material overrides cannot be rendered in this preview");
-        }
-        if(!resolve(BorgVariantAssetRole::Preview,&preview_file)||!resolve(BorgVariantAssetRole::Model,&model_file))
-            return fail("variant preview or model declaration is unavailable");
-        if(row->asset(BorgVariantAssetRole::Animations).kind==BorgVariantAssetKind::None)motions_file={};
-        else if(!resolve(BorgVariantAssetRole::Animations,&motions_file))return fail("variant motion declaration is unavailable");
-    }
-    if(preview_file.empty())return fail("no preview profile declared");
-    BorgPackagePreviewFiles next;next.identity=card.identity;
+    if(!borg_catalog_detail::current_folder(root,snapshot.package,&folder,error))return false;
+    BorgPackagePreviewFiles next;next.identity=snapshot.package.manifest.identity;
     std::string profile;
     using borg_package_scan_detail::read_local;
-    if(!read_local(folder,preview_file,kBorgPreviewProfileBytes,&profile)||
+    if(!read_local(folder,binding->preview,kBorgPreviewProfileBytes,&profile)||
        !borg_read_preview_profile(profile,&next.profile))return fail("missing or unsupported preview profile");
     if(next.profile.variant!=variant)return fail("preview profile does not match the selected variant");
-    if(next.profile.static_body!=motions_file.empty())return fail("preview motion declaration and static/clip binding disagree");
-    if(!read_local(folder,model_file,16u<<20,&next.model)||
-       (!next.profile.static_body&&!read_local(folder,motions_file,32u<<20,&next.motions))||
+    if(next.profile.static_body!=binding->motions.empty())return fail("preview motion declaration and static/clip binding disagree");
+    if(!read_local(folder,binding->model,16u<<20,&next.model)||
+        (!next.profile.static_body&&!read_local(folder,binding->motions,32u<<20,&next.motions))||
        !read_local(folder,next.profile.rig_prefix,1u<<16,&next.rig_prefix)||
-       (!next.profile.whole_body&&!read_local(folder,next.profile.pose_profile,1u<<16,&next.pose_profile)))return fail("missing, linked or oversized preview asset");
+        (!next.profile.whole_body&&!read_local(folder,next.profile.pose_profile,1u<<16,&next.pose_profile)))return fail("missing, linked or oversized preview asset");
+    if(lab_audio&&(next.profile.lab_landing_pcm.empty()||
+        !read_local(folder,next.profile.lab_landing_pcm,kBorgMovementSoundBytes,&next.landing_pcm)))
+        return fail("missing exact lab landing PCM declaration or unreadable sample");
     *out=std::move(next);if(error)error->clear();return true;
+}
+inline bool load_borg_preview_files(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
+                                      std::string_view id,std::string_view requested_variant,BorgPackagePreviewFiles* out,std::string* error,
+                                      bool lab_audio=false){
+    BorgCatalogSnapshot snapshot;
+    return load_borg_catalog_snapshot(root,scanned,id,&snapshot,error)&&
+        load_borg_preview_files(root,snapshot,requested_variant.empty()?std::string_view(snapshot.profile.default_variant):requested_variant,
+            out,error,lab_audio);
 }
 }

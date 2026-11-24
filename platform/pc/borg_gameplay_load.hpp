@@ -9,14 +9,22 @@ struct BorgBattlePackageFiles {
     std::shared_ptr<const BorgGameplayProfile> definition;
     BorgPracticeFiles gred;
     std::array<std::string,4> body;
+    std::string impact_archive;
+    std::array<std::string,kBorgBattleMoves> field_textures;
     BorgMovementSoundBank movement_sounds;
+    BorgLaunchSoundBank launch_sounds;
+    BorgImpactSoundBank impact_sounds;
+    BorgReleaseSoundBank release_sounds;
     BorgBattleVisualAssets visuals()const{
+        BorgBattleVisualAssets result;
+        const auto view=[](const std::string& s){return ByteView{reinterpret_cast<const u8*>(s.data()),s.size()};};
         if(definition&&definition->movement==BorgBattleMovement::NormalGRed){
             using A=NativeGRedPracticeAssets;const auto p=gred.views();
-            return {p[A::Body],p[A::RigPrefix],p[A::PoseProfile],p[A::Bank]};
-        }
-        const auto view=[](const std::string& s){return ByteView{reinterpret_cast<const u8*>(s.data()),s.size()};};
-        return {view(body[0]),view(body[1]),view(body[2]),view(body[3])};
+            result={p[A::Body],p[A::RigPrefix],p[A::PoseProfile],p[A::Bank]};
+        }else result={view(body[0]),view(body[1]),view(body[2]),view(body[3])};
+        for(unsigned i=0;i<field_textures.size();++i)result.field_texture[i]=view(field_textures[i]);
+        result.impact_record_bank=view(impact_archive);
+        return result;
     }
 };
 inline bool load_borg_battle_package(const std::filesystem::path& root,const BorgPackageCatalog& scanned,
@@ -41,16 +49,48 @@ inline bool load_borg_battle_package(const std::filesystem::path& root,const Bor
     if(definition.movement==BorgBattleMovement::NormalGRed){
         if(!load_borg_practice_files(root,scanned,id,variant,&next.gred,error))return false;
     }else{
+        if(definition.static_body()&&!package->manifest.animations.empty())
+            return fail("static body must not declare a motion bank");
         const std::array<std::string_view,4> paths{package->manifest.model,definition.rig_prefix,definition.pose_profile,package->manifest.animations};
         constexpr std::array<std::size_t,4> limits{16u<<20,1u<<16,1u<<16,32u<<20};
-        for(unsigned i=0;i<paths.size();++i)if(!read_local(folder,paths[i],limits[i],&next.body[i]))
+        for(unsigned i=0;i<(definition.static_body()?3u:4u);++i)if(!read_local(folder,paths[i],limits[i],&next.body[i]))
             return fail("required battle model, rig or motion bank missing, linked or oversized");
     }
+    if(!definition.impact_record_bank.empty()&&!read_local(folder,definition.impact_record_bank,4u<<20,&next.impact_archive))
+        return fail("required impact record archive missing, linked or oversized");
     for(unsigned i=0;i<definition.movement_sound.size();++i)if(!definition.movement_sound[i].empty()){
         std::string bytes;
         if(!read_local(folder,definition.movement_sound[i],kBorgMovementSoundBytes,&bytes)||
            !borg_movement_sound_decode(bytes,&next.movement_sounds[i]))
             return fail("missing or unqualified movement sound: expected bounded stereo 48 kHz s16le PCM");
+    }
+    for(unsigned i=0;i<definition.projectiles.size();++i)if(const auto& path=definition.projectiles[i].launch_sound;!path.empty()){
+        std::string bytes;
+        if(!read_local(folder,path,kBorgMovementSoundBytes,&bytes)||!borg_movement_sound_decode(bytes,&next.launch_sounds[i]))
+            return fail("missing or unqualified launch sound: expected bounded stereo 48 kHz s16le PCM");
+    }
+    for(unsigned i=0;i<definition.projectiles.size();++i)if(const auto& cue=definition.projectiles[i].impact_sound;cue){
+        std::string bytes;
+        if(!read_local(folder,cue->path,kBorgImpactSoundBytes,&bytes)||
+           !borg_movement_sound_decode(bytes,&next.impact_sounds[i],kBorgImpactSoundBytes))
+            return fail("missing or unqualified impact sound: expected bounded stereo 48 kHz s16le PCM");
+    }
+    unsigned sound_slot=0;
+    for(unsigned i=0;i<definition.moves.size();++i)for(const auto& release:definition.moves[i].releases){
+        if(release.debit_sound.empty())continue;
+        std::string bytes;
+        if(sound_slot>=next.release_sounds.size()||!read_local(folder,release.debit_sound,kBorgMovementSoundBytes,&bytes)||
+           !borg_movement_sound_decode(bytes,&next.release_sounds[sound_slot].pcm))
+            return fail("missing or unqualified release sound: expected bounded stereo 48 kHz s16le PCM");
+        next.release_sounds[sound_slot].move=u8(i);
+        next.release_sounds[sound_slot++].frame=release.frame;
+    }
+    for(unsigned i=0;i<definition.moves.size();++i){
+        const auto& f=definition.moves[i].field;
+        if(f&&!f->texture.empty()&&
+           (!read_local(folder,f->texture,kBorgFieldTextureBytes,&next.field_textures[i])||
+            next.field_textures[i].size()!=kBorgFieldTextureBytes))
+            return fail("missing or invalid field texture: expected local 32x32 RGBA8 pixels");
     }
     next.definition=std::make_shared<const BorgGameplayProfile>(std::move(definition));
     *out=std::move(next);if(error)error->clear();return true;

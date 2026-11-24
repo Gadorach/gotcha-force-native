@@ -2,9 +2,14 @@
 
 Work-in-progress, independently implemented C++20 native game systems with
 platform backends and offline asset readers. Linux is the current reference host.
-This repository contains **source code and tools only**. Supply your own original
-game image; no game assets, original executable, emulator, generated translation,
-reconstructed C decompilation, private evidence or credentials are included.
+This repository contains engine source, tools and original examples. For retail
+content, supply your own original game image. No retail assets, original
+executable, emulator, generated translation, reconstructed C decompilation,
+private evidence or credentials are included.
+
+The [release target](docs/architecture-directions.md) is a standalone shared
+engine with separately supplied game content: portable Borgs, stages, modes,
+scripts, presentation, and fonts.
 
 ## Current state
 
@@ -13,29 +18,42 @@ reconstructed C decompilation, private evidence or credentials are included.
 - Challenge setup and ordered battle initialization in progress.
 - Story setup/progression/UI/audio components.
 - Standalone native G-Red/Sasuke duel MVP with provisional gameplay rules.
-- Opt-in normal-G-Red controller labs using the shared world, animation VM,
-  renderer and independently checked native contact receipts.
-- **No original-battle, original-hardware or full-game compatibility claim.**
+- Opt-in G-Red source walk/turn/stop/dash lab with native input, using the shared
+  world, contact proxies and renderer; source jump/flight/combat remain unsupported.
+- Opt-in source moving-jump extension with takeoff, ascent turning, falling drift,
+  landing and resource spending; air dash/relaunch/combat remain unsupported.
+- Separate source air-dash extension with original wind-up/active/recovery
+  programs and meter policy; relaunch/combat and unreviewed contacts still refuse.
+- Opt-in source relaunch mode with additive airborne launch, original animation
+  handoff and meter/readiness predicates; combat and unreviewed contacts still refuse.
+- Source dash-jump mode adds buffered ground-dash interruption through the
+  existing takeoff path, preserving normal G-Red's source speed reset.
+- Source landing mode permits reviewed jump/dash cancellation after accepted
+  landing entry, with cached-history refill; instant touchdown skips still refuse.
+- Source surface mode adds paired static-surface landing gates and verified
+  non-cancelling takeoff input; steep/attached/unknown responses still refuse.
+- Source steep mode separately admits validated ordinary-falling static pushes,
+  keeping them airborne; unresolved seams and dash/relaunch push variants refuse.
+- Source fall-surface mode adds reviewed post-dash/relaunch selector6 pushes
+  while preserving their falling animations; active-callback pushes still refuse.
+- Source recovery-surface mode separately admits airborne dash-recovery pushes
+  during program12, preserving contact-before-completion and landing/refill order.
+- Source windup-surface mode adds continued program10 pushes with distinct
+  acceleration/timer handling; entry pushes and early wind-up landings still refuse.
+- Source active-surface mode adds continued program11 pushes without replaying
+  entry or skipping readiness, spending, depletion/recovery and landing boundaries.
+- Source relaunch-surface mode adds continued program14/15 projection with
+  positive jump acceleration and separate lane latches; entry/landing still refuse.
+- Source relaunch-entry-surface mode separately validates descending additive
+  entry projection; rising entries and relaunch landings remain refused.
+- **No original-battle or full-game compatibility claim.**
 
-Build and run the desktop prototype:
-
-```sh
-python3 -B tools/build_native.py --host --headers --jobs 1
-build/direct/gf_native --battle-mvp --no-audio
-```
-
-Game data is not included. Prepare local art from your existing qualified native
-bundles with `python3 -m tools.extract.native_battle_mvp --help`.
-See [native MVP](docs/native-battle-mvp.md), [portable movement kernels](docs/movement-kernels.md)
-and [G-Red controller recovery](docs/g-red-animation-controller.md).
-Run `build/direct/gf_native --gred-movement --no-audio` for movement practice
-with the combined G-Red controller, controls on screen, and a live flight
-meter. `--demo-gred-movement --frames 600` runs the existing wind-up-entry
-route with the same HUD. Both require GFMM9, use native contact proxies, and
-leave combat and unsupported contacts disabled. The focused wind-up entry
-lab is still available as `--source-ground-windup-entry-push`.
-Older modes retain their narrower permissions and native proxies stay labelled.
-Other Borgs do not inherit G-Red's recovered mappings.
+The immediate priority is a [playable native G-Red/Sasuke MVP](docs/native-battle-mvp.md),
+using provisional gameplay rules and the shared model/animation/renderer systems.
+The detailed [source-reconstruction progress](docs/battle-scene-mvp.md) is retained
+for later accuracy work, not as a prerequisite for that prototype.
+Current controller recovery and the source-dash lab are documented in
+[G-Red's animation-controller layout](docs/g-red-animation-controller.md).
 
 Some development demonstrations use private generated metadata profiles and
 integration harnesses. Those artifacts are not distributed here. The public
@@ -64,6 +82,69 @@ build/direct/gf_native --headless --frames 3
 Tests using original data skip their optional source-data portion when it is
 absent; generated test fixtures are separate from original game assets.
 Hardware/display-dependent tests are opt-in. Compilation is limited to two jobs.
+
+## Solo Borg control test
+
+With the local native MVP and G-Red movement assets prepared, run:
+
+```sh
+build/direct/gf_native --borg-controls --no-audio
+```
+
+Click the top-left dropdown to switch between **G-Red** (recovered movement
+subset) and **Sasuke** (provisional native MVP controller). Switching starts the
+selected Borg fresh on the stage. The scene has one active actor, no opponent
+or combat, and does not read or write a save. Animation previews and other
+unqualified Borgs are not selectable. The required local asset directories
+default to `local/content/native-battle-mvp-v1` and
+`local/content/source-gred-ground-v9`.
+
+Controls are shown in the window. **Q** resets, **Enter** pauses, and **Esc**
+closes. G-Red uses the existing bounded movement acceptance checks and a
+native solo steering setting, not an original no-target controller claim.
+`--demo-borg-controls` runs a short scripted switch-and-movement smoke test.
+
+## Interactive combat demo
+
+With a locally extracted playable roster and prepared Battle Test stage:
+
+```sh
+python3 -B -m tools.extract.interactive_battle_demo ROSTER_ROOT \
+  build/direct/gf_native local/content/native-battle-mvp-v1 local/interactive-battle \
+  --practice local/content/source-gred-ground-v9
+local/interactive-battle/play.sh
+```
+
+Click the top-left dropdown to switch between installed playable Borgs.
+Use **Prev/Next** or the mouse wheel to page. **Flight Stick** and **Jump
+Stick** are at the end. Switching starts a fresh fight against the
+training target; it does not read or write a save. The battle window is
+resizable and the camera backs out to fit oversized Borg bodies. Arrows move,
+R holds grounded facing for strafing, **Alt+Arrow** dashes,
+Shift jumps, flies or boosts according to the package, Space uses B,
+and E uses X where present. The HUD says **X NOT IMPLEMENTED** when a
+package has no X move and **B NOT IMPLEMENTED** when it has no B move, so
+a package like Beam Tank or Delta II, whose only authored attack is X, says
+so instead of advertising a dead key. Jump Stick and Flight Stick are quick ways to test
+the binding. Q restarts and Esc exits.
+For a scripted attack showcase, run
+`local/interactive-battle/show-attacks.sh gg4e08:0500` (Flame Dragon).
+Add `--exercise-battle-mobility` to watch an elemental Dragon jump, land,
+and trail its articulated tail along the stage floor.
+To script Sasuke's movement as well as attacks, run
+`local/interactive-battle/show-attacks.sh gg4e08:000a --exercise-battle-mobility`.
+`--practice` adds the checked G-Red flight controller, Sasuke's three-jump
+test, and authored mechanics examples such as Rotary Scout and Remote Scout.
+It also binds qualified package movement clips and source-relative ground
+pace where indexed. The examples are not complete retail movesets.
+For source G-Red, touchdown must complete its landing-entry update before
+a jump or dash can interrupt. A Shift press on that exact update is not
+queued: release and press Shift again after contact.
+Alt+Arrow is translated to a source-direction flick for G-Red; raw
+modifier and trigger buttons are not passed to the source controller.
+An unsupported staged input pauses the live round with a diagnostic.
+Use Q to restart or pick another Borg; the demo never switches to a
+different movement controller after a refusal.
 
 ## Extract your own assets
 

@@ -3,8 +3,8 @@
 #include <vector>
 #include "engine/core/types.hpp"
 namespace gf {
-// Physical arena/index, never a guest pointer. Index-only comparisons are
-// for inspection; traversal must use both fields.
+//A physical arena/index relationship, never an encoded guest or host pointer.
+//Index-only comparisons are inspection conveniences; traversal uses BOTH fields.
 struct ScenePhysicalLink {
     u8 physical=255;s32 index=-1;
     bool present()const{return physical!=255&&index>=0;}
@@ -13,8 +13,10 @@ struct ScenePhysicalLink {
 };
 struct ScenePhysicalRecord {
     u8 active00=0;s8 group01=0;u8 class02=0,physical03=0;
-    // +4 is free-next when free and previous-in-group when allocated.
+    //Source +4 is free-next while free, previous-group while allocated.
     ScenePhysicalLink free_next4,group_next8;u32 update0c_key=0;
+    ScenePhysicalLink render_next110;
+    u32 callback100_key=0;ScenePhysicalLink callback_previous104,callback_next108;
     u8 kind83=0,registration85=0;bool allocated=false;u64 generation=0;
     bool operator==(const ScenePhysicalRecord&)const=default;
 };
@@ -23,4 +25,4 @@ struct ScenePhysicalBankSnapshot {
     std::vector<ScenePhysicalRecord> records;
     bool operator==(const ScenePhysicalBankSnapshot&)const=default;
 };
-}
+} // namespace gf

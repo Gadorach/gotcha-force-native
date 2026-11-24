@@ -7,7 +7,7 @@ struct ActorFadeChannel {u8 curve=255,loops=0;f32 time=0;u32 rgba=0;bool active=
 struct ActorFadeState {std::array<ActorFadeChannel,2> channels{};u32 material_rgba=0x000000ffu,profile_binding=0;bool initialized=false;};
 struct ActorFadeMaterial {std::array<u8,3> rgb{};bool source_class=false;};
 namespace actor_fade_detail {
-inline const ActorFadeCurve* curve(const ActorFadeProfile& p,u8 id){for(const auto& c:p.curves)if(c.id==id)return &c;return nullptr;}
+inline const ActorFadeCurve* curve(const ActorFadeProfile& p,u8 id){for(unsigned i=0;i<p.curve_count();++i)if(p.curves[i].id==id)return &p.curves[i];return nullptr;}
 inline bool state(const ActorFadeProfile& p,const ActorFadeState& s){
     if(!actor_fade_profile_valid(p)||!s.initialized||s.profile_binding!=p.binding||(s.material_rgba&255u)!=255)return false;
     for(const auto& c:s.channels){if(!std::isfinite(c.time)||c.time<0||c.time>8208)return false;if(c.curve!=255&&!curve(p,c.curve))return false;if(c.active&&(c.curve==255||(c.rgba&255u)!=255))return false;}

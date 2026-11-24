@@ -9,7 +9,8 @@ namespace gf {
 class BorgForceBrowserView {
 public:
     unsigned draw(RenderEngine& render,s32 width,s32 height,const BorgForceBrowser& cursor,
-                  const MixedBorgForceView* force,std::string_view save_name,std::optional<std::string_view> practice={}){
+                  const MixedBorgForceView* force,std::string_view save_name,std::optional<std::string_view> practice={},
+                  std::optional<std::string_view> arrange={}){
         if(width<520||height<360)return 0;
         const auto saved=render.state();
         render.state()={};render.state().depth_test=render.state().depth_write=false;
@@ -48,7 +49,7 @@ public:
         fill(12,74,split-16,height-114,{24,36,48,255});
         fill(split,74,width-split-12,height-114,{31,43,56,255});
         text("SLOTS",22,87,split-36,title);
-        const unsigned room=unsigned(std::max(1,(height-(practice?175:153))/22));
+        const unsigned room=unsigned(std::max(1,(height-((practice||arrange)?175:153))/22));
         const unsigned start=cursor.slot()>=room?cursor.slot()-room+1:0;
         for(unsigned slot=start;slot<std::min(kForceSlots,start+room);++slot){
             const auto* row=force->find_slot(slot);
@@ -92,6 +93,10 @@ public:
             if(!practice->empty())text(*practice,right,height-61,right_room,muted);
             text("UP/DOWN SLOT  LEFT/RIGHT FORCE  L/R ROUTE",16,height-35,width-32,small);
             text("Q/Y PRACTICE  ESC CLOSE",16,height-22,width-32,small);
+        }else if(arrange){
+            if(!arrange->empty())text(*arrange,right,height-61,right_room,warning);
+            text("UP/DOWN SLOT  LEFT/RIGHT FORCE",16,height-35,width-32,small);
+            text("SPACE/A ARRANGE OWNED COPY IN OPEN SLOT  ESC CLOSE",16,height-22,width-32,small);
         }else text("UP/DOWN SLOT  LEFT/RIGHT FORCE  ESC CLOSE",16,height-24,width-32,small);
         render.state()=saved;return draws;
     }

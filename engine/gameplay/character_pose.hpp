@@ -36,6 +36,30 @@ struct CharacterPoseFrame {
     bool inverse_kinematics=false,alternate_root=false;
 };
 struct CharacterWorldPose {std::vector<Mat4> matrices;std::vector<u32> joint_offsets;};
+// Retarget only keyed translations to a different-sized package rig. An
+// unkeyed channel is still populated by that rig's own bind translation.
+inline bool character_pose_scale_translations(HsdBoneMotionSample& sample,u16 percent){
+    if(percent<25||percent>200)return false;
+    if(percent==100)return true;
+    const f32 scale=percent*.01f;
+    for(auto& bone:sample.bones)for(unsigned axis=5;axis<=7;++axis)
+        if(bone.present&(1u<<axis))bone.value[axis]*=scale;
+    return true;
+}
+// Single presentation lane; not source gameplay lane ownership or mirroring.
+inline bool character_pose_whole_body_profile(ByteView model,ByteView prefix,std::vector<u8>* out,std::string* error){
+    HsdModelBones bones;
+    if(!out||!hsd_bones_load(prefix,model,&bones,error))return false;
+    const unsigned n=unsigned(bones.bones.size()),order=32,mirror=order+n,identities=(mirror+n+3)&~3u;
+    if(n<2||n>kHsdMaxCharacterBones){if(error)*error="whole-body rig size unsupported";return false;}
+    out->assign(identities+n*4,0);auto* p=out->data();
+    store_be32(p,0x47464350);store_be16(p+4,1);store_be16(p+6,u16(n));
+    p[8]=1;p[9]=p[10]=p[11]=u8(n);
+    store_be32(p+12,order);store_be32(p+16,mirror);store_be32(p+20,identities);
+    store_be32(p+24,u32(out->size()));store_be32(p+28,bones.root_offset);
+    for(unsigned i=0;i<n;++i){p[order+i]=p[mirror+i]=u8(i);store_be32(p+identities+i*4,bones.bones[i].joint_offset);}
+    return true;
+}
 namespace character_pose_detail {
 inline bool finite(f32 x){return std::isfinite(x)&&std::fabs(x)<=1e7f;}
 inline bool matrix(const Mat4& m){for(auto x:m.m)if(!finite(x))return false;return m.m[12]==0&&m.m[13]==0&&m.m[14]==0&&m.m[15]==1;}
@@ -48,7 +72,7 @@ inline bool rig(const CharacterPoseRig& r){
         auto [slot,parent]=stack.back();stack.pop_back();
         if(slot>=n||seen[slot])return false;
         seen[slot]=true;walked.push_back(slot);const auto& bone=b.bones[slot];
-        if(bone.parent!=parent||!bone.joint_offset)return false;
+        if(bone.parent!=parent||!b.has_identity(slot))return false;
         for(auto value:bone.translation)if(!finite(value))return false;
         for(u8 other:walked)if(other!=slot&&b.bones[other].joint_offset==bone.joint_offset)return false;
         if(bone.next!=kHsdNoBone)stack.push_back({bone.next,parent});

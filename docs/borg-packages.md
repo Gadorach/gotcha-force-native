@@ -3,6 +3,7 @@
 See the [self-contained Borg requirements map](borg-package-requirements.md)
 for the current engine consumers, package/engine ownership split, and gates
 before integration. The discovery manifest below is only the first layer.
+For original GG4E08 assets, see the [deterministic roster extractor](retail-roster-extraction.md).
 
 The desktop host scans `borgs/` at startup, relative to the launch directory.
 Each Borg lives in one subfolder. The subfolder is just a location, not an ID:
@@ -177,15 +178,17 @@ another member. Both saved records are rechecked before launch and on
 **Q** restart. Other slots and Force budgets are not checked for battle
 admission.
 
-## Read-only installed Borg picker
+## Read-only installed Borg Collection
 
-`gf_native --browse-borgs` opens the standalone installed-package picker.
-Use **Up/Down** to browse packages, **Left/Right** to switch the selected
-variant, and **Space/A** to inspect its exact IDs. The picker reads the
-selected catalogue's variant labels and Force costs, and decodes only the
-selected editor icon through the shared texture system. Placeholder,
-unresolved and unavailable icons are labelled separately. A package with
-no available catalogue stays visible without inventing a variant.
+`gf_native --browse-borgs` opens the installed Collection. Each exact
+`(package ID, variant ID)` is a row. Use **Up/Down** or click to select a
+visible row, **Left/Right** to page, and **Space/A** to inspect the exact
+selection. **L** sorts by name or ID; **R** switches between all rows and
+exact variant rows. A package with no available catalogue stays visible
+in the unfiltered list without inventing a variant. The Collection pins
+metadata, and decodes only the selected editor icon through the shared
+texture system. Placeholder, unresolved and unavailable icons are labelled
+separately. Preview and gameplay declarations are not readiness.
 
 **E/X** opens the selected package and exact variant in the shared body
 preview. **Shift/B** returns to the same selection. Missing or unsupported
@@ -194,10 +197,27 @@ than changing the variant. The preview releases its own device textures
 between visits. The [standalone body preview](#standalone-body-preview)
 also remains available by explicit package and variant IDs.
 
-This is a read-only picker for installed definitions, not the retail box,
-an owned collection, or mode admission. It does not open a save or a
-battle. `--demo-borg-browser --frames 26` drives a repeatable navigation and
-preview sequence for checks.
+This view is read-only and does not open a save or an actor. The viewport
+can resize without changing the exact selection; narrow windows stack the
+list and details. The default compatibility font uses uppercase ASCII,
+`?` for unsupported characters, clipped labels and plain decimal numbers.
+Add `--collection-font FONT_ROOT` to the installed or read-only owned
+Collection to select a local [portable font](portable-content-v1.md#portable-ui-font-v1).
+Labels pass through as UTF-8; unsupported glyphs use the atlas's replacement.
+A missing, linked, invalid, or unsupported font falls back to the bitmap
+presentation. This does not change body previews, practice, Force arrangement,
+or cheat picking. Localized sorting and number formatting remain pending.
+Neither path changes saved or installed UTF-8 names.
+
+```sh
+python3 -B -m tools.extract.portable_ui_font_example local/example-ui
+gf_native --browse-borgs --collection-font local/example-ui
+```
+
+The demo font is generated from repository-owned bitmap shapes and includes
+lowercase, accented letters, and a few non-Latin glyphs; it is not a full
+Unicode font. `--demo-borg-browser --frames 26` drives a repeatable navigation
+and preview sequence for checks.
 
 ## Catalogue and editor-icon check
 
@@ -561,6 +581,14 @@ movement, ammo or other state. Battle fusion remains a separate facet.
 
 ### Standalone battle-fusion check
 
+The portable engine also has a tested paired **binding transaction**
+for two existing same-team slots. It checks both prepared bindings
+and current slot revisions before committing either, spends a shared
+clock only on eligible updates, and lets each slot restore its own
+binding when eligible. This boundary does not load forms, admit
+same-team combat, transfer HP or stock, or turn the metadata below
+into an executable rule.
+
 Set `fusions=gameplay/fusions.txt` in a version 2 catalogue. This is battle
 combination, **not** collecting or assembling crystal parts.
 
@@ -718,11 +746,18 @@ This does not import glTF, load rules or effects, alter the
 classifier, or grant battle capability.
 
 For more clips on that exact variant, use `GFBORG-PREVIEW 2` and append
-up to seven `clip=ID|GROUP:ENTRY` rows (for example, `clip=walk|0:1`).
+up to nineteen `clip=ID|GROUP:ENTRY` rows (for example, `clip=walk|0:1`).
 Keep `idle`; its label is reserved. Switch clips with **Left/Right** or
 open a named clip with `--preview-clip ID`. Every binding is checked
 before display, and clip changes reuse the same rig and textures.
 The bindings are for inspection, not movement or attack arbitration.
+
+Version 2 may also use `candidate=ID|GROUP:ENTRY` within the same
+nineteen-row budget shared with ordinary clips. Its slot must exist in the exact bank at load; the
+clip's track compatibility is checked only when selected. A refused
+inspection candidate leaves the current clip unchanged. This lets a
+package expose source-derived movement-role hypotheses without making
+an unsupported experiment veto its ordinary preview.
 
 Version 2 also accepts `model-format=hsd-whole-body-v1`. This uses the
 same renderer and the wrapper's logical skeleton, with a single preview
@@ -733,6 +768,62 @@ renders the body's initial pose without pretending it has an idle
 animation. Exact normal Death ICBM uses this static mode; exact normal
 Teleport Ninja and Switching Ninja each declare `idle`, `walk` and
 `dash-0` from their local bank.
+
+`GFBORG-PREVIEW 3` extends the whole-body format with one to sixteen
+`mount=RECORD|BONE|X|Y|Z` rows. Each selects an exact static record in the
+same model bank. `RECORD` is 1–31, `BONE` is a logical rig slot 0–31, and
+offsets are signed integer joint-local units in −4096…4096. The mount
+replaces the record root's authored transform and preserves its children's
+local transforms. A record may be instanced at distinct joints, and
+different records may share a joint. Duplicate record/joint pairs, missing
+records, missing joints, and unported skin or animation on mounts refuse.
+These are fixed presentation mounts, not gameplay attachments or selectors.
+
+`GFBORG-PREVIEW 4` adds one required `lab-landing-pcm=PATH` row to an
+animated whole-body profile, with optional fixed mounts. `PATH` must be
+package-local and names stereo 48 kHz signed 16-bit little-endian PCM
+(up to three seconds). Only the opt-in solo jump lab reads the sound.
+It plays on accepted native landing, never as a battle cue and never
+by borrowing another variant's sample.
+
+`GFBORG-PREVIEW 5` adds one to sixteen `origin=ID|JOINT|X|Y|Z`
+inspection points (with optional fixed mounts and lab audio). `JOINT`
+is an exact logical rig slot. The three finite decimal values are
+joint-local position coordinates in source units, bounded to ±100,000.
+IDs must be unique within the look. `--preview-origin ID` selects one
+point to show with the current pose; a missing ID or joint refuses.
+The marker has no direction, projectile, collision or gameplay effect.
+
+`GFBORG-PREVIEW 6` declares `lab-cruise=HEIGHT|CAPACITY|COST|REFILL|DELAY|MINIMUM`
+on a static whole-body look (`idle=none`, no motion bank). The tuple is
+validated by the same rules as the authored `cruise-boost` row. It
+admits that look only to the opt-in solo cruise lab, with no actions,
+landing cues or battle admission. Mounted records and origin markers
+remain optional; normal declarations never transfer to another look.
+
+`GFBORG-PREVIEW 7` declares `lab-ground-pace=N` on an animated whole-body
+look with an explicit `ground-travel` clip. `N` is an integer from 42 to
+1042 in hundredths of a native unit per tick. Fixed mounts, landing PCM
+and origin markers remain optional. The pace is read only by the opt-in
+solo `--lab-source-pace` mode; it does not change the default lab or
+admit a Borg to combat. It never transfers to another look.
+
+`GFBORG-PREVIEW 8` is the animated counterpart to version 6. It requires
+a whole body, a local motion bank, `lab-cruise` and one explicit
+`candidate=cruise-entry|GROUP:CHOICE`. The solo lab strictly binds that
+clip, plays it once and holds its final pose through cruise and boost.
+It never borrows the raw `idle` preview clip or replaces a failed entry.
+Origin markers remain optional; mounts, landing PCM and grounded pace
+are not supported in this version. It grants no battle or save access.
+
+`GFBORG-PREVIEW 9` adds `lab-air-dash-starts=WINDUP|ACTIVE|RECOVERY`
+to an animated whole-body look with all three air-dash and four jump/walk
+clip candidates. Starts are integer frames from 0 to 600 and at least
+one must be nonzero. The solo lab binds each exact clip and refuses a
+start beyond its decoded extent. Each phase samples only its declared
+start through the clip's end over the existing native phase duration.
+Mounts, landing PCM, origin markers and grounded pace remain optional.
+This row does not change raw clip inspection or grant combat access.
 
 From the prepared local MVP art, the first two portable model packages
 can be generated without modifying their inputs:
@@ -832,12 +923,13 @@ inventories. Retail menu integration remains separate.
 gf_native --browse-owned-borgs ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID
 ```
 
-The installed picker's shared display and body preview can also browse the
-packaged copies in one explicitly selected save. **Up/Down** selects a copy;
-`--owned-instance INSTANCE` opens directly on that saved instance. The
-collection shows the cached names, the saved variant ID and Force placement
-count even for disabled or missing copies. It never changes a variant or
-silently falls back to the installed default. **E/X** requests a body
+The same display and body preview can browse the packaged copies in one
+explicitly selected save. **Up/Down**, paging, sort and click operate on
+instance rows; `--owned-instance INSTANCE` opens directly on that copy.
+The default view keeps disabled and missing copies. **R** filters to
+enabled, exact matches. The view shows cached names, the saved variant
+ID and Force placement count where space permits. It never changes a
+variant or silently falls back to the installed default. **E/X** requests a body
 preview only for an enabled copy whose exact variant resolves; the preview
 can still refuse missing or unsupported assets. **Shift/B** returns to the
 same copy. This is a snapshot of packaged ownership only, not a unified
@@ -935,20 +1027,40 @@ Nothing here edits a save or launches a Force battle.
 ```sh
 gf_native --place-owned-borg ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER SLOT_NUMBER \
   [--owned-instance INSTANCE] [--retail-catalog FILE]
+gf_native --browse-borg-force ACCOUNT_STORE_ROOT ACCOUNT_ID SAVE_ID FORCE_NUMBER \
+  [--force-slot SLOT] [--retail-catalog FILE] --arrange-from-force
 ```
 
-Force and slot numbers are one-based. **Up/Down** selects an owned copy and
-**Space/A** stages it. Confirmation defaults to **Cancel**: press **Down**
+Force and slot numbers are one-based. The Force browser stays read-only unless
+you pass `--arrange-from-force`; **Space/A** on an empty position then opens
+the owned Collection arranger for that position on the same save. This
+handoff replaces the browser for the rest of the launch and cannot be combined
+with `--practice-from-picker`. In the arranger, **Up/Down** selects an owned
+copy and **Space/A** stages it. Confirmation defaults to **Cancel**: press **Down**
 to highlight **Confirm Placement**, then press **Space/A** separately.
 **Shift/B** or closing the window cancels without writing. Supply the exact
 GFBC catalogue with `--retail-catalog` if a retail inventory record exists.
-`--headless` cannot commit a placement.
+`--headless` cannot commit a placement. If the window cannot show the exact
+proposal and both choices, enlarge it before staging.
 
 This operation places one already-owned, enabled copy with its exact saved
 variant. It refuses an unverified retail record, either kind of occupancy,
-and repeated membership in the same Force. Confirmation rescans the
-package and rechecks both records on the selected account/save. A saved
+conflicts, unknown active costs, edited retail members, and repeated
+membership in the same Force. Confirmation rescans the proposed copy and
+existing active members and rechecks both records and their revision on
+the selected account/save. A saved
 result changes only the package position, not ownership or the retail
 record. After a saved, stale, or unconfirmed result, reopen to inspect the
 save; the UI does not retry a write. This is not a full mixed Force editor
 and does not check a mode budget or admit the Force to battle.
+
+### Inspect a cheat picker offer
+
+```sh
+gf_native --cheat-offer-picker
+```
+
+This explicit standalone capability browses the installed Collection.
+Highlight an exact variant and press **Space/A** to make an offer.
+Diagnostic rows have no variant to offer. The picker has no selected save,
+grants no Borgs, and does not admit an actor to battle.

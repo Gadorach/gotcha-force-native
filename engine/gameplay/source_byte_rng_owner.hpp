@@ -8,6 +8,7 @@ namespace source_byte_rng_detail {struct Scope {SourceByteRngState state;u64 rev
 class SourceByteRngSnapshot {
 public:
     SourceByteRngState state()const{return state_;}
+    bool live()const{return !scope_.expired();}
 private:
     friend class SourceByteRngOwner;friend class ChallengeInitialPartyAssembly;
     std::weak_ptr<const source_byte_rng_detail::Scope> scope_;SourceByteRngState state_;u64 revision_=0;
@@ -28,6 +29,8 @@ public:
     bool next_byte(u8* out){if(!out||!scope_||scope_->revision==std::numeric_limits<u64>::max()||scope_->draws==std::numeric_limits<u64>::max())return false;*out=source_byte_rng_step(scope_->state);++scope_->revision;++scope_->draws;return true;}
 private:
     friend class ChallengeInitialPartyAssembly;
+    friend class BattlePreparationBootstrap;
+    friend class BattleActorConstruction;
     bool commit(const SourceByteRngSnapshot& s,SourceByteRngState next,u32 draws){if(!current(s)||scope_->revision==std::numeric_limits<u64>::max()||draws>std::numeric_limits<u64>::max()-scope_->draws)return false;scope_->state=next;++scope_->revision;scope_->draws+=draws;return true;}
     std::shared_ptr<source_byte_rng_detail::Scope> scope_;
 };

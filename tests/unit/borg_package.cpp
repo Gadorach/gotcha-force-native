@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "platform/pc/borg_catalog_load.hpp"
+#include "platform/pc/borg_library_load.hpp"
 
 namespace {
 namespace fs=std::filesystem;
@@ -118,14 +119,25 @@ int main(){
     write(capability_root/"Renamed metadata/borg.manifest",manifest_v2);
     auto capabilities=pc::scan_borg_packages(capability_root);
     check(capabilities.find("test:metadata")&&capabilities.issues.empty(),
-        "catalogue capability still has a known identity while its catalogue is unavailable");
+         "catalogue capability still has a known identity while its catalogue is unavailable");
+    const auto missing_card=pc::load_borg_library_metadata(capability_root,capabilities);
+    check(missing_card.snapshots.empty()&&missing_card.issues.size()==1&&
+        missing_card.issues[0].state==BorgLibraryState::CatalogMissing,"library loader reports missing catalogue independently of package discovery");
     const auto static_folder=capability_root/"Renamed metadata";
+    write(static_folder/"catalog.txt","not a catalogue");
+    const auto invalid_card=pc::load_borg_library_metadata(capability_root,capabilities);
+    check(invalid_card.snapshots.empty()&&invalid_card.issues.size()==1&&
+        invalid_card.issues[0].state==BorgLibraryState::CatalogInvalid,"library loader distinguishes malformed catalogue");
+    write(static_folder/"catalog.txt","GFBORG-CATALOG 9\n");
+    const auto unsupported_card=pc::load_borg_library_metadata(capability_root,capabilities);
+    check(unsupported_card.snapshots.empty()&&unsupported_card.issues.size()==1&&
+        unsupported_card.issues[0].state==BorgLibraryState::CatalogUnsupported,"library loader distinguishes unsupported catalogue version");
     const std::string static_manifest=manifest_v2+"model=body.hsd\npreview=preview.txt\n";
     const std::string static_preview="GFBORG-PREVIEW 2\nmodel-format=hsd-whole-body-v1\n"
         "variant=normal\nrig-prefix=body.prefix\n";
     write(static_folder/"borg.manifest",static_manifest);
     write(static_folder/"catalog.txt","GFBORG-CATALOG 1\ndescription=Static example.\ntribe=none\n"
-        "default-variant=normal\nvariant=normal|Normal|10|placeholder\nvariant=other|Other|10|placeholder\n");
+        "default-variant=normal\nvariant=normal|Normal|10|missing-icon.tpl\nvariant=other|Other|10|unresolved\n");
     write(static_folder/"body.hsd","model");
     write(static_folder/"body.prefix","prefix");
     write(static_folder/"preview.txt",static_preview+"idle=none\n");
@@ -135,9 +147,36 @@ int main(){
         return pc::load_borg_preview_files(capability_root,capabilities,"test:metadata",variant,&static_files,&preview_error);
     };
     check(load_static("normal")&&static_files.profile.static_body&&static_files.motions.empty()&&static_files.pose_profile.empty(),
-        "static preview loader requires no fabricated motion or pose bytes");
+         "static preview needs neither motion, pose bytes nor artwork for any variant");
     check(!load_static("other")&&static_files.profile.variant=="normal",
         "another variant cannot fall through to the static base");
+    const auto pinned=pc::load_borg_library_metadata(capability_root,capabilities);
+    check(pinned.snapshots.size()==1&&pinned.issues.empty(),"selected metadata snapshot needs no icon bytes");
+    write(static_folder/"catalog.txt","broken after session start");
+    check(!load_static("normal")&&pc::load_borg_preview_files(capability_root,pinned.snapshots.front(),"normal",&static_files,&preview_error)&&
+        !pc::load_borg_preview_files(capability_root,pinned.snapshots.front(),"",&static_files,&preview_error),
+        "body preview uses the pinned exact metadata and never chooses a default for a Collection key");
+    write(static_folder/"catalog.txt","GFBORG-CATALOG 2\ndescription=Static example.\ntribe=none\n"
+        "default-variant=normal\nvariant=normal|Normal|10|missing-icon.tpl\nvariant=other|Other|10|unresolved\n"
+        "collection-number=unresolved\ncombat-role=unresolved\nrarity-grade=unresolved\ncrystals=unresolved\n"
+        "alternate=unresolved\nlevel-schedule=unresolved\nexperience=unresolved\ndisplay-jump=unresolved\n"
+        "hp=unresolved|unresolved\nratings=unresolved|unresolved|unresolved|unresolved\n"
+        "moves=none\ntraits=none\nforms=none\nfusions=none\nacquisition=none\neffects=none\nvariant-overrides=variants.txt\n");
+    write(static_folder/"variants.txt","GFBORG-VARIANTS 1\nvariant=other\nmodel=inherit\nanimations=none\n"
+        "preview=other.preview\ntextures=inherit\nmaterials=inherit\nstats=inherit\nmovement=inherit\nmoves=inherit\n"
+        "collision=inherit\neffects=inherit\nacquisition=inherit\nhp-level-offset=inherit\nammo-level-offset=inherit\n");
+    const auto alternate=pc::load_borg_library_metadata(capability_root,capabilities);
+    check(alternate.snapshots.size()==1&&
+        BorgLibrary(capabilities,alternate.snapshots,alternate.issues).find("test:metadata","other")->preview_declared&&
+        !load_static("other"),"a declared exact preview is not a readiness receipt");
+    write(static_folder/"other.preview","GFBORG-PREVIEW 2\nmodel-format=hsd-whole-body-v1\n"
+        "variant=other\nrig-prefix=body.prefix\nidle=none\n");
+    write(static_folder/"variants.txt","invalid replacement of pinned paths");
+    check(pc::load_borg_preview_files(capability_root,alternate.snapshots.front(),"other",&static_files,&preview_error)&&
+        static_files.profile.variant=="other"&&!load_static("other"),"the exact alternate preview retains its session binding");
+    write(static_folder/"catalog.txt","GFBORG-CATALOG 1\ndescription=Static example.\ntribe=none\n"
+        "default-variant=normal\nvariant=normal|Normal|10|missing-icon.tpl\nvariant=other|Other|10|unresolved\n");
+    check(load_static("normal"),"restore the base fixture");
     write(static_folder/"preview.txt",static_preview+"idle=0:0\n");
     check(!load_static("normal")&&static_files.profile.static_body,"animated binding without a bank refuses atomically");
     write(static_folder/"preview.txt",static_preview+"idle=none\n");

@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/assets/hsd_light_constructor.hpp"
 // Explicit published static-model records, not relocation-candidate/shape matching.
 // Decode a bank once; selected instances share immutable source/animation bytes.
 #include <memory>
@@ -16,7 +17,7 @@ inline bool pointers(const hsd_detail::Reader& r,u32 table,std::vector<u32>* out
     if(!table)return true;
     for(unsigned i=0;i<=256;++i){u32 value=0;if(!optional(r,table+i*4,&value))return false;if(!value)return true;if(i==256)return false;out->push_back(value);}return false;
 }
-struct Record {u32 root=0;std::vector<u32> joint,material,shape;};
+struct Record {u32 root=0,joint_table=0,material_table=0,shape_table=0;std::vector<u32> joint,material,shape;};
 struct Bank {std::vector<u8> bytes;hsd_detail::Reader reader;HsdScene scene;std::vector<Record> records;u32 hash=0,scene_export=0;};
 struct Object {enum Kind{Joint,Material,Texture} kind=Joint;u32 target=0;std::vector<u32> meshes;f32 end=0;std::vector<HsdAnimTrack> tracks;u32 path_reference=0;HsdAnimSpline path;HsdTextureState texture;bool retain_tev1=false;};
 struct Instance {std::shared_ptr<const Bank> bank;HsdScene scene;std::vector<Object> objects;u16 record=0;};
@@ -58,14 +59,22 @@ private:
     std::shared_ptr<const hsd_record_detail::Instance> data_;
     friend class HsdRecordAnimationBank;friend class HsdRecordAnimationPlayer;friend class HsdShapeMaterialRecord;
 };
-struct HsdArchiveSceneMetadata {u32 scene_key=0,models=0,cameras=0;bool fog_present=false;};
+//Compatibility field `cameras` counts scene+8 LIGHT ROOTS (08A94→LObjLoadDesc),
+//not cameras. Keep its stored value/API while exposing the correct semantic name.
+struct HsdArchiveSceneMetadata {u32 scene_key=0,models=0,cameras=0;bool fog_present=false;u32 light_root_count()const{return cameras;}};
+//Table identity is distinct from its parsed clip count: a nonnull table may
+//have a null first entry. Source callers branch on the former.
+struct HsdRecordAnimationTables {
+    u32 joint=0,material=0,shape=0;u32 joint_clips=0,material_clips=0,shape_clips=0;
+    bool operator==(const HsdRecordAnimationTables&)const=default;
+};
 class HsdRecordAnimationBank {
 public:
-    bool load(ByteView archive,std::string* error,bool share_images=false){
+    bool load(ByteView archive,std::string* error,bool share_images=false,HsdStaticMaterialPolicy material_policy=HsdStaticMaterialPolicy::Legacy){
         data_.reset();auto fail=[&](const char* why){if(error)*error=std::string("hsd record bank: ")+why;return false;};
         if(!archive.data||archive.size<32||archive.size>(64u<<20))return fail("input budget");
         auto data=std::make_shared<hsd_record_detail::Bank>();data->bytes.assign(archive.data,archive.data+archive.size);ByteView owned{data->bytes.data(),data->bytes.size()};
-        if(!hsd_load(owned,&data->scene,error)||!hsd_anim_detail::open_container(owned,&data->reader,error))return false;
+        if(!hsd_load(owned,&data->scene,error,material_policy)||!hsd_anim_detail::open_container(owned,&data->reader,error))return false;
         if(share_images&&!hsd_share_texture_images(data->scene))return fail("immutable image payloads");
         auto& r=data->reader;const u32 publics=owned.be32(12),externs=owned.be32(16);if(!publics||publics>4096||externs>4096)return fail("symbol budget");
         const std::size_t symbols=32+r.block.size+std::size_t(owned.be32(8))*4,strings=symbols+std::size_t(publics+externs)*8;bool found=false;u32 scene=0;
@@ -76,9 +85,10 @@ public:
         bool ended=false;
         for(unsigned i=0;i<=4096;++i){u32 descriptor=0;if(!hsd_record_detail::optional(r,table+i*4,&descriptor))return fail("record table range");if(!descriptor){ended=true;break;}if(i==4096||!r.has(descriptor,16))return fail("record budget");
             hsd_record_detail::Record record;u32 joint=0,material=0,shape=0;
-            if(!hsd_record_detail::optional(r,descriptor,&record.root)||!record.root||!hsd_record_detail::optional(r,descriptor+4,&joint)||!hsd_record_detail::optional(r,descriptor+8,&material)||!hsd_record_detail::optional(r,descriptor+12,&shape)||
+            if(!r.required_relocated_offset(descriptor,&record.root)||!hsd_record_detail::optional(r,descriptor+4,&joint)||!hsd_record_detail::optional(r,descriptor+8,&material)||!hsd_record_detail::optional(r,descriptor+12,&shape)||
                !hsd_record_detail::pointers(r,joint,&record.joint)||!hsd_record_detail::pointers(r,material,&record.material)||!hsd_record_detail::pointers(r,shape,&record.shape))return fail("record/animation lists");
             if(i>=data->scene.model_roots.size()||record.root!=data->scene.model_roots[i])return fail("decoded/published root mismatch");
+            record.joint_table=joint;record.material_table=material;record.shape_table=shape;
             data->records.push_back(std::move(record));
         }
         if(!ended||data->records.size()!=data->scene.model_roots.size())return fail("record table termination");
@@ -126,6 +136,12 @@ private:
         out->data_=std::move(result);return true;
     }
 public:
+    bool animation_tables(u16 record,HsdRecordAnimationTables* out)const{
+        if(out)*out={};
+        if(!out||!data_||record>=data_->records.size())return false;
+        const auto& r=data_->records[record];
+        *out={r.joint_table,r.material_table,r.shape_table,u32(r.joint.size()),u32(r.material.size()),u32(r.shape.size())};return true;
+    }
     // Explicit metadata query for authored no-geometry placeholders. This does
     // not make an empty drawable binding valid or swallow a selection failure.
     bool is_empty_static_record(u16 record)const{
@@ -143,6 +159,7 @@ private:
         const auto& entry=data_->records[record];if(!entry.shape.empty())return fail("shape animation requires explicit evaluator");
         auto clip=[&](const std::vector<u32>& clips,u16 index,u32* at){if(clips.empty()){*at=0;return index==0;}if(index>=clips.size())return false;*at=clips[index];return true;};
         u32 joint_root=0,material_root=0;if(((channels&1)&&!clip(entry.joint,joint_clip,&joint_root))||((channels&2)&&!clip(entry.material,material_clip,&material_root)))return fail("clip index");
+        if(material_root)for(unsigned i=0;i<data_->scene.meshes.size();++i)if(data_->scene.joints[data_->scene.mesh_joint[i]].model_root==record&&data_->scene.meshes[i].static_diffuse_overwrite)return fail("static diffuse overwrite requires immutable material weights");
         auto result=std::make_shared<hsd_record_detail::Instance>();result->bank=data_;result->record=record;auto& selected=result->scene;const auto& full=data_->scene;const auto& r=data_->reader;
         selected.model_roots={entry.root};if(!compact)selected.textures=full.textures;selected.lighting=full.lighting;
         std::vector<u32> remap(full.joints.size(),kHsdNoJoint),path_nodes,used_paths;
@@ -226,8 +243,16 @@ private:
 public:
     bool select_compact_static(u16 record,HsdRecordAnimationBinding* out,std::string* error)const{return select_impl(record,0,0,0,out,error,false,false,true);}
     u32 hash()const{return data_?data_->hash:0;}
+    bool read_initial_light_constructor(HsdInitialLightConstructor* out,std::string* error)const{
+        if(!data_){if(out)*out={};if(error)*error="initial light constructor: current decoded source bank required";return false;}
+        return hsd_detail::read_initial_light_constructor(data_->reader,data_->scene_export,out,error);
+    }
+    bool read_initial_cockpit_light_inputs(HsdInitialCockpitLightInputs* out,std::string* error)const{
+        if(!data_){if(out)*out={};if(error)*error="cockpit light inputs: current decoded bank required";return false;}
+        return hsd_detail::read_initial_cockpit_light_inputs(data_->reader,data_->scene_export,out,error);
+    }
     bool same_source(const HsdRecordAnimationBank& other)const{return data_&&data_==other.data_;}
-    //06C88's public0→name lookup→scene data contract. Null camera TABLE is not
+    //06C88's public0→name lookup→scene data contract. Null light-root TABLE is not
     //an empty list: source dereferences the table even when its first entry is0.
     bool archive_scene_metadata(HsdArchiveSceneMetadata* out,std::string* error)const{
         if(out)*out={};
@@ -241,6 +266,7 @@ public:
     std::size_t records()const{return data_?data_->records.size():0;}
     const SceneLighting* lighting()const{return data_?&data_->scene.lighting:nullptr;}
     bool read_linear_fog(LinearFog* out,std::string* error)const{if(out)*out={};return data_?hsd_detail::read_scene_linear_fog(data_->reader,data_->scene_export,out,error):false;}
+    bool read_authored_linear_fog(LinearFog* out,std::string* error)const{if(out)*out={};return data_?hsd_detail::read_scene_authored_linear_fog(data_->reader,data_->scene_export,out,error):false;}
 private:
     std::shared_ptr<const hsd_record_detail::Bank> data_;
     friend class HsdShapeRecord;

@@ -28,6 +28,7 @@ inline bool challenge_battle_team_plan(const ChallengeInitialPartyCandidate& par
 struct ChallengeSpawnActorFields {bool declared=false;u8 mode490=0,first43b=0,movement661=0;StageGroundActor ground;};
 struct ChallengeFirstPlacementPlan {
     std::array<f32,3> pre_projection{};std::array<f32,2> heading_inputs{};std::array<f32,3> first_projection_start{};
+    f32 ground_height=0;
     u8 chosen_cursor=0,next_cursor=0,proposed43b=0,proposed43c=0;bool heading_required=false,static_projection_required=false,actor_projection_required=false;
     bool operator==(const ChallengeFirstPlacementPlan&)const=default;
 };
@@ -39,7 +40,9 @@ inline bool challenge_first_placement_plan(const ChallengeBattleSpawnProfile& pr
     const auto* row=profile.find(stage.stage());if(!out||!profile.ready()||!stage.ready()||!row||!actor.declared||actor.mode490||actor.first43b||team>=2||actor.movement661>11||actor.movement661==8||actor.movement661==9||actor.movement661==11)return fail("declared initial ordinary actor/stage/team required; no special-air/respawn substitute");
     ChallengeFirstPlacementPlan plan;plan.chosen_cursor=cursor&3u;plan.next_cursor=u8(plan.chosen_cursor+1);plan.proposed43b=1;plan.proposed43c=plan.chosen_cursor&1u;plan.pre_projection={row->xz[team][plan.chosen_cursor][0],profile.initial_y(),row->xz[team][plan.chosen_cursor][1]};
     auto ground=actor.ground;ground.current24=ground.previous30=profile.initial_y();f32 height=0;if(!stage.ground(ground,plan.pre_projection,stage.parameters().high34,&height,error))return false;
-    plan.pre_projection[1]=f32(height+profile.lift(actor.movement661));plan.heading_inputs={-plan.pre_projection[0],-plan.pre_projection[2]};plan.first_projection_start=plan.pre_projection;plan.first_projection_start[1]=f32(plan.pre_projection[1]+stage.parameters().high34);
+    plan.ground_height=height;
+    const bool lifted=actor.movement661==3||actor.movement661==4||actor.movement661==5||actor.movement661==10;
+    plan.pre_projection[1]=lifted?f32(height+profile.lift(actor.movement661)):height;plan.heading_inputs={-plan.pre_projection[0],-plan.pre_projection[2]};plan.first_projection_start=plan.pre_projection;plan.first_projection_start[1]=f32(plan.pre_projection[1]+stage.parameters().high34);
     for(f32 x:plan.pre_projection)if(!std::isfinite(x)||std::abs(x)>1e7)return fail("position domain");
     for(f32 x:plan.first_projection_start)if(!std::isfinite(x)||std::abs(x)>1e7)return fail("projection domain");
     plan.heading_required=plan.static_projection_required=plan.actor_projection_required=true;*out=plan;if(error)error->clear();return true;

@@ -4,6 +4,7 @@
 #include "engine/assets/startup_scene_pass.hpp"
 #include "engine/graphics/lighting.hpp"
 #include "engine/graphics/camera.hpp"
+#include "engine/gameplay/scene_light_colours.hpp"
 namespace gf {
 struct StartupLightChannel {bool active=false;u8 phase=0,counter=0,duration=0;s16 remaining=0;std::array<u32,3> from{},target{},current{};};
 class StartupSceneLighting {
@@ -11,7 +12,8 @@ public:
     bool load(const SceneLighting& base,const StartupScenePassProfile& p,u32 bank_hash,std::string* error){
         ready_=false;channels_={};frame_=0;
         if(!startup_scene_pass_valid(p)||bank_hash!=p.bank_hash||!base.declared||!menu_light_rig_supported(base)||base.lights.size()!=3)return fail(error,"bound source rig/profile");
-        base_=current_=base;profile_=p;for(unsigned i=0;i<3;++i){u32 rgba=0;for(auto v:base.lights[i].colour)rgba=(rgba<<8)|v;baseline_[i]=rgba;for(auto& c:channels_)c.current[i]=rgba;}ready_=true;if(error)error->clear();return true;
+        SceneLightColours initial;if(!initialize_scene_light_colours(base,&initial,error))return false;
+        base_=current_=base;profile_=p;for(unsigned i=0;i<3;++i){baseline_[i]=initial.baseline[i];for(auto& c:channels_)c.current[i]=initial.baseline[i];}ready_=true;if(error)error->clear();return true;
     }
     bool step(u32 frame,bool source_opcode18,std::string* error){
         if(!ready_||frame!=frame_+1||frame>8192)return refuse(error,"consecutive source frame");

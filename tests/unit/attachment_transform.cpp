@@ -37,5 +37,30 @@ int main(){
     check(!attachment_bone_transform(parents,input,nullptr,&error),"null destination refuses");
     input.local_position={};parents[0]=Mat4{};
     check(attachment_bone_transform(parents,input,&out,&error)&&error.empty()&&out.valid,"fresh success explicitly replaces refusal");
-    std::printf("{\"attachment_transform_checks\":%u,\"all_passed\":true,\"numeric_bone_branch_only\":true,\"attachment_lifecycle_or_rendering_admitted\":false}\n",checks);
+    AttachmentWorldPositionInput direct;direct.position20={10,20,30};direct.angles={16384,0,16384};
+    check(attachment_world_position_transform(direct,&out,&error)&&out.position==direct.position20,"direct20 translation branch");
+    const float point[3]={1,2,3};float result[3];mat4_transform_point(out.world,point,result);
+    check(near(result[0],13)&&near(result[1],21)&&near(result[2],32),"direct translation with Rz*Ry*Rx order");
+    AttachmentBoneTransformInput local;local.flags=0xf;local.local_position=direct.position20;local.angles=direct.angles;AttachmentBoneTransform local_out;
+    check(attachment_identity_transform(local,&local_out,&error)&&std::equal(out.world.m,out.world.m+16,local_out.world.m),"identity numeric kernel shared by separate source operand domains");
+    local.flags=0xe;check(!attachment_identity_transform(local,&local_out,&error)&&!local_out.valid,"local branch still refuses direct-position flags");
+    direct.flags=0xf;check(!attachment_world_position_transform(direct,&out,&error)&&!out.valid,"direct branch refuses local-position flags");
+    direct.flags=0xe;direct.position20[0]=std::numeric_limits<float>::quiet_NaN();check(!attachment_world_position_transform(direct,&out,&error)&&!out.valid,"nonfinite direct position refuses");
+    AttachmentScaledWorldPositionInput scaled;scaled.position20={10,20,30};scaled.angles={16384,0,16384};scaled.scale58={2,3,4};
+    check(attachment_scaled_world_position_transform(scaled,&out,&error)&&out.position==scaled.position20,"explicit1E translation retained before source rotations/scale");
+    mat4_transform_point(out.world,point,result);check(near(result[0],22)&&near(result[1],22)&&near(result[2],36),"direct T*Rz*Ry*Rx*S, not a borrowed parent matrix");
+    for(unsigned flags=0;flags<256;++flags){scaled.flags=u8(flags);check(attachment_scaled_world_position_transform(scaled,&out,&error)==(flags==0x1e),"scaled adapter admits only exact1E");}
+    direct.flags=0x1e;direct.position20={};check(!attachment_world_position_transform(direct,&out,&error),"old0E adapter still refuses scale branch");
+    scaled.flags=0x1e;scaled.scale58[0]=std::numeric_limits<float>::quiet_NaN();check(!attachment_scaled_world_position_transform(scaled,&out,&error)&&!out.valid,"nonfinite scale refuses without a world");
+    check(attachment_world_axes_mount_transform(parents,1,{1,2,3},{0,0,-90},&out,&error)&&out.valid&&
+          out.position==std::array<float,3>{12,26,42},"world-axes mount still takes its point through the full bone");
+    mat4_transform_point(out.world,point,result);
+    check(near(result[0],14)&&near(result[1],25)&&near(result[2],45),"world-axes mount uses local Z rotation, without bone scale or axes");
+    check(!attachment_world_axes_mount_transform(parents,2,{},{},&out,&error)&&!out.valid&&
+          !attachment_world_axes_mount_transform(parents,1,{},{0,0,181},&out,&error)&&!out.valid,
+          "world-axes mount refuses unknown bone or invalid angles");
+    check(attachment_mount_transform(parents,1,{1,2,3},{90,0,90},&out,&error,true)&&
+          out.position==std::array<float,3>{12,26,42},"bone ZYX remains anchored to the same translated point");
+    for(unsigned r=0;r<3;++r)for(unsigned c=0;c<3;++c)check(near(out.world.at(r,c),expected[r][c]),"explicit bone ZYX keeps the source axis order");
+    std::printf("{\"attachment_transform_checks\":%u,\"all_passed\":true,\"attachment_lifecycle_or_rendering_admitted\":false}\n",checks);
 }

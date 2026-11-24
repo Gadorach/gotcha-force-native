@@ -10,7 +10,7 @@ struct BattleActorLevelCostPlan {std::array<s16,3> shorts1c4_1c6_1c8{};s16 cost4
 //rank/HP guess, peer/paired branch or RNG update is performed here.
 inline bool battle_actor_level_cost(const BattleActorLevelRow& row,u8 ai3e6,u8 field486,BattleActorLevelCostPlan* out,std::string* error){
     if(out)*out={};
-    if(!out||(row.model!=0x615&&row.model!=10)||row.variant||row.level>=10||!row.model_hash||row.full_cost<0||row.values[0]<0){if(error)*error="battle actor level cost: normal canonical row/cost required";return false;}
+    if(!out||!battle_model_in_domain(row.domain,row.model)||row.variant||row.level>=10||!row.model_hash||row.full_cost<0||row.values[0]<0){if(error)*error="battle actor level cost: normal canonical row/cost required";return false;}
     BattleActorLevelCostPlan p;p.shorts1c4_1c6_1c8.fill(row.values[0]);using W=BattleActorLevelCostWrite;
     p.writes.push_back(W{0x1c4,std::bit_cast<u16>(row.values[0])});p.writes.push_back(W{0x1c8,std::bit_cast<u16>(row.values[0])});p.writes.push_back(W{0x1c6,std::bit_cast<u16>(row.values[0])});
     p.cost4aa=row.full_cost;p.writes.push_back(W{0x4aa,u16(p.cost4aa)});

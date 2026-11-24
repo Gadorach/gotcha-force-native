@@ -60,6 +60,7 @@ struct InputSnapshot {
     bool quit = false;
     bool frame_step = false; // Host session control, not a routed game button.
     bool camera_toggle = false;
+    bool alt_arrow = false; // physical keyboard Alt + arrow; interpreted by the host mode
 
     // Convenience for backends and tests.
     RawInputState& pad(unsigned index) {

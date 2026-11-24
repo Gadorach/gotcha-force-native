@@ -1,5 +1,7 @@
 #pragma once
 #include <optional>
+#include <span>
+#include <type_traits>
 #include "engine/assets/borg_gameplay_profile.hpp"
 #include "engine/gameplay/weapon_stock_mode_zero.hpp"
 
@@ -10,7 +12,13 @@ enum class BorgBattleEventKind:u8 {Started,Marker,StockSpent,StockRefused,StockR
     ProjectileLanded,Detonation,StockReturned,GuidanceBound,GuidanceEnded,GuardArmed,GuardBlocked,GuardBroken,GuardRetired,
     StageImpact,EmitterDeployed,EmitterDeployRefused,EmitterFired,EmitterFireRefused,EmitterRetired,
     AnchorPlaced,AnchorRefused,RewindQueued,RewindReached,RewindCompleted,RewindStopped,AnchorPathSealed,RewindRefused,AnchorPlanted,
-    Tap,DoubleTap,AnchorFallback,SocketLaunch,SocketRefused};
+    Tap,DoubleTap,AnchorFallback,SocketLaunch,SocketRefused,AimCommitted,BombProximity,BombFuseCommitted,
+    BlastChildren,BlastChildrenRefused,SmokeCreated,SmokeRefused,InkApplied,PowerFieldPlaced,PowerFieldRefused,ShotPowered,
+    SlowFieldPlaced,SlowFieldRefused,FieldGuidanceBroken,FieldPlaced,FieldRefused,FieldAnchorLost,
+    AccuracyApplied,AccuracyAffected,FlightChildren,FlightChildrenRefused,ImpactChildren,ImpactChildrenRefused,
+    ImpactTrailStarted,ImpactTrailRefused,ImpactHazardStarted,ImpactHazardPlaced,ImpactHazardRefused,
+    ExtraEmitted,ExtraEmitRefused,WalkPulseCreated,WalkPulseRefused,FieldShotPulled,FieldActorPulled,FieldActorPullRefused,
+    FenceRecoilApplied,FenceRecoilRefused,EntryStockRefused,FieldReplaced,LaunchSound,ReleaseSound,ImpactSound};
 enum class BorgBattlePullRefusal:u16 {AlreadyQueued=1,OwnerBusy,NoTravel,SupportUnavailable,TerrainOrBody,RoundEnded};
 inline const char* borg_battle_pull_reason(u16 value){
     switch(BorgBattlePullRefusal(value)){
@@ -45,6 +53,8 @@ struct BorgBattleActionState {
     std::array<u8,2> tap_remaining{};
     std::array<u32,kBorgBattleMoves> spin{}; // per move, so switching weapons cannot transfer spin
     u16 fire_gap=0;
+    u16 release_wait=0;
+    bool release_pending=false;
     std::array<WeaponStockModeZeroState,kBorgBattleStocks> stocks{};
     void reset(const BorgGameplayProfile& p){
         *this={};
@@ -53,18 +63,24 @@ struct BorgBattleActionState {
             stocks[i]={s16(s.capacity),s16(s.capacity),s16(s.refill_ticks),0};
         }
     }
-    void cancel_action(){move=none;frame=0;cycle=0;spin={};fire_gap=0;discard_input();}
+    void cancel_action(){move=none;frame=0;cycle=0;spin={};fire_gap=release_wait=0;release_pending=false;discard_input();}
     void discard_input(){armed=0;hold_ticks={};tap_remaining={};}
+    static WeaponStockRefillMode stock_mode(const BorgBattleStockDefinition& spec){
+        if(spec.add_on_debit)return WeaponStockRefillMode::AddOnDebit;
+        return spec.refill_ticks?WeaponStockRefillMode::SeedOnDepletion:WeaponStockRefillMode::ClearClockOnDebit;
+    }
     // Called after movement, before contact. Prior accepted damage interrupts
     // before this visit's marker; new contact is delivered by the world later.
     // A paid release is not rolled back on pool refusal.
-    template<class Emit,class Trace>
+    template<class Emit,class Trace,class Pair=std::nullptr_t>
     void visit(const BorgGameplayProfile& p,const BorgBattleInputs& input,bool grounded,bool interrupted,Emit emit,Trace trace,
-               std::optional<f32> entry_distance={},u8 available_anchors=0){
+               std::optional<f32> entry_distance={},u8 available_anchors=0,Pair pair=nullptr,
+               std::optional<f32> aim_error={}){
         for(unsigned i=0;i<p.stocks.size();++i){
             if(!p.stocks[i].refill_ticks)continue;
             auto& s=stocks[i];const auto old=s.current;
-            weapon_stock_mode_zero_refill(s,s16(p.stocks[i].capacity),1,false,&s);
+            if(p.stocks[i].add_on_debit)weapon_stock_mode_one_refill(s,s16(p.stocks[i].capacity),1,false,&s);
+            else weapon_stock_mode_zero_refill(s,s16(p.stocks[i].capacity),1,false,&s);
             if(s.current!=old)trace(BorgBattleEventKind::StockRefilled,none,0,0,u16(s.current));
         }
         std::array<std::optional<u16>,2> released;
@@ -94,7 +110,10 @@ struct BorgBattleActionState {
         auto range_matches=[&](const BorgBattleMove& action){
             return !action.entry_range||(entry_distance&&*entry_distance<=action.entry_range);
         };
-        auto launch=[&](u8 stock,u8 cost,u8 attack){
+        auto launch=[&](u8 stock,u8 cost,u8 attack,std::span<const u8> extras={},bool return_pair=false,bool debit_sound=false){
+            if constexpr(std::is_same_v<Pair,std::nullptr_t>){
+                if(return_pair){trace(BorgBattleEventKind::EmitRefused,move,frame,0,0);return;}
+            }
             if(const auto& link=p.projectiles[attack].rewind_hit;link&&!(available_anchors&(1u<<link->set))){
                 if(link->fallback==255){trace(BorgBattleEventKind::AnchorRefused,move,frame,0,link->set);return;}
                 attack=link->fallback;trace(BorgBattleEventKind::AnchorFallback,move,frame,0,attack);
@@ -102,19 +121,39 @@ struct BorgBattleActionState {
             const auto& projectile=p.projectiles[attack];
             if(cost){
                 auto& s=stocks[stock];WeaponStockPlan spend;
-                const auto mode=p.stocks[stock].refill_ticks?WeaponStockRefillMode::SeedOnDepletion:WeaponStockRefillMode::ClearClockOnDebit;
+                const auto mode=stock_mode(p.stocks[stock]);
                 if(!weapon_stock_plan(s,mode,WeaponStockOperation::Debit,cost,&spend)||!spend.accepted){
                     trace(BorgBattleEventKind::StockRefused,move,frame,0,u16(s.current));return;
                 }
                 s=spend.state;trace(BorgBattleEventKind::StockSpent,move,frame,0,u16(s.current));
+                if(debit_sound)trace(BorgBattleEventKind::ReleaseSound,move,frame,0,0);
             }
-            const u8 return_stock=projectile.stock_return==BorgProjectileReturn::None?255:stock;
+            const u8 return_stock=return_pair||projectile.stock_return==BorgProjectileReturn::None?255:stock;
             const u32 first=emit(projectile,move,return_stock);
             trace(first?BorgBattleEventKind::Emitted:BorgBattleEventKind::EmitRefused,move,frame,first,first?projectile.count:0);
+            for(auto extra:extras){
+                const auto& followup=p.projectiles[extra];
+                const u32 second=emit(followup,move,255);
+                trace(second?BorgBattleEventKind::ExtraEmitted:BorgBattleEventKind::ExtraEmitRefused,
+                      move,frame,second,second?followup.count:0);
+                if constexpr(!std::is_same_v<Pair,std::nullptr_t>){
+                    if(return_pair)pair(move,stock,first,second);
+                }
+            }
         };
         const auto eligible_fire=[&](const BorgBattleMove& action){
             return !interrupted&&context_matches(action.context)&&range_matches(action)&&
                    (input.held&BorgBattleInputs::button(action.button));
+        };
+        const auto has_entry_stock=[&](const BorgBattleMove& action,u8 index){
+            if(!action.entry_stock)return true;
+            const auto& gate=*action.entry_stock;
+            const auto& current=stocks[gate.stock];
+            WeaponStockPlan plan;
+            if(weapon_stock_plan(current,stock_mode(p.stocks[gate.stock]),WeaponStockOperation::CheckOnly,
+                                 gate.minimum,&plan)&&plan.accepted)return true;
+            trace(BorgBattleEventKind::EntryStockRefused,index,0,0,u16(current.current));
+            return false;
         };
         const auto max_spin=[](const BorgBattleHeldFire& spec){return u32(spec.warmup)*std::max<u32>(1,spec.cooldown);};
         const auto spin_readout=[&](unsigned i){return u16(1000*spin[i]/max_spin(*p.moves[i].held_fire));};
@@ -149,14 +188,32 @@ struct BorgBattleActionState {
         }
         if(move!=none){
             const auto& action=p.moves[move];
+            const auto aims=[&](){
+                return aim_error&&std::isfinite(*aim_error)&&std::abs(*aim_error)<=action.release_gate->half_angle;
+            };
+            const auto pay_release=[&](const BorgBattleRelease& release){
+                launch(release.stock,release.cost,release.projectile,
+                       {release.followups.data(),release.count},release.return_pair,!release.debit_sound.empty());
+            };
+            if(release_pending){
+                if(interrupted){
+                    trace(BorgBattleEventKind::Interrupted,move,frame,0,0);cancel_action();
+                }else if(aims()||++release_wait>=action.release_gate->timeout){
+                    release_pending=false;release_wait=0;pay_release(action.releases.front());
+                }
+                return;
+            }
             if(interrupted||frame+1>=action.duration){
                 if(!interrupted&&action.hold_cycles>cycle&&context_matches(action.context)&&range_matches(action)&&
-                   (input.held&BorgBattleInputs::button(action.button))){
+                   (input.held&BorgBattleInputs::button(action.button))&&has_entry_stock(action,move)){
                     // Availability is a read-only repeat gate. The later
                     // marker still owns the attempt to debit and allocate.
-                    const auto& release=action.releases.front();WeaponStockModeZeroPlan available;
-                    if(weapon_stock_mode_zero_plan(stocks[release.stock],WeaponStockOperation::CheckOnly,release.cost,&available)&&available.accepted){
-                        frame=0;++cycle;trace(BorgBattleEventKind::Repeated,move,frame,0,cycle);return;
+                    const auto& release=action.releases.front();WeaponStockPlan available;
+                    if(weapon_stock_plan(stocks[release.stock],stock_mode(p.stocks[release.stock]),
+                        WeaponStockOperation::CheckOnly,release.cost,&available)&&available.accepted){
+                        frame=0;++cycle;trace(BorgBattleEventKind::Repeated,move,frame,0,cycle);
+                        if(action.aim_lock==frame)trace(BorgBattleEventKind::AimCommitted,move,frame,0,0);
+                        return;
                     }
                     trace(BorgBattleEventKind::RepeatStockRefused,move,frame,0,u16(stocks[release.stock].current));
                 }
@@ -164,9 +221,11 @@ struct BorgBattleActionState {
                 move=none;frame=0;cycle=0;
             }else{
                 ++frame;
+                if(action.aim_lock==frame)trace(BorgBattleEventKind::AimCommitted,move,frame,0,0);
                 for(const auto& release:action.releases)if(release.frame==frame){
                     trace(BorgBattleEventKind::Marker,move,frame,0,0);
-                    launch(release.stock,release.cost,release.projectile);
+                    if(action.release_gate&&!aims())release_pending=true;
+                    else pay_release(release);
                 }
             }
             return;
@@ -179,6 +238,7 @@ struct BorgBattleActionState {
                 m.activation==BorgBattleActivation::ReleaseWindow?charge&&*charge>=m.minimum_hold&&*charge<=m.maximum_hold:
                 gestures[unsigned(m.button)]==m.activation;
             if(!activated||!context_matches(m.context)||!range_matches(m)||(m.held_fire&&!eligible_fire(m)))continue;
+            if(!has_entry_stock(m,u8(i)))continue;
             if(move==none||m.priority>p.moves[move].priority)move=u8(i);
         }
         if(move!=none){
@@ -189,6 +249,7 @@ struct BorgBattleActionState {
                 trace(chosen.activation==BorgBattleActivation::Tap?BorgBattleEventKind::Tap:BorgBattleEventKind::DoubleTap,
                     move,0,0,chosen.tap_window);
             cycle=1;trace(BorgBattleEventKind::Started,move,frame,0,0);
+            if(chosen.aim_lock==frame)trace(BorgBattleEventKind::AimCommitted,move,frame,0,0);
             if(chosen.held_fire)trace(BorgBattleEventKind::HeldFireStarted,move,0,0,spin_readout(move));
         }
     }

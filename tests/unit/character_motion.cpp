@@ -92,6 +92,31 @@ int main(){
     x=c;word(x,32+0x2c,0x40);clip_bad(x,"non-null constraint cannot be ignored");
     x=c;word(x,32+0x30,2);clip_bad(x,"unknown AnimJoint flags refuse");
     x=c;word(x,32+0x80,1);clip_bad(x,"AObj loop/lifecycle flags unqualified");
+    x=c;word(x,32+0x80,0x20000000);clip_bad(x,"gameplay path still refuses authored loop lifecycle");
+    auto inspect_clip=[&](const auto& y){return gf::hsd_bone_motion_load({y.data(),y.size()},binding(),&clip,&error,
+                                                                        gf::HsdBoneMotionLoadMode::InspectAuthoredLoop);};
+    check(inspect_clip(x)&&clip.bones[0].source_loop&&!clip.bones[1].source_loop&&
+          gf::hsd_bone_motion_sample(clip,5,&sample,&error)&&sample.bones[0].value[5]==5,
+          "inspection preserves per-bone loop flag and samples existing SRT");
+    check(!gf::hsd_bone_motion_sample(clip,11,&sample,&error),"loop metadata does not change integer inspection sampling into wrapping");
+    word(x,32+0x80,0x20000001);
+    check(!inspect_clip(x)&&!clip.loaded,"inspection still refuses unknown bits alongside the loop flag");
+    auto native_idle=[&](const auto& y){return gf::hsd_bone_motion_load({y.data(),y.size()},binding(),&clip,&error,
+                                                                       gf::HsdBoneMotionLoadMode::NativeIdleLoop);};
+    x=c;word(x,32+0x80,0x20000000);
+    check(!native_idle(x)&&!clip.loaded,"native idle refuses mixed authored loop bits");
+    word(x,32+0xa0,0x20000000);
+    check(native_idle(x)&&clip.bones[0].source_loop&&clip.bones[1].source_loop&&
+          gf::hsd_bone_motion_sample(clip,5,&sample,&error),"explicit idle accepts the uniformly flagged sampled tracks");
+    auto action_window=[&](const auto& y){return gf::hsd_bone_motion_load({y.data(),y.size()},binding(),&clip,&error,
+                                                                          gf::HsdBoneMotionLoadMode::NativeActionLoopWindow);};
+    check(action_window(x)&&gf::hsd_bone_motion_sample(clip,10,&sample,&error)&&
+          !gf::hsd_bone_motion_sample(clip,11,&sample,&error),"action window accepts the flag without wrapping");
+    auto mixed=x;word(mixed,32+0xa0,0);
+    check(!action_window(mixed)&&!clip.loaded,"action window refuses mixed loop flags");
+    word(x,32+0x2c,0x40);
+    check(!native_idle(x)&&!clip.loaded,"idle loop does not admit an AnimJoint constraint");
+    check(!action_window(x)&&!clip.loaded,"action loop window does not admit an AnimJoint constraint");
     x=c;scalar(x,32+0x84,NAN);clip_bad(x,"nonfinite clip end refuses");
     x=c;scalar(x,32+0x84,8193);clip_bad(x,"clip end exceeds native work budget");
     x=c;scalar(x,32+0xa4,9);clip_bad(x,"mixed bone end times require separate lifecycle qualification");
@@ -108,6 +133,13 @@ int main(){
     x=c;const auto sy=32+gf::load_be32(x.data()+4)+gf::load_be32(x.data()+8)*4;word(x,sy+12,0);clip_bad(x,"duplicate public names would alter source's index-to-name lookup");
     auto bones=binding();bones.bones[1].joint_offset=bones.bones[0].joint_offset;
     check(!load_clip(c,bones),"ambiguous logical bone identities refuse");
+    bones=binding();bones.bones[0].joint_offset=0;bones.root_offset=0;
+    check(!load_clip(c,bones),"missing bone identity still refuses");
+    bones.root_at_block_zero=true;
+    check(load_clip(c,bones)&&gf::hsd_bone_motion_sample(clip,0,&sample,&error)&&sample.bones[0].joint_offset==0,
+          "validated block-zero root can be bound and sampled");
+    bones.bones[1].joint_offset=0;
+    check(!load_clip(c,bones),"block-zero root does not allow other missing identities");
     x=c;word(x,32+0x28,0);clip_bad(x,"relocated zero AObj isn't silently treated as absent animation");
     unrelocate(x,0x28);check(load_clip(x,binding())&&gf::hsd_bone_motion_sample(clip,0,&sample,&error)&&sample.bones[0].present==0,"unrelocated null AObj is distinct from malformed data, no fabricated channels");
     x=c;std::copy_n(x.begin()+32+0x140,18,x.begin()+32);word(x,32+0xd0,0);

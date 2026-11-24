@@ -25,11 +25,13 @@ struct BorgPackageManifest {
 struct BorgPackageEntry {
     std::string folder;
     BorgPackageManifest manifest;
+    bool operator==(const BorgPackageEntry&)const=default;
 };
 enum class BorgPackageIssueKind {InvalidManifest,MissingAsset,DuplicateId};
 struct BorgPackageIssue {
     std::string folder,id;
     BorgPackageIssueKind kind;
+    std::string name{}; // Only populated for a successfully parsed manifest.
 };
 enum class BorgPackageScanStatus {Complete,NoDirectory,Unavailable,EntryBudget};
 struct BorgPackageCatalog {

@@ -1,10 +1,13 @@
 #pragma once
 #include "engine/assets/hsd_record_animation.hpp"
+#include "engine/graphics/transform.hpp"
+#include <optional>
 #include <span>
 namespace gf {
 enum class HsdJointInstanceStyle {Normal,Alternate};
 struct HsdJointInstanceState {
     u32 source_index=0;HsdJoint joint; //Authored local SRT; NOT an evaluated world.
+    std::optional<Mat4> world{}; //Only a qualified source publication writes this.
 };
 struct HsdDObjInstanceState {
     u32 source_offset=0,joint=0,material_offset=0,flags=0;
@@ -16,9 +19,25 @@ struct HsdJointInstanceStateSet {
     std::vector<HsdJointInstanceState> joints;std::vector<HsdDObjInstanceState> dobjs;
     //Value-only render metadata, never copied vertex/index/image buffers.
     std::vector<std::pair<u32,HsdMeshProperties>> mesh_properties;
-    bool animation_requested=false,world_evaluated=false;
+    bool animation_requested=false,world_evaluated=false,side_style_applied=false,stage_shadow_applied=false;
+    bool source_zero_colour_cache=false; //native side076D0/7CAC publication, not actor fade
+    bool child_translucent_applied=false; //explicit child07C54/07CAC, not side texture removal
+    u64 world_generation=0;
+};
+class HsdJointWorldScope {
+public:bool live()const{return live_;}
+private:friend class SceneModelBindings;friend class BattleActorConstruction;friend class BattlePreparationBootstrap;mutable bool live_=true;
 };
 struct HsdJointInstanceIdentity {};
+class HsdJointWorldReceipt {
+public:
+    bool live()const{const auto epoch=epoch_.lock();const auto scope=scope_.lock();return !identity_.expired()&&epoch&&*epoch==generation_&&scope&&scope->live();}
+    u64 generation()const{return live()?generation_:0;}
+private:
+    friend class HsdJointInstanceOwner;
+    std::weak_ptr<const HsdJointInstanceIdentity> identity_;std::weak_ptr<const HsdJointWorldScope> scope_;
+    std::weak_ptr<const u64> epoch_;u64 generation_=0;
+};
 //Weak lifetime token; a copied token cannot keep retired instance state current.
 class HsdJointInstanceReceipt {
 public:
@@ -37,12 +56,16 @@ public:
     const HsdJointInstanceStateSet* state()const{return current()?&storage_->state:nullptr;}
     HsdJointInstanceReceipt receipt()const{HsdJointInstanceReceipt r;if(current())r.identity_=storage_->identity;return r;}
     bool same_source(const HsdRecordAnimationBank& bank)const{return current()&&storage_->source==bank.data_;}
+    bool world_current()const{const auto scope=storage_?storage_->world_scope.lock():nullptr;return current()&&storage_->state.world_evaluated&&scope&&scope->live();}
+    bool world_from(const std::shared_ptr<const HsdJointWorldScope>& scope)const{return world_current()&&storage_->world_scope.lock()==scope;}
+    HsdJointWorldReceipt world_receipt()const{HsdJointWorldReceipt receipt;if(world_current()){receipt.identity_=storage_->identity;receipt.scope_=storage_->world_scope;receipt.epoch_=storage_->publication_epoch;receipt.generation_=storage_->state.world_generation;}return receipt;}
     const HsdMesh* source_mesh(unsigned index)const{return current()&&index<storage_->source->scene.meshes.size()?&storage_->source->scene.meshes[index]:nullptr;}
     const HsdTexture* source_texture(unsigned index)const{return current()&&index<storage_->source->scene.textures.size()?&storage_->source->scene.textures[index]:nullptr;}
     void retire(){storage_.reset();}
 private:
     friend class HsdJointInstanceBank;
-    struct Storage {std::shared_ptr<const hsd_record_detail::Bank> source;HsdJointInstanceStateSet state;std::shared_ptr<const HsdJointInstanceIdentity> identity;};
+    friend class SceneModelBindings;
+    struct Storage {std::shared_ptr<const hsd_record_detail::Bank> source;HsdJointInstanceStateSet state;std::shared_ptr<const HsdJointInstanceIdentity> identity;std::weak_ptr<const HsdJointWorldScope> world_scope;std::shared_ptr<const u64> publication_epoch;};
     std::unique_ptr<Storage> storage_;
 };
 //07030/HSD_LoadJoint preparation, normal-all-records then alternate-all-records.

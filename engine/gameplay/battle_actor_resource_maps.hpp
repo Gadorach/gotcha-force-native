@@ -29,8 +29,9 @@ inline bool battle_actor_resource_maps(const CharacterPoseRig& rig,const Charact
     auto fail=[&](const char* why){if(error)*error=std::string("battle resource maps: ")+why;return false;};
     if(!out||slot>=6||!character_pose_detail::rig(rig)||!character_model_parts_valid(parts)||rig.binding.bones.size()<=11||instances.empty()||(instances.size()&1)||instances.size()>64)return fail("two-normal fresh rig/profile/record domain");
     const unsigned records=unsigned(instances.size()/2),count=unsigned(rig.binding.bones.size());
-    const unsigned last_record=unsigned(parts.groups[1].base)+parts.groups[1].count-1;
-    if(records<=last_record)return fail("part table exceeds complete bank");
+    const unsigned end_record=unsigned(parts.groups[1].base)+parts.groups[1].count;
+    if(records<end_record)return fail("part table exceeds complete bank");
+    if(parts.domain==BattleModelDomain::InitialAi&&records!=(parts.model_id==0x70b?3u:1u))return fail("AI source complete bank extent");
     if(!motion.loaded||motion.groups[0].empty()||motion.groups[0][0]>=motion.archives.size()||motion.archives.empty()||motion.archives.size()>4096)return fail("prepared nonempty motion bank required");
     for(const auto& archive:motion.archives)if(archive.empty())return fail("empty prepared motion archive");
     for(const auto& group:motion.groups){if(group.size()>256)return fail("motion table budget");for(u32 index:group)if(index!=kCharacterNoMotion&&index>=motion.archives.size())return fail("motion alias index");}

@@ -11,13 +11,14 @@ struct BattleActorClassFields {
 enum class BattleActorClassWriteKind:u8 {SourceKey,ActorDataResource};
 struct BattleActorClassWrite {BattleActorClassWriteKind kind=BattleActorClassWriteKind::SourceKey;u16 offset=0;u32 value=0;bool operator==(const BattleActorClassWrite&)const=default;};
 struct BattleActorClassSelectionPlan {BattleActorClassFields fields;std::vector<BattleActorClassWrite> writes;};
-//56CE0 selects the class-field installer (18CCFC/6F4F8), NOT the later4B8
-//initializer. Two normal models only. No model construction/program execution.
+//56CE0 selects a qualified class-field installer, NOT the later4B8 initializer.
+//V1 normal-pair and V2 initial-AI domains remain distinct. No program execution.
 inline bool battle_actor_class_select(const BattleNormalClassRow& row,const StartupActorSetupProfile& setup,u8 resource_slot,BattleActorClassSelectionPlan* out,std::string* error){
     if(out)*out={};
     auto fail=[&](){if(error)*error="battle class selection: two-normal current source/config domain";return false;};
-    if(!out||resource_slot>=6||!startup_actor_setup_detail::valid(setup)||!row.model_hash||row.model_hash!=setup.model_hash||row.model!=setup.model_id||row.variant||(row.model!=0x615&&row.model!=10))return fail();
-    const u32 expected_initializer=row.model==0x615?0x8018ccfcu:0x8006f4f8u,expected_config=row.model==0x615?0x80365ac8u:0x802d3ee0u;
+    if(!out||resource_slot>=6||!startup_actor_setup_detail::valid(setup)||!row.model_hash||row.model_hash!=setup.model_hash||row.model!=setup.model_id||row.variant||row.domain!=setup.domain||!battle_model_in_domain(row.domain,row.model))return fail();
+    const u32 expected_initializer=row.model==0x615?0x8018ccfcu:row.model==10?0x8006f4f8u:row.model==0x70b?0x8019c510u:0x80198490u;
+    const u32 expected_config=row.model==0x615?0x80365ac8u:row.model==10?0x802d3ee0u:row.model==0x70b?0x80373920u:0x8036fc50u;
     if(row.initializer_key!=expected_initializer||row.config_key!=expected_config||row.config_hash!=challenge_payload_hash(startup_actor_setup_detail::config(setup))||row.actor_data_hash!=challenge_payload_hash(startup_actor_setup_detail::data(setup)))return fail();
     auto key=[](u32 value){return !value||(value>=0x80000000u&&value<0x81800000u);};
     for(u32 value:row.fields4b4_to_4f0)if(!key(value))return fail();

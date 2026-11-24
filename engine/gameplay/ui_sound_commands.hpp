@@ -26,9 +26,8 @@ inline bool ui_sound_command_plan(const SoundCommandBanks& banks,const StartupSo
         auto gates=observation;
         if(op.kind==UiSoundOperationKind::MainNavigate||op.kind==UiSoundOperationKind::MainConfirm||op.kind==UiSoundOperationKind::MainOptionEnter){if(op.sfx_index!=-1)return fail("main operation settings belong to external owner snapshot");}
         else{if(op.sfx_index<0||op.sfx_index>=5)return fail("captured OPTION source SFX setting required");gates.settings_declared=true;gates.sfx_index=op.sfx_index;}
-        if(bypass){gates.gate_declared=true;gates.disabled=0;}
         StartupSoundScalarCommand call;call.cue=cue;call.volume=127;call.pan=64;call.pitch=8192; // null owner/group0 regardless of confirming controller
-        StartupSoundCommandPlan result;if(!sound_command_plan(banks,plan.candidate,gates,std::span(&call,1),&result,error))return false;
+        StartupSoundCommandPlan result;if(bypass?!sound_null_owner_command_plan(banks,plan.candidate,gates,cue,&result,error):!sound_command_plan(banks,plan.candidate,gates,std::span(&call,1),&result,error))return false;
         plan.candidate=std::move(result.candidate);plan.outcomes[plan.count++]=result.outcomes[0];
     }
     *out=std::move(plan);if(error)error->clear();return true;

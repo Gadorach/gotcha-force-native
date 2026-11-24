@@ -5,8 +5,18 @@
 #include "engine/assets/startup_actor_runtime.hpp"
 #include "engine/gameplay/startup_actor_setup.hpp"
 #include "engine/gameplay/startup_actor_class.hpp"
+#include "engine/gameplay/character_air_resource.hpp"
 namespace gf {
 struct StartupActorReload {s16 current=0,previous=0,target=0,mode=0,interval=0;f32 remaining=0;};
+//562B8's fresh reload rows: source channels0/2, middle channel untouched after
+//the constructor clear. Share the numeric operation without borrowing preview
+//class-callback or actor-readiness claims.
+inline bool startup_actor_reload_seed(const std::array<s16,9>& row,std::array<StartupActorReload,3>* out){
+    if(!out)return false;
+    *out={};
+    for(unsigned i=0;i<2;++i){auto& r=(*out)[i*2];const unsigned at=1+i*4;r.current=row[at];r.previous=r.target=row[at+1];r.mode=row[at+2];r.interval=row[at+3];if(!r.current&&(r.mode==0||r.mode==1))r.remaining=f32(r.interval);}
+    return true;
+}
 struct StartupActorPeerObservation {u32 handle=0;u8 phase18=0;};
 struct StartupActorBookkeeping {
     u32 model_hash=0;bool initialized=false;StartupActorClassState klass;
@@ -46,7 +56,7 @@ inline bool startup_actor_bookkeeping_initialize(const StartupActorSetupProfile&
     s.motion_delta=s.timer_delta=s.rate768=setup.one; //4BB14:804370F0 ->1DC8/1DCC;56180 ->768
     s.value1c6=runtime.row[0];s.value736=initial.health736;s.limit736=initial.health738;s.increment736=std::bit_cast<s16>(startup_actor_setup_detail::data(setup).be16(8));
     s.size7fc=initial.field7fc;s.scale_b4=initial.scale_b4;s.field661=setup.class_config[1];s.field8cc=setup.actor_data[386];
-    for(unsigned i=0;i<2;++i){auto& r=s.reloads[i*2];const unsigned at=1+i*4;r.current=runtime.row[at];r.previous=runtime.row[at+1];r.target=runtime.row[at+1];r.mode=runtime.row[at+2];r.interval=runtime.row[at+3];if(!r.current&&(r.mode==0||r.mode==1))r.remaining=f32(r.interval);}
+    if(!startup_actor_reload_seed(runtime.row,&s.reloads))return fail("fresh reload rows");
     s.initialized=true;if(!startup_actor_bookkeeping_detail::valid(s))return fail("initial scalar domain");*out=s;return true;
 }
 inline bool startup_actor_pre_update(const StartupActorRuntimeProfile& p,const StartupActorBookkeeping& input,
@@ -63,8 +73,9 @@ inline bool startup_actor_pre_update(const StartupActorRuntimeProfile& p,const S
     if(s.counter6ba){if(s.phase18==1&&s.phase19==2){s.counter6ba=narrow(s32(s.counter6ba)-1);if(s.counter6ba%30==0&&s.value1c6>1)s.value1c6=narrow(s32(s.value1c6)-1);}if(s.counter6ba<1)s.flags8c4&=~4u;}
     for(unsigned i=0;i<6;++i)if(s.field708&(1u<<i)){if(s.field709&(1u<<i))s.counters_a8[i]=2;if(s.counters_a8[i])--s.counters_a8[i];}
     if(u8(s.field709&s.field708&u8(~s.field707)))return fail("800F0104 consumer required");
-    const bool special=s.field661==2||s.field661==3||s.field661==6;
-    if((special&&!(flags&0x80u))||(!special&&!s.cached87)){if(!s.counter73a){s.value736=narrow(s32(s.value736)+s.increment736);if(s.value736>s.limit736)s.value736=s.limit736;}else s.counter73a=narrow(s32(s.counter73a)-1);if(!special)s.field747=0;}
+    CharacterAirResourceState resource;
+    if(!character_air_resource_recover({s.value736,s.counter73a,s.field747},s.field661,flags,s.cached87,s.limit736,s.increment736,&resource))return fail("resource branch");
+    s.value736=resource.value736;s.counter73a=resource.delay73a;s.field747=resource.air_actions747;
     if(!(flags&0x01000000u))for(unsigned i=0;i<4;++i){auto& v=s.timers684[i];if(v>0){v=f32(v-s.timer_delta);if(v<=0){v=0;if(i==0)s.field6c2=s.field6be;else if(i==1)return fail("8003D3E8 consumer required");else if(i==2)return fail("8003D444 consumer required");else{s.field6c8=0;s.field6ca=0;}}}}
     if(s.timer720>0){s.timer720=f32(s.timer720-s.timer_delta);if(s.timer720<=0){s.timer720=0;s.klass.field272=0;}}
     for(unsigned i=0;i<8;++i){const u32 handle=s.peers[i];if(!handle)continue;bool known=false;u8 phase=0;for(const auto& observation:peers)if(observation.handle==handle){if(known&&phase!=observation.phase18)return fail("inconsistent peer phase");phase=observation.phase18;known=true;}

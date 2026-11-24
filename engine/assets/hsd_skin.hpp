@@ -3,6 +3,7 @@
 // world-space evaluation. No renderer admission, clip selection or guest state.
 #include <array>
 #include <limits>
+#include <optional>
 #include <span>
 #include "engine/assets/hsd_anim.hpp"
 #include "engine/graphics/transform.hpp"
@@ -40,14 +41,18 @@ inline bool normal(const Mat4& m,const f32 in[3],f32 out[3]){
 }
 //Same metadata parser for the legacy owned scene and an explicitly retained
 //decoded bank. No second geometry/image decode on the bank-backed path.
-inline bool hsd_skin_metadata(const HsdScene& scene,const hsd_detail::Reader& r,std::vector<HsdSkinJoint>* out_joints,std::vector<HsdSkinMesh>* out_meshes,std::string* error){
+inline bool hsd_skin_metadata(const HsdScene& scene,const hsd_detail::Reader& r,std::vector<HsdSkinJoint>* out_joints,std::vector<HsdSkinMesh>* out_meshes,std::string* error,
+                              std::optional<u32> selected_record=std::nullopt){
     if(out_joints)out_joints->clear();
     if(out_meshes)out_meshes->clear();
     auto fail=[&](const char* why){if(error)*error=std::string("hsd skin: ")+why;return false;};
     if(!out_joints||!out_meshes)return fail("metadata destination");
     HsdSkinAsset next;
     if(scene.meshes.size()>kHsdMaxNodes)return fail("mesh metadata budget");
-    std::vector<std::pair<u32,u32>> joint_offsets;for(u32 i=0;i<scene.joints.size();++i)joint_offsets.push_back({scene.joints[i].archive_offset,i});
+    if(selected_record&&*selected_record>=scene.model_roots.size())return fail("selected record missing");
+    auto selected=[&](const HsdJoint& joint){return !selected_record||joint.model_root==*selected_record;};
+    std::vector<std::pair<u32,u32>> joint_offsets;for(u32 i=0;i<scene.joints.size();++i)
+        if(selected(scene.joints[i]))joint_offsets.push_back({scene.joints[i].archive_offset,i});
     std::sort(joint_offsets.begin(),joint_offsets.end());
     for(unsigned i=1;i<joint_offsets.size();++i)if(joint_offsets[i-1].first==joint_offsets[i].first)return fail("ambiguous joint identity");
     auto joint_index=[&](u32 offset,u32* result){const auto found=std::lower_bound(joint_offsets.begin(),joint_offsets.end(),std::pair<u32,u32>{offset,0});
@@ -55,13 +60,15 @@ inline bool hsd_skin_metadata(const HsdScene& scene,const hsd_detail::Reader& r,
         *result=found->second;return true;};
     next.joints.resize(scene.joints.size());
     for(u32 i=0;i<next.joints.size();++i){const auto& j=scene.joints[i];u32 inverse=0;
+        if(!selected(j))continue;
         u32 klass=0;if(!r.ptr(j.archive_offset,&klass)||klass)return fail("custom joint class requires separate matrix semantics");
         if(!r.ptr(j.archive_offset+0x38,&inverse))return fail("inverse-bind pointer lacks relocation");
         if(inverse){if(!hsd_skin_detail::read_matrix(r,inverse,&next.joints[i].inverse))return fail("inverse-bind matrix extent/domain");next.joints[i].has_inverse=true;}}
     next.meshes.resize(scene.meshes.size());std::size_t vertices=0,bindings=0;
     for(u32 i=0;i<next.meshes.size();++i){const auto& mesh=scene.meshes[i];auto& skin=next.meshes[i];const u32 kind=mesh.pobj_flags&0x3000;
         if(i>=scene.mesh_joint.size()||scene.mesh_joint[i]>=next.joints.size())return fail("mesh owner");
-        const u32 owner=scene.mesh_joint[i];u32 binding=0;if(!r.ptr(mesh.pobj_offset+0x14,&binding))return fail("POBJ binding lacks relocation");
+        const u32 owner=scene.mesh_joint[i];if(!selected(scene.joints[owner]))continue;
+        u32 binding=0;if(!r.ptr(mesh.pobj_offset+0x14,&binding))return fail("POBJ binding lacks relocation");
         u32 klass=0;if(!r.ptr(mesh.pobj_offset,&klass)||klass)return fail("custom POBJ class requires separate matrix semantics");
         if(kind==0){skin.palettes.push_back({{{owner,1}}});
             if(binding){u32 shared=0;if(!joint_index(binding,&shared))return fail("shared joint outside published skeleton");skin.kind=HsdSkinKind::Shared;skin.palettes.push_back({{{shared,1}}});}
@@ -95,15 +102,18 @@ inline bool hsd_skin_metadata(const HsdScene& scene,const hsd_detail::Reader& r,
     }
     *out_joints=std::move(next.joints);*out_meshes=std::move(next.meshes);return true;
 }
-inline bool hsd_skin_load(ByteView archive,HsdSkinAsset* out,std::string* error){
+// A selected-record result is preparation only. The scene owner must remap
+// and publish a complete subset before passing it to hsd_skin_sample.
+inline bool hsd_skin_load(ByteView archive,HsdSkinAsset* out,std::string* error,std::optional<u32> selected_record=std::nullopt,
+                          HsdStaticMaterialPolicy material_policy=HsdStaticMaterialPolicy::Legacy){
     if(out)*out={};
     auto fail=[&](const char* why){if(error)*error=std::string("hsd skin: ")+why;return false;};
     if(!out||!archive.data||archive.size<32||archive.size>(64u<<20))return fail("archive budget/destination");
-    HsdSkinAsset next;if(!hsd_load(archive,&next.scene,error))return false;
+    HsdSkinAsset next;if(!hsd_load(archive,&next.scene,error,material_policy))return false;
     if(next.scene.meshes.size()>kHsdMaxNodes)return fail("mesh metadata budget");
     hsd_detail::Reader r;if(!hsd_anim_detail::open_container(archive,&r,error))return false;
-    if(!hsd_skin_metadata(next.scene,r,&next.joints,&next.meshes,error))return false;
-    next.loaded=true;*out=std::move(next);return true;
+    if(!hsd_skin_metadata(next.scene,r,&next.joints,&next.meshes,error,selected_record))return false;
+    next.loaded=!selected_record;*out=std::move(next);return true;
 }
 inline bool hsd_skin_sample(const HsdSkinAsset& asset,std::span<const Mat4> world,HsdSkinGeometry* out,std::string* error){
     if(out)*out={};

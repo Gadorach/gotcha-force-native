@@ -1,0 +1,12 @@
+GFSTAGE 1
+id=example:workshop
+name=Workshop
+arena-half=1800
+model=art/workshop.hsd
+floor=collision/floor.stih
+projectile-stage=collision/bounds.gfsr
+secondary=collision/walls.stih
+tertiary=collision/props.stih
+view-fade=art/occlusion.txt
+spawn=west|-240|20|300
+spawn=east|240|-10|-300

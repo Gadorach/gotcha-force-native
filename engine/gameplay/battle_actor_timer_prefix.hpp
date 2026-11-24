@@ -2,12 +2,14 @@
 #include <vector>
 #include "engine/assets/battle_actor_timers.hpp"
 #include "engine/gameplay/source_byte_rng.hpp"
+#include "engine/assets/battle_model_domain.hpp"
 namespace gf {
 struct BattleActorInitFieldWrite {u16 offset=0;u8 bytes=0;u16 value=0;bool operator==(const BattleActorInitFieldWrite&)const=default;};
 struct BattleActorTimerPrefixInput {
     bool declared=false;u16 model=0;u8 selector438=0,level439=0;s16 field1c6=0;
     bool override_enabled=false,override_fields_declared=false;
     std::array<u8,5> override_fields{}; //source per-slot339/352/37F/1E9/1EA
+    BattleModelDomain domain=BattleModelDomain::NormalPair;
 };
 struct BattleActorTimerPrefixPlan {
     std::vector<BattleActorInitFieldWrite> writes;std::array<u8,6> draws{};SourceByteRngState after;
@@ -15,12 +17,12 @@ struct BattleActorTimerPrefixPlan {
 };
 //541AC→1C80C through263EC, BEFORE2532C's target/peer/RNG consumers. Writes are
 //ordered candidates, not a source actor image, current owner or committed RNG.
-//The two admitted models take263EC's no-write return. No guessed target, fake
+//All versioned admitted models take263EC's no-write return. No guessed target, fake
 //registry miss, fabricated peer list, or seeded/restarted global random stream.
 inline bool battle_actor_timer_prefix(const BattleActorTimerProfile& profile,const BattleActorTimerPrefixInput& in,SourceByteRngState rng,BattleActorTimerPrefixPlan* out,std::string* error){
     if(out)*out={};
     auto fail=[&](){if(error)*error="battle actor timer prefix: declared two-normal fields/table domain required";return false;};
-    if(!out||!profile.ready()||!in.declared||(in.model!=0x615&&in.model!=10)||in.selector438>=18||in.level439>=16||(in.override_enabled&&!in.override_fields_declared))return fail();
+    if(!out||!profile.ready()||!in.declared||!battle_model_in_domain(in.domain,in.model)||in.selector438>=18||in.level439>=16||(in.override_enabled&&!in.override_fields_declared))return fail();
     BattleActorTimerPrefixPlan next;next.after=rng;
     auto put=[&](unsigned offset,unsigned bytes,u16 value){next.writes.push_back({u16(offset),u8(bytes),value});};
     for(unsigned at:{0x2e4u,0x2e5u,0x2e6u,0x2e7u,0x32cu,0x32du,0x337u,0x338u,0x336u,0x347u})put(at,1,0);

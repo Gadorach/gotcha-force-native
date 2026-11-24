@@ -11,17 +11,20 @@ struct StartupAttachmentParent {
 struct StartupAttachmentState {
     u8 phase=0,mode=0,render_group=0;f32 draw_scale=0;bool allocated=true;
     AttachmentBoneTransformInput transform;
+    bool operator==(const StartupAttachmentState&)const=default;
 };
 struct StartupAttachmentUpdate {
     StartupAttachmentState state;bool unregister=false,released=false,visible=false,alternate=false;
 };
-inline bool startup_attachment_state_step(const StartupAttachmentProfile& p,unsigned index,u8 stored_parent_index,
+namespace startup_attachment_state_detail {
+//Shared numeric implementation; wrappers keep their separate index contracts.
+inline bool step(const StartupAttachmentProfile& p,unsigned index,u8 stored_parent_index,u8 maximum_parent_index,
                                          const StartupAttachmentParent& parent,const StartupAttachmentState& input,
                                          StartupAttachmentUpdate* out,std::string* error){
     if(out)*out={};
     if(error)error->clear();
     auto fail=[&](const char* why){if(error)*error=std::string("startup attachment state: ")+why;return false;};
-    if(!out||!startup_attachment_profile_valid(p)||index>=2||stored_parent_index>1||input.phase>3||(!input.allocated&&input.phase!=3)||!std::isfinite(input.draw_scale)||input.draw_scale<0||input.draw_scale>p.one)return fail("profile/state/index");
+    if(!out||!startup_attachment_profile_valid(p)||index>=2||stored_parent_index>maximum_parent_index||input.phase>3||(!input.allocated&&input.phase!=3)||!std::isfinite(input.draw_scale)||input.draw_scale<0||input.draw_scale>p.one)return fail("profile/state/index");
     const auto& e=p.entries[index];
     if((input.phase==0&&(input.mode||input.render_group||input.draw_scale!=0))||(input.phase>=2&&input.render_group)||(!p.kind&&input.draw_scale!=0)||(p.kind&&input.mode))return fail("constructor/retired field domain");
     if(input.phase==1){
@@ -41,5 +44,9 @@ inline bool startup_attachment_state_step(const StartupAttachmentProfile& p,unsi
     if(p.kind){s.draw_scale=f32(s.draw_scale+(parent.mode6e8==e.grow_mode?p.growth:-p.growth));s.draw_scale=std::clamp(s.draw_scale,p.zero,p.one);result.visible=s.draw_scale>p.zero;result.alternate=result.visible&&parent.alternate_ae!=0;}
     else{result.visible=!(e.id&1u)||(s.mode==2&&parent.reload784>0);result.alternate=result.visible&&(parent.alternate_ae!=0||parent.selector3ec==4);}
     result.state=s;*out=result;if(error)error->clear();return true;
+}
+}
+inline bool startup_attachment_state_step(const StartupAttachmentProfile& p,unsigned index,u8 stored_parent_index,const StartupAttachmentParent& parent,const StartupAttachmentState& input,StartupAttachmentUpdate* out,std::string* error){
+    return startup_attachment_state_detail::step(p,index,stored_parent_index,1,parent,input,out,error);
 }
 } // namespace gf

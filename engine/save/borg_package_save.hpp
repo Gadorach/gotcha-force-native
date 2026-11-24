@@ -1,6 +1,6 @@
 #pragma once
 #include "engine/gameplay/borg_package_roster.hpp"
-#include "engine/save/account_save_format.hpp"
+#include "engine/save/account_save_repository.hpp"
 
 namespace gf {
 enum class PackageBorgLoad {Loaded,Missing,Unavailable,Invalid};
@@ -57,6 +57,17 @@ public:
         return true;
     }
     bool write(const PackageBorgRoster& roster){
+        return write_impl(roster,[&](const auto& bytes){return backend_.store(kBorgPackageSaveSlot,bytes.data(),bytes.size());});
+    }
+    bool write_scoped(const PackageBorgRoster& roster,AccountSaveBackend& backend,const AccountSaveRevision& expected){
+        if(&backend_!=&backend)return false;
+        return write_impl(roster,[&](const auto& bytes){
+            return backend.store_if_save_revision(kBorgPackageSaveSlot,bytes.data(),bytes.size(),expected);
+        });
+    }
+private:
+    template<class Store>
+    bool write_impl(const PackageBorgRoster& roster,Store store){
         if(!package_borg_roster_valid(roster)||!current())return false;
         const bool has_variants=std::any_of(roster.owned.begin(),roster.owned.end(),[](const auto& borg){return borg.variant.has_value();});
         SaveWriter writer;writer.u32_field(magic_);writer.u32_field(has_variants?2:1);
@@ -73,13 +84,12 @@ public:
         }
         for(const auto& place:roster.placements){writer.u64_field(place.instance);writer.u32_field(place.force);writer.u32_field(place.slot);}
         account_save_detail::Framing next;SaveEngine framing(next);
-        if(!framing.write(0,writer)||!backend_.store(kBorgPackageSaveSlot,next.bytes.data(),next.bytes.size())){
+        if(!framing.write(0,writer)||!store(next.bytes)){
             writable_=false;return false;
         }
         loaded_record_=std::move(next.bytes);
         return true;
     }
-private:
     static constexpr u32 magic_=0x4e425247u; // NBRG: native package roster
     ISaveBackend& backend_;SaveEngine save_;bool writable_=false;
     std::vector<u8> loaded_record_;

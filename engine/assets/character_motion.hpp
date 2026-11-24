@@ -82,12 +82,14 @@ struct HsdBoneMotion {
     u32 joint_offset=0;
     bool has_aobj=false,classical_scale=false;
     std::vector<HsdAnimTrack> tracks;
+    bool source_loop=false;
 };
 struct HsdBoneMotionClip {
     std::vector<HsdBoneMotion> bones; // logical slots, not descriptor preorder
     u32 public_bone_count=0; // absent public != public with a null AObj
     f32 end_frame=0;
     bool loaded=false;
+    bool root_at_block_zero=false;
 };
 struct HsdBoneMotionValues {
     u32 joint_offset=0;
@@ -95,7 +97,10 @@ struct HsdBoneMotionValues {
     std::array<f32,11> value{};
 };
 struct HsdBoneMotionSample {std::vector<HsdBoneMotionValues> bones;};
-inline bool hsd_bone_motion_load(ByteView archive,const HsdModelBones& binding,HsdBoneMotionClip* out,std::string* error){
+enum class HsdBoneMotionLoadMode { Strict, InspectAuthoredLoop, NativeLocomotionLoop, NativeIdleLoop=NativeLocomotionLoop,
+                                   NativeActionLoopWindow };
+inline bool hsd_bone_motion_load(ByteView archive,const HsdModelBones& binding,HsdBoneMotionClip* out,std::string* error,
+                                 HsdBoneMotionLoadMode mode=HsdBoneMotionLoadMode::Strict){
     if(out)*out={};
     auto fail=[&](const char* why){if(error)*error=std::string("hsd bone motion: ")+why;return false;};
     if(!out||!binding.loaded||binding.bones.empty()||binding.bones.size()>kHsdMaxCharacterBones||
@@ -103,7 +108,7 @@ inline bool hsd_bone_motion_load(ByteView archive,const HsdModelBones& binding,H
     const u32 publics=archive.be32(12),externs=archive.be32(16);
     if(!publics||publics>binding.bones.size()||externs)return fail("public bone count/unsupported extern binding");
     for(std::size_t i=0;i<binding.bones.size();++i){
-        if(!binding.bones[i].joint_offset)return fail("missing bone identity");
+        if(!binding.has_identity(i))return fail("missing bone identity");
         for(std::size_t j=0;j<i;++j)if(binding.bones[j].joint_offset==binding.bones[i].joint_offset)return fail("ambiguous bone identity");
     }
     hsd_detail::Reader r;if(!hsd_anim_detail::open_container(archive,&r,error))return false;
@@ -116,6 +121,7 @@ inline bool hsd_bone_motion_load(ByteView archive,const HsdModelBones& binding,H
     };
     const std::size_t symbols=32+r.block.size+std::size_t(archive.be32(8))*4,strings=symbols+std::size_t(publics)*8;
     HsdBoneMotionClip next;next.public_bone_count=publics;next.bones.resize(binding.bones.size());
+    next.root_at_block_zero=binding.root_at_block_zero&&binding.root_offset==0;
     for(std::size_t i=0;i<binding.bones.size();++i)next.bones[i].joint_offset=binding.bones[i].joint_offset;
     std::vector<std::string> names;std::size_t bytes=0;
     for(u32 slot=0;slot<publics;++slot){
@@ -135,8 +141,13 @@ inline bool hsd_bone_motion_load(ByteView archive,const HsdModelBones& binding,H
         auto& bone=next.bones[slot];bone.classical_scale=(r.block.be32(node+16)&1)!=0;
         if(!aobj)continue;
         u32 track=0,object=0;
-        if(!r.has(aobj,16)||r.block.be32(aobj)!=0||!optional(aobj+8,&track)||!track||!optional(aobj+12,&object)||object)
+        // Original 80243C34 tests bit 29 for end-time wrapping. An inspector
+        // may sample its tracks in range, but does not evaluate that lifecycle.
+        constexpr u32 loop=0x20000000u;
+        const u32 allowed_flags=mode==HsdBoneMotionLoadMode::Strict?0:loop;
+        if(!r.has(aobj,16)||(r.block.be32(aobj)&~allowed_flags)||!optional(aobj+8,&track)||!track||!optional(aobj+12,&object)||object)
             return fail("unsupported AObj flags/object/track binding");
+        bone.source_loop=(r.block.be32(aobj)&loop)!=0;
         const f32 end_frame=r.block.bef32(aobj+4);
         if(!std::isfinite(end_frame)||end_frame<=0||end_frame>8192||std::floor(end_frame)!=end_frame)return fail("integer-time clip end budget");
         if(next.end_frame&&end_frame!=next.end_frame)return fail("mixed bone end times require AObj lifecycle evaluation");
@@ -159,6 +170,11 @@ inline bool hsd_bone_motion_load(ByteView archive,const HsdModelBones& binding,H
             if(!optional(track,&track))return fail("track next pointer");
         }
     }
+    if((mode==HsdBoneMotionLoadMode::NativeLocomotionLoop||mode==HsdBoneMotionLoadMode::NativeActionLoopWindow)&&(!next.end_frame||
+       std::any_of(next.bones.begin(),next.bones.end(),[](const auto& bone){return bone.has_aobj&&!bone.source_loop;})))
+        return fail(mode==HsdBoneMotionLoadMode::NativeActionLoopWindow?
+                    "native action loop window requires uniformly looped animated joints":
+                    "native locomotion loop requires uniformly looped animated joints");
     next.loaded=true;*out=std::move(next);return true;
 }
 // Explicit source AObj request: nonloop FIRST_PLAY samples the requested time
@@ -171,7 +187,8 @@ inline bool hsd_bone_motion_sample_requested(const HsdBoneMotionClip& clip,u32 r
        clip.end_frame<0||clip.end_frame>8192||requested_time>8192)return fail("clip/time/destination domain");
     HsdBoneMotionSample next;next.bones.resize(clip.bones.size());std::size_t bytes=0;
     for(std::size_t i=0;i<clip.bones.size();++i){const auto& bone=clip.bones[i];auto& target=next.bones[i];target.joint_offset=bone.joint_offset;
-        if(!bone.joint_offset||bone.tracks.size()>9||(!bone.has_aobj&&!bone.tracks.empty()))return fail("bone/track binding");
+        if((!bone.joint_offset&&!(clip.root_at_block_zero&&i==0))||bone.tracks.size()>9||
+           (!bone.has_aobj&&!bone.tracks.empty()))return fail("bone/track binding");
         for(std::size_t j=0;j<i;++j)if(clip.bones[j].joint_offset==bone.joint_offset)return fail("ambiguous bone identity");
         for(const auto& track:bone.tracks){const auto channel=track.channel;
             if(!((channel>=1&&channel<=3)||(channel>=5&&channel<=10))||(target.present&(1u<<channel)))return fail("unsupported/duplicate channel");

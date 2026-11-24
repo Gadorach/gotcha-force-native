@@ -37,6 +37,25 @@ int main(){using namespace gf;
 
     {Storage storage;AccountSaveRepository repo(storage),foreign(storage);AccountSaveEntry a,s;check(repo.create_account(5,"Five",&a)==AccountResult::Ok&&repo.create_save(a,7,"Seven",&s)==AccountResult::Ok,"failure fixture");std::unique_ptr<AccountSaveBackend> selected;check(foreign.open(s,&selected)==AccountResult::Invalid,"foreign repository row cannot select");const auto before=storage.objects.at(s.key);storage.next_write=AccountWrite::Error;check(repo.rename(s,"failed",nullptr)==AccountResult::Unavailable,"known replacement failure reported");bytes_equal(before,storage.objects.at(s.key),"failed rename preserves prior object");check(repo.open(s,&selected)==AccountResult::Ok,"open for uncertain write");account_save_detail::Framing framed;SaveEngine framing(framed);SaveWriter writer;writer.u32_field(99);check(framing.write(0,writer),"owned framed data");storage.next_write=AccountWrite::Uncertain;storage.commit_uncertain=true;check(!selected->store(0,framed.bytes.data(),framed.bytes.size()),"unknown acceptance not reported successful");const auto calls=storage.write_calls;check(!selected->store(0,framed.bytes.data(),framed.bytes.size())&&storage.write_calls==calls,"uncertain context latches, no automatic replay");std::vector<u8> bytes={1};check(selected->read_slot(0,bytes)==SaveReadStatus::Error&&bytes.empty(),"latched read clears output, not fake Missing");}
 
+    {Storage storage;AccountSaveRepository repo(storage);AccountSaveEntry a,s;
+        std::unique_ptr<AccountSaveBackend> backend,reopened;
+        check(repo.create_account(1,"Account",&a)==AccountResult::Ok&&repo.create_save(a,2,"Save",&s)==AccountResult::Ok&&
+            repo.open(s,&backend)==AccountResult::Ok,"revision-guarded write fixture");
+        account_save_detail::Framing framed;SaveEngine framing(framed);SaveWriter writer;writer.u32_field(99);
+        check(framing.write(0,writer),"framed payload for write predicate");
+        const auto first=backend->revision();
+        check(first&&first->key()==s.key&&first->revision()==s.revision&&first->parent_revision()==a.revision&&
+            backend->store_if_save_revision(0,framed.bytes.data(),framed.bytes.size(),*first),"first save-local scoped write");
+        const auto current=backend->revision();const auto writes=storage.write_calls;
+        check(current&&*current!=*first&&!backend->store_if_save_revision(0,framed.bytes.data(),framed.bytes.size(),*first)&&
+            !backend->store_if_save_revision(1,framed.bytes.data(),framed.bytes.size(),*current)&&storage.write_calls==writes,
+            "obsolete expectation and account scope refused before storage");
+        repo.close();s=find_save(repo,1,2);
+        check(repo.open(s,&reopened)==AccountResult::Ok&&!backend->revision()&&
+            reopened->revision()->revision()==current->revision()&&
+            !reopened->store_if_save_revision(0,framed.bytes.data(),framed.bytes.size(),*current)&&storage.write_calls==writes,
+            "same bytes and revision under a new lease cannot revive an old write predicate");}
+
     {Storage storage;AccountSaveRepository repo(storage);AccountSaveEntry a,s;check(repo.create_account(1,"Account",&a)==AccountResult::Ok&&repo.create_save(a,2,"Save",&s)==AccountResult::Ok,"corruption fixture");storage.objects[a.key].payload[0]^=1;std::unique_ptr<AccountSaveBackend> backend;const auto writes=storage.write_calls;check(repo.open(s,&backend)==AccountResult::Invalid&&!backend&&storage.write_calls==writes,"corrupt account payload cannot open or overwrite");storage.objects[a.key].payload[0]^=1;storage.objects[s.key].payload.back()^=1;check(repo.open(s,&backend)==AccountResult::Invalid&&!backend,"corrupt save payload cannot become writable defaults");storage.objects[s.key].metadata[0]^=1;AccountSavePage rows;check(repo.saves(a,0,8,&rows)==AccountResult::Ok&&rows.entries.size()==1&&rows.entries[0].status==AccountEntryStatus::Invalid,"malformed metadata stays visible as invalid, not loadable");}
 
     std::printf("native accounts/scoped saves foundation: %u owned checks PASS\n",checks);return 0;

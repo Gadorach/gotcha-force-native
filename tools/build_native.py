@@ -83,6 +83,8 @@ def main():
             run_command = [str(output / name)]
             if name in ("account_save_storage", "account_save_storage_edges"):
                 run_command = [sys.executable, "-B", str(ROOT / "tests/unit/run_account_save_storage.py"), *run_command]
+            elif name == "stage_viewport_render":
+                run_command = [sys.executable, "-B", str(ROOT / "tests/unit/run_stage_viewport_render.py"), *run_command]
             elif name in ("startup_sound_timebase", "render_copy_compat_gl"):
                 run_command = [sys.executable, "-B", str(ROOT / "tests/unit/run_output_test.py"), *run_command]
             with (output / (name + ".run.log")).open("w") as log:

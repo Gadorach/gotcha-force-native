@@ -1,0 +1,7 @@
+GFBORG 2
+id=example:flight-stick
+name=Flight Stick
+catalog=catalog.txt
+model=body.hsd
+animations=body.motions
+gameplay=gameplay.txt

@@ -1,7 +1,8 @@
-# Long-term architecture considerations
+# Engine and portable content
 
-User-provided planning notes; **not an immediate implementation checklist**.
-The current priority remains the playable MVP and animation classification.
+This is the release architecture, not a claim that every loader already exists.
+Keep work incremental: qualify portable, playable slices without making the
+retail executable or an evidence harness a runtime dependency.
 
 ## Separate objectives
 
@@ -12,13 +13,23 @@ The current priority remains the playable MVP and animation classification.
 Avoid making modern controls or community content depend on original executable
 addresses, source callback layouts or a source-exact startup sequence.
 
-## Candidate boundaries
+## Runtime boundaries
 
 - Simulation owns gameplay entities, movement, combat, AI and time.
 - Input produces simulation commands; rendering consumes simulation state.
-- Original-game readers and behaviour adapters belong to a compatibility layer.
-- Community content should use the same gameplay interfaces without pretending
-  to be original assets or weakening original-content validation.
+- The engine owns shared rule implementations, resource lifetimes, validation,
+  permissions, and authoritative state. Content declares which rules to use,
+  their operands, assets, and how to sequence them.
+- Original-game readers, address maps, replays, legacy ID bridges and
+  extraction belong to compatibility tooling. Retail and authored content
+  execute the same versioned runtime interfaces; they need not share an
+  on-disc authoring format or qualify for the same game modes.
+- Do not promote a retail-ID branch or a reference-only lookup table into the
+  gameplay interface. If verified behavior has no portable expression, add
+  a reusable capability and test it with authored content, then encode the
+  exact retail package. An audit, an asset bind, or an authored demonstration
+  is not retail admission. Existing retail-specific lab paths are migration
+  seams, not a precedent for new runtime branches.
 
 The current fixed two-Borg MVP is a prototype, not the final Borg registry.
 
@@ -54,11 +65,41 @@ copying terrain code or applying G-Red's rules to Sasuke.
 
 ## Content packaging
 
+See [Portable content v1 contracts](portable-content-v1.md) for the
+stage, Challenge, Story, Collection and Force-editor implementation plan.
+
 [Borg package discovery](borg-packages.md) scans `borgs/<package>/` for a
-manifest that names its assets and rules. The catalog is metadata-only so far.
-Validated asset loading, shared mode availability, and save recovery are
-separate steps. Prefer validated behaviour primitives; sandboxed scripting
-is a possibility to evaluate later, not a dependency to introduce now.
+manifest that names assets and rules. The catalogue is metadata; an executable
+definition uses the [Borg gameplay API](borg-gameplay-api.md). Every retail
+Borg, exact variant and reachable form should eventually use that packaging.
+Definitions own equipment, moves, cues, form rules and mechanics parameters.
+The engine still accepts or refuses requests and owns actual contacts and
+outcomes.
+
+| Content owned by packages | Engine-owned service |
+| --- | --- |
+| Story map, mission graph, conversations, encounters, unlock rules and rewards | Progression, event dispatch, validated battle requests, save transactions |
+| Challenge stages, enemy Forces, AI profiles, win rules and options | Challenge/session flow, Force and actor resolution, AI and battle mechanics |
+| Stage geometry, collision inputs, spawn markers, hazards and presentation, including [per-viewport obstacle fading](stage-viewport-occlusion.md) | Scene loading, collision queries, actor placement, rule execution and view-local rendering |
+| Main menu and HUD layouts, navigation, transitions, labels, icons and cues | Input/focus, UI rendering, audio, and explicit mode/save commands |
+| Opening and other sequences: animation tracks, camera, audio, timing, optional video | A shared timeline/player and presentation services; retail's pre-rendered opening is media, not battle timing evidence |
+| Localized strings and fonts for menus, dialogue, HUD, names, counters and other numeric values | String lookup, formatting, glyph layout and rendering |
+| Cheat definitions, activation conditions, scopes and requested effects | Explicit opt-in and authorization; edits use the same validation and save boundaries as normal actions |
+
+Script Story, menu flow and cheats through bounded, versioned requests and
+events. Prefer declarative rules and timelines where they suffice; scripts
+must not directly mutate actors or saves, invoke platform code, or load native
+plugins. Give packages stable IDs and explicit dependencies. Validate data
+before use and reject unsupported or missing definitions without substituting
+other retail content or writing saves.
+
+Text and numbers are actual strings and values rendered through dynamically
+loadable font assets, not baked words or numerical sprites. A font can use
+a glyph atlas internally; an image containing a whole label is not a font.
+Do not couple layout to the original encoding. Art and non-text visual
+elements remain ordinary media assets. A redistributable engine build must
+be usable without retail files, with independently authored content as a
+smoke test; users can supply the compatible game content separately.
 
 ## Multiplayer/replay preparation
 

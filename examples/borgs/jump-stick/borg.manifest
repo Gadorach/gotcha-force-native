@@ -1,0 +1,7 @@
+GFBORG 2
+id=example:jump-stick
+name=Jump Stick
+catalog=catalog.txt
+model=body.hsd
+animations=body.motions
+gameplay=gameplay.txt

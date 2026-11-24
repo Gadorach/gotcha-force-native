@@ -96,7 +96,7 @@ class CharacterProgramVm {
 public:
     bool load(const CharacterProgramAsset& asset,const CharacterProgramActor& actor,
               const std::array<CharacterProgramMotion,2>& initial,std::string* error){
-        loaded_=ready_=fresh_actor_=transitions_=control_flow_=height_controls_=directional_controls_=selection_height_controls_=root_controls_=directional_root_controls_=completed_follow_tail_=false;class_scope_.reset();asset_={};state_={};
+        loaded_=ready_=fresh_actor_=transitions_=control_flow_=height_controls_=directional_controls_=selection_height_controls_=root_controls_=directional_root_controls_=completed_follow_tail_=request_prefix_=false;class_scope_.reset();asset_={};state_={};
         if(!character_program_detail::valid(asset)||!character_program_vm_detail::actor(actor))return fail(error,"asset/initial actor domain");
         for(const auto& m:initial)if(!character_program_vm_detail::motion(m))return fail(error,"initial motion domain");
         asset_=asset;state_.actor=actor;for(unsigned i=0;i<2;++i)state_.lanes[i].motion=initial[i];loaded_=ready_=true;return true;
@@ -148,12 +148,19 @@ public:
         if(!load_fresh_actor_directional_root_controls(asset,height,position,error))return false;
         completed_follow_tail_=true;return true;
     }
+    bool load_fresh_actor_request_prefix(const CharacterProgramAsset& asset,const CharacterPoseHeightState& height,std::array<f32,3> position,std::string* error){
+        if(!load_fresh_impl(asset,error,true,true,true))return false;
+        if(!character_program_vm_detail::pose_height(height)){loaded_=ready_=false;return fail(error,"request-prefix height state");}
+        for(f32 value:position)if(!character_motion_root_number(value)){loaded_=ready_=false;return fail(error,"request-prefix root position");}
+        state_.actor.pose_height=height;state_.actor.root.position=position;
+        height_controls_=directional_controls_=selection_height_controls_=root_controls_=true;return true;
+    }
 private:
-    bool load_fresh_impl(const CharacterProgramAsset& asset,std::string* error,bool transitions,bool control_flow=false){
-        loaded_=ready_=fresh_actor_=transitions_=control_flow_=height_controls_=directional_controls_=selection_height_controls_=root_controls_=directional_root_controls_=completed_follow_tail_=false;class_scope_.reset();asset_={};state_={};
-        if(!character_program_detail::valid_impl(asset,transitions,control_flow)||asset.lane_mask!=3)return fail(error,"fresh actor requires reviewed two-lane asset");
+    bool load_fresh_impl(const CharacterProgramAsset& asset,std::string* error,bool transitions,bool control_flow=false,bool request_prefix=false){
+        loaded_=ready_=fresh_actor_=transitions_=control_flow_=height_controls_=directional_controls_=selection_height_controls_=root_controls_=directional_root_controls_=completed_follow_tail_=request_prefix_=false;class_scope_.reset();asset_={};state_={};
+        if(!character_program_detail::valid_impl(asset,transitions,control_flow,request_prefix)||asset.lane_mask!=3)return fail(error,"fresh actor requires reviewed two-lane asset");
         asset_=asset;for(auto& lane:state_.lanes){lane.done=false;lane.metadata[4]=255;}
-        class_scope_=std::make_shared<const CharacterProgramClassScope>();loaded_=ready_=fresh_actor_=true;transitions_=transitions;control_flow_=control_flow;return true;
+        class_scope_=std::make_shared<const CharacterProgramClassScope>();loaded_=ready_=fresh_actor_=true;transitions_=transitions;control_flow_=control_flow;request_prefix_=request_prefix;return true;
     }
 public:
     bool request(u8 group,u8 choice,u8 requested_mask,f32 start,f32 delta,const ICharacterProgramMotion& driver,
@@ -183,6 +190,7 @@ private:
                         std::vector<CharacterProgramOperation>* operations,std::string* error,const CharacterProgramTransition* transition,const ICharacterProgramActorControls* controls=nullptr){
         if(operations)operations->clear();
         ready_=false;
+        if(request_prefix_&&(state_.lanes[0].program!=0xffff||state_.lanes[1].program!=0xffff))return fail(error,"request-only prefix cannot be replayed");
         if(directional_controls_&&(!controls||!controls->motion_driver_matches(driver)))return fail(error,"explicit directional motion owner required");
         if(root_controls_&&(!controls||!controls->ordinary_root_controls()))return fail(error,"explicit ordinary-root consumer required");
         if(directional_root_controls_&&(!controls||!controls->directional_root_controls()))return fail(error,"explicit ordered directional-root consumer required");
@@ -225,6 +233,7 @@ public:
 private:
     bool update_impl(u8 requested_mask,f32 delta,const ICharacterProgramMotion& driver,std::vector<CharacterProgramOperation>* operations,std::string* error,const ICharacterProgramActorControls* controls){
         if(operations)operations->clear();
+        if(request_prefix_)return refuse(error,"request-only prefix has no qualified continuation");
         if(directional_controls_&&(!controls||!controls->motion_driver_matches(driver)))return refuse(error,"explicit directional update owner required");
         if(directional_root_controls_&&(!controls||!controls->directional_root_controls()))return refuse(error,"explicit ordered directional-root consumer required");
         if(!ready_||!operations||(requested_mask&~3u)||!std::isfinite(delta)||delta<0||delta>16){ready_=false;return fail(error,"update domain/not ready");}
@@ -440,7 +449,7 @@ private:
         }
         return false;
     }
-    CharacterProgramAsset asset_;CharacterProgramState state_;bool loaded_=false,ready_=false,fresh_actor_=false,transitions_=false,control_flow_=false,height_controls_=false,directional_controls_=false,selection_height_controls_=false,root_controls_=false,directional_root_controls_=false,completed_follow_tail_=false;
+    CharacterProgramAsset asset_;CharacterProgramState state_;bool loaded_=false,ready_=false,fresh_actor_=false,transitions_=false,control_flow_=false,height_controls_=false,directional_controls_=false,selection_height_controls_=false,root_controls_=false,directional_root_controls_=false,completed_follow_tail_=false,request_prefix_=false;
     std::shared_ptr<const CharacterProgramClassScope> class_scope_;
 };
 } // namespace gf

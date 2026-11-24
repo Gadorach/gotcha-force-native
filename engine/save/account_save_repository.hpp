@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include "engine/save/account_save_format.hpp"
 
 namespace gf {
@@ -13,6 +14,21 @@ struct AccountSaveEntry {
     std::weak_ptr<const AccountRepositoryScope> repository;
 };
 struct AccountSavePage {std::vector<AccountSaveEntry> entries;u64 next=0;bool more=false;};
+namespace account_save_detail {struct Lease;}
+class AccountSaveRevision {
+public:
+    AccountSaveKey key()const{return key_;}
+    u64 revision()const{return revision_;}
+    u64 parent_revision()const{return parent_revision_;}
+    bool operator==(const AccountSaveRevision& other)const{
+        return key_==other.key_&&revision_==other.revision_&&parent_revision_==other.parent_revision_&&
+            !lease_.owner_before(other.lease_)&&!other.lease_.owner_before(lease_);
+    }
+private:
+    friend class AccountSaveBackend;
+    AccountSaveKey key_;u64 revision_=0,parent_revision_=0;
+    std::weak_ptr<const account_save_detail::Lease> lease_;
+};
 
 namespace account_save_detail {
 struct Snapshot {u64 revision=0;AccountSaveDescription description;AccountSaveRecords records;};
@@ -62,7 +78,31 @@ public:
         out=record;return SaveReadStatus::Loaded;
     }
     bool store(u32 slot,const u8* data,std::size_t size)override{
+        return store_impl(slot,data,size,nullptr);
+    }
+    bool store_if_save_revision(u32 slot,const u8* data,std::size_t size,const AccountSaveRevision& expected){
+        // This CAS predicate is for save-local categories, not account options.
+        return slot!=1&&store_impl(slot,data,size,&expected);
+    }
+    //Individual category deletion is not account/save management. Retire the
+    //whole selected object through a separately confirmed UI, never erase slot0.
+    bool erase(u32)override{return false;}
+    bool current(){const auto lease=lease_.lock();return lease&&lease->current();}
+    // Bytes alone cannot detect a same-lease write to another category or a
+    // changed record restored to its old bytes. Bind staged UI to the revision.
+    std::optional<AccountSaveRevision> revision(){
+        const auto lease=lease_.lock();if(!lease||!lease->current())return {};
+        return revision_of(lease);
+    }
+private:
+    static AccountSaveRevision revision_of(const std::shared_ptr<account_save_detail::Lease>& lease){
+        AccountSaveRevision next;
+        next.key_=lease->save.description.key;next.revision_=lease->save.revision;next.parent_revision_=lease->account.revision;
+        next.lease_=lease;return next;
+    }
+    bool store_impl(u32 slot,const u8* data,std::size_t size,const AccountSaveRevision* expected){
         const auto lease=lease_.lock();if(slot>kBorgPackageSaveSlot||!data||size>kAccountObjectBytes||!lease||!lease->current())return false;
+        if(expected&&revision_of(lease)!=*expected)return false;
         std::vector<u8> record(data,data+size);if(!account_save_detail::framed(record))return false;
         auto next=slot==1?lease->account:lease->save;next.records.records[slot]=std::move(record);
         std::vector<u8> metadata,payload;
@@ -72,11 +112,6 @@ public:
         if(!revision||revision<=next.revision){lease->failed=true;return false;}
         next.revision=revision;if(slot==1)lease->account=std::move(next);else lease->save=std::move(next);return true;
     }
-    //Individual category deletion is not account/save management. Retire the
-    //whole selected object through a separately confirmed UI, never erase slot0.
-    bool erase(u32)override{return false;}
-    bool current(){const auto lease=lease_.lock();return lease&&lease->current();}
-private:
     friend class AccountSaveRepository;
     explicit AccountSaveBackend(std::weak_ptr<account_save_detail::Lease> lease):lease_(std::move(lease)){}
     std::weak_ptr<account_save_detail::Lease> lease_;

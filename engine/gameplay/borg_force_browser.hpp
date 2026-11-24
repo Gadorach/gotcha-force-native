@@ -4,7 +4,7 @@
 #include "engine/input/input_map.hpp"
 
 namespace gf {
-enum class BorgForceBrowseChange {None,Force,Slot,Close,Practice,PracticeRoute};
+enum class BorgForceBrowseChange {None,Force,Slot,Close,Practice,PracticeRoute,Arrange};
 // Cursor over one read-only scope; blank slots are still exact positions.
 class BorgForceBrowser {
 public:
@@ -17,12 +17,13 @@ public:
     GRedPickerPracticeRoute practice_route()const{return practice_route_;}
     std::string_view practice_route_name()const{return gred_picker_practice_route_name(practice_route_);}
     void sync_input(const GamePadState& pad){previous_=pad;}
-    BorgForceBrowseChange step(const GamePadState& pad,bool allow_practice=false){
+    BorgForceBrowseChange step(const GamePadState& pad,bool allow_practice=false,bool allow_arrange=false){
         const bool back=pad.b&&!previous_.b;
         const bool left=pad.dpad_left&&!previous_.dpad_left,right=pad.dpad_right&&!previous_.dpad_right;
         const bool up=pad.dpad_up&&!previous_.dpad_up,down=pad.dpad_down&&!previous_.dpad_down;
         const bool l=pad.l&&!previous_.l,r=pad.r&&!previous_.r;
         const bool practice=allow_practice&&pad.y&&!previous_.y&&!pad.b&&!pad.start;
+        const bool arrange=allow_arrange&&pad.a&&!previous_.a&&!pad.start;
         previous_=pad;
         if(back)return BorgForceBrowseChange::Close;
         if(left!=right){
@@ -38,6 +39,7 @@ public:
             return BorgForceBrowseChange::PracticeRoute;
         }
         if(practice)return BorgForceBrowseChange::Practice;
+        if(arrange)return BorgForceBrowseChange::Arrange;
         return BorgForceBrowseChange::None;
     }
 private:

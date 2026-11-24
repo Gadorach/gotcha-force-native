@@ -114,7 +114,7 @@ private:
         //5380C/67E18 copy logical JObj LOCAL translations;4BB14 copies these
         // into both pose buffers and creates identity quaternions from identity
         // matrices, with unit extra scales and zero extra angles.
-        for(const auto& bone:rig.binding.bones){CharacterBonePose p;p.joint_offset=bone.joint_offset;std::copy_n(bone.translation,3,p.translation);initial.bones.push_back(p);}
+        if(!character_pose_initial_local(rig,&initial,error))return false;
         if(r.root_owner){const std::array<s8,2> model_bones={std::bit_cast<s8>(r.actor_setup.class_config[0x42]),std::bit_cast<s8>(r.actor_setup.class_config[0x43])};
             if((model_bones[0]>=0&&model_bones[0]==model_bones[1])||!r.driver.load_directional_transitions(assets.model,rig,r.program,assets.clips,initial,model_bones,error)||!(r.demo_owner?r.live.vm.load_fresh_actor_directional_root_follow_tail(r.program,{0,r.actor_setup.one,r.height.zero},r.live.setup.position,error):r.directional_root_owner?r.live.vm.load_fresh_actor_directional_root_controls(r.program,{0,r.actor_setup.one,r.height.zero},r.live.setup.position,error):r.live.vm.load_fresh_actor_root_controls(r.program,{0,r.actor_setup.one,r.height.zero},r.live.setup.position,error)))return fail(error,"ordinary-root library/model-bone binding");
             r.root_lane=2;for(unsigned lane=0;lane<2;++lane)for(unsigned i=rig.cuts[lane];i<rig.cuts[lane+1];++i)if(rig.order[i]==0)r.root_lane=lane;if(r.root_lane>=2)return fail(error,"active root lane required");

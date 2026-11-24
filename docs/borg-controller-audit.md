@@ -111,11 +111,220 @@ nothing, not the `-1` sentinel for an unavailable lane. Tables compare
   simply tick in any order. Similar pose requests do not establish common
   rigs, native maps or transition timing.
 
+### Animation checkpoint scope
+
+Of 410 archived animation requests, 237 sampled and published a current
+pose, 100 had partial evidence, two stopped, and 71 were excluded before
+execution. Later checks accounted for all 100 exact partial requests:
+89 advanced the mapped animation clock and 11 stayed stationary while
+the original VM completed normally. All 100 published a current logical
+pose in those scoped checks. A stationary sample is not, by itself, a
+stall.
+
+Another 184 static-only rows remain outside that intake. Neither a
+completed VM request nor a current pose proves that ordinary movement
+or an action will select that request on a live Scene actor.
+
 ## Normal Sasuke: air points and HUD
 
 This follow-up is scoped to `GG4E08:000A/0`, AFS member 495. The exact normal
 wrapper and local motion bank match the retained native duel art fingerprints;
 that match is not controller admission. [Wiki lead: Sasuke](https://gotchaforce.fandom.com/wiki/Sasuke?oldid=6766).
+
+### Ground movement and the solo demo
+
+The solo demo still uses the provisional MVP movement rules for Sasuke:
+an acceleration ramp, a separate dash button, and a generic jump. These
+are not the original controller. The retained `000A/0` ground traces
+give a bounded comparison target:
+
+- The aligned walk arm loaded **10** units of speed and selected local
+  clip `0:1`. The walk step kept travel direction and body heading
+  separate. On the tested stop entry, source cleared speed immediately
+  without moving the root; the lower lane then waited for its transition
+  before returning to neutral.
+- A strong directional flick selected ground dash and consumed its
+  buffered command. All four tested directions moved the root **30**
+  units on entry. The fixture's left, right, up and down inputs selected
+  local programs **27, 29, 30, 28** and clips **2, 3, 5, 4**, respectively.
+  Those input labels describe the captured camera/body alignment, not
+  universal program bindings to physical buttons.
+
+The retained left and down arms also establish the order after entry:
+
+| Step | Original lower-handler result |
+|---|---|
+| Active dash `13` | Steer and apply the minimum-speed check, tick the authored program, then integrate movement. The minimum hold clock starts at **4** but stays there until the program raises its cue. In the held controls that happened on active update **11** for the left arm and **7** for the down arm. Then the clock ran **3 → 2 → 1 → 0**, selecting recovery after motion. |
+| Early exit | Releasing the matching direction after the cue selected recovery with **2** still on the clock. Refusing selector `14` in a declared control kept the already executed movement separate from the failed transition. |
+| Recovery `14` | Tick the authored lower program, copy its current root-speed output into movement speed, and integrate before checking whether the lane is done. This is not G-Red's damped-speed comparison. The measured speeds changed as the source program ran, so a fixed deceleration ramp would not reproduce them. |
+| Neutral and next input | After the completion update's motion, the original handler selected neutral and cleared speed. Fresh direction selected walk in both arms. |
+
+The recovery split is a shared handler with an exact model operand:
+at `80061240` Sasuke's installed configuration has bit `0x8` clear.
+That takes the direct root-speed copy at `800612AC`, whereas normal
+G-Red has the bit set and uses the separate damping/latch path. The
+active clock write is at `80060FF8`; the recovery completion check is
+after the grounded integrator at `80061128`.
+
+### Authored ground animation and lane order
+
+The original scheduler captures the upper handler **before** running the
+lower one. Their selectors and animation requests need not match at the
+end of an update. The `000A/0` source tables and handler callsites give
+the following ground-movement map:
+
+| Phase | Upper lane | Lower lane |
+|---|---|---|
+| Walk entry `1` | Requests program `1` with the upper mask. | Requests program `1` with the lower mask. The program selects walk clip `0:1`; its authored tail can select `0:6`. |
+| Settled walk `2` | Advances the retained program. | Applies travel and advances the retained program. |
+| Stop `3` | Requests program `31` on entry. | Clears planar speed and requests `31` in the tested type-0 path. Program `31` aliases program `0`; their first clip is `0:0`. The stop tail checks the lane mode rather than imposing a braking duration. |
+| Dash entry `12` | Requests the selected directional program with mask `13`. | Requests the same program with mask `2`, runs ground travel, and advances the lower selector to `13`. |
+| Active dash `13` | Advances only while the lower handler's hold flag is clear. | Uses the program cue for the clock, then moves before publishing a requested recovery selector. |
+| Recovery `14` | Uses the same flag to choose a continuation call or a normal tick. | Uses the retained program's speed output for movement, then tests its completion before selecting neutral. |
+
+The dash programs are **not** clip numbers. Programs `27–30` resolve
+through descriptors `28–31` to clips `0:2`, `0:4`, `0:3`, and `0:5` in
+that order, for both authored lanes. The initial waits are `10, 6, 10, 6`;
+they precede the cue, not the end of the clip. The saved first post-landing
+dash update independently confirms program `27` requested lower-first
+with masks `2` then `13`, ending at lower/upper `13/12` with a current
+pose. That frame does not verify when the upper hold flag clears over
+the rest of the dash.
+
+### Ordinary versus forced dash recovery
+
+The source does not make the two selectors permanently independent.
+After movement priority, `80059F5C` copies the lower selection to the
+upper through its own setter when the selectors differ and the busy
+mask `0x81000003` is clear. That setter resets the upper entry state.
+The dispatcher then captures the upper handler before running the
+lower one. For ordinary dash this explains the one-update mismatch:
+the entry update publishes `13/12`; the next eligible prepass can
+align them at `13/13`. The same ordering applies when the lower
+handler selects `14`: upper recovery is not retroactively dispatched
+on the transition update.
+
+The first lower recovery handler tests **bit `0x2`** of the VM cue byte.
+Sasuke's four ordinary dash programs write cue `0` then `1`, not `2`.
+The saved left and down arms each arrived at recovery with cue `1`,
+both on held expiry and on release after the cue. All four first
+lower-recovery cuts called ordinary VM tick `800611B8`, not forced
+continuation. That ordinary path clears the shared hold flag before
+the upper handler tests it; the resulting upper call is the ordinary
+tick at `80061070` if recovery has been selected on both lanes.
+
+Forced continuation `8004CFF4` remains a separate source path, not a
+faster tick. It uses the saved program cursor without the ordinary
+wait predicate, or advances the motion without continuation when the
+hold test succeeds. The hold test uses `1 << effective_mask`, where
+the effective mask is the request masked by the installed lanes.
+Do not reuse the ordinary per-lane hold index there. This path is
+not evidence of a normal Sasuke dash requirement, nor permission to
+ignore it if a competing action changes the cue. The upper recovery
+call above is a static join from verified operands, not a scheduled
+pose measurement.
+
+An offline native comparison ran those original program and descriptor
+records in the shared animation VM using Sasuke's qualified model, rig
+and motion bank. In the declared lower-then-upper sequence, idle, walk
+and stop selected the expected clips, and all four dash programs raised
+their cue at the expected active update. The two lanes composed a
+portable world pose from a declared root. The shared root-motion
+calculation also matched the saved original recovery speeds for two
+exact frame pairs: **13.78572** for clip `0:2` at `13 → 14` and
+**17.89746** for clip `0:4` at `9 → 10`. This checks the animation and
+root-speed components, not a live Sasuke movement update. In particular,
+the lower VM was advanced separately during recovery; this did not
+verify the upper recovery continuation or a terrain-accepted root.
+
+The next offline comparison joined the held-to-expiry left and down
+records through lower recovery and neutral, checking **68 saved source
+updates**. It matched the lower sample, cue, remaining clock, selector
+and root-speed output, including **44 recovery updates**. One timing
+correction matters: the lower handler decides whether to hold animation
+from the cue **before** its tick. On the update that raises cue `1`,
+the countdown can start, but the captured upper lane still ticks once.
+Later active updates hold both samples. This replaces the first
+offline check's post-cue guess at the upper hold gate.
+
+The same comparison ran the statically mapped ordinary upper ticks and
+composed both lanes at each recorded source root and heading. Those
+roots were inputs, not accepted movement results, and the lower-only
+source records do not contain upper matrices to match. A continuous
+original two-lane pose trace remains separate.
+
+A follow-up replaced the supplied **output** roots with the shared
+ground integrator and native static contact check on all three original
+`st42` grids. It carried each accepted root into the next update and
+composed the pose only after acceptance. All **68** updates passed and
+matched the flat-reference positions within **0.002 units**. Recovery
+speed came from the native VM's root-motion output. The initial roots,
+travel headings, active-dash speeds and body headings initially came
+from the saved trace. The check refused an unqualified endpoint
+instead of substituting a flat height, and did not test dynamic
+support, solid bodies or general slopes.
+
+The next comparison recomputed the dash class, program, travel heading
+and body turn from Sasuke's exact source tables rather than supplying
+those outputs. The shared `80065EB0` steering body takes the same
+ordinary facing branch for normal G-Red and Sasuke; Sasuke's class data
+and recovery speed policy remain separate. The four saved flick
+entries matched, and the recalculated headings and speeds again matched
+all 68 accepted updates in the two retained routes. The camera word and
+consumed flick were fixture inputs. Steering distance was the same
+declared zero used by the source comparisons; a live target or a solo
+no-target producer was not recovered. Neither comparison changes the
+playable controller.
+
+### Processed input and retained flicks
+
+A separate native comparison used Sasuke's exact source input operands
+and the existing shared movement conditioner. It matched **24 saved
+updates**: nine threshold/history controls, four fresh ground flicks, and
+11 landing-to-wind-up inputs. Processed stick input begins producing a
+held direction at radius **30**, while the low and strong direction
+buffers use **20** and **52**. Those are different tests; held direction
+alone does not prove a fresh strong flick was produced.
+
+With the declared landing inlet, the conditioner produced the same
+jump pulse and strong flick as the original. Grounded recovery reset
+the previous used point, takeoff left the flick buffered, and the
+declared first post-takeoff opportunity consumed it for wind-up,
+seeding one used point. The intervening neutral samples matched the
+saved buffer clocks. This check did not execute the handlers or prove
+the animation handoff; the first post-takeoff opportunity came from
+the saved original trace. Physical pad polling, the live camera
+producer and actual controller admission are still separate.
+
+### Joined offline ground-dash check
+
+For the two exact left/down controls, a single offline comparison now
+starts from processed stick axes. The conditioner creates the flick,
+the ground gate consumes it, and the consumed direction selects the
+authored dash program. The test integrates the entry on the real
+`st42` grids and carries the accepted root through all **68** subsequent
+active and recovery updates to neutral. The replayed headings, clock,
+selectors, and speed matched the saved lower paths, and both native
+animation lanes composed after terrain acceptance.
+
+Four additional controls recreated the release input: release before
+the cue still moved and stayed in active dash; release after the cue
+moved and then selected recovery with clock **2** remaining. Held
+direction did not recreate the consumed flick. The camera, initial
+root, unit clocks and zero steering distance were declared, and the
+scheduler was not a live native actor. This is a joined comparison
+fixture, not new demo admission.
+
+These are retained lower-lane traces with declared camera/input conditions
+and flat contact. They reach neutral for the two exact arms above; they
+do not qualify the other directions, a continuous two-lane dash, or
+slope handling. The next join is the ordinary
+ground cycle with **both** authored lanes and checked root publication,
+then the already verified point and landing rules on that same input
+path. Do not tune the MVP's numbers to imitate only the measured
+endpoints.
+
+### Takeoff, relaunch and landing
 
 | Event | Recovered ownership and order |
 | --- | --- |
@@ -128,12 +337,58 @@ that match is not controller admission. [Wiki lead: Sasuke](https://gotchaforce.
 The bounded offline comparison against qualified DOL instruction fragments
 matched **162 synthetic input cases**. It checked selected input
 pulses, requests, counter stores and display bookkeeping, not an original
-world frame, physics path or HUD draw. **Walk off a ledge → fall without
-jumping → directional air dash** is a source-supported candidate for the
-zero-to-one case, not an accepted route. Verify it independently from an
-ordinary ground launch → air relaunch → dash → landing witness. Keep exact
-stage contact, accepted input, both pose clocks, the used count and display
-state in the same trace before enabling Sasuke practice.
+world frame, physics path or HUD draw. A later original-source replay
+verified the zero-to-one case separately from a ground launch: normal
+Sasuke dashed off the `st42` roof without jumping, entered fall with zero
+points used, and used a fresh directional flick to enter air-dash wind-up.
+Wind-up wrote `0 → 1` without spending meter. The same actor landed on
+the lower floor, reset the point count on the following grounded update,
+and returned to neutral. A separate scheduled walk-off replay verified
+the same point behavior without a grounded dash. Fall produced downward
+velocity before air-dash entry. Wind-up carried a reduced downward
+velocity; active entry reset that velocity and held Y on that update,
+then Y fell by 0.2 on the following active update. A separate neutral
+control matched the first four scheduled visits through the same
+walk-off and changed only the subsequent directional input. On visit
+12, Sasuke was at Y `446.748` without a dash and Y `478.048` with the
+dash: the dash preserved 31.3 units of height in this fixture. That
+comparison does not establish a universal air-dash height rule, verify
+a live HUD binding or draw, or admit Sasuke to native practice.
+
+In a separate matched replay, a fresh jump press during active air dash
+entered relaunch with the fall-readiness latch still clear. The original
+active-dash gate selected relaunch before either dash handler ran.
+Relaunch entry then used one point (`1 → 2`) without spending meter.
+The replay published the new pose and stopped before later ascent or
+landing. In a separate cap test, the active-dash gate rejected a fresh
+jump at three used points, even though it did not check the fall-readiness
+latch. Both dash handlers continued, advancing the dash timer without
+spending meter or changing the point count. Neither result establishes
+the outcome in every air-dash phase.
+
+In a separate `st42` replay on face 1600, Sasuke landed with one used
+point and kept it through landing entry. On the first grounded update
+after entry, the scheduler reset the count `1 → 0` before the
+ground-dash gate accepted and consumed a fresh directional flick. Meter
+stayed at `10000`. Neither landing handler ran, and dash entry moved
+the root 30 units and published the current pose. A harness comparison
+stopped after recording that update, so active dash was not tested.
+
+On the same route, a packet with both a fresh jump and a strong flick
+reset the used-point count before accepting takeoff. The ground-dash
+gate was bypassed, not rejected. On the next update, the pad was neutral,
+both commands remained buffered, and both takeoff lanes advanced without
+moving the root or spending meter. A matched continuation kept the pad
+neutral through the lower lane's takeoff completion. The strong flick
+was still buffered with 10 ticks left, and the upper selector remained
+in takeoff. The scheduler had already selected the upper handler before
+the lower handler changed its selector, so the upper takeoff lane still
+ticked. On the first update after lower takeoff completed, the original
+air-dash gate consumed the still-buffered flick without a new press and
+selected wind-up before ordinary ascent. Wind-up used one jump point
+(`0 → 1`) without spending meter or moving the root. Both lanes published
+the wind-up pose. The replay stopped at wind-up entry, before active
+dash travel.
 
 The detached `normal_sasuke_air_relaunch_request` checks only the reviewed
 count-based leaves for falling, dash recovery and active dash. It emits a
@@ -200,7 +455,7 @@ and [Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425
 
 | Mechanism | Ordinary source finding |
 | --- | --- |
-| Glide request | From fall, held input and a clear lock can request 18 (`8006952C`) after earlier choices. Release can return certain glide selectors to fall, not every selector in the family. The ordinary generic air-dash request refuses type 2; this does not rule out class-owned transfers. |
+| Glide request | From fall, held input and a clear lock can request 18 (`8006952C`) after earlier choices. Release can return certain glide selectors to fall, not every selector in the family. The ordinary air-dash gate refuses type 2. A separate unlocked directional flick from glide 18 instead selected `22 → 23 → 24 → 18` without a meter charge in the tested lower-handler replay; this is not a full scheduled action. |
 | Floor offset | The ordinary pose-offset producer writes `6D0 = 0` for both (`8004D1E8`). The shared floor snap still uses `floorY − 6D0`. This is a logical root operand, not a measurement of the rendered body above the floor. |
 | Snap and landing | Glide entry 18 installs a continuation that can select landing 7 after a valid snap. A transfer to steering 19 clears it; a snap without the continuation does not select landing. The landing entry (`80060228`), not the snap, clears airborne status and leaves `0x80` intact. |
 | Refill | Before selection, the shared type-2 branch holds both meter and delay while `0x80` is set. When clear, it decrements a nonzero delay or adds 2000 up to 10000 if delay was already zero. It does not test floor contact, landing, the logical airborne flag or the cached ground field. Neither the ordinary snap nor landing fills the meter. |
@@ -208,10 +463,38 @@ and [Quick Valkrie](https://gotchaforce.fandom.com/wiki/Quick_Valkrie?oldid=6425
 The offline audit matched **282 source-fragment cases**, 141 per model.
 Stage planes and completion fields were supplied to the tested tails; no live
 surface query, animation clock, actor update or HUD draw was compared.
-Next, witness exact fall-to-glide contacts with and without a landing
-continuation, then trace each Borg's X Fly and any class-owned refill-inhibit
-writers separately. There is no general hover-height rule or new gameplay
-admission.
+Later lower-handler replays used original static terrain with declared
+near-floor positions and velocities. Both exact models snapped and selected
+landing in stationary glide; in steered glide, both snapped with no callback,
+kept selector 19, and stayed airborne. These were not full actor schedules.
+The scheduled Wing Soldier steering replay cleared the callback but stayed
+above the floor, so a scheduled steered-glide snap remains unverified. X Fly
+and class-owned refill-inhibit writers remain separate. There is no general
+hover-height rule or new gameplay admission.
+
+After stationary glide resumed from braking, a scheduled Wing Soldier
+replay accepted a strong flick while jump stayed held. The alternate gate
+consumed the flick, cleared the landing callback, and selected dash entry
+22. The source read the original floor normal and height and moved the
+root 20 units horizontally. It restored the old Y because the drop to
+the floor exceeded the 50-unit limit. The lower selector advanced to 23
+while the upper stayed at 22, and both lanes and the overlay published
+the entry pose. Wing Soldier stayed airborne without spending meter or
+another point. With the stick centered and jump still held on the next
+update, both active dash handlers ran and moved the root another 20 units
+at the same height. All three animation lanes advanced, the current pose
+published, and the landing callback remained absent. The hold clock
+stayed at 20 through sample 29 of clip `0:2` while jump remained held.
+On the next update, the lower VM raised the dash cue. The original
+handler decremented the hold clock from 20 to 19 and selected recovery
+24 while the upper selector stayed at 23. The actor moved another 20
+units horizontally and published the current pose at the same height,
+without a landing callback or resource change. On the first recovery
+update, both handlers ran, cleared the cue, and published clip `0:12`
+at sample zero on all three lanes. The root moved another 19.6 units
+without changing height. The clock stayed at 19, the actor stayed
+airborne, and neither meter nor points changed. The replay stopped
+after that pose; later recovery remains unverified.
 
 The detached `normal_type2_glide` component shares only the reviewed
 normal Wing Soldier/Quick Valkrie scalar paths. It proposes the fall/glide
@@ -696,6 +979,43 @@ return, not a timed reload. The native comparison matched **89** bounded
 cases across requests, entries, bookkeeping, program metadata, and stock.
 No live control program, bomb, contact or actor is published.
 
+### Roach's bomb: timer and proximity are separate exits
+
+The supplied Move List lists the timed bomb under **B**: one may be
+out at a time, and it can go off on a delay or near an enemy. No separate
+timed-bomb move was identified there. The same-carrier original replay
+agrees with the two exit routes, with important boundaries:
+
+- Accepted shape binding seeded a **300**-count object timer. Timeout,
+  and a separately supplied contact latch, led to the same later
+  **25**-count inner phase and a request for area key **26**.
+  Static readback joins the request to a separate **class-3 type-5**
+  allocation, using the bomb's position and retaining both its carrier
+  parent and credited actor. The key-26 table selects raw group **3**
+  for the initial binding call. A request is not an accepted group
+  registration, a recipient, or a damage result.
+- The separate proximity service could end the carrier without that
+  same area request. Eight follow-up DOL probes qualified its numeric
+  branch with supplied eligible slot records and vector leaves: it
+  scans six slots, honors the slot eligibility flag and optional mask,
+  and accepts a **3-D root distance at or below 150 source units**.
+  An eligible slot outside that range can instead pull the bomb toward
+  it; the first such visit increases a travel operand by **3**, capped
+  at **100**. An absent or masked slot does neither. This is not a
+  weapon-hit query and does not establish the downstream effect or
+  prove which natural battle objects qualify for the scan.
+- Terminal stock return goes to the credited owner, capped at
+  capacity, before the later physical-release request. This is not
+  a weapon refill timer or an immediate allocation refund.
+
+These are scoped callback counts, not seconds of live fuse time.
+The exact return, area, and proximity gates still need to be joined
+before making a retail Roach package playable. The portable
+[`bomb-proximity` binding](borg-gameplay-api.md#landed-charges-and-remote-commands)
+expresses separate sensor, blast, and return choices for authors; its
+flat-support attraction option only follows one current opponent and
+does not substitute for the retail slot scan or 3D motion.
+
 ## Normal Knight and Normal Samurai: shared movement, distinct melee
 
 Exact normal **Normal Knight `GG4E08:020A/0`** (#26, AFS member 519)
@@ -759,9 +1079,18 @@ normal Sasuke; the movement operands and pose data do not.
 
 The reviewed neutral X spends one channel-2 stock during setup. The paid
 marker gates the later voice sequence; the separate startup hit does not
-carry its status. Caster cues can make an owned carrier request a
-**collidable type-62 note** credited to Pop Honey. Sound and presentation
-requests are not the status producer.
+carry its status. Static source tracing shows that the class initializer
+attempts to create two carriers before the cast. The first paid cue wakes
+an existing carrier; it does not allocate one. A later timed carrier update
+can request a **collidable type-62 note** whose parent is the carrier and
+whose credit is inherited from it. No live carrier-to-note allocation was
+verified. Sound and presentation requests are not the status producer.
+
+The fresh-slot clear covers the matrix translations for keys 20–27
+that Pop Honey's class initializer later reads. The intervening rig
+setup writes local vectors, not those matrix translations. A complete
+constructor trace has not yet verified their last writers or values at
+the reads. A reused actor slot cannot inherit the fresh-slot result.
 
 On an accepted ordinary row-5 contact, the **actual recipient** gets a
 timer of **641 qualifying bookkeeping updates**, not a wall-clock duration.
@@ -776,8 +1105,34 @@ snapshot and the targeting helper swaps lateral sectors 2 and 8. This is
 Entry can clear the timer; another recipient flag can pause its decrement.
 The note lifetime, caster's stock clock and recipient timer are independent.
 
-All **138 bounded offline cases** matched. No live cast, contact, expiry
-timeline, audio, or new actor admission was verified.
+The original logical-pose code also has a guarded path that adds
+`timer << 10` to the yaw used to compose the root matrix, without
+rewriting the recipient's stored heading. A scheduled recipient-only
+replay started with a declared timer of 2. The first update decremented
+it to 1 and published a yaw offset of 1024; the next decremented it to 0
+and published the unmodified heading. The stored heading did not change.
+This verifies expiry on the recipient, not a note hit, live status
+assignment, or input inversion.
+
+A separate recipient-only control started with a declared status timer
+of 1 and hold countdown of 2. The hold guard tests the entire byte, not
+a bitmask. On both updates the status timer stayed at 1 and the logical
+pose kept its yaw offset of 1024. On the second update, status bookkeeping
+ran before the hold countdown reached zero, so the offset remained for
+that publication. A matched continuation verified that on the next
+scheduled update the timer fell from 1 to 0 and both pose passes used
+the stored heading with no offset. No live note or status assignment
+was part of the fixture.
+
+A separate comparison gave normal Sasuke the same weak stick input
+with and without a declared status timer. Both runs produced the same
+conditioned input, selected walk, and kept the same desired, travel,
+and stored body headings. Only the status run added a yaw offset to
+the logical pose. Neither actor translated on that first walk update,
+so this does not establish sustained movement or targeting behavior.
+
+All **138 bounded offline cases** matched. No live cast, contact, full
+status lifetime from a hit, audio, or new actor admission was verified.
 [Wiki lead: Lovely Voice](https://gotchaforce.fandom.com/wiki/Pop_Honey?oldid=6708).
 
 The detached voice component models paid setup, the post-startup program
@@ -906,7 +1261,10 @@ alter the separate Normal Samurai close-B planner.
   The outbound allocation-refusal path clears its flag too. A
   successful enemy hit is not required by the checked return tail;
   the actual target, contact, and interrupted-return branches still
-  need separate verification. [Wiki move reference](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580).
+   need separate verification. [Wiki move reference](https://gotchaforce.fandom.com/wiki/Demon_Samurai?oldid=6580).
+  The portable `release-return=…|all-retired` covers a pair of
+  independently accepted emissions sharing one return token. It does
+  not qualify Demon Samurai's orbit, flight, or return states.
 - **Demon Samurai `0701/0` and Akuma Samurai `0708/0` — blade growth.**
   The player reports that Demon Samurai's blades extend slightly
   whenever any Borg is destroyed while he is in play and suspects
@@ -970,6 +1328,9 @@ check-only stock, exact release cue and separate hand presentation.
 The shared mode-1 refill visit preserves a negative overshoot when it
 restores the cap, unlike mode 0. It matched **121 bounded source cases**.
 No class VM, projectile allocation, hit test or actor update is wired.
+The portable `stock-clock=…|add-on-debit` uses that shared arithmetic
+with a native one-tick clock. It doesn't establish the source tick
+conversion or qualify a Spirit Shot release.
 
 ## G-Red: original neutral B release
 
@@ -1914,12 +2275,30 @@ only where qualified, keeping resource gates, logical contact, pose mapping and
 class actions separately owned. Camera rotation still must not force body
 heading. No missing row inherits another Borg's rules.
 
-Priorities are a normal Sasuke input/launch/dash/landing witness, an exact
-Blue Striker boost cycle, and independent Wing/Angel floor-height and
-Satellite placement traces. Then compare more same-tribe members and sample
-individual class action guards, stock and effects. Verify Gold Hero's and
-Titan Robot's live form handoffs, other form transitions, copy effects, and
-Galactic Emperor's special starts independently.
+G-Red's original shallow-slope walk ran the movement prepass
+(`80055598 → 80059068`) before lane dispatch and current-pose publication.
+That replay started in a declared ordinary update phase with input already
+ingested. It does not verify the first unmasked startup update: that
+requires the same loaded actor to reach the prepass from `800547DC` with
+source-produced input history and lower selector.
+
+The original Story reserve replay verified a separate startup boundary:
+while the exact resource was pending, the scheduler did not read the
+reserve's collider. After delivery, revision 2 published its world before
+the first collider sweep. That sweep seeded the body without admitting it
+to the contact lists; a later source mask clear admitted it. This was a
+scoped reserve replay with input and VM interfaces held at declared
+boundaries, not a witness for ordinary unmasked input.
+
+The [shared startup map](battle-startup-recovery.md) identifies the
+next check: one same-actor neutral input update from original readiness
+through pad ingest and current pose. Keep that
+separate from the existing post-startup movement traces. For individual
+Borgs, remaining work includes class-owned Wing/Angel floor-height
+inputs, special placement and stance, and exact action guards, stock,
+effects and cleanup. Verify live form handoffs and copy effects on their
+own actors rather than inferring them from installed rows or isolated
+animation requests.
 [Wiki lead: battle fusions](https://gotchaforce.fandom.com/wiki/Category:Fusion_Borgs?oldid=6272).
 Battle fusion is a separate two-owner transition, not collection assembly.
 No assumption is made about form timers, state transfer, transformed or

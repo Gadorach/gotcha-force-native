@@ -72,7 +72,8 @@ inline BorgPackageCatalog scan_borg_packages(const std::filesystem::path& root){
         while(last<candidates.size()&&candidates[last].entry.manifest.identity.id==id)++last;
         if(last-i>1){
             for(auto j=i;j<last;++j)result.issues.push_back({candidates[j].entry.folder,id,BorgPackageIssueKind::DuplicateId});
-        }else if(!candidates[i].has_files)result.issues.push_back({candidates[i].entry.folder,id,BorgPackageIssueKind::MissingAsset});
+        }else if(!candidates[i].has_files)result.issues.push_back({candidates[i].entry.folder,id,BorgPackageIssueKind::MissingAsset,
+            candidates[i].entry.manifest.identity.name});
         else result.discovered.push_back(std::move(candidates[i].entry));
         i=last;
     }

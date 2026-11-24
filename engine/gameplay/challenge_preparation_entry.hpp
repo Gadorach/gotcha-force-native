@@ -1,17 +1,24 @@
 #pragma once
 #include "engine/assets/challenge_preparation_entry.hpp"
 #include "engine/gameplay/scene_physical_fields.hpp"
+#include "engine/gameplay/scene_deferred_callbacks.hpp"
+#include "engine/gameplay/battle_common_resources.hpp"
+#include "engine/gameplay/source_halfword_rng.hpp"
 #include <memory>
 #include <optional>
 namespace gf {
+class SceneArchivePool;
 struct ChallengePreparationEntryState {
-    u8 common50=1,common64=0,root00=0,substate01=0;
+    u8 common50=1,common64=0,root00=0,substate01=0,route15dd=0; //inside the qualified fresh18B8-byte clear
     u32 countera8=0,counterac=0,counterb0=0;u64 native_revision=1;
+    u8 common66=0; //same fresh18B8-byte clear; distinct from common64
+    std::optional<u8> common00,common01;std::optional<s16> caller4;bool normal_dispatch_returned=false;
+    std::optional<u8> common32; //fresh V3 mode-table lineage ONLY
     bool operator==(const ChallengePreparationEntryState&)const=default;
 };
 namespace challenge_preparation_entry_detail {
 //Only the fresh presentation opt-in can publish a weak reference to this owner.
 //Neither copied inspection fields nor an equal profile can create that link.
-struct Storage {bool live=true,handoff_ready=false,prefix_claimed=false,branch_claimed=false;std::optional<u8> scene45;std::weak_ptr<ScenePhysicalControlFields> physical_controls;ChallengePreparationEntryState state;};
+struct Storage {bool live=true,handoff_ready=false,prefix_claimed=false,branch_claimed=false,character_load_claimed=false;std::optional<u8> scene45;std::weak_ptr<ScenePhysicalControlFields> physical_controls;std::weak_ptr<SceneArchivePool> archives;BattleCommonResourceBinding common;ChallengePreparationEntryState state;SceneDeferredCallbacks deferred;std::optional<SourceHalfwordRngSnapshot> halfword_rng;};
 }
 } // namespace gf

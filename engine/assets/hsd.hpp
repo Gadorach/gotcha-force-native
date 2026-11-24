@@ -110,7 +110,9 @@ struct HsdMeshProperties {
     u32 texture_low_colour = 0, texture_high_colour = 0xFFFFFFFFu;
     bool deformation_required = false;
     u8 texture_matrix_mask=0,texture_coordinate_mode=0;
+    std::array<u8,2> explicit_uv_axes{}; // TEX0/TEX1, bits for U and V
     bool texture_matrix_required=false,generated_uv_required=false;
+    bool identity_texture_srt=false;
     bool reflection_uv_supported=false;
     u32 material_offset = 0;
     u32 dobj_offset = 0;
@@ -121,6 +123,7 @@ struct HsdMeshProperties {
     u8 material_specular[4] = {};
     f32 shininess = 50.0f;
     bool texture_after_lighting = false; // HSD LIGHTMAP_EXT (vs diffuse/ambient)
+    bool static_diffuse_overwrite=false; //qualified immutable two-stage reduction
 };
 
 struct HsdMesh : HsdMeshProperties {
@@ -230,6 +233,19 @@ struct Reader {
         if (!std::binary_search(fields.begin(), fields.end(), static_cast<u32>(at))) return false;
         if (!std::binary_search(targets.begin(), targets.end(), value)) return false;
         *out = value;
+        return true;
+    }
+
+    // A published, nonoptional pointer has its own relocation. In that
+    // context offset zero names the beginning of the archive data block.
+    // Optional links retain ptr()'s separate null convention.
+    bool required_relocated_offset(std::size_t at, u32* out) const {
+        if (!has(at,4) || !std::binary_search(fields.begin(),fields.end(),static_cast<u32>(at))) return false;
+        const u32 value=be32(block,at);
+        // Some readers omit zero from heuristic candidate lists. Explicit
+        // relocation membership, not that list, authenticates this pointer.
+        if (value>=block.size) return false;
+        *out=value;
         return true;
     }
 
@@ -577,7 +593,10 @@ inline bool decode_pobj(const Reader& r, u32 pobj, HsdMesh* mesh, std::string* e
     mesh->cull_backface = (flags & 0x8000u) != 0;
     mesh->cull_frontface = (flags & 0x4000u) != 0;
     mesh->deformation_required = (flags & 0x3000u) != 0||mesh->skin_binding!=0;
-    for(const auto& d:descs)if(d.attr>=1&&d.attr<=8&&d.type)mesh->texture_matrix_mask|=u8(1u<<(d.attr-1));
+    for(const auto& d:descs)if(d.type){
+        if(d.attr>=1&&d.attr<=8)mesh->texture_matrix_mask|=u8(1u<<(d.attr-1));
+        if(d.attr==13||d.attr==14)mesh->explicit_uv_axes[d.attr-13]|=d.comp_count==0?1u:3u;
+    }
 
     const std::size_t start = be32(r.block, pobj + 0x10);
     std::size_t at = start;
@@ -782,11 +801,28 @@ inline bool resolve_texture(const Reader& r, u32 tobj, HsdScene* scene, u32* ind
     return true;
 }
 
+//80242A9C visits diffuse TObjs in list order.8023FB48 colour mode3 mixes
+//previous RGB with this texel by blending; alpha mode0 preserves prior alpha.
+//Two ordinary diffuse stages at weight1 therefore reduce to the last texel.
+//This predicate admits exactly that immutable expression, not general layering.
+inline u32 static_diffuse_overwrite_tail(const Reader& r,u32 head){
+    u32 tail=0,klass=0,end=0,tev=0;
+    if(!head||!as_tobj(r,head)||!r.ptr(head,&klass)||klass||!r.ptr(head+4,&tail)||!tail||tail==head||!as_tobj(r,tail)||!r.ptr(tail,&klass)||klass||!r.ptr(tail+4,&end)||end)return 0;
+    if(be32(r.block,head+8)!=0||be32(r.block,head+12)!=4||be32(r.block,tail+8)!=1||be32(r.block,tail+12)!=5)return 0;
+    for(u32 at:{head,tail}){
+        if(be32(r.block,at+0x40)!=0x00030010||be32(r.block,at+0x44)!=0x3f800000||!r.ptr(at+0x58,&tev)||tev||r.block.data[at+0x3c]!=1||r.block.data[at+0x3d]!=1)return 0;
+        if(!as_image_desc(r,be32(r.block,at+0x4c)))return 0;
+        for(unsigned k=0;k<3;++k)if(be_f32(r.block,at+0x10+4*k)!=0||be_f32(r.block,at+0x1c+4*k)!=1||be_f32(r.block,at+0x28+4*k)!=0)return 0;
+    }
+    return tail;
+}
+
 } // namespace hsd_detail
 
 // Decodes one HSD archive. On failure `out` is left empty and `error` explains
 // why; nothing is partially published.
-inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
+enum class HsdStaticMaterialPolicy {Legacy,DiffuseOverwritePair,BodyInspection,ImmutableHighlight};
+inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error,HsdStaticMaterialPolicy material_policy=HsdStaticMaterialPolicy::Legacy) {
     if (!out) {
         if (error) *error = "hsd: no scene target";
         return false;
@@ -910,7 +946,7 @@ inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
             if (!reader.ptr(std::size_t(root_table) + i * 4, &record))
                 return fail("hsd: invalid root record pointer");
             if (!record) break;
-            if (i == kHsdMaxNodes || !reader.ptr(record, &root) || !root || !reader.has(root,0x40) ||
+            if (i == kHsdMaxNodes || !reader.required_relocated_offset(record, &root) || !reader.has(root,0x40) ||
                 !reader.finite(reader.block,root+0x14,9))
                 return fail("hsd: invalid published joint root");
             roots.push_back(root);
@@ -1036,6 +1072,7 @@ inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
         u8 ambient[4] = {255, 255, 255, 255};
         u32 texture = kHsdNoTexture;
         f32 texture_weight = 1.0f;
+        u32 effective_tex=0;bool diffuse_overwrite=false;
         if (mobj && as_mobj(reader, mobj)) {
             const u32 material = be32(reader.block, mobj + 0x0C);
             if (material && reader.has(material, 0x14)) {
@@ -1052,10 +1089,21 @@ inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
                 ambient[3] = u8(flat & 0xFFu);
             }
             const u32 tobj = be32(reader.block, mobj + 0x08);
+            effective_tex=tobj;
             if (tobj) {
                 std::string texture_error;
                 if (!resolve_texture(reader, tobj, out, &texture, &texture_weight, &texture_error)) {
                     return fail(texture_error);
+                }
+                if((material_policy==HsdStaticMaterialPolicy::DiffuseOverwritePair||
+                    material_policy==HsdStaticMaterialPolicy::BodyInspection)&&!(be32(reader.block,mobj+4)&0x04001000u)){
+                    const auto tail=static_diffuse_overwrite_tail(reader,tobj);
+                    if(tail){
+                        //Retain validation/decoding of the head resource above;
+                        //only its proven unobservable material expression is elided.
+                        if(!resolve_texture(reader,tail,out,&texture,&texture_weight,&texture_error))return fail(texture_error);
+                        effective_tex=tail;diffuse_overwrite=true;
+                    }
                 }
             }
         }
@@ -1076,6 +1124,7 @@ inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
             mesh.material_offset = mobj;
             mesh.dobj_offset = dobj;
             mesh.texture_weight = texture_weight;
+            mesh.static_diffuse_overwrite=diffuse_overwrite;
             if (mobj) {
                 mesh.render_mode = be32(reader.block, mobj + 4);
                 const u32 material = be32(reader.block, mobj + 12);
@@ -1087,7 +1136,7 @@ inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
                 }
                 if (!std::isfinite(mesh.material_alpha) || mesh.material_alpha < 0 || mesh.material_alpha > 1)
                     return fail("hsd: invalid material alpha");
-                const u32 tex = be32(reader.block, mobj + 8);
+                const u32 tex = effective_tex;
                 if (tex) {
                     const u32 src=be32(reader.block,tex+12);
                     mesh.texture_uv1=src==5;
@@ -1095,16 +1144,26 @@ inline bool hsd_load(ByteView archive, HsdScene* out, std::string* error) {
                     const u32 flags_tex = be32(reader.block, tex + 0x40);
                     mesh.texture_coordinate_mode=u8(flags_tex&15u);
                     mesh.generated_uv_required=mesh.texture_coordinate_mode!=0;
-                    if(mesh.texture_coordinate_mode>1)mesh.material_supported=false;
+                    bool identity=reader.has(tex,0x40)&&reader.block.data[tex+0x3c]==1&&reader.block.data[tex+0x3d]==1;
+                    for(unsigned axis=0;axis<3&&identity;++axis)
+                        identity=be_f32(reader.block,tex+0x10+axis*4)==0&&be_f32(reader.block,tex+0x1c+axis*4)==1&&be_f32(reader.block,tex+0x28+axis*4)==0;
+                    mesh.identity_texture_srt=identity;
+                    // Inspection-only mode 2: a single immutable highlight
+                    // stage. The body evaluator must explicitly use the
+                    // branch without a source HSD light binding.
+                    const bool inspect_highlight=(material_policy==HsdStaticMaterialPolicy::BodyInspection||
+                        material_policy==HsdStaticMaterialPolicy::ImmutableHighlight)&&
+                        flags_tex==0x00030082&&src==4&&identity&&texture!=kHsdNoTexture&&texture_weight==1&&
+                        !be32(reader.block,mobj)&&!(mesh.render_mode&0x04001000u)&&
+                        !be32(reader.block,tex)&&!be32(reader.block,tex+4)&&!be32(reader.block,tex+8)&&
+                        !be32(reader.block,tex+0x34)&&!be32(reader.block,tex+0x38)&&!be32(reader.block,tex+0x58);
+                    if(mesh.texture_coordinate_mode>1&&!inspect_highlight)mesh.material_supported=false;
                     if(mesh.texture_coordinate_mode==1){
                         mesh.texture_uv1=false; // reflection overrides src with GX_TG_NRM
                         // Supported reflection subset: the source TObj matrix
                         // is identity; camera-normal generation is a separate
                         // evaluated path, NEVER a default UV=(0,0) fallback.
-                        bool identity=reader.has(tex,0x40)&&reader.block.data[tex+0x3c]==1&&reader.block.data[tex+0x3d]==1&&be32(reader.block,tex+0x38)!=2;
-                        for(unsigned axis=0;axis<3&&identity;++axis)
-                            identity=be_f32(reader.block,tex+0x10+axis*4)==0&&be_f32(reader.block,tex+0x1c+axis*4)==1&&be_f32(reader.block,tex+0x28+axis*4)==0;
-                        mesh.reflection_uv_supported=identity;
+                        mesh.reflection_uv_supported=identity&&be32(reader.block,tex+0x38)!=2;
                     }
                     mesh.texture_after_lighting=(flags_tex&0x80u)!=0;
                     mesh.texture_stage_inactive=flags_tex==0&&!be32(reader.block,tex+4)&&!be32(reader.block,tex+0x58);

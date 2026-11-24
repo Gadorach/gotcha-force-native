@@ -145,6 +145,33 @@ public:
     }
     bool prepare(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,
                   const NativeBorgMovementFrame& camera,s16 stick_x,s16 stick_y,u32 held,NativeBorgMotionOffer* out,std::string* error){
+        return prepare_impl(world,current_binding,camera,stick_x,stick_y,held,out,error,false);
+    }
+    // Battle Test input only: touchdown has one mandatory source entry visit.
+    // Drop jump/dash intent at that boundary, rather than canceling the entry,
+    // retaining a latent press, retrying an offer, or borrowing another driver.
+    bool prepare_battle_tick(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,
+                             const NativeBorgMovementFrame& camera,GamePadState pad,NativeBorgMotionOffer* out,std::string* error,
+                             bool preserve_on_refusal=false){
+        const bool barrier=battle_landing_entry_pending();
+        if(barrier)pad.b=false;
+        NativeGRedGroundInput mapped;
+        if(!map_input(pad,&mapped,error)){
+            if(error&&error->empty())*error="source controller does not admit this pad sample";
+            return false;
+        }
+        struct PreserveScope {bool& flag;~PreserveScope(){flag=false;}} scope{preserve_prepare_failure_};
+        preserve_prepare_failure_=preserve_on_refusal;
+        if(!prepare_impl(world,current_binding,camera,mapped.x,mapped.y,mapped.held,out,error,barrier)){
+            if(error&&error->empty())*error="source movement callback refused the staged tick";
+            return false;
+        }
+        return true;
+    }
+private:
+    bool prepare_impl(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,
+                  const NativeBorgMovementFrame& camera,s16 stick_x,s16 stick_y,u32 held,NativeBorgMotionOffer* out,std::string* error,
+                  bool battle_landing_barrier){
         if(error)error->clear();
         NativeBorgMotionObservation observed;
         if(!ready_||pending_||!out||!world.observe_motion(&observed)||observed.scope.lock()!=world_scope_.lock()||observed.tick!=expected_tick_||
@@ -202,6 +229,13 @@ public:
            (observed.grounded&&std::abs(start_floor-observed.position[1])>.01f))return fail(error,"source/native current-ground disagreement");
         if(!character_air_resource_recover(s.resource,air_meter_,s.motion.flags5e0,s.jump.cached87,&s.resource))return fail(error,"resource recovery refused");
         if(!character_movement_input_step(input_,s.input,{stick_x,stick_y,held,s.motion.flags5e0},&s.input,error))return fail(error,"unsupported movement input");
+        if(battle_landing_barrier){
+            if(!observed.grounded||!battle_landing_entry_pending()||(held&0x100u))
+                return fail(error,"battle touchdown entry barrier requires current accepted floor contact");
+            s.input.directions5d8&=0xff0fu; // never carry a pre-entry flick into a later landing cancel
+            s.input.commands5d4&=~3u;
+            s.input.commands[4].pulse=s.input.commands[5].pulse=0;
+        }
         if(moving_mode(mode_)){
             if(s.jump.timer690>0)s.jump.timer690=std::max(0.f,s.jump.timer690-1); //declared native timer768=1
             if(s.air_dash.contact69c>0)s.air_dash.contact69c=std::max(0.f,s.air_dash.contact69c-1);
@@ -623,12 +657,17 @@ public:
         }
         *out=candidate->offer;pending_=std::move(candidate);return true;
     }
+public:
     // Borrowed only during the caller's synchronous world.step. This local
     // pose may be composed at the root that step accepts, not at an unaccepted
     // proposal or a previous render publication.
     const CharacterLocalPose* prepared_local(const NativeBattleMvp& world,const NativeBorgMotionOffer& offer)const{
         return ready_&&pending_&&offer.serial==pending_->offer.serial&&offer.producer.lock()==producer_&&
             world.motion_observation_current(offer.observed)?&pending_->local:nullptr;
+    }
+    bool withdraw_battle_offer(const NativeBattleMvp& world,const NativeBorgMotionOffer& offer){
+        if(!prepared_local(world,offer)||!world.ready())return false;
+        pending_.reset();return true;
     }
     bool commit(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,std::string* error){
         NativeBorgMotionReceipt receipt;
@@ -778,6 +817,9 @@ public:
     u64 dash_jumps()const{return dash_jumps_;}u8 last_dash_jump_selector()const{return last_dash_jump_;}
     u64 landing_jumps()const{return landing_jumps_;}u64 landing_dashes()const{return landing_dashes_;}
     bool landing_entry_accepted()const{return ready_&&state_.jump.selector==7&&state_.jump.entered&&!state_.jump.cached87;}
+    bool battle_landing_entry_pending()const{
+        return ready_&&ground_landing_mode(mode_)&&state_.jump.selector==7&&!landing_entry_accepted();
+    }
     u64 surface_landings()const{return surface_landings_;}s16 last_surface_angle()const{return last_surface_angle_;}
     u64 surface_pushes()const{return surface_pushes_;}
     s16 last_push_angle()const{return last_push_angle_;}
@@ -1542,7 +1584,14 @@ private:
         ground.actor.offset6d0=s.vm.state().actor.pose_height.offset6d0;
         ground.query_height668=motion_.dimensions[2]*motion_.rank[0];ground.step674=motion_.dimensions[4]*motion_.rank[0];return ground;
     }
-    bool fail(std::string* error,const char* why){retire();if(error)*error=std::string("source ground lab: ")+why;return false;}
+    bool fail(std::string* error,const char* why){
+        if(!preserve_prepare_failure_)retire();
+        if(error){if(error->empty())*error=std::string("source ground lab: ")+why;
+            else if(preserve_prepare_failure_)*error=std::string("source ground lab: ")+why+": "+*error;
+            else *error=std::string("source ground lab: ")+why;}
+        return false;
+    }
+    bool preserve_prepare_failure_=false;
     void retire(){ready_=false;pending_.reset();frame_scope_.reset();producer_.reset();state_.dash_root_scope.reset();}
     CharacterProgramAsset programs_;CharacterPoseHeightProfile height_;CharacterMovementInputProfile input_;CharacterMovementProfile motion_;CharacterMotionDriver driver_;
     std::array<StihGrid,3> grids_;State state_;std::unique_ptr<Pending> pending_;

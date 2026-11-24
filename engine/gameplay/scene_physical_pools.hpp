@@ -5,16 +5,26 @@
 #include "engine/gameplay/scene_physical_fields.hpp"
 #include "engine/gameplay/battle_fixed_slots.hpp"
 #include "engine/assets/battle_stage_seed.hpp"
+#include "engine/gameplay/battle_initial_actor_order.hpp"
 #include <optional>
 namespace gf {
-//Class2/3/4 share an allocation owner, not constructors or current frame data.
-struct BattleStageSeedState {u8 phase00=0,draw08=0;u32 stage=0;std::array<f32,3> translation10{};f32 high34=0,low68=0;std::array<f32,4> bounds38_44{},expanded48_54{};};
+//Fresh physical recipe. Class2/class3/class4 share mutable group links; the remaining
+//banks still expose only represented factory/header fields, not live actors.
+struct BattleStageSeedState {u8 phase00=0,draw08=0;u32 stage=0;std::array<f32,3> translation10{};f32 high34=0,low68=0;std::array<f32,4> bounds38_44{},expanded48_54{};std::array<std::optional<u16>,4> model_indices58_64{};};
 struct ScenePhysicalSchedulerSnapshot {
-    std::array<s32,12> callback_heads,callback_tails;std::array<s32,30> render_heads,render_tails;std::array<u16,10> registry_counts{};
+    std::array<ScenePhysicalLink,12> callback_heads{},callback_tails{};std::array<ScenePhysicalLink,30> render_heads{},render_tails{};std::array<u16,10> registry_counts{};
+    //89100 selectors0/1,40/41,20/21,10..15 in that order.
+    static constexpr std::array<u32,12> callback_head_keys{0x80436290,0x80436294,0x80436280,0x80436284,0x80436270,0x80436274,0x803c6f54,0x803c6f58,0x803c6f5c,0x803c6f60,0x803c6f64,0x803c6f68};
+    //Source actor-controlled list heads803C6E64/tails803C6E4C.
+    static constexpr unsigned actor_render_base=24;
+    //89D28 selector1 → group0 list used by89EB4.
+    static constexpr unsigned object_render_base=0;
+    //8853C store order, not an inferred list of initialized reference arrays.
+    static constexpr std::array<u32,10> registry_count_keys{0x80436250,0x8043624e,0x8043624c,0x8043624a,0x80436248,0x80436246,0x80436244,0x80436242,0x80436240,0x8043623e};
     //8853C does NOT establish these three late-call queue counters, nor does it
     //clear registry reference arrays. Unknown is not an empty active registry.
     std::array<std::optional<u32>,3> late_queue_counts{};
-    ScenePhysicalSchedulerSnapshot(){callback_heads.fill(-1);callback_tails.fill(-1);render_heads.fill(-1);render_tails.fill(-1);}
+    std::optional<BattleInitialActorOrderState> initial_actor_order;
     bool operator==(const ScenePhysicalSchedulerSnapshot&)const=default;
 };
 class ScenePhysicalPools {
@@ -25,31 +35,16 @@ public:
         auto reject=[&](const char* why){if(error)*error=std::string("physical pools: ")+why;return false;};
         if(attempted_||!profile.ready()||!descriptors.pristine_for_physical_join()){return reject("fresh untouched same descriptor domain/profile required");}attempted_=true;
         try{auto next=std::make_unique<Storage>();next->profile=profile;next->domain=descriptors.model_pool();next->archives=descriptors.archive_pool();next->class2=std::make_shared<SceneObjectPool>();
-            for(unsigned i=0;i<8;++i){
-                if(i==2){if(!next->class2->begin_fresh(profile.class2_profile(),next->domain,error))return false;continue;}
-                const auto& row=*profile.row(i);
-                if(i==3){if(!next->class2->initialize_class3_pool(row.count))return reject("class3 bank recipe");continue;}
-                if(i==4){if(!next->class2->initialize_collision_pool(row.count))return reject("class4 bank recipe");continue;}
-                auto& b=next->banks[i];if(!row.count)continue;
-                b.runtime_class=s8(row.source_class);b.free_head=0;b.free_tail=s32(row.count)-1;b.free_count=row.count;b.records.resize(row.count);
-                for(unsigned j=0;j<row.count;++j){
-                    auto& r=b.records[j];r.class02=row.source_class;r.physical03=u8(i);
-                    if(j+1<row.count)r.free_next4={u8(i),s32(j+1)};
-                }
-            }
+            for(unsigned i=0;i<8;++i){if(i==2){if(!next->class2->begin_fresh(profile.class2_profile(),next->domain,error))return false;continue;}const auto& row=*profile.row(i);if(i==3){if(!next->class2->initialize_class3_pool(row.count))return false;continue;}if(i==4){if(!next->class2->initialize_collision_pool(row.count))return false;continue;}auto& b=next->banks[i];if(!row.count)continue;b.runtime_class=s8(row.source_class);b.free_head=0;b.free_tail=s32(row.count)-1;b.free_count=row.count;b.records.resize(row.count);for(unsigned j=0;j<row.count;++j){auto& r=b.records[j];r.class02=row.source_class;r.physical03=u8(i);r.free_next4=j+1<row.count?ScenePhysicalLink{u8(i),s32(j+1)}:ScenePhysicalLink{};}}
             next->controls=std::make_shared<ScenePhysicalControlFields>();auto& c=*next->controls;c.d1=0;c.d2=0;c.d3=0;c.d4=0;c.d6=0;c.d9=0;c.d8=0;c.da=0;c.db=0;c.eb=0;c.e8=0;
             storage_=std::move(next);if(error)error->clear();return true;
         }catch(const std::exception&){return reject("uncertain native allocation; no reset/retry acknowledgement");}
     }
     bool current()const{if(!storage_||!storage_->class2||!storage_->class2->ready())return false;const auto a=storage_->archives.lock();return a&&a->matches_descriptor_owner(storage_->domain);}
-    //The historical class2 accessor exposes the one shared group/link owner.
+    //Class2, class3 and class4 share ONE typed group/link owner. No parallel group lists,
+    //pool resets or inferred callback/frame authority.
     std::shared_ptr<SceneObjectPool> class2_pool()const{return current()?storage_->class2:nullptr;}
-    const ScenePhysicalBankSnapshot* bank(unsigned i)const{
-        if(!current()||i>=8||i==2)return nullptr;
-        if(i==3)return storage_->class2->class3_snapshot();
-        if(i==4)return storage_->class2->collision_snapshot();
-        return &storage_->banks[i];
-    }
+    const ScenePhysicalBankSnapshot* bank(unsigned i)const{return current()&&i<8&&i!=2?(i==3?storage_->class2->class3_snapshot():i==4?storage_->class2->collision_snapshot():&storage_->banks[i]):nullptr;}
     const ScenePhysicalSchedulerSnapshot* scheduler()const{return current()?&storage_->scheduler:nullptr;}
     const ScenePhysicalControlFields* controls()const{return current()?storage_->controls.get():nullptr;}
     const ScenePhysicalPoolsProfile* recipe()const{return current()?&storage_->profile:nullptr;}
@@ -121,6 +116,11 @@ private:
         if(!current_trial_attack_registry())return {};
         return storage_->trial_attack_registry->receiver;
     }
+    friend class BattleStageConstruction;
+    //37B98 reads counts80436244 and8043624C before either reference-array loop.
+    //The actual fresh scheduler owns these zeros; allocation alone never
+    //registers a collision body. Nonempty registries require their consumers.
+    bool initial_dynamic_projection_empty()const{return current()&&storage_->scheduler.registry_counts[6]==0&&storage_->scheduler.registry_counts[2]==0;}
     //Fixed arena factory, NOT a free-list pop. 537A8 clears link4 in all six
     //cells. Source global free-count/head/tail metadata is retained but no longer
     //describes an available generic actor free-list; no class0 allocator exists.
@@ -137,7 +137,11 @@ private:
         storage_->stage=s;storage_->stage_seeded=true;if(error)error->clear();return true;
     }
     std::weak_ptr<ScenePhysicalControlFields> control_binding()const{if(!current())return {};return storage_->controls;}
-    struct Storage {ScenePhysicalPoolsProfile profile;std::shared_ptr<SceneDescriptorPool> domain;std::weak_ptr<SceneArchivePool> archives;std::shared_ptr<SceneObjectPool> class2;std::array<ScenePhysicalBankSnapshot,8> banks;ScenePhysicalSchedulerSnapshot scheduler;std::optional<TrialAttackRegistry> trial_attack_registry;std::shared_ptr<ScenePhysicalControlFields> controls;BattleFixedSlotPlan actors;BattleStageSeedState stage;bool actor_seeded=false,stage_seeded=false;~Storage(){if(class2)class2->retire();}};
+    bool bind_constructor(unsigned slot,const SceneActorReference& reference){
+        if(!current()||!storage_->actor_seeded||slot>=6||!storage_->actors.slots[slot].active00||storage_->constructor_claimed[slot]||!reference.live())return false;
+        storage_->constructor_claimed[slot]=true;storage_->constructors[slot]=reference;return true;
+    }
+    struct Storage {ScenePhysicalPoolsProfile profile;std::shared_ptr<SceneDescriptorPool> domain;std::weak_ptr<SceneArchivePool> archives;std::shared_ptr<SceneObjectPool> class2;std::array<ScenePhysicalBankSnapshot,8> banks;ScenePhysicalSchedulerSnapshot scheduler;std::optional<TrialAttackRegistry> trial_attack_registry;std::shared_ptr<ScenePhysicalControlFields> controls;BattleFixedSlotPlan actors;BattleStageSeedState stage;std::array<SceneActorReference,6> constructors;std::array<bool,6> constructor_claimed{};bool actor_seeded=false,stage_seeded=false;~Storage(){if(class2)class2->retire();}};
     std::unique_ptr<Storage> storage_;bool attempted_=false;
 };
 } // namespace gf

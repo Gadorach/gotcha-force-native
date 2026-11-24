@@ -7,6 +7,7 @@ struct RetailForceSlotView {
     ForceBorg value;
     std::string source_name; // original encoding, not necessarily UTF-8
     u32 declared_cost=0;
+    bool operator==(const RetailForceSlotView&)const=default;
 };
 struct MixedBorgForceSlotView {
     u8 slot=0;
@@ -20,6 +21,7 @@ struct MixedBorgForceView {
     std::vector<MixedBorgForceSlotView> slots;
     // Inspection only. Not a cost checked against any mode's rules.
     std::optional<u32> declared_cost;
+    std::optional<std::string> retail_source_name; // preserved source encoding
     const MixedBorgForceSlotView* find_slot(unsigned slot)const{
         const auto it=std::lower_bound(slots.begin(),slots.end(),slot,[](const auto& row,unsigned index){return row.slot<index;});
         return it!=slots.end()&&it->slot==slot?&*it:nullptr;
@@ -38,6 +40,11 @@ inline bool borg_mixed_force_view(const PackageForceView& packages,const ForceIn
         package_slots[row.slot]=&row;
     }
     const auto* original=retail?&retail->state()->forces[packages.force]:nullptr;
+    if(original){
+        const auto end=std::find(original->name.begin(),original->name.end(),u8{0});
+        if(end==original->name.end())return false;
+        next.retail_source_name=std::string(original->name.begin(),end);
+    }
     bool complete=true;u32 total=0;
     for(unsigned i=0;i<kForceSlots;++i){
         const auto* pkg=package_slots[i];const s16 box_slot=original?original->slots[i]:-1;

@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "engine/assets/challenge_difficulty.hpp"
 #include "engine/gameplay/challenge_setup_choice.hpp"
 #include "engine/gameplay/challenge_random_force.hpp"
@@ -16,7 +17,8 @@ inline bool challenge_roster_fields(const ForceCatalog& catalog,const ForceBorg&
 }
 enum class ChallengePartyOrigin {StoredBox,RandomBox,RandomWarehouse,RandomSourceDefault,InitialAi};
 struct ChallengePartyMember {ChallengeRosterFields fields;ChallengePartyOrigin origin=ChallengePartyOrigin::StoredBox;u16 source_slot=0xffff;u8 force_slot=0xff;};
-class ChallengeInitialPartyAssembly;
+struct ChallengeBattleDisplaySetup {u8 layout29=0,enabled33=1;std::optional<u8> split3d;};
+class ChallengeInitialPartyAssembly;class ChallengeNativeStageData;
 class ChallengeInitialPartyCandidate {
 public:
     bool ready()const{return ready_;}u8 humans()const{return human_mask_;}u8 active()const{return active_mask_;}u8 players()const{return count_;}
@@ -26,6 +28,8 @@ public:
     const std::array<u8,41>* name(unsigned slot)const{return slot<6?&names_[slot]:nullptr;}
     const ChallengeStageRngPlan& stage()const{return stage_;}const ChallengeAiPhasePlan& ai()const{return ai_;}
     u8 difficulty()const{return ready_?difficulty_:255;}
+    const ChallengeBattleDisplaySetup* display_setup()const{return ready_?&display_:nullptr;}
+    std::optional<s16> initial_wave46()const{return ready_?initial_wave46_:std::nullopt;} //inspection, not a scene capability
     const ChallengePreparationEntryState* preparation_entry_state(const std::array<const ForceInventory*,2>& owners)const{if(!current(owners))return nullptr;const auto state=preparation_entry_.lock();return state&&state->live?&state->state:nullptr;}
     SourceByteRngState before()const{return before_;}SourceByteRngState after()const{return after_;}u32 draws()const{return draws_;}
     SourceByteRngState ai_before()const{return ai_before_;}u64 intervening_draws()const{return intervening_draws_;}
@@ -34,6 +38,8 @@ private:
     friend class ChallengeInitialPartyAssembly;
     friend class BattlePreparationContext;
     friend class BattlePreparationBootstrap;
+    friend class ChallengeCharacterResources;
+    friend class BattleActorConstruction;
     friend class ChallengeFinalSetup;
     bool bound(const std::array<const ForceInventory*,2>& owners)const{for(unsigned i=0;i<count_;++i)if(!owners[i]||!owners[i]->ready()||owners[i]->instance_binding().lock()!=owners_[i].lock()||!owners_[i].lock()||owners[i]->revision()!=revisions_[i])return false;return true;}
     std::array<std::array<ChallengePartyMember,30>,6> members_{};std::array<u8,6> counts_{};std::array<std::array<u8,41>,6> names_{};
@@ -42,7 +48,11 @@ private:
     ChallengeStageRngPlan stage_;ChallengeAiPhasePlan ai_;SourceByteRngState before_,after_;u32 draws_=0;u8 human_mask_=0,active_mask_=0,count_=0;bool ready_=false;
     SourceByteRngState ai_before_;u64 intervening_draws_=0;
     u8 difficulty_=255;
+    ChallengeBattleDisplaySetup display_;
+    std::optional<s16> initial_wave46_;
     std::weak_ptr<challenge_preparation_entry_detail::Storage> preparation_entry_;
+    SourceByteRngSnapshot rng_source_;
+    std::shared_ptr<const ChallengeNativeStageData> stage_data_;
 };
 enum class ChallengeInitialPartyStatus {Closed,Ready,Taken,Failed,StageReady,AwaitAi};
 //Fresh first-battle candidate ONLY:95F2C/95FBC clear context/roster storage and
@@ -102,7 +112,7 @@ public:
         if(out)*out={};
         if(!out||status_!=ChallengeInitialPartyStatus::Ready)return false;
         const auto batch=batch_.lock();if(!batch||!batch->live||!batch->claimed||!candidate_.current(owners)||!rng.commit(snapshot_,candidate_.after_,stage_committed_?candidate_.ai_.draws:candidate_.draws_)){status_=ChallengeInitialPartyStatus::Failed;candidate_={};return false;}
-        *out=candidate_;status_=ChallengeInitialPartyStatus::Taken;return true;
+        candidate_.rng_source_=rng.snapshot();*out=candidate_;status_=ChallengeInitialPartyStatus::Taken;return true;
     }
     ChallengeInitialPartyStatus status()const{return status_;}
     const ChallengeStageRngPlan* pending_stage()const{return status_==ChallengeInitialPartyStatus::StageReady||status_==ChallengeInitialPartyStatus::AwaitAi?&candidate_.stage_:nullptr;}
@@ -112,6 +122,13 @@ private:
         if(!challenge_ai_force_plan(ai,catalog,selected,0,next.human_mask_,next.after_,&next.ai_,error))return "AI field candidate";
         next.after_=next.ai_.next;next.draws_+=next.ai_.draws;next.active_mask_=next.ai_.active_mask;
         for(unsigned slot=0;slot<6;++slot){next.teams_[slot]=next.ai_.slots[slot].team;if(!(next.human_mask_&(1u<<slot))&&next.teams_[slot]>=0){for(unsigned j=0;j<next.ai_.slots[slot].count;++j){const auto& fields=next.ai_.slots[slot].members[j];auto& dest=next.members_[slot][next.counts_[slot]++];dest.fields={fields.model,fields.variant,fields.level,0,0};dest.origin=ChallengePartyOrigin::InitialAi;}}if(next.teams_[slot]>=0&&!next.counts_[slot])return "empty active roster cannot reach next-member modulo consumer";}
+        //1962C4's reached one/two-player stores, after initial AI assembly.
+        //The one-player branch does not write3D; keep that field unknown.
+        if(next.count_<1||next.count_>2)return "Challenge display player domain";
+        next.display_.enabled33=1;next.display_.layout29=u8(next.count_-1);if(next.count_==2)next.display_.split3d=1;
+        //1962C4 writes scene46 from its wave input. This initial-only planner
+        //passed wave0 above; the fact becomes live ONLY with party/RNG commit.
+        next.initial_wave46_=0;
         return nullptr;
     }
     std::weak_ptr<challenge_choice_detail::Batch> batch_;SourceByteRngSnapshot snapshot_;ChallengeInitialPartyCandidate candidate_;ChallengeInitialPartyStatus status_=ChallengeInitialPartyStatus::Closed;

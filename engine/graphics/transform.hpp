@@ -24,6 +24,7 @@ struct Mat4 {
 
     f32& at(unsigned row, unsigned column) { return m[row * 4 + column]; }
     f32 at(unsigned row, unsigned column) const { return m[row * 4 + column]; }
+    bool operator==(const Mat4&)const=default;
 };
 
 inline Mat4 mat4_identity() { return Mat4{}; }

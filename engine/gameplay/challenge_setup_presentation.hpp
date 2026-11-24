@@ -40,12 +40,18 @@ public:
     //represented common64 clear and fresh95FBC context fields, not all caller/
     //common01/menu-transition/resource work. Old/default APIs retain UNKNOWN
     //preparation entry state. No public flag setter, late seed or replay route.
+    //The V2 recipe additionally owns the fresh enclosing common00/caller4
+    //lineage. V1 does not infer it from the Challenge label.
     bool initialize_normal_preparation_entry(const ChallengePreparationEntryProfile& profile,std::string* error){
         if(!opened_||failed_||!second_enabled_||!choice_batch_||choice_batch_->ready||choice_batch_->claimed||flow_.updates()||flow_.phase()!=ChallengeSetupPhase::Entry||preparation_entry_||!profile.ready()){if(error)*error="Challenge setup: fresh unstepped normal preparation entry/profile required";return false;}
-        try{auto next=std::make_shared<challenge_preparation_entry_detail::Storage>();preparation_entry_=next;choice_batch_->preparation_entry=next;if(error)error->clear();return true;}
+        try{auto next=std::make_shared<challenge_preparation_entry_detail::Storage>();if(profile.normal_dispatch()){next->state.common00=1;next->state.caller4=0;}if(profile.challenge_mode_lineage())next->state.common32=1;preparation_entry_=next;choice_batch_->preparation_entry=next;if(error)error->clear();return true;}
         catch(const std::exception&){return fail(error,"uncertain normal entry allocation; no replay");}
     }
     const ChallengePreparationEntryState* preparation_entry_state()const{return !failed_&&preparation_entry_&&preparation_entry_->live?&preparation_entry_->state:nullptr;}
+    bool bind_normal_halfword_rng(const SourceHalfwordRngOwner& rng,std::string* error){
+        if(!opened_||failed_||!preparation_entry_||!preparation_entry_->live||preparation_entry_->state.common32!=1||preparation_entry_->halfword_rng||flow_.updates()||flow_.phase()!=ChallengeSetupPhase::Entry||!rng.ready()){if(error)*error="Challenge setup: fresh mode1 entry and explicit independent halfword stream required";return false;}
+        preparation_entry_->halfword_rng=rng.snapshot();if(error){error->clear();}return true;
+    }
     bool step(const std::array<ChallengeSetupPad,4>& pads,bool box_resources_ready,ForceInventoryStore* first_store,ChallengeSetupEvent* out,std::string* error,ForceInventoryStore* second_store=nullptr){
         if(!out)return false;
         *out={};if(!opened_||failed_||flow_.terminal())return false;

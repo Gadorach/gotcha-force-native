@@ -35,8 +35,19 @@ public:
     unsigned draw(CharacterModelScene& model,RenderEngine& render,const Camera& camera){return ready_&&published_&&bound(model)?model.draw(render,camera):0;}
     bool bound(const CharacterModelScene& model)const{const auto binding=binding_.lock();return target_==&model&&binding&&binding==model.instance_binding();}
     bool ready()const{return ready_;}
+    bool material(const CharacterModelScene& model,ActorFadeMaterial* out)const{return ready_&&bound(model)&&actor_fade_material(profile_,state_,out);}
     const ActorFadeState& state()const{return state_;}
 private:
+    friend class BattleActorConstruction;
+    bool prepare_spawn_tick(const CharacterModelScene& model,f32 delta,ActorFadeState* out)const{
+        if(!out||!ready_||!bound(model)||!profile_.spawn_curve)return false;
+        for(const auto& c:state_.channels)if(c.active||c.curve!=255||c.time!=0)return false;
+        ActorFadeState requested;return actor_fade_request(profile_,state_,0,1,&requested)&&actor_fade_update(profile_,requested,delta,out);
+    }
+    bool commit_spawn_tick(const CharacterModelScene& model,const ActorFadeState& next){
+        if(!ready_||!bound(model)||!actor_fade_detail::state(profile_,next))return false;
+        state_=next;published_=false;return true;
+    }
     const CharacterModelScene* target_=nullptr; // comparison only, never dereferenced
     std::weak_ptr<const CharacterModelBinding> binding_;
     ActorFadeProfile profile_;ActorFadeState state_;u16 model_id_=0;bool ready_=false,published_=false;

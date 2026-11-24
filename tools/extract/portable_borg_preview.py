@@ -66,6 +66,7 @@ TEST_BATTLES = {
         "stock=shuriken-stock|8|90\n"
         "projectile=shuriken|shuriken|1|42|0|0|0|8|120|9|ignore-floor\n"
         "origin=shuriken|7|-50|0|20|target-height\nlook=shuriken|64|122|218|255\n"
+        "projectile-animation=shuriken|0.36|0|0\n"
         "move=shuriken-test|b|20|grounded|24|3:0\npose-start=shuriken-test|7\n"
         "release=shuriken-test|3|shuriken-stock|1|shuriken\n"
         "repeat=shuriken-test|5\n"
@@ -251,7 +252,7 @@ def checked(path, pin):
     return data
 
 
-def prepare(model, art, output, practice=None, battle_test=False, movement_sfx=None):
+def prepare(model, art, output, practice=None, battle_test=False, movement_sfx=None, *, gameplay_transform=None):
     output = Path(output)
     if output.exists() or output.is_symlink():
         raise FileExistsError("portable Borg output already exists")
@@ -262,6 +263,8 @@ def prepare(model, art, output, practice=None, battle_test=False, movement_sfx=N
         raise ValueError("this retail model has no test combat profile or lacks its qualified movement pack")
     if movement_sfx is not None and (not battle_test or model not in MOVEMENT_CUES):
         raise ValueError("reviewed original movement sounds only bind normal G-Red or Sasuke Battle Test")
+    if gameplay_transform is not None and not battle_test:
+        raise ValueError("a gameplay transform requires explicit test rules")
     art_model = "sasuke" if custom else model
     name, tribe, cost, pins = ART[art_model]
     if custom:
@@ -306,7 +309,8 @@ def prepare(model, art, output, practice=None, battle_test=False, movement_sfx=N
                 if path not in files:
                     files[path] = checked(Path(movement_sfx)/f"{clip}.pcm", MOVEMENT_PCM[clip])
                 gameplay += f"movement-sound={cue}|{path}\n"
-        files["gameplay.txt"] = gameplay.encode()
+        encoded=gameplay.encode()
+        files["gameplay.txt"] = gameplay_transform(encoded) if gameplay_transform is not None else encoded
     # All inputs passed the content checks. Publish the manifest last.
     output.mkdir(parents=True, exist_ok=False)
     for name, data in (*files.items(), ("borg.manifest", manifest.encode())):

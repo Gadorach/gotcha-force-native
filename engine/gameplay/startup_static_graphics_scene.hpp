@@ -52,7 +52,7 @@ public:
     void release(){storage_.reset();ready_=pending_=published_=false;}
 private:
     struct Storage {StartupStaticGraphicsProfile profile;std::array<AnimatedModelScene,32> models;std::array<StartupStaticGraphicsState,32> states{},candidate{};Mat4 screen;Camera camera;u32 frames=0,next_frame=0;bool display=false,camera_required=false;};
-    static bool same_camera(const Camera& a,const Camera& b){for(unsigned k=0;k<3;++k)if(a.eye[k]!=b.eye[k]||a.target[k]!=b.target[k]||a.up[k]!=b.up[k])return false;return a.fov_y_degrees==b.fov_y_degrees&&a.near_plane==b.near_plane&&a.far_plane==b.far_plane&&a.viewport_width==b.viewport_width&&a.viewport_height==b.viewport_height;}
+    static bool same_camera(const Camera& a,const Camera& b){return a.cache_key()==b.cache_key();}
     static bool fail(std::string* error,const char* why){if(error)*error=std::string("startup static graphics: ")+why;return false;}
     bool refuse(std::string* error,const char* why){const auto detail=error?*error:std::string{};ready_=pending_=published_=false;if(storage_)for(auto& model:storage_->models)model.set_enabled(false);fail(error,why);if(error&&!detail.empty())*error+="; "+detail;return false;}
     std::unique_ptr<Storage> storage_;bool ready_=false,pending_=false,published_=false;

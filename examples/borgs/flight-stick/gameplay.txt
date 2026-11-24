@@ -1,0 +1,27 @@
+GFBORG-GAMEPLAY 1
+variant=normal
+movement=grounded-v1|7|11|14
+health=160
+powered-flight=7|32
+movement-effect=jet|rise|jet|1|0|-9|-14|44|0
+rig-prefix=body.prefix
+pose-profile=body.pose
+idle=0:0
+walk=0:1
+air=0:2
+dash=0:3
+stock=paint|5|90
+projectile=paint|orb|1|55|0|0|0|8|110|8|ignore-floor
+origin=paint|4|8|-15|5|target-height
+look=paint|31|255|229|142
+projectile-animation=paint|0.22|12|45
+move=paint-shot|b|10|any|14|0:4
+release=paint-shot|3|paint|1|paint
+part-motion=paint-shot|5|0:5|0|20
+part-scroll=paint-shot|5|u|8|forward
+projectile=paint-stream|beam|1|75|0|0|0|18|28|3|ignore-floor
+sustained-beam=paint-stream|780|4|0.035
+origin=paint-stream|4|8|-15|5|target-height
+look=paint-stream|64|255|206|110
+move=paint-stream|x|20|any|36|0:4
+release=paint-stream|5|none|0|paint-stream

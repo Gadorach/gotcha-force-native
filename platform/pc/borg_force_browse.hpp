@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/gameplay/borg_force_arrange.hpp"
 #include "engine/gameplay/borg_mixed_force_view.hpp"
 #include "engine/save/borg_package_save.hpp"
 #include "engine/save/scoped_retail_force_record.hpp"
@@ -20,6 +21,11 @@ public:
         if(!package_borg_force_view(roster_,packages,metadata_.snapshots,force,&package)||
            !borg_mixed_force_view(package,retail_.ready()?&retail_:nullptr,&next)||!current())return false;
         *out=std::move(next);return true;
+    }
+    // The opt-in host route can leave inspection for an Arrange page, but
+    // cannot redirect it to a new lease even for the same account/save IDs.
+    std::unique_ptr<BorgForceArrange> make_arranger(){
+        return current()?std::make_unique<BorgForceArrange>(*selected_->backend):nullptr;
     }
     static std::unique_ptr<BorgForceBrowseSnapshot> open(const std::string& root,AccountSaveKey key,
                                                          const std::filesystem::path& packages_root,

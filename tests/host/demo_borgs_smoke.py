@@ -21,8 +21,213 @@ def smoke(binary, opengl=False):
             assert result.returncode == 0 and "event=socket-launch" in log and "event=hit" in log, log
             if first == "flight-stick":
                 assert "package-flight: peak=32 cap=32" in log, log
+                assert "move=paint-stream event=socket-launch frame=5" in log, log
+                assert "move=paint-stream event=hit" in log, log
             else:
                 assert "actor=0 cues=10" in log and "actor=0 cues=4" in log, log
+                assert "move=lined-shot event=aim-committed frame=3" in log, log
+                assert "move=lined-shot event=socket-launch frame=12" in log, log
+        wall_root = Path(scratch) / "clipped"
+        prepare(wall_root, clipped_beam=True)
+        wall_cmd = [binary, "--battle-borg", "example:flight-stick", "--against-borg", "example:jump-stick",
+                    "--battle-mvp-assets", "arena-wall", "--demo-package-battle", "--trace-package-battle",
+                    "--no-audio", "--frames", "82", *([] if opengl else ["--headless"])]
+        for root_dir, should_hit in ((wall_root, False), (root, True)):
+            result = run(wall_cmd, cwd=root_dir, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-stream event=socket-launch frame=5" in log, log
+            assert ("move=paint-stream event=hit" in log) == should_hit, log
+            assert "alpha=0.250" in log, log
+        sweep_root = Path(scratch) / "swept"
+        prepare(sweep_root, swept_beam=True)
+        result = run(wall_cmd, cwd=sweep_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and log.count("move=paint-stream event=stage-impact") >= 2, log
+        assert "move=paint-stream event=blast-hit" not in log, log
+        smoke_root = Path(scratch) / "smoke"
+        prepare(smoke_root, smoke_bomb=True)
+        result = run(cmd, cwd=smoke_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "move=drop-charge event=smoke-created" in log, log
+        assert "move=drop-charge event=blast-hit" not in log, log
+        power_root = Path(scratch) / "power"
+        prepare(power_root, power_field=True)
+        result = run(["arena" if word == "arena-wall" else word for word in wall_cmd],
+                     cwd=power_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "move=paint-scope event=power-field-placed" in log, log
+        assert "move=paint-shot event=shot-powered" in log, log
+        slow_root = Path(scratch) / "slow"
+        prepare(slow_root, slow_field=True)
+        result = run(["arena" if word == "arena-wall" else word for word in wall_cmd],
+                     cwd=slow_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "move=paint-scope event=slow-field-placed" in log, log
+        assert "event=shot-powered" not in log, log
+        pulse_root = Path(scratch) / "walk-pulse"
+        prepare(pulse_root, walk_pulse=True)
+        result = run(["arena" if word == "arena-wall" else word for word in wall_cmd],
+                     cwd=pulse_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "event=walk-pulse-created" in log, log
+        if not opengl:
+            cruise = Path(scratch) / "cruise"
+            prepare(cruise, cruise_boost=True)
+            result = run(["arena" if word == "arena-wall" else word for word in wall_cmd],
+                         cwd=cruise, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "actors=2 restarts=0 moved=1 airborne=1" in log, log
+            gravity = Path(scratch) / "gravity"
+            prepare(gravity, gravity_field=True)
+            result = run([*["arena" if word == "arena-wall" else word for word in wall_cmd],
+                          "--package-battle-distance", "260"], cwd=gravity, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-scope event=field-placed" in log, log
+            assert "event=field-shot-pulled" in log and "move=paint-scope event=hit " in log, log
+            magnet = Path(scratch) / "magnet"
+            prepare(magnet, magnet_field=True)
+            result = run([*["arena" if word == "arena-wall" else word for word in wall_cmd],
+                          "--package-battle-distance", "260"], cwd=magnet, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-scope event=field-actor-pulled" in log, log
+            assert "event=field-shot-pulled" not in log and "move=paint-scope event=hit " not in log, log
+            repel = Path(scratch) / "repel"
+            prepare(repel, repel_field=True)
+            result = run([*["arena" if word == "arena-wall" else word for word in wall_cmd],
+                          "--package-battle-distance", "260"], cwd=repel, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-scope event=field-actor-pulled" in log, log
+        fence = Path(scratch) / "fence"
+        prepare(fence, electric_fence=True)
+        result = run([*["arena" if word == "arena-wall" else word for word in wall_cmd],
+                      "--package-battle-distance", "260"], cwd=fence, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and log.count("move=paint-scope event=anchor-placed") == 2, log
+        assert "move=- event=fence-recoil" in log and "move=- event=hit frame=0" in log, log
+        trail = Path(scratch) / "impact-trail"
+        prepare(trail, impact_trail=True)
+        result = run(wall_cmd, cwd=trail, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "move=paint-shot event=impact-trail-started" in log, log
+        assert not any("move=paint-shot event=" + event in log for event in ("hit", "blast-trigger", "impact-children")), log
+        if not opengl:
+            hazard = Path(scratch) / "impact-hazard"
+            prepare(hazard, impact_hazard=True)
+            result = run([*wall_cmd, "--package-battle-distance", "260"], cwd=hazard, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-shot event=impact-hazard-started" in log, log
+            assert "move=paint-shot event=impact-trail-started" in log and "move=paint-shot event=impact-hazard-placed" in log, log
+            assert "move=paint-shot event=blast-trigger" not in log, log
+            hits = [line for line in log.splitlines() if "move=paint-shot event=hit " in line]
+            assert len(hits) == 2 and all("recipient=1 value=5" in line for line in hits), log
+            elemental = Path(scratch) / "elemental"
+            prepare(elemental, elemental_ball=True)
+            result = run(["arena" if word == "arena-wall" else word for word in wall_cmd],
+                         cwd=elemental, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-shot event=flight-children" in log, log
+            impact = Path(scratch) / "impact"
+            prepare(impact, impact_ball=True)
+            result = run(wall_cmd, cwd=impact, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-shot event=stage-impact" in log, log
+            assert "move=paint-shot event=impact-children" in log and "move=paint-shot event=blast-trigger" not in log, log
+        mixed_root = Path(scratch) / "mixed"
+        prepare(mixed_root, field_demo=True)
+        mixed_cmd = ["arena" if word == "arena-wall" else word for word in wall_cmd]
+        result = run(mixed_cmd, cwd=mixed_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "move=paint-scope event=field-placed" in log and "event=shot-powered" in log, log
+        if not opengl:
+            field_profile = mixed_root / "borgs/flight-stick/gameplay.txt"
+            field_profile.write_text(field_profile.read_text() + "field-follow=paint-scope|source\n")
+            result = run(mixed_cmd, cwd=mixed_root, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "event=field-placed" in log and "event=field-anchor-lost" not in log, log
+            (mixed_root / "borgs/flight-stick/scope.rgba").write_bytes(b"\0")
+            result = run(mixed_cmd, cwd=mixed_root, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode != 0 and "missing or invalid field texture" in log, log
+        ink_root = Path(scratch) / "ink"
+        prepare(ink_root, ink_bomb=True)
+        result = run(cmd, cwd=ink_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        assert result.returncode == 0 and "move=drop-charge event=ink-applied" in log, log
+        if not opengl:
+            accuracy_root = Path(scratch) / "ink-accuracy"
+            prepare(accuracy_root, accuracy_ink=True)
+            result = run(cmd, cwd=accuracy_root, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=drop-charge event=accuracy-applied" in log, log
+            assert "actor=1 move=paint-shot event=accuracy-affected" in log, log
+        if not opengl:
+            bomb_root = Path(scratch) / "bombs"
+            prepare(bomb_root, proximity_bomb=True)
+            result = run(cmd, cwd=bomb_root, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=drop-charge event=projectile-landed" in log, log
+            assert "move=drop-charge event=bomb-proximity" in log and "move=drop-charge event=stock-returned" in log, log
+            attracting = Path(scratch) / "attraction"
+            prepare(attracting, attracting_bomb=True)
+            attracting_cmd = ["arena-bomb" if word == "arena" else word for word in cmd]
+            result = run(attracting_cmd, cwd=attracting, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=drop-charge event=bomb-proximity" in log, log
+            fragments = Path(scratch) / "fragments"
+            prepare(fragments, fragmenting_bomb=True)
+            result = run(cmd, cwd=fragments, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=drop-charge event=blast-children" in log, log
+            # Same clip policy, same wall grid, no fade: collision still blocks.
+            fade = wall_root / "arena-wall/view-fade.txt"
+            saved_fade = fade.read_bytes()
+            fade.rename(fade.with_suffix(".off"))
+            result = run(wall_cmd, cwd=wall_root, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            assert result.returncode == 0 and "move=paint-stream event=socket-launch frame=5" in log, log
+            assert "move=paint-stream event=hit" not in log and "stage-view:" not in log, log
+            fade.write_bytes(saved_fade.replace(b"obstacle=occlusion|4|5|", b"obstacle=occlusion|3|5|"))
+            invalid = run(wall_cmd, cwd=wall_root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "stage viewport fade:" in log, log
+            fade.write_bytes(saved_fade)
+            # The rail grid cannot cover this altered declared rectangle.
+            descriptor = wall_root / "arena-wall/projectile-stage.gfsr"
+            declared = descriptor.read_bytes()
+            descriptor.write_bytes(declared[:20] + bytes.fromhex("46000000") + declared[24:])
+            invalid = run(wall_cmd, cwd=wall_root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "authored stage projectile collision" in log, log
+            # The following change is confined to the disposable example. It
+            # parses, but the untextured rig must not be admitted with a scroll.
+            path = root / "borgs/jump-stick/gameplay.txt"
+            profile = path.read_text()
+            path.write_text(profile.replace("part-material=2|0|0|5|loop", "part-material=2|0|2|2|sample"))
+            sampled = run(cmd, cwd=root, capture_output=True, text=True, timeout=35)
+            log = sampled.stdout + sampled.stderr
+            assert sampled.returncode == 0 and "event=hit" in log, log
+            path.write_text(profile + "part-scroll=paint-shot|5|u|8|forward\n")
+            invalid = run(cmd, cwd=root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "part-scroll needs explicit repeating texture coordinates" in log, log
+            path.write_text(profile.replace("part-material=2|0|0|5|loop\n", "").replace("|3|10|2\n", "|3|10|255\n"))
+            invalid = run(cmd, cwd=root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "unavailable part-swap record or material clip" in log, log
+            path.write_text(profile.replace("part-swap-bone=paint-shot|badge|4", "part-swap-bone=paint-shot|badge|31"))
+            invalid = run(cmd, cwd=root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "unbound part-swap bone" in log, log
+            path.write_text(profile.replace("part-material=2|0|0|5|loop", "part-material=2|0|0|25|loop"))
+            invalid = run(cmd, cwd=root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "unavailable part-swap record or material clip" in log, log
+            path.write_text(profile)
+            flight = root / "borgs/flight-stick/gameplay.txt"
+            flight.write_text(flight.read_text().replace("|18|28|3|ignore-floor", "|18|28|3|clip-on-stage"))
+            invalid = run(cmd, cwd=root, capture_output=True, text=True, timeout=35)
+            log = invalid.stdout + invalid.stderr
+            assert invalid.returncode != 0 and "stage projectile collision requires the qualified matching stage" in log, log
         assert not list(root.rglob("*.pcm")), "examples must not pull source audio"
     print(f"Original Flight/Jump Stick and flat arena PASS ({'OpenGL' if opengl else 'headless'})")
 

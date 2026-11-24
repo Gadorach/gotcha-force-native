@@ -17,6 +17,21 @@
 #include "engine/graphics/fog.hpp"
 
 namespace gf {
+class RenderFrameReceipt {
+public:
+    bool live()const{const auto scope=scope_.lock();return scope&&*scope;}
+    bool same_frame(const RenderFrameReceipt& other)const{return live()&&other.live()&&!scope_.owner_before(other.scope_)&&!other.scope_.owner_before(scope_);}
+private:friend class RenderEngine;std::weak_ptr<const bool> scope_;
+};
+// A lightweight, borrowed reference to one exact immutable device texture.
+// It cannot be transferred to another RenderEngine with the same numeric slot.
+class RenderSharedTextureReceipt {
+private:
+    friend class RenderEngine;
+    std::weak_ptr<const u8> owner_;
+    u64 revision_=0;
+    u32 handle_=0;
+};
 
 // Portable render state, mirroring the semantics the game actually uses.
 struct RenderState {
@@ -49,11 +64,18 @@ struct RenderState {
 class RenderEngine {
 public:
     explicit RenderEngine(IRenderBackend& backend) : backend_(backend) {}
+    RenderEngine(const RenderEngine&)=delete;RenderEngine& operator=(const RenderEngine&)=delete;
 
     bool initialize(const RenderConfig& config, IWindowBackend* window, std::string* error) {
-        return backend_.initialize(config, window, error);
+        if(frame_scope_){*frame_scope_=false;}frame_open_=false;
+        if(!backend_.initialize(config,window,error))return false;
+        canvas_width_=config.width;canvas_height_=config.height;return true;
     }
     RenderCapabilities capabilities() const { return backend_.capabilities(); }
+    bool model_pass_active()const{return model_pass_active_;}
+    RenderFrameReceipt frame_receipt()const{RenderFrameReceipt receipt;if(frame_open_)receipt.scope_=frame_scope_;return receipt;}
+    bool shared_texture_reserved(u32 handle)const{return shared_textures_.find(handle)!=shared_textures_.end();}
+    std::array<u32,2> canvas_size()const{return {canvas_width_,canvas_height_};}
     // Optional scene-global context. Legacy callers retain archive-local lights
     // and their existing draw order; invalid explicit context suppresses models.
     bool set_scene_lighting(const SceneLighting& lights){
@@ -125,6 +147,19 @@ public:
     }
     bool frame_in_progress()const{return frame_open_;}
     bool texture_is_shared(u32 handle)const{return shared_textures_.find(handle)!=shared_textures_.end();}
+    RenderSharedTextureReceipt shared_texture_receipt(u32 handle)const{
+        RenderSharedTextureReceipt receipt;
+        const auto at=shared_textures_.find(handle);
+        if(at==shared_textures_.end())return receipt;
+        if(!texture_receipt_owner_)texture_receipt_owner_=std::make_shared<const u8>(0);
+        receipt.owner_=texture_receipt_owner_;receipt.revision_=at->second.revision;receipt.handle_=handle;
+        return receipt;
+    }
+    u32 shared_texture_handle(const RenderSharedTextureReceipt& receipt)const{
+        if(!texture_receipt_owner_||receipt.owner_.lock()!=texture_receipt_owner_)return 0;
+        const auto at=shared_textures_.find(receipt.handle_);
+        return at!=shared_textures_.end()&&at->second.revision==receipt.revision_?receipt.handle_:0;
+    }
     bool release_texture(u32 handle){
         if(!handle||frame_open_||model_pass_active_||texture_is_shared(handle)||!backend_.release_texture(handle))return false;
         if(state_.texture==handle)state_.texture=0;
@@ -139,7 +174,8 @@ public:
         auto found=shared_textures_.find(handle);
         if(found!=shared_textures_.end()){const auto& x=found->second;const bool equal=x.width==desc.width&&x.height==desc.height&&x.wrap_s==desc.wrap_s&&x.wrap_t==desc.wrap_t&&x.linear==desc.linear&&std::equal(x.pixels->begin(),x.pixels->end(),desc.pixels);return equal?true:failed();}
         if(shared_texture_bytes_+size>(128u<<20)||!backend_.upload_texture(handle,desc))return failed();
-        SharedTexture x;x.width=desc.width;x.height=desc.height;x.wrap_s=desc.wrap_s;x.wrap_t=desc.wrap_t;x.linear=desc.linear;x.hash=1469598103934665603ull;for(std::size_t i=0;i<size;++i)x.hash=(x.hash^desc.pixels[i])*1099511628211ull;
+        SharedTexture x;x.width=desc.width;x.height=desc.height;x.wrap_s=desc.wrap_s;x.wrap_t=desc.wrap_t;x.linear=desc.linear;
+        x.revision=++next_texture_revision_;x.hash=1469598103934665603ull;for(std::size_t i=0;i<size;++i)x.hash=(x.hash^desc.pixels[i])*1099511628211ull;
         for(const auto& [id,prior]:shared_textures_){(void)id;if(prior.hash==x.hash&&prior.pixels->size()==size&&std::equal(prior.pixels->begin(),prior.pixels->end(),desc.pixels)){x.pixels=prior.pixels;break;}}
         if(!x.pixels)x.pixels=std::make_shared<const std::vector<u8>>(desc.pixels,desc.pixels+std::size_t(size));
         shared_texture_bytes_+=std::size_t(size);shared_textures_.emplace(handle,std::move(x));return true;
@@ -158,7 +194,7 @@ public:
         if (!backend_.copy_framebuffer(copy)) { frame_failed_=true; return false; }
         return true;
     }
-    void shutdown() { shared_textures_.clear();shared_texture_bytes_=0;backend_.shutdown(); }
+    void shutdown() { if(frame_scope_)*frame_scope_=false;frame_open_=false;texture_receipt_owner_.reset();shared_textures_.clear();shared_texture_bytes_=0;backend_.shutdown(); }
 
     // State changes are recorded, not applied immediately, so a backend can
     // reorder or merge work without changing observable ordering.
@@ -236,6 +272,8 @@ public:
     }
 
     void begin_frame(const FrameDesc& frame) {
+        if(frame_scope_)*frame_scope_=false;
+        frame_scope_=std::make_shared<bool>(true);
         pending_.clear();
         depths_.clear();model_pass_active_=model_pass_failed_=model_enqueue_=false;
         flushed_draws_=0;frame_open_=true;frame_failed_=false;
@@ -244,6 +282,7 @@ public:
     }
     // Flushes this frame's work. Ordering across draws is preserved.
     bool end_frame() {
+        if(frame_scope_)*frame_scope_=false;
         if(model_pass_active_){pending_.resize(model_pass_start_);depths_.resize(model_pass_start_);model_pass_active_=false;model_pass_failed_=true;}
         flush_pending_draws();
         backend_.end_frame();
@@ -257,7 +296,7 @@ public:
     std::size_t pending_packet_writes() const { return packet_writes_.size(); }
 
 private:
-    struct SharedTexture {u32 width=0,height=0;u8 wrap_s=0,wrap_t=0;bool linear=false;u64 hash=0;std::shared_ptr<const std::vector<u8>> pixels;};
+    struct SharedTexture {u32 width=0,height=0;u8 wrap_s=0,wrap_t=0;bool linear=false;u64 hash=0,revision=0;std::shared_ptr<const std::vector<u8>> pixels;};
     void forget_shared_texture(u32 id){auto p=shared_textures_.find(id);if(p!=shared_textures_.end()){shared_texture_bytes_-=p->second.pixels->size();shared_textures_.erase(p);}}
     bool flush_pending_draws(){
         if(frame_failed_)return false;
@@ -278,10 +317,14 @@ private:
     std::vector<f32> depths_;SceneLighting scene_lighting_;bool have_scene_lighting_=false,lighting_valid_=true;
     bool model_pass_active_=false,model_pass_failed_=false,model_enqueue_=false;u8 model_pass_=0;std::size_t model_pass_start_=0;
     std::size_t flushed_draws_=0;bool frame_open_=false,frame_failed_=false;
+    std::shared_ptr<bool> frame_scope_;
+    u32 canvas_width_=0,canvas_height_=0;
     std::vector<Vertex> arena_;
     bool arena_dirty_ = true;
     std::vector<gf_gfx_write> packet_writes_;
     std::unordered_map<u32,SharedTexture> shared_textures_;std::size_t shared_texture_bytes_=0;bool shared_upload_error_=false;
+    mutable std::shared_ptr<const u8> texture_receipt_owner_;
+    u64 next_texture_revision_=0;
 };
 
 } // namespace gf

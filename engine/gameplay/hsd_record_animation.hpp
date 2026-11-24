@@ -3,6 +3,7 @@
 // Reuses the common FObj machine; scene activation/lifetime remain controller policy.
 #include "engine/assets/hsd_record_animation.hpp"
 #include "engine/animation/hsd_material.hpp"
+#include <optional>
 namespace gf {
 struct HsdRecordTrackTrace {u32 channel=0,state=0,flags=0,op=0,interpolation=0;std::size_t cursor=0;f64 time=0,value=0;u64 callbacks=0;};
 struct HsdRecordObjectTrace {f32 frame=0;bool stopped=false;std::vector<HsdRecordTrackTrace> tracks;};
@@ -13,11 +14,11 @@ public:
     HsdRecordAnimationPlayer& operator=(const HsdRecordAnimationPlayer&)=default;
     HsdRecordAnimationPlayer(HsdRecordAnimationPlayer&& other)noexcept{*this=std::move(other);}
     HsdRecordAnimationPlayer& operator=(HsdRecordAnimationPlayer&& other)noexcept{
-        if(this!=&other){data_=std::move(other.data_);objects_=std::move(other.objects_);pose_=std::move(other.pose_);frame_=other.frame_;updates_=other.updates_;ready_=other.ready_;requested_=other.requested_;other.ready_=other.requested_=false;}
+        if(this!=&other){data_=std::move(other.data_);objects_=std::move(other.objects_);pose_=std::move(other.pose_);diffuse_override_=std::move(other.diffuse_override_);other.diffuse_override_.reset();frame_=other.frame_;updates_=other.updates_;ready_=other.ready_;requested_=other.requested_;other.ready_=other.requested_=false;}
         return *this;
     }
     bool bind(const HsdRecordAnimationBinding& binding,std::string* error){
-        ready_=requested_=false;data_.reset();objects_.clear();pose_={};frame_=0;updates_=0;
+        ready_=requested_=false;data_.reset();objects_.clear();pose_={};diffuse_override_.reset();frame_=0;updates_=0;
         if(!binding.data_)return fail(error,"explicit record binding required");
         data_=binding.data_;ready_=true;if(error)error->clear();return true;
     }
@@ -63,6 +64,14 @@ public:
     }
     const HsdAnimPose* pose()const{return ready_&&requested_?&pose_:nullptr;}
     f32 frame()const{return frame_;}
+    //A source constant MObj RGB write AFTER a texture-only AnimAll. Keep the
+    //base colour for later texture ticks/re-requests; it is not a colour AObj.
+    bool set_texture_only_base_diffuse(const std::array<u8,3>& rgb,std::string* error){
+        if(!ready_||!requested_||!data_||data_->objects.empty()){if(error)*error="texture base diffuse: requested texture-only player required";return false;}
+        for(const auto& object:data_->objects)if(object.kind!=hsd_record_detail::Object::Texture){if(error)*error="texture base diffuse: material/joint animation is not admitted";return false;}
+        diffuse_override_=rgb;for(auto& material:pose_.materials)for(unsigned k=0;k<3;++k)material.diffuse[k]=f32(rgb[k])/255.f;
+        if(error){error->clear();}return true;
+    }
     //Read-only constants of the accepted retained TObj states, in texture-object
     //order. This is scalar state inspection, not a renderer/device receipt.
     std::vector<std::array<u32,3>> texture_constants()const{
@@ -85,6 +94,7 @@ private:
         HsdAnimPose pose;const auto& scene=data_->scene;pose.joints.resize(scene.joints.size());pose.materials.resize(scene.meshes.size());
         for(unsigned i=0;i<scene.joints.size();++i){const auto& j=scene.joints[i];auto& p=pose.joints[i];for(unsigned k=0;k<3;++k){p.rotation[k]=j.rotation[k];p.translation[k]=j.translation[k];p.scale[k]=j.scale[k];}p.hidden=(j.flags&0x10u)!=0;}
         for(unsigned i=0;i<scene.meshes.size();++i){const auto& mesh=scene.meshes[i];auto& p=pose.materials[i];p.alpha=mesh.material_alpha;p.has_specular=true;for(unsigned k=0;k<3;++k){p.ambient[k]=mesh.material_ambient[k]/255.f;p.diffuse[k]=mesh.material_colour[k]/255.f;p.specular[k]=mesh.material_specular[k]/255.f;}}
+        if(diffuse_override_)for(auto& material:pose.materials)for(unsigned k=0;k<3;++k)material.diffuse[k]=f32((*diffuse_override_)[k])/255.f;
         return pose;
     }
     bool apply(unsigned object,unsigned track,ObjectState& state,HsdAnimPose& pose,f32 rate,std::string* error)const{
@@ -122,6 +132,6 @@ private:
         }
         return true;
     }
-    std::shared_ptr<const hsd_record_detail::Instance> data_;std::vector<ObjectState> objects_;HsdAnimPose pose_;f32 frame_=0;u32 updates_=0;bool ready_=false,requested_=false;
+    std::shared_ptr<const hsd_record_detail::Instance> data_;std::vector<ObjectState> objects_;HsdAnimPose pose_;std::optional<std::array<u8,3>> diffuse_override_;f32 frame_=0;u32 updates_=0;bool ready_=false,requested_=false;
 };
 } // namespace gf

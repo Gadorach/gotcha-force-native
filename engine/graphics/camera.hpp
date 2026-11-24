@@ -7,6 +7,8 @@
 // the same scene draw under the headless recorder and the GL backend.
 #include <cmath>
 #include <array>
+#include <algorithm>
+#include <limits>
 
 #include "engine/core/types.hpp"
 
@@ -134,5 +136,58 @@ private:
     }
     static f32 length(const f32 a[3]) { return std::sqrt(dot(a, a)); }
 };
+
+// Reframe evaluated geometry at the horizontal or vertical limit, whichever
+// is narrower. Retain the viewing direction and the caller's clip planes.
+inline bool camera_fit_bounds(Camera& camera,const std::array<f32,3>& low,const std::array<f32,3>& high,
+                              f64 min_distance,f64 max_distance){
+    Camera::Basis basis;
+    if(!camera.basis(&basis)||!std::isfinite(min_distance)||!std::isfinite(max_distance)||
+       min_distance<=0||max_distance<min_distance)return false;
+    std::array<f64,3> size;
+    for(unsigned k=0;k<3;++k){
+        size[k]=f64(high[k])-low[k];
+        if(!std::isfinite(size[k])||size[k]<0)return false;
+    }
+    const f64 radius=.5*std::hypot(size[0],size[1],size[2]);
+    const f64 tangent=f64(basis.tan_half_fov)*std::min(1.f,basis.aspect);
+    const f64 sine=tangent/std::hypot(1.,tangent);
+    const f64 distance=std::max({min_distance,1.15*radius/sine,radius+2*camera.near_plane});
+    if(distance>max_distance||distance+radius>=camera.far_plane)return false;
+    Camera fitted=camera;
+    for(unsigned k=0;k<3;++k){
+        fitted.target[k]=f32(f64(low[k])+.5*size[k]);
+        fitted.eye[k]=f32(fitted.target[k]-distance*basis.forward[k]);
+    }
+    if(!fitted.basis(nullptr))return false;
+    camera=fitted;return true;
+}
+
+// Back the camera up only as far as needed, keeping its target and view
+// direction. Fit horizontal and vertical limits independently: a bounding
+// sphere would zoom out for depth even when the bodies fit on screen.
+inline bool camera_dolly_to_fit_bounds(Camera& camera,const std::array<f32,3>& low,const std::array<f32,3>& high){
+    Camera::Basis basis;
+    if(!camera.basis(&basis))return false;
+    for(unsigned axis=0;axis<3;++axis)
+        if(!std::isfinite(low[axis])||!std::isfinite(high[axis])||low[axis]>high[axis])return false;
+    const f64 vertical=.88*f64(basis.tan_half_fov),horizontal=vertical*basis.aspect; // 6% on each edge
+    f64 retreat=0,farthest=-std::numeric_limits<f64>::infinity();
+    for(unsigned corner=0;corner<8;++corner){
+        f64 x=0,y=0,depth=0;
+        for(unsigned k=0;k<3;++k){
+            const f64 offset=f64(corner&(1u<<k)?high[k]:low[k])-basis.eye[k];
+            x+=offset*basis.right[k];y+=offset*basis.up[k];depth+=offset*basis.forward[k];
+        }
+        farthest=std::max(farthest,depth);
+        retreat=std::max(retreat,std::max({std::abs(x)/horizontal,std::abs(y)/vertical,1.01*camera.near_plane})-depth);
+    }
+    if(retreat+farthest>=camera.far_plane)return false;
+    if(retreat==0)return true;
+    Camera fitted=camera;
+    for(unsigned k=0;k<3;++k)fitted.eye[k]=f32(basis.eye[k]-retreat*basis.forward[k]);
+    if(!fitted.basis(nullptr))return false;
+    camera=fitted;return true;
+}
 
 } // namespace gf

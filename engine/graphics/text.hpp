@@ -87,6 +87,9 @@ public:
     static constexpr bool covers(char c) { return index_of(c) >= 0; }
 
 private:
+    friend class PortableTextRenderer;
+    unsigned draw_impl(RenderEngine& render,std::string_view text,s32 x,s32 y,const Style& style,bool legacy_slot)const;
+
     struct Glyph {
         u8 rows[kGlyphRows];  // bit 0 = leftmost column, bit k = column k
     };
@@ -247,6 +250,11 @@ inline void TextRenderer::emit_quad(f32 x, f32 y, s32 size, const Style& style) 
 
 inline unsigned TextRenderer::draw(RenderEngine& render, std::string_view text, s32 x, s32 y,
                                    const Style& style) const {
+    return draw_impl(render,text,x,y,style,true);
+}
+
+inline unsigned TextRenderer::draw_impl(RenderEngine& render, std::string_view text, s32 x, s32 y,
+                                        const Style& style,bool legacy_slot)const{
     if (text.empty()) return 0;
 
     const s32 scale = effective_scale(style);
@@ -303,8 +311,8 @@ inline unsigned TextRenderer::draw(RenderEngine& render, std::string_view text, 
     render.state().colour_write=true;render.state().alpha_write=true;
     render.state().cull_backface = false;
     render.state().texture = 0;
-    render.upload_matrix(0, kIdentity);
-    render.state().position_matrix = 0;
+    if(legacy_slot)render.upload_matrix(0,kIdentity);
+    render.state().position_matrix=legacy_slot?0:kIdentityPositionMatrix;
 
     const bool submitted =
         render.draw(Primitive::Triangles, base, static_cast<u32>(vertices_.size()));

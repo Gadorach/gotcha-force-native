@@ -22,5 +22,21 @@ int main(){
     check(!moved.replace_after_material_callbacks_alpha(std::numeric_limits<f32>::quiet_NaN(),&error)&&!moved.ready(),"nonfinite late alpha invalidates publication");
     check(!moved.replace_after_material_callbacks_alpha(.5f,&error),"failed instance cannot replay prior alpha pose");
     check(moved.load(bank,0,3,0,0,&error)&&moved.request_selectors(0,0,&error)&&!moved.replace_static_alpha(.5f,&error),"old static guard still refuses animated record");
+    check(moved.load(bank,0,3,0,0,&error)&&moved.request_selectors(0,0,&error)&&
+          !moved.multiply_static_alpha(.5f,&error),"authored fade refuses active callbacks");
+    check(moved.load_compact_static(bank,0,&error)&&moved.request(0,0,&error),"static material owns base opacity");
+    const auto check_alpha=[&](const AnimatedModelScene& model,u8 expected){
+        check(model.pose()&&!model.pose()->materials.empty(),"static material pose published");
+        for(const auto& material:model.pose()->materials)check(material.alpha==f32(expected)/255.f,"fade is relative to source, not accumulated");
+    };
+    check_alpha(moved,191);
+    check(moved.multiply_static_alpha(.5f,&error),"half authored opacity accepted");
+    check_alpha(moved,95);
+    AnimatedModelScene fading(std::move(moved));
+    check(fading.set_root_world(Mat4{},&error),"move and root publish preserve opacity");
+    check_alpha(fading,95);
+    check(fading.multiply_static_alpha(1,&error),"first tick of new view instance resets fade");
+    check_alpha(fading,191);
+    check(!fading.multiply_static_alpha(1.01f,&error)&&!fading.ready(),"invalid multiplier suppresses publication");
     std::printf("{\"post_callback_alpha_owned_checks\":%u,\"all_passed\":true}\n",checks);
 }

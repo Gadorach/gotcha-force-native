@@ -52,5 +52,10 @@ int main(){
     check(consume(neutral)==neutral,"held controls through a stopped session do not create an edge");
     released(right,2);input.sample(combat,std::nullopt,true);
     check(consume(combat)==combat&&consume(neutral)==neutral,"unsupported samples clear pending input and remain refused by the source");
+    gf::GamePadState arrows;arrows.dpad_left=true;arrows.l=true;arrows.trigger_l_pressed=true;arrows.trigger_l=90;
+    const auto flick=gf::pc::gred_battle_pad(arrows,true),held=gf::pc::gred_battle_pad(arrows,false);
+    check(flick.stick_x==-127&&!flick.dpad_left&&!flick.l&&!flick.trigger_l_pressed&&!flick.trigger_l,
+          "battle Alt+Left/trigger produces one source left flick, no raw unsupported buttons");
+    check(held.dpad_left&&!held.stick_x&&!held.l&&!held.trigger_l_pressed,"held dash key returns to soft walking");
     std::puts("practice input: single-sample replay, priority and reset boundaries PASS");
 }

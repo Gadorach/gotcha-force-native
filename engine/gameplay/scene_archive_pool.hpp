@@ -8,6 +8,7 @@ struct SceneArchiveRecord {
     s32 link0=-1,link4=-1;u8 pool08=1,allocated09=0,flag0a=0;u64 generation=0;
     bool header0c_nonnull=false,header_owned=false,bank_loaded=false,borrowed_header=false,data14_present=false;
     u32 scene10_source_key=0,data14_hash=0,bank_hash=0;u8 cameras18=0,fog19=0;u16 models1a=0;
+    u8 light_root_count()const{return cameras18;} //legacy field name; source scene+8 is the LObj root table
     bool operator==(const SceneArchiveRecord&)const=default;
 };
 struct SceneArchivePoolSnapshot {s32 free_head=-1,live_head=-1;s16 free_count=0;std::vector<SceneArchiveRecord> records;bool operator==(const SceneArchivePoolSnapshot&)const=default;};
@@ -70,6 +71,7 @@ public:
         storage_->headers[lease.index_].reset();r.header_owned=false;r.bank_loaded=false;r.borrowed_header=false;r.bank_hash=0;scene_pool_links::put(s,lease.index_);if(error)error->clear();return true;
     }
     bool matches_descriptor_owner(const std::shared_ptr<SceneDescriptorPool>& owner)const{return ready()&&owner&&owner->ready()&&owner==storage_->domain&&owner->snapshot()==storage_->domain_identity;}
+    std::shared_ptr<SceneDescriptorPool> descriptor_owner()const{return ready()?storage_->domain:nullptr;}
     const SceneArchivePoolSnapshot* snapshot()const{return ready()?&storage_->state:nullptr;}
     bool ready()const{return storage_&&storage_->current();}bool requires_scene_allocation_join()const{return true;}
     void retire(){if(storage_)storage_->live=false;storage_.reset();attempted_=true;} //native invalidation, not source bulk/global scene cleanup

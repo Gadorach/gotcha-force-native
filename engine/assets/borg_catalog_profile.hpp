@@ -11,6 +11,7 @@ inline constexpr unsigned kBorgCatalogVariants=16,kBorgCatalogIconDimension=128;
 struct BorgCatalogVariant {
     std::string id,label,icon;
     u16 force_cost=0;
+    bool operator==(const BorgCatalogVariant&)const=default;
     bool placeholder_icon()const{return icon=="placeholder";}
     bool unresolved_icon()const{return icon=="unresolved";}
 };
@@ -30,11 +31,17 @@ struct BorgCatalogCard {
     // decode failure. A card is presentation data, not an actor or save entry.
     std::vector<std::optional<TplImage>> icons;
 };
+// Derived from the existing manifest and optional variant declarations.
+// These are pinned local paths, not loaded art or a preview readiness receipt.
+struct BorgCatalogPreviewBinding {
+    std::string variant,preview,model,motions,error;
+};
 // A parsed metadata view of one discovered manifest, independent of whether
 // its editor icons or model can be loaded.
 struct BorgCatalogSnapshot {
     BorgPackageEntry package;
     BorgCatalogProfile profile;
+    std::vector<BorgCatalogPreviewBinding> preview_bindings{};
 };
 inline bool borg_catalog_variant_id_valid(std::string_view id){
     auto letter=[](char c){return (c>='a'&&c<='z')||(c>='0'&&c<='9');};

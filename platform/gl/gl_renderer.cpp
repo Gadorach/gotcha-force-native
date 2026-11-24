@@ -521,8 +521,8 @@ public:
         glClearColor(frame.clear_r, frame.clear_g, frame.clear_b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         functions.UseProgram(program_);
-        functions.Uniform2f(scale_location_, 2.0f / static_cast<float>(width_),
-                            2.0f / static_cast<float>(height_));
+        functions.Uniform2f(scale_location_, 2.0f / static_cast<float>(std::max(1u,frame.drawable_coordinates?w:width_)),
+                            2.0f / static_cast<float>(std::max(1u,frame.drawable_coordinates?h:height_)));
         functions.BindBuffer(GL_ARRAY_BUFFER, vbo_);
     }
 

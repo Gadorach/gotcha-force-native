@@ -13,7 +13,7 @@ struct Storage {
     std::optional<std::array<ChallengePlayerDefaults,6>> player_defaults;
     bool preparation_context_claimed=false;
     std::optional<u8> scene45;
-    bool current(const std::array<const ForceInventory*,2>& owners)const{const auto b=allocation.lock();return live&&b&&b->live&&b->party.current(owners);}
+    bool current(const std::array<const ForceInventory*,2>& owners)const{const auto b=allocation.lock();return live&&b&&b->current(owners);}
 };
 }
 enum class ChallengeBattleRosterStatus {Closed,Ready,Failed,Retired};

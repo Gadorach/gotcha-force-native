@@ -11,10 +11,20 @@ public:
         if(error)error->clear();
         ready_=loaded_=false;binding_.reset();parts_.clear();frame_=0;target_=nullptr;const auto binding=parent.instance_binding();
         if(!binding||!character_model_parts_load(profile,binding->model_hash,&profile_,error)||profile_.model_id!=model_id||parent.rig().binding.bones.size()<=11)return fail(error,"native parent/model/profile/rig");
+        if(profile_.domain==BattleModelDomain::InitialAi){binding_=binding;target_=&parent;loaded_=true;return true;}
         AttachmentModelBank decoded;if(!decoded.load(bank,error)||decoded.hash()!=binding->model_hash)return fail(error,"source bank binding");
         std::vector<AttachmentModelScene> parts(profile_.groups[1].base+profile_.groups[1].count);
         for(unsigned i=1;i<parts.size();++i)if(!parts[i].load_shared(decoded,u16(i),error))return false;
         parts_=std::move(parts);binding_=binding;target_=&parent;loaded_=true;return true;
+    }
+    bool bind_prepared(const CharacterModelScene& parent,const HsdRecordAnimationBank& bank,const CharacterModelPartsProfile& profile,std::string* error){
+        ready_=loaded_=false;binding_.reset();parts_.clear();frame_=0;target_=nullptr;const auto binding=parent.instance_binding();
+        if(!binding||!character_model_parts_valid(profile)||profile.model_hash!=binding->model_hash||parent.rig().binding.bones.size()<=11)return fail(error,"same model/source part profile required");
+        if(profile.domain==BattleModelDomain::InitialAi){if(bank.hash()!=binding->model_hash)return fail(error,"same empty-table source bank required");profile_=profile;binding_=binding;target_=&parent;loaded_=true;return true;}
+        AttachmentModelBank decoded;if(!decoded.load_prepared(bank,error)||decoded.hash()!=binding->model_hash)return false;
+        std::vector<AttachmentModelScene> parts(profile.groups[1].base+profile.groups[1].count);
+        for(unsigned i=1;i<parts.size();++i)if(!parts[i].load_shared(decoded,u16(i),error))return false;
+        profile_=profile;parts_=std::move(parts);binding_=binding;target_=&parent;loaded_=true;if(error)error->clear();return true;
     }
     bool prepare(const CharacterModelScene& parent,const CharacterWorldPose& world,u64 frame,std::array<u8,2> selectors,
                  u32 visible,u32 suppressed,const ActorFadeMaterial& fade,std::string* error){

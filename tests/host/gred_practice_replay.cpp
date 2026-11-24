@@ -3,6 +3,7 @@
 #define main gf_desktop_entry
 #include "platform/pc/native_main.cpp"
 #undef main
+#include <functional>
 
 namespace {
 enum class Replay {Session,SingleStep,Jump,Camera,Separate,RefusedInput,RaisedFace,FixtureWalk,FixtureRestart,
@@ -1000,6 +1001,138 @@ int replay_force_practice_picker(std::string root,std::string retail_path){
     std::puts("Force browser practice: exact slot, live routes, and overlap refusal PASS");
     return 0;
 }
+
+// Drive the real portable Collection/Force host without any test-input or
+// write-enabling flag in the production executable.
+class ArrangeReplayInput final:public gf::IInputBackend {
+public:
+    ArrangeReplayInput(std::span<const gf::u32> buttons,std::function<void(unsigned)> before)
+        :buttons_(buttons),before_(std::move(before)){}
+    void pump()override{
+        if(before_)before_(frame_);
+        sample_.clear();sample_.port_count=1;
+        if(frame_<buttons_.size())sample_.pads[0].buttons=buttons_[frame_];
+        ++frame_;
+    }
+    const gf::InputSnapshot& snapshot()const override{return sample_;}
+private:
+    std::span<const gf::u32> buttons_;
+    std::function<void(unsigned)> before_;
+    gf::InputSnapshot sample_{};
+    unsigned frame_=0;
+};
+
+int replay_portable_arrange(std::string root,std::string retail_path){
+    using namespace gf;
+    constexpr u32 a=1u,b=1u<<1,down=1u<<6;
+    check(seed_owned_practice(root,retail_path.c_str())==0,"fresh disposable Force store required","");
+    const auto files=gf::sdl::create_file_system();
+    ForceCatalog retail;
+    check(files&&load_retail_force_catalogue(*files,retail_path,&retail),"typed retail fixture","");
+    std::string error;
+    auto selected=[&](u64 save=11){return gf::pc::open_borg_selected_save(root,7,save,&error);};
+    auto storage=gf::pc::create_account_save_storage(root,false,&error);
+    check(bool(storage),"fixture reader",error);
+    auto stored=[&](u64 save){
+        AccountObjectRead result;
+        check(storage->read({7,save},&result)==SaveReadStatus::Loaded,"read fixture object",error);
+        return result;
+    };
+    auto equal=[](const auto& lhs,const auto& rhs){
+        return lhs.revision==rhs.revision&&lhs.metadata==rhs.metadata&&lhs.payload==rhs.payload;
+    };
+    {
+        auto owner=selected();check(bool(owner),"selected Force seed",error);
+        PackageBorgSaveStore store(*owner->backend);PackageBorgRoster roster;
+        check(store.load(&roster)==PackageBorgLoad::Loaded,"load seeded roster",error);
+        roster.owned.push_back({14,{"fixture:support","Saved Support"},false,SavedPackageVariant{"normal","Support"}});
+        roster.placements.push_back({14,1,1}); // Another package's cost must also be verified at confirm.
+        check(store.write(roster),"seed mixed target Force",error);
+    }
+    const auto packages=gf::pc::scan_borg_packages("borgs");
+    const auto original=stored(11),other=stored(12),account=stored(0);
+    AccountSaveRecords records;check(account_records_decode(original.payload,{7,11},&records),"fixture Force record bytes",error);
+    ReplayLog log;
+    auto run=[&](std::vector<std::string> args,std::span<const u32> input,bool force,
+                 std::function<void(unsigned)> before={}){
+        args.insert(args.begin(),"gf_native");
+        std::vector<char*> argv;for(auto& arg:args)argv.push_back(arg.data());
+        Options options;log.text.clear();
+        check(parse(int(argv.size()),argv.data(),&options),"portable host options",log.text);
+        ArrangeReplayInput input_backend(input,std::move(before));gf::headless::Bundle headless;
+        auto backends=headless.get();backends.files=files.get();backends.input=&input_backend;backends.log=&log;
+        check(backends.window->create({options.width,options.height,"Portable arrange replay"},&error),"test viewport",error);
+        gf::Context context(backends,60);gf::RenderEngine render(context.render());
+        check(render.initialize({options.width,options.height,false,true,"Portable arrange replay"},nullptr,&error),"test renderer",error);
+        if(force){
+            auto snapshot=gf::pc::BorgForceBrowseSnapshot::open(root,{7,11},"borgs",packages,retail,&error);
+            check(bool(snapshot)&&run_borg_force_browser(context,render,options,packages,*snapshot)==0,"Force browser host replay",log.text);
+        }else check(run_borg_browser(context,render,options,packages)==0,"Collection host replay",log.text);
+        check(context.frame_index()==options.frames,"one frame budget across host handoff",log.text);
+    };
+    auto direct=[&](bool headless,unsigned width=300,unsigned height=500){
+        std::vector<std::string> out{"--place-owned-borg",root,"7","11","2","3","--owned-instance","8","--retail-catalog",
+            retail_path,"--frames","12","--size",std::to_string(width),std::to_string(height)};
+        if(headless)out.emplace_back("--headless");
+        return out;
+    };
+    auto force_args=[&](bool arrange,unsigned slot){
+        auto result=std::vector<std::string>{"--browse-borg-force",root,"7","11","2","--force-slot",std::to_string(slot),
+            "--retail-catalog",retail_path,"--frames","12"};
+        if(arrange)result.emplace_back("--arrange-from-force");
+        return result;
+    };
+    const std::array<u32,9> accept{a,a,0,down,0,a,a,0,a};
+    const std::array<u32,6> cancel{a,a,0,down,0,a|b};
+    const std::array<u32,9> handoff{a,a,0,a,a,down,0,a,a};
+    run(force_args(false,3),handoff,true);
+    check(!has(log.text,"opened Arrange")&&equal(stored(11),original),"read-only Force route ignores arrangement",log.text);
+    run(force_args(true,1),handoff,true);
+    check(has(log.text,"Force 2 slot 1 occupied")&&!has(log.text,"opened Arrange")&&equal(stored(11),original),
+        "retail claim cannot start a Force arrangement",log.text);
+    run(direct(true),accept,false);
+    check(has(log.text,"offered Force 2 slot 3 owned-instance=8 package=fixture:gred variant=normal force-cost=117->140")&&
+        has(log.text,"HEADLESS INSPECTION DOES NOT WRITE")&&!has(log.text,"PLACEMENT SAVED")&&equal(stored(11),original),
+        "headless receives consent but never reaches the write path",log.text);
+    run(direct(false,220,520),accept,false);
+    check(has(log.text,"ENLARGE WINDOW TO REVIEW PLACEMENT")&&!has(log.text,"offered Force")&&equal(stored(11),original),
+        "small layout does not accept blind consent",log.text);
+    run(direct(false),cancel,false);
+    check(once(log.text,"PLACEMENT CANCELLED - NO WRITE")&&!has(log.text,"PLACEMENT SAVED")&&equal(stored(11),original),
+        "back cancels even with simultaneous accept and Confirm selected",log.text);
+    run(direct(false),accept,false,[&](unsigned frame){
+        if(frame!=4)return;
+        auto owner=selected();check(bool(owner),"separate editor while modal is open",error);
+        CheatSettingsStore prefs(*owner->backend);CheatSettings value;
+        check(prefs.load(&value)==CheatSettingsLoad::Missing&&prefs.write({}),"changed selected revision",error);
+    });
+    const auto revised=stored(11);AccountSaveRecords revised_records;
+    check(has(log.text,"SELECTED SAVE CHANGED - NO WRITE")&&!has(log.text,"PLACEMENT SAVED")&&
+        account_records_decode(revised.payload,{7,11},&revised_records)&&revised_records.records[0]==records.records[0]&&
+        revised_records.records[kBorgPackageSaveSlot]==records.records[kBorgPackageSaveSlot],
+        "same-save revision change consumes the confirmation",log.text);
+    run(force_args(true,3),handoff,true);
+    const auto saved=stored(11);AccountSaveRecords saved_records;
+    check(once(log.text,"opened Arrange from Force 2 slot 3 on the same selected save")&&
+        once(log.text,"offered Force 2 slot 3 owned-instance=8")&&once(log.text,"PLACEMENT SAVED")&&
+        account_records_decode(saved.payload,{7,11},&saved_records)&&saved_records.records[0]==records.records[0]&&
+        saved_records.records[2]==revised_records.records[2]&&equal(stored(12),other)&&equal(stored(0),account),
+        "explicit Force browser handoff stages then writes exactly one package record",log.text);
+    {
+        auto owner=selected();check(bool(owner),"reopen acknowledged Force",error);
+        PackageBorgSaveStore store(*owner->backend);PackageBorgRoster roster;
+        check(store.load(&roster)==PackageBorgLoad::Loaded&&roster.find(8)->identity.name=="Saved G-Red"&&
+            roster.find(8)->variant->label=="Saved Standard"&&roster.placements.back()==PackageBorgPlacement{8,1,2},
+            "read back exact instance, saved variant, and new slot",error);
+    }
+    const std::array<u32,7> pick_offer{down,0,a,a,0,down,a};
+    run({"--cheat-offer-picker","--headless","--frames","12"},pick_offer,false);
+    check(once(log.text,"cheat offer ")&&once(log.text,"cheat offer fixture:gred variant=shadow")&&!has(log.text,"PLACEMENT SAVED")&&
+        equal(stored(11),saved)&&equal(stored(12),other)&&equal(stored(0),account),
+        "exact installed variant offer authorizes no save or actor",log.text);
+    std::puts("Portable Force host: exact handoff, headless/cancel/stale refusal, one checked placement, and offer-only cheat picker PASS");
+    return 0;
+}
 }
 
 int main(int argc,char** argv){
@@ -1008,6 +1141,7 @@ int main(int argc,char** argv){
             const std::string_view command=argv[1];
             if(command=="--seed-force-practice")return seed_owned_practice(argv[2],argv[3]);
             if(command=="--replay-force-practice-picker")return replay_force_practice_picker(argv[2],argv[3]);
+            if(command=="--replay-portable-arrange")return replay_portable_arrange(argv[2],argv[3]);
             return 2;
         }
         if(argc!=3)return 2;

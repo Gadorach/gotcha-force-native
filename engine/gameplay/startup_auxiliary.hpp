@@ -9,8 +9,13 @@ struct StartupAuxiliaryParent {u16 model94=0;u8 phase18=1,kind83=0,active_count=
 struct StartupAuxiliaryState {
     bool allocated=false,matrices_valid=false;u16 captured94=0;s16 counter=0;u8 phase=0,render_group=0,cached_a8=0,previous_a9=0;
     std::array<Mat4,2> matrices{};std::array<std::array<f32,3>,2> history{};
+    bool operator==(const StartupAuxiliaryState&)const=default;
 };
 struct StartupAuxiliaryConstruction {StartupAuxiliaryState state;u8 parent708=0;bool created=false,parent_write=false;};
+namespace startup_auxiliary_detail {
+//Only C76A0's constant inline-two initializer fields. No C79F8 matrix work.
+inline void initialize_inline_two(StartupAuxiliaryState& state){state.phase=1;state.counter=0;state.cached_a8=state.previous_a9=0;state.render_group=1;}
+}
 inline bool startup_auxiliary_construct(const StartupAuxiliaryProfile& p,unsigned entry,const StartupAuxiliaryParent& parent,
                                         u8 scene_mode,bool allocation_available,u8 parent708,StartupAuxiliaryConstruction* out,std::string* error){
     if(out)*out={};
@@ -27,7 +32,7 @@ inline bool startup_auxiliary_step(const StartupAuxiliaryProfile& p,unsigned ent
     auto fail=[&](const char* why){if(error)*error=std::string("startup auxiliary step: ")+why;return false;};
     if(!out||!startup_auxiliary_profile_valid(p)||entry>1||parent.stored_index>1||input.phase>3||(!input.allocated&&input.phase!=0&&input.phase!=3))return fail("state/profile/parent");
     auto s=input;if(!s.allocated){*out=s;if(error)error->clear();return true;}
-    if(s.phase==0){s.phase=1;s.counter=0;s.cached_a8=s.previous_a9=0;s.render_group=1;} //inline2 matrices; no fake immediate77EC call
+    if(s.phase==0){startup_auxiliary_detail::initialize_inline_two(s);} //no fake immediate77EC call
     else if(s.phase==1){s.counter=std::bit_cast<s16>(u16(u16(s.counter)+1u));
         if(parent.active_count){s.previous_a9=s.cached_a8;if(s.cached_a8){if(!s.matrices_valid)return fail("previous matrices required by source history copy");
             for(unsigned n=0;n<2;++n){f64 length=0;for(unsigned k=0;k<3;++k){const f32 v=s.matrices[n].at(k,1);if(!std::isfinite(v))return fail("history matrix finite");length+=f64(v)*v;}length=std::sqrt(length);if(!std::isfinite(length)||length<1e-12)return fail("source history normalization domain");for(unsigned k=0;k<3;++k)s.history[n][k]=f32(s.matrices[n].at(k,1)/length);}}}

@@ -38,10 +38,13 @@ public:
         default:return fail(error,"unexpected final phase");
         }
         if(!p.retained_final_callback(event.reset_input,event.retire_widgets,error))return fail(error,"retained setup callback");
+        //190EBC resets the deferred queue after the retained setup cleanup.
+        //Only this genuine final callback creates the empty-ring lineage.
+        if(event.retire_widgets){const auto& entry=p.preparation_entry_;if(entry&&entry->live)entry->deferred.reset_cursors();}
         fade_.advance();++updates_;*out=event;return true;
     }
     bool draw(ChallengeSetupPresentation& p,RenderEngine& render,std::string* error){return phase_!=ChallengeFinalPhase::Failed&&phase_!=ChallengeFinalPhase::Closed&&p.choice_batch_==selection_.lock()&&p.draw(render,error)&&draw_screen_fade(render,fade_,640,480);}
-    bool take(const std::array<const ForceInventory*,2>& owners,ChallengeInitialPartyCandidate* out){if(out)*out={};if(!out||phase_!=ChallengeFinalPhase::PartyRequested||!party_.current(owners))return false;*out=party_;if(const auto entry=party_.preparation_entry_.lock();entry&&entry->live)entry->handoff_ready=true;phase_=ChallengeFinalPhase::Taken;return true;}
+    bool take(const std::array<const ForceInventory*,2>& owners,ChallengeInitialPartyCandidate* out){if(out)*out={};if(!out||phase_!=ChallengeFinalPhase::PartyRequested||!party_.current(owners))return false;party_.stage_data_=data_;*out=party_;if(const auto entry=party_.preparation_entry_.lock();entry&&entry->live)entry->handoff_ready=true;phase_=ChallengeFinalPhase::Taken;return true;}
     ChallengeFinalPhase phase()const{return phase_;}bool terminal()const{return phase_==ChallengeFinalPhase::PartyRequested||phase_==ChallengeFinalPhase::Taken||phase_==ChallengeFinalPhase::Failed;}
     const ScreenFade& fade()const{return fade_;}s16 remaining()const{return remaining_;}u32 updates()const{return updates_;}
     std::shared_ptr<const ChallengeNativeStageData> data()const{return data_;}

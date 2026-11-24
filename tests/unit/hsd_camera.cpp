@@ -84,6 +84,20 @@ int main(){
     {auto bad=p;bad[39]^=4;check(!gf::option_camera_profile_load({bad.data(),bad.size()},{bytes.data(),bytes.size()},123,base,&result,&error),"wrong expected clip refuses");}
     {auto bad=base;bad.eye[0]=2;check(!gf::option_camera_profile_load({p.data(),p.size()},{bytes.data(),bytes.size()},123,bad,&result,&error),"wrong main baseline refuses");}
     {auto bad=base;bad.up[0]=1;bad.up[1]=0;check(!gf::option_camera_profile_load({p.data(),p.size()},{bytes.data(),bytes.size()},123,bad,&result,&error),"wrong baseline orientation refuses");}
+    {
+        auto fitted=base;fitted.viewport_width=240;fitted.viewport_height=600;fitted.viewport_x=30;
+        const std::array<gf::f32,3> low{200,-50,-30},high{260,70,30};
+        check(gf::camera_fit_bounds(fitted,low,high,10,900)&&fitted.target[0]==230&&
+              fitted.eye[0]==230&&fitted.eye[1]==10&&fitted.eye[2]>0,"framing recentres without changing the view direction");
+        for(auto x:{low[0],high[0]})for(auto y:{low[1],high[1]})for(auto z:{low[2],high[2]}){
+            gf::f32 point[]{x,y,z},sx,sy;
+            check(fitted.project(point,&sx,&sy,nullptr)&&sx>=30&&sx<=270&&sy>=0&&sy<=600,
+                  "all corners fit inside the offset portrait viewport");
+        }
+        const auto key=fitted.cache_key();
+        check(!gf::camera_fit_bounds(fitted,low,high,10,20)&&fitted.cache_key()==key,
+              "camera budget refusal leaves the previous camera unchanged");
+    }
     bool real=false;std::ifstream af("local/analysis/arc/stff_mdl.arc",std::ios::binary),lf("local/content/main-menu.gfml",std::ios::binary),pf("local/content/main-menu.gfop",std::ios::binary);
     if(af&&lf&&pf){
         std::vector<gf::u8>a((std::istreambuf_iterator<char>(af)),{}),l((std::istreambuf_iterator<char>(lf)),{}),p((std::istreambuf_iterator<char>(pf)),{});

@@ -1,0 +1,5 @@
+GFCHALLENGE 1
+id=example:workshop-trials
+name=Workshop Trials
+encounter=round-one|example:workshop|west|east|duel-ai-v1|defeat-opponent|3600
+enemy=round-one|example:jump-stick|normal
