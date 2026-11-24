@@ -1618,6 +1618,14 @@ classification:
   are recorded, not claimed. Stock is capped at three and returned on
   expiry or proximity.
 
+  The source damage is still unclaimed. The private
+  `bulk-scene-receiver.py` already executes the shared receiver spans
+  `8008A28C`-`8008A5D0`, `80089AEC`-`80089C00`, `8008A65C`-`8008AB30`
+  and `8003A4B8`-`8003A5E4` with supplied shape/body registration. A
+  Roach adaptation would bind the group-3 radius-310 sphere and the area
+  child's shape handoff; that is the probe that can replace the authored
+  12 damage with the source receiver result.
+
 Next passes should prefer a shared capability (X moves in the scripted
 showcase, breath/area, child ownership) over one-off per-Borg exceptions,
 and keep recording whether an origin came from explicit weapon/socket data
