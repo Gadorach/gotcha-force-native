@@ -1550,6 +1550,15 @@ classification:
   close-B route. It was reverted rather than shipped unused. Their preview
   draw remains inspection, not battle admission.
 
+  The four also share a neutral **B-shot** row (`state 0`, `substate 0`,
+  selector 44, handler `[61,0]`, callback `801487C4`), so hands are not the
+  only route. That callback dispatches through `0x8033ECF8` (modes 0-4 →
+  `80148838`, 5 → `80148874`, …) and state table `0x8033ED0C`; its terminal
+  calls are `80067310`/`800677B0`/`8006D144`/`800B2190`/`800B22F4`
+  movement and state helpers, not an origin factory. The shared route is a
+  scripted charge/melee, so it needs the same contact capability as the
+  X-charge family rather than a shot profile.
+
   `0107` was the one body whose only refusal was a material stage, and it is
   now admitted. Its single `0x00030082` mesh is the reviewed immutable
   highlight; `body-material=immutable-highlight` admits exactly that
