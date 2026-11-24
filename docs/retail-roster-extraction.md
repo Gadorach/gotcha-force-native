@@ -1567,10 +1567,17 @@ classification:
   `801C04E8` uses `80383A0C`, and the destinations increment the actor's
   `+0x540` state before re-dispatching. `0806`/`0809`/`080f` share
   X-charge callback `80156428`, which dispatches on `+0x581` through the
-  SDA-relative table at `r13-0x6EC8`; no file-backed table was found at
-  the computed address, so resolving the family needs a startup-store
-  trace. `0d06`/`0d07` expose only an `X` selector with handler pair
-  `[61,0]`. None of these yield an origin without that trace.
+  SDA-relative table at `r13-0x6EC8`. The startup sets
+  `r13 = 0x8043B5A0` at `80003334`, so that table is the file-backed
+  `0x804346D8`: modes 0/1 → `80156460`, 2 → `801571C0`, 3/5/7 →
+  `801573D8`, 4 → `80157320`, 6 → `80157584`, 8 → `8015A8F8`,
+  9 → `8015AA24`. Mode 0 dispatches through `0x8034267C` to
+  `801564B0`/`801565CC`/`801566F0`, which drive program `0xC1` via
+  `8006D144`/`8006E1AC`. The terminal `800B22F4` is an inverse-square-root
+  and matrix velocity helper, not a projectile or area factory. The
+  branch is therefore a charged movement/ram, and its contact shape still
+  needs mapping. `0d06`/`0d07` expose only an `X` selector with handler
+  pair `[61,0]`. None of these yield an origin without that work.
 - **Shared 80-byte spawner** (`010a`, `0f04`): their neutral B pays a
   channel-2 debit and calls the sixth shared factory at `80084600`, which
   registers a child actor and selects an 80-byte row at `802D9758` from
