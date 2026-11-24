@@ -42,7 +42,9 @@ def check(root, opengl, samurai=False, gatling=False, complete_samurai=False, ni
         ids=("0700","0701","0702","0704","0707","0708","0709","070a")
         if complete_samurai:
             ids+=("0703","0706")
-        unadmitted=("0705","070b","070c","070d") if complete_samurai else ("0703","0705","0706","070b","070c","070d")
+        # 0705/070b/070c/070d are admitted through the following-field route,
+        # not the close-B hand-record route, so they are not unadmitted here.
+        unadmitted=() if complete_samurai else ("0703","0705","0706","070b","070c","070d")
         if not {f"gg4e08:{id}" for id in ids}<=set(rows) or any(f"gg4e08:{id}" in rows for id in
                 unadmitted):
             raise ValueError("Samurai dropdown includes an unadmitted route or excludes an exact test")

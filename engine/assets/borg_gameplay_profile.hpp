@@ -201,6 +201,7 @@ struct BorgFieldActorPull {
     bool repel=false;
 };
 struct BorgFieldCoreDamage {BorgFieldScope scope=BorgFieldScope::Enemies;u16 radius=0,damage=0,interval=0;};
+struct BorgFieldDebit {std::string stock;u16 cost=0;};
 struct BorgFieldDrift {f32 speed=0,deceleration=0;bool active_while_moving=false;};
 struct BorgFieldSlot {std::string id;bool on_ready=false;};
 inline constexpr unsigned kBorgFieldEffects=8,kBorgFieldTextureSide=32,kBorgFieldTextureBytes=32*32*4;
@@ -216,6 +217,7 @@ struct BorgField {
     std::optional<BorgBattleSocket> socket;
     std::optional<BorgFieldShotPull> shot_pull;
     std::optional<BorgFieldCoreDamage> core_damage;
+    std::optional<BorgFieldDebit> debit;
     std::optional<BorgFieldActorPull> actor_pull;
     std::optional<BorgFieldDrift> drift{};
     std::optional<BorgFieldSlot> slot{};
@@ -286,6 +288,7 @@ struct BorgGameplayProfile {
     BorgBattleMovement movement=BorgBattleMovement::Grounded;
     bool record_zero_body=false;
     bool body_immutable_highlight=false;
+    bool body_diffuse_overwrite_pair=false;
     std::vector<CharacterPreviewMount> body_mounts;
     std::vector<BorgZeroReflection> zero_reflections;
     u16 animated_translation_percent=100;
@@ -397,7 +400,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
        p.moves.empty()!=(p.movement==BorgBattleMovement::Stationary))return false;
     if(p.movement==BorgBattleMovement::Grounded&&(!finite(p.walk,.4f,16)||!finite(p.jump,2,24)||!finite(p.dash,p.walk,32)))return false;
     if((p.record_zero_body||p.idle_authored_loop)&&p.movement==BorgBattleMovement::NormalGRed)return false;
-    if(p.body_immutable_highlight&&p.movement==BorgBattleMovement::NormalGRed)return false;
+    if((p.body_immutable_highlight||p.body_diffuse_overwrite_pair)&&p.movement==BorgBattleMovement::NormalGRed)return false;
     if((!p.body_mounts.empty()&&!p.record_zero_body)||!character_preview_mounts_valid(p.body_mounts))return false;
     if((!p.zero_reflections.empty()&&!p.record_zero_body)||!borg_zero_reflections_valid(p.zero_reflections))return false;
     if(p.animated_translation_percent<25||p.animated_translation_percent>200||
@@ -723,6 +726,9 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
                core->radius>*std::min_element(f.extent.begin(),f.extent.end())||!core->damage||core->damage>10000||
                !core->interval||core->interval>=f.ticks||
                (p.movement==BorgBattleMovement::NormalGRed&&core->scope!=BorgFieldScope::Enemies)))return false;
+            if(const auto& debit=f.debit;debit&&(debit->cost<1||debit->cost>255||
+               std::none_of(p.stocks.begin(),p.stocks.end(),
+                            [&](const auto& stock){return stock.id==debit->stock;})))return false;
             u32 seen=0;
             for(const auto& e:f.effects){
                 if(unsigned(e.kind)>4||unsigned(e.scope)>3)return false;
@@ -835,6 +841,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct FieldActorPullRef {unsigned line;std::string move;BorgFieldActorPull spec;};
     struct FieldPullPointRef {unsigned line;std::string move;BorgFieldPullPoint spec;};
     struct FieldCoreDamageRef {unsigned line;std::string move;BorgFieldCoreDamage spec;};
+    struct FieldDebitRef {unsigned line;std::string move;BorgFieldDebit spec;};
     struct FieldTextureRef {unsigned line;std::string move,path;};
     struct FieldSocketRef {unsigned line;std::string move;BorgBattleSocket socket;};
     struct ProjectileAnimationRef {unsigned line;std::string projectile;BorgProjectileAnimation spec;};
@@ -917,6 +924,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<FieldPullPointRef> field_pull_points;
     std::vector<std::pair<unsigned,std::string>> field_repulsions;
     std::vector<FieldCoreDamageRef> field_core_damage;
+    std::vector<FieldDebitRef> field_debit;
     std::vector<FieldTextureRef> field_textures;
     std::vector<FieldSocketRef> field_sockets;
     std::vector<std::pair<unsigned,std::string>> field_follows;
@@ -969,9 +977,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(next.record_zero_body||value!="0")return fail("only explicit record-zero body binding is supported");
             next.record_zero_body=true;
         }else if(key=="body-material"){
-            if(next.body_immutable_highlight||value!="immutable-highlight")
+            if(next.body_immutable_highlight||next.body_diffuse_overwrite_pair)
                 return fail("invalid or duplicate body material policy");
-            next.body_immutable_highlight=true;
+            if(value=="immutable-highlight")next.body_immutable_highlight=true;
+            else if(value=="diffuse-overwrite-pair")next.body_diffuse_overwrite_pair=true;
+            else return fail("invalid or duplicate body material policy");
         }else if(key=="animated-translation-percent"){
             u16 percent=0;
             if(next.animated_translation_percent!=100||!number(value,25,200,&percent)||percent==100)
@@ -1168,6 +1178,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !field_scope(a[1],&spec.scope)||!number(a[2],1,600,&spec.radius)||
                !number(a[3],1,10000,&spec.damage)||!number(a[4],1,599,&spec.interval))return fail("invalid field-core-damage");
             field_core_damage.push_back({line,std::string(a[0]),spec});
+        }else if(key=="field-debit"){
+            std::array<std::string_view,3> a;BorgFieldDebit spec;
+            if(field_debit.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
+               !number(a[2],1,255,&spec.cost))return fail("invalid field debit");
+            spec.stock=std::string(a[1]);
+            field_debit.push_back({line,std::string(a[0]),spec});
         }else if(key=="field-effect"){
             constexpr std::array<std::string_view,5> kinds{"actor-speed","shot-speed","shot-damage","shot-size","break-guidance"};
             std::array<std::string_view,4> a;u16 amount=0;BorgFieldScope scope;
@@ -1905,6 +1921,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->core_damage)
             return fail("field-core-damage needs one binding to a declared field");
         next.moves[mi].field->core_damage=r.spec;
+    }
+    for(const auto& r:field_debit){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->debit)
+            return fail("field-debit needs one binding to a declared field");
+        next.moves[mi].field->debit=r.spec;
     }
     for(const auto& r:field_textures){
         line=r.line;const auto mi=index(next.moves,r.move);

@@ -783,6 +783,14 @@ guards. The core fits inside the smallest field extent; it doesn't
 pull actors. Either declaration can be used alone. Try both on Flight
 Stick's X with `--gravity-field`.
 
+`field-debit=move|stock|cost` pays one declared stock on the accepted
+placement frame. The field is refused without spending if the stock
+cannot pay; an accepted payment records `stock-spent` and the field
+placement follows. The debit happens before the free-slot check, so an
+allocation refusal still spends the paid unit, matching the source
+factory order. Use `entry-stock` when the move itself must also be
+gated.
+
 `field-drift=move|initial speed|deceleration per tick|active-or-after-stop`
 captures the placing actor's heading and moves the field horizontally
 from its accepted start. The first step happens on the next tick;

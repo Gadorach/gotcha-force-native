@@ -130,8 +130,10 @@ public:
         }else{
             reset_control_test_pose();ready_=false;model_id_=0;world_={};displayed_={};
             bool body;
-            const auto material=profile->body_immutable_highlight?
-                HsdStaticMaterialPolicy::ImmutableHighlight:HsdStaticMaterialPolicy::Legacy;
+            const auto material=profile->body_diffuse_overwrite_pair?
+                HsdStaticMaterialPolicy::DiffuseOverwritePair:
+                profile->body_immutable_highlight?HsdStaticMaterialPolicy::ImmutableHighlight:
+                HsdStaticMaterialPolicy::Legacy;
             if(profile->body_mounts.empty()){
                 body=profile->record_zero_body?scene_.load_record_zero(hsd,prefix,pose,error,material):
                                               scene_.load(hsd,prefix,pose,error,material);

@@ -18,6 +18,7 @@ from tools.analyze import retail_paired_ground_shot as ground_pairs
 from tools.analyze import retail_single_ground_shot as single_shots
 from tools.analyze import retail_breath_dragon as breath
 from tools.analyze import retail_roach_bomb as roach_bomb
+from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_knight_melee as knight
 from tools.analyze import retail_samurai_melee as samurai
@@ -177,6 +178,26 @@ class RosterFormatTests(unittest.TestCase):
         self.assertIn(b"release=breath-dive|8|breath-stock|1|dive\n",dive_rules)
         self.assertNotIn(b"breath-sweep",dive_rules)
         self.assertEqual(dive_receipt["native_dive"]["origin_joint"],12)
+
+    def test_zeta_field_pilot_binds_shared_row_and_authors_the_field(self):
+        joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]
+        roles=[("ground-stop",0,0),("ground-travel",0,1),("air-continuation",0,24),("ground-dash-forward",0,2)]
+        row={"state":0,"substate":0,"selector":44,"handler_pair":[61,0],
+             "class_callback_candidate":"801487C4","contexts":[[0,0],[0,1]]}
+        actions={"profiles":[{"groups":[{"group":"B-shot","rows":[row]}]}]}
+        rules,pose,receipt=zfield.battle_test(0x0705,joints,roles,{"native_units_per_tick_x100":458},[50],actions)
+        for line in ("body-material=diffuse-overwrite-pair","idle-loop=authored-bit","walk-loop=authored-bit",
+                     "stock=z-stock|1|180","field=z-hit|3|sphere|90|90|90|30|80|40|190|90|220|120",
+                     "field-follow=z-hit|source","field-core-damage=z-hit|enemies|90|10|6",
+                     "field-debit=z-hit|z-stock|1","move=z-hit|b|10|grounded|28|none"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(receipt["source_debit"]["channel"],2)
+        self.assertEqual(receipt["authored"]["damage"],10)
+        self.assertFalse(receipt["retail_behavior_verified"])
+        bad=dict(row,class_callback_candidate="80156428")
+        actions["profiles"][0]["groups"][0]["rows"]=[bad]
+        with self.assertRaisesRegex(ValueError,"neutral B-shot row"):
+            zfield.battle_test(0x0705,joints,roles,{"native_units_per_tick_x100":458},[50],actions)
 
     def test_roach_reimplements_the_placed_area_as_a_native_bomb(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]

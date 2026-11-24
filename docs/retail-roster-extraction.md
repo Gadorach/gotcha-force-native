@@ -68,8 +68,11 @@ geometry submissions, not just successful loading and UI draws. It passed
 exact looks each for `0202` and `020b` pass. `0107` is now a normal-only
 pilot: its five exact wrappers remain as `source-wrapper-*.bin`, but the
 playable catalogue declares only `normal`, so those five leave the
-declared alternate set (the current preview run is five requests lower for
-that reason). The remaining looks refuse strict reflection generation. An
+declared alternate set. The four Zeta models are now normal-only pilots
+too, so their twenty exact wrappers likewise remain as
+`source-wrapper-*.bin` without catalogue variant declarations. The current
+preview run is twenty-five requests lower for those reasons. The remaining
+looks refuse strict reflection generation. An
 undeclared variant request refused.
 
 ### Use the coarse movement and move map
@@ -1523,7 +1526,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 184 of 206. The remaining 22 are no longer a
+Battle Test now covers 188 of 206. The remaining 18 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1538,17 +1541,14 @@ classification:
   callbacks (`801F8108`/`801F840C`). These are heterogeneous owned effect
   objects, so a shared child capability must bind each callback rather than
   assume one spawner shape.
-- **Strict body refusals** (`0705`, `070b`, `070c`, `070d`): the four Zeta
-  bodies each contain one two-TObj diffuse pair (`0x00030010` head `src=4`,
-  tail `src=5`) plus single/reflection stages. The preview's `BodyInspection`
-  bank admits the pair, while the battle body loads the bank with `Legacy`,
-  so the binding refuses `unsupported material/texture-matrix stages`.
-
-  A scoped `body-material=diffuse-overwrite-pair` opt-in was implemented and
-  probed, but it does not unlock any of them: all four have empty
-  `model_parts.default_candidates`, so no hand records exist for their
-  close-B route. It was reverted rather than shipped unused. Their preview
-  draw remains inspection, not battle admission.
+- **Zeta body material (admitted)**: the four Zeta bodies each contain one
+  two-TObj diffuse pair (`0x00030010` head `src=4`, tail `src=5`) plus
+  single/reflection stages. The scoped
+  `body-material=diffuse-overwrite-pair` policy admits exactly that pair,
+  and the authored idle/walk loop bits bind their Samurai-family clips.
+  All four have empty `model_parts.default_candidates`, so the Samurai
+  close-B route has no hand records; the admitted route is the shared
+  B-shot child below.
 
   The four also share a neutral **B-shot** row (`state 0`, `substate 0`,
   selector 44, handler `[61,0]`, callback `801487C4`), so hands are not the
@@ -1556,9 +1556,17 @@ classification:
   `80148838`, 5 → `80148874`, …) and state table `0x8033ED0C`. The
   terminal `800B2190` allocates a child (callbacks `800B26CC`/`800B2CE4`,
   phase table `802FC7AC`, parent `+0x8C`); its handlers use `80089100`
-  list registration and `8003D6E4` distance/matrix helpers. It is another
-  child/effect runtime, not an origin factory or a body charge, so the
-  four need the child ownership path rather than a shot or bomb profile.
+  list registration and `8003D6E4` distance/matrix helpers. It is a
+  following child effect, not an origin factory.
+
+  The four are now admitted through that B-shot route. The validated
+  `body-material=diffuse-overwrite-pair` policy binds their two-stage
+  body, the authored idle/walk loop bits bind the Samurai-family clips,
+  and the following-field API expresses the child: `field-follow=source`,
+  `field-core-damage` radius 90 / damage 10 / interval 6, lifetime 30,
+  and the new `field-debit` paying the exact channel-2 cost 1 through the
+  move's stock. The source child asset and scene damage receiver remain
+  unclaimed; the field geometry, damage and timing are authored.
 
   `0107` was the one body whose only refusal was a material stage, and it is
   now admitted. Its single `0x00030082` mesh is the reviewed immutable
@@ -1568,8 +1576,7 @@ classification:
 - **X-only pilots are now supported**: `0303` Delta II and `0c02` Beam
   Tank declare an `x` move and rely on the showcase's existing frame-41 and
   frame-126 presses; the HUD reports a missing B. Remaining X-side routes
-  (`070c`, `070d`, `080a`) end in effect or child calls rather than an
-  origin factory.
+  (`080a`) end in effect or child calls rather than an origin factory.
 - **No neutral B row** (`0205`, `0308`, `0806`, `0809`, `080a`, `080f`,
   `0d06`, `0d07`): their B or X is state-specific, so there is no `0:0`
   context to bind. The dispatchers confirm it is an action-state machine,

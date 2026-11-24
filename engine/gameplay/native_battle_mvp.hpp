@@ -2012,18 +2012,35 @@ private:
         if(move.field&&action.frame==move.field->frame)spec=*move.field;
         else if(move.slow_field&&action.frame==move.slow_field->frame){
             const auto& s=*move.slow_field;
-            spec={s.frame,s.ticks,s.forward,s.height,BorgFieldShape::Sphere,{s.radius,s.radius,s.radius},{72,190,208,55},{},{},false,{},{},{},{}};
+            spec={s.frame,s.ticks,s.forward,s.height,BorgFieldShape::Sphere,{s.radius,s.radius,s.radius},{72,190,208,55},{},{},false,{},{},{},{},{}};
             if(s.actor_percent!=100)spec.effects.push_back({K::ActorSpeed,S::Enemies,s.actor_percent});
             if(s.shot_percent!=100)spec.effects.push_back({K::ShotSpeed,S::Enemies,s.shot_percent});
             if(s.break_guidance)spec.effects.push_back({K::BreakGuidance,S::Enemies,0});
             placed=BorgBattleEventKind::SlowFieldPlaced;refused=BorgBattleEventKind::SlowFieldRefused;value=s.actor_percent;
         }else if(move.power_field&&action.frame==move.power_field->frame){
             const auto& s=*move.power_field;
-            spec={s.frame,s.ticks,s.forward,s.height,BorgFieldShape::Sphere,{s.radius,s.radius,s.radius},{223,75,55,48},{},{},false,{},{},{},{}};
+            spec={s.frame,s.ticks,s.forward,s.height,BorgFieldShape::Sphere,{s.radius,s.radius,s.radius},{223,75,55,48},{},{},false,{},{},{},{},{}};
             if(s.damage_percent!=100)spec.effects.push_back({K::ShotDamage,S::All,s.damage_percent});
             if(s.visual_percent!=100)spec.effects.push_back({K::ShotSize,S::All,s.visual_percent});
             placed=BorgBattleEventKind::PowerFieldPlaced;refused=BorgBattleEventKind::PowerFieldRefused;value=s.damage_percent;
         }else return;
+        if(const auto& debit=spec.debit){
+            const auto& profile=*config_.packages[owner];
+            const auto found=std::find_if(profile.stocks.begin(),profile.stocks.end(),
+                [&](const auto& stock){return stock.id==debit->stock;});
+            if(found==profile.stocks.end()){
+                record_package(refused,owner,action.move,action.frame,0,0);return;
+            }
+            auto& stock=package_actions_[owner].stocks[unsigned(found-profile.stocks.begin())];
+            WeaponStockPlan plan;
+            if(!weapon_stock_plan(stock,BorgBattleActionState::stock_mode(*found),WeaponStockOperation::Debit,
+                                  debit->cost,&plan)||!plan.accepted){
+                record_package(BorgBattleEventKind::StockRefused,owner,action.move,action.frame,0,u16(stock.current));
+                record_package(refused,owner,action.move,action.frame,0,0);return;
+            }
+            stock=plan.state;
+            record_package(BorgBattleEventKind::StockSpent,owner,action.move,action.frame,0,u16(stock.current));
+        }
         auto free=std::find_if(fields_.begin(),fields_.end(),[](const auto& field){return !field.id;});
         const auto same=[&](const auto& field){return same_package_field_slot(field,owner,spec);};
         const bool wait=spec.slot&&spec.slot->on_ready;

@@ -775,6 +775,23 @@ void movement_and_attraction_cases(){
     check(!borg_read_gameplay_profile(std::string(player)+"walk-pulse=1|8|120|20|8|13\n",&invalid,nullptr)&&
           !borg_read_gameplay_profile(core_base+"field-core-damage=well|enemies|171|7|3\n",&invalid,nullptr),
           "pulse stride and core extent are bounded");
+    const auto debit_base=std::string(player)+
+        "move=well|x|80|any|4|none\nfield=well|1|sphere|170|170|170|10|400|50|95|50|160|80\n"
+        "field-core-damage=well|enemies|170|7|3\n";
+    check(!borg_read_gameplay_profile(debit_base+"field-debit=well|primary|0\n",&invalid,nullptr)&&
+          !borg_read_gameplay_profile(debit_base+"field-debit=well|missing|1\n",&invalid,nullptr),
+          "field debit needs a bounded cost and a declared stock");
+    {
+        const auto debit=parse(debit_base+"field-debit=well|primary|1\n");
+        NativeBattleMvp world;BattleMvpConfig config;config.packages={debit,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+        check(world.start(config),"field debit fixture");
+        for(unsigned i=0;i<4;++i)check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+            {BorgBattleInputs{u8(i==0?BorgBattleInputs::x:0),0,0},BorgBattleInputs{}}),"field debit step");
+        check(world.fields()[0].id,"field debit places the field");
+        check(world.package_action(0).stocks[0].current==1,"field debit spends one stock");
+        check(world.package_action(0).stocks[0].previous==2,"field debit keeps the previous count");
+    }
     for(unsigned scenario=0;scenario<4;++scenario){
         NativeBattleMvp world;BattleMvpConfig config;config.packages={pulse,parse(target)};
         config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
