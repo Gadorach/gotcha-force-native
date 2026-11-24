@@ -1610,9 +1610,17 @@ classification:
   latch, area-key-26 request, capped return and physical release. Its
   `remaining` list still names *child/area-key-26 lifecycle and receiver
   outcome*, and the retry scope records that `80085E00` returns a declared
-  refusal without receiver or damage. That receiver is a scene-owned
-  service the replay harness does not execute, so an authored bomb or field
-  cannot claim the source damage.
+  refusal without receiver or damage.
+
+  Static tracing now maps the area object itself: `80085E00` allocates a
+  second child (callbacks `80086048`/`80086504`, key 26, parent `+0x90`).
+  Its phase table `802DA544` runs phase 0 proximity through
+  `8008AE10`/`8008AE3C` → `8008AE60` (the six-slot query and table
+  `802C4760`), phase 5 shape bind through `8008AFF0`, and phase 3 release
+  through `80088E50`. None of those functions applies damage; the hit is
+  the scene's attack-shape overlap, which the harness does not execute.
+  That is why the receiver remains unresolved and why an authored bomb or
+  field cannot claim the source damage.
 
 Next passes should prefer a shared capability (X moves in the scripted
 showcase, breath/area, child ownership) over one-off per-Borg exceptions,
