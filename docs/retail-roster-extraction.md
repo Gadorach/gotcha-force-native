@@ -1606,6 +1606,14 @@ classification:
   parent field `+0x8C`. It is a child effect, not a projectile, so it needs
   the child-actor capability below.
 
+  The private Roach receipt already covers the paid carrier, timer/contact
+  latch, area-key-26 request, capped return and physical release. Its
+  `remaining` list still names *child/area-key-26 lifecycle and receiver
+  outcome*, and the retry scope records that `80085E00` returns a declared
+  refusal without receiver or damage. That receiver is a scene-owned
+  service the replay harness does not execute, so an authored bomb or field
+  cannot claim the source damage.
+
 Next passes should prefer a shared capability (X moves in the scripted
 showcase, breath/area, child ownership) over one-off per-Borg exceptions,
 and keep recording whether an origin came from explicit weapon/socket data
