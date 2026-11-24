@@ -1553,11 +1553,12 @@ classification:
   The four also share a neutral **B-shot** row (`state 0`, `substate 0`,
   selector 44, handler `[61,0]`, callback `801487C4`), so hands are not the
   only route. That callback dispatches through `0x8033ECF8` (modes 0-4 →
-  `80148838`, 5 → `80148874`, …) and state table `0x8033ED0C`; its terminal
-  calls are `80067310`/`800677B0`/`8006D144`/`800B2190`/`800B22F4`
-  movement and state helpers, not an origin factory. The shared route is a
-  scripted charge/melee, so it needs the same contact capability as the
-  X-charge family rather than a shot profile.
+  `80148838`, 5 → `80148874`, …) and state table `0x8033ED0C`. The
+  terminal `800B2190` allocates a child (callbacks `800B26CC`/`800B2CE4`,
+  phase table `802FC7AC`, parent `+0x8C`); its handlers use `80089100`
+  list registration and `8003D6E4` distance/matrix helpers. It is another
+  child/effect runtime, not an origin factory or a body charge, so the
+  four need the child ownership path rather than a shot or bomb profile.
 
   `0107` was the one body whose only refusal was a material stage, and it is
   now admitted. Its single `0x00030082` mesh is the reviewed immutable
