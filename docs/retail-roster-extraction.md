@@ -1613,9 +1613,14 @@ classification:
   B state machine `80199490` → `8036FB48` spawns rows **11** and **12**
   via `800853EC` and debits channel 2 cost 1 through `8006DBE0`
   (`801997B0`). Rows 11/12 give joint 25, animation index 7/11, source
-  speed 25.0 (`+0x2C`) and timer 60.0 (`+0x10`). The channel-2 stock cap
-  and the exact spawn frames remain open; the native projectile path can
-  express the two ordered hitboxes once those are pinned.
+  speed 25.0 (`+0x2C`) and timer 60.0 (`+0x10`). Joint 25 is a **child-rig
+  index**, not a caster socket: `010a` exposes only joints 0-19, and the
+  child's effect asset comes from the shared effect archive rather than
+  the package. The native projectile can express the hitbox speed and
+  lifetime, but its origin and visual require binding that child asset or
+  reproducing the sampled `8020B7A8` entry. The channel-2 stock cap and
+  the exact spawn frames are separate. This is the asset/ownership gap
+  that keeps the family indexed.
 - **Flying bosses** (`0e00`-`0e05`, `0f04`): their B-shot callbacks are
   state machines with no origin factory. `0e00`/`0e05` use table
   `80362CA8`; state 1 starts a timer at `+0x558` and calls `801FC1B0`,
