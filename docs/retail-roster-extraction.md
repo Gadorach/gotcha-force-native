@@ -1604,6 +1604,18 @@ classification:
   well as the row. Binding it as a fixed authored origin would substitute
   a different launch. The family stays indexed rather than bound until the
   sampled entry can be reproduced or a user-observed origin is supplied.
+
+  The child update `80084740` runs phase table `802DA018`: phase 0
+  `80084790` builds the transform, phase 1 `80084CEC` decrements the timer
+  and hands off an attack shape through `8008AFF0`, phase 2 `800850F8`
+  keeps the shape handoff, and phase 3 `80085134` releases through
+  `80088E50`. That is a moving hitbox, not a script VM. For `010a`, the
+  B state machine `80199490` → `8036FB48` spawns rows **11** and **12**
+  via `800853EC` and debits channel 2 cost 1 through `8006DBE0`
+  (`801997B0`). Rows 11/12 give joint 25, animation index 7/11, source
+  speed 25.0 (`+0x2C`) and timer 60.0 (`+0x10`). The channel-2 stock cap
+  and the exact spawn frames remain open; the native projectile path can
+  express the two ordered hitboxes once those are pinned.
 - **Flying bosses** (`0e00`-`0e05`, `0f04`): their B-shot callbacks are
   state machines with no origin factory. `0e00`/`0e05` use table
   `80362CA8`; state 1 starts a timer at `+0x558` and calls `801FC1B0`,
