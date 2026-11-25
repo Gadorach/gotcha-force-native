@@ -647,17 +647,20 @@ with the same credit factor, scalar and receiver rank as the boost hit. Both
 G-Red moves therefore select **per-Borg config records**, and the shared pool at
 `0x802D4148` is used by a different carrier path.
 
-The same X sequence also exposes a **decay factor**. Three successive hits kept
-the same credit record (`80366058`), base (30), credit factor, scalar and
-receiver rank, yet applied:
+The same X sequence looked like a decay, but it is the **ReceiverTier** row.
+`actor+0x6CA` increments on each successive hit and indexes
+`0x802C7CA0 = [1.0, 0.8, 0.5, 0.25]`:
 
 ```text
-33 (HP 180) -> 27 (HP 147) -> 16 (HP 120)
+tier 0: 33.8 x 1.0 = 33.8 -> 33
+tier 1: 33.8 x 0.8 = 27.04 -> 27
+tier 2: 33.8 x 0.5 = 16.9 -> 16
 ```
 
-The GFDA health and force rows are all 1.0 at those indices, so the decay is a
-runtime factor (a combo/health table) that is not yet identified. The published
-move-base amounts are the **first hit** of each sequence.
+The live checks are exact: `d290 f0=1.0 index=0 tier6ca=0`, then
+`f0=0.8 index=4 tier6ca=1`, then `f0=0.5 index=8 tier6ca=2`. There is no
+separate combo factor; the tier byte **is** the hit-chain counter. The published
+move-base amounts are the first hit (tier 0).
 
 The Mana hit's carrier is `0x8064AAB8`, a separate object rather than the actor,
 unlike the X hit where the carrier is `0x805DBDC0` itself. But the **B-close/boost
