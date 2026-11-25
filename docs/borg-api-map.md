@@ -58,6 +58,19 @@ them. It cannot be derived from the attack rating either — `0f01`'s ratings ar
 So damage lives in the program/cue path that the projectiles do not describe,
 and recovering it means decoding that path rather than reading the row. Until
 then every pilot's damage stays explicitly authored.
+
+The static route to that path is now exhausted. The HP writer at `8003D358`
+(the `HP - r4` site found during the Roach work) has no `bl`, no `b`, no 32-bit
+pointer word in any data section, and no `lis`/`addi`/`ori` materialisation of
+its address anywhere in either text section. The direct `+0x1C6` HP writes that
+do exist are initialisation sites (`HP = +0x1C4`), such as `8004E318` and
+`80081CFC`, not damage application.
+
+Settling the amount therefore needs an observation the binary cannot give
+statically: a bounded original execution under the project's strict replay gate
+(fresh exclusive slot, one isolated process, no concurrent compiles or replays),
+recording `r4` at the damage site for a known attacker and defender. Until that
+runs, authored damage stays labelled rather than guessed.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
