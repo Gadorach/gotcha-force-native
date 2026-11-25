@@ -569,6 +569,14 @@ The measured record is exported as
 by `tools/analyze/gred_sasuke_contact_damage.py`; it is one pair and one
 contact path, and explicitly does not generalise yet.
 
+The scalar is not a Borg value. `0x803C4E60 + team` is a **battle/team** byte
+that indexes a fixed 32-entry ladder at `0x802C6820` (`0.97 … 2.0`). The same
+credit record at `0x80365EC0` reads index **16 → 1.13** in the Kakeru savestate
+and index **30 → 1.4** in the Mana savestate. The ladder is exported as
+[`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by
+`tools/analyze/contact_scalar_ladder.py`; the Mana value is read from the
+settings global but has not yet been confirmed by a captured hit.
+
 This also explains the difference from the beam table. With the same caps the
 host replay asserts **19** (depleted receiver Force) and **20** (full Force),
 because the beam path applies the GFDA rows, including receiver difficulty

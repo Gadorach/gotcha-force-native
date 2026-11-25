@@ -1,0 +1,66 @@
+{
+  "address": "802C6820",
+  "count": 32,
+  "entries": [
+    0.97,
+    0.98,
+    0.99,
+    1.0,
+    1.01,
+    1.02,
+    1.03,
+    1.04,
+    1.05,
+    1.06,
+    1.07,
+    1.08,
+    1.09,
+    1.1,
+    1.11,
+    1.12,
+    1.13,
+    1.14,
+    1.15,
+    1.16,
+    1.17,
+    1.18,
+    1.19,
+    1.2,
+    1.21,
+    1.22,
+    1.23,
+    1.24,
+    1.25,
+    1.3,
+    1.4,
+    2.0
+  ],
+  "kind": "gf-contact-scalar-ladder",
+  "notes": [
+    "The scalar is a battle/team value, not a Borg value.",
+    "Index 16 is the observed Kakeru value; index 30 is read from the Mana savestate but no contact was captured there.",
+    "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows."
+  ],
+  "revision": 1,
+  "settings": {
+    "address": "803C4E60",
+    "index_expression": "byte at settings + team",
+    "observations": [
+      {
+        "byte": 16,
+        "scalar": 1.13,
+        "state": "kakeru_battle",
+        "team": 1,
+        "verified": true
+      },
+      {
+        "byte": 30,
+        "scalar": 1.4,
+        "state": "mana_battle",
+        "team": 1,
+        "verified": false
+      }
+    ]
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
