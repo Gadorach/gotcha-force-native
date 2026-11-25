@@ -69,20 +69,30 @@ component. A successful build or extracted ISO is not a completed game.
 
 ### Published maps
 
-Two generated, asset-free views of the roster are checked in:
+Generated, asset-free views of the roster are checked in. None contains model,
+texture or audio bytes; each regenerates from a local roster.
 
 - [Borg API map](docs/borg-api-map.md) — per Borg: identity, movement
   candidates and the bound operand record, locomotion roles, neutral action
-  rows, binding capability and its fidelity, air-action budget and
-  pose-ground offset. The data is
-  [`docs/api-map/gg4e08-borg-api-map.json`](docs/api-map/gg4e08-borg-api-map.json).
+  rows, binding capability and its fidelity, air-action budget, pose-ground
+  offset, recovered stock operands and which audio keys are actually bound.
+  Data: [`docs/api-map/gg4e08-borg-api-map.json`](docs/api-map/gg4e08-borg-api-map.json).
+  Tool: `tools/extract/borg_api_map.py`.
 - [Model render inventory](docs/api-map/model-render-inventory.json) — render
   bits, texture and TLUT formats, vertex attributes and PObj types, with the
-  models that carry unknown bits.
+  models that carry unknown bits. Tool:
+  `tools/analyze/material_stage_inventory.py`.
+- [Descriptor lane events](docs/api-map/lane-events.json) — per Borg, each
+  resolved entry clip's lane group, choice, event and flags. Tool:
+  `tools/extract/retail_borg_roster.py` with `--action-clips`.
 
-Neither contains model, texture or audio bytes, so both can be regenerated
-from a local roster with `tools/extract/borg_api_map.py` and
-`tools/analyze/material_stage_inventory.py`.
+Two recovery records carry the reasoning rather than the data:
+
+- [Borg API map notes](docs/borg-api-map.md) — what each field means and what is
+  authored versus recovered.
+- [Attack pipeline recovery](docs/borg-attack-pipeline-recovery.md) — the full
+  contact trace from input to data, the three remaining steps, and every
+  candidate that was measured and rejected.
 
 ## Build
 
