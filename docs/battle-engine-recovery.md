@@ -189,6 +189,31 @@ The full chain is therefore:
 So the reaction path is mostly a scaffold of matched helpers around the open
 amount and a handful of open per-class effect functions.
 
+## Applying the recovered scale to content
+
+The `damage-vs` row matches the **receiver** model, so it belongs in the
+attacker's package. The current demo profiles make the mapping easy to get
+wrong:
+
+- G-Red's test profile (`g-red`) has only the `beam-test` move; it has no close
+  melee move.
+- `close-b-test` is Sasuke's move, so adding `damage-vs=10` there would match
+  Sasuke-model receivers, not G-Red's opponent.
+
+The correct content step is a dedicated G-Red close move on an unused button
+(for example `x`) with:
+
+```text
+move=close-b-test|x|30|grounded|18|0:2
+range=close-b-test|145
+melee=close-b-test|4|8|115|12|60|24|20
+damage-vs=10|0.867|1.13|1.15|1.0
+damage-chain=1.0|0.8|0.5|0.25
+```
+
+That keeps G-Red's `b` beam behaviour intact and applies the recovered contact
+only against model `0x000A`.
+
 ## Next targets
 
 1. `8003CD5C`: turn the reproduced live amount into a native table-driven
