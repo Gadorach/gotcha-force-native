@@ -499,13 +499,18 @@ The extracted GFDA table
 | ReceiverRank | **1.15**, 1.1, 1.05, 1.0 |
 | ReceiverTier | 1.0, 0.8, 0.5, 0.25 |
 
-So the live value is `base 20 × factor product`. `20 × 1.1 = 22` exactly, and
-`20 × 1.15 × 0.99 = 22.77` truncates to 22; either way the observed 22 sits in
-the table's own range. The remaining exactness is the **index selection** for
-each row: the health index is the one captured at `8003CF70`, while the
-difficulty/rank/tier and force indices come from the sample fields. That is the
-last step before the amount can be called table-derived rather than
-observation-only.
+So the live value is `base 20 × factor product`, and `20 × 1.1 = 22` matches
+exactly. But the full beam formula in
+`engine/gameplay/borgs/normal_gred_beam_sasuke_health.hpp` multiplies **all**
+nine factor rows (difficulty, health, force, rank, tier) and also applies a
+projectile relative adjustment; with the live indices the full product lands
+around 17–21, not 22. The boost/contact path therefore applies a **reduced
+factor set** rather than the beam's full chain. The shared facts are the base
+`20`, the credit record and the `1.15/1.1` receiver-rank row; the exact
+per-hit factor selection is still open.
+
+That distinction matters for shipping: the live 22 is a genuine contact amount,
+but it must not be fed into the beam table as if it were the beam result.
 
 The move-level name still needs the carrier row, but the attacker, receiver,
 base amount, factor row and HP write are all identified.
