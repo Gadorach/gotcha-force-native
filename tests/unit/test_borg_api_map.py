@@ -56,6 +56,13 @@ class BorgApiMapTest(unittest.TestCase):
             self.assertEqual(present["other_sfx"], "unresolved")
             self.assertFalse(present["landing"]["trigger_qualified"])
 
+    def test_audio_counts_recovered_action_routes(self):
+        cues = [{"routes": [{"a": 1}, {"b": 2}]}, {"routes": [{"c": 3}]}]
+        out = api._audio({}, Path("."), cues)
+        self.assertEqual(out["recovered_action_cues"], 2)
+        self.assertEqual(out["recovered_action_routes"], 3)
+        self.assertEqual(api._audio({}, Path("."), ())["recovered_action_routes"], 0)
+
     @unittest.skipUnless(ROSTER.is_dir(), "local roster export")
     def test_map_states_that_it_carries_no_asset_bytes(self):
         data = api.build(ROSTER)

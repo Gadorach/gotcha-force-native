@@ -37,8 +37,9 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
 - `capability` — the pilot that binds the Borg, or `null` when the package
   carries no executable gameplay.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
-  qualified, and whether the PCM file is present), the `other_sfx` state, and
-  whether a launch sound was authored.
+  qualified, and whether the PCM file is present), the `other_sfx` state,
+  whether a launch sound was authored, and how many action cues and routes
+  the shared `shared-action-sfx.json` recovers for that Borg.
 - `preview_declaration` — whether a preview is declared.
 
 ## Reading it honestly
@@ -110,11 +111,13 @@ The map records what is actually bound rather than what is hoped for:
 | --- | --- |
 | Landing PCM present | 181 of 206 |
 | Landing trigger qualified | 0 of 206 |
-| `other_sfx` resolved | 0 of 206 (all `unresolved`) |
+| Action cues recovered in `shared-action-sfx.json` | 13 of 206 |
+| `other_sfx` still `unresolved` | 206 of 206 |
 
-So the "missing sfx" complaint is accurate and locatable: the roster carries a
-landing candidate for most Borgs, but no trigger is qualified and no per-Borg
-action SFX set has been recovered. That is the next audio unit — recover the
-cue tables per action from the source banks, then bind them per move through
-the existing `movement-cue`/`launch-sound`/`impact-sound` API instead of adding
-per-Borg exceptions.
+So the "missing sfx" complaint is accurate and locatable. Most Borgs carry a
+landing candidate with no qualified trigger, and only thirteen have recovered
+action-SFX routes at all (`0007`, `0104`, `0203`, `020c`, `0619`, `061b`,
+`061f`, `0620`, `0625`, `0804`, `080c`, `0c05`, `0f05`). That is the next audio
+unit: recover the cue tables per action from the source banks for the other 193,
+then bind them per move through the existing `movement-cue`, `launch-sound` and
+`impact-sound` API instead of adding per-Borg exceptions.

@@ -127,7 +127,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "15",
@@ -364,7 +366,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "16",
@@ -596,7 +600,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "17",
@@ -847,7 +853,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "18",
@@ -1079,7 +1087,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "charge-field",
    "collection_number": "19",
@@ -1387,7 +1397,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "20",
@@ -1624,7 +1636,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "114",
@@ -1875,7 +1889,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 2,
+    "recovered_action_routes": 10
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "153",
@@ -2145,7 +2161,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "76",
@@ -2458,7 +2476,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "115",
@@ -2752,7 +2772,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "2",
@@ -2989,7 +3011,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "9",
@@ -3259,7 +3283,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "77",
@@ -3496,7 +3522,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "21",
@@ -3747,7 +3775,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "22",
@@ -3960,7 +3990,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "held-fire",
    "collection_number": "116",
@@ -4306,7 +4338,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "23",
@@ -4567,7 +4601,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 5
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "154",
@@ -4780,7 +4816,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "79",
@@ -5126,7 +5164,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "24",
@@ -5482,7 +5522,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "25",
@@ -5724,7 +5766,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "13",
@@ -5937,7 +5981,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "78",
@@ -6131,7 +6177,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "spawner-shot",
    "collection_number": "80",
@@ -6444,7 +6492,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "30",
@@ -6681,7 +6731,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "32",
@@ -6913,7 +6965,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "31",
@@ -7221,7 +7275,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 10
    },
    "capability": "basic-melee",
    "collection_number": "117",
@@ -7458,7 +7514,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "118",
@@ -7709,7 +7767,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "staged-field",
    "collection_number": "183",
@@ -7903,7 +7963,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "81",
@@ -8135,7 +8197,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "190",
@@ -8424,7 +8488,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "155",
@@ -8680,7 +8746,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "182",
@@ -8988,7 +9056,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "26",
@@ -9225,7 +9295,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "28",
@@ -9533,7 +9605,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 10
    },
    "capability": "basic-melee",
    "collection_number": "29",
@@ -9770,7 +9844,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "27",
@@ -10059,7 +10135,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "156",
@@ -10372,7 +10450,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "82",
@@ -10609,7 +10689,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "34",
@@ -10841,7 +10923,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "35",
@@ -11149,7 +11233,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "38",
@@ -11367,7 +11453,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "84",
@@ -11637,7 +11725,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "181",
@@ -11931,7 +12021,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "120",
@@ -12244,7 +12336,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "36",
@@ -12462,7 +12556,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "37",
@@ -12732,7 +12828,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "charge-field",
    "collection_number": "180",
@@ -13026,7 +13124,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "119",
@@ -13320,7 +13420,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "157",
@@ -13557,7 +13659,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "6",
@@ -13751,7 +13855,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "83",
@@ -13964,7 +14070,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "85",
@@ -14196,7 +14304,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "58",
@@ -14428,7 +14538,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "134",
@@ -14717,7 +14829,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "59",
@@ -14949,7 +15063,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "135",
@@ -15181,7 +15297,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "60",
@@ -15413,7 +15531,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "61",
@@ -15626,7 +15746,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "103",
@@ -15915,7 +16037,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "63",
@@ -16204,7 +16328,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "136",
@@ -16436,7 +16562,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "62",
@@ -16668,7 +16796,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "4",
@@ -16919,7 +17049,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "104",
@@ -17180,7 +17312,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "105",
@@ -17441,7 +17575,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "106",
@@ -17740,7 +17876,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "149",
@@ -18042,7 +18180,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "193",
@@ -18308,7 +18448,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "150",
@@ -18544,7 +18686,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam, exact body and paid release",
    "collection_number": "204",
@@ -18813,7 +18957,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "201",
@@ -19044,7 +19190,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "202",
@@ -19197,7 +19345,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "203",
@@ -19466,7 +19616,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "151",
@@ -19730,7 +19882,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "152",
@@ -20032,7 +20186,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "194",
@@ -20336,7 +20492,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "110",
@@ -20638,7 +20796,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "191",
@@ -20904,7 +21064,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "111",
@@ -21140,7 +21302,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam, exact body and paid release",
    "collection_number": "200",
@@ -21409,7 +21573,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "197",
@@ -21640,7 +21806,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "198",
@@ -21793,7 +21961,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "199",
@@ -22062,7 +22232,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "112",
@@ -22326,7 +22498,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "113",
@@ -22628,7 +22802,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "192",
@@ -22875,7 +23051,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "164",
@@ -23202,7 +23380,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "165",
@@ -23458,7 +23638,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "176",
@@ -23766,7 +23948,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "166",
@@ -24060,7 +24244,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "167",
@@ -24297,7 +24483,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "168",
@@ -24624,7 +24812,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "169",
@@ -24880,7 +25070,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "177",
@@ -25131,7 +25323,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "178",
@@ -25382,7 +25576,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "179",
@@ -25690,7 +25886,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "175",
@@ -26003,7 +26201,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "158",
@@ -26354,7 +26554,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "1",
@@ -26591,7 +26793,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "137",
@@ -26918,7 +27122,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "138",
@@ -27231,7 +27437,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "139",
@@ -27525,7 +27733,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 5
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "66",
@@ -27819,7 +28029,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "140",
@@ -28094,7 +28306,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 10
    },
    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
    "collection_number": "71",
@@ -28266,7 +28480,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "141",
@@ -28593,7 +28809,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "142",
@@ -28906,7 +29124,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "143",
@@ -29257,7 +29477,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 5
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "67",
@@ -29665,7 +29887,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 5
    },
    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
    "collection_number": "72",
@@ -29918,7 +30142,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "170",
@@ -30231,7 +30457,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "171",
@@ -30582,7 +30810,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 5
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "146",
@@ -30895,7 +31125,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "144",
@@ -31189,7 +31421,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "69",
@@ -31540,7 +31774,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "14",
@@ -31891,7 +32127,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "206",
@@ -32128,7 +32366,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "39",
@@ -32531,7 +32771,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "186",
@@ -32768,7 +33010,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "33",
@@ -33000,7 +33244,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "40",
@@ -33232,7 +33478,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "121",
@@ -33464,7 +33712,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "zeta-field",
    "collection_number": "86",
@@ -33677,7 +33927,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "159",
@@ -33909,7 +34161,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "184",
@@ -34312,7 +34566,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "185",
@@ -34549,7 +34805,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "8",
@@ -34781,7 +35039,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "5",
@@ -35013,7 +35273,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "zeta-field",
    "collection_number": "87",
@@ -35416,7 +35678,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "zeta-field",
    "collection_number": "88",
@@ -35824,7 +36088,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "zeta-field",
    "collection_number": "89",
@@ -36061,7 +36327,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "41",
@@ -36293,7 +36561,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "42",
@@ -36563,7 +36833,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, retains locomotion",
    "collection_number": "122",
@@ -36852,7 +37124,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 4
    },
    "capability": "basic-melee",
    "collection_number": "160",
@@ -37089,7 +37363,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "43",
@@ -37283,7 +37559,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "charge-field",
    "collection_number": "44",
@@ -37477,7 +37755,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "101",
@@ -37747,7 +38027,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "123",
@@ -37941,7 +38223,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "charge-field",
    "collection_number": "45",
@@ -38230,7 +38514,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "charge-field",
    "collection_number": "124",
@@ -38519,7 +38805,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 4
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "161",
@@ -38756,7 +39044,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "125",
@@ -38988,7 +39278,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "11",
@@ -39182,7 +39474,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "charge-field",
    "collection_number": "98",
@@ -39414,7 +39708,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "47",
@@ -39646,7 +39942,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "126",
@@ -39878,7 +40176,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "48",
@@ -40110,7 +40410,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "49",
@@ -40342,7 +40644,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "50",
@@ -40593,7 +40897,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "90",
@@ -40830,7 +41136,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "127",
@@ -41062,7 +41370,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "128",
@@ -41294,7 +41604,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "129",
@@ -41526,7 +41838,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "51",
@@ -41777,7 +42091,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "91",
@@ -42014,7 +42330,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "162",
@@ -42246,7 +42564,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "3",
@@ -42459,7 +42779,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "52",
@@ -42701,7 +43023,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "46",
@@ -42981,7 +43305,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "187",
@@ -43228,7 +43554,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "130",
@@ -43470,7 +43798,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "163",
@@ -43693,7 +44023,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "99",
@@ -43935,7 +44267,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "131",
@@ -44215,7 +44549,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "188",
@@ -44462,7 +44798,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "132",
@@ -44704,7 +45042,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "10",
@@ -44927,7 +45267,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "100",
@@ -45169,7 +45511,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "53",
@@ -45411,7 +45755,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "54",
@@ -45653,7 +45999,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "55",
@@ -45895,7 +46243,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "56",
@@ -46137,7 +46487,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "57",
@@ -46360,7 +46712,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "92",
@@ -46602,7 +46956,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "133",
@@ -46825,7 +47181,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "basic-melee",
    "collection_number": "93",
@@ -47067,7 +47425,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "64",
@@ -47299,7 +47659,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "65",
@@ -47531,7 +47893,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, retains locomotion",
    "collection_number": "172",
@@ -47782,7 +48146,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "145",
@@ -47994,7 +48360,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 2,
+    "recovered_action_routes": 2
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "68",
@@ -48226,7 +48594,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "7",
@@ -48477,7 +48847,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored static-cruise B-charge; not retail combat",
    "collection_number": "70",
@@ -48644,7 +49016,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "147",
@@ -48830,7 +49204,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "73",
@@ -48997,7 +49373,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "195",
@@ -49183,7 +49561,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored static-cruise B-charge; not retail combat",
    "collection_number": "74",
@@ -49350,7 +49730,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "75",
@@ -49479,7 +49861,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "icbm",
    "collection_number": "109",
@@ -49614,7 +49998,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "icbm",
    "collection_number": "108",
@@ -49806,7 +50192,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "flying-field",
    "collection_number": "173",
@@ -49973,7 +50361,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "flying-field",
    "collection_number": "148",
@@ -50140,7 +50530,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "flying-field",
    "collection_number": "196",
@@ -50307,7 +50699,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "flying-field",
    "collection_number": "174",
@@ -50474,7 +50868,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "flying-field",
    "collection_number": "205",
@@ -50660,7 +51056,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "flying-field",
    "collection_number": "12",
@@ -50808,7 +51206,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "94",
@@ -50937,7 +51337,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "95",
@@ -51066,7 +51468,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "96",
@@ -51195,7 +51599,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "nu-field",
    "collection_number": "97",
@@ -51324,7 +51730,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "spawner-static",
    "collection_number": "102",
@@ -51453,7 +51861,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": false,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 1,
+    "recovered_action_routes": 1
    },
    "capability": "roach-bomb",
    "collection_number": "189",
@@ -51582,7 +51992,9 @@
      "trigger_qualified": false
     },
     "launch_sound_authored": true,
-    "other_sfx": "unresolved"
+    "other_sfx": "unresolved",
+    "recovered_action_cues": 0,
+    "recovered_action_routes": 0
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "107",

@@ -102,7 +102,7 @@ def _capability(summary):
     return None
 
 
-def _audio(summary, folder):
+def _audio(summary, folder, action_cues=()):
     bindings = summary.get("sfx_bindings") or {}
     landing = bindings.get("landing_candidate") or {}
     pcm = landing.get("lab_pcm")
@@ -114,10 +114,12 @@ def _audio(summary, folder):
         "other_sfx": bindings.get("other"),
         "launch_sound_authored": bool(
             (summary.get("basic_shot_battle_test") or {}).get("authored_launch_sounds")),
+        "recovered_action_cues": len(action_cues),
+        "recovered_action_routes": sum(len(cue.get("routes") or []) for cue in action_cues),
     }
 
 
-def borg_entry(folder):
+def borg_entry(folder, action_cues=()):
     summary = json.loads((folder / "source-index.json").read_bytes())
     manifest = _manifest(folder / "borg.manifest")
     catalog = _catalog(folder / "catalog.txt")
@@ -150,7 +152,7 @@ def borg_entry(folder):
                   for name, group, choice in (summary.get("role_preview_clips") or [])],
         "actions": _actions(summary),
         "capability": _capability(summary),
-        "audio": _audio(summary, folder),
+        "audio": _audio(summary, folder, action_cues),
         "preview_declaration": bool(summary.get("preview_declaration")),
     }
 
@@ -163,12 +165,17 @@ def build(roster):
         raise ValueError("API map needs a roster export with source-index.json files")
     extracted = roster / "roster-extraction.json"
     source = json.loads(extracted.read_bytes()) if extracted.exists() else {}
+    cues_by_borg = {}
+    cue_file = source.get("action_sfx_index")
+    if cue_file and (roster / cue_file).exists():
+        cues_by_borg = json.loads((roster / cue_file).read_bytes()).get("borgs") or {}
     return {
         "kind": "generated Borg API map; metadata only, no model, texture or audio bytes",
         "revision": REVISION,
         "roster_revision": source.get("revision"),
         "borg_count": len(folders),
-        "borgs": [borg_entry(folder) for folder in folders],
+        "borgs": [borg_entry(folder, cues_by_borg.get(folder.name.replace("-", ":"), ()))
+                  for folder in folders],
     }
 
 
