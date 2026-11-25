@@ -512,6 +512,17 @@ per-hit factor selection is still open.
 That distinction matters for shipping: the live 22 is a genuine contact amount,
 but it must not be fed into the beam table as if it were the beam result.
 
+The existing host replay makes the gap concrete. With the exact same caps
+(credit 200/200, receiver 180/180, difficulty 0, rank 0, tier 0), the
+`GRedSasukeDamageTable` path asserts **19** with a depleted receiver Force
+history and **20** with a full one (`tests/host/gred_sasuke_damage_replay.cpp`).
+The live boost hit on the same pair, at full HP, produced **22**. So the boost
+path carries roughly a further **1.1×** that the beam table does not describe.
+`22 / 20 = 1.1` is exactly the second ReceiverRank entry, but the live rank
+field reads 0, so the boost path either indexes that row with an offset or
+applies a move-specific multiplier. That 1.1 is the next thing to locate; until
+then the live 22 remains an observation, not a table result.
+
 The move-level name still needs the carrier row, but the attacker, receiver,
 base amount, factor row and HP write are all identified.
 
