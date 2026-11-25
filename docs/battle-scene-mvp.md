@@ -2831,3 +2831,30 @@ that demonstration; no battle demo has been launched yet.
 
 No original assets or private data are distributed, and no new commits or pushes
 are implicit in continuing this implementation.
+
+## Battle Test HUD
+
+The packaged Battle Test draws a small top-left HUD through the engine's own
+bitmap text, not recovered battle-mode artwork:
+
+```text
+P1 [################----] 1600/2000   P2 [####----------------] 400/2000
+CHARGE [##########------] 12/20
+```
+
+- Each HP bar is 20 cells and its maximum is that actor's **own** profile
+  health, so a 30 HP Borg and a 2000 HP Borg each read on their own scale.
+  `battle_health_cells(current, maximum, cells)` reports an empty bar for a zero
+  maximum and never overfills; four checks cover full, empty, half, zero maximum
+  and over-maximum.
+- The charge line appears only while a `move-charge` window is open and reads
+  `battle_charge_gauge`, which is clamped to `[0, total]`.
+- Stock pips are deliberately absent: current stock counts live in the move
+  runtime rather than on the battle actor, and the HUD should read published
+  state through an accessor rather than reach into those counters.
+
+This is native presentation for authored windows and health, replacing no
+recovered HUD graphics. Recovering the battle-mode HUD means binding the
+initial-HUD child objects already modelled in `battle_initial_ui_world.hpp`
+(callbacks `800818CC`, `80080F88`) and supplying its artwork separately, since
+game textures stay out of the repository.

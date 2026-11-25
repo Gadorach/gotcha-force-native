@@ -49,6 +49,11 @@ int main(){
     check(duel.actors()[1].position[0]-duel.actors()[0].position[0]>=2*close.actor_radius-.01f,"Borg bodies cannot walk through each other");
     BattleMvpConfig bad;bad.gravity=0;check(!duel.start(bad),"invalid prototype tuning refuses");
     muzzle[0]=BattleMvpVec{std::numeric_limits<f32>::quiet_NaN(),0,0};check(!duel.step({},false,nullptr,&muzzle),"invalid weapon origin refuses");
+    check(battle_health_cells(2000,2000,20)==20&&battle_health_cells(0,2000,20)==0,
+          "health bar fills and empties with its own maximum");
+    check(battle_health_cells(1000,2000,20)==10,"health bar halves at half health");
+    check(battle_health_cells(500,0,20)==0,"zero maximum reports an empty bar");
+    check(battle_health_cells(9999,100,20)==20,"health bar never overfills");
     const auto idle_gauge=battle_charge_gauge(0,10,40);
     check(idle_gauge.total==0&&idle_gauge.elapsed==0,"no charge window reports no gauge");
     const auto mid_gauge=battle_charge_gauge(20,10,22);

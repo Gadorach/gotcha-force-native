@@ -205,6 +205,14 @@ inline bool native_gred_relaunch_acceleration_valid(f32 value){
 // Charge-gauge progress for an active authored charge window. Elapsed is
 // clamped to the total, so a move that outlives its window reports full
 // rather than overflowing, and an idle actor reports zero.
+// Filled cells for an HP bar of `cells` divisions. A zero maximum reports an
+// empty bar rather than dividing by zero, and the result never exceeds the bar.
+inline unsigned battle_health_cells(u32 current,u32 maximum,unsigned cells){
+    if(!maximum||!cells)return 0;
+    const u64 scaled=u64(current)*cells;
+    return unsigned(std::min<u64>(cells,scaled/maximum));
+}
+
 struct BattleChargeGauge { u16 total=0, elapsed=0; };
 inline BattleChargeGauge battle_charge_gauge(u16 total,u32 born,u32 tick){
     BattleChargeGauge gauge;

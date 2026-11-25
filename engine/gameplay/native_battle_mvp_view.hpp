@@ -924,8 +924,21 @@ public:
         else if(world.paused())status+=source_practice_?"\nPAUSED AT TICK "+std::to_string(world.tick()):"\nPAUSED";
         if(package&&world.actor_count()>0){
             const auto& self=world.actors()[0];
-            std::string hud="P1 HP "+std::to_string(int(self.health));
-            if(world.actor_count()>1)hud+="   P2 HP "+std::to_string(int(world.actors()[1].health));
+            // A 20-cell bar per actor. The maximum comes from that actor's own
+            // profile health, so the bar cannot imply a shared scale.
+            const auto health_bars=[&](unsigned actor){
+                const auto& a=world.actors()[actor];
+                const auto& profile=world.config().packages[actor];
+                const unsigned maximum=profile?profile->health:0;
+                constexpr unsigned cells=20;
+                const unsigned filled=battle_health_cells(u32(a.health),u32(maximum),cells);
+                std::string bar(cells,'-');
+                for(unsigned i=0;i<filled;++i)bar[i]='#';
+                return "P"+std::to_string(actor+1)+" ["+bar+"] "+
+                       std::to_string(int(a.health))+"/"+std::to_string(int(maximum));
+            };
+            std::string hud=health_bars(0);
+            if(world.actor_count()>1)hud+="   "+health_bars(1);
             const auto gauge=battle_charge_gauge(self.package_charge_total,self.package_action_born,world.tick());
             if(gauge.total){
                 constexpr unsigned cells=16;
