@@ -2302,7 +2302,8 @@ private:
             target.package_hit_chain=0;
             target.package_hit_chain_owner=u8(owner);
         }
-        const u16 value=borg_damage_amount(profile,base,target.package_hit_chain);
+        const u16 value=borg_damage_amount(profile,base,target.package_hit_chain,
+                                          actors_[recipient].model);
         if(profile.damage_chain_count&&target.package_hit_chain<255)++target.package_hit_chain;
         return value;
     }

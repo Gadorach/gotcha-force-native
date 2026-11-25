@@ -504,6 +504,11 @@ release=arc-twin|6|arc-stock|1|arc
   authored damage. The chain resets after a 30-tick gap or when the
   attacker changes. These are scale factors, not recovered hit geometry or
   per-Borg branches.
+- `damage-vs=model|credit|scalar|receiver-rank|relative` declares a contact
+  factor row for one receiver model. The engine picks the row matching the
+  target actor's model, otherwise the package `damage-factors` default,
+  otherwise neutral. This mirrors the original's receiver-dependent amount
+  without a branch on the Borg ID.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a

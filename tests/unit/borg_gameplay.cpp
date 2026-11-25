@@ -2562,5 +2562,15 @@ int main(){
           !borg_read_gameplay_profile(damage_text+"damage-chain=1|1|1|1\n",&invalid_scope,&scope_error)&&
           !borg_read_gameplay_profile(std::string(player)+"damage-factors=0|1|1|1\n",&invalid_scope,&scope_error),
           "damage factors and chain refuse duplicates and out-of-range values");
+    const auto per_model=parse(std::string(player)+
+        "damage-vs=10|0.5|1|1|1\ndamage-vs=20|2|1|1|1\n");
+    check(borg_damage_amount(*per_model,20,0,10)==10&&
+          borg_damage_amount(*per_model,20,0,20)==40&&
+          borg_damage_amount(*per_model,20,0,30)==20,
+          "damage-vs selects the receiver model and falls back to neutral");
+    check(!borg_read_gameplay_profile(std::string(player)+
+              "damage-vs=10|0.5|1|1|1\ndamage-vs=10|1|1|1|1\n",
+              &invalid_scope,&scope_error),
+          "duplicate damage-vs model is refused");
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

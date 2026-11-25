@@ -315,6 +315,8 @@ struct BorgGameplayProfile {
     std::array<f32,4> damage_chain{1,1,1,1};
     u8 damage_chain_count=0;
     bool damage_factors_declared=false;
+    struct DamageRow { u16 model=0; std::array<f32,4> factors{1,1,1,1}; };
+    std::vector<DamageRow> damage_rows; // per receiver model; default factors otherwise
     f32 flight_lift=0;u16 flight_ticks=0;
     std::optional<BorgCruiseBoost> cruise{};
     std::optional<BorgBattleClip> cruise_entry;
@@ -339,9 +341,15 @@ struct BorgGameplayProfile {
     std::array<std::string,4> movement_sound{};
     bool static_body()const{return static_cruise_body||static_grounded_body;}
 };
-inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain){
+inline const std::array<f32,4>* borg_damage_factors(const BorgGameplayProfile& profile,u16 model){
+    for(const auto& row:profile.damage_rows)if(row.model==model)return &row.factors;
+    return profile.damage_factors_declared?&profile.damage_factors:nullptr;
+}
+
+inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain,u16 model=0){
     f32 value=f32(base);
-    for(f32 factor:profile.damage_factors)value*=factor;
+    if(const auto* factors=borg_damage_factors(profile,model))
+        for(f32 factor:*factors)value*=factor;
     if(profile.damage_chain_count)
         value*=profile.damage_chain[std::min<unsigned>(chain,profile.damage_chain_count-1)];
     if(!(value>0))return 0;
@@ -1085,6 +1093,16 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             for(unsigned i=0;i<4;++i)
                 if(!scalar(a[i],.01f,4.f,&next.damage_factors[i]))return fail("invalid damage factor");
             next.damage_factors_declared=true;
+        }else if(key=="damage-vs"){
+            std::array<std::string_view,5> a;
+            u16 model=0;
+            if(next.damage_rows.size()>=16||!split_fields(value,&a)||
+               !number(a[0],0,65535,&model))return fail("invalid damage-vs row");
+            for(const auto& row:next.damage_rows)if(row.model==model)return fail("duplicate damage-vs model");
+            BorgGameplayProfile::DamageRow row;row.model=model;
+            for(unsigned i=0;i<4;++i)
+                if(!scalar(a[1+i],.01f,4.f,&row.factors[i]))return fail("invalid damage-vs factor");
+            next.damage_rows.push_back(row);
         }else if(key=="damage-chain"){
             std::array<std::string_view,4> a;
             if(next.damage_chain_count||!split_fields(value,&a))return fail("invalid or duplicate damage chain");
