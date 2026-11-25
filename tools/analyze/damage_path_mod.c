@@ -78,13 +78,28 @@ static void observe_pair(CPUState* state)
 static void observe_amount_call(CPUState* state)
 {
     static unsigned count;
+    const uint32_t credit = state->gpr[3];
+    const uint32_t carrier = state->gpr[4];
+    const uint32_t owner = (uint32_t)moderngekko_mod_read(state, carrier + 144u, 4);
+    const uint32_t settings =
+        (uint32_t)moderngekko_mod_read(state, state->gpr[13] - 31824u, 4);
     if (count++ < 8u)
-        fprintf(stderr, "damage-path: amount-call #%u r3=%08X r4=%08X r5=%08X "
-                        "r6=%08X | r3 id=%d hp=%d | r5 id=%d hp=%d\n",
-                count, state->gpr[3], state->gpr[4], state->gpr[5],
-                state->gpr[6], actor_id(state, state->gpr[3]),
-                actor_hp(state, state->gpr[3]), actor_id(state, state->gpr[5]),
-                actor_hp(state, state->gpr[5]));
+        fprintf(stderr,
+                "damage-path: amount-call #%u credit=%08X carrier=%08X "
+                "receiver=%08X | base=%u credit6=%u owner=%08X owner998=%d "
+                "owner136=%d owner996=%d owner452=%d owner454=%d "
+                "difficulty=%d | r5 id=%d hp=%d\n",
+                count, credit, carrier, state->gpr[5],
+                (unsigned)moderngekko_mod_read(state, credit, 2),
+                (unsigned)moderngekko_mod_read(state, credit + 6u, 1),
+                owner,
+                (int)moderngekko_mod_read(state, owner + 998u, 1),
+                (int)moderngekko_mod_read(state, owner + 136u, 1),
+                (int)moderngekko_mod_read(state, owner + 996u, 1),
+                (int)moderngekko_mod_read(state, owner + 452u, 2),
+                (int)moderngekko_mod_read(state, owner + 454u, 2),
+                settings ? (int)moderngekko_mod_read(state, settings + 50u, 1) : -1,
+                actor_id(state, state->gpr[5]), actor_hp(state, state->gpr[5]));
 }
 
 static void observe_division(CPUState* state, unsigned site)
