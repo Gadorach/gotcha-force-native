@@ -627,6 +627,19 @@ side's variant plus the conditional half. The only unnamed input is the
 semantic of `owner998`; it behaves as a half-damage guard/critical flag, but the
 name is not recovered.
 
+The per-move **base** is the first halfword of the selected attack record. Two
+records are now identified:
+
+| Record | Where | Base | Hit |
+| --- | --- | --- | --- |
+| `80365EC0` | G-Red config block (`CONFIG 80365AC8 + 0x3F8`) | 20 | Kakeru boost/contact |
+| `802D4160` | shared action context table `802D4148 + 0x18` | 5 | Mana contact |
+
+The second is the same context table the API map already lists for `B-shot`,
+`B-close` and `X` (`context_count` 2/7/8), so the per-move base is an indexing
+problem over that table, not a new data source. That indexing is the remaining
+step before the formula can be emitted as a content-driven capability.
+
 The ladder is exported as
 [`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by
 `tools/analyze/contact_scalar_ladder.py`, with both hits recorded as verified.
