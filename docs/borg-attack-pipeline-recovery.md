@@ -641,6 +641,11 @@ with the same credit factor, scalar and receiver rank as the boost hit. Both
 G-Red moves therefore select **per-Borg config records**, and the shared pool at
 `0x802D4148` is the other side's record set.
 
+The third group, `B-shot`, is not isolated yet. Holding `B` at range on the same
+state reused the `B-close` record `80365EC0` (base 20, amount 22), and `A` over
+240 frames produced no hit at all. `B-shot` needs either a controlled ranged hit
+or the action-program mapping that selects its context record.
+
 The second is the same context table the API map already lists for `B-shot`,
 `B-close` and `X` (`context_count` 2/7/8), so the per-move base is an indexing
 problem over that table, not a new data source.
