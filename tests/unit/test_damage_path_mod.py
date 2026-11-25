@@ -10,7 +10,10 @@ class DamagePathModTest(unittest.TestCase):
         self.text = MOD.read_text()
 
     def test_hooks_the_damage_entries(self):
-        for address in ("0x8002E660u", "0x8002F108u", "0x8002F110u", "0x8003D344u"):
+        for address in ("0x8002E660u", "0x8003CD5Cu", "0x8002F108u",
+                        "0x8002F110u", "0x8003CF70u", "0x8003D1B8u",
+                        "0x8003D214u", "0x8002F10Cu", "0x8003D00Cu",
+                        "0x8003D344u"):
             self.assertIn(f"RECOMP_HOOK({address}", self.text)
 
     def test_reads_model_id_and_hp(self):

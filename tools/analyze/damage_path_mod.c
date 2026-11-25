@@ -75,10 +75,53 @@ static void observe_pair(CPUState* state)
                 actor_hp(state, state->gpr[5]));
 }
 
+static void observe_amount_call(CPUState* state)
+{
+    static unsigned count;
+    if (count++ < 8u)
+        fprintf(stderr, "damage-path: amount-call #%u r3=%08X r4=%08X r5=%08X "
+                        "r6=%08X | r3 id=%d hp=%d | r5 id=%d hp=%d\n",
+                count, state->gpr[3], state->gpr[4], state->gpr[5],
+                state->gpr[6], actor_id(state, state->gpr[3]),
+                actor_hp(state, state->gpr[3]), actor_id(state, state->gpr[5]),
+                actor_hp(state, state->gpr[5]));
+}
+
+static void observe_division(CPUState* state, unsigned site)
+{
+    static unsigned count;
+    if (count++ < 24u)
+        fprintf(stderr, "damage-path: division site=%03X caller=%08X r3=%08X "
+                        "r4=%08X r5=%08X r6=%08X\n",
+                site, state->lr, state->gpr[3], state->gpr[4], state->gpr[5],
+                state->gpr[6]);
+}
+
+static void observe_div_cf70(CPUState* state) { observe_division(state, 0xCF70); }
+static void observe_div_d1b8(CPUState* state) { observe_division(state, 0xD1B8); }
+static void observe_div_d214(CPUState* state) { observe_division(state, 0xD214); }
+
+static void observe_return(CPUState* state, unsigned site)
+{
+    static unsigned count;
+    if (count++ < 24u)
+        fprintf(stderr, "damage-path: return site=%03X r3=%08X r4=%08X\n",
+                site, state->gpr[3], state->gpr[4]);
+}
+
+static void observe_ret_cf70(CPUState* state) { observe_return(state, 0xF10C); }
+static void observe_ret_d00c(CPUState* state) { observe_return(state, 0xD00C); }
+
 static const ModernGekkoModHook hooks[] = {
     RECOMP_HOOK(0x8002E660u, observe_pair),
+    RECOMP_HOOK(0x8003CD5Cu, observe_amount_call),
     RECOMP_HOOK(0x8002F108u, observe_amount),
     RECOMP_HOOK(0x8002F110u, observe_tail),
+    RECOMP_HOOK(0x8003CF70u, observe_div_cf70),
+    RECOMP_HOOK(0x8003D1B8u, observe_div_d1b8),
+    RECOMP_HOOK(0x8003D214u, observe_div_d214),
+    RECOMP_HOOK(0x8002F10Cu, observe_ret_cf70),
+    RECOMP_HOOK(0x8003D00Cu, observe_ret_d00c),
     RECOMP_HOOK(0x8003D344u, observe_apply),
 };
 

@@ -428,6 +428,30 @@ A longer run continued with contact damage of **1 per frame**, HP falling
 - The pair entry `8002E660` did not fire for this contact, so the hit is not
   routed through the shape-pair scan; it arrives at the reaction tail directly.
 
+The amount arithmetic is now visible. With both chunks forced to the
+interpreter, the same hit logs:
+
+```text
+division site=CF70 caller=8002F10C r3=0000012C r4=00002580 ...
+return   site=D00C r3=00000000
+division site=D1B8 caller=8003D00C r3=807469C0 r4=00000001 r5=805DDBC0 ...
+division site=D214 caller=8003D00C r3=807469C0 r4=00000064 r5=805DDBC0 ...
+return   site=F10C r3=00000016   (22)
+```
+
+`8003CF70` is `divw r3, r4, r3` followed by `subfic r9, r3, 32`, clamped to
+31. So the factor index is `32 - (r4 / r3)`: live `9600 / 300 = 32`, index 0.
+The index selects the first float of the `0x802C7C80` ladder (1.15), and the
+base damage times that factor gives the observed **22**. The two later
+divisions return 0 and are the other factor rows (force/rank), which is the
+same shape as `GRedSasukeDamageTable` (32-entry health/force rows, 3/4-entry
+difficulty/rank/tier rows). This is the first live confirmation of that
+index formula outside the supplied-operand fixture.
+
+The call that produces the amount is `8003CD5C(credit, ?, receiver)`, reached
+from `8002F108`; `r3` is 300 at the division and the returned quotient is the
+final amount. The reaction then applies it at `8003D344`.
+
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only
 receives the target and the amount. The next observation is the pair entry
