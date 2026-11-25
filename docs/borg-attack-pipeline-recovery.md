@@ -637,8 +637,21 @@ records are now identified:
 
 The second is the same context table the API map already lists for `B-shot`,
 `B-close` and `X` (`context_count` 2/7/8), so the per-move base is an indexing
-problem over that table, not a new data source. That indexing is the remaining
-step before the formula can be emitted as a content-driven capability.
+problem over that table, not a new data source.
+
+The pool itself is now visible. After the six pointers at `0x802D4148`, the
+inline array starts at `0x802D4160` with a **0x18-byte stride**; the first
+halfword of each record is a base:
+
+```text
+5, 10, 40, 40, 40, 40, 40, 40, 40, 10, 1, 40, <sentinel>
+```
+
+The Mana hit used record 0 (`base 5`). The API map's `context_count` values
+(2 for `B-close`, 7 for `B-shot`, 8 for `X`) are the record counts per action,
+so the remaining step is assigning each action's record range. That needs one
+runtime observation per action (which record the selected program passes in),
+not more static reading.
 
 The ladder is exported as
 [`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by
