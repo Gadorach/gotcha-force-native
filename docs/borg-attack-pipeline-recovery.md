@@ -223,6 +223,17 @@ that is still unreached.
 That makes the order unambiguous for the next pass: the dynamic collision-
 receiver trace is the only item that can move melee geometry, melee timing and
 damage at once, and nothing left in the static data substitutes for it.
+
+The class blocks were also searched for directly. Their decoded signature is
+distinctive — eight pointers at `+0xA20` into the same 7,840-byte block, whose
+records' first bytes select 80-byte rows at `+0xAA0` — so both data sections
+were scanned for it. The only hits were overlapping sliding windows in texture
+and palette regions (`0x802dc998` decodes to colour values `0.046`/`0.747` and
+`00FA`-style indices), not class blocks. The blocks are therefore built at run
+time rather than stored in `main.dol`, which matches `actor+0x9C` being filled
+by a loader.
+
+Do not repeat that scan; it produces false positives on palette data.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
