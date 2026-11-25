@@ -13,6 +13,13 @@ scripts, presentation, and fonts.
 
 ## Current state
 
+- **All 206 normal retail Borgs are playable** through authored Battle Tests
+  (install v62, 222 combat selections). Every package records what stays
+  authored, and a roster-wide sweep confirms each Borg starts its bound input
+  and reaches a payload. See the [Borg API map](docs/borg-api-map.md) for the
+  per-Borg binding and fidelity, and
+  [attack-pipeline recovery](docs/borg-attack-pipeline-recovery.md) for what
+  the native contact path does and does not reconstruct.
 - Shared GL renderer, model/material/animation machinery, input and audio.
 - Native menu/editor systems, inventory and save formats.
 - Challenge setup and ordered battle initialization in progress.
