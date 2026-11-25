@@ -411,10 +411,16 @@ A longer run continued with contact damage of **1 per frame**, HP falling
   contact continued. Its HUD entry (entry 1, the 100-HP target) never changed in
   the same window, so the HUD copy is not a reliable damage oracle when several
   actors are present.
-- The apply's `r7` points at `0x802C7C80`, in the same reaction/hit table region
-  (`0x802C7xxx`) that the audit receipt walks for the rifle. The pair entry
-  `8002E660` did not fire for this contact, so the attacker is not yet named by
-  that route.
+- The apply's `r7` points at `0x802C7C80`. That is not a move ID: the bytes are
+  the float ladder `1.15, 1.1, 1.05, 1.0, 0.95, 0.9, 0.85, 0.8`, and
+  `0x802C7CA0` (the receipt's last indexed record) is a second ladder
+  `1.0, 0.8, 0.5, 0.25, 0.1, 0.05, 0.02, ...`. They are damage multipliers, so
+  the base amount still comes from `8002F108` and the actor stats.
+- A control run with the same savestate, forward movement and **no boost**
+  produced zero applies over 100 frames. The 22 and the 1-per-frame contact are
+  therefore caused by the boost input, not by passive enemy action.
+- The pair entry `8002E660` did not fire for this contact, so the attacker is
+  not yet named by that route.
 
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only
