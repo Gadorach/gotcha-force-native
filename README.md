@@ -60,6 +60,23 @@ integration harnesses. Those artifacts are not distributed here. The public
 desktop entry point does not yet connect every newer menu/Story/Challenge
 component. A successful build or extracted ISO is not a completed game.
 
+### Published maps
+
+Two generated, asset-free views of the roster are checked in:
+
+- [Borg API map](docs/borg-api-map.md) — per Borg: identity, movement
+  candidates and the bound operand record, locomotion roles, neutral action
+  rows, binding capability and its fidelity, air-action budget and
+  pose-ground offset. The data is
+  [`docs/api-map/gg4e08-borg-api-map.json`](docs/api-map/gg4e08-borg-api-map.json).
+- [Model render inventory](docs/api-map/model-render-inventory.json) — render
+  bits, texture and TLUT formats, vertex attributes and PObj types, with the
+  models that carry unknown bits.
+
+Neither contains model, texture or audio bytes, so both can be regenerated
+from a local roster with `tools/extract/borg_api_map.py` and
+`tools/analyze/material_stage_inventory.py`.
+
 ## Build
 
 Requires a C++20 compiler. The desktop executable additionally needs `pkg-config`,
