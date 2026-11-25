@@ -266,6 +266,17 @@ class RosterFormatTests(unittest.TestCase):
         brules,_,breceipt=charge_field.battle_test(0x080A,joints,roles,{"native_units_per_tick_x100":500},[200],bactions)
         self.assertIn(b"move=charge-hit|b|10|grounded|28|none\n",brules)
         self.assertEqual(breceipt["source_profile"]["callback"],"801C04E8")
+        arow={"state":2,"substate":0,"selector":44,"handler_pair":[61,0],
+              "class_callback_candidate":"80162780","contexts":[[0,0],[5,0]]}
+        aactions={"profiles":[{"groups":[{"group":"X","rows":[arow]}]}]}
+        arules,_,areceipt=charge_field.battle_test(0x0004,joints,roles,{"native_units_per_tick_x100":542},[200],aactions)
+        self.assertIn(b"move=charge-hit|x|10|grounded|28|none\n",arules)
+        self.assertEqual(areceipt["source_profile"]["leaf_table"],"8034C770")
+        self.assertEqual(areceipt["source_profile"]["entry_leaf"],"80162804")
+        self.assertNotIn("program",areceipt["source_profile"])
+        aactions["profiles"][0]["groups"][0]["rows"]=[dict(arow,class_callback_candidate="80162454")]
+        with self.assertRaisesRegex(ValueError,"neutral charge row"):
+            charge_field.battle_test(0x0004,joints,roles,{"native_units_per_tick_x100":542},[200],aactions)
         actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=45)]
         with self.assertRaisesRegex(ValueError,"neutral charge row"):
             charge_field.battle_test(0x0806,joints,roles,{"native_units_per_tick_x100":500},[200],actions)

@@ -1210,7 +1210,11 @@ owned identity, unlike the audited form and reload paths.
 All **146 bounded offline cases** matched. Live steering, exact
 animation/contact windows, final damage and interruption remain
 unverified. [Wiki lead: Ninpo Full Throttle](https://gotchaforce.fandom.com/wiki/Acceleration_Ninja?oldid=6692).
-No actor was admitted.
+A later Battle Test package admits the same stance through the native dash
+plus a following field
+(`tools/analyze/retail_charge_field.py`, `gg4e08:0004`); its geometry,
+damage and visual are authored, and this audit's live windows remain
+unverified.
 
 The detached Acceleration Ninja helper proposes separate stance clocks,
 fresh-edge exits, trail updates, and actor-bound shape requests. Shape

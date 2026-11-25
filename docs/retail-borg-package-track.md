@@ -532,6 +532,12 @@ move-phase boundaries, not runnable behavior:
   and explicit pose-clock shape registration/retirement. Neither a new
   form, a timed forward `melee` proxy, nor the trail establishes live
   contact. No final damage or same-update interruption ordering is admitted.
+  A later authored Battle Test (`tools/analyze/retail_charge_field.py`)
+  expresses the stance as the native dash plus an owner-following field:
+  the field stays on the actor like the recovered colocated shapes, but its
+  radius, damage, interval and lifetime are authored, and it does not
+  implement animation-progress shape registration/retirement. The
+  geometric contact and final damage remain unclaimed.
 - **Lovely Voice** (`0904/0`): [138 source and 101 detached checks](borg-controller-audit.md#pop-honey-contact-delivered-targeting-status)
   distinguish a paid setup from a later wake of a preallocated carrier
   and its timed type-62 note request. Row-5 note contact applies/refills

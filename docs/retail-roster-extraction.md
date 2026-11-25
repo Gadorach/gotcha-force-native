@@ -71,8 +71,10 @@ playable catalogue declares only `normal`, so those five leave the
 declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
-X-charge models follow the same policy, removing another fifteen. The
-current preview run is sixty-five requests lower for those reasons. The
+X-charge models follow the same policy, removing another fifteen, and the
+later `010a`, `0f04` and `0004` pilots remove another fifteen. The current
+preview run is eighty requests lower for that reason: 2,618 requested and
+2,491 passed. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1527,7 +1529,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 197 of 206. The remaining 9 are no longer a
+Battle Test now covers 198 of 206. The remaining 8 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1579,17 +1581,33 @@ classification:
   frame-126 presses; the HUD reports a missing B. Remaining X-side routes
   (`080a`) end in effect or child calls rather than an origin factory.
 - **Charge-field pilots** (`0806`, `0809`, `080f`, `080a`, `0308`,
-  admitted): the X group's callback `80156428` dispatches through
+  `0004`, admitted): the X group's callback `80156428` dispatches through
   `804346D8` (SDA base `8043B5A0`) to mode 0 → `80156460` → state table
   `8034267C` → `801564B0`/`801565CC`/`801566F0`, driving program `0xC1`
   through `8006D144`/`8006E1AC` and the `800B22F4` velocity helper.
   `080a` (`801C04E8`) and `0308` (`8010A508`) are deeper neutral-B state
   machines that end in the same velocity helper and matrix/state calls,
-  not an origin factory. The new `move-charge` API reuses the native dash
-  for that movement, and the following field carries authored radius 240 /
-  damage 10 / interval 6 / lifetime 30. The source contact shape and
-  damage receiver remain unclaimed. All five keep their source health,
-  pace and locomotion roles.
+  not an origin factory.
+
+  `0004` Acceleration Ninja is the **steerable stance**, bound on X.
+  Its neutral X row (`state 2`, `substate 0`, selector 44, callback
+  `80162780`) dispatches `80162418` → `8034C72C` (byte `+0x582`) →
+  `80162780` → `8034C75C` (byte `+0x581`) → `801627C8` → `8034C770`
+  (byte `+0x540`). The entry leaf `80162804` sets the forward speed from
+  the model movement operand at config `+0x2C` and starts the steering
+  clock, which matches the 146-case controller audit's
+  `borg-controller-audit.md#acceleration-ninja-steerable-stance-with-actor-bound-contact`
+  recovery: a stockless stance with two actor-bound contact shapes
+  activated by animation progress. Those shapes are model-local; the
+  shared collision bank's group 10 is stage geometry, so the native field
+  radius stays authored. The `b-shot-c0-s0` clip requests no projectile,
+  which is why the earlier review left this model unsettled; its B chain
+  is a separate program-`0xC1` state and is not bound.
+
+  The new `move-charge` API reuses the native dash for that movement, and
+  the following field carries authored radius 240 / damage 10 / interval
+  6 / lifetime 30. The source contact shape and damage receiver remain
+  unclaimed. All six keep their source health, pace and locomotion roles.
 - **ICBM pilots** (`0d06`, `0d07`, admitted): the private
   `deep-0d06-death-icbm.json` receipt records a no-stock X terminal, the
   exact eligibility/life/hold phases, a supplied floor/terrain impact to a
@@ -1638,9 +1656,6 @@ classification:
   authored `grounded-v1` or static-cruise body is not a substitute for
   those exact base controllers, so they also wait on the flying movement
   runtime. `0e00`/`0e05` are the separate sequence-child route.
-- **Unsettled classification** (`0004` Acceleration Ninja): its B-shot
-  program clip `3:11` binds strictly but requests no projectile, so it is
-  either a melee or a buff and must not be guessed.
 - **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
   `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
   creates the type-5 area child at `80085E00` (phase table `802DA544`,

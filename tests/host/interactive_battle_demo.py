@@ -306,7 +306,7 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
             if not bodies or "0" in bodies:
                 raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if charge_field:
-        for id in ("0806","0809","080f","080a","0308"):
+        for id in ("0806","0809","080f","080a","0308","0004"):
             stable=f"gg4e08:{id}"
             button="b" if id in ("080a","0308") else "x"
             rules=(root/f"borgs/gg4e08-{id}/gameplay.txt").read_text()
