@@ -21,6 +21,7 @@ from tools.analyze import retail_roach_bomb as roach_bomb
 from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
 from tools.analyze import retail_icbm as icbm
+from tools.analyze import retail_spawner_shot as spawner_shot
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_knight_melee as knight
 from tools.analyze import retail_samurai_melee as samurai
@@ -180,6 +181,30 @@ class RosterFormatTests(unittest.TestCase):
         self.assertIn(b"release=breath-dive|8|breath-stock|1|dive\n",dive_rules)
         self.assertNotIn(b"breath-sweep",dive_rules)
         self.assertEqual(dive_receipt["native_dive"]["origin_joint"],12)
+
+    def test_spawner_shot_binds_the_80_byte_rows_and_authors_the_origin(self):
+        joints=[{"index":i,"descriptor_offset":i*4} for i in range(20)]
+        roles=[("ground-stop",0,0),("ground-travel",0,1),("air-continuation",0,24),("ground-dash-forward",0,2)]
+        row={"state":2,"substate":0,"selector":44,"handler_pair":[61,0],
+             "class_callback_candidate":"80199490","contexts":[[0,0],[0,1]]}
+        profile={"config":"8036FD68","context_table":"8036FFB8","main_handler":"8019889C",
+                 "groups":[{"group":"B-shot","rows":[row]}]}
+        actions={"profiles":[profile]}
+        rules,pose,receipt=spawner_shot.battle_test(0x010A,joints,roles,{"native_units_per_tick_x100":417},[50],actions)
+        for line in ("stock=spawn-stock|1|180",
+                     "projectile=spawn-a|bullet|1|25|0|0|0|16|60|8|ignore-floor",
+                     "projectile=spawn-b|bullet|1|25|0|0|0|16|60|8|ignore-floor",
+                     "origin=spawn-a|12|0|0|60|target-height","origin=spawn-b|12|0|0|60|target-height",
+                     "move=spawn-shot|b|10|grounded|28|none",
+                     "release=spawn-shot|12|spawn-stock|1|spawn-a",
+                     "release-followup=spawn-shot|12|spawn-b"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(receipt["source_profile"]["rows"][0]["key"],11)
+        self.assertEqual(receipt["source_debit"]["channel"],2)
+        self.assertFalse(receipt["retail_behavior_verified"])
+        profile["groups"][0]["rows"]=[dict(row,state=0)]
+        with self.assertRaisesRegex(ValueError,"neutral B-shot row"):
+            spawner_shot.battle_test(0x010A,joints,roles,{"native_units_per_tick_x100":417},[50],actions)
 
     def test_icbm_pilot_binds_the_no_stock_x_and_authors_the_bomb(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]

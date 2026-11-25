@@ -72,7 +72,7 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen. The
-current preview run is fifty-five requests lower for those reasons. The
+current preview run is sixty requests lower for those reasons. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1527,7 +1527,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 195 of 206. The remaining 11 are no longer a
+Battle Test now covers 196 of 206. The remaining 10 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1601,7 +1601,14 @@ classification:
   unclaimed.
 - **No neutral B row** (`0205`): its B or X is state-specific, so there is
   no `0:0` context to bind.
-- **Shared 80-byte spawner** (`010a`, `0f04`): their neutral B pays a
+- **Spawner-shot pilot** (`010a`, admitted): its B state machine
+  `80199490` → `8036FB48` spawns rows **11** and **12** through
+  `800853EC` and pays channel-2 cost 1 through `8006DBE0`. Rows 11/12
+  give speed 25.0 and timer 60.0. The pilot binds the exact row/debit and
+  locomotion, and authors a two-shot ordered projectile with chest joint
+  12 plus `(0,0,60)`, look and damage; the source child asset and
+  animation-sampled placement remain unclaimed.
+- **Shared 80-byte spawner** (`0f04`): its neutral B pays a
   channel-2 debit and calls the sixth shared factory at `80084600`, which
   registers a child actor and selects an 80-byte row at `802D9758` from
   the child's own byte `+0x11`; `010a` uses rows `11` and `12`. The child
