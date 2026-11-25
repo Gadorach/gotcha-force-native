@@ -155,7 +155,14 @@ static void observe_factor(CPUState* state, unsigned site)
 
 FACTOR_FN(factor_d024, 0xD024)
 FACTOR_FN(factor_d0b4, 0xD0B4)
-FACTOR_FN(factor_d100, 0xD100)
+static void factor_d100(CPUState* state)
+{
+    static unsigned count;
+    if (count++ < 8u)
+        fprintf(stderr, "damage-path: d100 f31=%.6f f0=%.6f index=%d actor=%08X\n",
+                state->fpr[31], state->fpr[0], (int)state->gpr[8],
+                state->gpr[6]);
+}
 FACTOR_FN(factor_d128, 0xD128)
 FACTOR_FN(factor_d16c, 0xD16C)
 
@@ -175,7 +182,16 @@ static void factor_d134(CPUState* state)
 FACTOR_FN(factor_d1ec, 0xD1EC)
 FACTOR_FN(factor_d260, 0xD260)
 FACTOR_FN(factor_d270, 0xD270)
-FACTOR_FN(factor_d290, 0xD290)
+static void factor_d290(CPUState* state)
+{
+    static unsigned count;
+    const uint32_t actor = state->gpr[6];
+    const int tier = (int8_t)moderngekko_mod_read(state, actor + 1738u, 1);
+    if (count++ < 8u)
+        fprintf(stderr, "damage-path: d290 f31=%.6f f0=%.6f index=%d tier6ca=%d "
+                        "actor=%08X\n",
+                state->fpr[31], state->fpr[0], (int)state->gpr[0], tier, actor);
+}
 FACTOR_FN(factor_d2a4, 0xD2A4)
 FACTOR_FN(factor_d31c, 0xD31C)
 
