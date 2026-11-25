@@ -85,6 +85,11 @@ texture or audio bytes; each regenerates from a local roster.
 - [Descriptor lane events](docs/api-map/lane-events.json) — per Borg, each
   resolved entry clip's lane group, choice, event and flags. Tool:
   `tools/extract/retail_borg_roster.py` with `--action-clips`.
+- [G-Red/Sasuke contact damage](docs/api-map/gred-sasuke-contact-damage.json) —
+  the first live original damage chain: base 20, multipliers 0.867, 1.13 and
+  1.15, amount 22, with the DOL addresses and the observation that produced it.
+  This is a measured single-pair contact record, not a general rule. Tool:
+  `tools/analyze/gred_sasuke_contact_damage.py`.
 
 Two recovery records carry the reasoning rather than the data:
 

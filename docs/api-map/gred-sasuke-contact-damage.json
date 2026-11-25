@@ -1,0 +1,58 @@
+{
+  "amount": 22,
+  "base": {
+    "address": "80365EC0",
+    "value": 20
+  },
+  "credit": "gg4e08:0615/0",
+  "factors": {
+    "matchup": {
+      "source": "live accumulator between the amount call and 8003D024",
+      "stored_as_float": false,
+      "value": 0.867
+    },
+    "receiver_rank": {
+      "address": "802C7C80",
+      "index": 0,
+      "value": 1.15
+    },
+    "relative": {
+      "source": "receiver+180 = 1.0, adjusted neutrally",
+      "value": 1.0
+    },
+    "scalar": {
+      "address": "802C6820",
+      "index": 16,
+      "row": "0.97..1.16 linear ladder",
+      "value": 1.13
+    },
+    "tier": {
+      "actor_byte": "actor+0x6CA = 0",
+      "address": "802C7CA0",
+      "index": 0,
+      "value": 1.0
+    }
+  },
+  "generalises_to_other_pairs": false,
+  "kind": "gf-borg-contact-damage",
+  "notes": [
+    "The amount is a live boost/contact observation, not a beam-table result.",
+    "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies the GFDA rows, including receiver difficulty 0.9.",
+    "generalises_to_other_pairs is false until the matchup and scalar selections are recovered per pair."
+  ],
+  "observation": {
+    "actor": "805DDBC0",
+    "caller": "8002F1DC",
+    "hp_after": 158,
+    "hp_before": 180,
+    "ledger": 22,
+    "model": 10,
+    "writer": "8003D344"
+  },
+  "path": "boost-contact",
+  "product": 22.533329,
+  "receiver": "gg4e08:000a/0",
+  "retail_behaviour_verified": true,
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

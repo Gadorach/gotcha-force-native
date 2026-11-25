@@ -559,6 +559,10 @@ The final attribution is therefore coherent:
 | `D16C` | 1.0 | relative neutral (`receiver+180 = 1.0`) |
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
+The measured record is exported as
+[`api-map/gred-sasuke-contact-damage.json`](api-map/gred-sasuke-contact-damage.json)
+by `tools/analyze/gred_sasuke_contact_damage.py`; it is one pair and one
+contact path, and explicitly does not generalise yet.
 
 This also explains the difference from the beam table. With the same caps the
 host replay asserts **19** (depleted receiver Force) and **20** (full Force),
