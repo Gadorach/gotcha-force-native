@@ -667,10 +667,27 @@ chain:
 800291C4, 8002891C, 800282A0, 8017FCC8
 ```
 
-Hooking the call target at `8002E2A8` (the `bl` at `8002DED4`) did **not** fire
-for the same hit, so the saved-LR chain and the pair call are not aligned by a
-simple frame walk. A proper unwinder or a debugger trace is needed before those
-addresses can name the move scheduler.
+The `8002E2A8` call target does fire once its own chunk is forced into the
+interpreter (`8002D5E0-800315E0`). Its two side objects carry the credit records
+directly:
+
+```text
+pair-entry r3=80681A40 r4=8067FAC0 r5=80636244 ...
+pair-link 80681A40 +0x02C -> 80365EC0
+pair-link 80681A40 +0x1EC -> 80365EC0
+pair-link 8067FAC0 +0x02C -> 802D4160
+pair-link 8067FAC0 +0x1EC -> 802D4160
+pair-link 80636244 +0x168 -> 80365EC0
+```
+
+The applied damage uses the **attacker object's** `+0x2C` record (here
+`80365EC0`), while the other side object carries `802D4160`. That settles the
+shared-pool question: `802D4160` is the **other side's** credit record, not a
+G-Red shot. The per-hit mapping point is the pair object at `+0x2C`, which is
+where a future `B-shot` capture should read its record.
+
+The earlier saved-LR/`8002E2A8` mismatch was only the missing fallback range for
+the `8002D5E0` chunk, not a broken frame walk.
 
 The second is the same context table the API map already lists for `B-shot`,
 `B-close` and `X` (`context_count` 2/7/8), so the per-move base is an indexing

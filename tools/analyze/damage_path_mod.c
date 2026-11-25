@@ -63,6 +63,38 @@ static int actor_hp(CPUState* state, uint32_t address)
     return (int16_t)moderngekko_mod_read(state, address + 0x1C6u, 2);
 }
 
+static void pair_entry(CPUState* state)
+{
+    static unsigned count;
+    if (count++ < 8u)
+    {
+        const uint32_t records[] = {0x80365EC0u, 0x80366058u, 0x803661F0u,
+                                    0x802D4160u};
+        fprintf(stderr, "damage-path: pair-entry r3=%08X r4=%08X r5=%08X "
+                        "r6=%08X r7=%08X lr=%08X\n",
+                state->gpr[3], state->gpr[4], state->gpr[5], state->gpr[6],
+                state->gpr[7], state->lr);
+        for (unsigned which = 0; which < 3u; ++which)
+        {
+            const uint32_t base = state->gpr[3u + which];
+            if (base < 0x80000000u || base >= 0x81700000u)
+                continue;
+            for (int offset = -0x100; offset <= 0x200; offset += 4)
+            {
+                const uint32_t at = base + (uint32_t)offset;
+                if (at < 0x80000000u || at >= 0x81700000u)
+                    continue;
+                const uint32_t value = (uint32_t)moderngekko_mod_read(state, at, 4);
+                for (unsigned r = 0; r < 4u; ++r)
+                    if (value == records[r])
+                        fprintf(stderr, "damage-path: pair-link base=%08X "
+                                        "offset=%+d record=%08X\n",
+                                base, offset, value);
+            }
+        }
+    }
+}
+
 static void observe_pair(CPUState* state)
 {
     static unsigned count;
@@ -245,6 +277,7 @@ FACTOR_FN(factor_d2a4, 0xD2A4)
 FACTOR_FN(factor_d31c, 0xD31C)
 
 static const ModernGekkoModHook hooks[] = {
+    RECOMP_HOOK(0x8002E2A8u, pair_entry),
     RECOMP_HOOK(0x8002E660u, observe_pair),
     RECOMP_HOOK(0x8003CD5Cu, observe_amount_call),
     RECOMP_HOOK(0x8002F108u, observe_amount),
