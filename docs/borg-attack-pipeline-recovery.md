@@ -234,6 +234,16 @@ time rather than stored in `main.dol`, which matches `actor+0x9C` being filled
 by a loader.
 
 Do not repeat that scan; it produces false positives on palette data.
+
+The packaged wrapper headers were checked too. `visual/body.prefix` is 256 bytes
+and is the `rig-prefix` joint remap — pairs such as `01 0E 00` and `0F 11 0D`
+mapping logical joints to JObj indices — not class data. So the class blocks are
+not in the DOL, not in `body.hsd`, and not in the wrapper prefix: they come from
+another archive member or are synthesised at load, and only the loader tells us
+which.
+
+Every packaged file has now been examined. Further progress on melee geometry or
+damage needs the dynamic trace, not another guess at an archive region.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
