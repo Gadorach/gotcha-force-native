@@ -155,6 +155,31 @@ static void observe_factor(CPUState* state, unsigned site)
 
 FACTOR_FN(factor_d024, 0xD024)
 FACTOR_FN(factor_d0b4, 0xD0B4)
+static void matchup_select(CPUState* state)
+{
+    static unsigned count;
+    const unsigned row = state->gpr[3];
+    const unsigned column = state->gpr[28];
+    const uint32_t address = 0x802C5D60u + row * 80u + column * 4u;
+    const uint32_t bits = (uint32_t)moderngekko_mod_read(state, address, 4);
+    float value = 0.0f;
+    __builtin_memcpy(&value, &bits, sizeof(value));
+    if (count++ < 4u)
+        fprintf(stderr, "damage-path: matchup row=%u column=%u value=%.6f\n",
+                row, column, (double)value);
+}
+
+static void scalar_index(CPUState* state)
+{
+    static unsigned count;
+    const uint32_t settings = state->gpr[7];
+    const uint32_t team = state->gpr[4];
+    const int index = (int)moderngekko_mod_read(state, settings + team, 1);
+    if (count++ < 4u)
+        fprintf(stderr, "damage-path: scalar settings=%08X team=%08X index=%d\n",
+                settings, team, index);
+}
+
 static void chain_d0d8(CPUState* state)
 {
     static unsigned count;
@@ -226,6 +251,8 @@ static const ModernGekkoModHook hooks[] = {
     RECOMP_HOOK(0x8002F110u, observe_tail),
     RECOMP_HOOK(0x8003D024u, factor_d024),
     RECOMP_HOOK(0x8003D0B4u, factor_d0b4),
+    RECOMP_HOOK(0x8003D00Cu, matchup_select),
+    RECOMP_HOOK(0x8003D0E0u, scalar_index),
     RECOMP_HOOK(0x8003D0D8u, chain_d0d8),
     RECOMP_HOOK(0x8003D0ECu, chain_d0ec),
     RECOMP_HOOK(0x8003D0F8u, chain_d0f8),
