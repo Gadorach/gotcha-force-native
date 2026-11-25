@@ -194,3 +194,26 @@ collision receiver described earlier.
   whether a launch sound was authored, and how many action cues and routes
   the shared `shared-action-sfx.json` recovers for that Borg.
 - `preview_declaration` — whether a preview is declared.
+
+## Why recovered action cues do not play
+
+`shared-action-sfx.json` recovers cue sets for 13 Borgs (each with a bank, tone,
+site and route list), and `tone_candidate` resolves them to a tone record. None
+of that reaches the player.
+
+The reason is structural rather than a missing bind: launch sounds are not
+played by the simulation. It records `BorgBattleEventKind::LaunchSound` and the
+host plays the PCM, driven by a `launch-sound=projectile|path` rule. There is no
+per-move sound key and no corresponding event, so a recovered action cue has
+nowhere to attach.
+
+Binding them needs four coordinated pieces:
+
+1. a profile key such as `action-sound=move|path`;
+2. a new engine event raised on the move's accepted start;
+3. host playback mirroring the launch-sound path;
+4. extraction emitting the PCM for the 13 Borgs whose routes already resolve.
+
+That is one unit, not a one-line change, and it is the honest prerequisite for
+"action SFX" beyond the landing candidate.
+
