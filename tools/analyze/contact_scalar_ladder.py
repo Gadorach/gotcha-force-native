@@ -21,8 +21,12 @@ LADDER = 0x802C6820
 COUNT = 32
 SETTINGS = 0x803C4E60
 OBSERVATIONS = (
-    {"state": "kakeru_battle", "team": 1, "byte": 16, "scalar": 1.13, "verified": True},
-    {"state": "mana_battle", "team": 1, "byte": 30, "scalar": 1.4, "verified": False},
+    {"state": "kakeru_battle", "team": 1, "byte": 16, "scalar": 1.13,
+     "verified": True, "hit": {"credit": "80365EC0", "receiver_model": 10,
+                               "base": 20, "amount": 22}},
+    {"state": "mana_combat_hud", "team": 1, "byte": 30, "scalar": 1.4,
+     "verified": True, "hit": {"credit": "802D4160", "receiver_model": 261,
+                               "base": 5, "amount": 3}},
 )
 
 
@@ -52,7 +56,7 @@ def recover(image):
         },
         "notes": [
             "The scalar is a battle/team value, not a Borg value.",
-            "Index 16 is the observed Kakeru value; index 30 is read from the Mana savestate but no contact was captured there.",
+            "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
             "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows.",
         ],
     }

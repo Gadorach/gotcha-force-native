@@ -38,7 +38,7 @@
   "kind": "gf-contact-scalar-ladder",
   "notes": [
     "The scalar is a battle/team value, not a Borg value.",
-    "Index 16 is the observed Kakeru value; index 30 is read from the Mana savestate but no contact was captured there.",
+    "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
     "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows."
   ],
   "revision": 1,
@@ -48,6 +48,12 @@
     "observations": [
       {
         "byte": 16,
+        "hit": {
+          "amount": 22,
+          "base": 20,
+          "credit": "80365EC0",
+          "receiver_model": 10
+        },
         "scalar": 1.13,
         "state": "kakeru_battle",
         "team": 1,
@@ -55,10 +61,16 @@
       },
       {
         "byte": 30,
+        "hit": {
+          "amount": 3,
+          "base": 5,
+          "credit": "802D4160",
+          "receiver_model": 261
+        },
         "scalar": 1.4,
-        "state": "mana_battle",
+        "state": "mana_combat_hud",
         "team": 1,
-        "verified": false
+        "verified": true
       }
     ]
   },

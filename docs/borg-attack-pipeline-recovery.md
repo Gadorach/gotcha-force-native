@@ -570,12 +570,23 @@ by `tools/analyze/gred_sasuke_contact_damage.py`; it is one pair and one
 contact path, and explicitly does not generalise yet.
 
 The scalar is not a Borg value. `0x803C4E60 + team` is a **battle/team** byte
-that indexes a fixed 32-entry ladder at `0x802C6820` (`0.97 … 2.0`). The same
-credit record at `0x80365EC0` reads index **16 → 1.13** in the Kakeru savestate
-and index **30 → 1.4** in the Mana savestate. The ladder is exported as
+that indexes a fixed 32-entry ladder at `0x802C6820` (`0.97 … 2.0`). Both
+indices are now confirmed by captured hits:
+
+| State | team byte | scalar | hit |
+| --- | --- | --- | --- |
+| Kakeru | 16 | 1.13 | credit `80365EC0`, base 20, receiver model 10, amount 22 |
+| Mana combat | 30 | 1.40 | credit `802D4160`, base 5, receiver model 261, amount 3 |
+
+The Mana hit is the generalisation check: a different credit record (base 5),
+different receiver (model 261) and a different settings byte all flow through
+the same computation, and the `D100` factor is exactly **1.400000**. The amount
+is `trunc(base × credit_factor × scalar(settings+team) × receiver_rank × tier ×
+relative)`; only the base, credit factor and receiver rank vary per pair.
+
+The ladder is exported as
 [`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by
-`tools/analyze/contact_scalar_ladder.py`; the Mana value is read from the
-settings global but has not yet been confirmed by a captured hit.
+`tools/analyze/contact_scalar_ladder.py`, with both hits recorded as verified.
 
 This also explains the difference from the beam table. With the same caps the
 host replay asserts **19** (depleted receiver Force) and **20** (full Force),

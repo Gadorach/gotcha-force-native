@@ -92,7 +92,7 @@ texture or audio bytes; each regenerates from a local roster.
   `tools/analyze/gred_sasuke_contact_damage.py`.
 - [Contact scalar ladder](docs/api-map/contact-scalar-ladder.json) — the
   32-entry per-battle/team scalar selected by the settings byte. Index 16 is
-  1.13 (Kakeru, observed); index 30 is 1.4 (Mana, read but not yet hit-tested).
+  1.13 (Kakeru) and index 30 is 1.4 (Mana), both confirmed by captured hits.
   Tool: `tools/analyze/contact_scalar_ladder.py`.
 
 Two recovery records carry the reasoning rather than the data:

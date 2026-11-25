@@ -25,7 +25,9 @@ class ContactScalarLadderTest(unittest.TestCase):
     def test_observations_are_marked(self):
         observations = {item["state"]: item for item in self.data["settings"]["observations"]}
         self.assertTrue(observations["kakeru_battle"]["verified"])
-        self.assertFalse(observations["mana_battle"]["verified"])
+        self.assertEqual(observations["kakeru_battle"]["hit"]["amount"], 22)
+        self.assertTrue(observations["mana_combat_hud"]["verified"])
+        self.assertEqual(observations["mana_combat_hud"]["hit"]["amount"], 3)
 
 
 if __name__ == "__main__":
