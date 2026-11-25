@@ -1,0 +1,559 @@
+{
+  "database": "decomp.db",
+  "kind": "gf-decomp-battle-inventory",
+  "notes": [
+    "Metadata only: no matching source is copied into this artifact.",
+    "Use largest_open to choose the next subsystem to recover or reimplement."
+  ],
+  "ranges": [
+    {
+      "functions": 69,
+      "high": "8002B000",
+      "largest_matched": [
+        {
+          "address": 2147648588,
+          "name": "fn_8002844C",
+          "score": 0,
+          "size": 652,
+          "status": "matched"
+        },
+        {
+          "address": 2147657864,
+          "name": "fn_8002A888",
+          "score": 0,
+          "size": 548,
+          "status": "matched"
+        },
+        {
+          "address": 2147658960,
+          "name": "fn_8002ACD0",
+          "score": 0,
+          "size": 528,
+          "status": "matched"
+        },
+        {
+          "address": 2147646516,
+          "name": "fn_80027C34",
+          "score": 0,
+          "size": 396,
+          "status": "matched"
+        },
+        {
+          "address": 2147647072,
+          "name": "fn_80027E60",
+          "score": 0,
+          "size": 356,
+          "status": "matched"
+        },
+        {
+          "address": 2147649788,
+          "name": "fn_800288FC",
+          "score": 0,
+          "size": 256,
+          "status": "matched"
+        },
+        {
+          "address": 2147648228,
+          "name": "fn_800282E4",
+          "score": 0,
+          "size": 216,
+          "status": "matched"
+        },
+        {
+          "address": 2147657272,
+          "name": "fn_8002A638",
+          "score": 0,
+          "size": 204,
+          "status": "matched"
+        },
+        {
+          "address": 2147658412,
+          "name": "fn_8002AAAC",
+          "score": 0,
+          "size": 196,
+          "status": "matched"
+        },
+        {
+          "address": 2147651940,
+          "name": "fn_80029164",
+          "score": 0,
+          "size": 180,
+          "status": "matched"
+        }
+      ],
+      "largest_open": [
+        {
+          "address": 2147650044,
+          "name": "fn_800289FC",
+          "score": null,
+          "size": 1896,
+          "status": "open"
+        },
+        {
+          "address": 2147653576,
+          "name": "fn_800297C8",
+          "score": 8173,
+          "size": 912,
+          "status": "open"
+        },
+        {
+          "address": 2147645284,
+          "name": "fn_80027764",
+          "score": 1696,
+          "size": 736,
+          "status": "open"
+        },
+        {
+          "address": 2147649240,
+          "name": "fn_800286D8",
+          "score": 120,
+          "size": 548,
+          "status": "open"
+        },
+        {
+          "address": 2147656300,
+          "name": "fn_8002A26C",
+          "score": 1638,
+          "size": 376,
+          "status": "open"
+        },
+        {
+          "address": 2147652120,
+          "name": "fn_80029218",
+          "score": 160,
+          "size": 368,
+          "status": "open"
+        },
+        {
+          "address": 2147654984,
+          "name": "fn_80029D48",
+          "score": 460,
+          "size": 336,
+          "status": "open"
+        },
+        {
+          "address": 2147652660,
+          "name": "fn_80029434",
+          "score": 10,
+          "size": 320,
+          "status": "open"
+        },
+        {
+          "address": 2147655320,
+          "name": "fn_80029E98",
+          "score": 713,
+          "size": 316,
+          "status": "open"
+        },
+        {
+          "address": 2147646184,
+          "name": "fn_80027AE8",
+          "score": 35,
+          "size": 308,
+          "status": "open"
+        }
+      ],
+      "low": "80027000",
+      "matched": 46,
+      "open": 23,
+      "range": "scene-actor"
+    },
+    {
+      "functions": 39,
+      "high": "80031000",
+      "largest_matched": [
+        {
+          "address": 2147660776,
+          "name": "fn_8002B3E8",
+          "score": 0,
+          "size": 964,
+          "status": "matched"
+        },
+        {
+          "address": 2147667064,
+          "name": "fn_8002CC78",
+          "score": 0,
+          "size": 300,
+          "status": "matched"
+        },
+        {
+          "address": 2147672520,
+          "name": "fn_8002E1C8",
+          "score": 0,
+          "size": 224,
+          "status": "matched"
+        },
+        {
+          "address": 2147679420,
+          "name": "fn_8002FCBC",
+          "score": 0,
+          "size": 192,
+          "status": "matched"
+        },
+        {
+          "address": 2147666600,
+          "name": "fn_8002CAA8",
+          "score": 0,
+          "size": 120,
+          "status": "matched"
+        },
+        {
+          "address": 2147681200,
+          "name": "fn_800303B0",
+          "score": 0,
+          "size": 112,
+          "status": "matched"
+        },
+        {
+          "address": 2147681312,
+          "name": "fn_80030420",
+          "score": 0,
+          "size": 112,
+          "status": "matched"
+        },
+        {
+          "address": 2147681424,
+          "name": "fn_80030490",
+          "score": 0,
+          "size": 112,
+          "status": "matched"
+        },
+        {
+          "address": 2147681096,
+          "name": "fn_80030348",
+          "score": 0,
+          "size": 104,
+          "status": "matched"
+        },
+        {
+          "address": 2147667524,
+          "name": "fn_8002CE44",
+          "score": 0,
+          "size": 76,
+          "status": "matched"
+        }
+      ],
+      "largest_open": [
+        {
+          "address": 2147672744,
+          "name": "fn_8002E2A8",
+          "score": null,
+          "size": 5672,
+          "status": "open"
+        },
+        {
+          "address": 2147662612,
+          "name": "fn_8002BB14",
+          "score": null,
+          "size": 3712,
+          "status": "open"
+        },
+        {
+          "address": 2147681752,
+          "name": "fn_800305D8",
+          "score": null,
+          "size": 1124,
+          "status": "open"
+        },
+        {
+          "address": 2147670872,
+          "name": "fn_8002DB58",
+          "score": null,
+          "size": 944,
+          "status": "open"
+        },
+        {
+          "address": 2147683376,
+          "name": "fn_80030C30",
+          "score": null,
+          "size": 944,
+          "status": "open"
+        },
+        {
+          "address": 2147669956,
+          "name": "fn_8002D7C4",
+          "score": 9644,
+          "size": 916,
+          "status": "open"
+        },
+        {
+          "address": 2147679612,
+          "name": "fn_8002FD7C",
+          "score": 7974,
+          "size": 832,
+          "status": "open"
+        },
+        {
+          "address": 2147661740,
+          "name": "fn_8002B7AC",
+          "score": null,
+          "size": 828,
+          "status": "open"
+        },
+        {
+          "address": 2147678428,
+          "name": "fn_8002F8DC",
+          "score": 6471,
+          "size": 828,
+          "status": "open"
+        },
+        {
+          "address": 2147671816,
+          "name": "fn_8002DF08",
+          "score": 7787,
+          "size": 704,
+          "status": "open"
+        }
+      ],
+      "low": "8002B000",
+      "matched": 14,
+      "open": 25,
+      "range": "collision-pair-reaction"
+    },
+    {
+      "functions": 16,
+      "high": "8003E000",
+      "largest_matched": [
+        {
+          "address": 2147734340,
+          "name": "fn_8003D344",
+          "score": 0,
+          "size": 164,
+          "status": "matched"
+        }
+      ],
+      "largest_open": [
+        {
+          "address": 2147732828,
+          "name": "fn_8003CD5C",
+          "score": null,
+          "size": 1512,
+          "status": "open"
+        },
+        {
+          "address": 2147729536,
+          "name": "fn_8003C080",
+          "score": null,
+          "size": 856,
+          "status": "open"
+        },
+        {
+          "address": 2147730964,
+          "name": "fn_8003C614",
+          "score": 1620,
+          "size": 672,
+          "status": "open"
+        },
+        {
+          "address": 2147735268,
+          "name": "fn_8003D6E4",
+          "score": null,
+          "size": 640,
+          "status": "open"
+        },
+        {
+          "address": 2147734688,
+          "name": "fn_8003D4A0",
+          "score": 3926,
+          "size": 580,
+          "status": "open"
+        },
+        {
+          "address": 2147730392,
+          "name": "fn_8003C3D8",
+          "score": 1118,
+          "size": 572,
+          "status": "open"
+        },
+        {
+          "address": 2147735908,
+          "name": "fn_8003D964",
+          "score": null,
+          "size": 568,
+          "status": "open"
+        },
+        {
+          "address": 2147737216,
+          "name": "fn_8003DE80",
+          "score": null,
+          "size": 552,
+          "status": "open"
+        },
+        {
+          "address": 2147732040,
+          "name": "fn_8003CA48",
+          "score": 1744,
+          "size": 476,
+          "status": "open"
+        },
+        {
+          "address": 2147736476,
+          "name": "fn_8003DB9C",
+          "score": null,
+          "size": 408,
+          "status": "open"
+        }
+      ],
+      "low": "8003C000",
+      "matched": 1,
+      "open": 15,
+      "range": "damage"
+    },
+    {
+      "functions": 132,
+      "high": "80073000",
+      "largest_matched": [
+        {
+          "address": 2147939576,
+          "name": "fn_8006F4F8",
+          "score": 0,
+          "size": 276,
+          "status": "matched"
+        },
+        {
+          "address": 2147941560,
+          "name": "fn_8006FCB8",
+          "score": 0,
+          "size": 256,
+          "status": "matched"
+        },
+        {
+          "address": 2147943472,
+          "name": "fn_80070430",
+          "score": 0,
+          "size": 256,
+          "status": "matched"
+        },
+        {
+          "address": 2147950664,
+          "name": "fn_80072048",
+          "score": 0,
+          "size": 252,
+          "status": "matched"
+        },
+        {
+          "address": 2147943112,
+          "name": "fn_800702C8",
+          "score": 0,
+          "size": 212,
+          "status": "matched"
+        },
+        {
+          "address": 2147940764,
+          "name": "fn_8006F99C",
+          "score": 0,
+          "size": 192,
+          "status": "matched"
+        },
+        {
+          "address": 2147952880,
+          "name": "fn_800728F0",
+          "score": 0,
+          "size": 192,
+          "status": "matched"
+        },
+        {
+          "address": 2147940104,
+          "name": "fn_8006F708",
+          "score": 0,
+          "size": 184,
+          "status": "matched"
+        },
+        {
+          "address": 2147952120,
+          "name": "fn_800725F8",
+          "score": 0,
+          "size": 180,
+          "status": "matched"
+        },
+        {
+          "address": 2147941972,
+          "name": "fn_8006FE54",
+          "score": 0,
+          "size": 172,
+          "status": "matched"
+        }
+      ],
+      "largest_open": [
+        {
+          "address": 2147937812,
+          "name": "fn_8006EE14",
+          "score": 760,
+          "size": 696,
+          "status": "open"
+        },
+        {
+          "address": 2147953648,
+          "name": "fn_80072BF0",
+          "score": 40,
+          "size": 528,
+          "status": "open"
+        },
+        {
+          "address": 2147944376,
+          "name": "fn_800707B8",
+          "score": 3428,
+          "size": 512,
+          "status": "open"
+        },
+        {
+          "address": 2147934672,
+          "name": "fn_8006E1D0",
+          "score": 3232,
+          "size": 460,
+          "status": "open"
+        },
+        {
+          "address": 2147947488,
+          "name": "fn_800713E0",
+          "score": 475,
+          "size": 440,
+          "status": "open"
+        },
+        {
+          "address": 2147935508,
+          "name": "fn_8006E514",
+          "score": 3971,
+          "size": 432,
+          "status": "open"
+        },
+        {
+          "address": 2147938920,
+          "name": "fn_8006F268",
+          "score": 410,
+          "size": 388,
+          "status": "open"
+        },
+        {
+          "address": 2147935132,
+          "name": "fn_8006E39C",
+          "score": 3692,
+          "size": 376,
+          "status": "open"
+        },
+        {
+          "address": 2147946792,
+          "name": "fn_80071128",
+          "score": 831,
+          "size": 352,
+          "status": "open"
+        },
+        {
+          "address": 2147935940,
+          "name": "fn_8006E6C4",
+          "score": 1080,
+          "size": 348,
+          "status": "open"
+        }
+      ],
+      "low": "8006E000",
+      "matched": 84,
+      "open": 48,
+      "range": "action"
+    }
+  ],
+  "revision": 1,
+  "source": "private matching decompilation",
+  "total_functions": 13039,
+  "total_matched": 7907
+}

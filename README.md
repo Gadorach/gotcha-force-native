@@ -99,6 +99,14 @@ texture or audio bytes; each regenerates from a local roster.
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the
   config offsets and measured factors. Tool:
   `tools/analyze/gred_sasuke_move_bases.py`.
+- [Decomp battle inventory](docs/api-map/decomp-battle-inventory.json) — metadata
+  for the private matching decompilation in the scene/actor, collision, damage
+  and action ranges: matched versus open counts and the largest open functions.
+  Tool: `tools/analyze/decomp_inventory.py`.
+- [Retail battle call graph](docs/api-map/retail-battle-engine-map.json) — the
+  direct-call graph from twelve scene/actor/collision/reaction/damage/action
+  roots, plus the dispatch-table entries. Tool:
+  `tools/analyze/retail_battle_engine_map.py`.
 
 Two recovery records carry the reasoning rather than the data:
 
@@ -107,6 +115,9 @@ Two recovery records carry the reasoning rather than the data:
 - [Attack pipeline recovery](docs/borg-attack-pipeline-recovery.md) — the full
   contact trace from input to data, the three remaining steps, and every
   candidate that was measured and rejected.
+- [Battle engine recovery](docs/battle-engine-recovery.md) — the shared action
+  class table (`802D3B68`), the scene/actor state dispatch, matched versus open
+  decompilation coverage, and the native mapping.
 
 ## Build
 
