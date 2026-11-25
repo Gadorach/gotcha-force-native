@@ -171,6 +171,24 @@ chain. A second writer, `8003CC48`, installs a pointer from a small table at
 Summary of the remaining decode, in order: fill source for `actor+0x9C`, then
 the eight pointers at `+0xA20`, then the 80-byte rows at `+0xAA0` including the
 damage field. Everything above that is traced.
+
+## The contact child is visual
+
+One more check changes what binding those rows would buy. The child's update
+`8009A65C` is a matrix and transform pass: it calls `8020B238` and `8020AF5C`
+for vector maths and submits the child's model through `800076D0`/`800097B4`
+using its render object at `+0xE0`. There is no collision or HP write in it.
+
+So the opcode-10 child that carries the 80-byte row is the **swing effect**, not
+the hit. The actual contact is resolved by the collision service against the
+actor's own shapes, and its damage goes through the unreachable HP writer. That
+matches the melee pilots' description of a body proxy: the geometry they stand
+in for is real, but the amount is not in the visual path.
+
+Consequently, recovering the `+0xAA0` rows would give the **effect** asset,
+timing and scale for melee — genuinely useful for presentation — but it would
+not by itself yield damage. Damage still needs the dynamic trace of the
+collision receiver described earlier.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
