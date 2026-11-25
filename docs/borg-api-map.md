@@ -100,6 +100,16 @@ geometry for 91 Borgs, exact damage for all of them, and the attack timing that
 the authored window proxies stand in for. Porting the lane-event to shape/damage
 path is the next real unit, and it starts at `8004BEB8` and the program at
 `actor+0x1D84`.
+
+One concrete obstacle found while trying to start it: `descriptor_lanes` decodes
+a per-lane `event` and `flags` byte, but `program_candidate` reduces each lane to
+`lane/group/choice` and the export never persists the event. The shared
+`shared-action-program-controls.json` stores programs, routes and wait commands,
+not descriptor lanes. So before the shape path can be classified, the export
+needs a lane-event index — a per-Borg list of `(action group, lane, group,
+choice, event, flags, bank)` — which does not exist yet. Attempting it as a
+silent enrichment of `program_candidate` produced no observable output, so that
+change was reverted rather than left as dead metadata.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
