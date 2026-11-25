@@ -584,6 +584,14 @@ the same computation, and the `D100` factor is exactly **1.400000**. The amount
 is `trunc(base × credit_factor × scalar(settings+team) × receiver_rank × tier ×
 relative)`; only the base, credit factor and receiver rank vary per pair.
 
+The per-pair factor is still open. The Mana hit's pre-`D024` factor is
+`1.955 / 5 = 0.391`; the credit difficulty row for that category is `0.92`
+(`0x802C4C20[0]`) and its minimum product with the rank row is `0.799`, so
+`0.391` is **not** the credit difficulty × rank product. The live matchup probe
+for that hit read row 19 / column 0 as `1.0`, which is also not `0.391`. The
+scalar and receiver rank are solved; the credit/matchup selection is the
+remaining per-pair input.
+
 The ladder is exported as
 [`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by
 `tools/analyze/contact_scalar_ladder.py`, with both hits recorded as verified.
