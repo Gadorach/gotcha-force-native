@@ -45,6 +45,19 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   `retail_behavior_verified`. On this roster that flag is `false` for all 206
   Borgs: 23 carry an explicit authored `damage` in the receipt and the rest
   keep damage in the generated rules. Nothing here claims retail equivalence.
+
+### Where damage is not
+
+Damage was searched for in the two projectile row tables and is in neither. The
+56-byte child rows at `802D7B10` for `0f01` key 74 carry `51.8, 40.0, 100.0,
+0.75, 15.0`, and the 80-byte rows at `802D9758` for `0f04` key 23 carry `-35,
+100, 60, 0.3, 7.5, 25`: speed, lifetime, scale and timing, with no `8` among
+them. It cannot be derived from the attack rating either — `0f01`'s ratings are
+`[1,2,0,2]`, so its attack stat is zero while its authored damage is 8.
+
+So damage lives in the program/cue path that the projectiles do not describe,
+and recovering it means decoding that path rather than reading the row. Until
+then every pilot's damage stays explicitly authored.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
