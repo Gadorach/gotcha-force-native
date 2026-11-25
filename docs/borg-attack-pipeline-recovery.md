@@ -533,30 +533,30 @@ So the live boost amount is exact:
 22.533329 = 20 x 0.867 x 1.13 x 1.15
 ```
 
-- `0.867` is applied at `D024`, from the matchup table at `0x802C5D60`
-  (80-byte rows).
-- `1.13` is applied at `D100`, loaded with index **64** from the runtime table
-  family rooted at `0x80333600`; the value is stored at `0x802C4FD4`.
-- `1.15` is applied at **`D270`**, the ReceiverRank row at `0x802C7C80`
-  (index 0) — not at `D290`.
-- `D290` is the tier multiply: the live `actor+0x6CA` byte is **0**, the index
-  is 0, and the factor is **1.0**.
-- `D16C` (relative) and `D1EC`/`D260` are neutral.
+The checkpoint deltas give the net multipliers **0.867, 1.13, 1.15**. The
+relative adjustment is neutral: the source actor is the receiver (`0x805DDBC0`,
+Sasuke), its `+180` reads **1.0**, `owner+180` reads `1.0`, and `carrier+180`
+reads `1.082251`; none produces a non-neutral relative.
 
-The decisive single-step logs:
+The per-site attribution does **not** reconcile with the static table chain, so
+the site labels are provisional. The live chain logs
+`table=80433600 → ptr=802C4BA0 → row=802C6BC0` and index 64, but
+`802C4BA0+64 = 0.98` and `802C6BC0+64 = 1.0`; neither is `1.13`. The observed
+`f0=1.13` at `D100` cannot come from those rows, and the hooks are
+block-level checkpoints rather than per-instruction proofs.
 
-```text
-d100 f31=17.340000 f0=1.130000 index=64 actor=805DDBC0
-d290 f31=22.533329 f0=1.000000 index=0 tier6ca=0 actor=805DDBC0
-```
+What is solid:
 
-So the `1.15` is the **ReceiverRank** row and does match the GFDA table; the
-`1.13` and `0.867` do not — they come from the runtime matchup/factor tables.
-The relative is neutral: the source actor is the receiver (`0x805DDBC0`,
-Sasuke), its `+180` reads **1.0**, and `D16C` multiplies by 1.0.
+- the exact arithmetic `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`;
+- the base `20` from the credit record, the receiver Sasuke, and the HP/ledger
+  writes at `8003D344`;
+- the relative adjustment is neutral;
+- `1.15` is consistent with the ReceiverRank row, but its exact applying site
+  is not proven;
+- the beam table's `19/20` uses a different factor chain.
 
-The remaining source detail is the `D100` row at index 64 and the `D024`
-matchup row.
+The next measurement has to be a true instruction trace or a memory read at the
+exact multiply, not more block-level hooks.
 
 This also explains the difference from the beam table. With the same caps the
 host replay asserts **19** (depleted receiver Force) and **20** (full Force),

@@ -155,6 +155,30 @@ static void observe_factor(CPUState* state, unsigned site)
 
 FACTOR_FN(factor_d024, 0xD024)
 FACTOR_FN(factor_d0b4, 0xD0B4)
+static void chain_d0d8(CPUState* state)
+{
+    static unsigned count;
+    if (count++ < 4u)
+        fprintf(stderr, "damage-path: chain D0D8 table=%08X offset=%08X ptr=%08X\n",
+                state->gpr[9], state->gpr[0], state->gpr[10]);
+}
+
+static void chain_d0ec(CPUState* state)
+{
+    static unsigned count;
+    if (count++ < 4u)
+        fprintf(stderr, "damage-path: chain D0EC row=%08X index=%08X outer=%08X\n",
+                state->gpr[10], state->gpr[9], state->gpr[8]);
+}
+
+static void chain_d0f8(CPUState* state)
+{
+    static unsigned count;
+    if (count++ < 4u)
+        fprintf(stderr, "damage-path: chain D0F8 row=%08X offset=%08X\n",
+                state->gpr[10], state->gpr[8]);
+}
+
 static void factor_d100(CPUState* state)
 {
     static unsigned count;
@@ -202,6 +226,9 @@ static const ModernGekkoModHook hooks[] = {
     RECOMP_HOOK(0x8002F110u, observe_tail),
     RECOMP_HOOK(0x8003D024u, factor_d024),
     RECOMP_HOOK(0x8003D0B4u, factor_d0b4),
+    RECOMP_HOOK(0x8003D0D8u, chain_d0d8),
+    RECOMP_HOOK(0x8003D0ECu, chain_d0ec),
+    RECOMP_HOOK(0x8003D0F8u, chain_d0f8),
     RECOMP_HOOK(0x8003D100u, factor_d100),
     RECOMP_HOOK(0x8003D128u, factor_d128),
     RECOMP_HOOK(0x8003D134u, factor_d134),
