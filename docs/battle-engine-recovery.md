@@ -218,8 +218,20 @@ only against the Sasuke package, which now declares damage-model `0x000A`.
 The shared package-battle script is **not** a safe place for this yet: it presses
 `x` at frames 41 and 126-138, so adding the close move to the shared G-Red
 profile would add an unscripted hit and change the verified `shots=2 hits=2`
-traces. A dedicated fixture needs its own input script (or a CLI switch) before
-the content can be exercised end to end.
+traces. A dedicated fixture was added instead:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
+```
+
+It appends the close move and `damage-model=10` only inside the temporary
+packages and asserts the real host applies the chained amount:
+
+```text
+beam hit tick=23
+close hit tick=46 value=18
+20 x 0.867 x 1.13 x 1.15 x 0.8 = 18.03 -> 18
+```
 
 ## Next targets
 
