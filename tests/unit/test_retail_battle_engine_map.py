@@ -10,6 +10,12 @@ class BattleEngineDecodeTest(unittest.TestCase):
         self.assertTrue(engine.is_bl(0x48000009))
         self.assertEqual(engine.bl_target(0x48000009, 0x80000000), 0x80000008)
 
+    def test_branch_decoders(self):
+        self.assertEqual(engine.branch_target(0x48000008, 0x80000000), 0x80000008)
+        self.assertIsNone(engine.branch_target(0x48000009, 0x80000000))
+        self.assertEqual(engine.bc_target(0x41820010, 0x80000000), 0x80000010)
+        self.assertIsNone(engine.bc_target(0x48000008, 0x80000000))
+
     def test_blr_detection(self):
         self.assertTrue(engine.is_blr(0x4E800020))
         self.assertFalse(engine.is_blr(0x48000009))

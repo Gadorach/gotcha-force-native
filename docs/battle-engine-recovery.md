@@ -12,7 +12,7 @@ status and architecture only; matching source stays local.
 - The recompiled module under `recomp/generated` is generated from the same DOL
   and chunk-verified by the runtime.
 - [`api-map/retail-battle-engine-map.json`](api-map/retail-battle-engine-map.json)
-  follows 12 curated roots into **240 functions and 403 direct calls**, with the
+  follows 14 curated roots into **213 functions and 412 direct calls**, with the
   dispatch tables it meets.
 
 ## The shared engine is a class table, not per-Borg code
@@ -169,8 +169,22 @@ reaction fan-out:
   (the HP writer), `8013F300`, `80176EC0`, `801DFF24`, `801EC1BC`. The open
   ones are `8002F8DC`, `8002FC18`, `800300BC`, `8003CD5C`, `800DB250`,
   `8010E158`, `8018214C`.
-- `8002BB14` (collision, 3,712 B) was not fully followed by the simple
-  first-`blr` scan; it needs a branch-aware walk.
+- `8002BB14` (collision, 3,712 B) is the walk above the pair loop. With a
+  branch-aware scan it calls 32 functions, including `8002DB58` and the
+  `8002C994`–`8002E1C8` group.
+- `8002DB58` (pair loop) calls `8002E2A8` (the reaction), `8002FD7C`, `80030348`,
+  `80030490`, `80039F6C` and the vector helpers.
+
+The full chain is therefore:
+
+```text
+8002BB14 collision walk
+  -> 8002DB58 pair loop
+     -> 8002E2A8 pair/reaction
+        -> 8003CD5C amount
+        -> 8003D344 HP writer
+        -> matched reaction/effect helpers
+```
 
 So the reaction path is mostly a scaffold of matched helpers around the open
 amount and a handful of open per-class effect functions.

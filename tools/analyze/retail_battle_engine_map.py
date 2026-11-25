@@ -25,6 +25,8 @@ ROOTS = {
     0x800291C4: "actor-update-inner",
     0x800294F8: "actor-update-leaf",
     0x8002C4D0: "collision-service",
+    0x8002BB14: "collision-walk",
+    0x8002DB58: "pair-loop",
     0x8002E2A8: "pair-entry",
     0x8002F110: "reaction-hp-tail",
     0x8003CD5C: "damage-amount",
@@ -94,15 +96,39 @@ def in_ranges(address, ranges):
     return any(lo <= address < hi for lo, hi in ranges)
 
 
+def branch_target(word, pc):
+    """Target of a direct `b` (opcode 18, LK=0)."""
+    if (word >> 26) != 18 or (word & 1):
+        return None
+    return bl_target(word, pc)
+
+
+def bc_target(word, pc):
+    """Target of a conditional branch (opcode 16, BD field)."""
+    if (word >> 26) != 16:
+        return None
+    displacement = word & 0x3FFF
+    if displacement & 0x2000:
+        displacement -= 0x4000
+    return (pc + displacement) & 0xFFFFFFFF
+
+
 def scan_function(words, start, data):
-    calls = []
-    refs = []
-    for pc in range(start, start + MAX_FUNCTION_BYTES, 4):
+    calls = set()
+    refs = set()
+    pending = [start]
+    seen = set()
+    limit = start + MAX_FUNCTION_BYTES
+    while pending and len(seen) < MAX_FUNCTION_BYTES // 4:
+        pc = pending.pop()
+        if pc in seen:
+            continue
+        seen.add(pc)
         word = words.get(pc)
         if word is None:
-            break
+            continue
         if is_bl(word):
-            calls.append(bl_target(word, pc))
+            calls.add(bl_target(word, pc))
         if (word >> 26) == 15:
             for step in range(1, 9):
                 follow = words.get(pc + 4 * step)
@@ -110,11 +136,25 @@ def scan_function(words, start, data):
                     break
                 address = lis_addi(word, follow)
                 if address is not None and in_ranges(address, data):
-                    refs.append(address)
+                    refs.add(address)
                     break
-        if is_blr(word) and pc != start:
-            break
-    return calls, refs
+        if is_blr(word):
+            continue
+        target = branch_target(word, pc)
+        if target is not None:
+            if start <= target < limit:
+                pending.append(target)
+            else:
+                calls.add(target)
+            continue
+        target = bc_target(word, pc)
+        if target is not None:
+            if start <= target < limit:
+                pending.append(target)
+            pending.append(pc + 4)
+            continue
+        pending.append(pc + 4)
+    return sorted(calls), sorted(refs)
 
 
 def recover(image):
