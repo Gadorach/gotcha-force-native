@@ -127,9 +127,23 @@ Its first result is a **negative** one, and it redirects the work:
 | `X` | `(-1,1)` 67, `(4,0)` 39, `(-1,5)` 26, `(0,0)` 19, `(8,1)` 16 |
 
 The event values overlap heavily across groups, so `event` is a lane action type
-(play clip, sound, and so on), **not** an attack class. The melee-versus-shot
-distinction therefore lives in the bank and group each lane points at, not in
-the event byte. That is where the shape port should look next.
+(play clip, sound, and so on), **not** an attack class.
+
+The lane **group** does separate the families cleanly:
+
+| Group | Dominant lane target |
+| --- | --- |
+| `B-close` | local group `1` (582), then local `2` (64), `7` (43), `6` (32), `0` (27) |
+| `B-shot` | local group `0` (284), then local `3` (134), `2` (121), `5` (36) |
+| `X` | local group `4` (112), then local `2` (36) |
+| `X-charge` | local group `4` (88) |
+
+So melee plays local group `1`, shots groups `0`/`3`, and X group `4`. Those
+groups are animation bank selectors, though: they choose which clip a lane
+plays, not which collision shape an attack uses. That places the hit-shape
+request inside the **program bytecode** at `actor+0x1D84`, not in the descriptor
+lanes at all — which is the next thing to decode, and the reason this index was
+worth building even though its first answer was negative.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
