@@ -65,6 +65,13 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
                 if not all(draws.get(t,0)>=8 for t in (1,int(hit[1])-1,int(hit[1]),int(hit[1])+7)):
                     raise ValueError("Axe visual is not submitted around contact\n"+trace)
     if equipped:
+        for id in ("0001","0004","0205","0700"):
+            folder=root/f"borgs/gg4e08-{id}"
+            rules=(folder/"gameplay.txt").read_text()
+            if "movement-sound=landing|audio/lab-landing.pcm" not in rules:
+                raise ValueError(f"gg4e08:{id} lost its landing sound binding")
+            if not (folder/"audio/lab-landing.pcm").is_file():
+                raise ValueError(f"gg4e08:{id} lost its landing PCM")
         trace=launch("show-attacks.sh","gg4e08:0007","--no-audio")
         for rnd in (0,1):
             draws={int(t):int(n) for t,n in re.findall(rf"borg-parts: round={rnd} tick=(\d+) actor=0 draws=(\d+)",trace)}
