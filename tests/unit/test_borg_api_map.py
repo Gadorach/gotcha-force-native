@@ -63,6 +63,19 @@ class BorgApiMapTest(unittest.TestCase):
         self.assertEqual(out["recovered_action_routes"], 3)
         self.assertEqual(api._audio({}, Path("."), ())["recovered_action_routes"], 0)
 
+    def test_binding_reports_authored_fields_for_both_receipt_shapes(self):
+        shaped = api._binding({"basic_shot_battle_test": {
+            "authored": {"damage": 8, "note": "authored"},
+            "source_profile": {"callback": "8000AAAA"},
+            "retail_behavior_verified": False}})
+        self.assertEqual(shaped["authored_fields"], ["damage", "note"])
+        self.assertEqual(shaped["source_fields"], ["callback"])
+        self.assertFalse(shaped["retail_behavior_verified"])
+        plain = api._binding({"basic_shot_battle_test": {"authored": "plain note"}})
+        self.assertEqual(plain["authored_fields"], [])
+        self.assertEqual(plain["authored_note"], "plain note")
+        self.assertIsNone(api._binding({})["capability"])
+
     @unittest.skipUnless(ROSTER.is_dir(), "local roster export")
     def test_map_states_that_it_carries_no_asset_bytes(self):
         data = api.build(ROSTER)

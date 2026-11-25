@@ -137,6 +137,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "15",
    "hp": 150,
@@ -383,6 +390,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "16",
    "hp": 200,
@@ -623,6 +637,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "17",
@@ -884,6 +905,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "18",
    "hp": 150,
@@ -1124,6 +1152,35 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "charge_ticks",
+     "damage",
+     "field_radius",
+     "height",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the source sets forward speed from its own movement operand and activates model-local contact shapes by animation progress; the native dash and following field are authored",
+    "capability": "charge-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "contact",
+     "entry_leaf",
+     "handler_pair",
+     "leaf_table",
+     "selector",
+     "source",
+     "speed_source",
+     "state",
+     "state_table",
+     "substate_table",
+     "velocity_helper"
+    ]
    },
    "capability": "charge-field",
    "collection_number": "19",
@@ -1442,6 +1499,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "20",
    "hp": 200,
@@ -1687,6 +1751,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "114",
@@ -1947,6 +2018,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 2,
     "recovered_action_routes": 10
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "153",
@@ -2226,6 +2304,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "76",
@@ -2549,6 +2634,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "115",
    "hp": 200,
@@ -2852,6 +2944,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "2",
    "hp": 180,
@@ -3097,6 +3196,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "9",
@@ -3377,6 +3483,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "77",
    "hp": 60,
@@ -3622,6 +3735,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "21",
@@ -3883,6 +4003,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "22",
    "hp": 200,
@@ -4104,6 +4231,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "held-fire",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "held-fire",
    "collection_number": "116",
@@ -4460,6 +4594,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "23",
    "hp": 220,
@@ -4730,6 +4871,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 5
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, both dash inputs declined",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "154",
    "hp": 300,
@@ -4951,6 +5099,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "79",
@@ -5306,6 +5461,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "24",
@@ -5672,6 +5834,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "25",
    "hp": 220,
@@ -5923,6 +6092,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "13",
    "hp": 200,
@@ -6145,6 +6321,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "78",
    "hp": 50,
@@ -6347,6 +6530,31 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "note",
+     "origin_height",
+     "origin_joint",
+     "radius",
+     "stock"
+    ],
+    "authored_note": "the child asset is in the shared effect archive and the source placement is animation-sampled; the chest origin, look and damage are authored",
+    "capability": "spawner-shot",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "child",
+     "config",
+     "context_table",
+     "handler_pair",
+     "main_handler",
+     "origin",
+     "rows",
+     "selector",
+     "state"
+    ]
    },
    "capability": "spawner-shot",
    "collection_number": "80",
@@ -6670,6 +6878,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "30",
    "hp": 180,
@@ -6916,6 +7131,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "32",
    "hp": 250,
@@ -7156,6 +7378,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "31",
@@ -7474,6 +7703,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 10
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "117",
    "hp": 250,
@@ -7719,6 +7955,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "118",
@@ -7980,6 +8223,33 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the neutral entry carries no payload; the child allocations live in later substates and the staged chain is not run, so the field geometry, damage and timing are authored",
+    "capability": "staged-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "child_sites",
+     "class_callback_candidate",
+     "config",
+     "context_table",
+     "debit",
+     "handler_pair",
+     "main_handler",
+     "selector",
+     "stage_tables",
+     "state",
+     "unbound"
+    ]
+   },
    "capability": "staged-field",
    "collection_number": "183",
    "hp": 300,
@@ -8182,6 +8452,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "81",
@@ -8423,6 +8700,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "190",
@@ -8722,6 +9006,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "155",
    "hp": 300,
@@ -8986,6 +9277,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "182",
@@ -9304,6 +9602,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "26",
    "hp": 180,
@@ -9549,6 +9854,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "28",
@@ -9867,6 +10179,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 10
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "29",
    "hp": 200,
@@ -10112,6 +10431,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "27",
@@ -10410,6 +10736,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "156",
@@ -10733,6 +11066,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "82",
    "hp": 80,
@@ -10979,6 +11319,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "34",
    "hp": 130,
@@ -11219,6 +11566,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "35",
@@ -11537,6 +11891,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "38",
    "hp": 150,
@@ -11763,6 +12124,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, both dash inputs declined",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "84",
@@ -12042,6 +12410,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "181",
@@ -12345,6 +12720,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "120",
@@ -12668,6 +13050,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "36",
    "hp": 200,
@@ -12894,6 +13283,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "37",
@@ -13173,6 +13569,30 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "charge_ticks",
+     "damage",
+     "field_radius",
+     "height",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the source contact shape/damage is unclaimed; the native dash reuses the profile dash speed and the field is authored",
+    "capability": "charge-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "handler_pair",
+     "program",
+     "selector",
+     "source",
+     "state",
+     "velocity_helper"
+    ]
    },
    "capability": "charge-field",
    "collection_number": "180",
@@ -13477,6 +13897,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "119",
    "hp": 200,
@@ -13780,6 +14207,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "157",
    "hp": 300,
@@ -14026,6 +14460,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "6",
    "hp": 150,
@@ -14228,6 +14669,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "83",
@@ -14450,6 +14898,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "85",
@@ -14692,6 +15147,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "58",
    "hp": 300,
@@ -14932,6 +15394,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "134",
@@ -15231,6 +15700,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "59",
    "hp": 300,
@@ -15471,6 +15947,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "135",
@@ -15713,6 +16196,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "60",
    "hp": 350,
@@ -15954,6 +16444,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "61",
    "hp": 350,
@@ -16175,6 +16672,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "103",
@@ -16474,6 +16978,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "63",
    "hp": 350,
@@ -16772,6 +17283,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "136",
    "hp": 350,
@@ -17013,6 +17531,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "62",
    "hp": 350,
@@ -17253,6 +17778,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "4",
@@ -17513,6 +18045,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "104",
@@ -17784,6 +18323,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "105",
    "hp": 150,
@@ -18053,6 +18599,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "106",
@@ -18361,6 +18914,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored grounded Dragon orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "149",
@@ -18673,6 +19233,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Worm orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "193",
    "hp": 300,
@@ -18948,6 +19515,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam on a pose-free action",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "150",
    "hp": 500,
@@ -19192,6 +19766,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam, exact body and paid release",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored sustained breath beam, exact body and paid release",
    "collection_number": "204",
@@ -19471,6 +20052,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam on a pose-free action",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "201",
    "hp": 1300,
@@ -19706,6 +20294,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "202",
    "hp": 500,
@@ -19872,6 +20467,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam on a pose-free action",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "203",
@@ -20151,6 +20753,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored grounded Dragon orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "151",
    "hp": 1000,
@@ -20423,6 +21032,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored grounded Dragon orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "152",
@@ -20734,6 +21350,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Worm orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "194",
@@ -21048,6 +21671,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored grounded Dragon orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "110",
    "hp": 500,
@@ -21359,6 +21989,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Worm orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "191",
    "hp": 150,
@@ -21634,6 +22271,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam on a pose-free action",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "111",
    "hp": 250,
@@ -21878,6 +22522,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam, exact body and paid release",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored sustained breath beam, exact body and paid release",
    "collection_number": "200",
@@ -22157,6 +22808,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam on a pose-free action",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "197",
    "hp": 650,
@@ -22392,6 +23050,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "198",
    "hp": 250,
@@ -22558,6 +23223,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": "beam length, cadence, damage, radius, charge window, sweep angle and caster joint are native tuning, not retail values",
+    "capability": "authored sustained breath beam on a pose-free action",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "199",
@@ -22837,6 +23509,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored grounded Dragon orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "112",
    "hp": 500,
@@ -23109,6 +23788,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored grounded Dragon orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "113",
@@ -23421,6 +24107,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Worm orb; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "192",
    "hp": 150,
@@ -23676,6 +24369,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "164",
@@ -24013,6 +24713,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "165",
    "hp": 550,
@@ -24277,6 +24984,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "176",
@@ -24595,6 +25309,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "166",
    "hp": 450,
@@ -24898,6 +25619,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "167",
    "hp": 400,
@@ -25143,6 +25871,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "168",
@@ -25480,6 +26215,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "169",
    "hp": 550,
@@ -25745,6 +26487,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "177",
    "hp": 1050,
@@ -26005,6 +26754,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "178",
    "hp": 1050,
@@ -26264,6 +27020,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "179",
@@ -26581,6 +27344,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "175",
@@ -26903,6 +27673,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "158",
@@ -27264,6 +28041,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "1",
    "hp": 200,
@@ -27509,6 +28293,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "137",
@@ -27846,6 +28637,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "138",
    "hp": 550,
@@ -28168,6 +28966,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "139",
    "hp": 420,
@@ -28470,6 +29275,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 1,
     "recovered_action_routes": 5
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal ground shot pair, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "66",
@@ -28774,6 +29586,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "140",
    "hp": 380,
@@ -29053,6 +29872,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 10
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
    "collection_number": "71",
    "hp": 250,
@@ -29238,6 +30064,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "141",
@@ -29575,6 +30408,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "142",
    "hp": 550,
@@ -29896,6 +30736,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "143",
@@ -30256,6 +31103,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 1,
     "recovered_action_routes": 5
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal ground shot pair, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "67",
@@ -30669,6 +31523,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 5
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
    "collection_number": "72",
    "hp": 300,
@@ -30935,6 +31796,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "170",
@@ -31257,6 +32125,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "171",
@@ -31618,6 +32493,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 5
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal ground shot pair, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "146",
    "hp": 400,
@@ -31940,6 +32822,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "144",
    "hp": 400,
@@ -32242,6 +33131,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "69",
@@ -32603,6 +33499,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "14",
    "hp": 400,
@@ -32963,6 +33866,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "206",
    "hp": 350,
@@ -33208,6 +34118,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "39",
@@ -33621,6 +34538,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "186",
    "hp": 220,
@@ -33867,6 +34791,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "33",
    "hp": 250,
@@ -34107,6 +35038,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "40",
@@ -34349,6 +35287,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "121",
    "hp": 300,
@@ -34590,6 +35535,29 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "field_radius",
+     "forward",
+     "height",
+     "interval",
+     "note",
+     "stock",
+     "ticks"
+    ],
+    "authored_note": "child is a following effect; the source damage/area receiver remains unclaimed",
+    "capability": "zeta-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "child",
+     "handler_pair",
+     "selector",
+     "state",
+     "substate"
+    ]
+   },
    "capability": "zeta-field",
    "collection_number": "86",
    "hp": 50,
@@ -34811,6 +35779,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "159",
@@ -35052,6 +36027,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "184",
@@ -35465,6 +36447,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "185",
    "hp": 250,
@@ -35711,6 +36700,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "8",
    "hp": 250,
@@ -35952,6 +36948,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "5",
    "hp": 280,
@@ -36192,6 +37195,29 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "field_radius",
+     "forward",
+     "height",
+     "interval",
+     "note",
+     "stock",
+     "ticks"
+    ],
+    "authored_note": "child is a following effect; the source damage/area receiver remains unclaimed",
+    "capability": "zeta-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "child",
+     "handler_pair",
+     "selector",
+     "state",
+     "substate"
+    ]
    },
    "capability": "zeta-field",
    "collection_number": "87",
@@ -36604,6 +37630,29 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "field_radius",
+     "forward",
+     "height",
+     "interval",
+     "note",
+     "stock",
+     "ticks"
+    ],
+    "authored_note": "child is a following effect; the source damage/area receiver remains unclaimed",
+    "capability": "zeta-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "child",
+     "handler_pair",
+     "selector",
+     "state",
+     "substate"
+    ]
    },
    "capability": "zeta-field",
    "collection_number": "88",
@@ -37022,6 +38071,29 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "field_radius",
+     "forward",
+     "height",
+     "interval",
+     "note",
+     "stock",
+     "ticks"
+    ],
+    "authored_note": "child is a following effect; the source damage/area receiver remains unclaimed",
+    "capability": "zeta-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "child",
+     "handler_pair",
+     "selector",
+     "state",
+     "substate"
+    ]
+   },
    "capability": "zeta-field",
    "collection_number": "89",
    "hp": 60,
@@ -37268,6 +38340,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "41",
    "hp": 180,
@@ -37508,6 +38587,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "42",
@@ -37787,6 +38873,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored single ground shot, exact poses, retains locomotion",
    "collection_number": "122",
@@ -38086,6 +39179,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 4
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "160",
    "hp": 250,
@@ -38332,6 +39432,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "43",
    "hp": 180,
@@ -38535,6 +39642,33 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "charge_ticks",
+     "damage",
+     "field_radius",
+     "height",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the source contact shape/damage is unclaimed; the native dash reuses the profile dash speed and the field is authored",
+    "capability": "charge-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "dispatch_table",
+     "handler_pair",
+     "program",
+     "sda_base",
+     "selector",
+     "source",
+     "state",
+     "state_table",
+     "velocity_helper"
+    ]
+   },
    "capability": "charge-field",
    "collection_number": "44",
    "hp": 200,
@@ -38737,6 +39871,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "101",
@@ -39017,6 +40158,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "123",
    "hp": 200,
@@ -39219,6 +40367,33 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "charge_ticks",
+     "damage",
+     "field_radius",
+     "height",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the source contact shape/damage is unclaimed; the native dash reuses the profile dash speed and the field is authored",
+    "capability": "charge-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "dispatch_table",
+     "handler_pair",
+     "program",
+     "sda_base",
+     "selector",
+     "source",
+     "state",
+     "state_table",
+     "velocity_helper"
+    ]
    },
    "capability": "charge-field",
    "collection_number": "45",
@@ -39518,6 +40693,30 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "charge_ticks",
+     "damage",
+     "field_radius",
+     "height",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the source contact shape/damage is unclaimed; the native dash reuses the profile dash speed and the field is authored",
+    "capability": "charge-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "handler_pair",
+     "program",
+     "selector",
+     "source",
+     "state",
+     "velocity_helper"
+    ]
+   },
    "capability": "charge-field",
    "collection_number": "124",
    "hp": 200,
@@ -39816,6 +41015,13 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 4
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "161",
    "hp": 250,
@@ -40062,6 +41268,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "125",
    "hp": 180,
@@ -40303,6 +41516,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "11",
    "hp": 200,
@@ -40505,6 +41725,33 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "charge_ticks",
+     "damage",
+     "field_radius",
+     "height",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the source contact shape/damage is unclaimed; the native dash reuses the profile dash speed and the field is authored",
+    "capability": "charge-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "dispatch_table",
+     "handler_pair",
+     "program",
+     "sda_base",
+     "selector",
+     "source",
+     "state",
+     "state_table",
+     "velocity_helper"
+    ]
    },
    "capability": "charge-field",
    "collection_number": "98",
@@ -40747,6 +41994,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "47",
    "hp": 150,
@@ -40987,6 +42241,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "126",
@@ -41229,6 +42490,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "48",
    "hp": 150,
@@ -41470,6 +42738,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "49",
    "hp": 150,
@@ -41710,6 +42985,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "50",
@@ -41971,6 +43253,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "90",
    "hp": 50,
@@ -42217,6 +43506,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "127",
    "hp": 150,
@@ -42457,6 +43753,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "128",
@@ -42699,6 +44002,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "129",
    "hp": 180,
@@ -42939,6 +44249,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "51",
@@ -43200,6 +44517,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "91",
    "hp": 70,
@@ -43446,6 +44770,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "162",
    "hp": 180,
@@ -43687,6 +45018,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored Battle Test rules; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "3",
    "hp": 180,
@@ -43908,6 +45246,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "52",
@@ -44159,6 +45504,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "46",
@@ -44449,6 +45801,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "187",
    "hp": 210,
@@ -44705,6 +46064,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "130",
    "hp": 200,
@@ -44956,6 +46322,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "163",
    "hp": 400,
@@ -45187,6 +46560,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "99",
@@ -45438,6 +46818,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "131",
@@ -45728,6 +47115,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "188",
    "hp": 200,
@@ -45984,6 +47378,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "132",
    "hp": 400,
@@ -46235,6 +47636,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "10",
    "hp": 450,
@@ -46466,6 +47874,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "100",
@@ -46718,6 +48133,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "53",
    "hp": 120,
@@ -46968,6 +48390,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "54",
@@ -47220,6 +48649,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "55",
    "hp": 130,
@@ -47470,6 +48906,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "56",
@@ -47722,6 +49165,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "57",
    "hp": 180,
@@ -47953,6 +49403,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "92",
@@ -48205,6 +49662,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "basic-melee",
    "collection_number": "133",
    "hp": 120,
@@ -48436,6 +49900,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "basic-melee",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "basic-melee",
    "collection_number": "93",
@@ -48688,6 +50159,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal tank single shot, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "64",
    "hp": 300,
@@ -48929,6 +50407,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal tank single shot, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "65",
    "hp": 320,
@@ -49169,6 +50654,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored single ground shot, exact poses, retains locomotion",
    "collection_number": "172",
@@ -49430,6 +50922,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, both dash inputs declined",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "145",
    "hp": 500,
@@ -49650,6 +51149,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 2,
     "recovered_action_routes": 2
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal tank single shot, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "68",
@@ -49891,6 +51397,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored normal tank single shot, retains locomotion",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "7",
@@ -50147,6 +51660,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored static-cruise B-charge; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored static-cruise B-charge; not retail combat",
    "collection_number": "70",
    "hp": 150,
@@ -50322,6 +51842,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "147",
@@ -50513,6 +52040,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "73",
    "hp": 200,
@@ -50683,6 +52217,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "195",
@@ -50874,6 +52415,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored static-cruise B-charge; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored static-cruise B-charge; not retail combat",
    "collection_number": "74",
    "hp": 150,
@@ -51050,6 +52598,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "75",
    "hp": 150,
@@ -51187,6 +52742,26 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "blast_radius",
+     "damage",
+     "lifetime",
+     "note",
+     "origin_height",
+     "pace",
+     "radius",
+     "speed"
+    ],
+    "authored_note": "the source terminal geometry, type-73 service, damage and real lifetime are unresolved; this is an authored bomb proxy",
+    "capability": "icbm",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "receipt",
+     "row",
+     "source"
+    ]
    },
    "capability": "icbm",
    "collection_number": "109",
@@ -51326,6 +52901,26 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "blast_radius",
+     "damage",
+     "lifetime",
+     "note",
+     "origin_height",
+     "pace",
+     "radius",
+     "speed"
+    ],
+    "authored_note": "the source terminal geometry, type-73 service, damage and real lifetime are unresolved; this is an authored bomb proxy",
+    "capability": "icbm",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "receipt",
+     "row",
+     "source"
+    ]
    },
    "capability": "icbm",
    "collection_number": "108",
@@ -51523,6 +53118,41 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "boost_cost_per_tick",
+     "cruise_height",
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the type-36 child contact exists (shape handoff 8008AFF0) but its damage amount is unrecovered; radius, damage, interval, height and boost cost are authored",
+    "capability": "flying-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "boost_handler",
+     "boost_selector",
+     "button",
+     "callback",
+     "child_allocator",
+     "child_update",
+     "corner_layout",
+     "cruise_handler",
+     "cruise_selector",
+     "debit",
+     "handler_pair",
+     "operands",
+     "recovered_cruise",
+     "selector",
+     "shape_handoff",
+     "state",
+     "walk",
+     "walk_authored"
+    ]
+   },
    "capability": "flying-field",
    "collection_number": "173",
    "hp": 2000,
@@ -51693,6 +53323,39 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "boost_cost_per_tick",
+     "cruise_height",
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the type-36 child contact exists (shape handoff 8008AFF0) but its damage amount is unrecovered; radius, damage, interval, height and boost cost are authored",
+    "capability": "flying-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "boost_handler",
+     "boost_selector",
+     "button",
+     "callback",
+     "child_allocator",
+     "child_update",
+     "corner_layout",
+     "cruise_handler",
+     "cruise_selector",
+     "debit",
+     "handler_pair",
+     "operands",
+     "selector",
+     "shape_handoff",
+     "state",
+     "walk"
+    ]
    },
    "capability": "flying-field",
    "collection_number": "148",
@@ -51865,6 +53528,39 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "boost_cost_per_tick",
+     "cruise_height",
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the type-36 child contact exists (shape handoff 8008AFF0) but its damage amount is unrecovered; radius, damage, interval, height and boost cost are authored",
+    "capability": "flying-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "boost_handler",
+     "boost_selector",
+     "button",
+     "callback",
+     "child_allocator",
+     "child_update",
+     "corner_layout",
+     "cruise_handler",
+     "cruise_selector",
+     "debit",
+     "handler_pair",
+     "operands",
+     "selector",
+     "shape_handoff",
+     "state",
+     "walk"
+    ]
+   },
    "capability": "flying-field",
    "collection_number": "196",
    "hp": 2000,
@@ -52036,6 +53732,41 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "boost_cost_per_tick",
+     "cruise_height",
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the type-36 child contact exists (shape handoff 8008AFF0) but its damage amount is unrecovered; radius, damage, interval, height and boost cost are authored",
+    "capability": "flying-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "boost_handler",
+     "boost_selector",
+     "button",
+     "callback",
+     "child_allocator",
+     "child_update",
+     "corner_layout",
+     "cruise_handler",
+     "cruise_selector",
+     "debit",
+     "handler_pair",
+     "operands",
+     "recovered_cruise",
+     "selector",
+     "shape_handoff",
+     "state",
+     "walk",
+     "walk_authored"
+    ]
+   },
    "capability": "flying-field",
    "collection_number": "174",
    "hp": 2000,
@@ -52206,6 +53937,39 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "boost_cost_per_tick",
+     "cruise_height",
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the type-36 child contact exists (shape handoff 8008AFF0) but its damage amount is unrecovered; radius, damage, interval, height and boost cost are authored",
+    "capability": "flying-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "boost_handler",
+     "boost_selector",
+     "button",
+     "callback",
+     "child_allocator",
+     "child_update",
+     "corner_layout",
+     "cruise_handler",
+     "cruise_selector",
+     "debit",
+     "handler_pair",
+     "operands",
+     "selector",
+     "shape_handoff",
+     "state",
+     "walk"
+    ]
    },
    "capability": "flying-field",
    "collection_number": "205",
@@ -52397,6 +54161,41 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "boost_cost_per_tick",
+     "cruise_height",
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "ticks"
+    ],
+    "authored_note": "the type-36 child contact exists (shape handoff 8008AFF0) but its damage amount is unrecovered; radius, damage, interval, height and boost cost are authored",
+    "capability": "flying-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "boost_handler",
+     "boost_selector",
+     "button",
+     "callback",
+     "child_allocator",
+     "child_update",
+     "corner_layout",
+     "cruise_handler",
+     "cruise_selector",
+     "debit",
+     "handler_pair",
+     "operands",
+     "recovered_cruise",
+     "selector",
+     "shape_handoff",
+     "state",
+     "walk",
+     "walk_authored"
+    ]
+   },
    "capability": "flying-field",
    "collection_number": "12",
    "hp": 2000,
@@ -52549,6 +54348,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "94",
    "hp": 20,
@@ -52687,6 +54493,13 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
+   },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "95",
    "hp": 30,
@@ -52819,6 +54632,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "opt-in authored pose-free Battle Test; not retail combat",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "96",
@@ -52953,6 +54773,38 @@
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
    },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "field_radius",
+     "height_band",
+     "interval",
+     "note",
+     "pace",
+     "stock_cap",
+     "ticks"
+    ],
+    "authored_note": "the child runs the shared effect-command interpreter with no origin row, speed or lifetime; the paid following field and its geometry, damage and timing are authored",
+    "capability": "nu-field",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "button",
+     "callback",
+     "child_call",
+     "child_interpreter",
+     "child_motion",
+     "child_variant",
+     "debit",
+     "debit_site",
+     "handler_pair",
+     "main_handler",
+     "selector",
+     "shared_state2",
+     "sibling_routes",
+     "state",
+     "state_table"
+    ]
+   },
    "capability": "nu-field",
    "collection_number": "97",
    "hp": 50,
@@ -53085,6 +54937,31 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [
+     "damage",
+     "note",
+     "origin_height",
+     "origin_joint",
+     "radius"
+    ],
+    "authored_note": "the child asset is in the shared effect archive and the source placement is animation-sampled; the chest origin, look and damage are authored",
+    "capability": "spawner-static",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "child",
+     "config",
+     "context_table",
+     "debit",
+     "handler_pair",
+     "main_handler",
+     "origin",
+     "row",
+     "selector",
+     "state"
+    ]
    },
    "capability": "spawner-static",
    "collection_number": "102",
@@ -53219,6 +55096,28 @@
     "recovered_action_cues": 1,
     "recovered_action_routes": 1
    },
+   "binding": {
+    "authored_fields": [
+     "arming",
+     "damage",
+     "lifetime",
+     "note",
+     "origin",
+     "pace",
+     "visual"
+    ],
+    "authored_note": "the source area row stores the impact record/cue, not damage",
+    "capability": "roach-bomb",
+    "retail_behavior_verified": false,
+    "source_fields": [
+     "callback",
+     "config",
+     "context_table",
+     "main_handler",
+     "roots",
+     "row"
+    ]
+   },
    "capability": "roach-bomb",
    "collection_number": "189",
    "hp": 60,
@@ -53351,6 +55250,13 @@
     "other_sfx": "unresolved",
     "recovered_action_cues": 0,
     "recovered_action_routes": 0
+   },
+   "binding": {
+    "authored_fields": [],
+    "authored_note": null,
+    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
+    "retail_behavior_verified": false,
+    "source_fields": []
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "107",

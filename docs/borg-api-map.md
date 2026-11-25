@@ -40,6 +40,11 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   contexts the row covers.
 - `capability` — the pilot that binds the Borg, or `null` when the package
   carries no executable gameplay.
+- `binding` — the fidelity record: the same capability, the fields the receipt
+  marks as authored (with its note), the source fields it did recover, and
+  `retail_behavior_verified`. On this roster that flag is `false` for all 206
+  Borgs: 23 carry an explicit authored `damage` in the receipt and the rest
+  keep damage in the generated rules. Nothing here claims retail equivalence.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes

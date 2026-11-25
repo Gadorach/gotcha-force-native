@@ -88,6 +88,16 @@ def _actions(summary):
     return out
 
 
+def _receipt(summary):
+    for key, _ in CAPABILITY_KEYS:
+        if summary.get(key) is not None:
+            return summary[key]
+    for key in ("basic_shot_battle_test", "basic_melee_battle_test", "held_fire_battle_test"):
+        if summary.get(key) is not None:
+            return summary[key]
+    return None
+
+
 def _capability(summary):
     for key, name in CAPABILITY_KEYS:
         if summary.get(key) is not None:
@@ -100,6 +110,25 @@ def _capability(summary):
     if summary.get("held_fire_battle_test") is not None:
         return "held-fire"
     return None
+
+
+def _binding(summary):
+    """What stays authored for this Borg, straight from its receipt."""
+    receipt = _receipt(summary) or {}
+    authored = receipt.get("authored") or {}
+    source = receipt.get("source_profile") or {}
+    if isinstance(authored, dict):
+        fields = sorted(str(key) for key in authored)
+        note = authored.get("note")
+    else:
+        fields = []
+        note = authored if isinstance(authored, str) else None
+    return {"capability": _capability(summary),
+            "authored_fields": fields,
+            "authored_note": note,
+            "source_fields": sorted(str(key) for key in source)
+                             if isinstance(source, dict) else [],
+            "retail_behavior_verified": bool(receipt.get("retail_behavior_verified"))}
 
 
 def _audio(summary, folder, action_cues=()):
@@ -159,6 +188,7 @@ def borg_entry(folder, action_cues=()):
                   for name, group, choice in (summary.get("role_preview_clips") or [])],
         "actions": _actions(summary),
         "capability": _capability(summary),
+        "binding": _binding(summary),
         "audio": _audio(summary, folder, action_cues),
         "preview_declaration": bool(summary.get("preview_declaration")),
     }
