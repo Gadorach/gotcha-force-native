@@ -107,10 +107,19 @@ The fields are stable across both variants:
 | `8004BEB8` | action/program request used at the phase exits |
 
 The native move model currently covers the active volume (melee window) but not
-this windup/active-velocity/recovery machine. The next concrete unit is to
-extract the per-Borg `+0x868` 3x3 tables and add an `action-phase` profile key
-(windup/active/recovery ticks plus the active velocity) so a shared native state
-machine can run them without per-Borg code.
+this windup/active-velocity/recovery machine.
+
+**The phase gate is animation-driven, not a tick counter.** The open helper
+`fn_80066838(actor, threshold)` compares a transformed vector magnitude against
+`threshold * actor[180]` and returns 1 while it exceeds the threshold. The
+`+0x868` values (G-Red 1000/1200/1300, Sasuke 1000/800/1000) are displacement
+thresholds for the class/mode, not phase durations. The phase advances when the
+animated displacement falls below them.
+
+So an `action-phase` tick key would **not** be faithful. The native clip and
+duration model stays the approximation until the animation displacement is
+recovered. Exact phase timing needs the retail animation/pose data, not another
+tick table.
 
 The scene/actor layers use the same pattern:
 
