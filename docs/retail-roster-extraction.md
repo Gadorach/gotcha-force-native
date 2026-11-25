@@ -1617,8 +1617,15 @@ classification:
   lands and blasts with an authored 300 radius, 20 damage and 30-tick
   lifetime. The source terminal geometry and type-73 service remain
   unclaimed.
-- **No neutral B row** (`0205`): its B or X is state-specific, so there is
-  no `0:0` context to bind.
+- **No resolved class branch** (`0205`): it does expose a `(0,0)` context,
+  but that row maps into a multi-stage chain rather than one class
+  callback. `80156FFC` selects `803429C4`/`803429D4` on byte `+0x582`,
+  the entry dispatches again on `+0x581` through `803429E4`/`803429F8`,
+  and the leaves drive program, timer and effect helpers
+  (`8006D144`/`8006E1AC`/`8006A474`/`8006A5A4`/`800679D0`) instead of an
+  origin factory. The extractor finds no class callback for the model, so
+  the chain still needs its own ownership/effect settlement before any
+  neutral input can be bound.
 - **Spawner-shot pilot** (`010a`, admitted): its B state machine
   `80199490` → `8036FB48` spawns rows **11** and **12** through
   `800853EC` and pays channel-2 cost 1 through `8006DBE0`. Rows 11/12
