@@ -83,6 +83,35 @@ actor+0x541 -> phase timer reset flag
 
 Per-Borg data selects the family/sub-class/phase; the handlers are shared.
 
+### The close-phase state machine
+
+The close family's phase handlers are still open, but their partial sources show
+the shared machine:
+
+| Phase | Handlers | Role |
+| --- | --- | --- |
+| 0 | `80070CCC` / `800706E8` | windup; timer from the actor's 3x3 parameter table; freezes velocity and requests the next program |
+| 1 | `80070DE4` / `800707B8` | active; integrates velocity and timer, then advances |
+| 2 | `80070F18` | recovery; clears flags and requests the next program |
+
+The fields are stable across both variants:
+
+| Field | Meaning |
+| --- | --- |
+| `actor+0x540` | phase index, incremented on each transition |
+| `actor+0x541` | phase reset flag; writes `actor+0xCC = 0` |
+| `actor+0x558` | phase timer |
+| `actor+0x868` | per-mode 3x3 parameter table (windup/active/recovery values) |
+| `actor+0x584` | mode selector; index is `mode % 3` |
+| `actor+0x44/48/4C/50` | velocity components |
+| `8004BEB8` | action/program request used at the phase exits |
+
+The native move model currently covers the active volume (melee window) but not
+this windup/active-velocity/recovery machine. The next concrete unit is to
+extract the per-Borg `+0x868` 3x3 tables and add an `action-phase` profile key
+(windup/active/recovery ticks plus the active velocity) so a shared native state
+machine can run them without per-Borg code.
+
 The scene/actor layers use the same pattern:
 
 - `fn_80028264`: `lbl_802CFDE0[scene_state]()` then advances a frame counter.
