@@ -100,6 +100,11 @@ def recover(image):
                 "value": round(matchup, 6),
                 "formula": "credit_difficulty x credit_rank",
             },
+            "conditional_half": {
+                "applied": False,
+                "condition": "owner998 != 0 && owner136 == 0",
+                "reason": "owner998 = 0 on this hit",
+            },
             "scalar": {
                 "value": round(scalar, 6),
                 "address": f"{SCALAR_ROW:08X}",

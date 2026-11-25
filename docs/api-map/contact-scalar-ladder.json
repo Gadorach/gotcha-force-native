@@ -35,10 +35,12 @@
     1.4,
     2.0
   ],
+  "formula": "trunc(base * credit_difficulty * credit_rank * (owner998 != 0 && owner136 == 0 ? 0.5 : 1) * scalar(settings+team) * receiver_rank * tier * relative)",
   "kind": "gf-contact-scalar-ladder",
   "notes": [
     "The scalar is a battle/team value, not a Borg value.",
     "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
+    "The Mana hit also applies the conditional 0.5: credit difficulty 0.92 x rank 0.85 x 0.5 = 0.391; the Kakeru hit does not (owner998 = 0).",
     "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows."
   ],
   "revision": 1,
@@ -48,6 +50,9 @@
     "observations": [
       {
         "byte": 16,
+        "conditional_half": false,
+        "credit_difficulty": 1.02,
+        "credit_rank": 0.85,
         "hit": {
           "amount": 22,
           "base": 20,
@@ -61,6 +66,9 @@
       },
       {
         "byte": 30,
+        "conditional_half": true,
+        "credit_difficulty": 0.92,
+        "credit_rank": 0.85,
         "hit": {
           "amount": 3,
           "base": 5,

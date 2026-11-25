@@ -22,6 +22,11 @@ class ContactScalarLadderTest(unittest.TestCase):
         self.assertAlmostEqual(entries[16], 1.13, places=5)
         self.assertAlmostEqual(entries[30], 1.4, places=5)
 
+    def test_formula_reproduces_the_mana_amount(self):
+        value = 5 * 0.92 * 0.85 * 0.5 * 1.4 * 1.15
+        self.assertEqual(int(value), 3)
+        self.assertIn("owner998", self.data["formula"])
+
     def test_observations_are_marked(self):
         observations = {item["state"]: item for item in self.data["settings"]["observations"]}
         self.assertTrue(observations["kakeru_battle"]["verified"])

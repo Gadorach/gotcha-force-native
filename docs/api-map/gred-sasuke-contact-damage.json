@@ -6,6 +6,11 @@
   },
   "credit": "gg4e08:0615/0",
   "factors": {
+    "conditional_half": {
+      "applied": false,
+      "condition": "owner998 != 0 && owner136 == 0",
+      "reason": "owner998 = 0 on this hit"
+    },
     "credit_difficulty": {
       "address": "802C4BA0",
       "index": 0,

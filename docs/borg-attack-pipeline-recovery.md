@@ -584,13 +584,39 @@ the same computation, and the `D100` factor is exactly **1.400000**. The amount
 is `trunc(base × credit_factor × scalar(settings+team) × receiver_rank × tier ×
 relative)`; only the base, credit factor and receiver rank vary per pair.
 
-The per-pair factor is still open. The Mana hit's pre-`D024` factor is
-`1.955 / 5 = 0.391`; the credit difficulty row for that category is `0.92`
-(`0x802C4C20[0]`) and its minimum product with the rank row is `0.799`, so
-`0.391` is **not** the credit difficulty × rank product. The live matchup probe
-for that hit read row 19 / column 0 as `1.0`, which is also not `0.391`. The
-scalar and receiver rank are solved; the credit/matchup selection is the
-remaining per-pair input.
+The per-pair factor is resolved too. The Mana pre-`D024` factor `0.391` is
+**credit difficulty × rank × a conditional 0.5**:
+
+- credit difficulty for that category is `0.92` (`0x802C4C20[0]`);
+- credit rank is `0.85`;
+- the code at `8003CEBC` applies `×0.5` when `owner998 != 0` and
+  `owner136 == 0`.
+
+`0.92 × 0.85 × 0.5 = 0.391`, and the full amount is:
+
+```text
+5 × 0.92 × 0.85 × 0.5 × 1.4 × 1.15 = 3.14755  →  3
+```
+
+The Kakeru hit has `owner998 = 0`, so the half does not apply:
+`1.02 × 0.85 × 1 = 0.867`, and `20 × 0.867 × 1.13 × 1.15 = 22`.
+
+So the complete contact formula is:
+
+```text
+amount = trunc(base
+               × credit_difficulty(category)
+               × credit_rank
+               × (owner998 != 0 && owner136 == 0 ? 0.5 : 1)
+               × scalar(settings+team)
+               × receiver_rank
+               × tier
+               × relative)
+```
+
+Both captured hits reproduce exactly. The only unnamed input is the semantic
+of `owner998`; it behaves as a half-damage guard/critical flag, but the name is
+not recovered.
 
 The ladder is exported as
 [`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by
