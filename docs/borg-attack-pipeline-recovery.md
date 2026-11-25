@@ -512,6 +512,27 @@ per-hit factor selection is still open.
 That distinction matters for shipping: the live 22 is a genuine contact amount,
 but it must not be fed into the beam table as if it were the beam result.
 
+The factor sequence inside `8003CD5C` is now statically mapped, which is where
+the next pass should start:
+
+| Site | Applied value |
+| --- | --- |
+| `8003D024` | credit difficulty (row selected through settings/team) |
+| `8003D0B4` | conditional 0.5 flag |
+| `8003D100` | owner/health factor |
+| `8003D128` | conditional 0.5 flag |
+| `8003D16C` | relative-scale factor from `carrier+180` |
+| `8003D1EC` | health-row factor (index from the `CF70` division) |
+| `8003D260` | force/rank factor |
+| `8003D270` | another rank/force factor |
+| `8003D290` | tier factor (`actor+6CA`) |
+| `8003D2A4` | conditional 0.5 flag |
+
+The live boost hit reaches the final `f31` through this chain, but the observed
+22 means at least one of the beam factors is skipped or bounded differently.
+The exact per-site factor values (and which rows are bypassed) are the next
+measurement.
+
 The existing host replay makes the gap concrete. With the exact same caps
 (credit 200/200, receiver 180/180, difficulty 0, rank 0, tier 0), the
 `GRedSasukeDamageTable` path asserts **19** with a depleted receiver Force
