@@ -58,6 +58,31 @@ machines (`8006FB44`, `8006FDB8`, `80070024`, `80070670`, `80070C7C`,
 `800710D8`, `80071714`, `80071AC0`, …), and most are byte-matched. A handful of
 sub-handlers remain open (`8006FF00`, `80071750`, `80071858`, `80071938`, …).
 
+There is a **third level**: those handlers dispatch again on `actor+0x540`
+through phase tables. The generic dispatcher is `800FED6C`:
+
+```c
+void fn_800FED6C(void *p, const char *desc) {
+    if (p[0x541]) *(int *)(p + 0xCC) = 0;
+    lbl_8031EFF0[(signed char)p[0x540]](p, desc);
+}
+```
+
+Phase tables such as `802D3C2C`, `802D3C14`, `802D3C3C` and `802D3C90` hold the
+per-frame windup/active/recovery handlers. The published class map now includes
+those phase tables and the dispatcher.
+
+So the original action engine is a **four-byte dispatch hierarchy**:
+
+```text
+actor+0x580 -> family   (802D3B68)
+actor+0x581 -> sub-class (802D3B7C, 802D3BD4/802D3BE8, 802D3C48, ...)
+actor+0x540 -> phase     (802D3C2C, 802D3C14, 8031EFF0, ...)
+actor+0x541 -> phase timer reset flag
+```
+
+Per-Borg data selects the family/sub-class/phase; the handlers are shared.
+
 The scene/actor layers use the same pattern:
 
 - `fn_80028264`: `lbl_802CFDE0[scene_state]()` then advances a frame counter.

@@ -28,6 +28,14 @@ SUBTABLES = {
     0x802D3C5C: ("class-3", 16),
     0x802D3C7C: ("class-4", 16),
 }
+PHASE_TABLES = {
+    0x802D3C2C: ("close-default-phases", 8),
+    0x802D3C3C: ("close-alt-phases", 8),
+    0x802D3C14: ("close-model-000a-phases", 8),
+    0x802D3C90: ("class-4-phases", 4),
+    0x8031EFF0: ("generic-action-phases", 16),
+}
+PHASE_DISPATCHERS = {0x800FED6C: "generic-phase-dispatcher"}
 TEXT_LOW = 0x80003100
 TEXT_HIGH = 0x802B0160
 
@@ -95,6 +103,23 @@ def recover(image, db=None):
                 entry.update(found)
             entries.append(entry)
         subtables.append({"name": name, "address": f"{address:08X}", "entries": entries})
+    phase_tables = []
+    for address, (name, count) in PHASE_TABLES.items():
+        entries = []
+        for index, handler in enumerate(read_table(image, address, count)):
+            entry = {"index": index, "handler": f"{handler:08X}"}
+            found = _status(rows, starts, handler)
+            if found:
+                entry.update(found)
+            entries.append(entry)
+        phase_tables.append({"name": name, "address": f"{address:08X}", "entries": entries})
+    dispatchers = []
+    for address, role in PHASE_DISPATCHERS.items():
+        entry = {"address": f"{address:08X}", "role": role}
+        found = _status(rows, starts, address)
+        if found:
+            entry.update(found)
+        dispatchers.append(entry)
     return {
         "kind": "gf-retail-action-class-map",
         "revision": 1,
@@ -104,8 +129,10 @@ def recover(image, db=None):
         "sub_index": "actor+0x581",
         "family_table": {"address": f"{FAMILY_TABLE:08X}", "entries": families},
         "subtables": subtables,
+        "phase_tables": phase_tables,
+        "phase_dispatchers": dispatchers,
         "notes": [
-            "Two-level dispatch: family byte then sub-class byte select shared handlers.",
+            "Two-level class dispatch (0x580 family, 0x581 sub-class), then a phase table selected by actor+0x540.",
             "Handler status comes from the optional private decomp database; no source is copied.",
         ],
     }

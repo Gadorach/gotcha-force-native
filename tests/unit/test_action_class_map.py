@@ -25,6 +25,13 @@ class ActionClassMapTest(unittest.TestCase):
         for table in self.data["subtables"]:
             self.assertTrue(table["entries"])
 
+    def test_phase_tables(self):
+        names = {table["name"] for table in self.data["phase_tables"]}
+        self.assertIn("close-default-phases", names)
+        self.assertIn("generic-action-phases", names)
+        dispatchers = {entry["address"]: entry for entry in self.data["phase_dispatchers"]}
+        self.assertEqual(dispatchers["800FED6C"]["role"], "generic-phase-dispatcher")
+
 
 if __name__ == "__main__":
     unittest.main()

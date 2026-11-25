@@ -264,8 +264,322 @@
   },
   "kind": "gf-retail-action-class-map",
   "notes": [
-    "Two-level dispatch: family byte then sub-class byte select shared handlers.",
+    "Two-level class dispatch (0x580 family, 0x581 sub-class), then a phase table selected by actor+0x540.",
     "Handler status comes from the optional private decomp database; no source is copied."
+  ],
+  "phase_dispatchers": [
+    {
+      "address": "800FED6C",
+      "name": "fn_800FED6C",
+      "role": "generic-phase-dispatcher",
+      "score": 0,
+      "size": 80,
+      "status": "matched"
+    }
+  ],
+  "phase_tables": [
+    {
+      "address": "802D3C2C",
+      "entries": [
+        {
+          "handler": "80070CCC",
+          "index": 0,
+          "name": "fn_80070CCC",
+          "score": 405,
+          "size": 280,
+          "status": "open"
+        },
+        {
+          "handler": "80070DE4",
+          "index": 1,
+          "name": "fn_80070DE4",
+          "score": 1366,
+          "size": 308,
+          "status": "open"
+        },
+        {
+          "handler": "80070F18",
+          "index": 2,
+          "name": "fn_80070F18",
+          "score": 1024,
+          "size": 192,
+          "status": "open"
+        },
+        {
+          "handler": "80070FD8",
+          "index": 3,
+          "name": "fn_80070FD8",
+          "score": 440,
+          "size": 256,
+          "status": "open"
+        },
+        {
+          "handler": "80071128",
+          "index": 4,
+          "name": "fn_80071128",
+          "score": 831,
+          "size": 352,
+          "status": "open"
+        },
+        {
+          "handler": "80071288",
+          "index": 5,
+          "name": "fn_80071288",
+          "score": 835,
+          "size": 344,
+          "status": "open"
+        },
+        {
+          "handler": "800713E0",
+          "index": 6,
+          "name": "fn_800713E0",
+          "score": 475,
+          "size": 440,
+          "status": "open"
+        },
+        {
+          "handler": "800715D4",
+          "index": 7,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        }
+      ],
+      "name": "close-default-phases"
+    },
+    {
+      "address": "802D3C3C",
+      "entries": [
+        {
+          "handler": "80071128",
+          "index": 0,
+          "name": "fn_80071128",
+          "score": 831,
+          "size": 352,
+          "status": "open"
+        },
+        {
+          "handler": "80071288",
+          "index": 1,
+          "name": "fn_80071288",
+          "score": 835,
+          "size": 344,
+          "status": "open"
+        },
+        {
+          "handler": "800713E0",
+          "index": 2,
+          "name": "fn_800713E0",
+          "score": 475,
+          "size": 440,
+          "status": "open"
+        },
+        {
+          "handler": "800715D4",
+          "index": 3,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 4,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 5,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 6,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 7,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        }
+      ],
+      "name": "close-alt-phases"
+    },
+    {
+      "address": "802D3C14",
+      "entries": [
+        {
+          "handler": "800706E8",
+          "index": 0,
+          "name": "fn_800706E8",
+          "score": 200,
+          "size": 208,
+          "status": "open"
+        },
+        {
+          "handler": "800707B8",
+          "index": 1,
+          "name": "fn_800707B8",
+          "score": 3428,
+          "size": 512,
+          "status": "open"
+        },
+        {
+          "handler": "800709B8",
+          "index": 2,
+          "name": "fn_800709B8",
+          "score": 0,
+          "size": 144,
+          "status": "matched"
+        },
+        {
+          "handler": "80070A48",
+          "index": 3,
+          "name": "fn_80070A48",
+          "score": 0,
+          "size": 164,
+          "status": "matched"
+        },
+        {
+          "handler": "80070AEC",
+          "index": 4,
+          "name": "fn_80070AEC",
+          "score": 405,
+          "size": 280,
+          "status": "open"
+        },
+        {
+          "handler": "80070C04",
+          "index": 5,
+          "name": "fn_80070C04",
+          "score": 1,
+          "size": 120,
+          "status": "open"
+        },
+        {
+          "handler": "80070CCC",
+          "index": 6,
+          "name": "fn_80070CCC",
+          "score": 405,
+          "size": 280,
+          "status": "open"
+        },
+        {
+          "handler": "80070DE4",
+          "index": 7,
+          "name": "fn_80070DE4",
+          "score": 1366,
+          "size": 308,
+          "status": "open"
+        }
+      ],
+      "name": "close-model-000a-phases"
+    },
+    {
+      "address": "802D3C90",
+      "entries": [
+        {
+          "handler": "80071B10",
+          "index": 0,
+          "name": "fn_80071B10",
+          "score": 205,
+          "size": 320,
+          "status": "open"
+        },
+        {
+          "handler": "80071C50",
+          "index": 1,
+          "name": "fn_80071C50",
+          "score": 805,
+          "size": 296,
+          "status": "open"
+        },
+        {
+          "handler": "80071D78",
+          "index": 2,
+          "name": "fn_80071D78",
+          "score": 265,
+          "size": 212,
+          "status": "open"
+        }
+      ],
+      "name": "class-4-phases"
+    },
+    {
+      "address": "8031EFF0",
+      "entries": [
+        {
+          "handler": "800FEDBC",
+          "index": 0,
+          "name": "fn_800FEDBC",
+          "score": 761,
+          "size": 264,
+          "status": "open"
+        },
+        {
+          "handler": "800FEEC4",
+          "index": 1,
+          "name": "fn_800FEEC4",
+          "score": 30,
+          "size": 196,
+          "status": "open"
+        },
+        {
+          "handler": "800FEF88",
+          "index": 2,
+          "name": "fn_800FEF88",
+          "score": 806,
+          "size": 208,
+          "status": "open"
+        },
+        {
+          "handler": "800FF058",
+          "index": 3,
+          "name": "fn_800FF058",
+          "score": 2805,
+          "size": 404,
+          "status": "open"
+        },
+        {
+          "handler": "800FF30C",
+          "index": 4,
+          "name": "fn_800FF30C",
+          "score": 1705,
+          "size": 268,
+          "status": "open"
+        },
+        {
+          "handler": "800FF418",
+          "index": 5,
+          "name": "fn_800FF418",
+          "score": 0,
+          "size": 188,
+          "status": "matched"
+        },
+        {
+          "handler": "800FF4D4",
+          "index": 6,
+          "name": "fn_800FF4D4",
+          "score": 0,
+          "size": 284,
+          "status": "matched"
+        }
+      ],
+      "name": "generic-action-phases"
+    }
   ],
   "revision": 1,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
