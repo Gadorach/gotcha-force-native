@@ -256,10 +256,21 @@ air-jump cap would put six jumps on every Wing and one on Roach.
 
 `0x02C`/`0x068` were also checked and are not jump operands: `068` is `0.0` for
 107 Borgs and `-0.07` to `-0.70` for the rest, uncorrelated with the catalogue
-jump display. So the per-Borg jump limit is still unidentified, and
-`air-jump-points` stays unbound rather than guessed. The next step is to find
-where the `+0x747` counter is compared for a *grounded* model rather than the
-class gate above.
+jump display.
+
+The grounded comparison is the same class gate: `800605E8` requires the counter
+to reach `config+0x9F` exactly before clearing the ascent flag, so both known
+gates use that one field. The remaining candidate, `actor+0x5AA` passed to
+`80046510`, is not a count either — `80046510` is a Q13/Q14 fixed-point scale
+(`>>13` or `>>14`), and `+0x5AA` has 59 writers and 71 readers.
+
+The evidence therefore says the game budgets **air actions per class** through
+`config+0x9F` rather than exposing a per-Borg jump count in the movement
+record. The catalogue jump display is a separate UI figure. Since the native
+`air-jump-points` counts air *jumps* only, binding `0x9F` to it would change
+gameplay for all 206 Borgs on a semantic guess, so it stays unbound. Deciding
+this needs either ordinal evidence that couples `0x9F` to jump presses, or a
+native air-action budget that is not limited to jumps.
 
 #### Compare source-relative cruise pace
 
