@@ -307,6 +307,128 @@ So the remaining options are narrow and all outside this repository: a Dolphin
 movie (`.dtm`) played back headless, guest pad writes through the Dolphin GDB
 stub, or a runtime HLE hook in ModernGekko. Each needs work in the sibling
 checkout before this repo's observer can see a single damage event.
+
+## The runtime already has pad input, memory reads and battle savestates
+
+A cheaper route was under the earlier work all along: the bundled runtime's
+`--automation-dir <dir>` is a file-based controller and observation interface.
+It consumes command files from `commands/` and rewrites `status.txt` every
+200 ms. The commands that matter here are `pad`, `pad_frames` (frame-counted
+input on port 0–3), `pause`, `resume`, `read_memory`, `save_state`,
+`load_state`, `screenshot` and `stop`. It is the documented controller path,
+not a guest-state patch.
+
+Measured with the recompiled original:
+
+- `--graphics Null --audio Null` boots headless. `--graphics null`, `software`
+  and `opengl` fail to initialise, and `--headless` aborts on an ImGui
+  assertion.
+- `pad_frames port=0 frames=45 main_y=1` moved the player from
+  `z = -2437.18` to `z = -1937.41`, exactly 500 units, so the pad reaches the
+  game's own input path.
+- The sibling checkout already keeps battle savestates (`first_battle`,
+  `kakeru_battle`, `mana_battle`, `mana_combat_hud`, …). They load into a new
+  runtime with `--load-state` and resume the battle.
+
+That removes battle entry from the blocked list. The observation points that
+are now known:
+
+- The HUD status object sits at `0x803C5500` with `0x3C`-byte entries. Each
+  entry has an HP triple at `+0x34`, `+0x38`, `+0x3C`. Entry 0 is the ally
+  (300/300/300) and entry 1 the enemy. Observed values: 540/78/540 in the first
+  battle, 100/100/100 in the Kakeru battle, 580 in the Mana battle.
+- A scan for `lha → subf → sth` sequences that load a signed field, subtract a
+  register and store it back gives 44 distinct sites. The known `HP - r4` site
+  `8003D380`/`8003D388` (offset 454) is one of them. Hooking those sites with
+  `RECOMP_HOOK` makes the runtime print `mod fallback: chunk [...]`, and the
+  hooks do fire, so mid-chunk observation works without a patched runtime.
+
+What is still missing is a **damage event inside the observation window**. The
+savestates available here are either at battle start (enemy out of reach for
+the tested inputs) or after a combo (the enemy is already at 78 and stops
+responding). Replaying the recorded pad stream that followed a savestate is the
+next step: the recorded runs reached a WIN screen, so their input stream
+contains at least one damaging sequence if it was the automation rather than
+manual input that produced it. `tools/analyze/damage_trace.py --state <file>`
+now drives a short script for exactly this purpose and reports `mod loaded`,
+`mod rejected` and every observer line.
+
+## The damage fields are already pinned by a bounded fixture
+
+`build/borg-ordered-audit/retail-0600-rifle-outcome-v1.py` already executes the
+damage tail with supplied operands and asserts the exact write. Its facts:
+
+- the HP field is `actor + 0x1C6` (454) and the previous value goes to
+  `actor + 0x1C8` (456);
+- the applied amount is also recorded at `actor + 0x41C` (1052) and in a global
+  ledger (`state word 1048`), and both equal the amount;
+- the write is `HP_after = HP_before - amount`, and the receipt records
+  `amount = 8` on its ordinary path (`0` on the binding-mask refusal) with
+  `HP_before = 180`;
+- the amount itself comes from `8002F108`, which performs three integer
+  divisions; the receipt supplies `(3200, 100)`, `(5440, 180)`, `(3200, 100)`
+  because it has no live Scene.
+
+So the writer is no longer the unknown. What is missing is a **live hit** that
+supplies the native operands, and the observation points are now explicit:
+
+| Address | Meaning |
+| --- | --- |
+| `8002F108` | shared amount computation (three divisions) |
+| `8002F110` | HP tail caller; `r4` is the final amount |
+| `8003D344` | HP subtract tail; `r3` actor, `r4` amount |
+| `actor+0x1C4` | maximum HP |
+| `actor+0x1C6` | current HP |
+| `actor+0x3E8` | model ID (halfword) |
+| `actor+0x41C` | last applied amount |
+| `actor+0x4AC` | actor data pointer |
+
+`tools/analyze/damage_path_mod.c` is a read-only mod that hooks the pair entry
+and those three damage entries and prints the caller (LR), actor, model ID, HP
+and ledger. It loads, and
+the runtime prints `mod fallback: chunk [...]` for the two containing chunks, so
+the hooks are armed.
+
+It has now observed a live application. Loading `kakeru_battle`, moving forward
+45 frames and then holding boost+forward produced:
+
+```text
+damage-path: apply #1 caller=8002F1DC actor=805DDBC0 amount=22 hp=180 ledger=22
+damage-path: apply #2 caller=8002F1DC actor=805DDBC0 amount=22 hp=180 ledger=22
+```
+
+A longer run continued with contact damage of **1 per frame**, HP falling
+158 → 137 and the ledger 23 → 44. Three facts follow:
+
+- `8003D344` is reached with `caller=8002F1DC`, which is exactly the audit
+  fixture's `STOP` address for the same tail. The static fixture and the live
+  battle therefore meet at the same call site.
+- `hp` is read from `actor+0x1C6` and `ledger` from `actor+0x41C`; the ledger
+  increments by the amount, matching the receipt's `damage_ledgers` assertion.
+- The damaged actor is `0x805DDBC0`. Reading `actor+0x3E8` gives **model 0x0A**,
+  i.e. `GG4E08:000A` SASUKE, and `actor+0x1C4` gives its maximum HP, 180. So the
+  damaged actor is Sasuke, and it took 22 as a discrete hit and 1 per frame while
+  contact continued. Its HUD entry (entry 1, the 100-HP target) never changed in
+  the same window, so the HUD copy is not a reliable damage oracle when several
+  actors are present.
+- The apply's `r7` points at `0x802C7C80`, in the same reaction/hit table region
+  (`0x802C7xxx`) that the audit receipt walks for the rifle. The pair entry
+  `8002E660` did not fire for this contact, so the attacker is not yet named by
+  that route.
+
+So the first live amounts exist: **22 discrete** and **1 per frame contact** in
+this state. They are not yet attributed to a Borg or move — the apply tail only
+receives the target and the amount. The next observation is the pair entry
+(`8002E660`) and the reaction inlet (`receive: r3` hit table, carrier, target),
+which names the attacker and lets the amount be bound to the shared move rather
+than to one battle.
+
+The recorded pad streams, replayed without the observer, produced no HUD HP
+change; that confirms the earlier note that the recorded WIN screens came from
+manual input, not the automation stream alone. The live damage event above came
+from the boost/contact path, which is exactly the shared contact semantics the
+native port already models.
+
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
