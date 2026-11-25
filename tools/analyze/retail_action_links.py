@@ -685,6 +685,21 @@ class ActionLinker:
                             tuple((r["lane"],r["group"],r["index"]) for r in lanes)))
         return tuple(out), program["status"]
 
+    def lane_events(self, roots, mask, group, choice):
+        """Descriptor lanes with their decoded event and flags bytes.
+
+        The export otherwise keeps only lane/group/choice, so an index built here
+        is the only place the event byte survives.
+        """
+        try:
+            table = roots[3 if group & 128 else 2]
+            address = self.table_choice(table, group & 127, choice)
+            lanes = descriptor_lanes(self.data, address, mask)["lanes"]
+        except (ValueError, IndexError):
+            return []
+        return [{"lane": row["lane"], "group": row["group"], "choice": row["index"],
+                 "event": row["event"], "flags": row["flags"]} for row in lanes]
+
     def program_candidate(self, roots, local, args):
         mask,g,c = args
         try:

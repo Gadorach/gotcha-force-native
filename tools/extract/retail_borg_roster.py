@@ -373,6 +373,33 @@ def source_parts(dol, model, spec, joints):
              "runtime_visibility_resolved": False}
 
 
+def lane_event_index(actions, linker):
+    """Descriptor lane events per resolved entry clip.
+
+    Reads only what the row already recorded (request mask and program group /
+    choice) and keeps the event and flags bytes that the export otherwise drops.
+    """
+    out = []
+    for profile in actions.get("profiles") or []:
+        roots = tuple(int(root, 16) for root in profile.get("program_and_descriptor_roots") or [])
+        if len(roots) < 4:
+            continue
+        for group in profile.get("groups") or []:
+            for row in group.get("rows") or []:
+                entry = row.get("entry_clip_candidate") or {}
+                mask = entry.get("request_mask")
+                program = entry.get("program") or ()
+                if not isinstance(mask, int) or len(program) != 2:
+                    continue
+                lanes = linker.lane_events(roots, mask, program[0], program[1])
+                if lanes:
+                    out.append({"action_group": group.get("group"),
+                                "state": row.get("state"), "selector": row.get("selector"),
+                                "program": {"mask": mask, "group": program[0], "choice": program[1]},
+                                "lanes": lanes})
+    return out
+
+
 def neutral_preview_mounts(dol, model, installer):
     """Source operands for a neutral inspection composite, not actor rules."""
     if installer != 0x80123438 or model not in (0x0202, 0x020B):
@@ -1456,6 +1483,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         count = total = variant_count = 0
         release_catalogue = {}
         action_sound_catalogue = {}
+        lane_event_catalogue = {}
         program_control_catalogue = {}
         stock_catalogue = {}
         worm_catalogue = {}
@@ -1553,6 +1581,10 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             program_controls = controls.collect(summary["action_candidates"])
             if program_controls["programs"]:
                 program_control_catalogue[summary["id"]] = program_controls
+            if linker:
+                lane_events = lane_event_index(summary["action_candidates"], linker)
+                if lane_events:
+                    lane_event_catalogue[summary["id"]] = lane_events
             count += summary["preview_declaration"] is not None
             variant_count += len(summary["selectable_variants"])-1
         release_file="shared-projectile-release-links.json"
@@ -1561,6 +1593,9 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         action_sound_file="shared-action-sfx.json"
         action_sound_bytes=json_line({"kind":"static direct actor sound requests; not engine content",
                                       "variant":"normal","live_playback_verified":False,"borgs":action_sound_catalogue})
+        lane_event_file="shared-lane-events.json"
+        lane_event_bytes=json_line({"kind":"static descriptor lane events; not engine content",
+                                    "variant":"normal","borgs":lane_event_catalogue})
         control_file="shared-action-program-controls.json"
         control_bytes=json_line({"kind":"static program writes; not engine content","writer":control_schema,
                                  "variant":"normal","borgs":program_control_catalogue})
@@ -1568,7 +1603,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         worm_file="shared-worm-shot-routes.json"
         stock_bytes=json_line({"kind":"normal stock initializer operands; not engine content",
                                "variant":"normal","schema":stock_operands_schema,"borgs":stock_catalogue})
-        indexes={release_file:release_bytes,action_sound_file:action_sound_bytes,control_file:control_bytes,stock_file:stock_bytes,
+        indexes={release_file:release_bytes,action_sound_file:action_sound_bytes,
+                 lane_event_file:lane_event_bytes,control_file:control_bytes,stock_file:stock_bytes,
                  worm_file:json_line({"kind":"Worm ordinary B static review; not engine content","borgs":worm_catalogue}),
                  carrier_file:json_line(dragon_carriers)}
         if action_clips:
@@ -1623,6 +1659,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         write_new(output,indexes)
         shared_index["projectile_release_index"]=release_file
         shared_index["action_sfx_index"]=action_sound_file
+        shared_index["lane_event_index"]=lane_event_file
         shared_index["action_program_control_index"]=control_file
         shared_index["level_stock_operand_index"]=stock_file
         shared_index["worm_shot_index"]=worm_file

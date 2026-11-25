@@ -110,6 +110,26 @@ needs a lane-event index — a per-Borg list of `(action group, lane, group,
 choice, event, flags, bank)` — which does not exist yet. Attempting it as a
 silent enrichment of `program_candidate` produced no observable output, so that
 change was reverted rather than left as dead metadata.
+
+The index now exists: `tools/analyze/retail_action_links.py` exposes
+`lane_events(roots, mask, group, choice)` and the extractor writes
+`shared-lane-events.json`, copied here as
+[`lane-events.json`](api-map/lane-events.json). It covers 147 of 206 Borgs and
+records, per resolved entry clip, each lane's `group`, `choice`, `event` and
+`flags`.
+
+Its first result is a **negative** one, and it redirects the work:
+
+| Group | Most common `(event, flags)` |
+| --- | --- |
+| `B-close` | `(-1,1)` 311, `(1,0)` 227, `(1,255)` 116, `(9,1)` 48, `(6,1)` 30, `(5,1)` 25 |
+| `B-shot` | `(-1,1)` 214, `(-1,4)` 96, `(0,0)` 95, `(-1,0)` 50, `(0,4)` 48, `(3,0)` 37 |
+| `X` | `(-1,1)` 67, `(4,0)` 39, `(-1,5)` 26, `(0,0)` 19, `(8,1)` 16 |
+
+The event values overlap heavily across groups, so `event` is a lane action type
+(play clip, sound, and so on), **not** an attack class. The melee-versus-shot
+distinction therefore lives in the bank and group each lane points at, not in
+the event byte. That is where the shape port should look next.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
