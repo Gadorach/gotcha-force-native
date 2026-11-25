@@ -23,6 +23,7 @@ from pathlib import Path
 
 MOD = Path(__file__).with_name("damage_observer_mod.c")
 DEFAULT_TIMEOUT = 60
+DEFAULT_WORK = Path("/tmp/opencode/damage-trace")
 
 
 def build(include, output):
@@ -59,6 +60,8 @@ def main(argv=None):
     parser.add_argument("--gotcha", type=Path, required=True,
                         help="the GotchaForce checkout that owns the recomp runtime")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
+    parser.add_argument("--work", type=Path, default=DEFAULT_WORK,
+                        help="run directory; refuses one that already exists")
     args = parser.parse_args(argv)
     root = args.gotcha.resolve()
     runtime = root / "build/moderngekko/moderngekko-run"
@@ -69,7 +72,7 @@ def main(argv=None):
                        (game / "sys/main.dol", "extracted main.dol")):
         if not path.exists():
             raise SystemExit(f"missing {what}: {path}")
-    work = Path("/tmp/opencode/damage-trace")
+    work = args.work
     if work.exists():
         raise SystemExit(f"refusing an existing run directory: {work}")
     mods, user = work / "mods", work / "user"
