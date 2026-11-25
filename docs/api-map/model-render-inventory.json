@@ -1,0 +1,1269 @@
+{
+ "kind": "model render-feature inventory; counts and format names only, no pixel data",
+ "models": 206,
+ "models_with_unknown_render_bits": 204,
+ "per_model": [
+  {
+   "model": "gg4e08-0000",
+   "unknown_bits": {
+    "00000010": 35
+   }
+  },
+  {
+   "model": "gg4e08-0001",
+   "unknown_bits": {
+    "00000010": 53
+   }
+  },
+  {
+   "model": "gg4e08-0002",
+   "unknown_bits": {
+    "00000010": 29
+   }
+  },
+  {
+   "model": "gg4e08-0003",
+   "unknown_bits": {
+    "00000010": 33
+   }
+  },
+  {
+   "model": "gg4e08-0004",
+   "unknown_bits": {
+    "00000010": 32
+   }
+  },
+  {
+   "model": "gg4e08-0005",
+   "unknown_bits": {
+    "00000010": 29
+   }
+  },
+  {
+   "model": "gg4e08-0006",
+   "unknown_bits": {
+    "00000010": 44
+   }
+  },
+  {
+   "model": "gg4e08-0007",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-0008",
+   "unknown_bits": {
+    "00000010": 4
+   }
+  },
+  {
+   "model": "gg4e08-0009",
+   "unknown_bits": {
+    "00000010": 37
+   }
+  },
+  {
+   "model": "gg4e08-000a",
+   "unknown_bits": {
+    "00000010": 38
+   }
+  },
+  {
+   "model": "gg4e08-000b",
+   "unknown_bits": {
+    "00000010": 29
+   }
+  },
+  {
+   "model": "gg4e08-000c",
+   "unknown_bits": {
+    "00000010": 13
+   }
+  },
+  {
+   "model": "gg4e08-0100",
+   "unknown_bits": {
+    "00000010": 38
+   }
+  },
+  {
+   "model": "gg4e08-0101",
+   "unknown_bits": {
+    "00000010": 54
+   }
+  },
+  {
+   "model": "gg4e08-0102",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-0103",
+   "unknown_bits": {
+    "00000010": 34
+   }
+  },
+  {
+   "model": "gg4e08-0104",
+   "unknown_bits": {
+    "00000010": 30
+   }
+  },
+  {
+   "model": "gg4e08-0105",
+   "unknown_bits": {
+    "00000010": 4
+   }
+  },
+  {
+   "model": "gg4e08-0106",
+   "unknown_bits": {
+    "00000010": 33
+   }
+  },
+  {
+   "model": "gg4e08-0107",
+   "unknown_bits": {
+    "00000010": 30
+   }
+  },
+  {
+   "model": "gg4e08-0108",
+   "unknown_bits": {
+    "00000010": 38
+   }
+  },
+  {
+   "model": "gg4e08-0109",
+   "unknown_bits": {
+    "00000010": 9
+   }
+  },
+  {
+   "model": "gg4e08-010a",
+   "unknown_bits": {
+    "00000010": 10
+   }
+  },
+  {
+   "model": "gg4e08-0200",
+   "unknown_bits": {
+    "00000010": 36
+   }
+  },
+  {
+   "model": "gg4e08-0201",
+   "unknown_bits": {
+    "00000010": 30
+   }
+  },
+  {
+   "model": "gg4e08-0202",
+   "unknown_bits": {
+    "00000010": 57
+   }
+  },
+  {
+   "model": "gg4e08-0203",
+   "unknown_bits": {
+    "00000010": 66
+   }
+  },
+  {
+   "model": "gg4e08-0204",
+   "unknown_bits": {
+    "00000010": 32
+   }
+  },
+  {
+   "model": "gg4e08-0205",
+   "unknown_bits": {
+    "00000010": 37
+   }
+  },
+  {
+   "model": "gg4e08-0206",
+   "unknown_bits": {
+    "00000010": 9
+   }
+  },
+  {
+   "model": "gg4e08-0207",
+   "unknown_bits": {
+    "00000010": 46
+   }
+  },
+  {
+   "model": "gg4e08-0208",
+   "unknown_bits": {
+    "00000010": 55
+   }
+  },
+  {
+   "model": "gg4e08-0209",
+   "unknown_bits": {
+    "00000010": 39
+   }
+  },
+  {
+   "model": "gg4e08-020a",
+   "unknown_bits": {
+    "00000010": 36
+   }
+  },
+  {
+   "model": "gg4e08-020b",
+   "unknown_bits": {
+    "00000010": 57
+   }
+  },
+  {
+   "model": "gg4e08-020c",
+   "unknown_bits": {
+    "00000010": 64
+   }
+  },
+  {
+   "model": "gg4e08-020d",
+   "unknown_bits": {
+    "00000010": 32
+   }
+  },
+  {
+   "model": "gg4e08-020e",
+   "unknown_bits": {
+    "00000010": 56
+   }
+  },
+  {
+   "model": "gg4e08-020f",
+   "unknown_bits": {
+    "00000010": 10
+   }
+  },
+  {
+   "model": "gg4e08-0300",
+   "unknown_bits": {
+    "00000010": 32
+   }
+  },
+  {
+   "model": "gg4e08-0301",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-0302",
+   "unknown_bits": {
+    "00000010": 51
+   }
+  },
+  {
+   "model": "gg4e08-0303",
+   "unknown_bits": {
+    "00000010": 9
+   }
+  },
+  {
+   "model": "gg4e08-0304",
+   "unknown_bits": {
+    "00000010": 47
+   }
+  },
+  {
+   "model": "gg4e08-0305",
+   "unknown_bits": {
+    "00000010": 22
+   }
+  },
+  {
+   "model": "gg4e08-0306",
+   "unknown_bits": {
+    "00000010": 43
+   }
+  },
+  {
+   "model": "gg4e08-0307",
+   "unknown_bits": {
+    "00000010": 42
+   }
+  },
+  {
+   "model": "gg4e08-0308",
+   "unknown_bits": {
+    "00000010": 36
+   }
+  },
+  {
+   "model": "gg4e08-0309",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-030a",
+   "unknown_bits": {
+    "00000010": 22
+   }
+  },
+  {
+   "model": "gg4e08-030b",
+   "unknown_bits": {
+    "00000010": 34
+   }
+  },
+  {
+   "model": "gg4e08-030c",
+   "unknown_bits": {
+    "00000010": 11
+   }
+  },
+  {
+   "model": "gg4e08-030d",
+   "unknown_bits": {
+    "00000010": 15
+   }
+  },
+  {
+   "model": "gg4e08-0400",
+   "unknown_bits": {
+    "00000010": 42
+   }
+  },
+  {
+   "model": "gg4e08-0401",
+   "unknown_bits": {
+    "00000010": 49
+   }
+  },
+  {
+   "model": "gg4e08-0402",
+   "unknown_bits": {
+    "00000010": 79
+   }
+  },
+  {
+   "model": "gg4e08-0403",
+   "unknown_bits": {
+    "00000010": 53
+   }
+  },
+  {
+   "model": "gg4e08-0404",
+   "unknown_bits": {
+    "00000010": 57
+   }
+  },
+  {
+   "model": "gg4e08-0405",
+   "unknown_bits": {
+    "00000010": 49
+   }
+  },
+  {
+   "model": "gg4e08-0406",
+   "unknown_bits": {
+    "00000010": 28
+   }
+  },
+  {
+   "model": "gg4e08-0407",
+   "unknown_bits": {
+    "00000010": 75
+   }
+  },
+  {
+   "model": "gg4e08-0408",
+   "unknown_bits": {
+    "00000010": 71
+   }
+  },
+  {
+   "model": "gg4e08-0409",
+   "unknown_bits": {
+    "00000010": 54
+   }
+  },
+  {
+   "model": "gg4e08-040a",
+   "unknown_bits": {
+    "00000010": 45
+   }
+  },
+  {
+   "model": "gg4e08-040b",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-040c",
+   "unknown_bits": {
+    "00000010": 28
+   }
+  },
+  {
+   "model": "gg4e08-040d",
+   "unknown_bits": {
+    "00000010": 28
+   }
+  },
+  {
+   "model": "gg4e08-0500",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-0501",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-0502",
+   "unknown_bits": {
+    "00000010": 17
+   }
+  },
+  {
+   "model": "gg4e08-0503",
+   "unknown_bits": {
+    "00000010": 26
+   }
+  },
+  {
+   "model": "gg4e08-0504",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-0505",
+   "unknown_bits": {
+    "00000010": 10
+   }
+  },
+  {
+   "model": "gg4e08-0506",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0509",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-050a",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-050b",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-050c",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-050d",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-050e",
+   "unknown_bits": {
+    "00000010": 17
+   }
+  },
+  {
+   "model": "gg4e08-050f",
+   "unknown_bits": {
+    "00000010": 26
+   }
+  },
+  {
+   "model": "gg4e08-0510",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-0511",
+   "unknown_bits": {
+    "00000010": 10
+   }
+  },
+  {
+   "model": "gg4e08-0512",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0515",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0516",
+   "unknown_bits": {
+    "00000010": 21
+   }
+  },
+  {
+   "model": "gg4e08-0517",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-0600",
+   "unknown_bits": {
+    "00000010": 52
+   }
+  },
+  {
+   "model": "gg4e08-0601",
+   "unknown_bits": {
+    "00000010": 53
+   }
+  },
+  {
+   "model": "gg4e08-0602",
+   "unknown_bits": {
+    "00000010": 101
+   }
+  },
+  {
+   "model": "gg4e08-0604",
+   "unknown_bits": {
+    "00000010": 46
+   }
+  },
+  {
+   "model": "gg4e08-0606",
+   "unknown_bits": {
+    "00000010": 56
+   }
+  },
+  {
+   "model": "gg4e08-0608",
+   "unknown_bits": {
+    "00000010": 60
+   }
+  },
+  {
+   "model": "gg4e08-0609",
+   "unknown_bits": {
+    "00000010": 52
+   }
+  },
+  {
+   "model": "gg4e08-060a",
+   "unknown_bits": {
+    "00000010": 106
+   }
+  },
+  {
+   "model": "gg4e08-060c",
+   "unknown_bits": {
+    "00000010": 100
+   }
+  },
+  {
+   "model": "gg4e08-060e",
+   "unknown_bits": {
+    "00000010": 107
+   }
+  },
+  {
+   "model": "gg4e08-0610",
+   "unknown_bits": {
+    "00000010": 53
+   }
+  },
+  {
+   "model": "gg4e08-0613",
+   "unknown_bits": {
+    "00000010": 79
+   }
+  },
+  {
+   "model": "gg4e08-0615",
+   "unknown_bits": {
+    "00000010": 48
+   }
+  },
+  {
+   "model": "gg4e08-0616",
+   "unknown_bits": {
+    "00000010": 51
+   }
+  },
+  {
+   "model": "gg4e08-0617",
+   "unknown_bits": {
+    "00000010": 44
+   }
+  },
+  {
+   "model": "gg4e08-0618",
+   "unknown_bits": {
+    "00000010": 49
+   }
+  },
+  {
+   "model": "gg4e08-0619",
+   "unknown_bits": {
+    "00000010": 37
+   }
+  },
+  {
+   "model": "gg4e08-061a",
+   "unknown_bits": {
+    "00000010": 64
+   }
+  },
+  {
+   "model": "gg4e08-061b",
+   "unknown_bits": {
+    "00000010": 51
+   }
+  },
+  {
+   "model": "gg4e08-061c",
+   "unknown_bits": {
+    "00000010": 57
+   }
+  },
+  {
+   "model": "gg4e08-061d",
+   "unknown_bits": {
+    "00000010": 43
+   }
+  },
+  {
+   "model": "gg4e08-061e",
+   "unknown_bits": {
+    "00000010": 47
+   }
+  },
+  {
+   "model": "gg4e08-061f",
+   "unknown_bits": {
+    "00000010": 53
+   }
+  },
+  {
+   "model": "gg4e08-0620",
+   "unknown_bits": {
+    "00000010": 49
+   }
+  },
+  {
+   "model": "gg4e08-0621",
+   "unknown_bits": {
+    "00000010": 51
+   }
+  },
+  {
+   "model": "gg4e08-0623",
+   "unknown_bits": {
+    "00000010": 53
+   }
+  },
+  {
+   "model": "gg4e08-0625",
+   "unknown_bits": {
+    "00000010": 48
+   }
+  },
+  {
+   "model": "gg4e08-0627",
+   "unknown_bits": {
+    "00000010": 85
+   }
+  },
+  {
+   "model": "gg4e08-0628",
+   "unknown_bits": {
+    "00000010": 77
+   }
+  },
+  {
+   "model": "gg4e08-0629",
+   "unknown_bits": {
+    "00000010": 52
+   }
+  },
+  {
+   "model": "gg4e08-062a",
+   "unknown_bits": {
+    "00000010": 50
+   }
+  },
+  {
+   "model": "gg4e08-0700",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-0701",
+   "unknown_bits": {
+    "00000010": 16
+   }
+  },
+  {
+   "model": "gg4e08-0702",
+   "unknown_bits": {
+    "00000010": 41
+   }
+  },
+  {
+   "model": "gg4e08-0703",
+   "unknown_bits": {
+    "00000010": 45
+   }
+  },
+  {
+   "model": "gg4e08-0704",
+   "unknown_bits": {
+    "00000010": 45
+   }
+  },
+  {
+   "model": "gg4e08-0705",
+   "unknown_bits": {
+    "00000010": 9,
+    "00000030": 1
+   }
+  },
+  {
+   "model": "gg4e08-0706",
+   "unknown_bits": {
+    "00000010": 38
+   }
+  },
+  {
+   "model": "gg4e08-0707",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-0708",
+   "unknown_bits": {
+    "00000010": 19
+   }
+  },
+  {
+   "model": "gg4e08-0709",
+   "unknown_bits": {
+    "00000010": 28
+   }
+  },
+  {
+   "model": "gg4e08-070a",
+   "unknown_bits": {
+    "00000010": 40
+   }
+  },
+  {
+   "model": "gg4e08-070b",
+   "unknown_bits": {
+    "00000010": 13,
+    "00000030": 1
+   }
+  },
+  {
+   "model": "gg4e08-070c",
+   "unknown_bits": {
+    "00000010": 14,
+    "00000030": 1
+   }
+  },
+  {
+   "model": "gg4e08-070d",
+   "unknown_bits": {
+    "00000010": 14,
+    "00000030": 1
+   }
+  },
+  {
+   "model": "gg4e08-0800",
+   "unknown_bits": {
+    "00000010": 28
+   }
+  },
+  {
+   "model": "gg4e08-0801",
+   "unknown_bits": {
+    "00000010": 41
+   }
+  },
+  {
+   "model": "gg4e08-0802",
+   "unknown_bits": {
+    "00000010": 31
+   }
+  },
+  {
+   "model": "gg4e08-0804",
+   "unknown_bits": {
+    "00000010": 25
+   }
+  },
+  {
+   "model": "gg4e08-0805",
+   "unknown_bits": {
+    "00000010": 35
+   }
+  },
+  {
+   "model": "gg4e08-0806",
+   "unknown_bits": {
+    "00000010": 14
+   }
+  },
+  {
+   "model": "gg4e08-0807",
+   "unknown_bits": {
+    "00000010": 10
+   }
+  },
+  {
+   "model": "gg4e08-0808",
+   "unknown_bits": {
+    "00000010": 67
+   }
+  },
+  {
+   "model": "gg4e08-0809",
+   "unknown_bits": {
+    "00000010": 15
+   }
+  },
+  {
+   "model": "gg4e08-080a",
+   "unknown_bits": {
+    "00000010": 33
+   }
+  },
+  {
+   "model": "gg4e08-080c",
+   "unknown_bits": {
+    "00000010": 25
+   }
+  },
+  {
+   "model": "gg4e08-080d",
+   "unknown_bits": {
+    "00000010": 37
+   }
+  },
+  {
+   "model": "gg4e08-080e",
+   "unknown_bits": {
+    "00000010": 39
+   }
+  },
+  {
+   "model": "gg4e08-080f",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0900",
+   "unknown_bits": {
+    "00000010": 17
+   }
+  },
+  {
+   "model": "gg4e08-0901",
+   "unknown_bits": {
+    "00000010": 23
+   }
+  },
+  {
+   "model": "gg4e08-0902",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-0903",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0904",
+   "unknown_bits": {
+    "00000010": 22
+   }
+  },
+  {
+   "model": "gg4e08-0906",
+   "unknown_bits": {
+    "00000010": 12
+   }
+  },
+  {
+   "model": "gg4e08-0907",
+   "unknown_bits": {
+    "00000010": 25
+   }
+  },
+  {
+   "model": "gg4e08-0908",
+   "unknown_bits": {
+    "00000010": 18
+   }
+  },
+  {
+   "model": "gg4e08-0909",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-090a",
+   "unknown_bits": {
+    "00000010": 22
+   }
+  },
+  {
+   "model": "gg4e08-090b",
+   "unknown_bits": {
+    "00000010": 15
+   }
+  },
+  {
+   "model": "gg4e08-090c",
+   "unknown_bits": {
+    "00000010": 25
+   }
+  },
+  {
+   "model": "gg4e08-090d",
+   "unknown_bits": {
+    "00000010": 17
+   }
+  },
+  {
+   "model": "gg4e08-0a00",
+   "unknown_bits": {
+    "00000010": 23
+   }
+  },
+  {
+   "model": "gg4e08-0a01",
+   "unknown_bits": {
+    "00000010": 62
+   }
+  },
+  {
+   "model": "gg4e08-0a02",
+   "unknown_bits": {
+    "00000010": 34
+   }
+  },
+  {
+   "model": "gg4e08-0a03",
+   "unknown_bits": {
+    "00000010": 37
+   }
+  },
+  {
+   "model": "gg4e08-0a04",
+   "unknown_bits": {
+    "00000010": 39
+   }
+  },
+  {
+   "model": "gg4e08-0a05",
+   "unknown_bits": {
+    "00000010": 25
+   }
+  },
+  {
+   "model": "gg4e08-0a06",
+   "unknown_bits": {
+    "00000010": 36
+   }
+  },
+  {
+   "model": "gg4e08-0a07",
+   "unknown_bits": {
+    "00000010": 28
+   }
+  },
+  {
+   "model": "gg4e08-0a08",
+   "unknown_bits": {
+    "00000010": 38
+   }
+  },
+  {
+   "model": "gg4e08-0a09",
+   "unknown_bits": {
+    "00000010": 42
+   }
+  },
+  {
+   "model": "gg4e08-0a0a",
+   "unknown_bits": {
+    "00000010": 13
+   }
+  },
+  {
+   "model": "gg4e08-0b00",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-0b01",
+   "unknown_bits": {
+    "00000010": 23
+   }
+  },
+  {
+   "model": "gg4e08-0b02",
+   "unknown_bits": {
+    "00000010": 24
+   }
+  },
+  {
+   "model": "gg4e08-0b03",
+   "unknown_bits": {
+    "00000010": 51
+   }
+  },
+  {
+   "model": "gg4e08-0b04",
+   "unknown_bits": {
+    "00000010": 35
+   }
+  },
+  {
+   "model": "gg4e08-0b05",
+   "unknown_bits": {
+    "00000010": 13
+   }
+  },
+  {
+   "model": "gg4e08-0b06",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-0b07",
+   "unknown_bits": {
+    "00000010": 16
+   }
+  },
+  {
+   "model": "gg4e08-0c00",
+   "unknown_bits": {
+    "00000010": 27
+   }
+  },
+  {
+   "model": "gg4e08-0c01",
+   "unknown_bits": {
+    "00000010": 30
+   }
+  },
+  {
+   "model": "gg4e08-0c02",
+   "unknown_bits": {
+    "00000010": 23
+   }
+  },
+  {
+   "model": "gg4e08-0c04",
+   "unknown_bits": {
+    "00000010": 37
+   }
+  },
+  {
+   "model": "gg4e08-0c05",
+   "unknown_bits": {
+    "00000010": 17
+   }
+  },
+  {
+   "model": "gg4e08-0c06",
+   "unknown_bits": {
+    "00000010": 31
+   }
+  },
+  {
+   "model": "gg4e08-0d00",
+   "unknown_bits": {
+    "00000010": 19
+   }
+  },
+  {
+   "model": "gg4e08-0d01",
+   "unknown_bits": {
+    "00000010": 15
+   }
+  },
+  {
+   "model": "gg4e08-0d02",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0d03",
+   "unknown_bits": {
+    "00000010": 17
+   }
+  },
+  {
+   "model": "gg4e08-0d04",
+   "unknown_bits": {
+    "00000010": 20
+   }
+  },
+  {
+   "model": "gg4e08-0d05",
+   "unknown_bits": {
+    "00000010": 14
+   }
+  },
+  {
+   "model": "gg4e08-0d06",
+   "unknown_bits": {
+    "00000010": 6
+   }
+  },
+  {
+   "model": "gg4e08-0d07",
+   "unknown_bits": {
+    "00000010": 5
+   }
+  },
+  {
+   "model": "gg4e08-0e00",
+   "unknown_bits": {
+    "00000010": 36
+   }
+  },
+  {
+   "model": "gg4e08-0e01",
+   "unknown_bits": {
+    "00000010": 24
+   }
+  },
+  {
+   "model": "gg4e08-0e02",
+   "unknown_bits": {
+    "00000010": 34
+   }
+  },
+  {
+   "model": "gg4e08-0e03",
+   "unknown_bits": {
+    "00000010": 55
+   }
+  },
+  {
+   "model": "gg4e08-0e04",
+   "unknown_bits": {
+    "00000010": 45
+   }
+  },
+  {
+   "model": "gg4e08-0e05",
+   "unknown_bits": {
+    "00000010": 35
+   }
+  },
+  {
+   "model": "gg4e08-0f00",
+   "unknown_bits": {
+    "00000010": 5
+   }
+  },
+  {
+   "model": "gg4e08-0f01",
+   "unknown_bits": {
+    "00000010": 7
+   }
+  },
+  {
+   "model": "gg4e08-0f02",
+   "unknown_bits": {
+    "00000010": 6
+   }
+  },
+  {
+   "model": "gg4e08-0f03",
+   "unknown_bits": {
+    "00000010": 9
+   }
+  },
+  {
+   "model": "gg4e08-0f04",
+   "unknown_bits": {
+    "00000010": 11
+   }
+  }
+ ],
+ "pobj_types": {
+  "envelope": 2680,
+  "shapeanim": 15,
+  "skin": 7052
+ },
+ "texture_formats": {
+  "128x128/CMPR": 4951,
+  "128x128/RGBA8": 6,
+  "256x256/CMPR": 1572,
+  "64x64/CMPR": 540
+ },
+ "tlut_formats": {},
+ "unknown_render_bits": {
+  "00000010": {
+   "mobjs": 7061,
+   "models": 204
+  },
+  "00000030": {
+   "mobjs": 4,
+   "models": 4
+  }
+ },
+ "vertex_attributes": {
+  "attr0/1/0/4": 2680,
+  "attr1/1/0/4": 621,
+  "attr10/2/0/4": 1755,
+  "attr10/3/0/4": 6508,
+  "attr11/2/1/5": 780,
+  "attr13/2/1/4": 1620,
+  "attr13/3/1/4": 4004,
+  "attr14/3/1/4": 4,
+  "attr9/2/1/4": 2458,
+  "attr9/3/1/4": 7289
+ }
+}

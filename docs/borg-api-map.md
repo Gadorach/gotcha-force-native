@@ -47,3 +47,26 @@ number, while a `capability` label such as `flying-field` names the native
 mechanism that carries it. Whether that mechanism reproduces the retail
 behaviour is stated per family in `retail-roster-extraction.md`, and every
 authored geometry, damage or timing value is listed there as authored.
+
+## Model render inventory
+
+`docs/api-map/model-render-inventory.json` is the companion view of what the
+renderer is asked to draw:
+
+```sh
+python3 -B -m tools.analyze.material_stage_inventory <roster>/borgs docs/api-map/model-render-inventory.json
+```
+
+It aggregates each packaged `body.hsd` fingerprint into `unknown_render_bits`,
+`texture_formats`, `tlut_formats`, `vertex_attributes` and `pobj_types`, and
+lists the models that carry unknown render bits. It records counts and format
+names only, never pixels.
+
+The first run is mostly a negative result worth keeping: every texture is a
+standard format (`128x128/CMPR` 4,951 MObjs, `256x256/CMPR` 1,572,
+`64x64/CMPR` 540, `128x128/RGBA8` 6), so an untextured look is not a decode
+gap. The single dominant "unknown" bit is `0x00000010`, present on 7,061 MObjs
+across 204 of 206 models, which makes it a universal flag the analyser does not
+name rather than a per-model difference. `0x00000030` appears on four models
+only. The remaining work is therefore texture binding, UV/matrix stages and
+material-stage support, not extraction.
