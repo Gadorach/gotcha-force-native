@@ -212,6 +212,17 @@ That closes the last cheap route to melee timing. Exact melee geometry, timing
 and damage all reduce to the same missing piece — the animated shape data behind
 `8008AC80` — and every path to it now ends at either `actor+0x9C` or the
 collision receiver.
+
+The rendered model was checked as a last alternative and does not carry them.
+Across the roster its PObj types are only `skin` (7,052), `envelope` (2,680) and
+`shapeanim` (15); `0001` individually shows flags `a001` (18), `8000` (48) and
+`0000` (1) with no third collision type. So the melee contact volumes are not
+DObj/PObj geometry in `body.hsd`; they belong to the `owner+0x3FC` class block
+that is still unreached.
+
+That makes the order unambiguous for the next pass: the dynamic collision-
+receiver trace is the only item that can move melee geometry, melee timing and
+damage at once, and nothing left in the static data substitutes for it.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
