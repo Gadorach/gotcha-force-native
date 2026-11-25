@@ -244,6 +244,34 @@ which.
 
 Every packaged file has now been examined. Further progress on melee geometry or
 damage needs the dynamic trace, not another guess at an archive region.
+
+## The trace harness exists
+
+`tools/analyze/damage_observer_mod.c` is a read-only ModernGekko mod: a single
+`RECOMP_HOOK` entry hook at `8003D358` that prints the target pointer, the amount
+in `r4` and the type in `r5`. It patches nothing and writes no register.
+
+`tools/analyze/damage_trace.py` builds it against the sibling checkout's
+`external/ModernGekko/include`, refuses a missing runtime, module, header or
+`main.dol`, refuses an existing run directory, and runs
+
+```sh
+moderngekko-run --game original/extracted   --module build/moderngekko-module/gGG4E08_recomp.so   --mods <dir> --graphics Null --audio Null --user-dir <dir>
+```
+
+Two things are established by running it:
+
+- The recompiled original **does** boot headless: `--graphics Null --audio Null`
+  completed 12,394,857 native dispatches and 2,359,304,477 cycles in 60 s, where
+  `--graphics null`/`software`/`opengl` all failed to initialise and the
+  documented `--headless` path aborts on an ImGui assertion.
+- The observer **loads** and the run is bounded and repeatable; a 40 s run
+  reports `timed_out=True observed=0`.
+
+What is still missing is battle entry: nothing scripts the pad from the title
+screen into a fight, so no damage is raised and `observed` stays zero. The runner
+prints that rather than implying a result. Reaching a battle — by a pad-injection
+mod or a battle savestate — is the remaining prerequisite for exact damage.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
