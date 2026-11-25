@@ -22,6 +22,7 @@ from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
 from tools.analyze import retail_flying_boss as flying_boss
 from tools.analyze import retail_nu_iii as nu_iii
+from tools.analyze import retail_staged_field as staged_field
 from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_spawner_shot as spawner_shot
 from tools.analyze import retail_spawner_static as spawner_static
@@ -341,6 +342,27 @@ class RosterFormatTests(unittest.TestCase):
         actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=44)]
         with self.assertRaisesRegex(ValueError,"neutral B row"):
             nu_iii.battle_test(0x0F03,joints,[50],actions)
+
+    def test_staged_field_binds_the_unresolved_neutral_row_only(self):
+        joints=[{"index":i,"descriptor_offset":i*4} for i in range(4)]
+        roles=[("ground-stop",0,25),("ground-travel",0,1),("air-continuation",0,24),("ground-dash-forward",0,2)]
+        row={"state":1,"substate":0,"selector":44,"handler_pair":[61,0],
+             "class_callback_candidate":None,"contexts":[[0,0],[1,1]]}
+        profile={"config":"80342AD8","context_table":"80342D28","main_handler":"80156FFC",
+                 "groups":[{"group":"B-shot","rows":[row]}]}
+        actions={"profiles":[profile]}
+        rules,pose,receipt=staged_field.battle_test(0x0205,joints,roles,{"native_units_per_tick_x100":458},[300],actions)
+        for line in ("field-follow=stage-hit|source",
+                     "field-core-damage=stage-hit|enemies|120|10|6",
+                     "move=stage-hit|b|10|grounded|28|none"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertIn(b"movement=grounded-v1|4.58|13|15\n",rules)
+        self.assertIsNone(receipt["source_profile"]["class_callback_candidate"])
+        self.assertEqual(receipt["source_profile"]["child_sites"][0],"801578F8")
+        self.assertFalse(receipt["retail_behavior_verified"])
+        profile["groups"][0]["rows"]=[dict(row,class_callback_candidate="80157068")]
+        with self.assertRaisesRegex(ValueError,"unresolved neutral row"):
+            staged_field.battle_test(0x0205,joints,roles,{"native_units_per_tick_x100":458},[300],actions)
 
     def test_zeta_field_pilot_binds_shared_row_and_authors_the_field(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]

@@ -73,8 +73,8 @@ too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen, and the
 later `010a`, `0f04`, `0004`, `0e00`-`0e05` and `0f03` pilots remove
-another fifty. The current preview run is one hundred and fifteen requests
-lower for that reason: 2,583 requested and 2,456 passed. The
+another fifty-five. The current preview run is one hundred and twenty
+requests lower for that reason: 2,578 requested and 2,451 passed. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1529,9 +1529,8 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 205 of 206. The remaining 1 is no longer a
-single missing-evidence cohort; each needs a capability or a settled
-classification:
+Battle Test now covers **all 206** normal Borgs. Each family below records
+how it was admitted and what stays authored:
 
 - **Breath Dragons**: all eight now use the sustained-beam section above.
   Both airborne forms ship: the mechanical Dragons' downward chest beam
@@ -1639,9 +1638,9 @@ classification:
   lands and blasts with an authored 300 radius, 20 damage and 30-tick
   lifetime. The source terminal geometry and type-73 service remain
   unclaimed.
-- **No resolved class branch** (`0205`): it does expose a `(0,0)` context,
-  but that row maps into a multi-stage chain rather than one class
-  callback. `80156FFC` selects `803429C4`/`803429D4` on byte `+0x582`,
+- **Staged-child pilot** (`0205`, admitted; module
+  `tools/analyze/retail_staged_field.py`): its `(0,0)` context maps into
+  a multi-stage chain rather than one class callback. `80156FFC` selects `803429C4`/`803429D4` on byte `+0x582`,
   the entry dispatches again on `+0x581` through `803429E4`/`803429F8`,
   and the leaves drive program, timer and effect helpers
   (`8006D144`/`8006E1AC`/`8006A474`/`8006A5A4`/`800679D0`) instead of an
@@ -1654,9 +1653,13 @@ classification:
   and emits, then advances the sub-counter. The child allocation
   (`800B2190`, four sites) and the `800B22F4` velocity helper appear in
   later substates of the same chain, so the attack is a staged combo
-  rather than a single entry. Binding only the neutral row would publish
-  an empty move, and running the substates needs a move chain, which the
-  coverage boundary still excludes as a combo/cancel tree.
+  rather than a single entry. The chain is free (no `8006DBE0` site) and
+  has no origin row, so the admitted pilot binds the exact neutral input
+  and carries the payload as an owner-following field, with radius 120,
+  damage 10, interval 6 and the 30-tick window authored. Only the neutral
+  entry is run: the substates, their `800B2190` children and the staged
+  timing remain unbound, and a move chain is still excluded as a
+  combo/cancel tree.
 - **Spawner-shot pilot** (`010a`, admitted): its B state machine
   `80199490` → `8036FB48` spawns rows **11** and **12** through
   `800853EC` and pays channel-2 cost 1 through `8006DBE0`. Rows 11/12
