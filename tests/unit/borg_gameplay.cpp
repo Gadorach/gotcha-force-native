@@ -1253,6 +1253,25 @@ void ordered_followup_cases(){
               "each branch result is independent of the single debit and preceding results");
     }
 }
+void action_sound_cases(){
+    BorgGameplayProfile profile;
+    check(borg_read_gameplay_profile(std::string(player)+"action-sound=b-shot|audio/action.pcm\n",
+                                     &profile,nullptr),"action sound binds a move");
+    const auto found=std::find_if(profile.moves.begin(),profile.moves.end(),
+                                  [](const auto& move){return move.id=="b-shot";});
+    check(found!=profile.moves.end()&&found->action_sound=="audio/action.pcm",
+          "action sound reaches the bound move");
+    check(std::none_of(profile.moves.begin(),profile.moves.end(),
+                       [](const auto& move){return move.id=="x-volley"&&!move.action_sound.empty();}),
+          "action sound does not touch other moves");
+    BorgGameplayProfile invalid;
+    check(!borg_read_gameplay_profile(std::string(player)+"action-sound=missing|audio/action.pcm\n",
+                                      &invalid,nullptr),"action sound refuses an unknown move");
+    check(!borg_read_gameplay_profile(std::string(player)+"action-sound=b-shot|/abs/action.pcm\n",
+                                      &invalid,nullptr),"action sound refuses an absolute path");
+    check(!borg_read_gameplay_profile(std::string(player)+"action-sound=b-shot|audio/a.pcm\naction-sound=b-shot|audio/b.pcm\n",
+                                      &invalid,nullptr),"action sound refuses a duplicate");
+}
 void pose_ground_offset_cases(){
     BorgGameplayProfile positive,negative;
     check(borg_read_gameplay_profile(std::string(player)+"pose-ground-offset=83\n",&positive,nullptr)&&
@@ -1780,6 +1799,7 @@ int main(){
     cruise_boost_cases();
     air_action_budget_cases();
     pose_ground_offset_cases();
+    action_sound_cases();
     grouped_stock_return_cases();
     ordered_followup_cases();
     {

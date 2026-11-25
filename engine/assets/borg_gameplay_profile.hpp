@@ -247,7 +247,8 @@ enum class BorgPartMaterialPlayback:u8 {Once,Loop,Sample};
 struct BorgBattlePartMaterial {u16 record=0,clip=0,first=0,last=0;BorgPartMaterialPlayback playback=BorgPartMaterialPlayback::Once;};
 struct BorgMoveCharge {u16 ticks=0;};
 struct BorgBattleMove {
-    std::string id;BorgBattleButton button=BorgBattleButton::B;BorgBattleContext context=BorgBattleContext::Any;
+    std::string id;std::string action_sound; // authored per-move sound; empty plays nothing
+    BorgBattleButton button=BorgBattleButton::B;BorgBattleContext context=BorgBattleContext::Any;
     u16 priority=0,duration=0;BorgBattleClip clip;
     bool static_pose=false;
     bool free_release=false;
@@ -898,6 +899,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<SocketRef> sockets;
     struct LaunchSoundRef {unsigned line;std::string projectile,path;};
     std::vector<LaunchSoundRef> launch_sounds;
+    std::vector<std::pair<unsigned,std::pair<std::string,std::string>>> action_sounds; // line, (move, path)
     struct ReleaseSoundRef {unsigned line;std::string move,path;u16 frame;};
     std::vector<ReleaseSoundRef> release_sounds;
     std::vector<std::pair<unsigned,std::string>> body_launches;
@@ -1368,6 +1370,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(passes.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||a[1]!="ignore")
                 return fail("unsupported actor-contact policy");
             passes.push_back({line,std::string(a[0])});
+        }else if(key=="action-sound"){
+            std::array<std::string_view,2> a;
+            if(!split_fields(value,&a)||!id(a[0])||!borg_package_asset_path_valid(a[1]))
+                return fail("invalid action-sound move or path");
+            action_sounds.push_back({line,{std::string(a[0]),std::string(a[1])}});
         }else if(key=="movement-sound"){
             std::array<std::string_view,2> a;
             if(!split_fields(value,&a)||!borg_package_asset_path_valid(a[1]))return fail("invalid movement-sound path");
@@ -2033,6 +2040,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         line=r.line;const auto pi=index(next.projectiles,r.projectile);
         if(pi==next.projectiles.size()||next.projectiles[pi].socket)return fail("unknown projectile or duplicate origin");
         next.projectiles[pi].socket=r.spec;
+    }
+    for(const auto& r:action_sounds){
+        line=r.first;const auto mi=index(next.moves,r.second.first);
+        if(mi==next.moves.size()||!next.moves[mi].action_sound.empty())
+            return fail("unknown move or duplicate action sound");
+        next.moves[mi].action_sound=r.second.second;
     }
     for(const auto& r:launch_sounds){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);

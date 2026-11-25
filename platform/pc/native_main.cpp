@@ -1592,6 +1592,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     const std::array<const BorgLaunchSoundBank*,2> launch_banks{&packages[0].launch_sounds,&packages[1].launch_sounds};
     const std::array<const BorgReleaseSoundBank*,2> release_banks{&packages[0].release_sounds,&packages[1].release_sounds};
     const std::array<const BorgImpactSoundBank*,2> impact_banks{&packages[0].impact_sounds,&packages[1].impact_sounds};
+    const std::array<const BorgActionSoundBank*,2> action_banks{&packages[0].action_sounds,&packages[1].action_sounds};
     const auto has_pcm=[](const auto& banks){return std::any_of(banks.begin(),banks.end(),[](const auto* bank){
         return std::any_of(bank->begin(),bank->end(),[](const auto& clip){return !clip.empty();});
     });};
@@ -1600,7 +1601,8 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     const bool has_release_sounds=std::any_of(release_banks.begin(),release_banks.end(),[](const auto* bank){
         return std::any_of(bank->begin(),bank->end(),[](const auto& cue){return !cue.pcm.empty();});
     });
-    const bool has_sounds=has_pcm(sound_banks)||has_launch_sounds||has_release_sounds||has_impact_sounds;
+    const bool has_action_sounds=has_pcm(action_banks);
+    const bool has_sounds=has_pcm(sound_banks)||has_launch_sounds||has_release_sounds||has_impact_sounds||has_action_sounds;
     const bool audible=has_sounds&&!options.no_audio&&!options.headless&&context.audio().open(kBorgMovementSampleRate,2);
     const bool mix_audio=audible||((has_launch_sounds||has_release_sounds||has_impact_sounds)&&options.trace_package_battle&&!options.no_audio);
     struct CloseMovementAudio {IAudioBackend* device;~CloseMovementAudio(){if(device)device->close();}}
@@ -1921,7 +1923,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 if(actor.grounded&&!actor.dash_ticks)peak_walk=std::max(peak_walk,actor.movement_speed);
             }
             max_flight=std::max(max_flight,unsigned(world.actors()[0].package_flight_used));
-            if(mix_audio&&movement_audio.visit(world,sound_banks,&movement_pcm,launch_banks,release_banks,impact_banks)){
+            if(mix_audio&&movement_audio.visit(world,sound_banks,&movement_pcm,launch_banks,release_banks,impact_banks,action_banks)){
                 launch_audio_starts+=movement_audio.launch_started();
                 release_audio_starts+=movement_audio.release_started();
                 impact_audio_starts+=movement_audio.impact_started();

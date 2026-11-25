@@ -1786,6 +1786,8 @@ public:
                     if(kind==BorgBattleEventKind::Started){
                         actor.package_action_born=tick_;
                         const auto& package=*config_.packages[i];
+                        if(move<package.moves.size()&&!package.moves[move].action_sound.empty())
+                            record_package(BorgBattleEventKind::ActionSound,i,move,0,move,0);
                         if(move<package.moves.size()&&package.moves[move].charge){
                             // The source movement program owns the burst; the
                             // native controller reuses its existing dash state.

@@ -13,6 +13,7 @@ struct BorgBattlePackageFiles {
     std::array<std::string,kBorgBattleMoves> field_textures;
     BorgMovementSoundBank movement_sounds;
     BorgLaunchSoundBank launch_sounds;
+    BorgActionSoundBank action_sounds;
     BorgImpactSoundBank impact_sounds;
     BorgReleaseSoundBank release_sounds;
     BorgBattleVisualAssets visuals()const{
@@ -68,6 +69,11 @@ inline bool load_borg_battle_package(const std::filesystem::path& root,const Bor
         std::string bytes;
         if(!read_local(folder,path,kBorgMovementSoundBytes,&bytes)||!borg_movement_sound_decode(bytes,&next.launch_sounds[i]))
             return fail("missing or unqualified launch sound: expected bounded stereo 48 kHz s16le PCM");
+    }
+    for(unsigned i=0;i<definition.moves.size();++i)if(const auto& path=definition.moves[i].action_sound;!path.empty()){
+        std::string bytes;
+        if(!read_local(folder,path,kBorgMovementSoundBytes,&bytes)||!borg_movement_sound_decode(bytes,&next.action_sounds[i]))
+            return fail("missing or unqualified action sound: expected bounded stereo 48 kHz s16le PCM");
     }
     for(unsigned i=0;i<definition.projectiles.size();++i)if(const auto& cue=definition.projectiles[i].impact_sound;cue){
         std::string bytes;
