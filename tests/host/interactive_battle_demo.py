@@ -272,6 +272,21 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
         bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
         if not bodies or "0" in bodies:
             raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
+        stable="gg4e08:0f04"
+        rules=(root/"borgs/gg4e08-0f04/gameplay.txt").read_text()
+        for line in ("body-motion=static-grounded",
+                     "projectile=spawn|bullet|1|25|0|0|0|16|60|8|ignore-floor",
+                     "origin=spawn|2|0|0|60|target-height",
+                     "move=spawn-shot|b|10|grounded|28|none",
+                     "free-release=spawn-shot","release=spawn-shot|12|none|0|spawn"):
+            if line not in rules:
+                raise ValueError(f"{stable} lost its authored static spawner policy: {line}")
+        trace=launch("show-attacks.sh",stable,"--frames","150","--no-audio")
+        if "event=emit " not in trace or "event=hit " not in trace:
+            raise ValueError(f"{stable} did not fire its free spawner hitbox\n"+trace)
+        bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
+        if not bodies or "0" in bodies:
+            raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if icbm:
         for id in ("0d06","0d07"):
             stable=f"gg4e08:{id}"

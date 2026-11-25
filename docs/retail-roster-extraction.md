@@ -72,7 +72,7 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen. The
-current preview run is sixty requests lower for those reasons. The
+current preview run is sixty-five requests lower for those reasons. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1527,7 +1527,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 196 of 206. The remaining 10 are no longer a
+Battle Test now covers 197 of 206. The remaining 9 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1608,40 +1608,16 @@ classification:
   locomotion, and authors a two-shot ordered projectile with chest joint
   12 plus `(0,0,60)`, look and damage; the source child asset and
   animation-sampled placement remain unclaimed.
-- **Shared 80-byte spawner** (`0f04`): its neutral B pays a
-  channel-2 debit and calls the sixth shared factory at `80084600`, which
-  registers a child actor and selects an 80-byte row at `802D9758` from
-  the child's own byte `+0x11`; `010a` uses rows `11` and `12`. The child
-  initializer `80084790` then builds its placement with `8020B7A8`, a
-  paired-single matrix multiply of the 48-byte animation entry at `row+2`
-  and the `row+4` local offset triple (zero on both rows), writing the
-  result to `child+0x20`. `row+0x48` selects a behavior mode with branches
-  for `0`, `1`, `3` and `5`; `+16` is `60.0` and `+0x3C/+0x40/+0x44` are
-  three `1.0` scales, not velocities.
-
-  The origin is therefore **animation-sampled**, not an indexed joint or
-  socket: the placement depends on the parent's sampled animation entry as
-  well as the row. Binding it as a fixed authored origin would substitute
-  a different launch. The family stays indexed rather than bound until the
-  sampled entry can be reproduced or a user-observed origin is supplied.
-
-  The child update `80084740` runs phase table `802DA018`: phase 0
-  `80084790` builds the transform, phase 1 `80084CEC` decrements the timer
-  and hands off an attack shape through `8008AFF0`, phase 2 `800850F8`
-  keeps the shape handoff, and phase 3 `80085134` releases through
-  `80088E50`. That is a moving hitbox, not a script VM. For `010a`, the
-  B state machine `80199490` → `8036FB48` spawns rows **11** and **12**
-  via `800853EC` and debits channel 2 cost 1 through `8006DBE0`
-  (`801997B0`). Rows 11/12 give joint 25, animation index 7/11, source
-  speed 25.0 (`+0x2C`) and timer 60.0 (`+0x10`). Joint 25 is a **child-rig
-  index**, not a caster socket: `010a` exposes only joints 0-19, and the
-  child's effect asset comes from the shared effect archive rather than
-  the package. The native projectile can express the hitbox speed and
-  lifetime, but its origin and visual require binding that child asset or
-  reproducing the sampled `8020B7A8` entry. The channel-2 stock cap and
-  the exact spawn frames are separate. This is the asset/ownership gap
-  that keeps the family indexed.
-- **Flying bosses** (`0e00`-`0e05`, `0f04`): their B-shot callbacks are
+- **Static spawner pilot** (`0f04`, admitted): its B state machine
+  (callback `801F0EC4`, state table `803A15B8`) spawns row **23**
+  through `800853EC`; row 23 carries speed 25.0 and timer 60.0, and the
+  scoped state has no visible channel debit. The body has no motion bank.
+  `free-release` binds a static projectile with an authored joint-2 chest
+  origin, look and 8 damage; the shared effect child asset and
+  animation-sampled placement remain unclaimed. The same child update
+  (`80084740` → `802DA018`: moving hitbox with shape handoff `8008AFF0`
+  and release `80088E50`) is documented with the `010a` pilot above.
+- **Flying bosses** (`0e00`-`0e05`): their B-shot callbacks are
   state machines with no origin factory. `0e00`/`0e05` use table
   `80362CA8`; state 1 starts a timer at `+0x558` and calls `801FC1B0`,
   and state 2 counts down and calls `8006A53C` on expiry. `0e01`-`0e04`

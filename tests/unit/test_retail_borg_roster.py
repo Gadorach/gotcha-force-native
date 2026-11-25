@@ -22,6 +22,7 @@ from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
 from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_spawner_shot as spawner_shot
+from tools.analyze import retail_spawner_static as spawner_static
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_knight_melee as knight
 from tools.analyze import retail_samurai_melee as samurai
@@ -181,6 +182,26 @@ class RosterFormatTests(unittest.TestCase):
         self.assertIn(b"release=breath-dive|8|breath-stock|1|dive\n",dive_rules)
         self.assertNotIn(b"breath-sweep",dive_rules)
         self.assertEqual(dive_receipt["native_dive"]["origin_joint"],12)
+
+    def test_static_spawner_binds_row23_and_authors_the_free_shot(self):
+        joints=[{"index":i,"descriptor_offset":i*4} for i in range(3)]
+        row={"state":0,"substate":0,"selector":44,"handler_pair":[61,0],
+             "class_callback_candidate":"801F0EC4","contexts":[[0,0]]}
+        profile={"config":"803A15D8","context_table":"803A17B0","main_handler":"801F0E8C",
+                 "groups":[{"group":"B-shot","rows":[row]}]}
+        actions={"profiles":[profile]}
+        rules,pose,receipt=spawner_static.battle_test(0x0F04,joints,[40],actions)
+        for line in ("body-motion=static-grounded",
+                     "projectile=spawn|bullet|1|25|0|0|0|16|60|8|ignore-floor",
+                     "origin=spawn|2|0|0|60|target-height",
+                     "move=spawn-shot|b|10|grounded|28|none",
+                     "free-release=spawn-shot","release=spawn-shot|12|none|0|spawn"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(receipt["source_profile"]["row"]["key"],23)
+        self.assertFalse(receipt["retail_behavior_verified"])
+        profile["groups"][0]["rows"]=[dict(row,state=2)]
+        with self.assertRaisesRegex(ValueError,"neutral B-shot row"):
+            spawner_static.battle_test(0x0F04,joints,[40],actions)
 
     def test_spawner_shot_binds_the_80_byte_rows_and_authors_the_origin(self):
         joints=[{"index":i,"descriptor_offset":i*4} for i in range(20)]
