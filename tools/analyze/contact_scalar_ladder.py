@@ -30,7 +30,8 @@ OBSERVATIONS = (
      "credit_variant": 1, "credit_difficulty": 0.92, "credit_rank": 0.85,
      "conditional_half": True,
      "verified": True, "hit": {"credit": "802D4160", "receiver_model": 261,
-                               "base": 5, "amount": 3}},
+                               "base": 5, "amount": 3,
+                               "carrier": "8064AAB8", "carrier_is_actor": False}},
 )
 
 
@@ -74,6 +75,7 @@ def recover(image):
             "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
             "The Mana hit also applies the conditional 0.5: credit difficulty 0.92 x rank 0.85 x 0.5 = 0.391; the Kakeru hit does not (owner998 = 0).",
             "The difficulty/rank rows at 804335E0 are paired [1.02, 0.92] and [0.85, 0.85]; the credit side selects the variant.",
+            "The Mana carrier is 8064AAB8, a separate object rather than the actor, which is consistent with a projectile; an isolated shot input is still needed to call it the B-shot path.",
             "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows.",
         ],
     }

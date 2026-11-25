@@ -645,7 +645,13 @@ until a ranged hit captures it. No pad sequence tried here reached that context.
 The X hit confirms the per-move mapping: `30 × 0.867 × 1.13 × 1.15 = 33.8 → 33`,
 with the same credit factor, scalar and receiver rank as the boost hit. Both
 G-Red moves therefore select **per-Borg config records**, and the shared pool at
-`0x802D4148` is the other side's record set.
+`0x802D4148` is used by a different carrier path.
+
+The Mana hit's carrier is `0x8064AAB8`, a separate object rather than the actor,
+unlike the X hit where the carrier is `0x805DBDC0` itself. That is consistent
+with a **projectile/shot**. If confirmed, the shared record `0x802D4160`
+(base 5) is the shot base and the `+0x728` config entry is an unidentified
+move rather than `B-shot`. An isolated ranged shot is still needed to name it.
 
 The third group, `B-shot`, is not isolated yet. Holding `B` at range on the same
 state reused the `B-close` record `80365EC0` (base 20, amount 22), and `A` over
