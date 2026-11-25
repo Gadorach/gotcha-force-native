@@ -239,6 +239,25 @@ strict previews and battle rendering do not use the repair. Unmapped movement
 and undeclared variants also refuse. This is a native movement prototype,
 not retail speed, timing, collision or appearance equivalence.
 
+#### Compare source-relative cruise pace
+
+The cruise families had two hardcoded `movement=grounded-v1|6|13|12` lines —
+one in the pose-free cruise branch and one in the charge-shot cruise branch —
+so every flying Borg moved at the same authored `6.00`. Their bound actor
+records carry the real cruise target at operand `02C`, read by the shared
+cruise handler `800633C8`, so `cruise_pace_candidate` now derives the walk with
+the same relative normalisation as the ground pace (`12` → `5` native units per
+tick) and the same refusals: an unbound record, a missing operand, a value
+outside `1..25`, or a target outside `0.40..10.42` yields no declaration
+instead of a default.
+
+Measured effects: `0505` `15.0` → `6.25`, `0511` `7.5` → `3.13`, `0d00` `7.0` →
+`2.92`, reproducing a recovered 2:1 ratio that the single authored constant had
+erased. The declaration is `native_policy = source-relative-cruise-v1` with
+`retail_speed_verified: false`; it preserves relative pace, not retail units or
+timing. Static Nu bodies (`0f01`–`0f06`) and the ICBM pair (`0d06`/`0d07`) keep
+their authored paces, because they are not cruise pilots.
+
 #### Compare source-relative ground pace
 
 Add **`--source-pace`** to a fresh extraction with `--role-clips`. This

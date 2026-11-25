@@ -472,8 +472,10 @@ def pose_free_shot_test(model,joints,actions,level,releases,cruise,ordered_sites
     if flying:
         body=f"cruise-entry={cruise_entry[0]}:{cruise_entry[1]}" if animated else "body-motion=static-cruise"
         description="Authored flight and B shot" if animated else "Authored static flight and B shot"
+        walk = pace["native_units_per_tick_x100"] if pace else 600
         lines=["GFBORG-GAMEPLAY 1",f"# {description}; not retail combat.",
-               "variant=normal",f"health={hp}","movement=grounded-v1|6|13|12",*rig,
+               "variant=normal",f"health={hp}",
+               f"movement=grounded-v1|{walk//100}.{walk%100:02d}|13|12",*rig,
                body,"cruise-boost="+"|".join(map(str,cruise))]
     else:
         roles={name:(g,c) for name,g,c in role_clips}
@@ -532,7 +534,7 @@ def pose_free_shot_test(model,joints,actions,level,releases,cruise,ordered_sites
         "authored_launch_sounds":sounds}
 
 
-def cruise_charge_shot_test(model,joints,actions,level,releases,cruise,*,launch_audio=False):
+def cruise_charge_shot_test(model,joints,actions,level,releases,cruise,*,launch_audio=False,pace=None):
     """A stockless authored charge, scoped to the reviewed static branch."""
     key,site = CRUISE_CHARGE_SHOTS[model]
     if not cruise or not actions["profiles"] or any(
@@ -562,8 +564,10 @@ def cruise_charge_shot_test(model,joints,actions,level,releases,cruise,*,launch_
         raise ValueError("cruise charge test lacks the expected model branch")
     marker,length,minimum,maximum=8,20,6,45
     point="|".join(f"{n:.9g}" for n in hit["local_point"])
+    walk = pace["native_units_per_tick_x100"] if pace else 600
     lines=["GFBORG-GAMEPLAY 1","# Authored static flight and held B; no retail charge timing.",
-           "variant=normal",f"health={level[0]}","movement=grounded-v1|6|13|12",
+           "variant=normal",f"health={level[0]}",
+           f"movement=grounded-v1|{walk//100}.{walk%100:02d}|13|12",
            "rig-prefix=visual/body.prefix","pose-profile=visual/body.pose","body-record=0","body-motion=static-cruise",
            "cruise-boost="+"|".join(map(str,cruise)),"projectile=shot|bullet|1|32|0|0|0|12|70|8|ignore-floor",
            f"origin=shot|{hit['source_joint_selector']}|{point}|target-height",

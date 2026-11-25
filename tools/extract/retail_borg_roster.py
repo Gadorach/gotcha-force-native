@@ -59,7 +59,7 @@ from tools.analyze.retail_program_controls import ProgramControlIndex, control_w
 from tools.analyze.retail_stock_operands import LEVEL_TABLE, NORMAL_LEVEL_START, StockGuardIndex, attach_release_stock, stock_rows, stock_schema
 from tools.analyze.retail_shot_readiness import shot_readiness
 from tools.analyze.retail_movement_operands import ACTOR_BYTES, movement_operand_profile, movement_operand_schema
-from tools.analyze.retail_ground_pace import ground_pace_candidate
+from tools.analyze.retail_ground_pace import cruise_pace_candidate, ground_pace_candidate
 from tools.analyze.retail_projectile_origins import origin_candidates, origin_tables, preview_origin_markers, release_index
 
 from tools.extract.pzz import PzzArchive
@@ -975,6 +975,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         operands=movement_operand_profile(actor,role_mapping)
         operands["class_installer_binding"]=actor_record_binding(dol,installer,row.model,operands["records"],ACTOR_BYTES)
     pace=ground_pace_candidate(role_mapping,candidates,operands) if source_pace else None
+    cruise_pace=cruise_pace_candidate(operands) if (source_pace and cruise_pilot and operands) else None
     zeta_source = zfield.battle_test(row.model,joints,candidates,pace,level[0],actions) if zeta_pilot else None
     spawner_source = (spawner_shot.battle_test(row.model,joints,candidates,pace,level[0],actions)
                       if spawner_pilot else None)
@@ -1115,12 +1116,14 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
                 raise ValueError("pose-free pilot requires the exact unmounted body and motion policy")
             if row.model in CRUISE_CHARGE_SHOTS:
                 gameplay,pose,battle_receipt = cruise_charge_shot_test(
-                    row.model,joints,actions,level[0],links,cruise,launch_audio=launch_pcm is not None)
+                    row.model,joints,actions,level[0],links,cruise,
+                    launch_audio=launch_pcm is not None,pace=cruise_pace)
             else:
                 gameplay,pose,battle_receipt = pose_free_shot_test(
                     row.model,joints,actions,level[0],links,cruise,linker.ordered_shot_sites(row.model),
                     launch_audio=launch_pcm is not None,role_clips=candidates,
-                    pace=ground_pace_candidate(role_mapping,candidates,operands,static_ground_body=True) if static_ground_pilot else pace,
+                    pace=(ground_pace_candidate(role_mapping,candidates,operands,static_ground_body=True)
+                          if static_ground_pilot else (cruise_pace or pace)),
                     cruise_entry=cruise_entry if animated_pilot else None)
         else:
             gameplay,pose,battle_receipt = basic_shot_test(row.model,joints,candidates,action_entries,pace,level[0],links,
@@ -1242,6 +1245,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         summary["movement_operands"]=operands
     if pace and raw_preview:
         summary["lab_ground_pace"]=pace
+    if cruise_pace and raw_preview:
+        summary["lab_cruise_pace"]=cruise_pace
     if battle_receipt:
         summary["basic_melee_battle_test" if melee_pilot else "held_fire_battle_test" if held_pilot else "basic_shot_battle_test"]=battle_receipt
     if roach_source is not None:

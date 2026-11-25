@@ -124,6 +124,7 @@ def borg_entry(folder, action_cues=()):
     manifest = _manifest(folder / "borg.manifest")
     catalog = _catalog(folder / "catalog.txt")
     pace = summary.get("lab_ground_pace") or {}
+    cruise_pace = summary.get("lab_cruise_pace") or {}
     movement = summary.get("movement_candidates") or {}
     return {
         "id": summary.get("id"),
@@ -144,6 +145,11 @@ def borg_entry(folder, action_cues=()):
                      "source_value": pace.get("source_value"),
                      "native_units_per_tick_x100": pace.get("native_units_per_tick_x100")}
                     if pace else None,
+            "cruise_pace": {"operand": cruise_pace.get("operand"),
+                            "source_value": cruise_pace.get("source_value"),
+                            "native_units_per_tick_x100": cruise_pace.get("native_units_per_tick_x100"),
+                            "policy": cruise_pace.get("native_policy")}
+                           if cruise_pace else None,
             "operands": _operands(summary),
             "jump_display": summary.get("raw_jump_display"),
             "move_display_slots": summary.get("raw_move_display_slots"),

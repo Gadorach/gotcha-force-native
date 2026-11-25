@@ -46,3 +46,34 @@ def ground_pace_candidate(roles, preview_clips, operands, *, static_ground_body=
             "record":selected,"record_sha256":record["record_sha256"],
             "native_units_per_tick_x100":target,"native_policy":"source-relative-ground-v1",
             "retail_speed_verified":False}
+
+
+def cruise_pace_candidate(operands):
+    """Source-relative cruise target from operand 02C for a bound slot-0 record.
+
+    Same relative normalisation as the ground pace (the shared lab's speed 5 at
+    source operand 12). It is not a conversion from original time or world
+    units, and it is opt-in: an unbound record or an out-of-range operand is
+    refused rather than defaulted.
+    """
+    if not operands:
+        return None
+    binding = operands.get("class_installer_binding") or {}
+    selected = binding.get("selected_record")
+    records = operands.get("records") or []
+    if (binding.get("status") != "one-static-slot-0-record" or type(selected) is not int
+            or not 0 <= selected < len(records)):
+        return None
+    source = (records[selected].get("operands") or {}).get("02C")
+    if not source:
+        return None
+    raw = source["value"]
+    if not math.isfinite(raw) or not 1 <= raw <= 25:
+        return None
+    target = math.floor(raw * 500 / 12 + .5)
+    if not 40 <= target <= 1042:
+        return None
+    return {"operand": "02C", "source_bits": source["bits"], "source_value": raw,
+            "record": selected, "record_sha256": records[selected]["record_sha256"],
+            "native_units_per_tick_x100": target,
+            "native_policy": "source-relative-cruise-v1", "retail_speed_verified": False}

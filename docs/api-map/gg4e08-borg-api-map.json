@@ -152,6 +152,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -386,6 +387,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -620,6 +622,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -873,6 +876,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -1107,6 +1111,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -1422,6 +1427,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -1656,6 +1662,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -1909,6 +1916,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -2186,6 +2194,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -2501,6 +2510,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -2797,6 +2807,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -3031,6 +3042,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -3308,6 +3320,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -3542,6 +3555,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -3795,6 +3809,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -4010,6 +4025,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -4368,6 +4384,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -4621,6 +4638,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -4836,6 +4854,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -5194,6 +5213,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -5552,6 +5572,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -5786,6 +5807,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -6001,6 +6023,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -6202,6 +6225,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -6517,6 +6541,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -6751,6 +6776,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -6985,6 +7011,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -7300,6 +7327,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -7534,6 +7562,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -7787,6 +7816,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      6,
@@ -7983,6 +8013,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -8217,6 +8248,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -8513,6 +8545,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      6,
@@ -8766,6 +8799,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -9081,6 +9115,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -9315,6 +9350,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -9630,6 +9666,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -9864,6 +9901,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -10160,6 +10198,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -10475,6 +10514,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      6,
@@ -10709,6 +10749,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -10943,6 +10984,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -11258,6 +11300,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -11473,6 +11516,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -11750,6 +11794,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -12046,6 +12091,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -12361,6 +12407,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -12576,6 +12623,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -12853,6 +12901,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -13149,6 +13198,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -13445,6 +13495,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -13679,6 +13730,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -13875,6 +13927,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -14090,6 +14143,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      0,
@@ -14324,6 +14378,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -14558,6 +14613,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -14849,6 +14905,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -15083,6 +15140,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -15317,6 +15375,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -15551,6 +15610,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -15766,6 +15826,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -16057,6 +16118,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -16348,6 +16410,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -16582,6 +16645,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -16816,6 +16880,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -17079,6 +17144,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -17342,6 +17408,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -17605,6 +17672,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -17896,6 +17964,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -18215,6 +18284,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -18473,6 +18543,7 @@
       "type": 5
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -18711,6 +18782,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -18982,6 +19054,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -19215,6 +19288,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 625,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 15.0
+    },
     "jump_display": [
      0,
      0,
@@ -19370,6 +19449,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -19636,6 +19716,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -19902,6 +19983,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -20221,6 +20303,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -20512,6 +20595,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -20831,6 +20915,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -21089,6 +21174,7 @@
       "type": 5
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -21327,6 +21413,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -21598,6 +21685,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -21831,6 +21919,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 313,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 7.5
+    },
     "jump_display": [
      0,
      0,
@@ -21986,6 +22080,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -22252,6 +22347,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -22518,6 +22614,7 @@
       "type": 4
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -22837,6 +22934,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -23071,6 +23169,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -23405,6 +23504,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -23658,6 +23758,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -23973,6 +24074,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -24269,6 +24371,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -24503,6 +24606,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -24837,6 +24941,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -25090,6 +25195,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -25343,6 +25449,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -25596,6 +25703,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -25911,6 +26019,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -26226,6 +26335,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -26579,6 +26689,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -26813,6 +26924,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -27147,6 +27259,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -27462,6 +27575,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -27758,6 +27872,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -28054,6 +28169,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -28331,6 +28447,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 833,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 20.0
+    },
     "jump_display": [
      3,
      0,
@@ -28500,6 +28622,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -28834,6 +28957,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -29149,6 +29273,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -29502,6 +29627,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -29917,6 +30043,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 833,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 20.0
+    },
     "jump_display": [
      3,
      0,
@@ -30167,6 +30299,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -30482,6 +30615,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -30835,6 +30969,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      4,
@@ -31150,6 +31285,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -31446,6 +31582,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -31799,6 +31936,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -32152,6 +32290,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -32386,6 +32525,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -32796,6 +32936,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -33030,6 +33171,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -33264,6 +33406,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -33498,6 +33641,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -33732,6 +33876,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -33947,6 +34092,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -34181,6 +34327,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -34591,6 +34738,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -34825,6 +34973,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -35059,6 +35208,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -35293,6 +35443,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -35703,6 +35854,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -36113,6 +36265,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -36347,6 +36500,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -36581,6 +36735,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -36853,6 +37008,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -37149,6 +37305,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -37383,6 +37540,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -37579,6 +37737,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -37775,6 +37934,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -38047,6 +38207,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      0,
@@ -38243,6 +38404,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -38534,6 +38696,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -38830,6 +38993,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -39064,6 +39228,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -39298,6 +39463,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -39494,6 +39660,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -39728,6 +39895,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -39962,6 +40130,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -40196,6 +40365,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -40430,6 +40600,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -40664,6 +40835,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -40922,6 +41094,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -41156,6 +41329,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -41390,6 +41564,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -41624,6 +41799,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -41858,6 +42034,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -42116,6 +42293,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -42350,6 +42528,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -42584,6 +42763,7 @@
       "type": 0
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      0,
@@ -42799,6 +42979,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -43043,6 +43224,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -43330,6 +43512,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -43574,6 +43757,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -43818,6 +44002,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      1,
@@ -44043,6 +44228,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -44287,6 +44473,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -44574,6 +44761,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      1,
@@ -44818,6 +45006,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      1,
@@ -45062,6 +45251,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      1,
@@ -45287,6 +45477,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -45531,6 +45722,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      1,
@@ -45775,6 +45967,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      1,
@@ -46019,6 +46212,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      1,
@@ -46263,6 +46457,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      1,
@@ -46507,6 +46702,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -46732,6 +46928,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -46976,6 +47173,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      1,
@@ -47201,6 +47399,7 @@
       "type": 2
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      1,
@@ -47445,6 +47644,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      4,
@@ -47679,6 +47879,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      4,
@@ -47913,6 +48114,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      3,
      4,
@@ -48166,6 +48368,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      4,
@@ -48380,6 +48583,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      4,
@@ -48614,6 +48818,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      4,
@@ -48867,6 +49072,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 292,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 7.0
+    },
     "jump_display": [
      2,
      2,
@@ -49036,6 +49247,7 @@
       "type": 3
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      2,
@@ -49224,6 +49436,7 @@
       "type": 6
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      4,
      5,
@@ -49393,6 +49606,7 @@
       "type": 6
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      2,
@@ -49581,6 +49795,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 292,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 7.0
+    },
     "jump_display": [
      2,
      2,
@@ -49750,6 +49970,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 292,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 7.0
+    },
     "jump_display": [
      2,
      2,
@@ -49887,6 +50113,7 @@
       "type": 10
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      2,
      2,
@@ -50024,6 +50251,7 @@
       "type": 10
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      2,
@@ -50212,6 +50440,7 @@
       "type": 8
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      3,
@@ -50381,6 +50610,7 @@
       "type": 9
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      3,
@@ -50550,6 +50780,7 @@
       "type": 11
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      3,
@@ -50719,6 +50950,7 @@
       "type": 8
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      3,
@@ -50888,6 +51120,7 @@
       "type": 8
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      3,
@@ -51076,6 +51309,7 @@
       "type": 8
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      3,
@@ -51226,6 +51460,12 @@
       "type": 3
      }
     ],
+    "cruise_pace": {
+     "native_units_per_tick_x100": 125,
+     "operand": "02C",
+     "policy": "source-relative-cruise-v1",
+     "source_value": 3.0
+    },
     "jump_display": [
      0,
      2,
@@ -51357,6 +51597,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -51488,6 +51729,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -51619,6 +51861,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -51750,6 +51993,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
@@ -51881,6 +52125,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      1,
      0,
@@ -52012,6 +52257,7 @@
       "type": 1
      }
     ],
+    "cruise_pace": null,
     "jump_display": [
      0,
      0,
