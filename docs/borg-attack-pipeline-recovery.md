@@ -659,6 +659,19 @@ state reused the `B-close` record `80365EC0` (base 20, amount 22), and `A` over
 240 frames produced no hit at all. `B-shot` needs either a controlled ranged hit
 or the action-program mapping that selects its context record.
 
+The live stack at the first contact apply was captured by walking the PPC frame
+chain:
+
+```text
+8002F068, 8002DED8, 8002C4D0, 800294F8,
+800291C4, 8002891C, 800282A0, 8017FCC8
+```
+
+Hooking the call target at `8002E2A8` (the `bl` at `8002DED4`) did **not** fire
+for the same hit, so the saved-LR chain and the pair call are not aligned by a
+simple frame walk. A proper unwinder or a debugger trace is needed before those
+addresses can name the move scheduler.
+
 The second is the same context table the API map already lists for `B-shot`,
 `B-close` and `X` (`context_count` 2/7/8), so the per-move base is an indexing
 problem over that table, not a new data source.
