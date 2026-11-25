@@ -1623,8 +1623,15 @@ classification:
   and state 2 counts down and calls `8006A53C` on expiry. `0e01`-`0e04`
   use per-model tables (e.g. `0e01` at `8038D224`); state 1 scans four
   bits at `+0x144+i` and activates slot `i+22` through `8013212C`.
-  These are timed effects and boss subsystem activations, not shots, so
-  they need the child/effect ownership path.
+  `8013212C(actor,slot)` maps the slot through `80336B20` to a 36-byte
+  transform row at `80336560+idx*36` and a 40-byte model-check row at
+  `80336908+sec*40`, compares that row's model id with the actor
+  `+0x3E8`, then allocates a child through `80088AA0`. The bosses expose
+  one body record and no motion bank, so those part models are effect
+  children from the shared archive, not body records. The transforms are
+  decoded; the part assets and per-slot behavior remain unbound. These
+  are timed effects and boss subsystem activations, not shots, so they
+  need the child/effect ownership path.
 - **Unsettled classification** (`0004` Acceleration Ninja): its B-shot
   program clip `3:11` binds strictly but requests no projectile, so it is
   either a melee or a buff and must not be guessed.
