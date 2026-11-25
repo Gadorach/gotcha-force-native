@@ -114,6 +114,15 @@ The map records what is actually bound rather than what is hoped for:
 | Action cues recovered in `shared-action-sfx.json` | 13 of 206 |
 | `other_sfx` still `unresolved` | 206 of 206 |
 
+A generic scan was tried and rejected. Walking each action entry's bounded
+local CFG for `SOUND_REQUEST` (`800F036C`) calls and accepting only a
+same-block literal `r4` recovered nothing: at the sites that exist the id is a
+caller argument, not an immediate. For example the type-36 child update calls
+`800F036C` at `8013229C` with whatever `r4` the caller supplied. Emitting those
+would mean inventing the id, so the scan was removed rather than shipped.
+Coverage has to come from reviewing individual sites, which is what the curated
+`DIRECT`/`RELAY` tables do.
+
 So the "missing sfx" complaint is accurate and locatable. Most Borgs carry a
 landing candidate with no qualified trigger, and only thirteen have recovered
 action-SFX routes at all (`0007`, `0104`, `0203`, `020c`, `0619`, `061b`,
