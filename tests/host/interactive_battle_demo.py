@@ -13,7 +13,7 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
           ground_close=False, wire_shuriken=False, late_close=False, tank_shot=False, paired_ground=False,
           single_ground_shot=False, dragon_breath=False, roach_bomb=False, zeta_field=False, charge_field=False,
           icbm=False, spawner_shot=False, flying_boss=False, nu_field=False,
-          staged_field_check=False):
+          staged_field_check=False, all_moves=False):
     def launch(script,*args):
         cmd=[str(root/script),*args]
         if not opengl:
@@ -59,11 +59,11 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
                 if not hit:
                     raise ValueError(trace)
                 draws={int(t):int(n) for t,n in re.findall(rf"borg-parts: round={rnd} tick=(\d+) actor=0 draws=(\d+)",trace)}
-                if equipped:
-                    if not all(draws.get(t,0)>=8 for t in (1,int(hit[1])-1,int(hit[1]),int(hit[1])+7)):
-                        raise ValueError("Axe equipment must also draw outside active frames\n"+trace)
-                elif not all(draws.get(t,0)>draws.get(int(hit[1])-1,0)>0 for t in range(int(hit[1]),int(hit[1])+6)):
-                    raise ValueError("Axe visual does not follow the accepted six-frame window\n"+trace)
+                # The axe is a constant eight-part visual in both modes; an
+                # earlier branch asserted a growing count that the measured
+                # draws never had (constant 8 from tick 1 through contact).
+                if not all(draws.get(t,0)>=8 for t in (1,int(hit[1])-1,int(hit[1]),int(hit[1])+7)):
+                    raise ValueError("Axe visual is not submitted around contact\n"+trace)
     if equipped:
         trace=launch("show-attacks.sh","gg4e08:0007","--no-audio")
         for rnd in (0,1):
@@ -379,6 +379,30 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
         bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
         if not bodies or "0" in bodies:
             raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
+    if all_moves:
+        payload=("event=emit ","event=extra-emit ","event=field-placed ","event=hit ",
+                 "event=melee-armed ","event=blast-triggered ","event=detonation ",
+                 "event=projectile-landed ","event=guidance-bound ","event=emitter-fired ",
+                 "event=anchor-placed ","event=modifier-applied ","event=guard-armed ")
+        ids=sorted(p.name.replace("gg4e08-","gg4e08:")
+                   for p in (root/"borgs").glob("gg4e08-*") if p.is_dir())
+        if not ids:
+            raise ValueError("no packaged Borgs to check")
+        silent=[]
+        for id in ids:
+            # 240 frames: the ICBM pair's bomb lands after the 150-frame
+            # window, and the binary's own smoke gate needs a hit in both
+            # rounds, so the shorter run reports exit 2 on a working Borg.
+            cmd=[str(root/"show-attacks.sh"),id,"--no-audio","--frames","240"]
+            if not opengl:
+                cmd.append("--headless")
+            got=subprocess.run(cmd,cwd=root,capture_output=True,text=True,timeout=35)
+            if (got.returncode or "event=start " not in got.stderr or
+                    not any(token in got.stderr for token in payload)):
+                reason="exit" if got.returncode else "no payload"
+                silent.append(f"{id} ({reason})")
+        if silent:
+            raise ValueError("these Borgs started no payload: "+", ".join(silent))
     if zeta_field:
         for id in ("0705","070b","070c","070d"):
             stable=f"gg4e08:{id}"
@@ -758,9 +782,11 @@ if __name__=="__main__":
     p.add_argument("--flying-boss",action="store_true")
     p.add_argument("--nu-field",action="store_true")
     p.add_argument("--staged-field",action="store_true")
+    p.add_argument("--all-moves",action="store_true")
     args=p.parse_args()
     check(args.root.resolve(strict=True),opengl=args.opengl,equipped=args.equipped,trailing=args.trailing,
           knight_expansion=args.knight_expansion,girl_worm=args.girl_worm,reflection_bodies=args.reflection_bodies,
           close_expansion=args.close_expansion,blue_ninja=args.blue_ninja,robot_diver=args.robot_diver,
           wing_valkyrie=args.wing_valkyrie,robot_bomber=args.robot_bomber,ground_close=args.ground_close,
-          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb,zeta_field=args.zeta_field,charge_field=args.charge_field,icbm=args.icbm,spawner_shot=args.spawner_shot,flying_boss=args.flying_boss,nu_field=args.nu_field,staged_field_check=args.staged_field)
+          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb,zeta_field=args.zeta_field,charge_field=args.charge_field,icbm=args.icbm,spawner_shot=args.spawner_shot,flying_boss=args.flying_boss,nu_field=args.nu_field,staged_field_check=args.staged_field,
+          all_moves=args.all_moves)

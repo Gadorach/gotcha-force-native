@@ -1587,8 +1587,14 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers **all 206** normal Borgs. Each family below records
-how it was admitted and what stays authored:
+Battle Test now covers **all 206** normal Borgs, and a roster-wide sweep at
+240 frames confirms the stronger claim: every packaged Borg starts its bound
+input and reaches at least one payload event (emit, extra-emit, field-placed,
+hit, melee-armed, blast-triggered, detonation, landed, guidance, emitter,
+anchor, modifier or guard). The sweep uses 240 frames because the Death ICBM
+pair's bomb lands after the default 150-frame window; at 150 frames those two
+complete the battle but fail the binary's smoke gate, which wants a hit in both
+rounds. Each family below records how it was admitted and what stays authored:
 
 - **Breath Dragons**: all eight now use the sustained-beam section above.
   Both airborne forms ship: the mechanical Dragons' downward chest beam
