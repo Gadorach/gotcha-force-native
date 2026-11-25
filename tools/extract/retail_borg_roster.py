@@ -15,7 +15,9 @@ from tools.analyze.retail_dragon_carrier import COLLISION_BYTES, carrier_index a
 from tools.analyze import retail_dragon_art as dragon_art
 from tools.analyze.retail_dragon_shot import trailing_chain as dragon_trailing_chain, translation_scale as dragon_translation_scale
 from tools.analyze.retail_dragon_area import COMMON_COLLISION_SIZE, area_index as dragon_area_index, common_collision
-from tools.analyze.retail_action_sfx import action_sfx_index
+from tools.analyze.retail_action_sfx import DIRECT, action_sfx_index
+
+RELAY_SOUND_ID = 162
 from tools.analyze.retail_actor_data_binding import actor_record_binding, binding_schema
 from tools.analyze.retail_basic_shot_test import (
     ACTOR_RELEASE_SOUND, ANIMATED_CRUISE_SHOTS, CLOCKED_GROUND_SHOTS, COHORT as BASIC_SHOT_COHORT, CRUISE_CHARGE_SHOTS,
@@ -827,7 +829,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             move_labels=(), launch_tables=None, linker=None, landing_pcm=None, origin_markers=False, action_clips=False,
              cruise_lab=False, movement_operands=False, source_pace=False, basic_shot=False, stock_guards=None,
              launch_pcm=None, projectile_sounds=None, tone_banks=None, dragon_carrier=None, dragon_impact_art=None,
-             dragon_impact_pcm=None, worm_source=None, basic_melee=False):
+             dragon_impact_pcm=None, worm_source=None, basic_melee=False, action_pcm=None):
     cruise_pilot = basic_shot and cruise_lab and (row.model==VIOLET_SHOT["model"] or any(row.model in cohort for cohort in (
         STATIC_CRUISE_SHOTS, STATIC_CRUISE_PHASE_SHOTS, CRUISE_CHARGE_SHOTS, ANIMATED_CRUISE_SHOTS)))
     clocked_pilot = basic_shot and row.model in CLOCKED_GROUND_SHOTS
@@ -1230,6 +1232,31 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         files["gameplay.txt"] += f"movement-sound=landing|{landing_path}\n".encode("ascii")
         battle_receipt["authored_landing_sound"] = {
             "path": landing_path, "trigger": "landing cue", "retail_trigger_verified": False}
+    if action_pcm and battle_receipt is not None and "gameplay.txt" in files:
+        cues = action_sfx_index(actions, tone_banks)
+        if cues:
+            text = files["gameplay.txt"].decode("ascii")
+            moves = [line[5:].split("|") for line in text.splitlines() if line.startswith("move=")]
+            bound = []
+            for slot, cue in enumerate(cues):
+                tone = (cue.get("bank"), cue.get("tone"))
+                pcm = action_pcm.get(tone)
+                if not pcm:
+                    continue
+                groups = {route.get("action_group") for route in cue.get("routes") or []}
+                button = "x" if groups & {"X", "X-charge"} else "b"
+                target = next((move for move in moves if len(move) > 1 and move[1] == button), None)
+                if not target or any(item["move"] == target[0] for item in bound):
+                    continue
+                path = f"audio/action-{slot}.pcm"
+                files[path] = pcm
+                files["gameplay.txt"] += f"action-sound={target[0]}|{path}\n".encode("ascii")
+                bound.append({"path": path, "move": target[0],
+                              "source_sound_id": cue["source_sound_id"],
+                              "routes": sorted(group for group in groups if group),
+                              "retail_trigger_verified": False})
+            if bound:
+                battle_receipt["authored_action_sounds"] = bound
     files["catalog.txt"] = catalog.encode("ascii")
     summary = {
         "id": row.id, "variant": 0, "member": member_index, "member_sha256": member_digest,
@@ -1422,6 +1449,20 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             worm_tones-=tones
             if worm_tones:
                 launch_pcm.update(decode_shot_audio(shot_audio_decoder,worm_tones,shared_files,shared_index["audio_bank_members"]))
+        action_pcm = {}
+        if shot_audio_decoder is not None and tone_banks is not None:
+            # The curated action-SFX tables only ever reference a handful of
+            # sound ids, so their tones can be decoded before any package is
+            # written; the per-model cue index then just looks them up.
+            action_ids = {entry[3] for entry in DIRECT.values()} | {RELAY_SOUND_ID}
+            action_tones = set()
+            for sound_id in sorted(action_ids):
+                tone = pilot_launch_tone(tone_candidate(sound_id, tone_banks))
+                if tone is not None:
+                    action_tones.add(tone)
+            if action_tones:
+                action_pcm = decode_shot_audio(shot_audio_decoder, action_tones, shared_files,
+                                               shared_index["audio_bank_members"])
         sound_index = "shared-projectile-sfx.json"
         shared_files[sound_index] = json_line(projectile_sound)
         shared_index["projectile_sfx_index"] = sound_index
@@ -1522,7 +1563,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
                                         launch_pcm=launch_pcm,projectile_sounds=projectile_sound["tables"],tone_banks=tone_banks,
                                         dragon_carrier=dragon_carriers["borgs"].get(row.id),
                                          dragon_impact_art=art_files["effects/common-single.hsd"],dragon_impact_pcm=impact_pcm,
-                                         worm_source=worm_shots.get(row.model),basic_melee=basic_melee)
+                                         worm_source=worm_shots.get(row.model),basic_melee=basic_melee,
+                                         action_pcm=action_pcm)
             if "dragon_carrier_collision" in summary:
                 dragon_carriers["borgs"][row.id]["collision"]=summary["dragon_carrier_collision"]
                 dragon_carriers["borgs"][row.id]["visuals"]=summary["dragon_carrier_visuals"]

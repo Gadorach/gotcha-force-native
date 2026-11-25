@@ -587,6 +587,19 @@ restart clears it. `air-jump-points=N` is an opt-in for native grounded
 movement; takeoff uses the first point and landing resets the count.
 Sasuke's normal test profile uses three points, not his recovered controller.
 
+`action-sound=move|path` attaches one bounded PCM clip to a move; it plays once
+when that move's start is accepted, through the same one-shot voice pool as the
+launch, release and impact cues. The move must exist and the path must be
+package-relative; an unknown move, an absolute path or a duplicate all refuse.
+
+Extraction binds it from the curated action-SFX tables: the eleven recoverable
+Borgs whose recovered cue group matches a bound button get
+`action-sound=<move>|audio/action-N.pcm`, and each binding records
+`retail_trigger_verified: false` because only the sample is recovered. The two
+remaining Borgs with cues, `0104` and `0c05`, are refused deliberately: both
+carry only a `b` move while their recovered cues belong to `X`, so binding them
+would play an X action sound on B.
+
 `movement-sound=cue|path` independently binds a local raw stereo 48 kHz
 signed 16-bit little-endian PCM clip (up to 3 seconds). The extractor now emits
 `movement-sound=landing|audio/lab-landing.pcm` for the 181 packages whose landing
