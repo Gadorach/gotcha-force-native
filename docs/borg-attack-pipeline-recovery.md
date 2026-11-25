@@ -614,9 +614,18 @@ amount = trunc(base
                × relative)
 ```
 
-Both captured hits reproduce exactly. The only unnamed input is the semantic
-of `owner998`; it behaves as a half-damage guard/critical flag, but the name is
-not recovered.
+Both captured hits reproduce exactly. The credit rows themselves are **paired
+by side** at `0x804335E0`:
+
+| Variant | Difficulty | Rank | Hit |
+| --- | --- | --- | --- |
+| 0 | 1.02 | 0.85 | Kakeru (G-Red's side) |
+| 1 | 0.92 | 0.85 | Mana (the other side) |
+
+So the credit factor is not a per-pair category lookup: it is the credit
+side's variant plus the conditional half. The only unnamed input is the
+semantic of `owner998`; it behaves as a half-damage guard/critical flag, but the
+name is not recovered.
 
 The ladder is exported as
 [`api-map/contact-scalar-ladder.json`](api-map/contact-scalar-ladder.json) by

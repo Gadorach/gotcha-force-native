@@ -22,11 +22,13 @@ COUNT = 32
 SETTINGS = 0x803C4E60
 OBSERVATIONS = (
     {"state": "kakeru_battle", "team": 1, "byte": 16, "scalar": 1.13,
-     "credit_difficulty": 1.02, "credit_rank": 0.85, "conditional_half": False,
+     "credit_variant": 0, "credit_difficulty": 1.02, "credit_rank": 0.85,
+     "conditional_half": False,
      "verified": True, "hit": {"credit": "80365EC0", "receiver_model": 10,
                                "base": 20, "amount": 22}},
     {"state": "mana_combat_hud", "team": 1, "byte": 30, "scalar": 1.4,
-     "credit_difficulty": 0.92, "credit_rank": 0.85, "conditional_half": True,
+     "credit_variant": 1, "credit_difficulty": 0.92, "credit_rank": 0.85,
+     "conditional_half": True,
      "verified": True, "hit": {"credit": "802D4160", "receiver_model": 261,
                                "base": 5, "amount": 3}},
 )
@@ -54,6 +56,14 @@ def recover(image):
         "formula": "trunc(base * credit_difficulty * credit_rank * "
                    "(owner998 != 0 && owner136 == 0 ? 0.5 : 1) * "
                    "scalar(settings+team) * receiver_rank * tier * relative)",
+        "credit_rows": {
+            "pointer_table": "804335E0",
+            "variants": [
+                {"variant": 0, "difficulty": 1.02, "rank": 0.85},
+                {"variant": 1, "difficulty": 0.92, "rank": 0.85},
+            ],
+            "note": "The difficulty/rank rows are paired by the credit side; the Kakeru hit uses variant 0, the Mana hit variant 1.",
+        },
         "settings": {
             "address": f"{SETTINGS:08X}",
             "index_expression": "byte at settings + team",
@@ -63,6 +73,7 @@ def recover(image):
             "The scalar is a battle/team value, not a Borg value.",
             "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
             "The Mana hit also applies the conditional 0.5: credit difficulty 0.92 x rank 0.85 x 0.5 = 0.391; the Kakeru hit does not (owner998 = 0).",
+            "The difficulty/rank rows at 804335E0 are paired [1.02, 0.92] and [0.85, 0.85]; the credit side selects the variant.",
             "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows.",
         ],
     }

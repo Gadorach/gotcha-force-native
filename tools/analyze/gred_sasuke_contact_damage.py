@@ -89,12 +89,14 @@ def recover(image):
             "credit_difficulty": {
                 "value": round(difficulty, 6),
                 "address": f"{CREDIT_DIFFICULTY_ROW:08X}",
-                "index": 0,
+                "variant": 0,
+                "pointer_table": "804335E0",
             },
             "credit_rank": {
                 "value": round(credit_rank, 6),
                 "address": f"{CREDIT_RANK_ROW:08X}",
-                "index": 0,
+                "variant": 0,
+                "pointer_table": "804335E0",
             },
             "matchup": {
                 "value": round(matchup, 6),
@@ -142,6 +144,7 @@ def recover(image):
         "notes": [
             "The amount is a live boost/contact observation, not a beam-table result.",
             "The 0.867 matchup is credit difficulty 1.02 x credit rank 0.85, both GFDA rows; the 0x802C5D60 matrix is not in this chain.",
+            "The credit rows are paired at 804335E0: variant 0 is 1.02/0.85, variant 1 is 0.92/0.85.",
             "The 1.13 scalar index 16 comes from settings 0x803C4E60, team 1, byte 16.",
             "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies receiver difficulty 0.9 and the health/force rows.",
             "generalises_to_other_pairs is false until the per-pair credit/rank rows and the battle settings index are read for other pairs.",

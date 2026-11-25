@@ -1,6 +1,22 @@
 {
   "address": "802C6820",
   "count": 32,
+  "credit_rows": {
+    "note": "The difficulty/rank rows are paired by the credit side; the Kakeru hit uses variant 0, the Mana hit variant 1.",
+    "pointer_table": "804335E0",
+    "variants": [
+      {
+        "difficulty": 1.02,
+        "rank": 0.85,
+        "variant": 0
+      },
+      {
+        "difficulty": 0.92,
+        "rank": 0.85,
+        "variant": 1
+      }
+    ]
+  },
   "entries": [
     0.97,
     0.98,
@@ -41,6 +57,7 @@
     "The scalar is a battle/team value, not a Borg value.",
     "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
     "The Mana hit also applies the conditional 0.5: credit difficulty 0.92 x rank 0.85 x 0.5 = 0.391; the Kakeru hit does not (owner998 = 0).",
+    "The difficulty/rank rows at 804335E0 are paired [1.02, 0.92] and [0.85, 0.85]; the credit side selects the variant.",
     "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows."
   ],
   "revision": 1,
@@ -53,6 +70,7 @@
         "conditional_half": false,
         "credit_difficulty": 1.02,
         "credit_rank": 0.85,
+        "credit_variant": 0,
         "hit": {
           "amount": 22,
           "base": 20,
@@ -69,6 +87,7 @@
         "conditional_half": true,
         "credit_difficulty": 0.92,
         "credit_rank": 0.85,
+        "credit_variant": 1,
         "hit": {
           "amount": 3,
           "base": 5,
