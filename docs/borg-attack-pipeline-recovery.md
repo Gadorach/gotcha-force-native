@@ -482,9 +482,33 @@ hit is G-Red's own config record, which names the attacker without needing the
 pair scan.
 
 That closes the observed chain for this pair: **G-Red's boost/contact on
-Sasuke** computes factor index `32 - 9600/300 = 0`, selects `1.15`, and applies
-**22** to Sasuke's HP and ledger. The move-level name still needs the carrier
-row, but the attacker, receiver, arithmetic and HP write are all identified.
+Sasuke** computes factor index `32 - 9600/300 = 0`, selects the receiver-rank
+`1.15` entry, and applies **22** to Sasuke's HP and ledger.
+
+The base amount is also already extracted. `tools/extract/gred_sasuke_damage.py`
+guards `read(0x80365EC0, 2) == 20` and calls it the **source beam row amount**;
+that is the first halfword of the very credit record the live call passes in.
+The extracted GFDA table
+(`fb220836…` for this DOL) has the matching factor rows:
+
+| Row | First entries |
+| --- | --- |
+| CreditDifficulty | 1.02, 1.02, 1.01 |
+| CreditRank | 0.85, 0.9, 0.95, 1.0 |
+| ReceiverDifficulty | 0.9, 0.9, 0.91 |
+| ReceiverRank | **1.15**, 1.1, 1.05, 1.0 |
+| ReceiverTier | 1.0, 0.8, 0.5, 0.25 |
+
+So the live value is `base 20 × factor product`. `20 × 1.1 = 22` exactly, and
+`20 × 1.15 × 0.99 = 22.77` truncates to 22; either way the observed 22 sits in
+the table's own range. The remaining exactness is the **index selection** for
+each row: the health index is the one captured at `8003CF70`, while the
+difficulty/rank/tier and force indices come from the sample fields. That is the
+last step before the amount can be called table-derived rather than
+observation-only.
+
+The move-level name still needs the carrier row, but the attacker, receiver,
+base amount, factor row and HP write are all identified.
 
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only
