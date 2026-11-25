@@ -533,21 +533,32 @@ So the live boost amount is exact:
 22.533329 = 20 x 0.867 x 1.13 x 1.15
 ```
 
-- `0.867` is `1.02 x 0.85`: credit difficulty times credit rank.
-- `1.13` is `1 + 0.5*(relative - 1)`, so the relative operand is **1.26**.
-  The operand is read from the receiver-side actor in `r6`, not from the
-  carrier: the live `carrier+180` read was `1.082251`, so the carrier field is
-  not the source. A direct receiver `+180` read is the one confirmation still
-  missing; two later runs missed the hit window before it could be logged.
-- `1.15` is the ReceiverRank row at index 0.
-- The sites at `D100`, `D1EC`, `D260` and `D270` leave `f31` unchanged, so the
-  health/force rows are 1.0 on this hit (or skipped).
+- `0.867` is applied at `D024`.
+- `1.13` is applied at `D100`, from the table load at `D0F8` (indexed by the
+  receiver-side fields), **not** by the relative adjustment.
+- `1.15` is applied at `D290`.
+- The sites at `D1EC`, `D260` and `D270` leave `f31` unchanged, so those rows
+  are 1.0 on this hit (or skipped).
+
+The relative adjustment is a red herring: the source actor is the receiver
+(`0x805DDBC0`, Sasuke), its `+180` reads **1.0**, and the `D16C` multiply is
+therefore neutral. The earlier reading of `1.13` as a relative factor was
+wrong; it is the table factor at `D100`.
+
+The measured multipliers also do **not** match the GFDA beam rows: the table
+contains `1.02/0.85/0.9/1.15/1.1/1.05/1.0/…`, not `0.867` or `1.13` (only
+`0.867 = 1.02 × 0.85` would, and `D024` performs a single multiply). So the
+boost path reads a **different runtime table family** (the `0x803335E0` /
+`0x8033419C` pointers walked by the same function), not the extracted beam
+rows. That is the concrete next step: identify those tables and the indices
+that select `0.867` and `1.13`.
 
 This also explains the difference from the beam table. With the same caps the
 host replay asserts **19** (depleted receiver Force) and **20** (full Force),
-because the beam path additionally applies receiver difficulty `0.9`; the
-boost path measured here does not. The two paths share the base `20` and the
-table rows, but not the full factor chain.
+because the beam path applies the GFDA rows, including receiver difficulty
+`0.9`; the boost path measured here instead reads the runtime tables and lands
+on `0.867 × 1.13 × 1.15`. The two paths share the base `20` and the HP/ledger
+write, but not the factor tables.
 
 The move-level name still needs the carrier row, but the attacker, receiver,
 base amount, the applied factors and the HP write are all identified, and the

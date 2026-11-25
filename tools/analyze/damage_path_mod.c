@@ -158,6 +158,20 @@ FACTOR_FN(factor_d0b4, 0xD0B4)
 FACTOR_FN(factor_d100, 0xD100)
 FACTOR_FN(factor_d128, 0xD128)
 FACTOR_FN(factor_d16c, 0xD16C)
+
+static void factor_d134(CPUState* state)
+{
+    static unsigned count;
+    const uint32_t actor = state->gpr[6];
+    const uint32_t bits =
+        (uint32_t)moderngekko_mod_read(state, actor + 180u, 4);
+    float relative = 0.0f;
+    __builtin_memcpy(&relative, &bits, sizeof(relative));
+    if (count++ < 8u)
+        fprintf(stderr, "damage-path: relative-source actor=%08X id=%d "
+                        "plus180=%.6f\n",
+                actor, actor_id(state, actor), (double)relative);
+}
 FACTOR_FN(factor_d1ec, 0xD1EC)
 FACTOR_FN(factor_d260, 0xD260)
 FACTOR_FN(factor_d270, 0xD270)
@@ -174,6 +188,7 @@ static const ModernGekkoModHook hooks[] = {
     RECOMP_HOOK(0x8003D0B4u, factor_d0b4),
     RECOMP_HOOK(0x8003D100u, factor_d100),
     RECOMP_HOOK(0x8003D128u, factor_d128),
+    RECOMP_HOOK(0x8003D134u, factor_d134),
     RECOMP_HOOK(0x8003D16Cu, factor_d16c),
     RECOMP_HOOK(0x8003D1ECu, factor_d1ec),
     RECOMP_HOOK(0x8003D260u, factor_d260),
