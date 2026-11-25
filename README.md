@@ -107,6 +107,10 @@ texture or audio bytes; each regenerates from a local roster.
   direct-call graph from twelve scene/actor/collision/reaction/damage/action
   roots, plus the dispatch-table entries. Tool:
   `tools/analyze/retail_battle_engine_map.py`.
+- [Action class map](docs/api-map/retail-action-class-map.json) — the original
+  two-level dispatch: 32 family entries and six sub-tables selected by
+  `actor+0x580` and `actor+0x581`, with match status. Tool:
+  `tools/analyze/action_class_map.py`.
 
 Two recovery records carry the reasoning rather than the data:
 

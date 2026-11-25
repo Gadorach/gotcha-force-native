@@ -1,0 +1,879 @@
+{
+  "family_entry": "8006FACC",
+  "family_index": "actor+0x580",
+  "family_table": {
+    "address": "802D3B68",
+    "entries": [
+      {
+        "class": 0,
+        "handler": "8006FB08",
+        "name": "fn_8006FB08",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 1,
+        "handler": "80070604",
+        "name": "fn_80070604",
+        "score": 0,
+        "size": 108,
+        "status": "matched"
+      },
+      {
+        "class": 2,
+        "handler": "80071598",
+        "name": "fn_80071598",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 3,
+        "handler": "800716D8",
+        "name": "fn_800716D8",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 4,
+        "handler": "80071A84",
+        "name": "fn_80071A84",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 5,
+        "handler": "8006FB44",
+        "name": "fn_8006FB44",
+        "score": 0,
+        "size": 72,
+        "status": "matched"
+      },
+      {
+        "class": 6,
+        "handler": "8006FDB8",
+        "name": "fn_8006FDB8",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 7,
+        "handler": "8006FDB8",
+        "name": "fn_8006FDB8",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 8,
+        "handler": "80070024",
+        "name": "fn_80070024",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 9,
+        "handler": "80070024",
+        "name": "fn_80070024",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 10,
+        "handler": "8006FB44",
+        "name": "fn_8006FB44",
+        "score": 0,
+        "size": 72,
+        "status": "matched"
+      },
+      {
+        "class": 11,
+        "handler": "8006FDB8",
+        "name": "fn_8006FDB8",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 12,
+        "handler": "8006FDB8",
+        "name": "fn_8006FDB8",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 13,
+        "handler": "80070024",
+        "name": "fn_80070024",
+        "score": 0,
+        "size": 60,
+        "status": "matched"
+      },
+      {
+        "class": 14,
+        "handler": "80070280",
+        "name": "fn_80070280",
+        "score": 0,
+        "size": 72,
+        "status": "matched"
+      },
+      {
+        "class": 15,
+        "handler": "8006FB8C",
+        "name": "fn_8006FB8C",
+        "score": 0,
+        "size": 152,
+        "status": "matched"
+      },
+      {
+        "class": 16,
+        "handler": "8006FC24",
+        "name": "fn_8006FC24",
+        "score": 0,
+        "size": 148,
+        "status": "matched"
+      },
+      {
+        "class": 17,
+        "handler": "8006FCB8",
+        "name": "fn_8006FCB8",
+        "score": 0,
+        "size": 256,
+        "status": "matched"
+      },
+      {
+        "class": 18,
+        "handler": "8006FDF4",
+        "name": "fn_8006FDF4",
+        "score": 0,
+        "size": 96,
+        "status": "matched"
+      },
+      {
+        "class": 19,
+        "handler": "8006FE54",
+        "name": "fn_8006FE54",
+        "score": 0,
+        "size": 172,
+        "status": "matched"
+      },
+      {
+        "class": 20,
+        "handler": "8006FF00",
+        "name": "fn_8006FF00",
+        "score": 10,
+        "size": 292,
+        "status": "open"
+      },
+      {
+        "class": 21,
+        "handler": "80070060",
+        "name": "fn_80070060",
+        "score": 5,
+        "size": 148,
+        "status": "open"
+      },
+      {
+        "class": 22,
+        "handler": "800700F4",
+        "name": "fn_800700F4",
+        "score": 35,
+        "size": 148,
+        "status": "open"
+      },
+      {
+        "class": 23,
+        "handler": "80070188",
+        "name": "fn_80070188",
+        "score": 15,
+        "size": 248,
+        "status": "open"
+      },
+      {
+        "class": 24,
+        "handler": "800702C8",
+        "name": "fn_800702C8",
+        "score": 0,
+        "size": 212,
+        "status": "matched"
+      },
+      {
+        "class": 25,
+        "handler": "8007039C",
+        "name": "fn_8007039C",
+        "score": 0,
+        "size": 148,
+        "status": "matched"
+      },
+      {
+        "class": 26,
+        "handler": "80070430",
+        "name": "fn_80070430",
+        "score": 0,
+        "size": 256,
+        "status": "matched"
+      },
+      {
+        "class": 27,
+        "handler": "80070670",
+        "name": "fn_80070670",
+        "score": 0,
+        "size": 40,
+        "status": "matched"
+      },
+      {
+        "class": 28,
+        "handler": "80070670",
+        "name": "fn_80070670",
+        "score": 0,
+        "size": 40,
+        "status": "matched"
+      },
+      {
+        "class": 29,
+        "handler": "80070C7C",
+        "name": "fn_80070C7C",
+        "score": 0,
+        "size": 80,
+        "status": "matched"
+      },
+      {
+        "class": 30,
+        "handler": "800710D8",
+        "name": "fn_800710D8",
+        "score": 0,
+        "size": 80,
+        "status": "matched"
+      },
+      {
+        "class": 31,
+        "handler": "80070698",
+        "name": "fn_80070698",
+        "score": 0,
+        "size": 80,
+        "status": "matched"
+      }
+    ]
+  },
+  "kind": "gf-retail-action-class-map",
+  "notes": [
+    "Two-level dispatch: family byte then sub-class byte select shared handlers.",
+    "Handler status comes from the optional private decomp database; no source is copied."
+  ],
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "sub_index": "actor+0x581",
+  "subtables": [
+    {
+      "address": "802D3B7C",
+      "entries": [
+        {
+          "handler": "8006FB44",
+          "index": 0,
+          "name": "fn_8006FB44",
+          "score": 0,
+          "size": 72,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FDB8",
+          "index": 1,
+          "name": "fn_8006FDB8",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FDB8",
+          "index": 2,
+          "name": "fn_8006FDB8",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80070024",
+          "index": 3,
+          "name": "fn_80070024",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80070024",
+          "index": 4,
+          "name": "fn_80070024",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FB44",
+          "index": 5,
+          "name": "fn_8006FB44",
+          "score": 0,
+          "size": 72,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FDB8",
+          "index": 6,
+          "name": "fn_8006FDB8",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FDB8",
+          "index": 7,
+          "name": "fn_8006FDB8",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80070024",
+          "index": 8,
+          "name": "fn_80070024",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80070280",
+          "index": 9,
+          "name": "fn_80070280",
+          "score": 0,
+          "size": 72,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FB8C",
+          "index": 10,
+          "name": "fn_8006FB8C",
+          "score": 0,
+          "size": 152,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FC24",
+          "index": 11,
+          "name": "fn_8006FC24",
+          "score": 0,
+          "size": 148,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FCB8",
+          "index": 12,
+          "name": "fn_8006FCB8",
+          "score": 0,
+          "size": 256,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FDF4",
+          "index": 13,
+          "name": "fn_8006FDF4",
+          "score": 0,
+          "size": 96,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FE54",
+          "index": 14,
+          "name": "fn_8006FE54",
+          "score": 0,
+          "size": 172,
+          "status": "matched"
+        },
+        {
+          "handler": "8006FF00",
+          "index": 15,
+          "name": "fn_8006FF00",
+          "score": 10,
+          "size": 292,
+          "status": "open"
+        }
+      ],
+      "name": "b-shot"
+    },
+    {
+      "address": "802D3BD4",
+      "entries": [
+        {
+          "handler": "80070670",
+          "index": 0,
+          "name": "fn_80070670",
+          "score": 0,
+          "size": 40,
+          "status": "matched"
+        },
+        {
+          "handler": "80070670",
+          "index": 1,
+          "name": "fn_80070670",
+          "score": 0,
+          "size": 40,
+          "status": "matched"
+        },
+        {
+          "handler": "80070C7C",
+          "index": 2,
+          "name": "fn_80070C7C",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "800710D8",
+          "index": 3,
+          "name": "fn_800710D8",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80070698",
+          "index": 4,
+          "name": "fn_80070698",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80070670",
+          "index": 5,
+          "name": "fn_80070670",
+          "score": 0,
+          "size": 40,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 6,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 7,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "800710D8",
+          "index": 8,
+          "name": "fn_800710D8",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80070698",
+          "index": 9,
+          "name": "fn_80070698",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        }
+      ],
+      "name": "b-close-default"
+    },
+    {
+      "address": "802D3BE8",
+      "entries": [
+        {
+          "handler": "80070670",
+          "index": 0,
+          "name": "fn_80070670",
+          "score": 0,
+          "size": 40,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 1,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 2,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "800710D8",
+          "index": 3,
+          "name": "fn_800710D8",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80070698",
+          "index": 4,
+          "name": "fn_80070698",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        }
+      ],
+      "name": "b-close-model-000a"
+    },
+    {
+      "address": "802D3C48",
+      "entries": [
+        {
+          "handler": "800715D4",
+          "index": 0,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 1,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 2,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 3,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "800715D4",
+          "index": 4,
+          "name": "fn_800715D4",
+          "score": 0,
+          "size": 36,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 5,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 6,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 7,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 8,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 9,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071750",
+          "index": 10,
+          "name": "fn_80071750",
+          "score": 415,
+          "size": 264,
+          "status": "open"
+        },
+        {
+          "handler": "80071858",
+          "index": 11,
+          "name": "fn_80071858",
+          "score": 720,
+          "size": 224,
+          "status": "open"
+        },
+        {
+          "handler": "80071938",
+          "index": 12,
+          "name": "fn_80071938",
+          "score": 1015,
+          "size": 332,
+          "status": "open"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 13,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 14,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 15,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        }
+      ],
+      "name": "x"
+    },
+    {
+      "address": "802D3C5C",
+      "entries": [
+        {
+          "handler": "80071714",
+          "index": 0,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 1,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 2,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 3,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071714",
+          "index": 4,
+          "name": "fn_80071714",
+          "score": 0,
+          "size": 60,
+          "status": "matched"
+        },
+        {
+          "handler": "80071750",
+          "index": 5,
+          "name": "fn_80071750",
+          "score": 415,
+          "size": 264,
+          "status": "open"
+        },
+        {
+          "handler": "80071858",
+          "index": 6,
+          "name": "fn_80071858",
+          "score": 720,
+          "size": 224,
+          "status": "open"
+        },
+        {
+          "handler": "80071938",
+          "index": 7,
+          "name": "fn_80071938",
+          "score": 1015,
+          "size": 332,
+          "status": "open"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 8,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 9,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 10,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071E4C",
+          "index": 11,
+          "name": "fn_80071E4C",
+          "score": 365,
+          "size": 76,
+          "status": "open"
+        },
+        {
+          "handler": "80071E4C",
+          "index": 12,
+          "name": "fn_80071E4C",
+          "score": 365,
+          "size": 76,
+          "status": "open"
+        },
+        {
+          "handler": "80071B10",
+          "index": 13,
+          "name": "fn_80071B10",
+          "score": 205,
+          "size": 320,
+          "status": "open"
+        },
+        {
+          "handler": "80071C50",
+          "index": 14,
+          "name": "fn_80071C50",
+          "score": 805,
+          "size": 296,
+          "status": "open"
+        },
+        {
+          "handler": "80071D78",
+          "index": 15,
+          "name": "fn_80071D78",
+          "score": 265,
+          "size": 212,
+          "status": "open"
+        }
+      ],
+      "name": "class-3"
+    },
+    {
+      "address": "802D3C7C",
+      "entries": [
+        {
+          "handler": "80071AC0",
+          "index": 0,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 1,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071AC0",
+          "index": 2,
+          "name": "fn_80071AC0",
+          "score": 0,
+          "size": 80,
+          "status": "matched"
+        },
+        {
+          "handler": "80071E4C",
+          "index": 3,
+          "name": "fn_80071E4C",
+          "score": 365,
+          "size": 76,
+          "status": "open"
+        },
+        {
+          "handler": "80071E4C",
+          "index": 4,
+          "name": "fn_80071E4C",
+          "score": 365,
+          "size": 76,
+          "status": "open"
+        },
+        {
+          "handler": "80071B10",
+          "index": 5,
+          "name": "fn_80071B10",
+          "score": 205,
+          "size": 320,
+          "status": "open"
+        },
+        {
+          "handler": "80071C50",
+          "index": 6,
+          "name": "fn_80071C50",
+          "score": 805,
+          "size": 296,
+          "status": "open"
+        },
+        {
+          "handler": "80071D78",
+          "index": 7,
+          "name": "fn_80071D78",
+          "score": 265,
+          "size": 212,
+          "status": "open"
+        }
+      ],
+      "name": "class-4"
+    }
+  ]
+}

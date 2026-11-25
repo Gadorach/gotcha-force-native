@@ -41,6 +41,23 @@ This is how the original handles "all those Borg functions": a shared class
 handler table, with per-Borg data selecting the class. It is not a branch on the
 Borg ID.
 
+Each family handler dispatches a **second** time on `actor+0x581`:
+
+| Family | Sub-table | Notes |
+| --- | --- | --- |
+| `8006FB08` | `802D3B7C` | B-shot sub-classes |
+| `80070604` | `802D3BE8` if model `0x000A`, else `802D3BD4` | B-close, two variants |
+| `80071598` | `802D3C48` | X sub-classes |
+| `800716D8` | `802D3C5C` | class 3 |
+| `80071A84` | `802D3C7C` | class 4 |
+
+The full map is published in
+[`api-map/retail-action-class-map.json`](api-map/retail-action-class-map.json):
+32 family entries, 28 matched. The sub-tables contain the small shared state
+machines (`8006FB44`, `8006FDB8`, `80070024`, `80070670`, `80070C7C`,
+`800710D8`, `80071714`, `80071AC0`, …), and most are byte-matched. A handful of
+sub-handlers remain open (`8006FF00`, `80071750`, `80071858`, `80071938`, …).
+
 The scene/actor layers use the same pattern:
 
 - `fn_80028264`: `lbl_802CFDE0[scene_state]()` then advances a frame counter.
