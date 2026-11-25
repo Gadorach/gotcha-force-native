@@ -49,5 +49,13 @@ int main(){
     check(duel.actors()[1].position[0]-duel.actors()[0].position[0]>=2*close.actor_radius-.01f,"Borg bodies cannot walk through each other");
     BattleMvpConfig bad;bad.gravity=0;check(!duel.start(bad),"invalid prototype tuning refuses");
     muzzle[0]=BattleMvpVec{std::numeric_limits<f32>::quiet_NaN(),0,0};check(!duel.step({},false,nullptr,&muzzle),"invalid weapon origin refuses");
-    std::printf("native MVP duel movement/jump/AI/beam/bullet/shuriken/bomb/damage/restart: %u checks PASS\n",checks);
+    const auto idle_gauge=battle_charge_gauge(0,10,40);
+    check(idle_gauge.total==0&&idle_gauge.elapsed==0,"no charge window reports no gauge");
+    const auto mid_gauge=battle_charge_gauge(20,10,22);
+    check(mid_gauge.total==20&&mid_gauge.elapsed==12,"charge gauge counts from the started tick");
+    const auto full_gauge=battle_charge_gauge(20,10,99);
+    check(full_gauge.elapsed==20,"charge gauge clamps at its total");
+    const auto early_gauge=battle_charge_gauge(20,10,4);
+    check(early_gauge.elapsed==0,"charge gauge does not run backwards");
+    std::printf("native MVP duel movement/jump/AI/beam/bullet/shuriken/bomb/damage/restart/charge gauge: %u checks PASS\n",checks);
 }

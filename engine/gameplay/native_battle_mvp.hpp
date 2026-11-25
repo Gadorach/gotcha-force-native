@@ -47,6 +47,7 @@ struct BattleMvpActor {
     u8 package_move=BorgBattleActionState::none;
     u16 package_frame=0;
     u32 package_action_born=0;
+    u16 package_charge_total=0; // authored charge window for the active move, zero when idle
     u32 package_damage_serial=0;
     u32 package_last_hit_tick=0;
     u8 package_movement_cues=0;
@@ -201,6 +202,19 @@ inline bool native_gred_relaunch_acceleration_valid(f32 value){
 // Exact soft-Up branch of the qualified normal G-Red ascent turn (gain1).
 // Recover the stored body angle without accepting a tolerance on travel:
 // bounded atan2 can truncate one unit away from the exact forward vector.
+// Charge-gauge progress for an active authored charge window. Elapsed is
+// clamped to the total, so a move that outlives its window reports full
+// rather than overflowing, and an idle actor reports zero.
+struct BattleChargeGauge { u16 total=0, elapsed=0; };
+inline BattleChargeGauge battle_charge_gauge(u16 total,u32 born,u32 tick){
+    BattleChargeGauge gauge;
+    if(!total)return gauge;
+    gauge.total=total;
+    const u32 spent=tick>=born?tick-born:0;
+    gauge.elapsed=u16(spent<total?spent:total);
+    return gauge;
+}
+
 inline bool native_gred_relaunch_up_turn(const NativeBorgMovementFrame& camera,BattlePoint before,s16 travel,BattlePoint after){
     CharacterMovementHeadingFrame frame;
     if(!native_borg_source_heading_frame(camera,before,&frame))return false;
@@ -1764,6 +1778,7 @@ public:
                             // The source movement program owns the burst; the
                             // native controller reuses its existing dash state.
                             const auto ticks=package.moves[move].charge->ticks;
+                            actor.package_charge_total=u16(ticks);
                             actor.dash_ticks=actor.dash_duration=ticks;
                             actor.dash_direction=actor.facing;
                             actor.dash_motion=BattleMvpDashDirection::Forward;
@@ -1771,6 +1786,8 @@ public:
                             if(actor.dash_airborne){++actor.air_dashes_used;actor.vertical_speed=0;actor.takeoff_ticks=0;}
                         }
                     }
+                    if(kind==BorgBattleEventKind::Completed||kind==BorgBattleEventKind::Interrupted)
+                        actor.package_charge_total=0;
                     if(kind==BorgBattleEventKind::Started||kind==BorgBattleEventKind::Repeated||
                        kind==BorgBattleEventKind::Completed||kind==BorgBattleEventKind::Interrupted){
                         actor.package_aim_heading.reset();actor.package_aim_slope=0;actor.aim_facing=tracking;

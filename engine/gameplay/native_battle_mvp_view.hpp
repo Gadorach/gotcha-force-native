@@ -922,6 +922,20 @@ public:
             world.result()==BattleMvpResult::GRedWins?(package?"PLAYER 1 WINS":"G-RED WINS"):
             world.result()==BattleMvpResult::SasukeWins?(package?"PLAYER 2 WINS":"SASUKE WINS"):"DRAW")+" - Q TO RESTART";
         else if(world.paused())status+=source_practice_?"\nPAUSED AT TICK "+std::to_string(world.tick()):"\nPAUSED";
+        if(package&&world.actor_count()>0){
+            const auto& self=world.actors()[0];
+            std::string hud="P1 HP "+std::to_string(int(self.health));
+            if(world.actor_count()>1)hud+="   P2 HP "+std::to_string(int(world.actors()[1].health));
+            const auto gauge=battle_charge_gauge(self.package_charge_total,self.package_action_born,world.tick());
+            if(gauge.total){
+                constexpr unsigned cells=16;
+                const unsigned filled=unsigned((u32(gauge.elapsed)*cells)/gauge.total);
+                std::string bar(cells,'-');
+                for(unsigned i=0;i<filled;++i)bar[i]='#';
+                hud+="\nCHARGE ["+bar+"] "+std::to_string(int(gauge.elapsed))+"/"+std::to_string(int(gauge.total));
+            }
+            draws+=text_.draw(render,hud,24,16,style);
+        }
         const s32 status_y=source_practice_?std::max(0,height-16-
             s32(1+std::count(status.begin(),status.end(),'\n'))*text_.line_height(style)):height-80;
         draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;

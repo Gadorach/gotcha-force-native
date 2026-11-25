@@ -797,6 +797,14 @@ exits still end it, and the move may also carry a `field` or `melee`.
 This maps an authored charged-movement program; it does not implement the
 source's typed contact shape.
 
+The same `ticks` value is published as the actor's charge window
+(`package_charge_total`) while the move is active, and the Battle Test HUD
+draws it as `CHARGE [####------------] elapsed/total` beside the health
+line. `battle_charge_gauge(total, born, tick)` is the clamped progress
+helper: it reports zero when no window is open and never exceeds the
+total. The gauge is presentation for the authored window, not a recovered
+retail charge meter.
+
 `free-release=move` marks a static-pose move whose releases are all
 zero-cost; it is the explicit no-stock projectile form. It requires one
 or more releases, no `entry-stock`, and no paid release in the same move.
