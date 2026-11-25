@@ -1698,6 +1698,16 @@ classification:
   invent the hit. `0e00`/`0e05` are the separate sequence-child route
   (`801FC1B0`, then `8006A53C` on expiry).
 
+  The engine already carries windowed part mounting
+  (`part-record`/`part-pose`/`part-swap=move|slot|first|last|record`/
+  `part-swap-pose`), but those slots bind records from the shared effect
+  archive. These children resolve against the boss's **own** model
+  instead: `0e01`'s body is a six-root scene with 18 JObj candidates and
+  `0e04` a fifteen-joint variant, while `model_parts` reports no part
+  table for any of them. So the missing capability is model-local
+  part visibility keyed by a recovered root/JObj index, not another
+  archive-record mount.
+
   `8013212C` is now decoded far enough to show the child is a **part of
   the boss's own model**, not an independent actor. It gates on
   `lha actor+0x3E8` against the 40-byte row at `80336908 + sec*40` offset
@@ -1707,6 +1717,14 @@ classification:
   `80133530` at `+0x10C`, the owner at `+0x8C`, and a copy of the owner's
   transform and velocity. The 36-byte transform rows at
   `80336560 + idx*36` hold the corner layout `(0,±132,±232)`.
+
+  `0e00`/`0e05`'s other route is not a shot either. Their X calls
+  `800C74EC(actor, id)` with id 65, which indexes 8-byte rows at
+  `803072C8 + id*8` as `{s16, s16, u32 descriptor}`; the descriptor is a
+  24-byte `{u32 0x33010000, f32 2.0, f32 ±191, f32 532, f32 −1192,
+  f32 4.0}` pair, i.e. two mirrored part placements. `800C3BE0(actor,61)`
+  (the `0F02` branch) is a third child allocator with type byte 2 and
+  callbacks `800C3CDC`/`800C4468`. Neither writes a shot row.
 
   Two supporting facts close the compiled-content route. The exported
   shared effect archive (`effects/common-single.hsd`, 417,956 bytes,
@@ -1739,11 +1757,17 @@ classification:
   group-3 radius-310 sphere and the area child's shape handoff and show
   which lists receive it.
 
-  The damage owner entry is now located: `8003D358` checks the scene
-  flag at `scene+0x1F` and the actor byte at `actor+0x83`, writes a type
-  to `actor+0x1C8`, then stores `HP - r4` at `actor+0x1C6`. The remaining
-  join is the pair-scan result to that `r4` amount. The authored 12
-  damage remains the playable value until that join is executed.
+  `8003D358` is the HP writer: it checks the scene flag at `scene+0x1F`
+  and the actor byte at `actor+0x83`, writes a type to `actor+0x1C8`,
+  stores `HP - r4` at `actor+0x1C6`, clamps to `[0, actor+0x1C4]`,
+  mirrors the value through `actor+0x4A0`/`actor+0x4A4`, and returns
+  whether HP is now zero. It is **not statically reachable** from
+  `main.dol`: a scan of both text sections finds no `bl`/`b` to it, no
+  `0x8003D358` word in any data section, and no `lis`/`addi` address
+  materialisation. The amount join therefore goes through a
+  runtime-registered callback (or a region outside this DOL image), so
+  `r4` cannot be recovered by static reading alone. The authored 12
+  damage remains the playable value.
 
 Next passes should prefer a shared capability (X moves in the scripted
 showcase, breath/area, child ownership) over one-off per-Borg exceptions,
