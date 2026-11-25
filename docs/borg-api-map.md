@@ -80,6 +80,26 @@ Settling the amount therefore needs one capability the harness does not have
 today — a dynamic trace of a live battle that records the caller and `r4` at the
 damage site for a known attacker and defender. Until that exists, authored
 damage stays labelled rather than guessed.
+
+### One dispatcher, one missing subsystem
+
+Melee, shots and breath all reach the same entry. The close-B request that the
+knight pilot records as `800FEEA4` is
+`8004BEB8(actor, 15, group, choice, -1, -1)`, and `8004BEB8` is the shared
+cue/program request: it masks the request against `actor+0x579`, writes
+`actor+0x709`, and starts a program object from `actor+0x1D84` on the context at
+`actor+0x1CD4`.
+
+So the difference between a sword swing, a bullet and a breath is the program
+contents, not a per-family mechanism. `tools/analyze/lane_descriptors.py` already
+decodes clip lanes from those programs, but it exposes **no** shape, collision,
+hit or damage event.
+
+That is the single missing subsystem behind three separate gaps: the melee
+geometry for 91 Borgs, exact damage for all of them, and the attack timing that
+the authored window proxies stand in for. Porting the lane-event to shape/damage
+path is the next real unit, and it starts at `8004BEB8` and the program at
+`actor+0x1D84`.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
