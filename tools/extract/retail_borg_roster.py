@@ -807,7 +807,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     breath_pilot = basic_shot and row.model in breath.MODELS
     roach_pilot = basic_shot and row.model==roach.MODEL
     zeta_pilot = basic_shot and row.model in zfield.MODELS
-    charge_pilot = basic_shot and row.model in charge_field.MODELS
+    charge_pilot = basic_shot and row.model in charge_field.ALL_MODELS
     shot_pilot = basic_shot and (row.model in BASIC_SHOT_COHORT or cruise_pilot or clocked_pilot or static_ground_pilot or
                                 dragon_pilot or worm_pilot or tank_pilot or pair_pilot or single_shot_pilot or breath_pilot)
     held_pilot = basic_shot and row.model==gatling.MODEL

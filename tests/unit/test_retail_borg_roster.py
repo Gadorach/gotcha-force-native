@@ -194,8 +194,14 @@ class RosterFormatTests(unittest.TestCase):
         self.assertEqual(receipt["source_profile"]["program"],"0xC1")
         self.assertEqual(receipt["authored"]["charge_ticks"],20)
         self.assertFalse(receipt["retail_behavior_verified"])
+        brow={"state":0,"substate":0,"selector":44,"handler_pair":[61,0],
+              "class_callback_candidate":"801C04E8","contexts":[[0,0],[0,1]]}
+        bactions={"profiles":[{"groups":[{"group":"B-shot","rows":[brow]}]}]}
+        brules,_,breceipt=charge_field.battle_test(0x080A,joints,roles,{"native_units_per_tick_x100":500},[200],bactions)
+        self.assertIn(b"move=charge-hit|b|10|grounded|28|none\n",brules)
+        self.assertEqual(breceipt["source_profile"]["callback"],"801C04E8")
         actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=45)]
-        with self.assertRaisesRegex(ValueError,"X-charge row"):
+        with self.assertRaisesRegex(ValueError,"neutral charge row"):
             charge_field.battle_test(0x0806,joints,roles,{"native_units_per_tick_x100":500},[200],actions)
 
     def test_zeta_field_pilot_binds_shared_row_and_authors_the_field(self):

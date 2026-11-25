@@ -113,7 +113,10 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
                 raise ValueError(trace)
     if girl_worm:
         if "gg4e08:0308" in rows:
-            raise ValueError("Shadow Girl must not substitute a missing normal clip")
+            rules=(root/"borgs/gg4e08-0308/gameplay.txt").read_text()
+            if ("move=charge-hit|b|10|grounded|28|none" not in rules or
+                    "move=opening-slash" in rules):
+                raise ValueError("Shadow Girl must not substitute a missing normal clip")
         for id in ("0300","0304","0305","0307","0309","030a","030b","030d"):
             stable=f"gg4e08:{id}"
             profile=(root/f"borgs/gg4e08-{id}/gameplay.txt").read_text()
@@ -250,12 +253,13 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
         if not bodies or "0" in bodies:
             raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if charge_field:
-        for id in ("0806","0809","080f"):
+        for id in ("0806","0809","080f","080a","0308"):
             stable=f"gg4e08:{id}"
+            button="b" if id in ("080a","0308") else "x"
             rules=(root/f"borgs/gg4e08-{id}/gameplay.txt").read_text()
             for line in ("field=charge-hit|3|sphere|240|240|240|30|0|40|190|90|220|120",
                          "field-follow=charge-hit|source","field-core-damage=charge-hit|enemies|240|10|6",
-                         "move=charge-hit|x|10|grounded|28|none","move-charge=charge-hit|20"):
+                         f"move=charge-hit|{button}|10|grounded|28|none","move-charge=charge-hit|20"):
                 if line not in rules:
                     raise ValueError(f"{stable} lost its authored charge policy: {line}")
             trace=launch("show-attacks.sh",stable,"--frames","150","--no-audio")

@@ -72,7 +72,7 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen. The
-current preview run is forty requests lower for those reasons. The
+current preview run is forty-five requests lower for those reasons. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1527,7 +1527,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 191 of 206. The remaining 15 are no longer a
+Battle Test now covers 193 of 206. The remaining 13 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1578,25 +1578,21 @@ classification:
   Tank declare an `x` move and rely on the showcase's existing frame-41 and
   frame-126 presses; the HUD reports a missing B. Remaining X-side routes
   (`080a`) end in effect or child calls rather than an origin factory.
-- **Charge-field pilots** (`0806`, `0809`, `080f`, admitted): their X
-  callback `80156428` dispatches through `804346D8` (SDA base
-  `8043B5A0`) to mode 0 → `80156460` → state table `8034267C` →
-  `801564B0`/`801565CC`/`801566F0`, driving program `0xC1` through
-  `8006D144`/`8006E1AC` and the `800B22F4` velocity helper. The new
-  `move-charge` API reuses the native dash for that movement, and the
-  following field carries authored radius 240 / damage 10 / interval 6 /
-  lifetime 30. The source contact shape and damage receiver remain
-  unclaimed. All three keep their source health, pace and locomotion
-  roles.
-- **No neutral B row** (`0205`, `0308`, `080a`,
-  `0d06`, `0d07`): their B or X is state-specific, so there is no `0:0`
-  context to bind. The dispatchers confirm it is an action-state machine,
-  not a shot factory: `0308`'s `8010A508` uses table `80325A00`, `080A`'s
-  `801C04E8` uses `80383A0C`, and the destinations increment the actor's
-  `+0x540` state before re-dispatching. `0d06`/`0d07` expose only an
-  `X` selector with handler pair `[61,0]`. `0308` and `080a` remain:
-  their neutral B-shot callbacks dispatch through action-state tables
-  rather than a charge program or origin.
+- **Charge-field pilots** (`0806`, `0809`, `080f`, `080a`, `0308`,
+  admitted): the X group's callback `80156428` dispatches through
+  `804346D8` (SDA base `8043B5A0`) to mode 0 → `80156460` → state table
+  `8034267C` → `801564B0`/`801565CC`/`801566F0`, driving program `0xC1`
+  through `8006D144`/`8006E1AC` and the `800B22F4` velocity helper.
+  `080a` (`801C04E8`) and `0308` (`8010A508`) are deeper neutral-B state
+  machines that end in the same velocity helper and matrix/state calls,
+  not an origin factory. The new `move-charge` API reuses the native dash
+  for that movement, and the following field carries authored radius 240 /
+  damage 10 / interval 6 / lifetime 30. The source contact shape and
+  damage receiver remain unclaimed. All five keep their source health,
+  pace and locomotion roles.
+- **No neutral B row** (`0205`, `0d06`, `0d07`): their B or X is
+  state-specific, so there is no `0:0` context to bind. `0d06`/`0d07`
+  expose only an `X` selector with handler pair `[61,0]`.
 - **Shared 80-byte spawner** (`010a`, `0f04`): their neutral B pays a
   channel-2 debit and calls the sixth shared factory at `80084600`, which
   registers a child actor and selects an 80-byte row at `802D9758` from
