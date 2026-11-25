@@ -324,7 +324,7 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
             if not bodies or "0" in bodies:
                 raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if flying_boss:
-        for id in ("0e01","0e02","0e03"):
+        for id in ("0e01","0e02","0e03","0e04"):
             stable=f"gg4e08:{id}"
             rules=(root/f"borgs/gg4e08-{id}/gameplay.txt").read_text()
             for line in ("body-motion=static-cruise","cruise-boost=50|10000|1|2000|0|30",

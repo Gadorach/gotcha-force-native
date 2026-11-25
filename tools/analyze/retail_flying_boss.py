@@ -21,10 +21,9 @@ meter operands are recorded in the receipt.
 """
 from tools.analyze.retail_basic_shot_test import whole_body_pose
 
-# 0e04 shares every operand and row shape but its posed body exceeds the
-# native combat camera domain, so it stays indexed until that view limit is
-# settled.
-MODELS = {0x0E01, 0x0E02, 0x0E03}
+# 0e04 shares every operand and row shape; its 12,360-unit posed body needed
+# the opt-in far-plane growth in camera_dolly_to_fit_bounds.
+MODELS = {0x0E01, 0x0E02, 0x0E03, 0x0E04}
 CALLBACKS = {0x0E01: 0x801D5964, 0x0E02: 0x801D75A0,
              0x0E03: 0x801D5ECC, 0x0E04: 0x801D66CC}
 # Recovered operands shared by all four; 0x02C differs per model.

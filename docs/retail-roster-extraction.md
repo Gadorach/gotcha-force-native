@@ -72,9 +72,9 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen, and the
-later `010a`, `0f04`, `0004`, `0e01`, `0e02` and `0e03` pilots remove
-another thirty. The current preview run is ninety-five requests lower for
-that reason: 2,603 requested and 2,476 passed. The
+later `010a`, `0f04`, `0004` and `0e01`-`0e04` pilots remove another
+thirty-five. The current preview run is one hundred requests lower for
+that reason: 2,598 requested and 2,471 passed. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1529,7 +1529,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 201 of 206. The remaining 5 are no longer a
+Battle Test now covers 202 of 206. The remaining 4 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1661,7 +1661,7 @@ classification:
   animation-sampled placement remain unclaimed. The same child update
   (`80084740` → `802DA018`: moving hitbox with shape handoff `8008AFF0`
   and release `80088E50`) is documented with the `010a` pilot above.
-- **Flying-boss pilot** (`0e01`, `0e02`, `0e03`, admitted; module
+- **Flying-boss pilot** (`0e01`-`0e04`, admitted; module
   `tools/analyze/retail_flying_boss.py`): the neutral
   B-shot row (`state 0`, `substate 0`, selector 44, handler `[61,0]`,
   callbacks `801D5964`/`801D75A0`/`801D5ECC`) scans four bits and
@@ -1680,85 +1680,40 @@ classification:
   bank. An owner-following field carries the recovered corner contact;
   radius 240, damage 10, interval 6, height band 40, cruise height 50 and
   boost cost per tick 1 are authored, and the `(0,±132,±232)` corner
-  layout is recorded in the receipt.
-- **Flying bosses** (`0e00`, `0e04`, `0e05`): their B-shot callbacks are
-  state machines with no origin factory. `0e00`/`0e05` use table
+  layout is recorded in the receipt. `0e04`'s posed body spans about
+  12,360 x 6,337 x 12,360 units, which exceeded the battle camera's
+  25,000-unit far plane, so `camera_dolly_to_fit_bounds` now takes an
+  opt-in `grow_far` flag: the packaged-battle call site grows the far
+  plane to the measured depth instead of refusing to draw, while every
+  other caller keeps its clip planes.
+- **Flying bosses** (`0e00`, `0e05`): their B-shot callback uses table
   `80362CA8`; state 1 starts a timer at `+0x558` and calls `801FC1B0`,
-  and state 2 counts down and calls `8006A53C` on expiry. `0e01`-`0e04`
-  use per-model tables (e.g. `0e01` at `8038D224`); state 1 scans four
-  bits at `+0x144+i` and activates slot `i+22` through `8013212C`.
-  `8013212C(actor,slot)` maps the slot through `80336B20` to a 36-byte
-  transform row at `80336560+idx*36` and a 40-byte model-check row at
-  `80336908+sec*40`, compares that row's model id with the actor
-  `+0x3E8`, then allocates a child through `80088AA0`. The bosses expose
-  one body record and no motion bank; the model gate below shows those
-  children are sub-parts of that body, not separate archive actors. The
-  transforms are decoded; the per-slot behavior remains unbound. These
-  are timed effects and boss subsystem activations, not shots, so they
-  need the child/effect ownership path.
+  and state 2 counts down and calls `8006A53C` on expiry. `801FC1B0`
+  allocates a sequence child through `80088AA0(actor,3,8,0,3)`, stores
+  byte `+0x83` = 16 and callbacks `8020C2A8`/`8020CBB8`; `8006A53C`
+  only writes actor state, so it is not the release.
 
-  `0e04` shares the admitted family's operands and row shape but its posed
-  body exceeds the native combat camera domain (`native_battle_mvp_view.hpp`
-  refuses the fit), so it stays indexed until that view limit is settled.
+  Their X is not a shot either: `800C74EC(actor, 65)` indexes 8-byte rows
+  at `803072C8 + id*8` as `{s16, s16, u32 descriptor}`, and the
+  descriptor is a 24-byte `{u32 0x33010000, f32 2.0, f32 ±191, f32 532,
+  f32 −1192, f32 4.0}` pair, i.e. two mirrored part placements.
 
-  Their movement is **not** the blocker. All six link the shared cruise
-  handler `800633C8` (selector 27) and boost handler `80063644`
-  (selector 28), and the movement-operand schema labels every read:
-  meter cap `+0x004` = 10000, refill `+0x008` = 2000, refill delay
-  `+0x006` = 0; cruise planar target `+0x02C` = 10.0 (`0e01`/`0e02`/
-  `0e04`) or 0.0 (`0e03`/`0e00`/`0e05`); cruise pitch term `+0x044` = 2.0;
-  boost planar `+0x058` = 40.0, planar change `+0x05C` = 0.0, boost clock
-  `+0x064` = 30; vertical bases `+0x068`/`+0x070` = 0.0. The existing
-  authored `cruise-boost` pilot (already used by `0505`, `0511`, `061b`,
-  `0620`, `0d00`, `0d04`, `0d05`, `0f00`) can carry those exact meter and
-  cruise operands with `body-motion=static-cruise`.
+  The four admitted models above share the same cruise (`800633C8`,
+  selector 27) and boost (`80063644`, selector 28) handlers, so the
+  movement operands are settled for the whole family: cap `+0x004` =
+  10000, refill `+0x008` = 2000, delay `+0x006` = 0, cruise planar
+  `+0x02C` = 10.0 or 0.0, pitch term `+0x044` = 2.0, boost planar
+  `+0x058` = 40.0, planar change `+0x05C` = 0.0, boost clock `+0x064` =
+  30, vertical bases `+0x068`/`+0x070` = 0.0.
 
-  What they still lack is the *contact* of their B children. `0e01`-`0e04`
-  activate type-36 carried children at corner transforms; the private
-  child-exit receipt records only unlink/phase writes and release
-  requests, and explicitly states that no active hit was observed
-  (`bulk-actions-diverse-child-exits.json`: "no scene pair, active hit,
-  free or borrowed storage reuse"). Admitting a damage field there would
-  invent the hit. `0e00`/`0e05` are the separate sequence-child route
-  (`801FC1B0`, then `8006A53C` on expiry).
+  Both remaining routes allocate children rather than origin rows, so
+  they need the child/effect ownership path. One honesty note carries
+  over from the admitted four: their type-36 child does hand a shape to
+  `8008AFF0`, but the private child-exit receipt
+  (`bulk-actions-diverse-child-exits.json`) observed no scene pair or
+  active hit, so the field geometry and damage in the admitted pilot are
+  authored rather than recovered.
 
-  The engine already carries windowed part mounting
-  (`part-record`/`part-pose`/`part-swap=move|slot|first|last|record`/
-  `part-swap-pose`), but those slots bind records from the shared effect
-  archive. These children resolve against the boss's **own** model
-  instead: `0e01`'s body is a six-root scene with 18 JObj candidates and
-  `0e04` a fifteen-joint variant, while `model_parts` reports no part
-  table for any of them. So the missing capability is model-local
-  part visibility keyed by a recovered root/JObj index, not another
-  archive-record mount.
-
-  `8013212C` is now decoded far enough to show the child is a **part of
-  the boss's own model**, not an independent actor. It gates on
-  `lha actor+0x3E8` against the 40-byte row at `80336908 + sec*40` offset
-  `+0x20` (for `0e01`, `sec` 6 holds `0x0E01`), allocates with
-  `80088AA0(actor,3,8,0,1)`, then stores type byte `36`, the slot pair
-  bytes at `+0x11`/`+0x12`/`+0x13`, callback `801322DC` at `+0x0C`,
-  `80133530` at `+0x10C`, the owner at `+0x8C`, and a copy of the owner's
-  transform and velocity. The 36-byte transform rows at
-  `80336560 + idx*36` hold the corner layout `(0,±132,±232)`.
-
-  `0e00`/`0e05`'s other route is not a shot either. Their X calls
-  `800C74EC(actor, id)` with id 65, which indexes 8-byte rows at
-  `803072C8 + id*8` as `{s16, s16, u32 descriptor}`; the descriptor is a
-  24-byte `{u32 0x33010000, f32 2.0, f32 ±191, f32 532, f32 −1192,
-  f32 4.0}` pair, i.e. two mirrored part placements. `800C3BE0(actor,61)`
-  (the `0F02` branch) is a third child allocator with type byte 2 and
-  callbacks `800C3CDC`/`800C4468`. Neither writes a shot row.
-
-  Two supporting facts close the compiled-content route. The exported
-  shared effect archive (`effects/common-single.hsd`, 417,956 bytes,
-  157 records) reports `shape_table_offset: null` for every sampled
-  record, so those records are static visual models with no collision
-  data. And the native battle's body contact
-  (`engine/gameplay/native_borg_contact.hpp`) is swept collision only —
-  `body_hit` blocks movement and applies no damage. So neither the effect
-  assets nor the existing engine supplies the contact that these
-  children would need.
 - **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
   `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
   creates the type-5 area child at `80085E00` (phase table `802DA544`,

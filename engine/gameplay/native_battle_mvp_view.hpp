@@ -587,7 +587,7 @@ public:
             for(unsigned i=0;i<world.actor_count();++i)if(world.actors()[i].health){
                 BattleMvpVec bottom{},top{};
                 const auto& body=borgs_[model_slot(world,i)].scene_;
-                if(body.bounds(&bottom,&top)&&!camera_dolly_to_fit_bounds(camera,bottom,top)){
+                if(body.bounds(&bottom,&top)&&!camera_dolly_to_fit_bounds(camera,bottom,top,true)){
                     if(error)*error="native Battle Test: posed Borg bounds exceed the combat camera domain";
                     return 0;
                 }

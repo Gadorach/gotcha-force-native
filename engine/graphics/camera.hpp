@@ -166,7 +166,11 @@ inline bool camera_fit_bounds(Camera& camera,const std::array<f32,3>& low,const 
 // Back the camera up only as far as needed, keeping its target and view
 // direction. Fit horizontal and vertical limits independently: a bounding
 // sphere would zoom out for depth even when the bodies fit on screen.
-inline bool camera_dolly_to_fit_bounds(Camera& camera,const std::array<f32,3>& low,const std::array<f32,3>& high){
+// grow_far lets a caller whose subject cannot fit at all extend the far plane
+// to the measured depth instead of refusing to draw. The default keeps the
+// caller's clip planes so ordinary subjects never change.
+inline bool camera_dolly_to_fit_bounds(Camera& camera,const std::array<f32,3>& low,const std::array<f32,3>& high,
+                                       bool grow_far=false){
     Camera::Basis basis;
     if(!camera.basis(&basis))return false;
     for(unsigned axis=0;axis<3;++axis)
@@ -182,7 +186,10 @@ inline bool camera_dolly_to_fit_bounds(Camera& camera,const std::array<f32,3>& l
         farthest=std::max(farthest,depth);
         retreat=std::max(retreat,std::max({std::abs(x)/horizontal,std::abs(y)/vertical,1.01*camera.near_plane})-depth);
     }
-    if(retreat+farthest>=camera.far_plane)return false;
+    if(retreat+farthest>=camera.far_plane){
+        if(!grow_far||!std::isfinite(retreat+farthest))return false;
+        camera.far_plane=f32(retreat+farthest+std::max(1.,.1*(retreat+farthest)));
+    }
     if(retreat==0)return true;
     Camera fitted=camera;
     for(unsigned k=0;k<3;++k)fitted.eye[k]=f32(basis.eye[k]-retreat*basis.forward[k]);

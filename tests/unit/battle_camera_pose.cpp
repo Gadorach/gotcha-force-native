@@ -48,5 +48,8 @@ int main(){
     combat=base;combat.far_plane=800;
     const auto limited=combat.cache_key();
     check(!camera_dolly_to_fit_bounds(combat,low,high)&&combat.cache_key()==limited,"out-of-domain fit leaves camera unchanged");
+    combat=base;combat.far_plane=800;
+    check(camera_dolly_to_fit_bounds(combat,low,high,true)&&combat.far_plane>800,
+          "opted-in fit grows the far plane instead of refusing");
     std::printf("battle camera pose: %u checks PASS\n",checks);
 }
