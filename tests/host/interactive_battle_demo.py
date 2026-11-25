@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansion=False, girl_worm=False, reflection_bodies=False,
           close_expansion=False, blue_ninja=False, robot_diver=False, wing_valkyrie=False, robot_bomber=False,
           ground_close=False, wire_shuriken=False, late_close=False, tank_shot=False, paired_ground=False,
-          single_ground_shot=False, dragon_breath=False, roach_bomb=False, zeta_field=False):
+          single_ground_shot=False, dragon_breath=False, roach_bomb=False, zeta_field=False, charge_field=False):
     def launch(script,*args):
         cmd=[str(root/script),*args]
         if not opengl:
@@ -249,6 +249,23 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
         bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
         if not bodies or "0" in bodies:
             raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
+    if charge_field:
+        for id in ("0806","0809","080f"):
+            stable=f"gg4e08:{id}"
+            rules=(root/f"borgs/gg4e08-{id}/gameplay.txt").read_text()
+            for line in ("field=charge-hit|3|sphere|240|240|240|30|0|40|190|90|220|120",
+                         "field-follow=charge-hit|source","field-core-damage=charge-hit|enemies|240|10|6",
+                         "move=charge-hit|x|10|grounded|28|none","move-charge=charge-hit|20"):
+                if line not in rules:
+                    raise ValueError(f"{stable} lost its authored charge policy: {line}")
+            trace=launch("show-attacks.sh",stable,"--frames","150","--no-audio")
+            if ("event=field-placed " not in trace or
+                    not re.search(r"event=hit .* value=10\b",trace) or
+                    trace.count("event=field-placed ")<2):
+                raise ValueError(f"{stable} did not place and land its charge field\n"+trace)
+            bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
+            if not bodies or "0" in bodies:
+                raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if zeta_field:
         for id in ("0705","070b","070c","070d"):
             stable=f"gg4e08:{id}"
@@ -622,9 +639,10 @@ if __name__=="__main__":
     p.add_argument("--dragon-breath",action="store_true")
     p.add_argument("--roach-bomb",action="store_true")
     p.add_argument("--zeta-field",action="store_true")
+    p.add_argument("--charge-field",action="store_true")
     args=p.parse_args()
     check(args.root.resolve(strict=True),opengl=args.opengl,equipped=args.equipped,trailing=args.trailing,
           knight_expansion=args.knight_expansion,girl_worm=args.girl_worm,reflection_bodies=args.reflection_bodies,
           close_expansion=args.close_expansion,blue_ninja=args.blue_ninja,robot_diver=args.robot_diver,
           wing_valkyrie=args.wing_valkyrie,robot_bomber=args.robot_bomber,ground_close=args.ground_close,
-          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb,zeta_field=args.zeta_field)
+          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb,zeta_field=args.zeta_field,charge_field=args.charge_field)

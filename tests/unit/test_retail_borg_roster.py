@@ -19,6 +19,7 @@ from tools.analyze import retail_single_ground_shot as single_shots
 from tools.analyze import retail_breath_dragon as breath
 from tools.analyze import retail_roach_bomb as roach_bomb
 from tools.analyze import retail_zfield_shot as zfield
+from tools.analyze import retail_charge_field as charge_field
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_knight_melee as knight
 from tools.analyze import retail_samurai_melee as samurai
@@ -178,6 +179,24 @@ class RosterFormatTests(unittest.TestCase):
         self.assertIn(b"release=breath-dive|8|breath-stock|1|dive\n",dive_rules)
         self.assertNotIn(b"breath-sweep",dive_rules)
         self.assertEqual(dive_receipt["native_dive"]["origin_joint"],12)
+
+    def test_charge_pilot_binds_the_shared_x_program_and_authors_the_field(self):
+        joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]
+        roles=[("ground-stop",0,0),("ground-travel",0,1),("air-continuation",0,24),("ground-dash-forward",0,2)]
+        row={"state":2,"substate":0,"selector":44,"handler_pair":[61,0],
+             "class_callback_candidate":"80156428","contexts":[[0,0],[0,1]]}
+        actions={"profiles":[{"groups":[{"group":"X-charge","rows":[row]}]}]}
+        rules,pose,receipt=charge_field.battle_test(0x0806,joints,roles,{"native_units_per_tick_x100":500},[200],actions)
+        for line in ("field=charge-hit|3|sphere|240|240|240|30|0|40|190|90|220|120",
+                     "field-follow=charge-hit|source","field-core-damage=charge-hit|enemies|240|10|6",
+                     "move=charge-hit|x|10|grounded|28|none","move-charge=charge-hit|20"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(receipt["source_profile"]["program"],"0xC1")
+        self.assertEqual(receipt["authored"]["charge_ticks"],20)
+        self.assertFalse(receipt["retail_behavior_verified"])
+        actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=45)]
+        with self.assertRaisesRegex(ValueError,"X-charge row"):
+            charge_field.battle_test(0x0806,joints,roles,{"native_units_per_tick_x100":500},[200],actions)
 
     def test_zeta_field_pilot_binds_shared_row_and_authors_the_field(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]

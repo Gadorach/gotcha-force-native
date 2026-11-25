@@ -1757,7 +1757,20 @@ public:
             action.visit(*config_.packages[i],package_input[i],actor.grounded,package_interrupted[i],
                 [&](const auto& shot,u8 move,u8 return_stock){return emit_package(i,move,shot,return_stock,origins);},
                 [&](auto kind,u8 move,u16 frame,u32 object,u16 value){
-                    if(kind==BorgBattleEventKind::Started)actor.package_action_born=tick_;
+                    if(kind==BorgBattleEventKind::Started){
+                        actor.package_action_born=tick_;
+                        const auto& package=*config_.packages[i];
+                        if(move<package.moves.size()&&package.moves[move].charge){
+                            // The source movement program owns the burst; the
+                            // native controller reuses its existing dash state.
+                            const auto ticks=package.moves[move].charge->ticks;
+                            actor.dash_ticks=actor.dash_duration=ticks;
+                            actor.dash_direction=actor.facing;
+                            actor.dash_motion=BattleMvpDashDirection::Forward;
+                            actor.dash_airborne=!actor.grounded;
+                            if(actor.dash_airborne){++actor.air_dashes_used;actor.vertical_speed=0;actor.takeoff_ticks=0;}
+                        }
+                    }
                     if(kind==BorgBattleEventKind::Started||kind==BorgBattleEventKind::Repeated||
                        kind==BorgBattleEventKind::Completed||kind==BorgBattleEventKind::Interrupted){
                         actor.package_aim_heading.reset();actor.package_aim_slope=0;actor.aim_facing=tracking;

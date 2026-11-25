@@ -245,6 +245,7 @@ struct BorgBattlePartSwap {
 };
 enum class BorgPartMaterialPlayback:u8 {Once,Loop,Sample};
 struct BorgBattlePartMaterial {u16 record=0,clip=0,first=0,last=0;BorgPartMaterialPlayback playback=BorgPartMaterialPlayback::Once;};
+struct BorgMoveCharge {u16 ticks=0;};
 struct BorgBattleMove {
     std::string id;BorgBattleButton button=BorgBattleButton::B;BorgBattleContext context=BorgBattleContext::Any;
     u16 priority=0,duration=0;BorgBattleClip clip;
@@ -263,6 +264,7 @@ struct BorgBattleMove {
     std::optional<BorgBattleHeldFire> held_fire;
     std::optional<BorgBattleDetonation> detonation;
     std::optional<BorgBattleGuard> guard;
+    std::optional<BorgMoveCharge> charge;
     std::vector<BorgBattleEmitterDeploy> emitters;
     std::optional<BorgPowerField> power_field;
     std::optional<BorgSlowField> slow_field;
@@ -598,6 +600,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
             m.detonation||m.guard||!m.emitters.empty()||m.power_field||m.slow_field||!m.anchors.empty()||
             (m.field&&!m.releases.empty())||
             std::any_of(m.releases.begin(),m.releases.end(),[](const auto& r){return !r.cost;})))return false;
+        if(m.charge&&(m.charge->ticks<2||m.charge->ticks>60))return false;
         if(m.entry_stock&&(m.entry_stock->stock>=p.stocks.size()||!m.entry_stock->minimum||
            m.entry_stock->minimum>p.stocks[m.entry_stock->stock].capacity))return false;
         if(const auto& g=m.release_gate;g&&(
@@ -842,6 +845,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct FieldPullPointRef {unsigned line;std::string move;BorgFieldPullPoint spec;};
     struct FieldCoreDamageRef {unsigned line;std::string move;BorgFieldCoreDamage spec;};
     struct FieldDebitRef {unsigned line;std::string move;BorgFieldDebit spec;};
+    struct MoveChargeRef {unsigned line;std::string move;BorgMoveCharge spec;};
     struct FieldTextureRef {unsigned line;std::string move,path;};
     struct FieldSocketRef {unsigned line;std::string move;BorgBattleSocket socket;};
     struct ProjectileAnimationRef {unsigned line;std::string projectile;BorgProjectileAnimation spec;};
@@ -925,6 +929,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<std::pair<unsigned,std::string>> field_repulsions;
     std::vector<FieldCoreDamageRef> field_core_damage;
     std::vector<FieldDebitRef> field_debit;
+    std::vector<MoveChargeRef> move_charge;
     std::vector<FieldTextureRef> field_textures;
     std::vector<FieldSocketRef> field_sockets;
     std::vector<std::pair<unsigned,std::string>> field_follows;
@@ -1184,6 +1189,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !number(a[2],1,255,&spec.cost))return fail("invalid field debit");
             spec.stock=std::string(a[1]);
             field_debit.push_back({line,std::string(a[0]),spec});
+        }else if(key=="move-charge"){
+            std::array<std::string_view,2> a;BorgMoveCharge spec;
+            if(move_charge.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],2,60,&spec.ticks))return fail("invalid move charge");
+            move_charge.push_back({line,std::string(a[0]),spec});
         }else if(key=="field-effect"){
             constexpr std::array<std::string_view,5> kinds{"actor-speed","shot-speed","shot-damage","shot-size","break-guidance"};
             std::array<std::string_view,4> a;u16 amount=0;BorgFieldScope scope;
@@ -1927,6 +1937,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(mi==next.moves.size()||!next.moves[mi].field||next.moves[mi].field->debit)
             return fail("field-debit needs one binding to a declared field");
         next.moves[mi].field->debit=r.spec;
+    }
+    for(const auto& r:move_charge){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].charge)
+            return fail("move-charge needs one declared move");
+        next.moves[mi].charge=r.spec;
     }
     for(const auto& r:field_textures){
         line=r.line;const auto mi=index(next.moves,r.move);

@@ -791,6 +791,12 @@ allocation refusal still spends the paid unit, matching the source
 factory order. Use `entry-stock` when the move itself must also be
 gated.
 
+`move-charge=move|ticks` sets the native dash state when the move starts:
+the profile dash speed is used for `ticks`, the normal collision/landing
+exits still end it, and the move may also carry a `field` or `melee`.
+This maps an authored charged-movement program; it does not implement the
+source's typed contact shape.
+
 `field-drift=move|initial speed|deceleration per tick|active-or-after-stop`
 captures the placing actor's heading and moves the field horizontally
 from its accepted start. The first step happens on the next tick;

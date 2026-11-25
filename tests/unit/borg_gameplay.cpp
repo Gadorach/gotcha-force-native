@@ -792,6 +792,21 @@ void movement_and_attraction_cases(){
         check(world.package_action(0).stocks[0].current==1,"field debit spends one stock");
         check(world.package_action(0).stocks[0].previous==2,"field debit keeps the previous count");
     }
+    {
+        const auto charge=parse(std::string(player)+
+            "move=charge-move|x|80|any|20|none\n"
+            "field=charge-move|1|sphere|90|90|90|30|60|40|190|90|220|120\n"
+            "field-follow=charge-move|source\nfield-core-damage=charge-move|enemies|90|10|6\n"
+            "move-charge=charge-move|20\n");
+        NativeBattleMvp world;BattleMvpConfig config;config.packages={charge,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+        check(world.start(config),"move charge fixture");
+        for(unsigned i=0;i<24;++i)check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+            {BorgBattleInputs{u8(i==0?BorgBattleInputs::x:0),0,0},BorgBattleInputs{}}),"move charge step");
+        check(world.actors()[0].position[2]>10,"move charge moves the actor forward");
+        check(world.fields()[0].id&&world.actors()[1].health<500,
+              "move charge keeps the following field and damages");
+    }
     for(unsigned scenario=0;scenario<4;++scenario){
         NativeBattleMvp world;BattleMvpConfig config;config.packages={pulse,parse(target)};
         config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
