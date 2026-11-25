@@ -72,6 +72,16 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
                 raise ValueError(f"gg4e08:{id} lost its landing sound binding")
             if not (folder/"audio/lab-landing.pcm").is_file():
                 raise ValueError(f"gg4e08:{id} lost its landing PCM")
+        for id in ("0007","0203","0619"):
+            folder=root/f"borgs/gg4e08-{id}"
+            rules=(folder/"gameplay.txt").read_text()
+            bindings=[line for line in rules.splitlines() if line.startswith("action-sound=")]
+            if not bindings:
+                raise ValueError(f"gg4e08:{id} lost its action sound binding")
+            for binding in bindings:
+                path=binding.split("|",1)[1]
+                if not (folder/path).is_file():
+                    raise ValueError(f"gg4e08:{id} lost action PCM {path}")
         trace=launch("show-attacks.sh","gg4e08:0007","--no-audio")
         for rnd in (0,1):
             draws={int(t):int(n) for t,n in re.findall(rf"borg-parts: round={rnd} tick=(\d+) actor=0 draws=(\d+)",trace)}
