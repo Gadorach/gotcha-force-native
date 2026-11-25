@@ -647,6 +647,18 @@ with the same credit factor, scalar and receiver rank as the boost hit. Both
 G-Red moves therefore select **per-Borg config records**, and the shared pool at
 `0x802D4148` is used by a different carrier path.
 
+The same X sequence also exposes a **decay factor**. Three successive hits kept
+the same credit record (`80366058`), base (30), credit factor, scalar and
+receiver rank, yet applied:
+
+```text
+33 (HP 180) -> 27 (HP 147) -> 16 (HP 120)
+```
+
+The GFDA health and force rows are all 1.0 at those indices, so the decay is a
+runtime factor (a combo/health table) that is not yet identified. The published
+move-base amounts are the **first hit** of each sequence.
+
 The Mana hit's carrier is `0x8064AAB8`, a separate object rather than the actor,
 unlike the X hit where the carrier is `0x805DBDC0` itself. But the **B-close/boost
 carrier is also separate** (`0x80636130`), so a separate carrier does not by
@@ -680,11 +692,13 @@ pair-link 8067FAC0 +0x1EC -> 802D4160
 pair-link 80636244 +0x168 -> 80365EC0
 ```
 
-The applied damage uses the **attacker object's** `+0x2C` record (here
-`80365EC0`), while the other side object carries `802D4160`. That settles the
-shared-pool question: `802D4160` is the **other side's** credit record, not a
-G-Red shot. The per-hit mapping point is the pair object at `+0x2C`, which is
-where a future `B-shot` capture should read its record.
+On the B-close hit the r3 `+0x2C` link matched the applied record
+(`80365EC0`), but on the X hit the pair links still read `80365EC0`/`802D4160`
+while the **applied** credit was `80366058`. So `+0x2C` is a side/default
+record, **not** the applied record; the action context still selects the applied
+credit. The other-side finding stands: `802D4160` belongs to the other side, not
+a G-Red shot. A future `B-shot` capture must read the credit at the amount call,
+not at the pair object.
 
 The earlier saved-LR/`8002E2A8` mismatch was only the missing fallback range for
 the `8002D5E0` chunk, not a broken frame walk.
