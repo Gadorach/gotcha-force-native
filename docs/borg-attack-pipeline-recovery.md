@@ -189,6 +189,29 @@ Consequently, recovering the `+0xAA0` rows would give the **effect** asset,
 timing and scale for melee — genuinely useful for presentation — but it would
 not by itself yield damage. Damage still needs the dynamic trace of the
 collision receiver described earlier.
+
+## The melee window is authored because the source has none
+
+Decoding the exported close-B programs shows the contact command is the **first**
+command in the stream, before any descriptor select or wait:
+
+```text
+0x8030dc5c actor_event_10   0a0700ff
+0x8030dc60 select_descriptor 0103030104000000
+0x8030dc68 upper_controls   0200000000000000
+0x8030dc78 wait             00020004
+```
+
+So the source raises the contact request at program start rather than at a
+timed frame, and the actual overlap is decided by the animated body shapes
+during the swing. Summing the waits before the contact therefore always gives
+frame 0, which is why the native pilots' `melee=...|9|14|...` window is authored:
+it stands in for shape overlap that the program does not describe.
+
+That closes the last cheap route to melee timing. Exact melee geometry, timing
+and damage all reduce to the same missing piece — the animated shape data behind
+`8008AC80` — and every path to it now ends at either `actor+0x9C` or the
+collision receiver.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
