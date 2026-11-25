@@ -69,11 +69,17 @@ its address anywhere in either text section. The direct `+0x1C6` HP writes that
 do exist are initialisation sites (`HP = +0x1C4`), such as `8004E318` and
 `80081CFC`, not damage application.
 
-Settling the amount therefore needs an observation the binary cannot give
-statically: a bounded original execution under the project's strict replay gate
-(fresh exclusive slot, one isolated process, no concurrent compiles or replays),
-recording `r4` at the damage site for a known attacker and defender. Until that
-runs, authored damage stays labelled rather than guessed.
+The project does have a gated original-execution harness: receipts such as
+`build/borg-ordered-audit/retail-0600-rifle-consumer-v3.json` record forked
+observations under a 1 GiB address-space cap, an outer timeout and exclusive
+creation. That harness can execute a **named** span with supplied operands, and
+that is exactly what this case lacks: the damage writer has no static caller, so
+there is no root to enter from and no operand context to supply.
+
+Settling the amount therefore needs one capability the harness does not have
+today — a dynamic trace of a live battle that records the caller and `r4` at the
+damage site for a known attacker and defender. Until that exists, authored
+damage stays labelled rather than guessed.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
