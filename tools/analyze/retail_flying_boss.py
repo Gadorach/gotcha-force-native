@@ -21,15 +21,25 @@ meter operands are recorded in the receipt.
 """
 from tools.analyze.retail_basic_shot_test import whole_body_pose
 
+# model -> (button, neutral-row selector, callback). 0e01-0e04 bind B, which
+# activates four type-36 body children for free; 0e00/0e05 bind X, which pays
+# channel-2 cost 1 through 8006DBE0 and spawns a mirrored part pair whose
+# child update registers lists with 80089100 and releases with 80088E50.
 # 0e04 shares every operand and row shape; its 12,360-unit posed body needed
 # the opt-in far-plane growth in camera_dolly_to_fit_bounds.
-MODELS = {0x0E01, 0x0E02, 0x0E03, 0x0E04}
-CALLBACKS = {0x0E01: 0x801D5964, 0x0E02: 0x801D75A0,
-             0x0E03: 0x801D5ECC, 0x0E04: 0x801D66CC}
+ROUTES = {0x0E01: ("b", 44, 0x801D5964), 0x0E02: ("b", 44, 0x801D75A0),
+          0x0E03: ("b", 44, 0x801D5ECC), 0x0E04: ("b", 44, 0x801D66CC),
+          0x0E00: ("x", 45, 0x80189FA8), 0x0E05: ("x", 45, 0x80189FA8)}
+MODELS = set(ROUTES)
+CALLBACKS = {model: route[2] for model, route in ROUTES.items()}
 # Recovered operands shared by all four; 0x02C differs per model.
 EXPECTED = {"004": 10000, "006": 0, "008": 2000, "044": 2.0, "058": 40.0,
             "05C": 0.0, "064": 30.0, "068": 0.0, "070": 0.0}
-CRUISE = {0x0E01: 10.0, 0x0E02: 10.0, 0x0E03: 0.0, 0x0E04: 10.0}
+CRUISE = {0x0E01: 10.0, 0x0E02: 10.0, 0x0E03: 0.0, 0x0E04: 10.0,
+          0x0E00: 0.0, 0x0E05: 0.0}
+PART_PAIR = {"id": 65, "table": "803072C8", "entry_bytes": 8,
+             "descriptor": [0x33010000, 2.0, 191.0, 532.0, -1192.0, 4.0],
+             "mirror": True}
 CORNER_LAYOUT = [(0, 132, 232), (0, -132, -232), (0, 132, -232), (0, -132, 232)]
 
 AUTHORED_HEIGHT = 50
@@ -39,6 +49,7 @@ AUTHORED_HEIGHT_BAND = 40
 AUTHORED_TICKS = 30
 AUTHORED_DAMAGE = 10
 AUTHORED_INTERVAL = 6
+STOCK_CAP = 1
 MIN_WALK = 40  # native grounded-v1 floor, used when the recovered target is 0
 
 
@@ -73,12 +84,22 @@ def battle_test(model, joints, role_clips, operands, level, actions):
             for row in group.get("rows", []):
                 if (0, 0) in map(tuple, row.get("contexts", [])):
                     neutral.append(row)
-    callback = CALLBACKS[model]
+    button, selector, callback = ROUTES[model]
+    group_name = "B-shot" if button == "b" else "X"
+    state = 0 if button == "b" else 2
+    neutral = []
+    for profile in actions.get("profiles", []):
+        for group in profile.get("groups", []):
+            if group.get("group") != group_name:
+                continue
+            for row in group.get("rows", []):
+                if (0, 0) in map(tuple, row.get("contexts", [])):
+                    neutral.append(row)
     if (not neutral or any(
             (row.get("state"), row.get("selector"), row.get("handler_pair"),
-             row.get("class_callback_candidate")) != (0, 44, [61, 0], f"{callback:08X}")
+             row.get("class_callback_candidate")) != (state, selector, [61, 0], f"{callback:08X}")
             for row in neutral)):
-        raise ValueError("flying boss field needs its exact neutral B row")
+        raise ValueError("flying boss field needs its exact neutral row")
     walk = walk_for(model)
     lines = [
         "GFBORG-GAMEPLAY 1",
@@ -93,8 +114,12 @@ def battle_test(model, joints, role_clips, operands, level, actions):
         f"{AUTHORED_TICKS}|0|{AUTHORED_HEIGHT_BAND}|190|90|220|120",
         "field-follow=wing-hit|source",
         f"field-core-damage=wing-hit|enemies|{AUTHORED_RADIUS}|{AUTHORED_DAMAGE}|{AUTHORED_INTERVAL}",
-        "move=wing-hit|b|10|airborne|28|none",
     ]
+    if button == "x":
+        # The X route pays the exact channel-2 cost 1 before it spawns.
+        lines.insert(10, f"stock=wing-stock|{STOCK_CAP}|180")
+        lines.append("field-debit=wing-hit|wing-stock|1")
+    lines.append(f"move=wing-hit|{button}|10|airborne|28|none")
     return ("\n".join(lines) + "\n").encode("ascii"), whole_body_pose(joints), {
         "kind": "authored flying-boss field; exact cruise/meter operands, "
                 "geometry and damage authored",

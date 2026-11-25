@@ -72,9 +72,9 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen, and the
-later `010a`, `0f04`, `0004` and `0e01`-`0e04` pilots remove another
-thirty-five. The current preview run is one hundred requests lower for
-that reason: 2,598 requested and 2,471 passed. The
+later `010a`, `0f04`, `0004` and `0e00`-`0e05` pilots remove another
+forty-five. The current preview run is one hundred and ten requests lower
+for that reason: 2,588 requested and 2,461 passed. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1529,7 +1529,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 202 of 206. The remaining 4 are no longer a
+Battle Test now covers 204 of 206. The remaining 2 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1661,10 +1661,11 @@ classification:
   animation-sampled placement remain unclaimed. The same child update
   (`80084740` → `802DA018`: moving hitbox with shape handoff `8008AFF0`
   and release `80088E50`) is documented with the `010a` pilot above.
-- **Flying-boss pilot** (`0e01`-`0e04`, admitted; module
+- **Flying-boss pilot** (`0e00`-`0e05`, admitted; module
   `tools/analyze/retail_flying_boss.py`): the neutral
   B-shot row (`state 0`, `substate 0`, selector 44, handler `[61,0]`,
-  callbacks `801D5964`/`801D75A0`/`801D5ECC`) scans four bits and
+  callbacks `801D5964`/`801D75A0`/`801D5ECC`/`801D66CC`) scans four bits
+  and
   activates type-36 carried children through `8013212C`. The child update
   `801322DC` hands its shape to `8008AFF0`, the same collision handoff the
   Roach and ICBM pilots use, so the contact exists; only the damage amount
@@ -1686,34 +1687,18 @@ classification:
   opt-in `grow_far` flag: the packaged-battle call site grows the far
   plane to the measured depth instead of refusing to draw, while every
   other caller keeps its clip planes.
-- **Flying bosses** (`0e00`, `0e05`): their B-shot callback uses table
-  `80362CA8`; state 1 starts a timer at `+0x558` and calls `801FC1B0`,
-  and state 2 counts down and calls `8006A53C` on expiry. `801FC1B0`
-  allocates a sequence child through `80088AA0(actor,3,8,0,3)`, stores
-  byte `+0x83` = 16 and callbacks `8020C2A8`/`8020CBB8`; `8006A53C`
-  only writes actor state, so it is not the release.
 
-  Their X is not a shot either: `800C74EC(actor, 65)` indexes 8-byte rows
-  at `803072C8 + id*8` as `{s16, s16, u32 descriptor}`, and the
-  descriptor is a 24-byte `{u32 0x33010000, f32 2.0, f32 ±191, f32 532,
-  f32 −1192, f32 4.0}` pair, i.e. two mirrored part placements.
-
-  The four admitted models above share the same cruise (`800633C8`,
-  selector 27) and boost (`80063644`, selector 28) handlers, so the
-  movement operands are settled for the whole family: cap `+0x004` =
-  10000, refill `+0x008` = 2000, delay `+0x006` = 0, cruise planar
-  `+0x02C` = 10.0 or 0.0, pitch term `+0x044` = 2.0, boost planar
-  `+0x058` = 40.0, planar change `+0x05C` = 0.0, boost clock `+0x064` =
-  30, vertical bases `+0x068`/`+0x070` = 0.0.
-
-  Both remaining routes allocate children rather than origin rows, so
-  they need the child/effect ownership path. One honesty note carries
-  over from the admitted four: their type-36 child does hand a shape to
-  `8008AFF0`, but the private child-exit receipt
-  (`bulk-actions-diverse-child-exits.json`) observed no scene pair or
-  active hit, so the field geometry and damage in the admitted pilot are
-  authored rather than recovered.
-
+  `0e00`/`0e05` bind **X** instead (`state 2`, selector 45, callback
+  `80189FA8`). Their X leaf pays the exact channel-2 cost 1 through
+  `8006DBE0(actor,2,1,1)` and then spawns a mirrored part pair through
+  `800C74EC(actor,65)`, which indexes 8-byte rows at `803072C8 + id*8`
+  and a 24-byte descriptor `{0x33010000, 2.0, ±191, 532, −1192, 4.0}`;
+  the child update `800C7664` registers lists with `80089100` and
+  releases with `80088E50`. The pilot binds that exact debit with a
+  capacity-one `wing-stock` pool plus `field-debit`, and carries the same
+  authored field. Their B route is not bound: `801FC1B0` spawns a
+  pose-only sequence child (`8020C2A8`/`8020CBB8`, byte `+0x83` = 16)
+  that never calls the collision API.
 - **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
   `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
   creates the type-5 area child at `80085E00` (phase table `802DA544`,

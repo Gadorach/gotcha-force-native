@@ -308,6 +308,15 @@ class RosterFormatTests(unittest.TestCase):
                                                   {"profiles":[{"groups":[{"group":"B-shot","rows":[dict(row,class_callback_candidate="801D5ECC")]}]}]})
         self.assertIn(b"movement=grounded-v1|0.40|13|15\n",zrules)
         self.assertTrue(zreceipt["source_profile"]["walk_authored"])
+        xrow={"state":2,"substate":0,"selector":45,"handler_pair":[61,0],
+              "class_callback_candidate":"80189FA8","contexts":[[0,0],[0,1]]}
+        xactions={"profiles":[{"groups":[{"group":"X","rows":[xrow]}]}]}
+        operands["records"][0]["operands"]=zero
+        xrules,_,xreceipt=flying_boss.battle_test(0x0E00,joints,[],operands,[2000],xactions)
+        for line in ("stock=wing-stock|1|180","field-debit=wing-hit|wing-stock|1",
+                     "move=wing-hit|x|10|airborne|28|none"):
+            self.assertIn((line+"\n").encode(),xrules)
+        self.assertTrue(xreceipt["source_profile"]["walk_authored"])
         bad=dict(zero,**{"008":{"value":1000}})
         operands["records"][0]["operands"]=bad
         with self.assertRaisesRegex(ValueError,"cruise and meter operands"):
