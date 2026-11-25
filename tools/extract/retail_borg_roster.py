@@ -40,6 +40,7 @@ from tools.analyze import retail_breath_dragon as breath
 from tools.analyze import retail_roach_bomb as roach
 from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
+from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_equipment_visuals as equipment
 from tools.analyze import retail_gatling_held_fire as gatling
@@ -808,11 +809,12 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     roach_pilot = basic_shot and row.model==roach.MODEL
     zeta_pilot = basic_shot and row.model in zfield.MODELS
     charge_pilot = basic_shot and row.model in charge_field.ALL_MODELS
+    icbm_pilot = basic_shot and row.model in icbm.MODELS
     shot_pilot = basic_shot and (row.model in BASIC_SHOT_COHORT or cruise_pilot or clocked_pilot or static_ground_pilot or
                                 dragon_pilot or worm_pilot or tank_pilot or pair_pilot or single_shot_pilot or breath_pilot)
     held_pilot = basic_shot and row.model==gatling.MODEL
     melee_pilot = basic_melee and row.model in knight.PILOTS
-    pilot = shot_pilot or roach_pilot or zeta_pilot or charge_pilot or melee_pilot or held_pilot
+    pilot = shot_pilot or roach_pilot or zeta_pilot or charge_pilot or icbm_pilot or melee_pilot or held_pilot
     # The test package is explicitly normal-only. Keep other models' exact
     # alternate declarations and copy the pilot's wrappers as offline assets.
     source_variants = source_variants and not pilot
@@ -909,6 +911,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     if linker is not None:
         linker.attach(actions,row.model,clips,joints,index_action_entries=action_clips,installer=installer)
     roach_source = roach.battle_test(joints,actions,level[0]) if roach_pilot else None
+    icbm_source = icbm.battle_test(row.model,joints,level[0],actions) if icbm_pilot else None
     prior_close=tuple(x for x in action_preview_candidates(actions) if x["action_group"]=="B-close") if (
         action_clips and (row.model in knight.LANCES or row.model in samurai.MODELS or row.model in ninja.MODELS or
                           row.model in wings.MODELS or row.model in grounded.MODELS)) else ()
@@ -1006,9 +1009,11 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             body_material=("immutable-highlight" if row.model==bombers.REMOTE else None))
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         manifest += "gameplay=gameplay.txt\n"
-    elif roach_source is not None or zeta_source is not None or charge_source is not None:
+    elif (roach_source is not None or zeta_source is not None or charge_source is not None or
+          icbm_source is not None):
         gameplay,pose,battle_receipt=(roach_source if roach_source is not None else
-                                      zeta_source if zeta_source is not None else charge_source)
+                                      zeta_source if zeta_source is not None else
+                                      charge_source if charge_source is not None else icbm_source)
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         manifest += "gameplay=gameplay.txt\n"
     elif shot_pilot:
@@ -1218,6 +1223,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         summary["zeta_field_source"]=battle_receipt
     if charge_source is not None:
         summary["charge_field_source"]=battle_receipt
+    if icbm_source is not None:
+        summary["icbm_source"]=battle_receipt
     files["source-index.json"] = json_line(summary)
     files["borg.manifest"] = manifest.encode("ascii")  # publish last
     return files, summary
@@ -1458,7 +1465,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             if "held_fire_battle_test" in summary:
                 held_fire_ids.append(summary["id"])
             if ("roach_bomb_source" in summary or "zeta_field_source" in summary or
-                    "charge_field_source" in summary):
+                    "charge_field_source" in summary or "icbm_source" in summary):
                 short_range_ids.append(summary["id"])
             cues = action_sfx_index(summary["action_candidates"],tone_banks)
             if cues:

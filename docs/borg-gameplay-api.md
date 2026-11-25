@@ -797,6 +797,12 @@ exits still end it, and the move may also carry a `field` or `melee`.
 This maps an authored charged-movement program; it does not implement the
 source's typed contact shape.
 
+`free-release=move` marks a static-pose move whose releases are all
+zero-cost; it is the explicit no-stock projectile form. It requires one
+or more releases, no `entry-stock`, and no paid release in the same move.
+Use it only where the source has no debit; it is not a discount on a
+stocked move.
+
 `field-drift=move|initial speed|deceleration per tick|active-or-after-stop`
 captures the placing actor's heading and moves the field horizontally
 from its accepted start. The first step happens on the next tick;

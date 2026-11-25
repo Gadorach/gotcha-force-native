@@ -250,6 +250,7 @@ struct BorgBattleMove {
     std::string id;BorgBattleButton button=BorgBattleButton::B;BorgBattleContext context=BorgBattleContext::Any;
     u16 priority=0,duration=0;BorgBattleClip clip;
     bool static_pose=false;
+    bool free_release=false;
     u16 pose_start=0;
     bool pose_authored_loop_window=false;
     std::optional<u16> aim_lock;
@@ -599,8 +600,11 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            (p.movement!=BorgBattleMovement::Grounded||(m.releases.empty()&&!m.field)||m.held_fire||m.melee||
             m.detonation||m.guard||!m.emitters.empty()||m.power_field||m.slow_field||!m.anchors.empty()||
             (m.field&&!m.releases.empty())||
-            std::any_of(m.releases.begin(),m.releases.end(),[](const auto& r){return !r.cost;})))return false;
+            (!m.free_release&&std::any_of(m.releases.begin(),m.releases.end(),
+                                          [](const auto& r){return !r.cost;}))))return false;
         if(m.charge&&(m.charge->ticks<2||m.charge->ticks>60))return false;
+        if(m.free_release&&(m.releases.empty()||m.entry_stock||
+           std::any_of(m.releases.begin(),m.releases.end(),[](const auto& r){return r.cost;})))return false;
         if(m.entry_stock&&(m.entry_stock->stock>=p.stocks.size()||!m.entry_stock->minimum||
            m.entry_stock->minimum>p.stocks[m.entry_stock->stock].capacity))return false;
         if(const auto& g=m.release_gate;g&&(
@@ -846,6 +850,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct FieldCoreDamageRef {unsigned line;std::string move;BorgFieldCoreDamage spec;};
     struct FieldDebitRef {unsigned line;std::string move;BorgFieldDebit spec;};
     struct MoveChargeRef {unsigned line;std::string move;BorgMoveCharge spec;};
+    struct FreeReleaseRef {unsigned line;std::string move;};
     struct FieldTextureRef {unsigned line;std::string move,path;};
     struct FieldSocketRef {unsigned line;std::string move;BorgBattleSocket socket;};
     struct ProjectileAnimationRef {unsigned line;std::string projectile;BorgProjectileAnimation spec;};
@@ -930,6 +935,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<FieldCoreDamageRef> field_core_damage;
     std::vector<FieldDebitRef> field_debit;
     std::vector<MoveChargeRef> move_charge;
+    std::vector<FreeReleaseRef> free_release;
     std::vector<FieldTextureRef> field_textures;
     std::vector<FieldSocketRef> field_sockets;
     std::vector<std::pair<unsigned,std::string>> field_follows;
@@ -1194,6 +1200,9 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(move_charge.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
                !number(a[1],2,60,&spec.ticks))return fail("invalid move charge");
             move_charge.push_back({line,std::string(a[0]),spec});
+        }else if(key=="free-release"){
+            if(!value.empty()&&(!id(value)||value.find('|')!=value.npos))return fail("invalid free release");
+            free_release.push_back({line,std::string(value)});
         }else if(key=="field-effect"){
             constexpr std::array<std::string_view,5> kinds{"actor-speed","shot-speed","shot-damage","shot-size","break-guidance"};
             std::array<std::string_view,4> a;u16 amount=0;BorgFieldScope scope;
@@ -1943,6 +1952,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(mi==next.moves.size()||next.moves[mi].charge)
             return fail("move-charge needs one declared move");
         next.moves[mi].charge=r.spec;
+    }
+    for(const auto& r:free_release){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].free_release)
+            return fail("free-release needs one declared move");
+        next.moves[mi].free_release=true;
     }
     for(const auto& r:field_textures){
         line=r.line;const auto mi=index(next.moves,r.move);

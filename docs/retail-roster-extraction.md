@@ -72,7 +72,7 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen. The
-current preview run is forty-five requests lower for those reasons. The
+current preview run is fifty-five requests lower for those reasons. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1527,7 +1527,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 193 of 206. The remaining 13 are no longer a
+Battle Test now covers 195 of 206. The remaining 11 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1590,9 +1590,17 @@ classification:
   damage 10 / interval 6 / lifetime 30. The source contact shape and
   damage receiver remain unclaimed. All five keep their source health,
   pace and locomotion roles.
-- **No neutral B row** (`0205`, `0d06`, `0d07`): their B or X is
-  state-specific, so there is no `0:0` context to bind. `0d06`/`0d07`
-  expose only an `X` selector with handler pair `[61,0]`.
+- **ICBM pilots** (`0d06`, `0d07`, admitted): the private
+  `deep-0d06-death-icbm.json` receipt records a no-stock X terminal, the
+  exact eligibility/life/hold phases, a supplied floor/terrain impact to a
+  type-73 area request, and the terminal geometry/damage/service as
+  unresolved. Both bodies have no motion bank. The new `free-release`
+  policy binds a zero-cost static projectile; the native bomb launches,
+  lands and blasts with an authored 300 radius, 20 damage and 30-tick
+  lifetime. The source terminal geometry and type-73 service remain
+  unclaimed.
+- **No neutral B row** (`0205`): its B or X is state-specific, so there is
+  no `0:0` context to bind.
 - **Shared 80-byte spawner** (`010a`, `0f04`): their neutral B pays a
   channel-2 debit and calls the sixth shared factory at `80084600`, which
   registers a child actor and selects an 80-byte row at `802D9758` from

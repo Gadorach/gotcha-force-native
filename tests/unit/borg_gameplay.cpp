@@ -1629,6 +1629,15 @@ int main(){
     const auto ground_body=parse(static_ground);
     check(ground_body->static_body()&&ground_body->static_grounded_body&&!ground_body->cruise,
           "static grounded body uses no clips or cruise rules");
+    std::string free_ground=static_ground;
+    const std::string paid="release=b-shot|12|main|1|shot";
+    free_ground.replace(free_ground.find(paid),paid.size(),
+                        "free-release=b-shot\nrelease=b-shot|12|none|0|shot");
+    const auto free_profile=parse(free_ground);
+    check(free_profile->moves[0].free_release&&free_profile->moves[0].static_pose,
+          "free static release is an explicit no-stock projectile");
+    check(!borg_read_gameplay_profile(free_ground+"release=b-shot|13|main|1|shot\n",&invalid_scope,&scope_error),
+          "free release cannot mix a paid shot");
     for(auto row:{"idle=0:0\n","cruise-boost=240|240|12|12|8|4\n","body-motion=static-cruise\n"})
         check(!borg_read_gameplay_profile(static_ground+row,&invalid_scope,&scope_error),
               "static ground policy rejects animation and cruise substitutes");

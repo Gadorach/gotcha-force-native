@@ -20,6 +20,7 @@ from tools.analyze import retail_breath_dragon as breath
 from tools.analyze import retail_roach_bomb as roach_bomb
 from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
+from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_knight_melee as knight
 from tools.analyze import retail_samurai_melee as samurai
@@ -179,6 +180,25 @@ class RosterFormatTests(unittest.TestCase):
         self.assertIn(b"release=breath-dive|8|breath-stock|1|dive\n",dive_rules)
         self.assertNotIn(b"breath-sweep",dive_rules)
         self.assertEqual(dive_receipt["native_dive"]["origin_joint"],12)
+
+    def test_icbm_pilot_binds_the_no_stock_x_and_authors_the_bomb(self):
+        joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]
+        row={"state":0,"substate":0,"selector":45,"handler_pair":[61,0],
+             "class_callback_candidate":None,"contexts":[[0,0]]}
+        actions={"profiles":[{"groups":[{"group":"X","rows":[row]}]}]}
+        rules,pose,receipt=icbm.battle_test(0x0D06,joints,[100],actions)
+        for line in ("body-motion=static-grounded",
+                     "projectile=icbm|bullet|1|10|0|1|0|40|30|0|land-on-floor",
+                     "actor-contact=icbm|ignore","blast=icbm|expiry|300|20|opponent",
+                     "move=icbm|x|10|grounded|40|none","free-release=icbm",
+                     "release=icbm|12|none|0|icbm"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(receipt["source_profile"]["row"]["selector"],45)
+        self.assertEqual(receipt["authored"]["blast_radius"],300)
+        self.assertFalse(receipt["retail_behavior_verified"])
+        actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=44)]
+        with self.assertRaisesRegex(ValueError,"neutral X row"):
+            icbm.battle_test(0x0D06,joints,[100],actions)
 
     def test_charge_pilot_binds_the_shared_x_program_and_authors_the_field(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]
