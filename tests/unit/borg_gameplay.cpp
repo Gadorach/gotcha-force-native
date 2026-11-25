@@ -2547,7 +2547,7 @@ int main(){
             check(world.hits()==1,"damage factor battle hit");
             return world.actors()[1].health;
         };
-        check(battle(parse(std::string(target)+"model=10\n"))==478,
+        check(battle(parse(std::string(target)+"damage-model=10\n"))==478,
               "damage-vs row scales the melee base 20 to 22 against model 10");
         check(battle(parse(target))==480,
               "a receiver without a damage-vs row keeps the melee base 20");

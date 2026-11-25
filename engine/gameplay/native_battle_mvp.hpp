@@ -29,7 +29,7 @@ struct BattleMvpActor {
     static constexpr unsigned lab_air_windup=5,lab_air_burst=8,lab_air_recovery=6;
     static constexpr unsigned lab_glide_entry=6;
     static constexpr f32 lab_glide_sink=1.5f;
-    u16 model=0;BattleMvpVec position{};BattlePoint facing{0,1};f32 vertical_speed=0;
+    u16 model=0;u16 damage_model=0;BattleMvpVec position{};BattlePoint facing{0,1};f32 vertical_speed=0;
     unsigned health=100;bool grounded=true;BattleMvpAction action=BattleMvpAction::Idle;
     std::array<unsigned,2> cooldown{};unsigned attack_ticks=0,hit_flash=0;
     BattlePoint velocity{};f32 movement_speed=0,move_forward=0,move_right=0;
@@ -434,9 +434,10 @@ public:
             const auto p=config.spawn[i];if(!std::isfinite(p.x)||!std::isfinite(p.z)||std::abs(p.x)>config.arena_half-config.actor_radius||std::abs(p.z)>config.arena_half-config.actor_radius)return false;
             if(!std::isfinite(config.spawn_query_y[i])||std::abs(config.spawn_query_y[i])>20000)return false;
             auto& actor=next.actors_[i];actor.model=package?
-                (config.packages[i]->model_declared?config.packages[i]->model:
-                 config.packages[i]->movement==BorgBattleMovement::NormalGRed?0x0615:0):
+                (config.packages[i]->movement==BorgBattleMovement::NormalGRed?0x0615:0):
                 config.solo()?config.solo_model:i?0x000a:0x0615;
+            actor.damage_model=package&&config.packages[i]->damage_model_declared?
+                config.packages[i]->damage_model:actor.model;
             actor.position={p.x,0,p.z};actor.health=package?config.packages[i]->health:config.health;
             if(!floor(terrain,p.x,p.z,config.spawn_query_y[i],&actor.position[1]))return false;
             const auto& cruise=package?config.packages[i]->cruise:config.provisional_cruise;
@@ -2304,7 +2305,7 @@ private:
             target.package_hit_chain_owner=u8(owner);
         }
         const u16 value=borg_damage_amount(profile,base,target.package_hit_chain,
-                                          actors_[recipient].model);
+                                          actors_[recipient].damage_model);
         if(profile.damage_chain_count&&target.package_hit_chain<255)++target.package_hit_chain;
         return value;
     }
