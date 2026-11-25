@@ -235,3 +235,41 @@ package recording `retail_behaviour_verified: false` and its provenance
 Twenty-six rigs are bound in total. The shift happens inside the pose
 evaluation, so `bounds()`, the camera fit and the draw use the same corrected
 geometry while the actor itself never moves.
+
+## Binding families
+
+How the 206 Borgs are bound today, from the map itself:
+
+| Count | Capability | Examples |
+| --- | --- | --- |
+| 91 | basic-melee | `0001` `0005` `0006` |
+| 42 | opt-in authored Battle Test rules; not retail  | `0000` `0002` `0003` |
+| 8 | authored single ground shot | `0104` `0303` `0802` |
+| 8 | opt-in authored pose-free Battle Test; not ret | `0604` `0613` `0618` |
+| 6 | authored sustained breath beam on a pose-free  | `0502` `0504` `0506` |
+| 6 | charge-field | `0004` `0308` `0806` |
+| 6 | flying-field | `0e00` `0e01` `0e02` |
+| 6 | opt-in authored grounded Dragon orb; not retai | `0500` `0509` `050a` |
+| 4 | authored normal tank single shot | `0c00` `0c01` `0c05` |
+| 4 | opt-in authored Worm orb; not retail combat | `0501` `050b` `050d` |
+| 4 | opt-in authored static-cruise Battle Test; not | `0505` `0511` `0d05` |
+| 4 | zeta-field | `0705` `070b` `070c` |
+| 3 | authored normal ground shot pair | `0619` `061f` `0625` |
+| 2 | authored sustained breath beam | `0503` `050f` |
+| 2 | icbm | `0d06` `0d07` |
+| 2 | opt-in authored cruise-entry Battle Test; not  | `061b` `0620` |
+| 2 | opt-in authored static-cruise B-charge; not re | `0d00` `0d04` |
+| 1 | held-fire | `0102` |
+| 1 | nu-field | `0f03` |
+| 1 | roach-bomb | `0f05` |
+| 1 | spawner-shot | `010a` |
+| 1 | spawner-static | `0f04` |
+| 1 | staged-field | `0205` |
+
+The two largest families dominate any B/X improvement: **91 melee** Borgs use a
+stockless body proxy with no weapon collision, and **42** use the generic
+authored Battle Test rules. Everything else is one of the named pilots, whose
+geometry and damage are authored but whose route is bound.
+
+That ordering is deliberate: changing the melee proxy and the generic shot
+rules reaches 133 of 206 Borgs, while a further named pilot reaches a handful.
