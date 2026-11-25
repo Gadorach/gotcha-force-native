@@ -30,6 +30,20 @@ def _text(path):
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+def _declared_int(path, key):
+    """Read one integer rule from an emitted gameplay file, if present."""
+    if not path.exists():
+        return None
+    prefix = key + "="
+    for line in _text(path).splitlines():
+        if line.startswith(prefix):
+            try:
+                return int(line[len(prefix):])
+            except ValueError:
+                return None
+    return None
+
+
 def _manifest(path):
     fields = {}
     for line in _text(path).splitlines():
@@ -165,6 +179,7 @@ def borg_entry(folder, action_cues=()):
         "logical_joints": len(summary.get("logical_joints") or []),
         "wrapper_slots": len(summary.get("model_wrapper_slots") or []),
         "air_action_budget": summary.get("air_action_budget"),
+        "pose_ground_offset": _declared_int(folder / "gameplay.txt", "pose-ground-offset"),
         "movement": {
             "candidate_types": movement.get("candidate_types"),
             "candidates": [{"config": candidate.get("config"),

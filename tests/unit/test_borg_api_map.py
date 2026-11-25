@@ -76,6 +76,16 @@ class BorgApiMapTest(unittest.TestCase):
         self.assertEqual(plain["authored_note"], "plain note")
         self.assertIsNone(api._binding({})["capability"])
 
+    def test_declared_int_reads_an_emitted_gameplay_rule(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "gameplay.txt"
+            self.assertIsNone(api._declared_int(path, "pose-ground-offset"))
+            path.write_text("movement=grounded-v1|4.17|13|15\npose-ground-offset=83\n")
+            self.assertEqual(api._declared_int(path, "pose-ground-offset"), 83)
+            path.write_text("pose-ground-offset=oops\n")
+            self.assertIsNone(api._declared_int(path, "pose-ground-offset"))
+
     @unittest.skipUnless(ROSTER.is_dir(), "local roster export")
     def test_map_states_that_it_carries_no_asset_bytes(self):
         data = api.build(ROSTER)

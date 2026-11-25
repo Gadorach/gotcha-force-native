@@ -239,6 +239,7 @@
     }
    },
    "name": "NORMAL NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -487,6 +488,7 @@
     }
    },
    "name": "SHURIKEN NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -735,6 +737,7 @@
     }
    },
    "name": "ARROW NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -1002,6 +1005,7 @@
     }
    },
    "name": "DOUBLE NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -1272,6 +1276,7 @@
     }
    },
    "name": "ACCELERATION NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -1601,6 +1606,7 @@
     }
    },
    "name": "TELEPORT NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -1849,6 +1855,7 @@
     }
    },
    "name": "FLAME NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -2116,6 +2123,7 @@
     }
    },
    "name": "CYBER NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -2407,6 +2415,7 @@
     }
    },
    "name": "DEATH BORG ALPHA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -2736,6 +2745,7 @@
     }
    },
    "name": "SWITCHING NINJA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -3046,6 +3056,7 @@
     }
    },
    "name": "SASUKE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -3294,6 +3305,7 @@
     }
    },
    "name": "SHIJIMA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -3585,6 +3597,7 @@
     }
    },
    "name": "DEATH BORG ALPHA II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -3833,6 +3846,7 @@
     }
    },
    "name": "REVOLVER GUNMAN",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -4100,6 +4114,7 @@
     }
    },
    "name": "POWERED GUNMAN",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -4329,6 +4344,7 @@
     }
    },
    "name": "GATLING GUNNER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -4701,6 +4717,7 @@
     }
    },
    "name": "WIRE GUNNER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -4968,6 +4985,7 @@
     }
    },
    "name": "BEAM GUNNER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -5197,6 +5215,7 @@
     }
    },
    "name": "DEATH BORG BETA II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -5569,6 +5588,7 @@
     }
    },
    "name": "TIME BOMBER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -5941,6 +5961,7 @@
     }
    },
    "name": "REMOTE BOMBER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -6189,6 +6210,7 @@
     }
    },
    "name": "BILLY",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -6418,6 +6440,7 @@
     }
    },
    "name": "DEATH BORG BETA",
+   "pose_ground_offset": 216,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -6651,6 +6674,7 @@
     }
    },
    "name": "DEATH BORG BETA III",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -6980,6 +7004,7 @@
     }
    },
    "name": "SWORD KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -7228,6 +7253,7 @@
     }
    },
    "name": "CHAINSAW KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -7476,6 +7502,7 @@
     }
    },
    "name": "ELEMENTAL KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -7805,6 +7832,7 @@
     }
    },
    "name": "SPIKE KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -8053,6 +8081,7 @@
     }
    },
    "name": "AXE KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -8340,6 +8369,7 @@
     }
    },
    "name": "DARK KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     7,
@@ -8550,6 +8580,7 @@
     }
    },
    "name": "DEATH BORG GAMMA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -8798,6 +8829,7 @@
     }
    },
    "name": "ALIEN INSECT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -9108,6 +9140,7 @@
     }
    },
    "name": "SAPPHIRE KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -9375,6 +9408,7 @@
     }
    },
    "name": "IMPERIAL KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -9704,6 +9738,7 @@
     }
    },
    "name": "NORMAL KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -9952,6 +9987,7 @@
     }
    },
    "name": "GHOST KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -10281,6 +10317,7 @@
     }
    },
    "name": "HAMMER KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -10529,6 +10566,7 @@
     }
    },
    "name": "HATCHET KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -10839,6 +10877,7 @@
     }
    },
    "name": "RUBY KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -11168,6 +11207,7 @@
     }
    },
    "name": "DEATH BORG GAMMA II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -11416,6 +11456,7 @@
     }
    },
    "name": "BATTLE GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -11664,6 +11705,7 @@
     }
    },
    "name": "WIRE GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -11993,6 +12035,7 @@
     }
    },
    "name": "BARRIER GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -12222,6 +12265,7 @@
     }
    },
    "name": "DEATH BORG DELTA II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -12513,6 +12557,7 @@
     }
    },
    "name": "KILLER GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -12823,6 +12868,7 @@
     }
    },
    "name": "CYBER GIRL SUPER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -13152,6 +13198,7 @@
     }
    },
    "name": "COMMAND GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -13381,6 +13428,7 @@
     }
    },
    "name": "SPINNER GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -13689,6 +13737,7 @@
     }
    },
    "name": "SHADOW GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -13999,6 +14048,7 @@
     }
    },
    "name": "CYBER GIRL",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -14309,6 +14359,7 @@
     }
    },
    "name": "CYBER GIRL HYPER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -14557,6 +14608,7 @@
     }
    },
    "name": "KEI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -14767,6 +14819,7 @@
     }
    },
    "name": "DEATH BORG DELTA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -14996,6 +15049,7 @@
     }
    },
    "name": "DEATH BORG DELTA III",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -15244,6 +15298,7 @@
     }
    },
    "name": "CLAW ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -15492,6 +15547,7 @@
     }
    },
    "name": "DRILL ROBOT",
+   "pose_ground_offset": 68,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -15797,6 +15853,7 @@
     }
    },
    "name": "BUILD ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -16045,6 +16102,7 @@
     }
    },
    "name": "HAMMER ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -16293,6 +16351,7 @@
     }
    },
    "name": "THUNDER ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -16541,6 +16600,7 @@
     }
    },
    "name": "MAGNET ROBOT (+)",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -16770,6 +16830,7 @@
     }
    },
    "name": "DEATH BORG OMEGA",
+   "pose_ground_offset": 47,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -17075,6 +17136,7 @@
     }
    },
    "name": "MEGATON ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -17380,6 +17442,7 @@
     }
    },
    "name": "ARMY ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -17628,6 +17691,7 @@
     }
    },
    "name": "MAGNET ROBOT (-)",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -17876,6 +17940,7 @@
     }
    },
    "name": "ISAAC",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -18153,6 +18218,7 @@
     }
    },
    "name": "DEATH BORG OMEGA II",
+   "pose_ground_offset": 47,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -18430,6 +18496,7 @@
     }
    },
    "name": "DEATH BORG OMEGA III",
+   "pose_ground_offset": 47,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -18707,6 +18774,7 @@
     }
    },
    "name": "DEATH BORG OMEGA IV",
+   "pose_ground_offset": 47,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -19012,6 +19080,7 @@
     }
    },
    "name": "FLAME DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     8,
@@ -19345,6 +19414,7 @@
     }
    },
    "name": "ALIEN WORM",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -19617,6 +19687,7 @@
     }
    },
    "name": "PHOENIX DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -19869,6 +19940,7 @@
     }
    },
    "name": "CYBER DEATH DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     10,
@@ -20154,6 +20226,7 @@
     }
    },
    "name": "COSMIC DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -20397,6 +20470,7 @@
     "pace": null
    },
    "name": "DEATH HEAD",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -20570,6 +20644,7 @@
     }
    },
    "name": "CYBER DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -20850,6 +20925,7 @@
     }
    },
    "name": "PLASMA DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     8,
@@ -21130,6 +21206,7 @@
     }
    },
    "name": "BLIZZARD DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     8,
@@ -21463,6 +21540,7 @@
     }
    },
    "name": "VENOM WORM",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -21768,6 +21846,7 @@
     }
    },
    "name": "FIRE DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -22101,6 +22180,7 @@
     }
    },
    "name": "CLAW WORM",
+   "pose_ground_offset": 83,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -22373,6 +22453,7 @@
     }
    },
    "name": "WING DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -22625,6 +22706,7 @@
     }
    },
    "name": "MACHINE DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     8,
@@ -22910,6 +22992,7 @@
     }
    },
    "name": "SPACE DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -23153,6 +23236,7 @@
     "pace": null
    },
    "name": "MACHINE HEAD",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -23326,6 +23410,7 @@
     }
    },
    "name": "MECHANICAL DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     8,
@@ -23606,6 +23691,7 @@
     }
    },
    "name": "THUNDER DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -23886,6 +23972,7 @@
     }
    },
    "name": "ICE DRAGON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -24219,6 +24306,7 @@
     }
    },
    "name": "POISON WORM",
+   "pose_ground_offset": 83,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -24467,6 +24555,7 @@
     }
    },
    "name": "MACHINE RED",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -24815,6 +24904,7 @@
     }
    },
    "name": "MACHINE BLUE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -25082,6 +25172,7 @@
     }
    },
    "name": "CYBER MACHINE SEIRYU",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -25411,6 +25502,7 @@
     }
    },
    "name": "TITAN ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -25721,6 +25813,7 @@
     }
    },
    "name": "EAGLE ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -25969,6 +26062,7 @@
     }
    },
    "name": "CYBER MARS",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -26317,6 +26411,7 @@
     }
    },
    "name": "CYBER ATLAS",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -26584,6 +26679,7 @@
     }
    },
    "name": "CYBER MACHINE SUZAKU",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -26851,6 +26947,7 @@
     }
    },
    "name": "CYBER MACHINE BYAKKO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -27118,6 +27215,7 @@
     }
    },
    "name": "CYBER MACHINE GENBU",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -27447,6 +27545,7 @@
     }
    },
    "name": "VICTORY KING",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -27776,6 +27875,7 @@
     }
    },
    "name": "PANTHER ROBOT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -28143,6 +28243,7 @@
     }
    },
    "name": "G RED",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -28391,6 +28492,7 @@
     }
    },
    "name": "PROTO RED",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -28739,6 +28841,7 @@
     }
    },
    "name": "PROTO BLUE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -29068,6 +29171,7 @@
     }
    },
    "name": "PROTO TITAN",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -29378,6 +29482,7 @@
     }
    },
    "name": "TITAN TANK",
+   "pose_ground_offset": 22,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -29688,6 +29793,7 @@
     }
    },
    "name": "PROTO EAGLE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -29975,6 +30081,7 @@
     "pace": null
    },
    "name": "EAGLE JET",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -30162,6 +30269,7 @@
     }
    },
    "name": "PROTO MARS",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -30510,6 +30618,7 @@
     }
    },
    "name": "PROTO ATLAS",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -30839,6 +30948,7 @@
     }
    },
    "name": "PROTO KING",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -31206,6 +31316,7 @@
     }
    },
    "name": "VICTORY TANK",
+   "pose_ground_offset": 22,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -31631,6 +31742,7 @@
     "pace": null
    },
    "name": "VICTORY JET",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -31899,6 +32011,7 @@
     }
    },
    "name": "VICTORY DUKE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -32228,6 +32341,7 @@
     }
    },
    "name": "VICTORY BARON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -32595,6 +32709,7 @@
     }
    },
    "name": "VICTORY MACHINE",
+   "pose_ground_offset": 22,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -32924,6 +33039,7 @@
     }
    },
    "name": "PROTO PANTHER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -33234,6 +33350,7 @@
     }
    },
    "name": "PANTHER VEHICLE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -33601,6 +33718,7 @@
     }
    },
    "name": "NEO G RED",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -33968,6 +34086,7 @@
     }
    },
    "name": "G BLACK",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -34216,6 +34335,7 @@
     }
    },
    "name": "NORMAL SAMURAI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -34640,6 +34760,7 @@
     }
    },
    "name": "DEMON SAMURAI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -34888,6 +35009,7 @@
     }
    },
    "name": "VAMPIRE KNIGHT",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -35136,6 +35258,7 @@
     }
    },
    "name": "SONIC SAMURAI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -35384,6 +35507,7 @@
     }
    },
    "name": "SAMURAI SHOGUN",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -35648,6 +35772,7 @@
     }
    },
    "name": "DEATH BORG ZETA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -35877,6 +36002,7 @@
     }
    },
    "name": "BEAM SAMURAI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -36125,6 +36251,7 @@
     }
    },
    "name": "CHRONO SAMURAI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -36549,6 +36676,7 @@
     }
    },
    "name": "AKUMA SAMURAI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -36797,6 +36925,7 @@
     }
    },
    "name": "MUSASHI",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -37045,6 +37174,7 @@
     }
    },
    "name": "VLAD",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -37309,6 +37439,7 @@
     }
    },
    "name": "DEATH BORG ZETA II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -37749,6 +37880,7 @@
     }
    },
    "name": "DEATH BORG ZETA III",
+   "pose_ground_offset": 36,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -38189,6 +38321,7 @@
     }
    },
    "name": "DEATH BORG ZETA IV",
+   "pose_ground_offset": 36,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -38437,6 +38570,7 @@
     }
    },
    "name": "KUNG-FU MASTER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -38685,6 +38819,7 @@
     }
    },
    "name": "TAO MASTER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -38971,6 +39106,7 @@
     }
    },
    "name": "GOLD HERO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -39281,6 +39417,7 @@
     }
    },
    "name": "STAR HERO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -39529,6 +39666,7 @@
     }
    },
    "name": "JELLY DIVER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -39759,6 +39897,7 @@
     }
    },
    "name": "COPY MAN",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -39969,6 +40108,7 @@
     }
    },
    "name": "DEATH BORG TAU",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -40255,6 +40395,7 @@
     }
    },
    "name": "CYBER HERO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -40485,6 +40626,7 @@
     }
    },
    "name": "WALKING BOMB",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -40807,6 +40949,7 @@
     }
    },
    "name": "METAL HERO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -41117,6 +41260,7 @@
     }
    },
    "name": "PLANET HERO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -41365,6 +41509,7 @@
     }
    },
    "name": "TAR DIVER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -41613,6 +41758,7 @@
     }
    },
    "name": "JACK",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -41843,6 +41989,7 @@
     }
    },
    "name": "DEATH BORG OMICRON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -42091,6 +42238,7 @@
     }
    },
    "name": "ANGEL NURSE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -42339,6 +42487,7 @@
     }
    },
    "name": "BUG WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -42587,6 +42736,7 @@
     }
    },
    "name": "PATRA WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -42835,6 +42985,7 @@
     }
    },
    "name": "GUARD WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -43083,6 +43234,7 @@
     }
    },
    "name": "POP HONEY",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -43355,6 +43507,7 @@
     }
    },
    "name": "DEATH BORG THETA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -43603,6 +43756,7 @@
     }
    },
    "name": "BASTET WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -43851,6 +44005,7 @@
     }
    },
    "name": "ANGEL RESCUE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -44099,6 +44254,7 @@
     }
    },
    "name": "ISIS WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -44347,6 +44503,7 @@
     }
    },
    "name": "SHIELD WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -44619,6 +44776,7 @@
     }
    },
    "name": "DEATH BORG IOTA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -44867,6 +45025,7 @@
     }
    },
    "name": "SEKHMET WITCH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -45115,6 +45274,7 @@
     }
    },
    "name": "NAO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -45344,6 +45504,7 @@
     }
    },
    "name": "WING SOLDIER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -45602,6 +45763,7 @@
     }
    },
    "name": "JET HERO",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -45903,6 +46065,7 @@
     }
    },
    "name": "DEMON WING",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -46161,6 +46324,7 @@
     }
    },
    "name": "BEAM WING BLUE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -46419,6 +46583,7 @@
     }
    },
    "name": "ANUBIS WING",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -46658,6 +46823,7 @@
     }
    },
    "name": "DEATH BORG SIGMA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -46916,6 +47082,7 @@
     }
    },
    "name": "BEAM WING RED",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -47217,6 +47384,7 @@
     }
    },
    "name": "DEATH WING",
+   "pose_ground_offset": 84,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -47475,6 +47643,7 @@
     }
    },
    "name": "BLADE WING",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -47733,6 +47902,7 @@
     }
    },
    "name": "GARUDA",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -47972,6 +48142,7 @@
     }
    },
    "name": "DEATH BORG SIGMA II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -48230,6 +48401,7 @@
     }
    },
    "name": "QUICK VALKRIE",
+   "pose_ground_offset": 50,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -48488,6 +48660,7 @@
     }
    },
    "name": "ICE VALKRIE",
+   "pose_ground_offset": 39,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -48746,6 +48919,7 @@
     }
    },
    "name": "TORNADO VALKRIE",
+   "pose_ground_offset": 43,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -49004,6 +49178,7 @@
     }
    },
    "name": "WIND VALKRIE",
+   "pose_ground_offset": 48,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -49262,6 +49437,7 @@
     }
    },
    "name": "RING VALKRIE",
+   "pose_ground_offset": 38,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -49501,6 +49677,7 @@
     }
    },
    "name": "DEATH BORG LAMBDA",
+   "pose_ground_offset": 48,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -49759,6 +49936,7 @@
     }
    },
    "name": "SLOW VALKRIE",
+   "pose_ground_offset": 50,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -49998,6 +50176,7 @@
     }
    },
    "name": "DEATH BORG LAMBDA II",
+   "pose_ground_offset": 48,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -50256,6 +50435,7 @@
     }
    },
    "name": "NORMAL TANK",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -50504,6 +50684,7 @@
     }
    },
    "name": "GATLING TANK",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -50752,6 +50933,7 @@
     }
    },
    "name": "BEAM TANK",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     5,
@@ -51019,6 +51201,7 @@
     }
    },
    "name": "ULTIMATE CANNON",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     6,
@@ -51247,6 +51430,7 @@
     }
    },
    "name": "ICBM TANK",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -51495,6 +51679,7 @@
     }
    },
    "name": "LEOPARD",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     4,
@@ -51758,6 +51943,7 @@
     "pace": null
    },
    "name": "BLUE STRIKER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -51936,6 +52122,7 @@
     "pace": null
    },
    "name": "RED ATTACKER",
+   "pose_ground_offset": 74,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -52133,6 +52320,7 @@
     "pace": null
    },
    "name": "CARRIER HELICOPTER",
+   "pose_ground_offset": 71,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -52311,6 +52499,7 @@
     "pace": null
    },
    "name": "FLYING SAUCER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     3,
@@ -52513,6 +52702,7 @@
     "pace": null
    },
    "name": "ORANGE FIGHTER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -52696,6 +52886,7 @@
     "pace": null
    },
    "name": "VIOLET ATTACKER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -52855,6 +53046,7 @@
     "pace": null
    },
    "name": "DEATH ICBM",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     2,
@@ -53014,6 +53206,7 @@
     "pace": null
    },
    "name": "DEATH BOMB",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -53239,6 +53432,7 @@
     "pace": null
    },
    "name": "SIRIUS",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -53443,6 +53637,7 @@
     "pace": null
    },
    "name": "BEAM SATELLITE",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -53647,6 +53842,7 @@
     "pace": null
    },
    "name": "DEATH SAUCER",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -53853,6 +54049,7 @@
     "pace": null
    },
    "name": "ANTARES",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -54057,6 +54254,7 @@
     "pace": null
    },
    "name": "GALACTIC EMPEROR",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     10,
@@ -54282,6 +54480,7 @@
     "pace": null
    },
    "name": "DEATH ARC",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     9,
@@ -54446,6 +54645,7 @@
     "pace": null
    },
    "name": "DEATH BORG MU",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -54586,6 +54786,7 @@
     "pace": null
    },
    "name": "DEATH BORG NU",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -54726,6 +54927,7 @@
     "pace": null
    },
    "name": "DEATH BORG NU II",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -54891,6 +55093,7 @@
     "pace": null
    },
    "name": "DEATH BORG NU III",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -55049,6 +55252,7 @@
     "pace": null
    },
    "name": "DEATH BORG CHI",
+   "pose_ground_offset": 23,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -55204,6 +55408,7 @@
     "pace": null
    },
    "name": "ROACH",
+   "pose_ground_offset": null,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,
@@ -55344,6 +55549,7 @@
     "pace": null
    },
    "name": "DEATH EYE",
+   "pose_ground_offset": 26,
    "preview_declaration": true,
    "ratings_def_sht_atk_spd": [
     1,

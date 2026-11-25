@@ -34,6 +34,9 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   `09F` on 181 grounded walkers, or `null` where the profile keeps the older
   jump-only rule. It records the operand, the value and
   `retail_behaviour_verified: false`.
+- `pose_ground_offset` — the authored `pose-ground-offset` value for the 26 rigs
+  whose posed floor floated above the actor, or `null`. It is read from the
+  emitted gameplay rule, so the map reflects the shipped content.
 - `roles` — the locomotion clip roles bound for the package.
 - `actions` — per group, the profile identity and the neutral `(0,0)` rows
   only, with state, selector, handler pair, class callback and how many
