@@ -283,6 +283,19 @@ that layer or write the guest pad buffer directly — both are runtime work in t
 sibling checkout, not in this repository.
 
 Do not scan for SI register materialisation again; it is absent by design.
+
+Two further facts bound the route. The sibling checkout **does** bundle a working
+emulator — `local/dolphin/usr/bin/dolphin-emu` (Dolphin 2609, needs
+`LD_LIBRARY_PATH=local/dolphin/usr/lib`), and it boots the desktop disc image
+offscreen until killed. But its input path (`tools/verify/reference_window.py`,
+driven by `keyboard-inputs.jsonl`) injects **host** keys through X11/xcb, and
+`Xvfb` is not installed here, so that harness cannot reach a menu in this
+environment.
+
+So the remaining options are narrow and all outside this repository: a Dolphin
+movie (`.dtm`) played back headless, guest pad writes through the Dolphin GDB
+stub, or a runtime HLE hook in ModernGekko. Each needs work in the sibling
+checkout before this repo's observer can see a single damage event.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
