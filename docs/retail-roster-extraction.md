@@ -1632,6 +1632,12 @@ classification:
   decoded; the part assets and per-slot behavior remain unbound. These
   are timed effects and boss subsystem activations, not shots, so they
   need the child/effect ownership path.
+
+  The four also expose source movement types **9** (`0e01`), **11**
+  (`0e02`) and **8** (`0e03`/`0e04`) with no cruise or pace evidence. An
+  authored `grounded-v1` or static-cruise body is not a substitute for
+  those exact base controllers, so they also wait on the flying movement
+  runtime. `0e00`/`0e05` are the separate sequence-child route.
 - **Unsettled classification** (`0004` Acceleration Ninja): its B-shot
   program clip `3:11` binds strictly but requests no projectile, so it is
   either a melee or a buff and must not be guessed.
