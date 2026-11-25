@@ -34,6 +34,10 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   `09F` on 181 grounded walkers, or `null` where the profile keeps the older
   jump-only rule. It records the operand, the value and
   `retail_behaviour_verified: false`.
+- `audio.bound` — which audio keys the shipped gameplay actually declares:
+  `landing`, `action`, `launch`, `release` and `impact`, read from the emitted
+  rules. On this roster that is landing 181, action 11, launch 83, release 1 and
+  impact 6, so the gaps are visible per Borg instead of inferred.
 - `pose_ground_offset` — the authored `pose-ground-offset` value for the 26 rigs
   whose posed floor floated above the actor, or `null`. It is read from the
   emitted gameplay rule, so the map reflects the shipped content.

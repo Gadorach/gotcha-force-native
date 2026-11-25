@@ -125,6 +125,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -379,6 +388,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -628,6 +644,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -896,6 +921,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -1145,6 +1179,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -1492,6 +1533,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -1746,6 +1794,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -2014,6 +2069,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -2301,6 +2367,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -2631,6 +2706,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -2942,6 +3024,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -3196,6 +3287,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -3483,6 +3583,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-8.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -3737,6 +3846,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -4005,6 +4123,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -4235,6 +4360,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "gatling|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -4598,6 +4732,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -4876,6 +5019,15 @@
     "value": 4
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -5106,6 +5258,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -5469,6 +5630,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -5842,6 +6010,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -6101,6 +6276,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -6331,6 +6513,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -6542,6 +6731,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -6890,6 +7086,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -7144,6 +7347,13 @@
     "value": 4
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -7393,6 +7603,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -7718,6 +7935,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [
+      "opening-slash|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -7972,6 +8198,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -8240,6 +8473,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -8471,6 +8711,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -8720,6 +8967,13 @@
     "value": 4
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -9026,6 +9280,13 @@
     "value": 4
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -9299,6 +9560,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -9624,6 +9892,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -9878,6 +10153,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -10203,6 +10485,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [
+      "opening-slash|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -10457,6 +10748,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -10763,6 +11061,13 @@
     "value": 4
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -11093,6 +11398,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -11347,6 +11659,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -11596,6 +11915,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -11921,6 +12247,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -12156,6 +12489,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-58.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -12443,6 +12785,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -12754,6 +13103,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -13084,6 +13440,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -13319,6 +13682,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -13606,6 +13976,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -13934,6 +14311,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -14245,6 +14629,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -14499,6 +14890,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -14710,6 +15108,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -14940,6 +15345,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -15189,6 +15601,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -15438,6 +15857,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -15744,6 +16170,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -15993,6 +16426,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -16242,6 +16682,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -16491,6 +16938,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -16721,6 +17175,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -17027,6 +17488,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -17333,6 +17801,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -17582,6 +18057,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -17831,6 +18313,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -18099,6 +18588,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -18377,6 +18873,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -18655,6 +19158,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -18971,6 +19481,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [
+      "orb|actor|audio/impact-snd_com01-12.pcm"
+     ],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "orb|audio/launch-snd_com02-71.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -19290,6 +19811,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-82.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -19573,6 +20103,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -19826,6 +20363,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -20112,6 +20656,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -20355,6 +20906,16 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -20530,6 +21091,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -20816,6 +21384,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [
+      "orb|actor|audio/impact-snd_com01-12.pcm"
+     ],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "orb|audio/launch-snd_com02-71.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -21097,6 +21676,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [
+      "orb|actor|audio/impact-snd_com01-12.pcm"
+     ],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "orb|audio/launch-snd_com02-71.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -21416,6 +22006,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com03-4.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -21737,6 +22336,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [
+      "orb|actor|audio/impact-snd_com01-12.pcm"
+     ],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "orb|audio/launch-snd_com02-71.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -22056,6 +22666,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-82.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -22339,6 +22958,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -22592,6 +23218,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -22878,6 +23511,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -23121,6 +23761,16 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -23296,6 +23946,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -23582,6 +24239,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [
+      "orb|actor|audio/impact-snd_com01-12.pcm"
+     ],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "orb|audio/launch-snd_com02-71.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -23863,6 +24531,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [
+      "orb|actor|audio/impact-snd_com01-12.pcm"
+     ],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "orb|audio/launch-snd_com02-71.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -24182,6 +24861,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com03-4.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -24446,6 +25134,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -24790,6 +25487,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -25063,6 +25767,17 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm",
+      "shot-third|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -25388,6 +26103,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -25699,6 +26424,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -25953,6 +26688,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -26297,6 +27042,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -26570,6 +27322,20 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm",
+      "shot-third|audio/launch-snd_com02-57.pcm",
+      "shot-fourth|audio/launch-snd_com02-57.pcm",
+      "shot-fifth|audio/launch-snd_com02-57.pcm",
+      "shot-sixth|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -26838,6 +27604,19 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm",
+      "shot-third|audio/launch-snd_com02-57.pcm",
+      "shot-fourth|audio/launch-snd_com02-57.pcm",
+      "shot-fifth|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -27106,6 +27885,18 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm",
+      "shot-third|audio/launch-snd_com02-57.pcm",
+      "shot-fourth|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -27431,6 +28222,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -27761,6 +28561,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -28129,6 +28939,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -28383,6 +29202,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -28727,6 +29555,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -29057,6 +29892,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -29368,6 +30213,18 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -29679,6 +30536,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -29966,6 +30833,18 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -30160,6 +31039,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -30504,6 +31393,13 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -30834,6 +31730,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -31202,6 +32107,18 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -31622,6 +32539,18 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -31897,6 +32826,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -32227,6 +33165,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -32595,6 +33542,18 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -32925,6 +33884,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -33236,6 +34205,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm",
+      "shot-second|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -33604,6 +34583,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -33972,6 +34960,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -34226,6 +35223,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -34646,6 +35650,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -34900,6 +35911,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -35149,6 +36167,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -35398,6 +36423,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -35647,6 +36679,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -35893,6 +36932,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -36142,6 +37188,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -36562,6 +37615,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -36816,6 +37876,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -37065,6 +38132,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -37314,6 +38388,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -37750,6 +38831,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -38191,6 +39279,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -38461,6 +39556,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -38710,6 +39814,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -38997,6 +40110,15 @@
     "value": 2
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -39303,6 +40425,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [
+      "opening-slash|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -39557,6 +40688,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -39768,6 +40906,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -39999,6 +41144,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -40286,6 +41438,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -40497,6 +41656,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -40823,6 +41989,13 @@
     "value": 2
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -41146,6 +42319,17 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [
+      "basic-shot|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": [
+      "basic-shot|6|audio/release-snd_com02-34.pcm"
+     ]
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -41400,6 +42584,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -41649,6 +42840,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -41860,6 +43058,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -42129,6 +43334,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -42378,6 +43592,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -42627,6 +43850,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -42876,6 +44108,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -43125,6 +44366,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -43393,6 +44641,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -43647,6 +44904,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -43896,6 +45162,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -44145,6 +45420,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -44394,6 +45678,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -44662,6 +45955,13 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -44916,6 +46216,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -45165,6 +46474,15 @@
     "value": 3
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -45395,6 +46713,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -45654,6 +46979,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -45951,6 +47283,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -46215,6 +47554,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -46474,6 +47820,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -46714,6 +48067,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -46973,6 +48333,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -47270,6 +48637,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -47534,6 +48908,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -47793,6 +49174,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -48033,6 +49421,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -48292,6 +49687,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -48551,6 +49953,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -48810,6 +50219,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -49069,6 +50485,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -49328,6 +50751,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -49568,6 +50998,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -49827,6 +51264,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -50067,6 +51511,13 @@
     "value": 6
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -50326,6 +51777,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -50575,6 +52035,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -50824,6 +52293,16 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -51092,6 +52571,18 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm",
+      "shot-third|audio/launch-snd_com02-57.pcm",
+      "shot-fourth|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -51321,6 +52812,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -51570,6 +53070,15 @@
     "value": 5
    },
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": "audio/lab-landing.pcm",
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": "audio/lab-landing.pcm",
@@ -51833,6 +53342,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -52017,6 +53535,16 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -52215,6 +53743,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -52394,6 +53931,16 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm",
+      "shot-second|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -52592,6 +54139,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -52776,6 +54332,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -52922,6 +54487,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -53082,6 +54654,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -53299,6 +54878,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -53506,6 +55092,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -53711,6 +55304,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -53916,6 +55516,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -54123,6 +55730,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -54347,6 +55961,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -54535,6 +56156,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -54681,6 +56311,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -54822,6 +56461,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com02-57.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -54963,6 +56611,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -55129,6 +56784,13 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -55288,6 +56950,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [
+      "mine|audio/action-0.pcm"
+     ],
+     "impact": [],
+     "landing": null,
+     "launch": [],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,
@@ -55444,6 +57115,15 @@
    ],
    "air_action_budget": null,
    "audio": {
+    "bound": {
+     "action": [],
+     "impact": [],
+     "landing": null,
+     "launch": [
+      "shot|audio/launch-snd_com01-6.pcm"
+     ],
+     "release": []
+    },
     "landing": {
      "bank": "snd_com01",
      "lab_pcm": null,

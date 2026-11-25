@@ -86,6 +86,23 @@ class BorgApiMapTest(unittest.TestCase):
             path.write_text("pose-ground-offset=oops\n")
             self.assertIsNone(api._declared_int(path, "pose-ground-offset"))
 
+    def test_bound_audio_reads_the_declared_keys(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as name:
+            folder = Path(name)
+            self.assertEqual(api._bound_audio(folder),
+                             {"landing": None, "action": [], "launch": [], "release": [], "impact": []})
+            (folder / "gameplay.txt").write_text(
+                "movement-sound=landing|audio/lab-landing.pcm\n"
+                "action-sound=basic-shot|audio/action-0.pcm\n"
+                "launch-sound=shot|audio/launch.pcm\n")
+            bound = api._bound_audio(folder)
+            self.assertEqual(bound["landing"], "audio/lab-landing.pcm")
+            self.assertEqual(bound["action"], ["basic-shot|audio/action-0.pcm"])
+            self.assertEqual(bound["launch"], ["shot|audio/launch.pcm"])
+            self.assertEqual(bound["release"], [])
+            self.assertEqual(bound["impact"], [])
+
     @unittest.skipUnless(ROSTER.is_dir(), "local roster export")
     def test_map_states_that_it_carries_no_asset_bytes(self):
         data = api.build(ROSTER)

@@ -145,6 +145,26 @@ def _binding(summary):
             "retail_behavior_verified": bool(receipt.get("retail_behavior_verified"))}
 
 
+def _bound_audio(folder):
+    """Which audio keys the shipped gameplay actually declares."""
+    path = folder / "gameplay.txt"
+    bound = {"landing": None, "action": [], "launch": [], "release": [], "impact": []}
+    if not path.exists():
+        return bound
+    for line in _text(path).splitlines():
+        for key, slot in (("movement-sound=landing|", "landing"),
+                          ("action-sound=", "action"), ("launch-sound=", "launch"),
+                          ("release-sound=", "release"), ("impact-sound=", "impact")):
+            if not line.startswith(key):
+                continue
+            value = line[len(key):]
+            if slot == "landing":
+                bound["landing"] = value
+            else:
+                bound[slot].append(value)
+    return bound
+
+
 def _audio(summary, folder, action_cues=()):
     bindings = summary.get("sfx_bindings") or {}
     landing = bindings.get("landing_candidate") or {}
@@ -159,6 +179,7 @@ def _audio(summary, folder, action_cues=()):
             (summary.get("basic_shot_battle_test") or {}).get("authored_launch_sounds")),
         "recovered_action_cues": len(action_cues),
         "recovered_action_routes": sum(len(cue.get("routes") or []) for cue in action_cues),
+        "bound": _bound_audio(folder),
     }
 
 
