@@ -144,6 +144,28 @@ plays, not which collision shape an attack uses. That places the hit-shape
 request inside the **program bytecode** at `actor+0x1D84`, not in the descriptor
 lanes at all — which is the next thing to decode, and the reason this index was
 worth building even though its first answer was negative.
+
+### The melee contact opcode
+
+Decoding the exported programs (`shared-action-program-controls.json`, 245
+programs: 226 `terminal_wait`, 19 `yielding_loop`) and cross-tabbing opcodes by
+action group isolates one:
+
+| Group | `actor_event_10` | `class_event` | `directional_select` |
+| --- | --- | --- | --- |
+| `B-close` | **85** | 31 | 0 |
+| `B-shot` | 1 | 0 | 32 |
+| `X` | 13 | 11 | 6 |
+
+`actor_event_10` is the melee contact request: 85 occurrences in close programs
+against a single one in the shot programs, which use `directional_select`
+instead.
+
+Its encoding is `0a AA BB ff`, four bytes, where `AA` ranges over **0..7** and
+`BB` is `00` or `7f`. The `AA` range matches a per-Borg attack slot rather than a
+shape id, and `BB` behaves like a side or height flag. So the shape and damage
+for a contact are looked up from `(Borg, slot AA)`, not carried in the command —
+which is the next table to find.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
