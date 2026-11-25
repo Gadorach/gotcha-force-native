@@ -103,6 +103,16 @@ class BorgApiMapTest(unittest.TestCase):
             self.assertEqual(bound["release"], [])
             self.assertEqual(bound["impact"], [])
 
+    def test_stock_channels_summarise_the_recovered_operands(self):
+        self.assertIsNone(api._stock_channels(None))
+        self.assertIsNone(api._stock_channels([]))
+        rows = [{"channel": 0, "levels": [{"initial": 10, "limit": 10, "mode": 0, "preset": 90},
+                                         {"initial": 10, "limit": 10, "mode": 0, "preset": 90}]},
+                {"channel": 1, "levels": [{"initial": 5, "limit": 5, "mode": 0, "preset": 300}]}]
+        self.assertEqual(api._stock_channels(rows),
+                         [{"channel": 0, "initial": 10, "limit": 10, "mode": 0, "preset": 90},
+                          {"channel": 1, "initial": 5, "limit": 5, "mode": 0, "preset": 300}])
+
     @unittest.skipUnless(ROSTER.is_dir(), "local roster export")
     def test_map_states_that_it_carries_no_asset_bytes(self):
         data = api.build(ROSTER)

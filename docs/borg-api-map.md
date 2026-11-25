@@ -34,6 +34,13 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   `09F` on 181 grounded walkers, or `null` where the profile keeps the older
   jump-only rule. It records the operand, the value and
   `retail_behaviour_verified: false`.
+- `stock_channels` — the recovered stock operands per channel (`initial`,
+  `limit`, `mode`, `preset`) from `shared-level-stock-operands.json`, or `null`.
+  Capacity already agrees with `initial` for 89 of the 94 Borgs that declare a
+  stock, so this is published for review rather than used to replace the
+  authored numbers: the five exceptions are the deliberately capacity-one field
+  pilots, and `preset` is unresolved — only 17 of 94 match it directly and 10
+  match twice it, while 67 match neither, so it is not a safe refill interval.
 - `audio.bound` — which audio keys the shipped gameplay actually declares:
   `landing`, `action`, `launch`, `release` and `impact`, read from the emitted
   rules. On this roster that is landing 181, action 11, launch 83, release 1 and

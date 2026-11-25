@@ -318,6 +318,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-00",
    "wrapper_slots": 6
   },
@@ -572,6 +588,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 30,
+     "limit": 30,
+     "mode": 0,
+     "preset": 480
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-00",
@@ -830,6 +862,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-00",
@@ -1109,6 +1157,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-00",
    "wrapper_slots": 6
   },
@@ -1385,6 +1449,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-00",
@@ -1724,6 +1804,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-00",
    "wrapper_slots": 6
   },
@@ -1978,6 +2074,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 240
     }
    ],
    "tribe": "gg4e08:tribe-00",
@@ -2257,6 +2369,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-00",
@@ -2558,6 +2686,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -2897,6 +3041,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-00",
    "wrapper_slots": 6
   },
@@ -3217,6 +3377,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-00",
    "wrapper_slots": 6
   },
@@ -3473,6 +3649,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-00",
@@ -3776,6 +3968,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -4032,6 +4240,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-01",
@@ -4309,6 +4533,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 120
+    }
+   ],
    "tribe": "gg4e08:tribe-01",
    "wrapper_slots": 6
   },
@@ -4546,6 +4786,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 100,
+     "limit": 100,
+     "mode": 0,
+     "preset": 480
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-01",
@@ -4930,6 +5186,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 2,
+     "preset": 480
+    }
+   ],
    "tribe": "gg4e08:tribe-01",
    "wrapper_slots": 6
   },
@@ -5207,6 +5479,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-01",
    "wrapper_slots": 6
   },
@@ -5444,6 +5732,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 120
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -5826,6 +6130,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 2,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-01",
    "wrapper_slots": 6
   },
@@ -6206,6 +6526,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 8,
+     "limit": 8,
+     "mode": 2,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-01",
    "wrapper_slots": 6
   },
@@ -6462,6 +6798,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 120
+    }
+   ],
    "tribe": "gg4e08:tribe-01",
    "wrapper_slots": 6
   },
@@ -6697,6 +7049,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -6938,6 +7306,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -7277,6 +7661,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -7533,6 +7933,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -7787,6 +8203,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -8128,6 +8560,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -8382,6 +8830,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -8679,6 +9143,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -8895,6 +9375,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 2,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -9151,6 +9647,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-11",
@@ -9471,6 +9983,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 3,
+     "limit": 3,
+     "mode": 1,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -9744,6 +10272,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -10083,6 +10627,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -10337,6 +10897,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -10678,6 +11254,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-02",
    "wrapper_slots": 6
   },
@@ -10932,6 +11524,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -11250,6 +11858,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -11589,6 +12213,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -11845,6 +12485,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-03",
    "wrapper_slots": 6
   },
@@ -12099,6 +12755,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 2,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-03",
@@ -12438,6 +13110,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 600
+    }
+   ],
    "tribe": "gg4e08:tribe-03",
    "wrapper_slots": 6
   },
@@ -12675,6 +13363,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 6,
+     "limit": 6,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -12974,6 +13678,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-03",
@@ -13292,6 +14012,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 150
+    },
+    {
+     "channel": 1,
+     "initial": 6,
+     "limit": 6,
+     "mode": 1,
+     "preset": 120
     }
    ],
    "tribe": "gg4e08:tribe-03",
@@ -13631,6 +14367,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-03",
    "wrapper_slots": 6
   },
@@ -13866,6 +14618,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-03",
@@ -14182,6 +14950,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-03",
@@ -14502,6 +15286,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-03",
    "wrapper_slots": 6
   },
@@ -14820,6 +15620,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 240
+    },
+    {
+     "channel": 1,
+     "initial": 12,
+     "limit": 12,
+     "mode": 1,
+     "preset": 120
+    }
+   ],
    "tribe": "gg4e08:tribe-03",
    "wrapper_slots": 6
   },
@@ -15076,6 +15892,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-03",
    "wrapper_slots": 6
   },
@@ -15292,6 +16124,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -15529,6 +16377,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -15787,6 +16651,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -16041,6 +16921,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -16356,6 +17252,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 10,
+     "limit": 10,
+     "mode": 2,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -16610,6 +17522,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -16868,6 +17796,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -17124,6 +18068,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -17359,6 +18319,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -17674,6 +18650,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 1800
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -17987,6 +18979,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 10,
+     "limit": 10,
+     "mode": 2,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -18243,6 +19251,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -18497,6 +19521,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -18784,6 +19824,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -19069,6 +20125,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -19352,6 +20424,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -19644,6 +20732,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -20014,6 +21118,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 2,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 2,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-11",
    "wrapper_slots": 6
   },
@@ -20274,6 +21394,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 15,
+     "limit": 15,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -20527,6 +21663,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -20822,6 +21974,22 @@
      "name": "air-dash-active"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -21040,6 +22208,22 @@
     4
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -21255,6 +22439,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -21549,6 +22749,22 @@
      "name": "air-dash-active"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -21839,6 +23055,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -22209,6 +23441,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-11",
    "wrapper_slots": 6
   },
@@ -22499,6 +23747,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -22869,6 +24133,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 2,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 2,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-11",
    "wrapper_slots": 6
   },
@@ -23129,6 +24409,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 15,
+     "limit": 15,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -23382,6 +24678,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -23677,6 +24989,22 @@
      "name": "air-dash-active"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -23895,6 +25223,22 @@
     4
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -24110,6 +25454,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 8,
+     "limit": 8,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -24404,6 +25764,22 @@
      "name": "air-dash-active"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-05",
    "wrapper_slots": 6
   },
@@ -24694,6 +26070,22 @@
      "choice": 6,
      "group": 0,
      "name": "air-dash-active"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-05",
@@ -25064,6 +26456,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-11",
    "wrapper_slots": 6
   },
@@ -25320,6 +26728,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -25678,6 +27102,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -25955,6 +27395,22 @@
      "choice": 25,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -26297,6 +27753,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -26618,6 +28090,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -26875,6 +28363,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -27233,6 +28737,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -27513,6 +29033,22 @@
      "choice": 25,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -27796,6 +29332,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -28074,6 +29626,22 @@
      "choice": 25,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -28415,6 +29983,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -28753,6 +30337,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -29132,6 +30732,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -29388,6 +31004,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -29746,6 +31378,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -30086,6 +31734,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -30409,6 +32073,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-16",
    "wrapper_slots": 6
   },
@@ -30730,6 +32410,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 450
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -30969,6 +32665,22 @@
     6
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -31226,6 +32938,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 1,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -31584,6 +33312,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -31921,6 +33665,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -32303,6 +34063,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-16",
    "wrapper_slots": 6
   },
@@ -32680,6 +34456,22 @@
     5
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -33019,6 +34811,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -33356,6 +35164,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-04",
@@ -33738,6 +35562,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-16",
    "wrapper_slots": 6
   },
@@ -34078,6 +35918,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -34397,6 +36253,22 @@
      "choice": 5,
      "group": 2,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-16",
@@ -34776,6 +36648,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -35153,6 +37041,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 180
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-04",
    "wrapper_slots": 6
   },
@@ -35407,6 +37311,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-06",
@@ -35841,6 +37761,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 2,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-12",
    "wrapper_slots": 6
   },
@@ -36095,6 +38031,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -36353,6 +38305,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-06",
    "wrapper_slots": 6
   },
@@ -36607,6 +38575,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-06",
@@ -36881,6 +38865,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -37116,6 +39116,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-06",
@@ -37372,6 +39388,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-06",
@@ -37806,6 +39838,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-12",
    "wrapper_slots": 6
   },
@@ -38062,6 +40110,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-06",
    "wrapper_slots": 6
   },
@@ -38316,6 +40380,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-02",
@@ -38588,6 +40668,22 @@
      "choice": 23,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -39038,6 +41134,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 3,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 2,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -39486,6 +41598,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -39744,6 +41872,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-07",
    "wrapper_slots": 6
   },
@@ -40000,6 +42144,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 2,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-07",
@@ -40296,6 +42456,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 1,
+     "mode": 0,
+     "preset": 600
     }
    ],
    "tribe": "gg4e08:tribe-13",
@@ -40618,6 +42794,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-13",
    "wrapper_slots": 6
   },
@@ -40874,6 +43066,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 1200
+    }
+   ],
    "tribe": "gg4e08:tribe-07",
    "wrapper_slots": 6
   },
@@ -41112,6 +43320,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-07",
    "wrapper_slots": 6
   },
@@ -41328,6 +43552,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -41624,6 +43864,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-13",
    "wrapper_slots": 6
   },
@@ -41860,6 +44116,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-07",
@@ -42192,6 +44464,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 1,
+     "mode": 0,
+     "preset": 120
+    }
+   ],
    "tribe": "gg4e08:tribe-13",
    "wrapper_slots": 6
   },
@@ -42514,6 +44802,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 1,
+     "mode": 1,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-13",
    "wrapper_slots": 6
   },
@@ -42768,6 +45072,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 1200
     }
    ],
    "tribe": "gg4e08:tribe-07",
@@ -43026,6 +45346,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 1200
+    }
+   ],
    "tribe": "gg4e08:tribe-07",
    "wrapper_slots": 6
   },
@@ -43262,6 +45598,22 @@
      "choice": 4,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -43522,6 +45874,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-09",
    "wrapper_slots": 6
   },
@@ -43778,6 +46146,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-08",
@@ -44038,6 +46422,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-08",
    "wrapper_slots": 6
   },
@@ -44296,6 +46696,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-08",
    "wrapper_slots": 6
   },
@@ -44550,6 +46966,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
     }
    ],
    "tribe": "gg4e08:tribe-10",
@@ -44834,6 +47266,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -45090,6 +47538,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-08",
@@ -45350,6 +47814,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-09",
    "wrapper_slots": 6
   },
@@ -45608,6 +48088,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-08",
    "wrapper_slots": 6
   },
@@ -45864,6 +48360,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-08",
@@ -46146,6 +48658,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 100,
+     "limit": 100,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -46402,6 +48930,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-08",
@@ -46662,6 +49206,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-09",
    "wrapper_slots": 6
   },
@@ -46907,6 +49467,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-14",
@@ -47173,6 +49749,22 @@
      "choice": 16,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-13",
@@ -47484,6 +50076,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-12",
    "wrapper_slots": 6
   },
@@ -47748,6 +50356,22 @@
      "choice": 16,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-14",
@@ -48016,6 +50640,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 9,
+     "limit": 9,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-14",
    "wrapper_slots": 6
   },
@@ -48261,6 +50901,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -48527,6 +51183,22 @@
      "choice": 16,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-14",
@@ -48838,6 +51510,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-12",
    "wrapper_slots": 6
   },
@@ -49102,6 +51790,22 @@
      "choice": 16,
      "group": 0,
      "name": "air-dash-recovery"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 9,
+     "limit": 9,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-14",
@@ -49370,6 +52074,22 @@
      "name": "air-dash-recovery"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 9,
+     "limit": 9,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-14",
    "wrapper_slots": 6
   },
@@ -49615,6 +52335,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -49883,6 +52619,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-15",
    "wrapper_slots": 6
   },
@@ -50147,6 +52899,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-15",
@@ -50415,6 +53183,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-15",
    "wrapper_slots": 6
   },
@@ -50679,6 +53463,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-15",
@@ -50947,6 +53747,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-15",
    "wrapper_slots": 6
   },
@@ -51192,6 +54008,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -51460,6 +54292,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-15",
    "wrapper_slots": 6
   },
@@ -51705,6 +54553,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 90
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
     }
    ],
    "tribe": "gg4e08:tribe-19",
@@ -51965,6 +54829,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 6,
+     "limit": 6,
+     "mode": 0,
+     "preset": 240
+    }
+   ],
    "tribe": "gg4e08:tribe-16",
    "wrapper_slots": 6
   },
@@ -52221,6 +55101,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 50,
+     "limit": 50,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 120
     }
    ],
    "tribe": "gg4e08:tribe-16",
@@ -52480,6 +55376,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 50,
+     "limit": 50,
+     "mode": 0,
+     "preset": 240
+    },
+    {
+     "channel": 1,
+     "initial": 3,
+     "limit": 3,
+     "mode": 0,
+     "preset": 180
     }
    ],
    "tribe": "gg4e08:tribe-16",
@@ -52742,6 +55654,22 @@
      "name": "air-dash-active"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 200,
+     "limit": 200,
+     "mode": 0,
+     "preset": 240
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 120
+    }
+   ],
    "tribe": "gg4e08:tribe-16",
    "wrapper_slots": 6
   },
@@ -52998,6 +55926,22 @@
      "choice": 5,
      "group": 0,
      "name": "ground-dash-right"
+    }
+   ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 600
     }
    ],
    "tribe": "gg4e08:tribe-16",
@@ -53258,6 +56202,22 @@
      "name": "ground-dash-right"
     }
    ],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 20,
+     "limit": 20,
+     "mode": 0,
+     "preset": 60
+    },
+    {
+     "channel": 1,
+     "initial": 6,
+     "limit": 6,
+     "mode": 0,
+     "preset": 240
+    }
+   ],
    "tribe": "gg4e08:tribe-16",
    "wrapper_slots": 6
   },
@@ -53470,6 +56430,22 @@
     10
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 40,
+     "limit": 40,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 4,
+     "limit": 4,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -53659,6 +56635,22 @@
     9
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -53866,6 +56858,22 @@
     6
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 40,
+     "limit": 40,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 120
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -54055,6 +57063,22 @@
     10
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 240
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -54267,6 +57291,22 @@
     10
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 40,
+     "limit": 40,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 2,
+     "limit": 2,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -54460,6 +57500,22 @@
     9
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 40,
+     "limit": 40,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 1,
+     "limit": 1,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-17",
    "wrapper_slots": 6
   },
@@ -54627,6 +57683,22 @@
     9
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 0
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -54794,6 +57866,22 @@
     5
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -55027,6 +58115,22 @@
     1
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 30,
+     "limit": 30,
+     "mode": 1,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 20,
+     "limit": 20,
+     "mode": 1,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-18",
    "wrapper_slots": 6
   },
@@ -55239,6 +58343,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 8,
+     "limit": 8,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 1,
+     "mode": 0,
+     "preset": 900
+    }
+   ],
    "tribe": "gg4e08:tribe-18",
    "wrapper_slots": 6
   },
@@ -55451,6 +58571,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 1,
+     "preset": 360
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 1,
+     "mode": 0,
+     "preset": 900
+    }
+   ],
    "tribe": "gg4e08:tribe-18",
    "wrapper_slots": 6
   },
@@ -55665,6 +58801,22 @@
     1
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 10,
+     "limit": 10,
+     "mode": 2,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-18",
    "wrapper_slots": 6
   },
@@ -55877,6 +59029,22 @@
     0
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 0,
+     "limit": 0,
+     "mode": 1,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-18",
    "wrapper_slots": 6
   },
@@ -56110,6 +59278,22 @@
     1
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 30,
+     "limit": 30,
+     "mode": 1,
+     "preset": 120
+    },
+    {
+     "channel": 1,
+     "initial": 20,
+     "limit": 20,
+     "mode": 1,
+     "preset": 180
+    }
+   ],
    "tribe": "gg4e08:tribe-18",
    "wrapper_slots": 6
   },
@@ -56284,6 +59468,22 @@
     5
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 280
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -56434,6 +59634,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 280
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -56584,6 +59800,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 1,
+     "preset": 280
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -56757,6 +59989,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 1,
+     "preset": 230
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -56923,6 +60171,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 10,
+     "limit": 10,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   },
@@ -57088,6 +60352,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 1,
+     "limit": 1,
+     "mode": 2,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-11",
    "wrapper_slots": 6
   },
@@ -57238,6 +60518,22 @@
     2
    ],
    "roles": [],
+   "stock_channels": [
+    {
+     "channel": 0,
+     "initial": 5,
+     "limit": 5,
+     "mode": 0,
+     "preset": 300
+    },
+    {
+     "channel": 1,
+     "initial": 0,
+     "limit": 0,
+     "mode": 0,
+     "preset": 300
+    }
+   ],
    "tribe": "gg4e08:tribe-19",
    "wrapper_slots": 6
   }

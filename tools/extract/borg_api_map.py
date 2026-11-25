@@ -145,6 +145,19 @@ def _binding(summary):
             "retail_behavior_verified": bool(receipt.get("retail_behavior_verified"))}
 
 
+def _stock_channels(rows):
+    """Recovered stock operands per channel, or None when the Borg has none."""
+    if not rows:
+        return None
+    out = []
+    for channel in rows:
+        level = (channel.get("levels") or [{}])[0]
+        out.append({"channel": channel.get("channel"),
+                    "initial": level.get("initial"), "limit": level.get("limit"),
+                    "mode": level.get("mode"), "preset": level.get("preset")})
+    return out
+
+
 def _bound_audio(folder):
     """Which audio keys the shipped gameplay actually declares."""
     path = folder / "gameplay.txt"
@@ -183,7 +196,7 @@ def _audio(summary, folder, action_cues=()):
     }
 
 
-def borg_entry(folder, action_cues=()):
+def borg_entry(folder, action_cues=(), stock_rows=None):
     summary = json.loads((folder / "source-index.json").read_bytes())
     manifest = _manifest(folder / "borg.manifest")
     catalog = _catalog(folder / "catalog.txt")
@@ -200,6 +213,7 @@ def borg_entry(folder, action_cues=()):
         "logical_joints": len(summary.get("logical_joints") or []),
         "wrapper_slots": len(summary.get("model_wrapper_slots") or []),
         "air_action_budget": summary.get("air_action_budget"),
+        "stock_channels": _stock_channels(stock_rows),
         "pose_ground_offset": _declared_int(folder / "gameplay.txt", "pose-ground-offset"),
         "movement": {
             "candidate_types": movement.get("candidate_types"),
@@ -238,6 +252,10 @@ def build(roster):
         raise ValueError("API map needs a roster export with source-index.json files")
     extracted = roster / "roster-extraction.json"
     source = json.loads(extracted.read_bytes()) if extracted.exists() else {}
+    stock_by_borg = {}
+    stock_file = source.get("level_stock_operand_index")
+    if stock_file and (roster / stock_file).exists():
+        stock_by_borg = json.loads((roster / stock_file).read_bytes()).get("borgs") or {}
     cues_by_borg = {}
     cue_file = source.get("action_sfx_index")
     if cue_file and (roster / cue_file).exists():
@@ -247,7 +265,8 @@ def build(roster):
         "revision": REVISION,
         "roster_revision": source.get("revision"),
         "borg_count": len(folders),
-        "borgs": [borg_entry(folder, cues_by_borg.get(folder.name.replace("-", ":"), ()))
+        "borgs": [borg_entry(folder, cues_by_borg.get(folder.name.replace("-", ":"), ()),
+                             stock_by_borg.get(folder.name.replace("-", ":")))
                   for folder in folders],
     }
 
