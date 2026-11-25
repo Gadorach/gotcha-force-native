@@ -156,11 +156,31 @@ package declares moves, buttons and ranges, and shared systems execute them. The
 remaining work is to move the **open** collision/pair/reaction/amount logic into
 shared native systems and content data, not to add per-Borg branches.
 
+## Open core decomposition
+
+The call graph splits the open core into a small amount routine and a broader
+reaction fan-out:
+
+- `8003CD5C` (amount, 1,512 B) calls only `80066298` (the category lookup,
+  matched). The rest of the factor math is inline. The live chain already
+  reproduces it; a native table-driven amount is the next step.
+- `8002E2A8` (pair/reaction, 5,672 B) calls 17 functions. The matched ones are
+  `800061A8`, `80006C24`, `80019550`, `8002F8D0`, `8002FCBC`, `8003D344`
+  (the HP writer), `8013F300`, `80176EC0`, `801DFF24`, `801EC1BC`. The open
+  ones are `8002F8DC`, `8002FC18`, `800300BC`, `8003CD5C`, `800DB250`,
+  `8010E158`, `8018214C`.
+- `8002BB14` (collision, 3,712 B) was not fully followed by the simple
+  first-`blr` scan; it needs a branch-aware walk.
+
+So the reaction path is mostly a scaffold of matched helpers around the open
+amount and a handful of open per-class effect functions.
+
 ## Next targets
 
-1. `8002E2A8` / `8002BB14` / `8002DB58`: pair enumeration, collision and
-   reaction. These are the largest open functions and the gate for hit geometry,
-   contact timing and per-move damage.
-2. `8003CD5C`: the amount function and its factor-row selection.
-3. The action-class table entries: reimplement the shared class handlers as
+1. `8003CD5C`: turn the reproduced live amount into a native table-driven
+   routine with the category/factor-row selection.
+2. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
+   helpers and the new amount routine.
+3. `8002BB14`: branch-aware recovery of the collision walk.
+4. The action-class table entries: reimplement the shared class handlers as
    native move behaviours, with the class selected by content.
