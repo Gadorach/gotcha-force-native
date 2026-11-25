@@ -449,8 +449,34 @@ difficulty/rank/tier rows). This is the first live confirmation of that
 index formula outside the supplied-operand fixture.
 
 The call that produces the amount is `8003CD5C(credit, ?, receiver)`, reached
-from `8002F108`; `r3` is 300 at the division and the returned quotient is the
-final amount. The reaction then applies it at `8003D344`.
+from `8002F108`. Its live arguments name the three records:
+
+```text
+amount-call r3=80365EC0 r4=80636130 r5=805DDBC0 r6=3F46FE14
+            | r5 id=10 hp=180
+```
+
+- `r5 = 0x805DDBC0` is SASUKE (model 0x000A, HP 180), the receiver.
+- `r3 = 0x80365EC0` is the credit/attack record. It is not an actor — its
+  `+0x3E8` halfword is not a model ID — and its words are small operand-like
+  values (`0x00140032`, `0x00180000`, `0x001E0064`, …).
+- `r4 = 0x80636130` is the carrier/hit object; it holds three pointers
+  (`0x8066140C`, `0x806369DC`, `0x80199C0C`) and the usual position/matrix
+  floats.
+
+So the full live chain is now:
+
+```text
+8003CD5C(credit=80365EC0, carrier=80636130, receiver=805DDBC0)
+  -> divw index 32 - 9600/300 = 0
+  -> factor 1.15 from 0x802C7C80
+  -> amount 22 at 8002F10C
+  -> 8003D344 applies it to actor+0x1C6 and actor+0x41C
+```
+
+The remaining attribution step is to resolve `0x80365EC0` against the attack
+record tables, which would name the move instead of describing it as "G-Red's
+boost contact in the Kakeru battle".
 
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only
