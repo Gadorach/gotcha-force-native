@@ -214,6 +214,12 @@ damage-chain=1.0|0.8|0.5|0.25
 That keeps G-Red's `b` beam behaviour intact and applies the recovered contact
 only against the Sasuke package, which now declares model `0x000A`.
 
+The shared package-battle script is **not** a safe place for this yet: it presses
+`x` at frames 41 and 126-138, so adding the close move to the shared G-Red
+profile would add an unscripted hit and change the verified `shots=2 hits=2`
+traces. A dedicated fixture needs its own input script (or a CLI switch) before
+the content can be exercised end to end.
+
 ## Next targets
 
 1. `8003CD5C`: turn the reproduced live amount into a native table-driven
