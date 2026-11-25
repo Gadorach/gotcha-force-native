@@ -272,6 +272,17 @@ What is still missing is battle entry: nothing scripts the pad from the title
 screen into a fight, so no damage is raised and `observed` stays zero. The runner
 prints that rather than implying a result. Reaching a battle — by a pad-injection
 mod or a battle savestate — is the remaining prerequisite for exact damage.
+
+Where pad injection would have to attach is now known, and it is not the game
+code. The GameCube SI registers sit at `0xCC006400`, so the DOL was scanned for a
+`lis rD,0xCC00` / `ori rD,rD,0x6400` pair that would mark the SI driver: there
+are **zero** such sites. The module's generated tables likewise name no HLE
+entries, and `decomp/symbols/functions.csv` holds six hand-curated rows with no
+pad symbols. So the pad path is HLE'd in the runtime, and injection has to hook
+that layer or write the guest pad buffer directly — both are runtime work in the
+sibling checkout, not in this repository.
+
+Do not scan for SI register materialisation again; it is absent by design.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
