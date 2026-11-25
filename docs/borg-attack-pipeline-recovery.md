@@ -419,8 +419,14 @@ A longer run continued with contact damage of **1 per frame**, HP falling
 - A control run with the same savestate, forward movement and **no boost**
   produced zero applies over 100 frames. The 22 and the 1-per-frame contact are
   therefore caused by the boost input, not by passive enemy action.
-- The pair entry `8002E660` did not fire for this contact, so the attacker is
-  not yet named by that route.
+- The pair is the existing table's own case. The actor at `0x805DBDC0` has
+  maximum/current HP **200**, and `0x805DDBC0` is Sasuke with 180. The native
+  `engine/gameplay/borgs/normal_gred_beam_sasuke_damage_tables.hpp` already
+  expects exactly a **credit cap 200** (G-Red) and a **receiver cap 180**
+  (Sasuke), so the live hit is G-Red damaging Sasuke, and **22** is the first
+  live value that can be compared against that table.
+- The pair entry `8002E660` did not fire for this contact, so the hit is not
+  routed through the shape-pair scan; it arrives at the reaction tail directly.
 
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only
