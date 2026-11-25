@@ -534,8 +534,11 @@ So the live boost amount is exact:
 ```
 
 - `0.867` is `1.02 x 0.85`: credit difficulty times credit rank.
-- `1.13` is `1 + 0.5*(relative - 1)`, so the carrier's relative operand is
-  **1.26**.
+- `1.13` is `1 + 0.5*(relative - 1)`, so the relative operand is **1.26**.
+  The operand is read from the receiver-side actor in `r6`, not from the
+  carrier: the live `carrier+180` read was `1.082251`, so the carrier field is
+  not the source. A direct receiver `+180` read is the one confirmation still
+  missing; two later runs missed the hit window before it could be logged.
 - `1.15` is the ReceiverRank row at index 0.
 - The sites at `D100`, `D1EC`, `D260` and `D270` leave `f31` unchanged, so the
   health/force rows are 1.0 on this hit (or skipped).

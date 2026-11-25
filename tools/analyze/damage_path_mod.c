@@ -83,12 +83,25 @@ static void observe_amount_call(CPUState* state)
     const uint32_t owner = (uint32_t)moderngekko_mod_read(state, carrier + 144u, 4);
     const uint32_t settings =
         (uint32_t)moderngekko_mod_read(state, state->gpr[13] - 31824u, 4);
+    const uint32_t relative_bits =
+        (uint32_t)moderngekko_mod_read(state, carrier + 180u, 4);
+    float relative = 0.0f;
+    __builtin_memcpy(&relative, &relative_bits, sizeof(relative));
+    const uint32_t owner_bits =
+        (uint32_t)moderngekko_mod_read(state, owner + 180u, 4);
+    float owner_relative = 0.0f;
+    __builtin_memcpy(&owner_relative, &owner_bits, sizeof(owner_relative));
+    const uint32_t receiver_bits =
+        (uint32_t)moderngekko_mod_read(state, state->gpr[5] + 180u, 4);
+    float receiver_relative = 0.0f;
+    __builtin_memcpy(&receiver_relative, &receiver_bits, sizeof(receiver_relative));
     if (count++ < 8u)
         fprintf(stderr,
                 "damage-path: amount-call #%u credit=%08X carrier=%08X "
                 "receiver=%08X | base=%u credit6=%u owner=%08X owner998=%d "
                 "owner136=%d owner996=%d owner452=%d owner454=%d "
-                "difficulty=%d | r5 id=%d hp=%d\n",
+                "difficulty=%d relative=%.6f owner180=%.6f receiver180=%.6f "
+                "| r5 id=%d hp=%d\n",
                 count, credit, carrier, state->gpr[5],
                 (unsigned)moderngekko_mod_read(state, credit, 2),
                 (unsigned)moderngekko_mod_read(state, credit + 6u, 1),
@@ -99,6 +112,8 @@ static void observe_amount_call(CPUState* state)
                 (int)moderngekko_mod_read(state, owner + 452u, 2),
                 (int)moderngekko_mod_read(state, owner + 454u, 2),
                 settings ? (int)moderngekko_mod_read(state, settings + 50u, 1) : -1,
+                (double)relative, (double)owner_relative,
+                (double)receiver_relative,
                 actor_id(state, state->gpr[5]), actor_hp(state, state->gpr[5]));
 }
 
