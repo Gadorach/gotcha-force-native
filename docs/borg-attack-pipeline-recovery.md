@@ -474,9 +474,17 @@ So the full live chain is now:
   -> 8003D344 applies it to actor+0x1C6 and actor+0x41C
 ```
 
-The remaining attribution step is to resolve `0x80365EC0` against the attack
-record tables, which would name the move instead of describing it as "G-Red's
-boost contact in the Kakeru battle".
+The credit record is not a mystery address: `0x80365EC0` lies inside G-Red's
+static action/movement configuration block. `tools/analyze/gred_movement.py`
+uses `CONFIG = 0x80365AC8`, the block runs to the program root at
+`0x80366220`, and `0x80365EC0 - 0x80365AC8 = 0x3F8`. So the credit side of the
+hit is G-Red's own config record, which names the attacker without needing the
+pair scan.
+
+That closes the observed chain for this pair: **G-Red's boost/contact on
+Sasuke** computes factor index `32 - 9600/300 = 0`, selects `1.15`, and applies
+**22** to Sasuke's HP and ledger. The move-level name still needs the carrier
+row, but the attacker, receiver, arithmetic and HP write are all identified.
 
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only
