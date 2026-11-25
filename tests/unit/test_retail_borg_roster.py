@@ -20,6 +20,7 @@ from tools.analyze import retail_breath_dragon as breath
 from tools.analyze import retail_roach_bomb as roach_bomb
 from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
+from tools.analyze import retail_flying_boss as flying_boss
 from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_spawner_shot as spawner_shot
 from tools.analyze import retail_spawner_static as spawner_static
@@ -280,6 +281,37 @@ class RosterFormatTests(unittest.TestCase):
         actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=45)]
         with self.assertRaisesRegex(ValueError,"neutral charge row"):
             charge_field.battle_test(0x0806,joints,roles,{"native_units_per_tick_x100":500},[200],actions)
+
+    def test_flying_boss_binds_exact_cruise_operands_and_authors_the_field(self):
+        joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]
+        ops={"004":{"value":10000},"006":{"value":0},"008":{"value":2000},
+             "02C":{"value":10.0},"044":{"value":2.0},"058":{"value":40.0},
+             "05C":{"value":0.0},"064":{"value":30.0},"068":{"value":0.0},"070":{"value":0.0}}
+        operands={"class_installer_binding":{"status":"one-static-slot-0-record","selected_record":0},
+                  "records":[{"operands":ops,"record_sha256":"00"}]}
+        row={"state":0,"substate":0,"selector":44,"handler_pair":[61,0],
+             "class_callback_candidate":"801D5964","contexts":[[0,0],[0,1]]}
+        actions={"profiles":[{"groups":[{"group":"B-shot","rows":[row]}]}]}
+        rules,pose,receipt=flying_boss.battle_test(0x0E01,joints,[],operands,[1000],actions)
+        for line in ("body-motion=static-cruise","cruise-boost=50|10000|1|2000|0|30",
+                     "field-follow=wing-hit|source",
+                     "field-core-damage=wing-hit|enemies|240|10|6",
+                     "move=wing-hit|b|10|airborne|28|none"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertIn(b"movement=grounded-v1|4.17|13|15\n",rules)
+        self.assertEqual(receipt["source_profile"]["walk"],417)
+        self.assertNotIn("walk_authored",receipt["source_profile"])
+        self.assertFalse(receipt["retail_behavior_verified"])
+        zero=dict(ops,**{"02C":{"value":0.0}})
+        operands["records"][0]["operands"]=zero
+        zrules,_,zreceipt=flying_boss.battle_test(0x0E03,joints,[],operands,[2000],
+                                                  {"profiles":[{"groups":[{"group":"B-shot","rows":[dict(row,class_callback_candidate="801D5ECC")]}]}]})
+        self.assertIn(b"movement=grounded-v1|0.40|13|15\n",zrules)
+        self.assertTrue(zreceipt["source_profile"]["walk_authored"])
+        bad=dict(zero,**{"008":{"value":1000}})
+        operands["records"][0]["operands"]=bad
+        with self.assertRaisesRegex(ValueError,"cruise and meter operands"):
+            flying_boss.battle_test(0x0E01,joints,[],operands,[1000],actions)
 
     def test_zeta_field_pilot_binds_shared_row_and_authors_the_field(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]

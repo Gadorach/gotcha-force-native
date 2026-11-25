@@ -72,9 +72,9 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen, and the
-later `010a`, `0f04` and `0004` pilots remove another fifteen. The current
-preview run is eighty requests lower for that reason: 2,618 requested and
-2,491 passed. The
+later `010a`, `0f04`, `0004`, `0e01`, `0e02` and `0e03` pilots remove
+another thirty. The current preview run is ninety-five requests lower for
+that reason: 2,603 requested and 2,476 passed. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1529,7 +1529,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 198 of 206. The remaining 8 are no longer a
+Battle Test now covers 201 of 206. The remaining 5 are no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1661,7 +1661,27 @@ classification:
   animation-sampled placement remain unclaimed. The same child update
   (`80084740` → `802DA018`: moving hitbox with shape handoff `8008AFF0`
   and release `80088E50`) is documented with the `010a` pilot above.
-- **Flying bosses** (`0e00`-`0e05`): their B-shot callbacks are
+- **Flying-boss pilot** (`0e01`, `0e02`, `0e03`, admitted; module
+  `tools/analyze/retail_flying_boss.py`): the neutral
+  B-shot row (`state 0`, `substate 0`, selector 44, handler `[61,0]`,
+  callbacks `801D5964`/`801D75A0`/`801D5ECC`) scans four bits and
+  activates type-36 carried children through `8013212C`. The child update
+  `801322DC` hands its shape to `8008AFF0`, the same collision handoff the
+  Roach and ICBM pilots use, so the contact exists; only the damage amount
+  is unrecovered because the HP writer `8003D358` is not statically
+  reachable.
+
+  The native `cruise-boost` pilot carries the exact meter and cruise
+  operands (cap 10000, refill 2000, delay 0, boost clock 30), and the walk
+  target comes from the shared pace normalisation (`0e01`/`0e02` cruise
+  planar 10.0 → 4.17). `0e03`'s recovered target is 0.0, below the native
+  `grounded-v1` floor, so its walk is the documented 0.40 minimum and is
+  labelled authored. `body-motion=static-cruise` covers the missing motion
+  bank. An owner-following field carries the recovered corner contact;
+  radius 240, damage 10, interval 6, height band 40, cruise height 50 and
+  boost cost per tick 1 are authored, and the `(0,±132,±232)` corner
+  layout is recorded in the receipt.
+- **Flying bosses** (`0e00`, `0e04`, `0e05`): their B-shot callbacks are
   state machines with no origin factory. `0e00`/`0e05` use table
   `80362CA8`; state 1 starts a timer at `+0x558` and calls `801FC1B0`,
   and state 2 counts down and calls `8006A53C` on expiry. `0e01`-`0e04`
@@ -1676,6 +1696,10 @@ classification:
   transforms are decoded; the per-slot behavior remains unbound. These
   are timed effects and boss subsystem activations, not shots, so they
   need the child/effect ownership path.
+
+  `0e04` shares the admitted family's operands and row shape but its posed
+  body exceeds the native combat camera domain (`native_battle_mvp_view.hpp`
+  refuses the fit), so it stays indexed until that view limit is settled.
 
   Their movement is **not** the blocker. All six link the shared cruise
   handler `800633C8` (selector 27) and boost handler `80063644`
