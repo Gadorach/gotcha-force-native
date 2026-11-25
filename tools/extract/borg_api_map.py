@@ -102,12 +102,16 @@ def _capability(summary):
     return None
 
 
-def _audio(summary):
-    cues = summary.get("action_sfx_index") or {}
+def _audio(summary, folder):
+    bindings = summary.get("sfx_bindings") or {}
+    landing = bindings.get("landing_candidate") or {}
+    pcm = landing.get("lab_pcm")
     return {
-        "action_cue_keys": sorted(cues.get(key, {}).get("key", key) for key in cues)[:16]
-        if isinstance(cues, dict) else [],
-        "lab_landing_pcm": summary.get("lab_landing_pcm"),
+        "landing": {"bank": landing.get("bank"), "tone": landing.get("tone"),
+                    "trigger_qualified": landing.get("trigger_qualified"),
+                    "lab_pcm": pcm,
+                    "pcm_present": bool(pcm and (folder / pcm).exists())},
+        "other_sfx": bindings.get("other"),
         "launch_sound_authored": bool(
             (summary.get("basic_shot_battle_test") or {}).get("authored_launch_sounds")),
     }
@@ -146,7 +150,7 @@ def borg_entry(folder):
                   for name, group, choice in (summary.get("role_preview_clips") or [])],
         "actions": _actions(summary),
         "capability": _capability(summary),
-        "audio": _audio(summary),
+        "audio": _audio(summary, folder),
         "preview_declaration": bool(summary.get("preview_declaration")),
     }
 

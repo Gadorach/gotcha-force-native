@@ -36,8 +36,9 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   contexts the row covers.
 - `capability` — the pilot that binds the Borg, or `null` when the package
   carries no executable gameplay.
-- `audio` — action cue keys, the lab landing PCM and whether a launch sound
-  was authored.
+- `audio` — the landing candidate (bank, tone, whether the trigger is
+  qualified, and whether the PCM file is present), the `other_sfx` state, and
+  whether a launch sound was authored.
 - `preview_declaration` — whether a preview is declared.
 
 ## Reading it honestly
@@ -70,3 +71,50 @@ across 204 of 206 models, which makes it a universal flag the analyser does not
 name rather than a per-model difference. `0x00000030` appears on four models
 only. The remaining work is therefore texture binding, UV/matrix stages and
 material-stage support, not extraction.
+
+## Texture binding tally
+
+The packaged battle now prints a per-slot mesh tally on its admission line:
+
+```text
+slot=0 id=gg4e08:0004 variant=normal moves=1 textured=28 untextured=0 unresolved=0
+```
+
+`textured` counts skinned meshes whose texture index resolves in the decoded
+scene, `untextured` counts meshes authored with no texture stage, and
+`unresolved` counts meshes naming an index the scene does not carry. It is a
+read-only accessor (`CharacterModelScene::texture_tally`), so it never changes
+what is drawn.
+
+Running one frame of every packaged Borg gives:
+
+| Measure | Value |
+| --- | --- |
+| Textured meshes | 5,924 |
+| Authored-untextured meshes | 641 |
+| Unresolved texture indices | 0 |
+| Models with no textured mesh | 2 (`0f05` 3/3, `0f06` 5/5) |
+
+So an untextured or flat look is **not** a missing-index or missing-asset bug:
+every referenced texture resolves. The highest untextured shares are ordinary
+stages rather than failures — `0806` 7/18, `0d05` 7/18, `0d01` 6/16, `0c02`
+10/31, `0d00` 8/26, `0d04` 8/26. The remaining visible causes to investigate
+are the CMPR decode path, UV and texture-matrix stages, and the strict
+reflection refusals already documented in `retail-roster-extraction.md`.
+
+## Audio state
+
+The map records what is actually bound rather than what is hoped for:
+
+| Measure | Value |
+| --- | --- |
+| Landing PCM present | 181 of 206 |
+| Landing trigger qualified | 0 of 206 |
+| `other_sfx` resolved | 0 of 206 (all `unresolved`) |
+
+So the "missing sfx" complaint is accurate and locatable: the roster carries a
+landing candidate for most Borgs, but no trigger is qualified and no per-Borg
+action SFX set has been recovered. That is the next audio unit — recover the
+cue tables per action from the source banks, then bind them per move through
+the existing `movement-cue`/`launch-sound`/`impact-sound` API instead of adding
+per-Borg exceptions.

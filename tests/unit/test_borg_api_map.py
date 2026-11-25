@@ -39,6 +39,23 @@ class BorgApiMapTest(unittest.TestCase):
             {"basic_shot_battle_test": {"kind": "authored shot"}}), "authored shot")
         self.assertIsNone(api._capability({}))
 
+    def test_audio_records_the_landing_file_and_unresolved_actions(self):
+        import tempfile
+        summary = {"sfx_bindings": {"landing_candidate": {"bank": "b", "tone": 3,
+                                                          "trigger_qualified": False,
+                                                          "lab_pcm": "audio/x.pcm"},
+                                    "other": "unresolved"}}
+        with tempfile.TemporaryDirectory() as name:
+            folder = Path(name)
+            missing = api._audio(summary, folder)
+            self.assertFalse(missing["landing"]["pcm_present"])
+            (folder / "audio").mkdir()
+            (folder / "audio" / "x.pcm").write_bytes(b"1")
+            present = api._audio(summary, folder)
+            self.assertTrue(present["landing"]["pcm_present"])
+            self.assertEqual(present["other_sfx"], "unresolved")
+            self.assertFalse(present["landing"]["trigger_qualified"])
+
     @unittest.skipUnless(ROSTER.is_dir(), "local roster export")
     def test_map_states_that_it_carries_no_asset_bytes(self):
         data = api.build(ROSTER)

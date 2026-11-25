@@ -119,9 +119,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "15",
@@ -350,9 +356,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "16",
@@ -576,9 +588,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "17",
@@ -821,9 +839,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "18",
@@ -1047,9 +1071,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "charge-field",
    "collection_number": "19",
@@ -1349,9 +1379,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "20",
@@ -1580,9 +1616,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "114",
@@ -1825,9 +1867,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "153",
@@ -2089,9 +2137,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "76",
@@ -2396,9 +2450,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "115",
@@ -2684,9 +2744,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "2",
@@ -2915,9 +2981,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "9",
@@ -3179,9 +3251,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "77",
@@ -3410,9 +3488,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "21",
@@ -3655,9 +3739,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "22",
@@ -3862,9 +3952,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "held-fire",
    "collection_number": "116",
@@ -4202,9 +4298,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "23",
@@ -4457,9 +4559,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "154",
@@ -4664,9 +4772,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "79",
@@ -5004,9 +5118,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "24",
@@ -5354,9 +5474,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "25",
@@ -5590,9 +5716,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "13",
@@ -5797,9 +5929,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "78",
@@ -5985,9 +6123,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "spawner-shot",
    "collection_number": "80",
@@ -6292,9 +6436,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "30",
@@ -6523,9 +6673,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "32",
@@ -6749,9 +6905,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "31",
@@ -7051,9 +7213,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "117",
@@ -7282,9 +7450,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "118",
@@ -7527,9 +7701,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "staged-field",
    "collection_number": "183",
@@ -7715,9 +7895,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "81",
@@ -7941,9 +8127,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "190",
@@ -8224,9 +8416,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "155",
@@ -8474,9 +8672,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "182",
@@ -8776,9 +8980,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "26",
@@ -9007,9 +9217,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "28",
@@ -9309,9 +9525,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "29",
@@ -9540,9 +9762,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "27",
@@ -9823,9 +10051,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "156",
@@ -10130,9 +10364,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "82",
@@ -10361,9 +10601,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "34",
@@ -10587,9 +10833,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "35",
@@ -10889,9 +11141,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "38",
@@ -11101,9 +11359,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "84",
@@ -11365,9 +11629,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "181",
@@ -11653,9 +11923,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "120",
@@ -11960,9 +12236,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "36",
@@ -12172,9 +12454,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "37",
@@ -12436,9 +12724,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "charge-field",
    "collection_number": "180",
@@ -12724,9 +13018,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "119",
@@ -13012,9 +13312,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "157",
@@ -13243,9 +13549,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "6",
@@ -13431,9 +13743,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "83",
@@ -13638,9 +13956,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "85",
@@ -13864,9 +14188,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "58",
@@ -14090,9 +14420,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "134",
@@ -14373,9 +14709,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "59",
@@ -14599,9 +14941,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "135",
@@ -14825,9 +15173,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "60",
@@ -15051,9 +15405,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "61",
@@ -15258,9 +15618,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "103",
@@ -15541,9 +15907,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "63",
@@ -15824,9 +16196,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "136",
@@ -16050,9 +16428,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "62",
@@ -16276,9 +16660,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "4",
@@ -16521,9 +16911,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "104",
@@ -16776,9 +17172,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "105",
@@ -17031,9 +17433,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "106",
@@ -17324,9 +17732,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "149",
@@ -17620,9 +18034,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "193",
@@ -17880,9 +18300,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "150",
@@ -18110,9 +18536,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam, exact body and paid release",
    "collection_number": "204",
@@ -18373,9 +18805,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "201",
@@ -18598,9 +19036,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "202",
@@ -18745,9 +19189,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "203",
@@ -19008,9 +19458,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "151",
@@ -19266,9 +19722,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "152",
@@ -19562,9 +20024,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "194",
@@ -19860,9 +20328,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 22,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "110",
@@ -20156,9 +20630,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "191",
@@ -20416,9 +20896,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "111",
@@ -20646,9 +21132,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam, exact body and paid release",
    "collection_number": "200",
@@ -20909,9 +21401,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "197",
@@ -21134,9 +21632,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "198",
@@ -21281,9 +21785,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "authored sustained breath beam on a pose-free action",
    "collection_number": "199",
@@ -21544,9 +22054,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "112",
@@ -21802,9 +22318,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored grounded Dragon orb; not retail combat",
    "collection_number": "113",
@@ -22098,9 +22620,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Worm orb; not retail combat",
    "collection_number": "192",
@@ -22339,9 +22867,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "164",
@@ -22660,9 +23194,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "165",
@@ -22910,9 +23450,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "176",
@@ -23212,9 +23758,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "166",
@@ -23500,9 +24052,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "167",
@@ -23731,9 +24289,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "168",
@@ -24052,9 +24616,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "169",
@@ -24302,9 +24872,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "177",
@@ -24547,9 +25123,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "178",
@@ -24792,9 +25374,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "179",
@@ -25094,9 +25682,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "175",
@@ -25401,9 +25995,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "158",
@@ -25746,9 +26346,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "1",
@@ -25977,9 +26583,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "137",
@@ -26298,9 +26910,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "138",
@@ -26605,9 +27223,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "139",
@@ -26893,9 +27517,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "66",
@@ -27181,9 +27811,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "140",
@@ -27450,9 +28086,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
    "collection_number": "71",
@@ -27616,9 +28258,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "141",
@@ -27937,9 +28585,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "142",
@@ -28244,9 +28898,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "143",
@@ -28589,9 +29249,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "67",
@@ -28991,9 +29657,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored cruise-entry Battle Test; not retail flight or combat",
    "collection_number": "72",
@@ -29238,9 +29910,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "170",
@@ -29545,9 +30223,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "171",
@@ -29890,9 +30574,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal ground shot pair, retains locomotion",
    "collection_number": "146",
@@ -30197,9 +30887,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "144",
@@ -30485,9 +31181,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "69",
@@ -30830,9 +31532,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "14",
@@ -31175,9 +31883,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "206",
@@ -31406,9 +32120,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "39",
@@ -31803,9 +32523,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "186",
@@ -32034,9 +32760,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "33",
@@ -32260,9 +32992,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "40",
@@ -32486,9 +33224,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "121",
@@ -32712,9 +33456,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "zeta-field",
    "collection_number": "86",
@@ -32919,9 +33669,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "159",
@@ -33145,9 +33901,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "184",
@@ -33542,9 +34304,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "185",
@@ -33773,9 +34541,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "8",
@@ -33999,9 +34773,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "5",
@@ -34225,9 +35005,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "zeta-field",
    "collection_number": "87",
@@ -34622,9 +35408,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "zeta-field",
    "collection_number": "88",
@@ -35024,9 +35816,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "zeta-field",
    "collection_number": "89",
@@ -35255,9 +36053,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "41",
@@ -35481,9 +36285,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "42",
@@ -35745,9 +36555,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, retains locomotion",
    "collection_number": "122",
@@ -36028,9 +36844,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "160",
@@ -36259,9 +37081,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "43",
@@ -36447,9 +37275,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "charge-field",
    "collection_number": "44",
@@ -36635,9 +37469,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "101",
@@ -36899,9 +37739,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "123",
@@ -37087,9 +37933,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "charge-field",
    "collection_number": "45",
@@ -37370,9 +38222,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "charge-field",
    "collection_number": "124",
@@ -37653,9 +38511,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "161",
@@ -37884,9 +38748,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "125",
@@ -38110,9 +38980,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "11",
@@ -38298,9 +39174,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "charge-field",
    "collection_number": "98",
@@ -38524,9 +39406,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "47",
@@ -38750,9 +39638,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "126",
@@ -38976,9 +39870,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "48",
@@ -39202,9 +40102,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "49",
@@ -39428,9 +40334,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "50",
@@ -39673,9 +40585,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "90",
@@ -39904,9 +40822,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "127",
@@ -40130,9 +41054,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "128",
@@ -40356,9 +41286,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "129",
@@ -40582,9 +41518,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "51",
@@ -40827,9 +41769,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "91",
@@ -41058,9 +42006,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "162",
@@ -41284,9 +42238,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored Battle Test rules; not retail combat",
    "collection_number": "3",
@@ -41491,9 +42451,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "52",
@@ -41727,9 +42693,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "46",
@@ -42001,9 +42973,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "187",
@@ -42242,9 +43220,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "130",
@@ -42478,9 +43462,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "163",
@@ -42695,9 +43685,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "99",
@@ -42931,9 +43927,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "131",
@@ -43205,9 +44207,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "188",
@@ -43446,9 +44454,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "132",
@@ -43682,9 +44696,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "10",
@@ -43899,9 +44919,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "100",
@@ -44135,9 +45161,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "53",
@@ -44371,9 +45403,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "54",
@@ -44607,9 +45645,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "55",
@@ -44843,9 +45887,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "56",
@@ -45079,9 +46129,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "57",
@@ -45296,9 +46352,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "92",
@@ -45532,9 +46594,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "133",
@@ -45749,9 +46817,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "basic-melee",
    "collection_number": "93",
@@ -45985,9 +47059,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "64",
@@ -46211,9 +47291,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "65",
@@ -46437,9 +47523,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, retains locomotion",
    "collection_number": "172",
@@ -46682,9 +47774,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, both dash inputs declined",
    "collection_number": "145",
@@ -46888,9 +47986,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "68",
@@ -47114,9 +48218,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": "audio/lab-landing.pcm",
+     "pcm_present": true,
+     "tone": 18,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored normal tank single shot, retains locomotion",
    "collection_number": "7",
@@ -47359,9 +48469,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored static-cruise B-charge; not retail combat",
    "collection_number": "70",
@@ -47520,9 +48636,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "147",
@@ -47700,9 +48822,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "73",
@@ -47861,9 +48989,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "195",
@@ -48041,9 +49175,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored static-cruise B-charge; not retail combat",
    "collection_number": "74",
@@ -48202,9 +49342,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "75",
@@ -48325,9 +49471,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "icbm",
    "collection_number": "109",
@@ -48454,9 +49606,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "icbm",
    "collection_number": "108",
@@ -48640,9 +49798,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "flying-field",
    "collection_number": "173",
@@ -48801,9 +49965,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "flying-field",
    "collection_number": "148",
@@ -48962,9 +50132,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "flying-field",
    "collection_number": "196",
@@ -49123,9 +50299,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "flying-field",
    "collection_number": "174",
@@ -49284,9 +50466,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "flying-field",
    "collection_number": "205",
@@ -49464,9 +50652,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "flying-field",
    "collection_number": "12",
@@ -49606,9 +50800,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored static-cruise Battle Test; not retail flight or combat",
    "collection_number": "94",
@@ -49729,9 +50929,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "95",
@@ -49852,9 +51058,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "opt-in authored pose-free Battle Test; not retail combat",
    "collection_number": "96",
@@ -49975,9 +51187,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "nu-field",
    "collection_number": "97",
@@ -50098,9 +51316,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "spawner-static",
    "collection_number": "102",
@@ -50221,9 +51445,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": false
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": false,
+    "other_sfx": "unresolved"
    },
    "capability": "roach-bomb",
    "collection_number": "189",
@@ -50344,9 +51574,15 @@
     }
    ],
    "audio": {
-    "action_cue_keys": [],
-    "lab_landing_pcm": null,
-    "launch_sound_authored": true
+    "landing": {
+     "bank": "snd_com01",
+     "lab_pcm": null,
+     "pcm_present": false,
+     "tone": 15,
+     "trigger_qualified": false
+    },
+    "launch_sound_authored": true,
+    "other_sfx": "unresolved"
    },
    "capability": "authored single ground shot, exact poses, static turret, initial barrel only",
    "collection_number": "107",
