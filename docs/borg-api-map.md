@@ -199,6 +199,24 @@ attack-row format; they differ in which table and which row they select.
 That makes the remaining work a single decode of the 80-byte row fields, plus
 finding where damage lives in that row — and it applies to melee (91 Borgs) and
 projectiles together rather than to each family separately.
+
+The block itself is placed by `800544A0`:
+
+```text
+block = *(actor + 0x9C) + index*7840      // 0x1EA0 bytes per class block
+*(owner + 0x3FC) = block
+```
+
+So `actor+0x9C` is an array of 7840-byte class-data blocks, selected by a signed
+index and installed as `owner+0x3FC`. That is not the actor record — the
+extractor's actor stride is 432 bytes — so these blocks are built or copied
+separately, and finding where `actor+0x9C` is filled is the last link in the
+chain. A second writer, `8003CC48`, installs a pointer from a small table at
+`index*4+0x80`, which looks like the simpler class-selection path.
+
+Summary of the remaining decode, in order: fill source for `actor+0x9C`, then
+the eight pointers at `+0xA20`, then the 80-byte rows at `+0xAA0` including the
+damage field. Everything above that is traced.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
