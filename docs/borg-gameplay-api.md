@@ -592,7 +592,15 @@ signed 16-bit little-endian PCM clip (up to 3 seconds). The extractor now emits
 `movement-sound=landing|audio/lab-landing.pcm` for the 181 packages whose landing
 candidate resolves, so that sample is played instead of sitting unused; the
 receipt records `retail_trigger_verified: false`, because the landing trigger is
-still authored even though the sample is recovered. Rise loops while
+still authored even though the sample is recovered.
+
+That the clip now loads is directly observable: `0004` had no launch, release,
+impact or movement clips before, so an audio-enabled run printed no `borg-audio`
+line at all. After the binding, the same run reports `borg-audio: device=open`,
+because `has_sounds` is satisfied by the landing clip. It reports
+`frames-accepted=0` because the test harness never jumps, so no landing cue
+fires — audible playback of a package landing is therefore still unverified, and
+`--no-audio` gates cannot cover it. Rise loops while
 eligible; jump and landing sounds are one-shots mixed through the shared
 SFX bus. Sound playback can be disabled without disabling visual effects.
 No original media is bundled in Git. Normal G-Red and Sasuke can opt into
