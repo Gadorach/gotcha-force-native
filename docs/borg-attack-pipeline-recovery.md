@@ -648,10 +648,11 @@ G-Red moves therefore select **per-Borg config records**, and the shared pool at
 `0x802D4148` is used by a different carrier path.
 
 The Mana hit's carrier is `0x8064AAB8`, a separate object rather than the actor,
-unlike the X hit where the carrier is `0x805DBDC0` itself. That is consistent
-with a **projectile/shot**. If confirmed, the shared record `0x802D4160`
-(base 5) is the shot base and the `+0x728` config entry is an unidentified
-move rather than `B-shot`. An isolated ranged shot is still needed to name it.
+unlike the X hit where the carrier is `0x805DBDC0` itself. But the **B-close/boost
+carrier is also separate** (`0x80636130`), so a separate carrier does not by
+itself identify a projectile. The shot-versus-contact distinction is therefore
+still open; neither carrier shape proves that `0x802D4160` is the shot base or
+that `+0x728` is something else. An isolated ranged shot is still needed.
 
 The third group, `B-shot`, is not isolated yet. Holding `B` at range on the same
 state reused the `B-close` record `80365EC0` (base 20, amount 22), and `A` over
