@@ -1139,6 +1139,22 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         if cue:=battle_receipt.get("authored_release_sound"):
             files[cue["path"]]=launch_pcm[cue["bank"],cue["tone"]]
         manifest += "gameplay=gameplay.txt\n"
+    if battle_receipt is not None and pace is not None and operands is not None:
+        text=files["gameplay.txt"].decode("ascii")
+        if "cruise-boost=" not in text and "air-jump-points=" not in text:
+            binding=operands.get("class_installer_binding") or {}
+            selected=binding.get("selected_record")
+            records=operands.get("records") or []
+            budget=None
+            if isinstance(selected,int) and 0<=selected<len(records):
+                value=(records[selected].get("operands") or {}).get("09F",{}).get("value")
+                if isinstance(value,int) and 1<=value<=8:
+                    budget=value
+            if budget is not None:
+                files["gameplay.txt"]+=f"air-action-budget={budget}\n".encode("ascii")
+                battle_receipt["air_action_budget"]={"operand":"09F","value":budget,
+                                                     "source":"combined jump and air-dash cap",
+                                                     "retail_behaviour_verified":False}
     if battle_receipt is not None and (reflection:=zero_reflection_rules(row.model,model)):
         rules,policy=reflection
         files["gameplay.txt"]+=rules.encode("ascii")
@@ -1249,6 +1265,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         summary["lab_cruise_pace"]=cruise_pace
     if battle_receipt:
         summary["basic_melee_battle_test" if melee_pilot else "held_fire_battle_test" if held_pilot else "basic_shot_battle_test"]=battle_receipt
+    if battle_receipt and (budget_rule:=battle_receipt.get("air_action_budget")):
+        summary["air_action_budget"]=budget_rule
     if roach_source is not None:
         summary["roach_bomb_source"]=battle_receipt
     if zeta_source is not None:

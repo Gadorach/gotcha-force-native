@@ -135,6 +135,7 @@ def borg_entry(folder, action_cues=()):
         "ratings_def_sht_atk_spd": summary.get("ratings_def_sht_atk_spd"),
         "logical_joints": len(summary.get("logical_joints") or []),
         "wrapper_slots": len(summary.get("model_wrapper_slots") or []),
+        "air_action_budget": summary.get("air_action_budget"),
         "movement": {
             "candidate_types": movement.get("candidate_types"),
             "candidates": [{"config": candidate.get("config"),

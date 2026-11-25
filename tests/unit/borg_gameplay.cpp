@@ -1253,10 +1253,25 @@ void ordered_followup_cases(){
               "each branch result is independent of the single debit and preceding results");
     }
 }
+void air_action_budget_cases(){
+    BorgGameplayProfile profile;
+    check(borg_read_gameplay_profile(std::string(player)+"air-action-budget=3\n",&profile,nullptr),
+          "air-action budget loads on a grounded body");
+    check(profile.air_action_budget==3&&profile.air_jump_points==0,"air-action budget keeps the jump field clear");
+    BorgGameplayProfile invalid;
+    check(!borg_read_gameplay_profile(std::string(player)+"air-action-budget=0\n",&invalid,nullptr),
+          "air-action budget refuses zero");
+    check(!borg_read_gameplay_profile(std::string(player)+"air-jump-points=2\nair-action-budget=3\n",
+                                      &invalid,nullptr),
+          "air-action budget refuses a competing jump count");
+    check(!borg_read_gameplay_profile(std::string(player)+"air-action-budget=9\n",&invalid,nullptr),
+          "air-action budget refuses more than eight");
+}
 void cruise_boost_cases(){
     const auto text=std::string(player)+"cruise-boost=100|10|6|4|2|3\n";
     BorgGameplayProfile invalid;
     check(!borg_read_gameplay_profile(text+"air-jump-points=2\n",&invalid,nullptr)&&
+          !borg_read_gameplay_profile(text+"air-action-budget=3\n",&invalid,nullptr)&&
           !borg_read_gameplay_profile(text+"cruise-boost=100|10|6|4|2|3\n",&invalid,nullptr),
           "cruise refuses competing movement budgets");
     NativeBattleMvp world;BattleMvpConfig config;
@@ -1751,6 +1766,7 @@ int main(){
     entry_stock_cases();
     aim_gated_release_cases();
     cruise_boost_cases();
+    air_action_budget_cases();
     grouped_stock_return_cases();
     ordered_followup_cases();
     {

@@ -118,6 +118,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -358,6 +364,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -593,6 +605,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -847,6 +865,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -1082,6 +1106,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -1393,6 +1423,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -1633,6 +1669,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -1887,6 +1929,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -2160,6 +2208,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -2476,6 +2530,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -2773,6 +2833,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -3013,6 +3079,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -3286,6 +3358,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -3526,6 +3604,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -3780,6 +3864,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -3996,6 +4086,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -4345,6 +4441,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -4609,6 +4711,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 4
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -4825,6 +4933,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -5174,6 +5288,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -5533,6 +5653,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -5778,6 +5904,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -5994,6 +6126,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -6191,6 +6329,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -6507,6 +6651,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -6747,6 +6897,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 4
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -6982,6 +7138,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -7293,6 +7455,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -7533,6 +7701,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -7787,6 +7961,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -7984,6 +8164,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -8219,6 +8405,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 4
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -8511,6 +8703,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 4
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -8770,6 +8968,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -9081,6 +9285,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -9321,6 +9531,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -9632,6 +9848,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -9872,6 +10094,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -10164,6 +10392,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 4
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -10480,6 +10714,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -10720,6 +10960,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -10955,6 +11201,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -11266,6 +11518,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -11487,6 +11745,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -11760,6 +12024,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -12057,6 +12327,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -12373,6 +12649,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -12594,6 +12876,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -12867,6 +13155,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -13164,6 +13458,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -13461,6 +13761,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -13701,6 +14007,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -13898,6 +14210,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -14114,6 +14432,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -14349,6 +14673,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -14584,6 +14914,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -14876,6 +15212,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -15111,6 +15453,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -15346,6 +15694,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -15581,6 +15935,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -15797,6 +16157,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -16089,6 +16455,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -16381,6 +16753,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -16616,6 +16994,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -16851,6 +17235,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -17105,6 +17495,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -17369,6 +17765,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -17633,6 +18035,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -17935,6 +18343,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -18240,6 +18654,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -18509,6 +18929,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -18748,6 +19174,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -19020,6 +19452,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -19254,6 +19692,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -19415,6 +19854,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -19687,6 +20132,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -19954,6 +20405,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -20259,6 +20716,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -20566,6 +21029,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -20871,6 +21340,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -21140,6 +21615,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -21379,6 +21860,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -21651,6 +22138,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -21885,6 +22378,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -22046,6 +22540,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -22318,6 +22818,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -22585,6 +23091,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -22890,6 +23402,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -23140,6 +23658,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -23470,6 +23994,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -23729,6 +24259,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -24040,6 +24576,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -24337,6 +24879,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -24577,6 +25125,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -24907,6 +25461,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -25166,6 +25726,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -25420,6 +25986,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -25674,6 +26246,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -25985,6 +26563,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -26301,6 +26885,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -26655,6 +27245,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -26895,6 +27491,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -27225,6 +27827,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -27541,6 +28149,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -27838,6 +28452,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -28135,6 +28755,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -28413,6 +29039,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -28593,6 +29220,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -28923,6 +29556,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -29239,6 +29878,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -29593,6 +30238,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -30004,6 +30655,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -30265,6 +30917,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -30581,6 +31239,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -30935,6 +31599,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -31251,6 +31921,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -31548,6 +32224,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -31902,6 +32584,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -32256,6 +32944,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -32496,6 +33190,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -32902,6 +33602,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -33142,6 +33848,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -33377,6 +34089,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -33612,6 +34330,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -33847,6 +34571,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -34063,6 +34793,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -34298,6 +35034,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -34704,6 +35446,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -34944,6 +35692,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -35179,6 +35933,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -35414,6 +36174,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -35820,6 +36586,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -36231,6 +37003,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -36471,6 +37249,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -36706,6 +37490,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -36979,6 +37769,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 2
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -37271,6 +38067,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -37511,6 +38313,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -37708,6 +38516,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -37905,6 +38719,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -38178,6 +38998,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -38375,6 +39201,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -38667,6 +39499,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 2
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -38959,6 +39797,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -39199,6 +40043,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -39434,6 +40284,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -39631,6 +40487,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -39866,6 +40728,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -40101,6 +40969,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -40336,6 +41210,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -40571,6 +41451,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -40806,6 +41692,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -41060,6 +41952,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -41300,6 +42198,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -41535,6 +42439,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -41770,6 +42680,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -42005,6 +42921,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -42259,6 +43181,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -42499,6 +43427,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -42734,6 +43668,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 3
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -42950,6 +43890,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -43195,6 +44141,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -43478,6 +44430,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -43728,6 +44686,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -43973,6 +44937,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -44199,6 +45169,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -44444,6 +45420,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -44727,6 +45709,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -44977,6 +45965,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -45222,6 +46216,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -45448,6 +46448,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -45693,6 +46699,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -45938,6 +46950,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -46183,6 +47201,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -46428,6 +47452,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -46673,6 +47703,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -46899,6 +47935,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -47144,6 +48186,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -47370,6 +48418,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 6
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -47615,6 +48669,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -47850,6 +48910,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -48085,6 +49151,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -48339,6 +49411,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -48554,6 +49632,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -48789,6 +49873,12 @@
      ]
     }
    ],
+   "air_action_budget": {
+    "operand": "09F",
+    "retail_behaviour_verified": false,
+    "source": "combined jump and air-dash cap",
+    "value": 5
+   },
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -49043,6 +50133,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -49218,6 +50309,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -49407,6 +50499,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -49577,6 +50670,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -49766,6 +50860,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -49941,6 +51036,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -50078,6 +51174,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -50216,6 +51313,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -50411,6 +51509,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -50581,6 +51680,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -50751,6 +51851,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -50921,6 +52022,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51091,6 +52193,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51280,6 +52383,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51431,6 +52535,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51568,6 +52673,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51700,6 +52806,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51832,6 +52939,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -51964,6 +53072,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -52096,6 +53205,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",
@@ -52228,6 +53338,7 @@
      ]
     }
    ],
+   "air_action_budget": null,
    "audio": {
     "landing": {
      "bank": "snd_com01",

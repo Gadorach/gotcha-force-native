@@ -30,6 +30,10 @@ The tool is read-only on the roster and refuses to overwrite an existing file.
   planar, `004`/`008`/`006` flight meter).
 - `movement.jump_display`, `movement.move_display_slots` — the catalogue
   display slots.
+- `air_action_budget` — the combined jump and air-dash budget bound from operand
+  `09F` on 181 grounded walkers, or `null` where the profile keeps the older
+  jump-only rule. It records the operand, the value and
+  `retail_behaviour_verified: false`.
 - `roles` — the locomotion clip roles bound for the package.
 - `actions` — per group, the profile identity and the neutral `(0,0)` rows
   only, with state, selector, handler pair, class callback and how many

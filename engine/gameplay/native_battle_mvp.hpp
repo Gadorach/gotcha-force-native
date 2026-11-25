@@ -1632,8 +1632,9 @@ public:
                 if(actor.grounded){
                     actor.grounded=false;actor.vertical_speed=jump;actor.takeoff_ticks=BattleMvpActor::takeoff_duration;
                     actor.landing_ticks=actor.dash_ticks=actor.air_dashes_used=0;
-                    actor.package_air_points_used=definition&&definition->air_jump_points?1:0;
-                }else if(definition&&actor.package_air_points_used<definition->air_jump_points){
+                    actor.package_air_points_used=definition&&(definition->air_jump_points||definition->air_action_budget)?1:0;
+                }else if(definition&&actor.package_air_points_used<
+                         (definition->air_action_budget?definition->air_action_budget:definition->air_jump_points)){
                     ++actor.package_air_points_used;actor.vertical_speed=jump;actor.dash_ticks=0;
                     airborne_jump[i]=true;
                 }
@@ -1667,7 +1668,9 @@ public:
                 (actor.grounded?config_.provisional_ground_dash&&previously_grounded[i]:
                  lab_air&&!previously_grounded[i]&&!actor.takeoff_ticks&&!actor.air_dashes_used):
                  ((!definition||!definition->dash_disabled)&&(actor.grounded||
-                   ((!definition||!definition->air_dash_disabled)&&actor.air_dashes_used<config_.air_dashes)));
+                   ((!definition||!definition->air_dash_disabled)&&actor.air_dashes_used<config_.air_dashes&&
+                    (!definition||!definition->air_action_budget||
+                     actor.package_air_points_used<definition->air_action_budget))));
             if(start_air_burst&&!actor.grounded){
                 actor.dash_airborne=true;actor.dash_ticks=actor.dash_duration=BattleMvpActor::lab_air_burst;
             }
@@ -1682,7 +1685,8 @@ public:
                     actor.lab_air_windup_ticks=BattleMvpActor::lab_air_windup;++actor.air_dashes_used;
                 }else{
                     actor.dash_ticks=actor.dash_duration=config_.dash_duration;actor.dash_cooldown=config_.dash_cooldown;actor.dash_airborne=!actor.grounded;
-                    if(actor.dash_airborne){++actor.air_dashes_used;actor.vertical_speed=0;actor.takeoff_ticks=0;actor.facing=dash;} //classified air dash always faces its travel direction
+                    if(actor.dash_airborne){++actor.air_dashes_used;actor.vertical_speed=0;actor.takeoff_ticks=0;actor.facing=dash;
+                        if(definition&&definition->air_action_budget)++actor.package_air_points_used;} //classified air dash always faces its travel direction
                 }
             }
             if(actor.dash_ticks){

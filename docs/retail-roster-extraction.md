@@ -266,11 +266,17 @@ gates use that one field. The remaining candidate, `actor+0x5AA` passed to
 
 The evidence therefore says the game budgets **air actions per class** through
 `config+0x9F` rather than exposing a per-Borg jump count in the movement
-record. The catalogue jump display is a separate UI figure. Since the native
-`air-jump-points` counts air *jumps* only, binding `0x9F` to it would change
-gameplay for all 206 Borgs on a semantic guess, so it stays unbound. Deciding
-this needs either ordinal evidence that couples `0x9F` to jump presses, or a
-native air-action budget that is not limited to jumps.
+record. The catalogue jump display is a separate UI figure.
+
+The native API now has a matching capability: `air-action-budget=<1..8>` is a
+combined budget consumed by the ground jump (which starts it at one), by each
+air jump, and by each airborne dash start, cleared with the landing reset. It is
+mutually exclusive with `air-jump-points`, `flight`, `cruise` and non-grounded
+movement, so the two counting models cannot double. Grounded walkers emit it
+from operand `09F`; cruise, flight, ICBM and already-declared jump pilots keep
+their existing rules. `air-jump-points` itself stays unbound, because the source
+still exposes no jump-only count. This is a relative reconstruction of the
+shared counter, not a verified retail jump table.
 
 #### Compare source-relative cruise pace
 

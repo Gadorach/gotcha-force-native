@@ -304,6 +304,7 @@ struct BorgGameplayProfile {
     u16 health=0;f32 walk=0,jump=0,dash=0;
     u16 beam_recovery=0;
     u8 air_jump_points=0;
+    u8 air_action_budget=0; // combined jump + air-dash budget; zero keeps the jump-only rule
     f32 flight_lift=0;u16 flight_ticks=0;
     std::optional<BorgCruiseBoost> cruise{};
     std::optional<BorgBattleClip> cruise_entry;
@@ -398,6 +399,8 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
        p.anchor_sets.size()>kBorgBattleAnchorSets||(!p.anchor_sets.empty()&&p.movement!=BorgBattleMovement::Grounded)||
        p.movement_fx.size()>kBorgBattleMovementFx||(!p.movement_fx.empty()&&p.movement==BorgBattleMovement::Stationary)||
        p.air_jump_points>8||(p.air_jump_points&&p.movement!=BorgBattleMovement::Grounded)||
+       p.air_action_budget>8||(p.air_action_budget&&(p.movement!=BorgBattleMovement::Grounded||
+                                                    p.air_jump_points||p.flight_ticks||p.cruise))||
        (p.flight_ticks?(p.movement!=BorgBattleMovement::Grounded||p.air_jump_points||p.flight_ticks>120||
                         !finite(p.flight_lift,2,16)):p.flight_lift!=0)||
        p.moves.empty()!=(p.movement==BorgBattleMovement::Stationary))return false;
@@ -1049,6 +1052,10 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             u16 count=0;
             if(next.air_jump_points||!number(value,1,8,&count))return fail("invalid or duplicate air-jump count");
             next.air_jump_points=u8(count);
+        }else if(key=="air-action-budget"){
+            u16 count=0;
+            if(next.air_action_budget||!number(value,1,8,&count))return fail("invalid or duplicate air-action budget");
+            next.air_action_budget=u8(count);
         }else if(key=="movement"){
             if(has_movement)return fail("duplicate movement");
             has_movement=true;
