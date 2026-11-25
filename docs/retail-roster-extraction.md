@@ -1671,9 +1671,9 @@ classification:
   transform row at `80336560+idx*36` and a 40-byte model-check row at
   `80336908+sec*40`, compares that row's model id with the actor
   `+0x3E8`, then allocates a child through `80088AA0`. The bosses expose
-  one body record and no motion bank, so those part models are effect
-  children from the shared archive, not body records. The transforms are
-  decoded; the part assets and per-slot behavior remain unbound. These
+  one body record and no motion bank; the model gate below shows those
+  children are sub-parts of that body, not separate archive actors. The
+  transforms are decoded; the per-slot behavior remains unbound. These
   are timed effects and boss subsystem activations, not shots, so they
   need the child/effect ownership path.
 
@@ -1697,6 +1697,26 @@ classification:
   free or borrowed storage reuse"). Admitting a damage field there would
   invent the hit. `0e00`/`0e05` are the separate sequence-child route
   (`801FC1B0`, then `8006A53C` on expiry).
+
+  `8013212C` is now decoded far enough to show the child is a **part of
+  the boss's own model**, not an independent actor. It gates on
+  `lha actor+0x3E8` against the 40-byte row at `80336908 + sec*40` offset
+  `+0x20` (for `0e01`, `sec` 6 holds `0x0E01`), allocates with
+  `80088AA0(actor,3,8,0,1)`, then stores type byte `36`, the slot pair
+  bytes at `+0x11`/`+0x12`/`+0x13`, callback `801322DC` at `+0x0C`,
+  `80133530` at `+0x10C`, the owner at `+0x8C`, and a copy of the owner's
+  transform and velocity. The 36-byte transform rows at
+  `80336560 + idx*36` hold the corner layout `(0,±132,±232)`.
+
+  Two supporting facts close the compiled-content route. The exported
+  shared effect archive (`effects/common-single.hsd`, 417,956 bytes,
+  157 records) reports `shape_table_offset: null` for every sampled
+  record, so those records are static visual models with no collision
+  data. And the native battle's body contact
+  (`engine/gameplay/native_borg_contact.hpp`) is swept collision only —
+  `body_hit` blocks movement and applies no damage. So neither the effect
+  assets nor the existing engine supplies the contact that these
+  children would need.
 - **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
   `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
   creates the type-5 area child at `80085E00` (phase table `802DA544`,
