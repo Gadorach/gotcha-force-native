@@ -588,7 +588,11 @@ movement; takeoff uses the first point and landing resets the count.
 Sasuke's normal test profile uses three points, not his recovered controller.
 
 `movement-sound=cue|path` independently binds a local raw stereo 48 kHz
-signed 16-bit little-endian PCM clip (up to 3 seconds). Rise loops while
+signed 16-bit little-endian PCM clip (up to 3 seconds). The extractor now emits
+`movement-sound=landing|audio/lab-landing.pcm` for the 181 packages whose landing
+candidate resolves, so that sample is played instead of sitting unused; the
+receipt records `retail_trigger_verified: false`, because the landing trigger is
+still authored even though the sample is recovered. Rise loops while
 eligible; jump and landing sounds are one-shots mixed through the shared
 SFX bus. Sound playback can be disabled without disabling visual effects.
 No original media is bundled in Git. Normal G-Red and Sasuke can opt into

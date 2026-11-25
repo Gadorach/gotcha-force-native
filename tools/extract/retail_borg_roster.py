@@ -1221,8 +1221,15 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         files["preview.txt"] = raw_preview
         manifest += "preview=preview.txt\n"
         if landing_path:
-            files[landing_path]=landing_pcm[landing["tone"]]
-            landing["lab_pcm"]=landing_path
+            files.setdefault(landing_path, landing_pcm[landing["tone"]])
+            landing["lab_pcm"] = landing_path
+    if landing_path and battle_receipt is not None:
+        # The landing candidate is bound through the existing movement-sound
+        # API; the trigger itself stays authored.
+        files.setdefault(landing_path, landing_pcm[landing["tone"]])
+        files["gameplay.txt"] += f"movement-sound=landing|{landing_path}\n".encode("ascii")
+        battle_receipt["authored_landing_sound"] = {
+            "path": landing_path, "trigger": "landing cue", "retail_trigger_verified": False}
     files["catalog.txt"] = catalog.encode("ascii")
     summary = {
         "id": row.id, "variant": 0, "member": member_index, "member_sha256": member_digest,
