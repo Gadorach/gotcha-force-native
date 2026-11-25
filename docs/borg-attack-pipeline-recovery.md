@@ -533,12 +533,20 @@ So the live boost amount is exact:
 22.533329 = 20 x 0.867 x 1.13 x 1.15
 ```
 
-- `0.867` is applied at `D024`.
-- `1.13` is applied at `D100`, from the table load at `D0F8` (indexed by the
-  receiver-side fields), **not** by the relative adjustment.
-- `1.15` is applied at `D290`.
+- `0.867` is applied between the amount-call entry and `D024`.
+- `1.13` is applied between `D100` and `D16C`, from the table load at `D0F8`,
+  **not** by the relative adjustment.
+- `1.15` is applied between `D270` and `D290`.
 - The sites at `D1EC`, `D260` and `D270` leave `f31` unchanged, so those rows
   are 1.0 on this hit (or skipped).
+
+The site labels are the accumulator checkpoints, not proof of the applying
+instruction: the interpreter yields at block boundaries, and two static details
+need a single-step check. `D290` loads from `0x802C7CA0` (the tier row), which
+is `1.0` at index 0, yet the measured change is `1.15`; a **signed** index into
+the preceding ladder at `0x802C7C80` would reach `1.15`, so the live
+`actor+0x6CA` byte is the value to capture. `D100`'s `1.13` is stored in the
+matchup factor block at `0x802C4FD4`, not in the extracted GFDA rows.
 
 The relative adjustment is a red herring: the source actor is the receiver
 (`0x805DDBC0`, Sasuke), its `+180` reads **1.0**, and the `D16C` multiply is
