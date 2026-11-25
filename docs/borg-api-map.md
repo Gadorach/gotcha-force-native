@@ -178,11 +178,27 @@ child = 80088AA0(actor, 4, 0x30, 0, 0)
 ```
 
 So each contact resolves through a per-model array of eight pointers at
-`block+0xA20`, and the pointed-to record initialises a 48-byte child. That array
-is the attack descriptor table: its records are where the shape and damage for a
-slot live, and recovering them means reading the `owner+0x3FC` block out of the
-model data. That is the next target, and it is one table per model rather than a
-per-family decode.
+`block+0xA20`, and the pointed-to record initialises a 48-byte child.
+
+Following the child initialisation shows what those records hold:
+
+```text
+byte  = *(slot_record + 0)          // first byte of the slot record
+row   = block + 0xAA0 + byte*80     // 80-byte stride
+child+0x28 = row
+child+0x0C = 0x8009A65C             // contact update
+child+0x14 = slot
+child+0x20 = actor
+```
+
+The slot record's first byte indexes an **80-byte row**, and that is the same row
+format the projectile pilots already read from the shared table at `802D9758`
+(speed, lifetime, scale, timing). So melee contact and projectiles share one
+attack-row format; they differ in which table and which row they select.
+
+That makes the remaining work a single decode of the 80-byte row fields, plus
+finding where damage lives in that row — and it applies to melee (91 Borgs) and
+projectiles together rather than to each family separately.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
