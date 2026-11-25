@@ -512,40 +512,43 @@ per-hit factor selection is still open.
 That distinction matters for shipping: the live 22 is a genuine contact amount,
 but it must not be fed into the beam table as if it were the beam result.
 
-The factor sequence inside `8003CD5C` is now statically mapped, which is where
-the next pass should start:
+The factor sequence inside `8003CD5C` was then measured directly by hooking
+each multiply site and reading `fpr[31]`:
 
-| Site | Applied value |
-| --- | --- |
-| `8003D024` | credit difficulty (row selected through settings/team) |
-| `8003D0B4` | conditional 0.5 flag |
-| `8003D100` | owner/health factor |
-| `8003D128` | conditional 0.5 flag |
-| `8003D16C` | relative-scale factor from `carrier+180` |
-| `8003D1EC` | health-row factor (index from the `CF70` division) |
-| `8003D260` | force/rank factor |
-| `8003D270` | another rank/force factor |
-| `8003D290` | tier factor (`actor+6CA`) |
-| `8003D2A4` | conditional 0.5 flag |
+```text
+amount-call base=20
+D024  f31=17.340000      (x0.867)
+D100  f31=17.340000      (unchanged)
+D16C  f31=19.594200      (x1.13)
+D1EC  f31=19.594200      (unchanged)
+D260  f31=19.594200      (unchanged)
+D270  f31=19.594200      (unchanged)
+D290  f31=22.533329      (x1.15)
+D31C  f31=22.533329  ->  s16 truncation -> 22
+```
 
-The live boost hit reaches the final `f31` through this chain, but the observed
-22 means at least one of the beam factors is skipped or bounded differently.
-The exact per-site factor values (and which rows are bypassed) are the next
-measurement.
+So the live boost amount is exact:
 
-The existing host replay makes the gap concrete. With the exact same caps
-(credit 200/200, receiver 180/180, difficulty 0, rank 0, tier 0), the
-`GRedSasukeDamageTable` path asserts **19** with a depleted receiver Force
-history and **20** with a full one (`tests/host/gred_sasuke_damage_replay.cpp`).
-The live boost hit on the same pair, at full HP, produced **22**. So the boost
-path carries roughly a further **1.1×** that the beam table does not describe.
-`22 / 20 = 1.1` is exactly the second ReceiverRank entry, but the live rank
-field reads 0, so the boost path either indexes that row with an offset or
-applies a move-specific multiplier. That 1.1 is the next thing to locate; until
-then the live 22 remains an observation, not a table result.
+```text
+22.533329 = 20 x 0.867 x 1.13 x 1.15
+```
+
+- `0.867` is `1.02 x 0.85`: credit difficulty times credit rank.
+- `1.13` is `1 + 0.5*(relative - 1)`, so the carrier's relative operand is
+  **1.26**.
+- `1.15` is the ReceiverRank row at index 0.
+- The sites at `D100`, `D1EC`, `D260` and `D270` leave `f31` unchanged, so the
+  health/force rows are 1.0 on this hit (or skipped).
+
+This also explains the difference from the beam table. With the same caps the
+host replay asserts **19** (depleted receiver Force) and **20** (full Force),
+because the beam path additionally applies receiver difficulty `0.9`; the
+boost path measured here does not. The two paths share the base `20` and the
+table rows, but not the full factor chain.
 
 The move-level name still needs the carrier row, but the attacker, receiver,
-base amount, factor row and HP write are all identified.
+base amount, the applied factors and the HP write are all identified, and the
+live decimal value is reproduced to the last digit before truncation.
 
 So the first live amounts exist: **22 discrete** and **1 per frame contact** in
 this state. They are not yet attributed to a Borg or move — the apply tail only

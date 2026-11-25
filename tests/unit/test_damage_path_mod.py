@@ -20,6 +20,11 @@ class DamagePathModTest(unittest.TestCase):
         self.assertIn("address + 0x3E8u", self.text)
         self.assertIn("address + 0x1C6u", self.text)
 
+    def test_hooks_the_measured_factor_sites(self):
+        for site in ("0x8003D024u", "0x8003D16Cu", "0x8003D290u", "0x8003D31Cu"):
+            self.assertIn(f"RECOMP_HOOK({site}", self.text)
+        self.assertIn("state->fpr[31]", self.text)
+
     def test_is_read_only(self):
         self.assertNotIn("RECOMP_PATCH(", self.text)
         self.assertNotIn("moderngekko_mod_write", self.text)

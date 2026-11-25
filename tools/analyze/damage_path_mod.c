@@ -127,11 +127,45 @@ static void observe_return(CPUState* state, unsigned site)
 static void observe_ret_cf70(CPUState* state) { observe_return(state, 0xF10C); }
 static void observe_ret_d00c(CPUState* state) { observe_return(state, 0xD00C); }
 
+static void observe_factor(CPUState* state, unsigned site)
+{
+    static unsigned count;
+    if (count++ < 60u)
+        fprintf(stderr, "damage-path: factor site=%03X f31=%.6f\n",
+                site, state->fpr[31]);
+}
+
+#define FACTOR_FN(name, site) \
+    static void name(CPUState* state) { observe_factor(state, site); }
+
+FACTOR_FN(factor_d024, 0xD024)
+FACTOR_FN(factor_d0b4, 0xD0B4)
+FACTOR_FN(factor_d100, 0xD100)
+FACTOR_FN(factor_d128, 0xD128)
+FACTOR_FN(factor_d16c, 0xD16C)
+FACTOR_FN(factor_d1ec, 0xD1EC)
+FACTOR_FN(factor_d260, 0xD260)
+FACTOR_FN(factor_d270, 0xD270)
+FACTOR_FN(factor_d290, 0xD290)
+FACTOR_FN(factor_d2a4, 0xD2A4)
+FACTOR_FN(factor_d31c, 0xD31C)
+
 static const ModernGekkoModHook hooks[] = {
     RECOMP_HOOK(0x8002E660u, observe_pair),
     RECOMP_HOOK(0x8003CD5Cu, observe_amount_call),
     RECOMP_HOOK(0x8002F108u, observe_amount),
     RECOMP_HOOK(0x8002F110u, observe_tail),
+    RECOMP_HOOK(0x8003D024u, factor_d024),
+    RECOMP_HOOK(0x8003D0B4u, factor_d0b4),
+    RECOMP_HOOK(0x8003D100u, factor_d100),
+    RECOMP_HOOK(0x8003D128u, factor_d128),
+    RECOMP_HOOK(0x8003D16Cu, factor_d16c),
+    RECOMP_HOOK(0x8003D1ECu, factor_d1ec),
+    RECOMP_HOOK(0x8003D260u, factor_d260),
+    RECOMP_HOOK(0x8003D270u, factor_d270),
+    RECOMP_HOOK(0x8003D290u, factor_d290),
+    RECOMP_HOOK(0x8003D2A4u, factor_d2a4),
+    RECOMP_HOOK(0x8003D31Cu, factor_d31c),
     RECOMP_HOOK(0x8003CF70u, observe_div_cf70),
     RECOMP_HOOK(0x8003D1B8u, observe_div_d1b8),
     RECOMP_HOOK(0x8003D214u, observe_div_d214),
