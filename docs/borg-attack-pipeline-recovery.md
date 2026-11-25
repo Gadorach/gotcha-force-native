@@ -630,10 +630,16 @@ name is not recovered.
 The per-move **base** is the first halfword of the selected attack record. Two
 records are now identified:
 
-| Record | Where | Base | Hit |
-| --- | --- | --- | --- |
-| `80365EC0` | G-Red config block (`CONFIG 80365AC8 + 0x3F8`) | 20 | Kakeru boost/contact |
-| `802D4160` | shared action context table `802D4148 + 0x18` | 5 | Mana contact |
+| Record | Where | Base | Hit | Amount |
+| --- | --- | --- | --- | --- |
+| `80365EC0` | G-Red config (`CONFIG 80365AC8 + 0x3F8`) | 20 | Kakeru B-close/boost | 22 |
+| `80366058` | G-Red config (`CONFIG 80365AC8 + 0x590`) | 30 | Kakeru **X** | 33 |
+| `802D4160` | shared context table `802D4148 + 0x18` | 5 | Mana contact | 3 |
+
+The X hit confirms the per-move mapping: `30 × 0.867 × 1.13 × 1.15 = 33.8 → 33`,
+with the same credit factor, scalar and receiver rank as the boost hit. Both
+G-Red moves therefore select **per-Borg config records**, and the shared pool at
+`0x802D4148` is the other side's record set.
 
 The second is the same context table the API map already lists for `B-shot`,
 `B-close` and `X` (`context_count` 2/7/8), so the per-move base is an indexing

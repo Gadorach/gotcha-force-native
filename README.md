@@ -94,6 +94,10 @@ texture or audio bytes; each regenerates from a local roster.
   32-entry per-battle/team scalar selected by the settings byte. Index 16 is
   1.13 (Kakeru) and index 30 is 1.4 (Mana), both confirmed by captured hits.
   Tool: `tools/analyze/contact_scalar_ladder.py`.
+- [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the two
+  measured per-move base records: B-close/boost base 20 → 22, X base 30 → 33,
+  with the config offsets and the measured factors. Tool:
+  `tools/analyze/gred_sasuke_move_bases.py`.
 
 Two recovery records carry the reasoning rather than the data:
 
