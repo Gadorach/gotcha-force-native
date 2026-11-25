@@ -2534,17 +2534,23 @@ int main(){
         const auto attacker=parse(std::string(player)+
             "move=hit|b|30|grounded|18|0:0\nrange=hit|145\n"
             "melee=hit|4|8|90|40|60|22|20\n"
-            "damage-factors=0.867|1.13|1.15|1.0\n"
+            "damage-vs=10|0.867|1.13|1.15|1.0\n"
             "damage-chain=1.0|0.8|0.5|0.25\n");
-        NativeBattleMvp world;BattleMvpConfig config;
-        config.packages={attacker,parse(target)};
-        config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
-        check(world.start(config),"damage factor battle fixture");
-        for(unsigned i=0;i<12;++i)
-            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
-                {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"damage factor step");
-        check(world.hits()==1&&world.actors()[1].health==478,
-              "declared damage factors scale the melee base 20 to 22");
+        auto battle=[&](const std::shared_ptr<const BorgGameplayProfile>& opponent){
+            NativeBattleMvp world;BattleMvpConfig config;
+            config.packages={attacker,opponent};
+            config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+            check(world.start(config),"damage factor battle fixture");
+            for(unsigned i=0;i<12;++i)
+                check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                    {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"damage factor step");
+            check(world.hits()==1,"damage factor battle hit");
+            return world.actors()[1].health;
+        };
+        check(battle(parse(std::string(target)+"model=10\n"))==478,
+              "damage-vs row scales the melee base 20 to 22 against model 10");
+        check(battle(parse(target))==480,
+              "a receiver without a damage-vs row keeps the melee base 20");
     }
     const std::string damage_text=std::string(player)+
         "damage-factors=0.867|1.13|1.15|1.0\n"

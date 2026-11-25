@@ -288,6 +288,8 @@ struct BorgBattleMove {
 };
 struct BorgGameplayProfile {
     std::string variant,rig_prefix,pose_profile;
+    u16 model=0; // optional Borg/model id used for damage-vs selection
+    bool model_declared=false;
     std::string impact_record_bank;
     BorgBattleMovement movement=BorgBattleMovement::Grounded;
     bool record_zero_body=false;
@@ -1093,6 +1095,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             for(unsigned i=0;i<4;++i)
                 if(!scalar(a[i],.01f,4.f,&next.damage_factors[i]))return fail("invalid damage factor");
             next.damage_factors_declared=true;
+        }else if(key=="model"){
+            u16 declared=0;
+            if(next.model_declared||!number(value,0,65535,&declared))
+                return fail("invalid or duplicate model id");
+            next.model=declared;next.model_declared=true;
         }else if(key=="damage-vs"){
             std::array<std::string_view,5> a;
             u16 model=0;

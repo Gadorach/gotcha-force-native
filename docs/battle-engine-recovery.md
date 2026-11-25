@@ -201,7 +201,7 @@ wrong:
   Sasuke-model receivers, not G-Red's opponent.
 
 The correct content step is a dedicated G-Red close move on an unused button
-(for example `x`) with:
+(for example `x`), with `model=10` declared on the Sasuke package:
 
 ```text
 move=close-b-test|x|30|grounded|18|0:2
@@ -212,7 +212,7 @@ damage-chain=1.0|0.8|0.5|0.25
 ```
 
 That keeps G-Red's `b` beam behaviour intact and applies the recovered contact
-only against model `0x000A`.
+only against the Sasuke package, which now declares model `0x000A`.
 
 ## Next targets
 

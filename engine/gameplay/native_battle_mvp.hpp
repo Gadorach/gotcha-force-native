@@ -434,7 +434,8 @@ public:
             const auto p=config.spawn[i];if(!std::isfinite(p.x)||!std::isfinite(p.z)||std::abs(p.x)>config.arena_half-config.actor_radius||std::abs(p.z)>config.arena_half-config.actor_radius)return false;
             if(!std::isfinite(config.spawn_query_y[i])||std::abs(config.spawn_query_y[i])>20000)return false;
             auto& actor=next.actors_[i];actor.model=package?
-                (config.packages[i]->movement==BorgBattleMovement::NormalGRed?0x0615:0):
+                (config.packages[i]->model_declared?config.packages[i]->model:
+                 config.packages[i]->movement==BorgBattleMovement::NormalGRed?0x0615:0):
                 config.solo()?config.solo_model:i?0x000a:0x0615;
             actor.position={p.x,0,p.z};actor.health=package?config.packages[i]->health:config.health;
             if(!floor(terrain,p.x,p.z,config.spawn_query_y[i],&actor.position[1]))return false;

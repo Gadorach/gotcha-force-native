@@ -509,6 +509,8 @@ release=arc-twin|6|arc-stock|1|arc
   target actor's model, otherwise the package `damage-factors` default,
   otherwise neutral. This mirrors the original's receiver-dependent amount
   without a branch on the Borg ID.
+- `model=id` optionally declares the package's Borg/model id. `damage-vs` matches
+  this id; without it the engine follows the movement preset.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a
