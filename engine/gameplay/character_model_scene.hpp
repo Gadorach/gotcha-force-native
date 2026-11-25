@@ -313,6 +313,19 @@ public:
     }
     unsigned upload_textures(RenderEngine& render,u32 base=1){return loaded_?scene_.upload_textures(render,base):0;}
     unsigned upload_textures_shared(RenderEngine& render,u32 base){return loaded_?scene_.upload_textures_shared(render,base):0;}
+    // Presentation tally: how many skinned meshes resolve to a decoded texture,
+    // how many are authored untextured stages, and how many name an index the
+    // scene does not carry. Diagnostic only; it never changes a draw.
+    std::array<unsigned,3> texture_tally()const{
+        std::array<unsigned,3> tally{};
+        if(!ready_)return tally;
+        for(const auto& mesh:skin_.scene.meshes){
+            if(mesh.texture==kHsdNoTexture)++tally[1];
+            else if(mesh.texture>=skin_.scene.textures.size())++tally[2];
+            else ++tally[0];
+        }
+        return tally;
+    }
     unsigned draw(RenderEngine& render,const Camera& camera){
         if(!ready_)return 0;
         Camera::Basis basis;if(!camera.basis(&basis))return 0;

@@ -1636,8 +1636,12 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             request.stage.id.c_str(),request.player_spawns[0].id.c_str(),request.enemy_spawns[0].id.c_str());
     }else if(stage)gf::log_info(context,"package-battle","stage=%s player-spawn=%s enemy-spawn=%s",
         options.battle_stage.c_str(),options.battle_stage_spawns[0].c_str(),options.battle_stage_spawns[1].c_str());
-    for(unsigned i=0;i<2;++i)gf::log_info(context,"package-battle","slot=%u id=%s variant=%s moves=%zu",
-        i,packages[i].identity.id.c_str(),config.packages[i]->variant.c_str(),config.packages[i]->moves.size());
+    for(unsigned i=0;i<2;++i){
+        const auto tally=view.package_texture_tally(world,i);
+        gf::log_info(context,"package-battle","slot=%u id=%s variant=%s moves=%zu textured=%u untextured=%u unresolved=%u",
+            i,packages[i].identity.id.c_str(),config.packages[i]->variant.c_str(),
+            config.packages[i]->moves.size(),tally[0],tally[1],tally[2]);
+    }
     gf::log_info(context,"package-battle",hosted?
          "authored duel, not retail-equivalent; arrows move, Alt+Arrow dash, Shift jump, Space B, E X if available, Q cancel":
          "native test combat, not retail-equivalent; arrows move, Alt+Arrow dash, Shift jump, Space B, E X if available, Q restart");

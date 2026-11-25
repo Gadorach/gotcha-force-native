@@ -943,6 +943,10 @@ public:
     unsigned projectile_record_draws()const{return projectile_record_draws_;}
     unsigned package_part_draws(unsigned actor)const{return actor<package_part_draws_.size()?package_part_draws_[actor]:0;}
     unsigned package_body_draws(unsigned actor)const{return actor<package_body_draws_.size()?package_body_draws_[actor]:0;}
+    std::array<unsigned,3> package_texture_tally(const NativeBattleMvp& world,unsigned actor)const{
+        if(actor>=world.actor_count()||actor>=borgs_.size())return {};
+        return borgs_[model_slot(world,actor)].texture_tally();
+    }
     const BorgTrailingChain* package_trailing_chain(const NativeBattleMvp& world,unsigned actor)const{
         if(actor>=world.actor_count()||rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_))return nullptr;
         const auto& borg=borgs_[model_slot(world,actor)];

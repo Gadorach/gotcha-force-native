@@ -699,6 +699,7 @@ private:
         if(!hsd_bone_motion_sample(clip,first,a,error))return false;
         return *fraction==0||hsd_bone_motion_sample(clip,loop?(first+1)%length:std::min(first+1,length-1),b,error);
     }
+    std::array<unsigned,3> texture_tally()const{return scene_.texture_tally();}
     CharacterModelScene scene_;CharacterMotionBank bank_;NativeBorgMotionMap map_;std::array<HsdBoneMotionClip,unsigned(NativeBorgMotion::Count)> clips_;std::array<f32,unsigned(NativeBorgMotion::Count)> stride_{};CharacterWorldPose world_;
     CharacterLocalPose displayed_;std::array<CharacterLocalPose,4> blend_from_;std::array<f32,4> blend_remaining_{};
     std::array<u16,unsigned(NativeBorgMotion::Count)> lab_start_frames_{};
