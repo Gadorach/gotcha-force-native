@@ -495,6 +495,15 @@ release=arc-twin|6|arc-stock|1|arc
   windows are stockless; an optional projectile marker is a separate
   operation. This is native body-proxy contact, not recovered retail hit
   geometry, wall occlusion, or a continuous bone sweep.
+- `damage-factors=credit|scalar|receiver-rank|relative` and
+  `damage-chain=first|second|third|fourth` scale every package hit for the
+  declaring package. The four factors are the measured contact multipliers
+  (credit rows, battle scalar, receiver rank, relative); the chain is the
+  successive-hit tier row (`1.0|0.8|0.5|0.25` in the recovered G-Red/Sasuke
+  case). Both default to neutral, so a package that omits them keeps its
+  authored damage. The chain resets after a 30-tick gap or when the
+  attacker changes. These are scale factors, not recovered hit geometry or
+  per-Borg branches.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a

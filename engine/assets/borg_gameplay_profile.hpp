@@ -307,6 +307,14 @@ struct BorgGameplayProfile {
     u8 air_jump_points=0;
     u8 air_action_budget=0; // combined jump + air-dash budget; zero keeps the jump-only rule
     f32 pose_ground_offset=0; // authored presentation shift for a floating rig; zero leaves the pose
+    // Recovered contact scale: credit factor, battle scalar, receiver rank,
+    // relative. All default to 1, so a package that does not declare them is
+    // unchanged. `damage_chain` is the successive-hit row (retail tier); it is
+    // only applied when `damage_chain_count` is non-zero.
+    std::array<f32,4> damage_factors{1,1,1,1};
+    std::array<f32,4> damage_chain{1,1,1,1};
+    u8 damage_chain_count=0;
+    bool damage_factors_declared=false;
     f32 flight_lift=0;u16 flight_ticks=0;
     std::optional<BorgCruiseBoost> cruise{};
     std::optional<BorgBattleClip> cruise_entry;
@@ -331,6 +339,15 @@ struct BorgGameplayProfile {
     std::array<std::string,4> movement_sound{};
     bool static_body()const{return static_cruise_body||static_grounded_body;}
 };
+inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain){
+    f32 value=f32(base);
+    for(f32 factor:profile.damage_factors)value*=factor;
+    if(profile.damage_chain_count)
+        value*=profile.damage_chain[std::min<unsigned>(chain,profile.damage_chain_count-1)];
+    if(!(value>0))return 0;
+    return u16(value>65535.f?65535.f:value);
+}
+
 inline const BorgBattlePartSwap* borg_part_active_swap(u8 index,const BorgBattleMove* active,u16 frame){
     if(active)for(const auto& swap:active->part_swaps)
         if(swap.slot==index&&frame>=swap.first&&frame<=swap.last)return &swap;
@@ -1062,6 +1079,18 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             u16 count=0;
             if(next.air_action_budget||!number(value,1,8,&count))return fail("invalid or duplicate air-action budget");
             next.air_action_budget=u8(count);
+        }else if(key=="damage-factors"){
+            std::array<std::string_view,4> a;
+            if(next.damage_factors_declared||!split_fields(value,&a))return fail("invalid or duplicate damage factors");
+            for(unsigned i=0;i<4;++i)
+                if(!scalar(a[i],.01f,4.f,&next.damage_factors[i]))return fail("invalid damage factor");
+            next.damage_factors_declared=true;
+        }else if(key=="damage-chain"){
+            std::array<std::string_view,4> a;
+            if(next.damage_chain_count||!split_fields(value,&a))return fail("invalid or duplicate damage chain");
+            for(unsigned i=0;i<4;++i)
+                if(!scalar(a[i],.01f,2.f,&next.damage_chain[i]))return fail("invalid damage chain value");
+            next.damage_chain_count=4;
         }else if(key=="movement"){
             if(has_movement)return fail("duplicate movement");
             has_movement=true;

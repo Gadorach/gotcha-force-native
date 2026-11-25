@@ -2530,5 +2530,21 @@ int main(){
     check(!has(world,BorgBattleEventKind::ProjectileContact)&&!has(world,BorgBattleEventKind::BlastTriggered)&&
           world.package_events().back().value==9&&world.actors()[1].health==500,
           "unavailable segment does not masquerade as a miss, actor hit or blast");
+    const std::string damage_text=std::string(player)+
+        "damage-factors=0.867|1.13|1.15|1.0\n"
+        "damage-chain=1.0|0.8|0.5|0.25\n";
+    const auto damage=parse(damage_text);
+    check(damage->damage_factors_declared&&damage->damage_chain_count==4&&
+          std::abs(damage->damage_factors[0]-0.867f)<1e-6f&&
+          borg_damage_amount(*damage,20,0)==22&&
+          borg_damage_amount(*damage,30,0)==33&&
+          borg_damage_amount(*damage,30,1)==27&&
+          borg_damage_amount(*damage,30,2)==16&&
+          borg_damage_amount(*parse(player),30,2)==30,
+          "recovered damage factors and hit-chain row apply without changing undeclared packages");
+    check(!borg_read_gameplay_profile(damage_text+"damage-factors=1|1|1|1\n",&invalid_scope,&scope_error)&&
+          !borg_read_gameplay_profile(damage_text+"damage-chain=1|1|1|1\n",&invalid_scope,&scope_error)&&
+          !borg_read_gameplay_profile(std::string(player)+"damage-factors=0|1|1|1\n",&invalid_scope,&scope_error),
+          "damage factors and chain refuse duplicates and out-of-range values");
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

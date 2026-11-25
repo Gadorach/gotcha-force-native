@@ -50,6 +50,8 @@ struct BattleMvpActor {
     u16 package_charge_total=0; // authored charge window for the active move, zero when idle
     u32 package_damage_serial=0;
     u32 package_last_hit_tick=0;
+    u8 package_hit_chain=0;       // successive-hit index used by damage-chain
+    u8 package_hit_chain_owner=255;
     u8 package_movement_cues=0;
     u8 package_air_points_used=0;
     u16 package_flight_used=0;
@@ -2291,8 +2293,21 @@ private:
         if(package_event_count_<package_events_.size())
             package_events_[package_event_count_++]={kind,tick_,object,u8(actor),move,recipient,frame,value};
     }
+    u16 package_damage(unsigned owner,u8 recipient,u16 base){
+        if(owner>=config_.packages.size()||!config_.packages[owner])return base;
+        const auto& profile=*config_.packages[owner];
+        if(!profile.damage_factors_declared&&!profile.damage_chain_count)return base;
+        auto& target=actors_[recipient];
+        if(target.package_hit_chain_owner!=u8(owner)||tick_-target.package_last_hit_tick>30){
+            target.package_hit_chain=0;
+            target.package_hit_chain_owner=u8(owner);
+        }
+        const u16 value=borg_damage_amount(profile,base,target.package_hit_chain);
+        if(profile.damage_chain_count&&target.package_hit_chain<255)++target.package_hit_chain;
+        return value;
+    }
     void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,const BattleMvpVec& position){
-        const auto amount=u16(std::min(actors_[recipient].health,unsigned(damage_value)));
+        const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
         damage(recipient,amount);impact(position,false);
         record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);
     }
