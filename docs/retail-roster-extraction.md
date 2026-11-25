@@ -239,6 +239,28 @@ strict previews and battle rendering do not use the repair. Unmapped movement
 and undeclared variants also refuse. This is a native movement prototype,
 not retail speed, timing, collision or appearance equivalence.
 
+#### Jump accounting is not the ascent handler's threshold
+
+The shared ascent handler `8005FAF0` dispatches on `+0x544` and, on entry,
+increments the air-action counter at `actor+0x747` (`8005FB54`). That counter
+is cleared on the ground/refill path (`80055AA0`, next to the `+0x736` flight
+meter clamp) and during state initialisation (`800554F0`), so it counts air
+actions taken since leaving the ground.
+
+One gate compares it against `config+0x9F` (`80069268`), which is already in the
+operand schema as `09F` (u8). That field is **not** a jump count: it clusters by
+family rather than by jump ability — the Wing family `0a00`-`0a09` carries `6`,
+the Ninja family `00xx` carries `3`, the two Heroes `0802`/`080a` carry `2`, and
+Roach `0f05` carries `1`, with `5` on most of the rest. Treating it as an
+air-jump cap would put six jumps on every Wing and one on Roach.
+
+`0x02C`/`0x068` were also checked and are not jump operands: `068` is `0.0` for
+107 Borgs and `-0.07` to `-0.70` for the rest, uncorrelated with the catalogue
+jump display. So the per-Borg jump limit is still unidentified, and
+`air-jump-points` stays unbound rather than guessed. The next step is to find
+where the `+0x747` counter is compared for a *grounded* model rather than the
+class gate above.
+
 #### Compare source-relative cruise pace
 
 The cruise families had two hardcoded `movement=grounded-v1|6|13|12` lines —
