@@ -538,25 +538,27 @@ relative adjustment is neutral: the source actor is the receiver (`0x805DDBC0`,
 Sasuke), its `+180` reads **1.0**, `owner+180` reads `1.0`, and `carrier+180`
 reads `1.082251`; none produces a non-neutral relative.
 
-The per-site attribution does **not** reconcile with the static table chain, so
-the site labels are provisional. The live chain logs
-`table=80433600 → ptr=802C4BA0 → row=802C6BC0` and index 64, but
-`802C4BA0+64 = 0.98` and `802C6BC0+64 = 1.0`; neither is `1.13`. The observed
-`f0=1.13` at `D100` cannot come from those rows, and the hooks are
-block-level checkpoints rather than per-instruction proofs.
+The `1.13` row is resolved by logging the **final** load address:
 
-What is solid:
+```text
+table=80433600 -> ptr=802C4BA0 -> row=802C6820, offset=0x40
+row 0x802C6820: 0.97 0.98 0.99 1.00 1.01 ... 1.12 [1.13] 1.14 1.15 1.16
+```
 
-- the exact arithmetic `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`;
-- the base `20` from the credit record, the receiver Sasuke, and the HP/ledger
-  writes at `8003D344`;
-- the relative adjustment is neutral;
-- `1.15` is consistent with the ReceiverRank row, but its exact applying site
-  is not proven;
-- the beam table's `19/20` uses a different factor chain.
+So the `D100` factor is `0x802C6820[16] = 1.13`, a linear scalar ladder. The
+earlier `802C6BC0` was the pre-load pointer, which is why its `+0x40` read 1.0.
 
-The next measurement has to be a true instruction trace or a memory read at the
-exact multiply, not more block-level hooks.
+The final attribution is therefore coherent:
+
+| Checkpoint | Net factor | Source |
+| --- | --- | --- |
+| `D024` | 0.867 | matchup table at `0x802C5D60` |
+| `D100` | 1.13 | row `0x802C6820`, index 16 |
+| `D270` | 1.15 | ReceiverRank at `0x802C7C80`, index 0 |
+| `D290` | 1.0 | tier row, `actor+0x6CA = 0` |
+| `D16C` | 1.0 | relative neutral (`receiver+180 = 1.0`) |
+
+The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 
 This also explains the difference from the beam table. With the same caps the
 host replay asserts **19** (depleted receiver Force) and **20** (full Force),
