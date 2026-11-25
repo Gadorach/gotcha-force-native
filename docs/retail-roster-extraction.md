@@ -1537,13 +1537,23 @@ classification:
   Both airborne forms ship: the mechanical Dragons' downward chest beam
   (`stop-on-floor`) and the other six Dragons' fixed-angle sweep
   (`clip-on-stage`, bound through the qualified source grids).
-- **Child-actor B** (`0f03` Nu III): the release calls `8016CC24`, which
-  allocates through `80088AA0` and installs its own callback
-  `8017CD1C`/byte `89`; there is no origin table or stock meaning. The
-  `0f05` child uses a different allocator (`8008893C`) and different
-  callbacks (`801F8108`/`801F840C`). These are heterogeneous owned effect
-  objects, so a shared child capability must bind each callback rather than
-  assume one spawner shape.
+- **Child-actor B** (`0f03` Nu III): the whole `0f01`-`0f03` family shares
+  the state-2 handler `801B3824`. It pays `8006DBE0(actor, 0, 1, 1)` and
+  then branches on the model id at `+0x3E8`: `0F01` spawns table child
+  **74** through `80082824` (index into 56-byte rows at `802D7B10`);
+  `0F02` calls `800C3BE0(actor, 61)`; every other model, `0F03` included,
+  calls `8016CC24(actor, 11)`. That last call allocates through
+  `80088AA0`, copies the parent transform and velocity, stores the variant
+  byte `11` at child `+0x11`, and installs the shared effect-command
+  interpreter `8017CD1C` at child `+0x0C` (plus `8017D4AC` at `+0x10C`).
+
+  This is why `0f01` and `0f02` are admitted and `0f03` is not: the family's
+  exact row (key 74, speed 32, lifetime 70) exists only for `0F01`'s
+  branch, and `0F03`'s payload is a bytecode-driven effect child with no
+  origin row, speed or lifetime to bind. `8017CD1C` reads a command stream
+  into a shared context (`-21068(r13)`), so it is the effect-VM runtime,
+  not a shot. The `0f05` child is a third shape again (allocator
+  `8008893C`, callbacks `801F8108`/`801F840C`).
 - **Zeta body material (admitted)**: the four Zeta bodies each contain one
   two-TObj diffuse pair (`0x00030010` head `src=4`, tail `src=5`) plus
   single/reflection stages. The scoped
@@ -1623,9 +1633,18 @@ classification:
   the entry dispatches again on `+0x581` through `803429E4`/`803429F8`,
   and the leaves drive program, timer and effect helpers
   (`8006D144`/`8006E1AC`/`8006A474`/`8006A5A4`/`800679D0`) instead of an
-  origin factory. The extractor finds no class callback for the model, so
-  the chain still needs its own ownership/effect settlement before any
-  neutral input can be bound.
+  origin factory. The extractor finds no class callback for the model.
+
+  The neutral `(0,0)` path, with the fresh-move dispatch bytes at zero,
+  is also only a setup step: `80156FFC` →
+  `80157068` → `80157540` → `80157584`, which clears the carried velocity
+  and halfwords, runs the `8020BA78`/`8020BA9C`/`8020BA54` vector calls
+  and emits, then advances the sub-counter. The child allocation
+  (`800B2190`, four sites) and the `800B22F4` velocity helper appear in
+  later substates of the same chain, so the attack is a staged combo
+  rather than a single entry. Binding only the neutral row would publish
+  an empty move, and running the substates needs a move chain, which the
+  coverage boundary still excludes as a combo/cancel tree.
 - **Spawner-shot pilot** (`010a`, admitted): its B state machine
   `80199490` → `8036FB48` spawns rows **11** and **12** through
   `800853EC` and pays channel-2 cost 1 through `8006DBE0`. Rows 11/12
@@ -1658,11 +1677,26 @@ classification:
   are timed effects and boss subsystem activations, not shots, so they
   need the child/effect ownership path.
 
-  The four also expose source movement types **9** (`0e01`), **11**
-  (`0e02`) and **8** (`0e03`/`0e04`) with no cruise or pace evidence. An
-  authored `grounded-v1` or static-cruise body is not a substitute for
-  those exact base controllers, so they also wait on the flying movement
-  runtime. `0e00`/`0e05` are the separate sequence-child route.
+  Their movement is **not** the blocker. All six link the shared cruise
+  handler `800633C8` (selector 27) and boost handler `80063644`
+  (selector 28), and the movement-operand schema labels every read:
+  meter cap `+0x004` = 10000, refill `+0x008` = 2000, refill delay
+  `+0x006` = 0; cruise planar target `+0x02C` = 10.0 (`0e01`/`0e02`/
+  `0e04`) or 0.0 (`0e03`/`0e00`/`0e05`); cruise pitch term `+0x044` = 2.0;
+  boost planar `+0x058` = 40.0, planar change `+0x05C` = 0.0, boost clock
+  `+0x064` = 30; vertical bases `+0x068`/`+0x070` = 0.0. The existing
+  authored `cruise-boost` pilot (already used by `0505`, `0511`, `061b`,
+  `0620`, `0d00`, `0d04`, `0d05`, `0f00`) can carry those exact meter and
+  cruise operands with `body-motion=static-cruise`.
+
+  What they still lack is the *contact* of their B children. `0e01`-`0e04`
+  activate type-36 carried children at corner transforms; the private
+  child-exit receipt records only unlink/phase writes and release
+  requests, and explicitly states that no active hit was observed
+  (`bulk-actions-diverse-child-exits.json`: "no scene pair, active hit,
+  free or borrowed storage reuse"). Admitting a damage field there would
+  invent the hit. `0e00`/`0e05` are the separate sequence-child route
+  (`801FC1B0`, then `8006A53C` on expiry).
 - **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
   `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
   creates the type-5 area child at `80085E00` (phase table `802DA544`,
