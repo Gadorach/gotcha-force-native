@@ -265,13 +265,24 @@ Two things are established by running it:
   completed 12,394,857 native dispatches and 2,359,304,477 cycles in 60 s, where
   `--graphics null`/`software`/`opengl` all failed to initialise and the
   documented `--headless` path aborts on an ImGui assertion.
-- The observer **loads** and the run is bounded and repeatable; a 40 s run
-  reports `timed_out=True observed=0`.
+- The run is bounded and repeatable.
 
-What is still missing is battle entry: nothing scripts the pad from the title
-screen into a fight, so no damage is raised and `observed` stays zero. The runner
-prints that rather than implying a result. Reaching a battle — by a pad-injection
-mod or a battle savestate — is the remaining prerequisite for exact damage.
+A first version of this runner claimed the observer loaded while reporting zero
+observations. That was wrong, and the cause is worth recording because it looks
+exactly like a hook that never fires:
+
+- a dynamic mod is only discovered when its file name ends in **`.mgm.so`**
+  (`IsPackagedLibrary`); `damage_observer.so` was never enumerated;
+- the descriptor `version` must be a **three-part** version (`1.0.0`); `"1"` is
+  rejected with `mod rejected: ... invalid mod version`.
+
+The runner now builds `damage_observer.mgm.so`, prints `mod loaded` / `mod
+rejected`, and fails if the observer was not loaded. Battle entry is no longer
+missing either: the bundled runtime's `--automation-dir` exposes frame-counted
+pad input, pause/resume and `read_memory`, and the sibling checkout already keeps
+battle savestates, so a recorded battle can be resumed and driven without any
+guest-memory write. The remaining work is choosing the right observation point,
+not reaching a fight.
 
 Where pad injection would have to attach is now known, and it is not the game
 code. The GameCube SI registers sit at `0xCC006400`, so the DOL was scanned for a
