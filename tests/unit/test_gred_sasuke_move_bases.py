@@ -21,6 +21,9 @@ class MoveBasesTest(unittest.TestCase):
         self.assertEqual(moves["X"]["base"], 30)
         self.assertEqual(moves["X"]["amount"], 33)
         self.assertEqual(moves["X"]["config_offset"], "590")
+        self.assertEqual(moves["B-shot"]["base"], 30)
+        self.assertEqual(moves["B-shot"]["amount"], 33)
+        self.assertFalse(moves["B-shot"]["verified"])
         self.assertTrue(data["retail_behaviour_verified"])
         self.assertFalse(data["generalises_to_other_pairs"])
 

@@ -22,8 +22,12 @@ from tools.extract.source_image import DolImage, ReadOnlyFile
 
 CONFIG = 0x80365AC8
 MOVES = (
-    {"group": "B-close/boost", "record": 0x80365EC0, "base": 20, "amount": 22},
-    {"group": "X", "record": 0x80366058, "base": 30, "amount": 33},
+    {"group": "B-close/boost", "record": 0x80365EC0, "base": 20, "amount": 22,
+     "verified": True},
+    {"group": "X", "record": 0x80366058, "base": 30, "amount": 33,
+     "verified": True},
+    {"group": "B-shot", "record": 0x803661F0, "base": 30, "amount": 33,
+     "verified": False},
 )
 FACTORS = {
     "credit_difficulty": 1.02,
@@ -62,6 +66,7 @@ def recover(image):
             "base": base,
             "product": round(product, 6),
             "amount": amount,
+            "verified": move["verified"],
         })
     return {
         "kind": "gf-borg-move-bases",
@@ -75,6 +80,7 @@ def recover(image):
         "notes": [
             "Both records are per-Borg config rows; the shared pool at 802D4160 (base 5) is the other side's record in the Mana battle.",
             "The X and B-close amounts are captured from live original hits; the shared pool range per action is still being mapped.",
+            "The B-shot entry is the third record in the 0x198-stride table and is inferred, not captured; it is marked verified=false.",
             "This is one pair and one side; do not treat it as a roster-wide damage rule.",
         ],
         "retail_behaviour_verified": True,

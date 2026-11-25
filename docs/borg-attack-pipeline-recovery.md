@@ -634,7 +634,13 @@ records are now identified:
 | --- | --- | --- | --- | --- |
 | `80365EC0` | G-Red config (`CONFIG 80365AC8 + 0x3F8`) | 20 | Kakeru B-close/boost | 22 |
 | `80366058` | G-Red config (`CONFIG 80365AC8 + 0x590`) | 30 | Kakeru **X** | 33 |
+| `803661F0` | G-Red config (`CONFIG 80365AC8 + 0x728`) | 30 | **B-shot** (inferred) | 33 |
 | `802D4160` | shared context table `802D4148 + 0x18` | 5 | Mana contact | 3 |
+
+The two captured G-Red records sit in a **0x198-stride table** at
+`+0x3F8`, `+0x590`, `+0x728`. The third entry is the remaining `B-shot` group;
+its `base 30 → 33` is inferred from the stride and marked `verified=false`
+until a ranged hit captures it. No pad sequence tried here reached that context.
 
 The X hit confirms the per-move mapping: `30 × 0.867 × 1.13 × 1.15 = 33.8 → 33`,
 with the same credit factor, scalar and receiver rank as the boost hit. Both
