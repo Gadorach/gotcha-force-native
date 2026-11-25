@@ -21,6 +21,7 @@ from tools.analyze import retail_roach_bomb as roach_bomb
 from tools.analyze import retail_zfield_shot as zfield
 from tools.analyze import retail_charge_field as charge_field
 from tools.analyze import retail_flying_boss as flying_boss
+from tools.analyze import retail_nu_iii as nu_iii
 from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_spawner_shot as spawner_shot
 from tools.analyze import retail_spawner_static as spawner_static
@@ -321,6 +322,25 @@ class RosterFormatTests(unittest.TestCase):
         operands["records"][0]["operands"]=bad
         with self.assertRaisesRegex(ValueError,"cruise and meter operands"):
             flying_boss.battle_test(0x0E01,joints,[],operands,[1000],actions)
+
+    def test_nu_iii_binds_the_paid_child_and_authors_the_field(self):
+        joints=[{"index":i,"descriptor_offset":i*4} for i in range(3)]
+        row={"state":0,"substate":0,"selector":45,"handler_pair":[61,0],
+             "class_callback_candidate":"801B372C","contexts":[[0,0],[0,1]]}
+        actions={"profiles":[{"groups":[{"group":"B-shot","rows":[row]}]}]}
+        rules,pose,receipt=nu_iii.battle_test(0x0F03,joints,[50],actions)
+        for line in ("body-motion=static-grounded","stock=f03-stock|1|180",
+                     "field-follow=f03-hit|source",
+                     "field-core-damage=f03-hit|enemies|120|8|6",
+                     "field-debit=f03-hit|f03-stock|1",
+                     "move=f03-hit|b|10|grounded|28|none"):
+            self.assertIn((line+"\n").encode(),rules)
+        self.assertEqual(receipt["source_profile"]["debit_site"],"801B392C")
+        self.assertEqual(receipt["source_profile"]["child_variant"],11)
+        self.assertFalse(receipt["retail_behavior_verified"])
+        actions["profiles"][0]["groups"][0]["rows"]=[dict(row,selector=44)]
+        with self.assertRaisesRegex(ValueError,"neutral B row"):
+            nu_iii.battle_test(0x0F03,joints,[50],actions)
 
     def test_zeta_field_pilot_binds_shared_row_and_authors_the_field(self):
         joints=[{"index":0,"descriptor_offset":0},{"index":1,"descriptor_offset":4}]

@@ -44,6 +44,7 @@ from tools.analyze import retail_icbm as icbm
 from tools.analyze import retail_spawner_shot as spawner_shot
 from tools.analyze import retail_spawner_static as spawner_static
 from tools.analyze import retail_flying_boss as flying_boss
+from tools.analyze import retail_nu_iii as nu_iii
 from tools.analyze import retail_cannon_beam as cannon_beam
 from tools.analyze import retail_equipment_visuals as equipment
 from tools.analyze import retail_gatling_held_fire as gatling
@@ -813,6 +814,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     zeta_pilot = basic_shot and row.model in zfield.MODELS
     charge_pilot = basic_shot and row.model in charge_field.ALL_MODELS
     flying_pilot = basic_shot and row.model in flying_boss.MODELS
+    nu_pilot = basic_shot and row.model==nu_iii.MODEL
     icbm_pilot = basic_shot and row.model in icbm.MODELS
     spawner_pilot = basic_shot and row.model==spawner_shot.MODEL
     static_spawner_pilot = basic_shot and row.model==spawner_static.MODEL
@@ -821,7 +823,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     held_pilot = basic_shot and row.model==gatling.MODEL
     melee_pilot = basic_melee and row.model in knight.PILOTS
     pilot = (shot_pilot or roach_pilot or zeta_pilot or charge_pilot or icbm_pilot or
-             spawner_pilot or static_spawner_pilot or flying_pilot or melee_pilot or held_pilot)
+             spawner_pilot or static_spawner_pilot or flying_pilot or nu_pilot or melee_pilot or held_pilot)
     # The test package is explicitly normal-only. Keep other models' exact
     # alternate declarations and copy the pilot's wrappers as offline assets.
     source_variants = source_variants and not pilot
@@ -976,6 +978,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     charge_source = charge_field.battle_test(row.model,joints,candidates,pace,level[0],actions) if charge_pilot else None
     flying_source = (flying_boss.battle_test(row.model,joints,candidates,operands,level[0],actions)
                      if flying_pilot else None)
+    nu_source = (nu_iii.battle_test(row.model,joints,level[0],actions) if nu_pilot else None)
     timing=clip_timing(motion,clips)
     if girl_source is not None and row.model==girl.AUTHORED_ACTION_LOOP:
         exact=[entry for entry in timing if entry["archive_offset"]==girl_source["pose"]["archive_offset"]]
@@ -1024,14 +1027,14 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         manifest += "gameplay=gameplay.txt\n"
     elif (roach_source is not None or zeta_source is not None or charge_source is not None or
           icbm_source is not None or spawner_source is not None or static_spawner_source is not None or
-          flying_source is not None):
+          flying_source is not None or nu_source is not None):
         gameplay,pose,battle_receipt=(roach_source if roach_source is not None else
                                       zeta_source if zeta_source is not None else
                                       charge_source if charge_source is not None else
                                       icbm_source if icbm_source is not None else
                                       spawner_source if spawner_source is not None else
                                       static_spawner_source if static_spawner_source is not None else
-                                      flying_source)
+                                      flying_source if flying_source is not None else nu_source)
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         manifest += "gameplay=gameplay.txt\n"
     elif shot_pilot:
@@ -1249,6 +1252,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         summary["spawner_static_source"]=battle_receipt
     if flying_source is not None:
         summary["flying_field_source"]=battle_receipt
+    if nu_source is not None:
+        summary["nu_field_source"]=battle_receipt
     files["source-index.json"] = json_line(summary)
     files["borg.manifest"] = manifest.encode("ascii")  # publish last
     return files, summary
@@ -1491,7 +1496,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             if ("roach_bomb_source" in summary or "zeta_field_source" in summary or
                     "charge_field_source" in summary or "icbm_source" in summary or
                     "spawner_shot_source" in summary or "spawner_static_source" in summary or
-                    "flying_field_source" in summary):
+                    "flying_field_source" in summary or "nu_field_source" in summary):
                 short_range_ids.append(summary["id"])
             cues = action_sfx_index(summary["action_candidates"],tone_banks)
             if cues:

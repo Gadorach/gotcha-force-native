@@ -12,7 +12,7 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
           close_expansion=False, blue_ninja=False, robot_diver=False, wing_valkyrie=False, robot_bomber=False,
           ground_close=False, wire_shuriken=False, late_close=False, tank_shot=False, paired_ground=False,
           single_ground_shot=False, dragon_breath=False, roach_bomb=False, zeta_field=False, charge_field=False,
-          icbm=False, spawner_shot=False, flying_boss=False):
+          icbm=False, spawner_shot=False, flying_boss=False, nu_field=False):
     def launch(script,*args):
         cmd=[str(root/script),*args]
         if not opengl:
@@ -346,6 +346,23 @@ def check(root, *, opengl=False, equipped=False, trailing=False, knight_expansio
             bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
             if not bodies or "0" in bodies:
                 raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
+    if nu_field:
+        stable="gg4e08:0f03"
+        rules=(root/"borgs/gg4e08-0f03/gameplay.txt").read_text()
+        for line in ("body-motion=static-grounded","stock=f03-stock|1|180",
+                     "field-follow=f03-hit|source",
+                     "field-core-damage=f03-hit|enemies|120|8|6",
+                     "field-debit=f03-hit|f03-stock|1",
+                     "move=f03-hit|b|10|grounded|28|none"):
+            if line not in rules:
+                raise ValueError(f"{stable} lost its authored Nu III policy: {line}")
+        trace=launch("show-attacks.sh",stable,"--frames","150","--no-audio")
+        if ("event=debit " not in trace or "event=field-placed " not in trace or
+                not re.search(r"event=hit .* value=8\b",trace)):
+            raise ValueError(f"{stable} did not pay for and land its field\n"+trace)
+        bodies=re.findall(r"borg-body: round=\d+ tick=\d+ actor=0 draws=(\d+)",trace)
+        if not bodies or "0" in bodies:
+            raise ValueError(f"{stable} entered the round without a visible body\n"+trace)
     if zeta_field:
         for id in ("0705","070b","070c","070d"):
             stable=f"gg4e08:{id}"
@@ -723,9 +740,10 @@ if __name__=="__main__":
     p.add_argument("--icbm",action="store_true")
     p.add_argument("--spawner-shot",action="store_true")
     p.add_argument("--flying-boss",action="store_true")
+    p.add_argument("--nu-field",action="store_true")
     args=p.parse_args()
     check(args.root.resolve(strict=True),opengl=args.opengl,equipped=args.equipped,trailing=args.trailing,
           knight_expansion=args.knight_expansion,girl_worm=args.girl_worm,reflection_bodies=args.reflection_bodies,
           close_expansion=args.close_expansion,blue_ninja=args.blue_ninja,robot_diver=args.robot_diver,
           wing_valkyrie=args.wing_valkyrie,robot_bomber=args.robot_bomber,ground_close=args.ground_close,
-          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb,zeta_field=args.zeta_field,charge_field=args.charge_field,icbm=args.icbm,spawner_shot=args.spawner_shot,flying_boss=args.flying_boss)
+          wire_shuriken=args.wire_shuriken,late_close=args.late_close,tank_shot=args.tank_shot,paired_ground=args.paired_ground,single_ground_shot=args.single_ground_shot,dragon_breath=args.dragon_breath,roach_bomb=args.roach_bomb,zeta_field=args.zeta_field,charge_field=args.charge_field,icbm=args.icbm,spawner_shot=args.spawner_shot,flying_boss=args.flying_boss,nu_field=args.nu_field)

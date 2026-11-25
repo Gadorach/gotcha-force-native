@@ -72,9 +72,9 @@ declared alternate set. The four Zeta models are now normal-only pilots
 too, so their twenty exact wrappers likewise remain as
 `source-wrapper-*.bin` without catalogue variant declarations. The three
 X-charge models follow the same policy, removing another fifteen, and the
-later `010a`, `0f04`, `0004` and `0e00`-`0e05` pilots remove another
-forty-five. The current preview run is one hundred and ten requests lower
-for that reason: 2,588 requested and 2,461 passed. The
+later `010a`, `0f04`, `0004`, `0e00`-`0e05` and `0f03` pilots remove
+another fifty. The current preview run is one hundred and fifteen requests
+lower for that reason: 2,583 requested and 2,456 passed. The
 remaining looks refuse strict reflection generation. An
 undeclared variant request refused.
 
@@ -1529,7 +1529,7 @@ grounded actor. Their package now applies 50% only to keyed translations;
 the same sampled pose drives the visible body and the launch socket.
 Body floor contact is still independent of the tail.
 
-Battle Test now covers 204 of 206. The remaining 2 are no longer a
+Battle Test now covers 205 of 206. The remaining 1 is no longer a
 single missing-evidence cohort; each needs a capability or a settled
 classification:
 
@@ -1537,7 +1537,8 @@ classification:
   Both airborne forms ship: the mechanical Dragons' downward chest beam
   (`stop-on-floor`) and the other six Dragons' fixed-angle sweep
   (`clip-on-stage`, bound through the qualified source grids).
-- **Child-actor B** (`0f03` Nu III): the whole `0f01`-`0f03` family shares
+- **Nu III pilot** (`0f03`, admitted; module `tools/analyze/retail_nu_iii.py`):
+  the whole `0f01`-`0f03` family shares
   the state-2 handler `801B3824`. It pays `8006DBE0(actor, 0, 1, 1)` and
   then branches on the model id at `+0x3E8`: `0F01` spawns table child
   **74** through `80082824` (index into 56-byte rows at `802D7B10`);
@@ -1547,12 +1548,23 @@ classification:
   byte `11` at child `+0x11`, and installs the shared effect-command
   interpreter `8017CD1C` at child `+0x0C` (plus `8017D4AC` at `+0x10C`).
 
-  This is why `0f01` and `0f02` are admitted and `0f03` is not: the family's
-  exact row (key 74, speed 32, lifetime 70) exists only for `0F01`'s
-  branch, and `0F03`'s payload is a bytecode-driven effect child with no
-  origin row, speed or lifetime to bind. `8017CD1C` reads a command stream
-  into a shared context (`-21068(r13)`), so it is the effect-VM runtime,
-  not a shot. The `0f05` child is a third shape again (allocator
+  That difference is why the same family is bound two ways: the exact row
+  (key 74, speed 32, lifetime 70) exists only for `0F01`'s branch, so that
+  sibling is a shot, while `0F03`'s payload is a bytecode-driven effect
+  child with no origin row, speed or lifetime to bind. `8017CD1C` reads a
+  command stream into a shared context (`-21068(r13)`), so it is the
+  effect-VM runtime.
+
+  `0f03` is admitted through that exact debit and child call: a
+  capacity-one `f03-stock` pool plus `field-debit` pays channel-0 cost 1,
+  and the owner-following field carries the payload because the child
+  inherits the parent's transform and velocity rather than launching. The
+  field radius 120, damage 8, interval 6, height band 40 and the family
+  pace 3.33 are authored; the command program is unclaimed. Its siblings
+  stay as they were: `0F01`'s table child has an explicit speed/lifetime
+  row, which is why that one is a shot and this one is a follow.
+
+  The `0f05` child is a third shape again (allocator
   `8008893C`, callbacks `801F8108`/`801F840C`).
 - **Zeta body material (admitted)**: the four Zeta bodies each contain one
   two-TObj diffuse pair (`0x00030010` head `src=4`, tail `src=5`) plus
