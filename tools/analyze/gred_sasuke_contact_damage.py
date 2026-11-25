@@ -11,10 +11,12 @@ The live observation (kakeru_battle, boost+forward) was:
     20 x 0.867 x 1.13 x 1.15 = 22.533329 -> 22
     apply caller 8002F1DC, writer 8003D344, ledger actor+0x41C
 
-The 0.867 matchup scalar is not a stored float (the search over the data
-sections finds no 0.867); it is the live accumulator between the amount call
-and D024, so it is recorded as an observation input. The other scalars are read
-from the DOL at the addresses below and must match exactly.
+The 0.867 matchup scalar is not a stored float; it is the product of the
+credit difficulty row at 802C4BA0 (1.02) and the credit rank row at 802C5D20
+(0.85). The 1.13 scalar is the settings ladder at 802C6820 index 16, selected
+by settings 803C4E60, team 1, byte 16. The rank and tier rows are read at
+802C7C60 and 802C7CA0. Every scalar is checked against the DOL and must match
+exactly.
 """
 import argparse
 import hashlib
@@ -26,11 +28,12 @@ from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
 BASE = 0x80365EC0
+CREDIT_DIFFICULTY_ROW = 0x802C4BA0
+CREDIT_RANK_ROW = 0x802C5D20
 SCALAR_ROW = 0x802C6820
 SCALAR_INDEX = 16
-RANK_ROW = 0x802C7C80
+RANK_ROW = 0x802C7C60
 TIER_ROW = 0x802C7CA0
-MATCHUP_FACTOR = 0.867
 CREDIT_MODEL = 0x0615
 RECEIVER_MODEL = 0x000A
 
@@ -51,19 +54,26 @@ def recover(image):
         raise ValueError("unqualified source revision")
 
     base = struct.unpack(">H", _data(image, BASE, 2))[0]
+    difficulty = struct.unpack(">f", _data(image, CREDIT_DIFFICULTY_ROW, 4))[0]
+    credit_rank = struct.unpack(">f", _data(image, CREDIT_RANK_ROW, 4))[0]
     scalar = struct.unpack(">f", _data(image, SCALAR_ROW + 4 * SCALAR_INDEX, 4))[0]
     rank = struct.unpack(">f", _data(image, RANK_ROW, 4))[0]
     tier = struct.unpack(">f", _data(image, TIER_ROW, 4))[0]
     if base != 20:
         raise ValueError(f"base halfword changed: {base}")
+    if abs(difficulty - 1.02) > 1e-6 or abs(credit_rank - 0.85) > 1e-6:
+        raise ValueError(f"credit rows changed: {difficulty}, {credit_rank}")
     if abs(scalar - 1.13) > 1e-6:
         raise ValueError(f"scalar row changed: {scalar}")
     if abs(rank - 1.15) > 1e-6:
         raise ValueError(f"rank row changed: {rank}")
     if abs(tier - 1.0) > 1e-6:
         raise ValueError(f"tier row changed: {tier}")
+    matchup = difficulty * credit_rank
+    if abs(matchup - 0.867) > 1e-6:
+        raise ValueError(f"matchup product changed: {matchup}")
 
-    amount, product = combine(base, MATCHUP_FACTOR, scalar, rank, tier)
+    amount, product = combine(base, matchup, scalar, rank, tier)
     if amount != 22:
         raise ValueError(f"amount changed: {product} -> {amount}")
 
@@ -76,16 +86,26 @@ def recover(image):
         "source_dol_sha256": SOURCE_SHA256,
         "base": {"value": base, "address": f"{BASE:08X}"},
         "factors": {
+            "credit_difficulty": {
+                "value": round(difficulty, 6),
+                "address": f"{CREDIT_DIFFICULTY_ROW:08X}",
+                "index": 0,
+            },
+            "credit_rank": {
+                "value": round(credit_rank, 6),
+                "address": f"{CREDIT_RANK_ROW:08X}",
+                "index": 0,
+            },
             "matchup": {
-                "value": MATCHUP_FACTOR,
-                "source": "live accumulator between the amount call and 8003D024",
-                "stored_as_float": False,
+                "value": round(matchup, 6),
+                "formula": "credit_difficulty x credit_rank",
             },
             "scalar": {
                 "value": round(scalar, 6),
                 "address": f"{SCALAR_ROW:08X}",
                 "index": SCALAR_INDEX,
                 "row": "0.97..1.16 linear ladder",
+                "index_source": "settings 803C4E60, team 1, byte 16",
             },
             "receiver_rank": {
                 "value": round(rank, 6),
@@ -116,8 +136,10 @@ def recover(image):
         },
         "notes": [
             "The amount is a live boost/contact observation, not a beam-table result.",
-            "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies the GFDA rows, including receiver difficulty 0.9.",
-            "generalises_to_other_pairs is false until the matchup and scalar selections are recovered per pair.",
+            "The 0.867 matchup is credit difficulty 1.02 x credit rank 0.85, both GFDA rows; the 0x802C5D60 matrix is not in this chain.",
+            "The 1.13 scalar index 16 comes from settings 0x803C4E60, team 1, byte 16.",
+            "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies receiver difficulty 0.9 and the health/force rows.",
+            "generalises_to_other_pairs is false until the per-pair credit/rank rows and the battle settings index are read for other pairs.",
         ],
         "retail_behaviour_verified": True,
         "generalises_to_other_pairs": False,

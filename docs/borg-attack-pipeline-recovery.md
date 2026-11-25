@@ -548,15 +548,20 @@ row 0x802C6820: 0.97 0.98 0.99 1.00 1.01 ... 1.12 [1.13] 1.14 1.15 1.16
 So the `D100` factor is `0x802C6820[16] = 1.13`, a linear scalar ladder. The
 earlier `802C6BC0` was the pre-load pointer, which is why its `+0x40` read 1.0.
 
-The final attribution is therefore coherent:
+The final attribution is therefore coherent, and the zero factor that was the
+matchup table is not in the chain:
 
 | Checkpoint | Net factor | Source |
 | --- | --- | --- |
-| `D024` | 0.867 | matchup table at `0x802C5D60` |
-| `D100` | 1.13 | row `0x802C6820`, index 16 |
-| `D270` | 1.15 | ReceiverRank at `0x802C7C80`, index 0 |
-| `D290` | 1.0 | tier row, `actor+0x6CA = 0` |
+| `D024` | 0.867 | credit difficulty `1.02` (`0x802C4BA0[0]`) × credit rank `0.85` (`0x802C5D20[0]`) |
+| `D100` | 1.13 | row `0x802C6820`, index 16; index from settings `0x803C4E60`, team 1, byte 16 |
+| `D270` | 1.15 | ReceiverRank `0x802C7C60[0]` |
+| `D290` | 1.0 | tier row `0x802C7CA0[0]`, `actor+0x6CA = 0` |
 | `D16C` | 1.0 | relative neutral (`receiver+180 = 1.0`) |
+
+The live matchup probe read row 0 / column 4 of the `0x802C5D60` matrix as
+`1.0`, so that matrix is not the source of `0.867`; the two GFDA credit rows
+are. This also removes the last "unresolved factor" from the record.
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 The measured record is exported as

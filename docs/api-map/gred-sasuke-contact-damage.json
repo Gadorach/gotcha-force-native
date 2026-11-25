@@ -6,13 +6,22 @@
   },
   "credit": "gg4e08:0615/0",
   "factors": {
+    "credit_difficulty": {
+      "address": "802C4BA0",
+      "index": 0,
+      "value": 1.02
+    },
+    "credit_rank": {
+      "address": "802C5D20",
+      "index": 0,
+      "value": 0.85
+    },
     "matchup": {
-      "source": "live accumulator between the amount call and 8003D024",
-      "stored_as_float": false,
+      "formula": "credit_difficulty x credit_rank",
       "value": 0.867
     },
     "receiver_rank": {
-      "address": "802C7C80",
+      "address": "802C7C60",
       "index": 0,
       "value": 1.15
     },
@@ -23,6 +32,7 @@
     "scalar": {
       "address": "802C6820",
       "index": 16,
+      "index_source": "settings 803C4E60, team 1, byte 16",
       "row": "0.97..1.16 linear ladder",
       "value": 1.13
     },
@@ -37,8 +47,10 @@
   "kind": "gf-borg-contact-damage",
   "notes": [
     "The amount is a live boost/contact observation, not a beam-table result.",
-    "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies the GFDA rows, including receiver difficulty 0.9.",
-    "generalises_to_other_pairs is false until the matchup and scalar selections are recovered per pair."
+    "The 0.867 matchup is credit difficulty 1.02 x credit rank 0.85, both GFDA rows; the 0x802C5D60 matrix is not in this chain.",
+    "The 1.13 scalar index 16 comes from settings 0x803C4E60, team 1, byte 16.",
+    "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies receiver difficulty 0.9 and the health/force rows.",
+    "generalises_to_other_pairs is false until the per-pair credit/rank rows and the battle settings index are read for other pairs."
   ],
   "observation": {
     "actor": "805DDBC0",
@@ -50,7 +62,7 @@
     "writer": "8003D344"
   },
   "path": "boost-contact",
-  "product": 22.533329,
+  "product": 22.53333,
   "receiver": "gg4e08:000a/0",
   "retail_behaviour_verified": true,
   "revision": 1,
