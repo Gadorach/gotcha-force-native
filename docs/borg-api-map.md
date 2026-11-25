@@ -212,3 +212,23 @@ remaining offsets cannot be recovered from the data read so far; forcing them
 to zero would be an authored presentation offset, not a recovered behaviour.
 They are therefore left as-is and recorded here instead of being quietly
 "fixed".
+
+### Corrected offsets
+
+Those measured values are now bound through `pose-ground-offset`, with each
+package recording `retail_behaviour_verified: false` and its provenance
+(measured posed floor, stable at ticks 1, 10 and 30):
+
+| Model | Name | before | after |
+| --- | --- | --- | --- |
+| `0109` | DEATH BORG BETA | 215.72 | −0.28 |
+| `0a07` | DEATH WING | 83.93 | −0.07 |
+| `0517` | POISON WORM | 83.33 | 0.33 |
+| `0b00` | QUICK VALKRIE | 49.52 | −0.48 |
+| `0619` | TITAN TANK | 21.81 | −0.19 |
+| `0f06` | DEATH EYE | 26.40 | 0.40 |
+| `0004` | (not in the table) | 9.92 | 9.92 |
+
+Twenty-six rigs are bound in total. The shift happens inside the pose
+evaluation, so `bounds()`, the camera fit and the draw use the same corrected
+geometry while the actor itself never moves.

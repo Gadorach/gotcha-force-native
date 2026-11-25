@@ -1253,6 +1253,18 @@ void ordered_followup_cases(){
               "each branch result is independent of the single debit and preceding results");
     }
 }
+void pose_ground_offset_cases(){
+    BorgGameplayProfile positive,negative;
+    check(borg_read_gameplay_profile(std::string(player)+"pose-ground-offset=83\n",&positive,nullptr)&&
+          std::abs(positive.pose_ground_offset-83.f)<1e-3f,"pose ground offset loads");
+    check(borg_read_gameplay_profile(std::string(player)+"pose-ground-offset=-42.5\n",&negative,nullptr)&&
+          std::abs(negative.pose_ground_offset+42.5f)<1e-3f,"pose ground offset accepts a negative shift");
+    BorgGameplayProfile invalid;
+    check(!borg_read_gameplay_profile(std::string(player)+"pose-ground-offset=5000\n",&invalid,nullptr),
+          "pose ground offset refuses above the range");
+    check(!borg_read_gameplay_profile(std::string(player)+"pose-ground-offset=abc\n",&invalid,nullptr),
+          "pose ground offset refuses non-numeric");
+}
 void air_action_budget_cases(){
     BorgGameplayProfile profile;
     check(borg_read_gameplay_profile(std::string(player)+"air-action-budget=3\n",&profile,nullptr),
@@ -1767,6 +1779,7 @@ int main(){
     aim_gated_release_cases();
     cruise_boost_cases();
     air_action_budget_cases();
+    pose_ground_offset_cases();
     grouped_stock_return_cases();
     ordered_followup_cases();
     {

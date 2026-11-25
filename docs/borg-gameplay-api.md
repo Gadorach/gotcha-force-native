@@ -208,6 +208,12 @@ release=arc-twin|6|arc-stock|1|arc
    Ordinary locomotion uses `air`/`dash` clips for cruise/boost; the entry
    and static policies above use one shared pose. This does not reproduce retail
   vertical controls, landing callbacks, glide, or aircraft trajectories.
+- `pose-ground-offset=<units>` (integer, `-1000..1000`) shifts the drawn body
+  on Y and nothing else. The shift is applied inside the pose evaluation, so
+  bounds, the camera fit and the draw all agree, while the actor's position and
+  collision stay where they were. It exists for rigs whose authored bind pose
+  floats above their root; the value is an authored presentation correction, not
+  a recovered source height. Omit it and the pose is unchanged.
 - `stock=id|capacity|refill ticks`: fills on the last debit's eligible timer
   expiry. Declare `on-return` instead of a number for a pool without a
   timer. Capacity is 1–255 units; individual debit fields keep their

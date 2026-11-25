@@ -295,6 +295,8 @@ public:
             matrices=extended;
         }
         HsdSkinGeometry evaluated;std::string why;if(!hsd_skin_sample(skin_,matrices,&evaluated,&why))return failure(error,why.c_str());
+        if(ground_offset_!=0)
+            for(auto& mesh:evaluated.world_vertices)for(auto& vertex:mesh)vertex.position[1]-=ground_offset_;
         for(const auto& scroll:scrolls)for(unsigned m=0;m<evaluated.world_vertices.size();++m)
             if(scroll_mesh(m,scroll.bone,scroll.axis))for(auto& vertex:evaluated.world_vertices[m])
                 (skin_.scene.meshes[m].texture_uv1?vertex.uv1:vertex.uv)[scroll.axis]+=scroll.offset;
@@ -365,6 +367,9 @@ public:
         error_.clear();return scene_.draw(render,camera);
     }
     const CharacterPoseRig& rig()const{return rig_;}
+    // Authored presentation shift applied to every sampled vertex, so bounds and
+    // the draw agree. It never moves the actor, only the drawn body.
+    void set_ground_offset(f32 offset){ground_offset_=offset;}
     std::shared_ptr<const CharacterModelBinding> instance_binding()const{return binding_;}
     void discard_pose(){ready_=draw_prepared_=false;}
     const HsdSkinAsset& asset()const{return skin_;}
@@ -385,6 +390,7 @@ public:
     const std::string& error()const{return error_;}
     bool ready()const{return ready_;}
 private:
+    f32 ground_offset_=0;
     bool scroll_mesh(unsigned m,u8 bone,u8 axis)const{
         const auto& mesh=skin_.scene.meshes[m];
         if(skin_.scene.mesh_joint[m]!=bone||!mesh.identity_texture_srt||mesh.generated_uv_required||mesh.texture_matrix_required||mesh.texture_matrix_mask||

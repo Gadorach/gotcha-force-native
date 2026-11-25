@@ -252,6 +252,7 @@ public:
         for(const auto& fx:profile->movement_fx)
             if(fx.bone>=scene_.rig().binding.bones.size())
                 return fail("Borg gameplay: unbound movement effect bone for "+fx.id);
+        scene_.set_ground_offset(profile->pose_ground_offset);
         package_profile_=std::move(profile);ready_=true;return true;
     }
     // Explicit no-combat walk lab. Uses the same pose and body renderer as

@@ -305,6 +305,7 @@ struct BorgGameplayProfile {
     u16 beam_recovery=0;
     u8 air_jump_points=0;
     u8 air_action_budget=0; // combined jump + air-dash budget; zero keeps the jump-only rule
+    f32 pose_ground_offset=0; // authored presentation shift for a floating rig; zero leaves the pose
     f32 flight_lift=0;u16 flight_ticks=0;
     std::optional<BorgCruiseBoost> cruise{};
     std::optional<BorgBattleClip> cruise_entry;
@@ -1052,6 +1053,9 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             u16 count=0;
             if(next.air_jump_points||!number(value,1,8,&count))return fail("invalid or duplicate air-jump count");
             next.air_jump_points=u8(count);
+        }else if(key=="pose-ground-offset"){
+            if(!scalar(value,-1000.f,1000.f,&next.pose_ground_offset))
+                return fail("invalid pose-ground offset");
         }else if(key=="air-action-budget"){
             u16 count=0;
             if(next.air_action_budget||!number(value,1,8,&count))return fail("invalid or duplicate air-action budget");

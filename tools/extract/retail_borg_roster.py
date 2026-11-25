@@ -1155,6 +1155,23 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
                 battle_receipt["air_action_budget"]={"operand":"09F","value":budget,
                                                      "source":"combined jump and air-dash cap",
                                                      "retail_behaviour_verified":False}
+    # Measured presentation offsets: each rig's posed floor at ticks 1, 10 and
+    # 30 sits this far above the actor floor while the actor itself is grounded.
+    # These are authored corrections, not recovered source values.
+    POSE_GROUND_OFFSETS={
+        0x0109:216, 0x0A07:84, 0x050D:83, 0x0517:83, 0x0D01:74, 0x0D02:71,
+        0x0401:68, 0x0B00:50, 0x0B06:50, 0x0B03:48, 0x0B05:48, 0x0B07:48,
+        0x0406:47, 0x040B:47, 0x040C:47, 0x040D:47, 0x0B02:43, 0x0B01:39,
+        0x0B04:38, 0x070C:36, 0x070D:36, 0x0F06:26, 0x0F04:23, 0x0619:22,
+        0x061F:22, 0x0625:22,
+    }
+    if battle_receipt is not None and row.model in POSE_GROUND_OFFSETS:
+        if "cruise-boost=" not in files["gameplay.txt"].decode("ascii"):
+            offset=POSE_GROUND_OFFSETS[row.model]
+            files["gameplay.txt"]+=f"pose-ground-offset={offset}\n".encode("ascii")
+            battle_receipt["pose_ground_offset"]={"units":offset,
+                                                 "source":"measured posed floor, stable at ticks 1/10/30",
+                                                 "retail_behaviour_verified":False}
     if battle_receipt is not None and (reflection:=zero_reflection_rules(row.model,model)):
         rules,policy=reflection
         files["gameplay.txt"]+=rules.encode("ascii")
