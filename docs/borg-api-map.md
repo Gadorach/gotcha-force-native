@@ -163,9 +163,26 @@ instead.
 
 Its encoding is `0a AA BB ff`, four bytes, where `AA` ranges over **0..7** and
 `BB` is `00` or `7f`. The `AA` range matches a per-Borg attack slot rather than a
-shape id, and `BB` behaves like a side or height flag. So the shape and damage
-for a contact are looked up from `(Borg, slot AA)`, not carried in the command —
-which is the next table to find.
+shape id, and `BB` behaves like a side or height flag.
+
+The dispatch path is now traced. The interpreter `8004C050` selects handlers from
+`802D0DA0 + opcode*4`; opcode 10's handler is `8004C6B4`, which calls
+`8008AC80(actor, AA)` and also stores `AA` at `actor+0x744`. `8008AC80` is the
+slot lookup:
+
+```text
+owner = *(actor + 0x90)
+block = *(owner + 0x3FC)
+entry = *(block + 0xA20 + slot*4)   // 8 pointers, slot 0..7
+child = 80088AA0(actor, 4, 0x30, 0, 0)
+```
+
+So each contact resolves through a per-model array of eight pointers at
+`block+0xA20`, and the pointed-to record initialises a 48-byte child. That array
+is the attack descriptor table: its records are where the shape and damage for a
+slot live, and recovering them means reading the `owner+0x3FC` block out of the
+model data. That is the next target, and it is one table per model rather than a
+per-family decode.
 - `audio` — the landing candidate (bank, tone, whether the trigger is
   qualified, and whether the PCM file is present), the `other_sfx` state,
   whether a launch sound was authored, and how many action cues and routes
