@@ -134,3 +134,50 @@ action-SFX routes at all (`0007`, `0104`, `0203`, `020c`, `0619`, `061b`,
 unit: recover the cue tables per action from the source banks for the other 193,
 then bind them per move through the existing `movement-cue`, `launch-sound` and
 `impact-sound` API instead of adding per-Borg exceptions.
+
+## Posed floor
+
+The package battle reports the posed body's vertical extent on its per-tick body
+line, for actor 0:
+
+```text
+borg-body: round=0 tick=1 actor=0 draws=29 floor=9.35..292.29
+```
+
+`floor` comes from `NativeBattleMvpView::package_body_bounds`, which reads the
+same posed scene the renderer uses (`model_slot` indirection, so it is the right
+model). It is read-only.
+
+Two things it separates immediately:
+
+- **Airborne models read their spawn height.** `0d00` BLUE STRIKER reads
+  `250.0`, `0620` VICTORY JET `250.6`, `061b` EAGLE JET `432.0` — those are the
+  cruise heights from their own `cruise-boost` rows, not errors.
+- **The verified dragon scale works.** `050c` FIRE DRAGON, `0515` THUNDER
+  DRAGON and `0516` read `-8.04`, which is what the reviewed
+  `animated-translation-percent=50` should produce. Full-size keyed
+  translations would have put them about 281 units high.
+
+Among grounded packages most read within ±10 units. The stable outliers, all
+present at ticks 1, 10 and 30, are:
+
+| Model | Name | floor low |
+| --- | --- | --- |
+| `0109` | DEATH BORG BETA | 215.72 |
+| `0a07` | DEATH WING | 83.93 |
+| `050d` | CLAW WORM | 83.33 |
+| `0517` | POISON WORM | 83.33 |
+| `0d01` | RED ATTACKER | 74.30 |
+| `0d02` | CARRIER HELICOPTER | 71.30 |
+| `0401` | DRILL ROBOT | 67.99 |
+| `0b00`/`0b03`/`0b06` | VALKRIE family | 49.52 |
+| `0d07` | DEATH BOMB | -50.00 |
+| `0d06` | DEATH ICBM | -134.54 |
+
+No level-record field correlates with these values (`050b` sits at 9.35 with
+`180/180` while `050d` sits at 83.33 with `0/0`), and `translation_scale` is a
+verified per-cohort fact for the six dragons rather than a general rule. So the
+remaining offsets cannot be recovered from the data read so far; forcing them
+to zero would be an authored presentation offset, not a recovered behaviour.
+They are therefore left as-is and recorded here instead of being quietly
+"fixed".

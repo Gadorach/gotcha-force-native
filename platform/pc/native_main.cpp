@@ -1999,7 +1999,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             if(const auto parts=view.package_part_draws(i);parts)
                 gf::log_info(context,"borg-parts","round=%u tick=%u actor=%u draws=%u",restarts,world.tick(),i,parts);
         if(options.trace_package_battle)
-            gf::log_info(context,"borg-body","round=%u tick=%u actor=0 draws=%u",restarts,world.tick(),view.package_body_draws(0));
+        {
+            BattleMvpVec low{},high{};const bool bounded=view.package_body_bounds(world,0,&low,&high);
+            gf::log_info(context,"borg-body","round=%u tick=%u actor=0 draws=%u floor=%.2f..%.2f",
+                restarts,world.tick(),view.package_body_draws(0),bounded?low[1]:0.f,bounded?high[1]:0.f);
+        }
         if(options.trace_package_battle)if(const auto fade=view.stage_view_alpha(0);fade&&fade!=previous_fade){
             gf::log_info(context,"stage-view","viewer=0 tick=%u alpha=%.3f",world.tick(),double(*fade));
             previous_fade=fade;
