@@ -359,7 +359,9 @@ this pair. `8002E2A8` uses the same test before running the reaction branch.
 The live pair entry `r3=80681A40 r4=8067FAC0` carried `+0x2C`/`+0x1EC` links to
 `80365EC0` and `802D4160`, but the X hit applied `80366058` instead. Those links
 are side defaults, not the applied credit; the credit must be read at the amount
-call. The 47 direct calls are ordered in
+call. The 29 reaction-band calls and their decoded argument registers are in
+[`api-map/reaction-effect-map.json`](api-map/reaction-effect-map.json). The
+scaffold itself is ordered in
 [`api-map/reaction-scaffold-map.json`](api-map/reaction-scaffold-map.json):
 16 pre-amount calls, the amount call and HP write, then 29 reaction and
 presentation calls. The first reaction-band call (`8002F8DC`) is the force

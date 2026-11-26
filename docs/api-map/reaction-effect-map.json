@@ -1,0 +1,802 @@
+{
+  "calls": [
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 28
+        },
+        "r4": {
+          "kind": "move",
+          "source": 30
+        },
+        "r5": {
+          "kind": "move",
+          "source": 24
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "force/ledger update"
+      },
+      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
+      "role": "force-ledger-update",
+      "site": "8002F200",
+      "target": "8002F8DC"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 28
+        },
+        "r4": {
+          "base": 30,
+          "kind": "field",
+          "offset": 1188,
+          "op": "lwz"
+        },
+        "r5": {
+          "kind": "move",
+          "source": 24
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "force/ledger update"
+      },
+      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
+      "role": "force-ledger-update",
+      "site": "8002F21C",
+      "target": "8002F8DC"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "hex": "00000505",
+          "kind": "imm",
+          "value": 1285
+        },
+        "r4": {
+          "base": 30,
+          "kind": "field",
+          "offset": 1005,
+          "op": "lbz"
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "reaction helper"
+      },
+      "role": "reaction-helper",
+      "site": "8002F278",
+      "target": "8018214C"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "hex": "00000506",
+          "kind": "imm",
+          "value": 1286
+        },
+        "r4": {
+          "base": 30,
+          "kind": "field",
+          "offset": 1005,
+          "op": "lbz"
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "reaction helper"
+      },
+      "role": "reaction-helper",
+      "site": "8002F288",
+      "target": "8018214C"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "hex": "00000506",
+          "kind": "imm",
+          "value": 1286
+        },
+        "r4": {
+          "base": 30,
+          "kind": "field",
+          "offset": 1005,
+          "op": "lbz"
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "reaction helper"
+      },
+      "role": "reaction-helper",
+      "site": "8002F298",
+      "target": "8018214C"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "base": 3,
+          "kind": "field",
+          "offset": 1002,
+          "op": "lha"
+        },
+        "r4": {
+          "base": 3,
+          "kind": "field",
+          "offset": 1005,
+          "op": "lbz"
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "reaction helper"
+      },
+      "role": "reaction-helper",
+      "site": "8002F2B8",
+      "target": "8018214C"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 28
+        },
+        "r4": {
+          "kind": "move",
+          "source": 30
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "role": "slot update"
+      },
+      "role": "slot-update",
+      "site": "8002F2D4",
+      "target": "80006C24"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 28
+        },
+        "r4": {
+          "base": 30,
+          "kind": "field",
+          "offset": 1188,
+          "op": "lwz"
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "role": "slot update"
+      },
+      "role": "slot-update",
+      "site": "8002F2EC",
+      "target": "80006C24"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000004",
+          "kind": "imm",
+          "value": 4
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F544",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F5A0",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000003",
+          "kind": "imm",
+          "value": 3
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F5FC",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000005",
+          "kind": "imm",
+          "value": 5
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F614",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000006",
+          "kind": "imm",
+          "value": 6
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F62C",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000007",
+          "kind": "imm",
+          "value": 7
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F644",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000000",
+          "kind": "imm",
+          "value": 0
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F65C",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 31
+        },
+        "r4": {
+          "kind": "move",
+          "source": 30
+        },
+        "r5": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r6": {
+          "base": 29,
+          "kind": "field",
+          "offset": 9,
+          "op": "lbz"
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "dispatch": "800F04B4",
+        "opcode": "0x26",
+        "role": "impact record",
+        "state": "object+0x2AE = 4",
+        "volume": "object+0x7FC"
+      },
+      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
+      "role": "impact-effect",
+      "site": "8002F674",
+      "target": "8002FCBC"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "hex": "00000008",
+          "kind": "imm",
+          "value": 8
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "role": "effect values"
+      },
+      "role": "effect-values",
+      "site": "8002F698",
+      "target": "800DB250"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 31
+        },
+        "r4": {
+          "kind": "move",
+          "source": 30
+        },
+        "r5": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r6": {
+          "base": 29,
+          "kind": "field",
+          "offset": 9,
+          "op": "lbz"
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "dispatch": "800F04B4",
+        "opcode": "0x26",
+        "role": "impact record",
+        "state": "object+0x2AE = 4",
+        "volume": "object+0x7FC"
+      },
+      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
+      "role": "impact-effect",
+      "site": "8002F6B0",
+      "target": "8002FCBC"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "effect spawn"
+      },
+      "role": "effect-spawn",
+      "site": "8002F6DC",
+      "target": "8010E158"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000000",
+          "kind": "imm",
+          "value": 0
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "object spawn"
+      },
+      "role": "object-spawn",
+      "site": "8002F728",
+      "target": "8013F300"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000000",
+          "kind": "imm",
+          "value": 0
+        },
+        "r5": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "object spawn"
+      },
+      "role": "object-spawn",
+      "site": "8002F758",
+      "target": "80176EC0"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000000",
+          "kind": "imm",
+          "value": 0
+        },
+        "r5": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "object spawn"
+      },
+      "role": "object-spawn",
+      "site": "8002F778",
+      "target": "80176EC0"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000002",
+          "kind": "imm",
+          "value": 2
+        },
+        "r5": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "object spawn"
+      },
+      "role": "object-spawn",
+      "site": "8002F798",
+      "target": "80176EC0"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000002",
+          "kind": "imm",
+          "value": 2
+        },
+        "r5": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "role": "reaction effect"
+      },
+      "role": "reaction-effect",
+      "site": "8002F7BC",
+      "target": "801EC1BC"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "role": "reaction effect"
+      },
+      "role": "reaction-effect",
+      "site": "8002F7E8",
+      "target": "801DFF24"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "object spawn"
+      },
+      "role": "object-spawn",
+      "site": "8002F818",
+      "target": "8013F300"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 30
+        },
+        "r4": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        },
+        "r5": {
+          "hex": "00000001",
+          "kind": "imm",
+          "value": 1
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "allocator": "80088AA0",
+        "role": "object spawn"
+      },
+      "role": "object-spawn",
+      "site": "8002F848",
+      "target": "80176EC0"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 31
+        },
+        "r4": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r5": {
+          "base": 29,
+          "kind": "field",
+          "offset": 9,
+          "op": "lbz"
+        }
+      },
+      "confidence": "matched",
+      "effect": {
+        "role": "color",
+        "table": "802C7ED0"
+      },
+      "role": "color",
+      "site": "8002F87C",
+      "target": "80019550"
+    },
+    {
+      "arguments": {
+        "r3": {
+          "kind": "move",
+          "source": 31
+        },
+        "r4": {
+          "kind": "move",
+          "source": 30
+        },
+        "r5": {
+          "hex": "803B0720",
+          "kind": "absolute",
+          "value": -2143615200
+        },
+        "r6": {
+          "base": 29,
+          "kind": "field",
+          "offset": 10,
+          "op": "lbz"
+        }
+      },
+      "confidence": "open",
+      "effect": {
+        "dispatch": "800F088C",
+        "role": "impact record variant",
+        "selector": "value from record+10",
+        "state": "object+0x2AE = 4",
+        "thresholds": [
+          "80436FB8",
+          "80436F94",
+          "80436FBC"
+        ]
+      },
+      "note": "impact effect variant 800F088C with a threshold-derived selector",
+      "role": "impact-effect",
+      "site": "8002F894",
+      "target": "8002FC18"
+    }
+  ],
+  "effects": {
+    "80006C24": {
+      "role": "slot update"
+    },
+    "80019550": {
+      "role": "color",
+      "table": "802C7ED0"
+    },
+    "8002F8DC": {
+      "role": "force/ledger update"
+    },
+    "8002FC18": {
+      "dispatch": "800F088C",
+      "role": "impact record variant",
+      "selector": "value from record+10",
+      "state": "object+0x2AE = 4",
+      "thresholds": [
+        "80436FB8",
+        "80436F94",
+        "80436FBC"
+      ]
+    },
+    "8002FCBC": {
+      "dispatch": "800F04B4",
+      "opcode": "0x26",
+      "role": "impact record",
+      "state": "object+0x2AE = 4",
+      "volume": "object+0x7FC"
+    },
+    "800300BC": {
+      "role": "impact mode"
+    },
+    "8003CD5C": {
+      "role": "amount"
+    },
+    "8003D344": {
+      "role": "HP write"
+    },
+    "800DB250": {
+      "role": "effect values"
+    },
+    "8010E158": {
+      "allocator": "80088AA0",
+      "role": "effect spawn"
+    },
+    "8013F300": {
+      "allocator": "80088AA0",
+      "role": "object spawn"
+    },
+    "80176EC0": {
+      "allocator": "80088AA0",
+      "role": "object spawn"
+    },
+    "8018214C": {
+      "role": "reaction helper"
+    },
+    "801DFF24": {
+      "role": "reaction effect"
+    },
+    "801EC1BC": {
+      "role": "reaction effect"
+    }
+  },
+  "function": {
+    "address": "8002E2A8",
+    "calls": 29,
+    "size": 5672
+  },
+  "kind": "gf-reaction-effect-map",
+  "notes": [
+    "The argument map is the last write to r3-r7 in the 12-instruction window before each call.",
+    "Immediates and field offsets are decoded from the DOL; the effect labels come from matched helper summaries.",
+    "This is presentation/reaction data, not a recovered renderer."
+  ],
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

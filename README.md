@@ -113,6 +113,10 @@ texture or audio bytes; each regenerates from a local roster.
   calls of `8002BB14` in four phases (14 broad-phase, 7 geometry, 24 apply,
   23 post), with the pair-loop call `8002C4CC -> 8002DB58` and its reaction
   link. Tool: `tools/analyze/collision_walk_map.py`.
+- [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
+  reaction-band calls with decoded argument registers (immediates, field
+  offsets, paired addresses) and the known impact/color/spawn parameters.
+  Tool: `tools/analyze/reaction_effect_map.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the
