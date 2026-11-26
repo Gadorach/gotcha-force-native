@@ -160,9 +160,11 @@ The native pair seam implements the recovered order: the direct path collects
 every accepted pair, the indirect path keeps the nearest candidate with the
 `400000000.0` sentinel and last-wins ties, and the `0.1` sphere gate is shared.
 The relation filter (`8002FD7C`) is reimplemented as
-`battle_pair_relation_ok` over declared actor/record fields. The category
-dispatch (`80030490`) remains a `BattlePairFilter` supplied by the caller, so no
-retail-id branches enter the engine.
+`battle_pair_relation_ok` over declared actor/record fields and is applied at
+the MVP hit boundary through the `damage-attack-key`/`damage-mask`/
+`damage-immunity` content keys. The category dispatch (`80030490`) remains a
+`BattlePairFilter` supplied by the caller, so no retail-id branches enter the
+engine.
 
 The native engine is already data-driven in the same sense as the original: a
 package declares moves, buttons and ranges, and shared systems execute them. The

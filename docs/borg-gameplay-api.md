@@ -517,6 +517,14 @@ release=arc-twin|6|arc-stock|1|arc
   This mirrors the original's side-paired credit rows. The battle host also
   supplies a damage scalar (the recovered settings-ladder value); it multiplies
   the profile factors before the hit-chain row.
+- `damage-attack-key=key`, `damage-mask=bits` and `damage-immunity=key`
+  (repeatable, up to 48) declare the recovered `8002FD7C` pair-relation fields
+  for the MVP hit boundary. Before a package hit is applied, the engine tests
+  distinct actors/owners, the attacker key against the target immunity list,
+  and the target mask against bit `2`. Defaults are neutral, so undeclared
+  packages keep every hit. `damage-kind=0..255` declares the actor class for
+  the class rules; the MVP supplies zero record flags, so only the immunity and
+  mask rules change behaviour today.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a

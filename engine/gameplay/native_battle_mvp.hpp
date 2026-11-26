@@ -10,8 +10,10 @@
 #include <memory>
 #include <span>
 #include <utility>
+#include <vector>
 #include "engine/input/input_map.hpp"
 #include "engine/gameplay/battle_swept_circle.hpp"
+#include "engine/gameplay/battle_pair_targeting.hpp"
 #include "engine/gameplay/native_borg_movement.hpp"
 #include "engine/gameplay/native_borg_contact.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
@@ -52,6 +54,9 @@ struct BattleMvpActor {
     u32 package_last_hit_tick=0;
     u8 package_hit_chain=0;       // successive-hit index used by damage-chain
     u8 package_hit_chain_owner=255;
+    u8 damage_kind=0;             // declared 8002FD7C relation fields
+    u16 damage_attack_key=0,damage_target_mask=0;
+    std::vector<u16> damage_immunity;
     u8 package_movement_cues=0;
     u8 package_air_points_used=0;
     u16 package_flight_used=0;
@@ -439,6 +444,12 @@ public:
                 config.solo()?config.solo_model:i?0x000a:0x0615;
             actor.damage_model=package&&config.packages[i]->damage_model_declared?
                 config.packages[i]->damage_model:actor.model;
+            if(package){
+                actor.damage_kind=config.packages[i]->damage_kind;
+                actor.damage_attack_key=config.packages[i]->damage_attack_key;
+                actor.damage_target_mask=config.packages[i]->damage_target_mask;
+                actor.damage_immunity=config.packages[i]->damage_immunity;
+            }
             actor.position={p.x,0,p.z};actor.health=package?config.packages[i]->health:config.health;
             if(!floor(terrain,p.x,p.z,config.spawn_query_y[i],&actor.position[1]))return false;
             const auto& cruise=package?config.packages[i]->cruise:config.provisional_cruise;
@@ -2296,6 +2307,24 @@ private:
         if(package_event_count_<package_events_.size())
             package_events_[package_event_count_++]={kind,tick_,object,u8(actor),move,recipient,frame,value};
     }
+    // Recovered 8002FD7C at the MVP hit boundary. The duel has distinct owners
+    // and teams, so only declared immunity keys and the target mask can refuse.
+    bool package_hit_relation(unsigned owner,u8 recipient)const{
+        if(owner>=actors_.size()||recipient>=actors_.size())return false;
+        BattlePairFields a{},b{};
+        a.declared=a.exists=a.active=true;
+        a.actor_key=u32(owner)+1u;a.owner_key=u32(owner)+1u;a.team=u8(owner);
+        a.kind=actors_[owner].damage_kind;
+        a.attack_key=actors_[owner].damage_attack_key;
+        b.declared=b.exists=b.active=true;
+        b.actor_key=u32(recipient)+1u;b.owner_key=u32(recipient)+1u;
+        b.team=u8(recipient);b.kind=actors_[recipient].damage_kind;
+        b.target_mask=actors_[recipient].damage_target_mask;
+        b.immunity_count=u8(std::min<std::size_t>(48,actors_[recipient].damage_immunity.size()));
+        for(unsigned i=0;i<b.immunity_count;++i)b.immunity[i]=actors_[recipient].damage_immunity[i];
+        bool ok=false;std::string error;
+        return battle_pair_relation_ok(a,b,2,&ok,&error)&&ok;
+    }
     u16 package_damage(unsigned owner,u8 recipient,u16 base){
         if(owner>=config_.packages.size()||!config_.packages[owner])return base;
         const auto& profile=*config_.packages[owner];
@@ -2312,6 +2341,7 @@ private:
         return value;
     }
     void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,const BattleMvpVec& position){
+        if(!package_hit_relation(owner,recipient))return;
         const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
         damage(recipient,amount);impact(position,false);
         record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);

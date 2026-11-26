@@ -2552,6 +2552,31 @@ int main(){
         check(battle(parse(target))==480,
               "a receiver without a damage-vs row keeps the melee base 20");
     }
+
+    {
+        const auto keyed=parse(std::string(player)+
+            "move=hit|b|30|grounded|18|0:0\nrange=hit|145\n"
+            "melee=hit|4|8|90|40|60|22|20\n"
+            "damage-attack-key=7\n");
+        auto relation_battle=[&](const std::shared_ptr<const BorgGameplayProfile>& opponent){
+            NativeBattleMvp world;BattleMvpConfig config;
+            config.packages={keyed,opponent};
+            config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+            check(world.start(config),"pair relation battle fixture");
+            for(unsigned i=0;i<12;++i)
+                check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                    {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"pair relation step");
+            return world.actors()[1].health;
+        };
+        check(relation_battle(parse(target))==480,
+              "undeclared target accepts the base-20 hit");
+        check(relation_battle(parse(std::string(target)+"damage-immunity=7\n"))==500,
+              "declared immunity key refuses the hit");
+        check(relation_battle(parse(std::string(target)+"damage-mask=2\n"))==500,
+              "target mask bit 2 refuses the hit");
+        check(relation_battle(parse(std::string(target)+"damage-mask=1\n"))==480,
+              "unrelated target mask bit keeps the hit");
+    }
     const std::string damage_text=std::string(player)+
         "damage-factors=0.867|1.13|1.15|1.0\n"
         "damage-chain=1.0|0.8|0.5|0.25\n";
@@ -2594,5 +2619,22 @@ int main(){
     const auto scaled=parse(std::string(player)+"damage-vs=10|0.867|1.15|1|1\n");
     check(borg_damage_amount(*scaled,20,0,10,0,1.13f)==22,
           "the battle scalar multiplies the recovered factors");
+
+    const auto relation=parse(std::string(player)+
+        "damage-kind=16\ndamage-attack-key=7\ndamage-mask=2\n"
+        "damage-immunity=7\ndamage-immunity=9\n");
+    check(relation->damage_kind==16&&relation->damage_attack_key==7&&
+          relation->damage_target_mask==2&&relation->damage_immunity.size()==2&&
+          relation->damage_immunity[0]==7&&relation->damage_immunity[1]==9,
+          "declared pair-relation fields parse");
+    check(!borg_read_gameplay_profile(std::string(player)+"damage-kind=256\n",&invalid_scope,&scope_error)&&
+          !borg_read_gameplay_profile(std::string(player)+"damage-kind=1\ndamage-kind=2\n",&invalid_scope,&scope_error)&&
+          !borg_read_gameplay_profile(std::string(player)+"damage-immunity=7\ndamage-immunity=7\n",&invalid_scope,&scope_error)&&
+          !borg_read_gameplay_profile(std::string(player)+"damage-mask=65536\n",&invalid_scope,&scope_error),
+          "pair-relation fields refuse out-of-range and duplicates");
+    std::string full_immunity=std::string(player);
+    for(unsigned i=0;i<49;++i)full_immunity+="damage-immunity="+std::to_string(i)+"\n";
+    check(!borg_read_gameplay_profile(full_immunity,&invalid_scope,&scope_error),
+          "more than 48 immunity keys are refused");
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

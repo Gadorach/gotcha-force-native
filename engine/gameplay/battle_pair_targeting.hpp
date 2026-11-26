@@ -31,7 +31,9 @@ struct BattlePairFields {
     u16 target_mask = 0;                  // actor+0x272
     u16 attack_key = 0;                   // actor+0x26C
     std::array<u16, 48> immunity{};       // actor+0x20C, six eight-entry keys
+    u8 immunity_count = 0;                // number of declared keys
     std::array<u16, 48> owner_immunity{}; // owner +0x20C
+    u8 owner_immunity_count = 0;
     u16 owner_flags2 = 0;                 // [side+0x28]+2
     bool actor_6fc = false;               // actor+0x6FC
     // Geometry.
@@ -113,23 +115,20 @@ inline bool battle_pair_relation_ok(const BattlePairFields& a,
         if (error) error->clear();
         return true;
     }
-    for (unsigned i = 0; i < 6; ++i) {
-        for (unsigned j = 0; j < 8; ++j) {
-            const unsigned at = i * 8 + j;
-            if (b.immunity[at] == a.attack_key) {
-                if (error) error->clear();
-                return true;
-            }
+    for (unsigned at = 0; at < b.immunity_count && at < b.immunity.size();
+         ++at) {
+        if (b.immunity[at] == a.attack_key) {
+            if (error) error->clear();
+            return true;
         }
     }
     if ((b.owner_flags2 & 0x40u) != 0) {
-        for (unsigned i = 0; i < 6; ++i) {
-            for (unsigned j = 0; j < 8; ++j) {
-                const unsigned at = i * 8 + j;
-                if (b.owner_immunity[at] == a.attack_key) {
-                    if (error) error->clear();
-                    return true;
-                }
+        for (unsigned at = 0;
+             at < b.owner_immunity_count && at < b.owner_immunity.size();
+             ++at) {
+            if (b.owner_immunity[at] == a.attack_key) {
+                if (error) error->clear();
+                return true;
             }
         }
     }

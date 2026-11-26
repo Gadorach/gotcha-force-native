@@ -290,6 +290,14 @@ struct BorgGameplayProfile {
     std::string variant,rig_prefix,pose_profile;
     u16 damage_model=0; // optional damage-row id; does not change the motion model
     bool damage_model_declared=false;
+    // Declared pair-relation fields (recovered 8002FD7C). Defaults are neutral.
+    u8 damage_kind=0;
+    bool damage_kind_declared=false;
+    u16 damage_attack_key=0;
+    bool damage_attack_key_declared=false;
+    u16 damage_target_mask=0;
+    bool damage_target_mask_declared=false;
+    std::vector<u16> damage_immunity; // at most 48 keys
     std::string impact_record_bank;
     BorgBattleMovement movement=BorgBattleMovement::Grounded;
     bool record_zero_body=false;
@@ -1105,6 +1113,28 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(next.damage_model_declared||!number(value,0,65535,&declared))
                 return fail("invalid or duplicate damage-model id");
             next.damage_model=declared;next.damage_model_declared=true;
+        }else if(key=="damage-kind"){
+            u16 declared=0;
+            if(next.damage_kind_declared||!number(value,0,255,&declared))
+                return fail("invalid or duplicate damage-kind");
+            next.damage_kind=u8(declared);next.damage_kind_declared=true;
+        }else if(key=="damage-attack-key"){
+            u16 declared=0;
+            if(next.damage_attack_key_declared||!number(value,0,65535,&declared))
+                return fail("invalid or duplicate damage-attack-key");
+            next.damage_attack_key=declared;next.damage_attack_key_declared=true;
+        }else if(key=="damage-mask"){
+            u16 declared=0;
+            if(next.damage_target_mask_declared||!number(value,0,65535,&declared))
+                return fail("invalid or duplicate damage-mask");
+            next.damage_target_mask=declared;next.damage_target_mask_declared=true;
+        }else if(key=="damage-immunity"){
+            u16 key_value=0;
+            if(next.damage_immunity.size()>=48||!number(value,0,65535,&key_value))
+                return fail("invalid or full damage-immunity list");
+            for(u16 existing:next.damage_immunity)
+                if(existing==key_value)return fail("duplicate damage-immunity key");
+            next.damage_immunity.push_back(key_value);
         }else if(key=="damage-vs"){
             std::array<std::string_view,5> a;
             u16 model=0;

@@ -194,16 +194,20 @@ int main() {
         a.record_flags12 = 0;
 
         b.immunity[10] = 7;
+        b.immunity_count = 11;
         check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
               "target immunity key is rejected");
         b.immunity[10] = 0;
+        b.immunity_count = 0;
 
         b.owner_flags2 = 0x40;
         b.owner_immunity[3] = 7;
+        b.owner_immunity_count = 4;
         check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
               "owner immunity key is rejected");
         b.owner_flags2 = 0;
         b.owner_immunity[3] = 0;
+        b.owner_immunity_count = 0;
 
         b.target_mask = 2;
         check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
