@@ -101,7 +101,7 @@ def recover(image):
             "matchup": {
                 "value": round(matchup, 6),
                 "formula": "credit_difficulty x credit_rank",
-                "source_note": "0x802C5D60 is a neutral 1.0 cell at D024; 0.867 is selected earlier from the paired table at 803335E0/E8 by owner998 sign and settings/team.",
+                "source_note": "0x802C5D60 is a neutral 1.0 cell at D024; CE94 selects a paired-table cell (1.02 inspected) and a second rank factor gives the measured 0.867. The exact split is not proven.",
             },
             "conditional_half": {
                 "applied": False,

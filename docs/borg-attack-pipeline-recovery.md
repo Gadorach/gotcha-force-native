@@ -575,9 +575,12 @@ CE8C  f0  = ptr[index]
 CE94  f31 *= f0
 ```
 
-So the `0.867` is a cell of the paired pointer table at `803335E0/E8`
-(runtime `804335E0/E8`), selected by the `owner998` sign and the
-settings/team byte. The `D024` matchup matrix is a separate neutral multiply.
+So the `CE94` multiply takes a cell from the paired pointer table at
+`803335E0/E8` (runtime `804335E0/E8`), selected by the `owner998` sign and the
+settings/team byte. The inspected cell is `1.02`, while the measured pre-`D024`
+product is `0.867`, so a second factor (the `0.85` rank) must apply nearby. The
+exact split between the two multiplies is **not proven**; only the resulting
+`0.867` is measured. The `D024` matchup matrix is a separate neutral multiply.
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 The measured record is exported as
