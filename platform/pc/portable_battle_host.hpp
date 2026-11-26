@@ -184,7 +184,8 @@ private:
             return {Status::Denied,"portable host requires a campaign request with a selected saved Force"};
         std::string error;
         const std::array visuals{packages_[0].visuals(),packages_[1].visuals()};
-        if(!view_.load_packages(render_,config_.packages,visuals,&error))return {Status::Unsupported,std::move(error)};
+        const std::array duel_packages{config_.packages[0],config_.packages[1]};
+        if(!view_.load_packages(render_,duel_packages,visuals,&error))return {Status::Unsupported,std::move(error)};
         request_=request;
         return {Status::Ready,{}};
     }

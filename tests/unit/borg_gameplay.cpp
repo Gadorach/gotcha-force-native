@@ -961,8 +961,7 @@ void drifting_field_cases(){
         NativeBattleMvp world;BattleMvpConfig config;
         // Both opponents can share slot names without ownership aliasing.
         config.packages={parse(declaration),parse(declaration)};
-        config.spawn=outside?std::array{BattlePoint{0,0},BattlePoint{0,200}}:
-                             std::array{BattlePoint{0,0},BattlePoint{0,300}};
+        config.spawn={BattlePoint{0,0},outside?BattlePoint{0,200}:BattlePoint{0,300}};
         if(outside){
             const auto at=declaration.find("sphere|40|40|40|30|0|50",declaration.find("field=new"));
             declaration.replace(at,std::string_view("sphere|40|40|40|30|0|50").size(),"sphere|40|40|40|30|500|50");
@@ -2698,5 +2697,25 @@ int main(){
     for(unsigned i=0;i<49;++i)full_immunity+="damage-immunity="+std::to_string(i)+"\n";
     check(!borg_read_gameplay_profile(full_immunity,&invalid_scope,&scope_error),
           "more than 48 immunity keys are refused");
+
+    {
+        const auto presence=parse(target);
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={presence,presence,presence,presence};
+        config.declared_actors=4;
+        config.teams={0,1,0,1};config.teams_declared=true;
+        config.spawn={BattlePoint{-200,0},BattlePoint{200,0},
+                      BattlePoint{0,200},BattlePoint{0,-200}};
+        check(world.start(config),"four actor fixture");
+        check(world.actor_count()==4,"four actors start");
+        check(world.actors()[0].team==0&&world.actors()[1].team==1&&
+              world.actors()[2].team==0&&world.actors()[3].team==1,
+              "declared teams are assigned to the four actors");
+        check(world.target_of(0)==3&&world.target_of(1)==2&&
+              world.target_of(2)==1&&world.target_of(3)==0,
+              "each actor targets the nearest living enemy");
+        check(!world.step({},false,nullptr,nullptr,nullptr,nullptr,{},nullptr),
+              "four-actor stepping is refused until the roster input path lands");
+    }
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

@@ -149,12 +149,13 @@ struct BattleMvpEmitter {
     u32 id=0;BattleMvpVec position{};
     u16 remaining=0;u8 deployment_move=BorgBattleActionState::none;
 };
+constexpr unsigned kBattleMvpMaxActors=6;
 struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
 struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
 struct BattleMvpConfig {
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
     unsigned health=100;
-    std::array<BattlePoint,2> spawn{BattlePoint{-240,300},BattlePoint{240,-300}};
+    std::array<BattlePoint,kBattleMvpMaxActors> spawn{BattlePoint{-240,300},BattlePoint{240,-300}};
     f32 ground_acceleration=.9f,ground_braking=1.4f,air_acceleration=.25f,turn_per_tick=.18f;
     f32 dash_speed=12;unsigned dash_duration=12,dash_cooldown=30,air_dashes=1;
     f32 damage_scalar=1; // battle/team scalar from the recovered settings ladder
@@ -163,14 +164,17 @@ struct BattleMvpConfig {
     // always-decrement pool used by the duel.
     std::array<BattleMvpForcePolicy,2> force_policy{};
     std::array<BattleMvpTeamLedgerFlags,2> team_ledger{};
-    std::array<bool,2> actor_flag3e6{},actor_flag1ea{};
+    std::array<bool,kBattleMvpMaxActors> actor_flag3e6{},actor_flag1ea{};
     bool force_global1f=false;
     //Native-only static-floor query reference, NOT an air spawn or recovered
     //actor constructor. Default0 preserves the ordinary MVP's selection.
-    std::array<f32,2> spawn_query_y{};
+    std::array<f32,kBattleMvpMaxActors> spawn_query_y{};
     // Standalone control lab only. Zero keeps the existing duel unchanged.
     u16 solo_model=0;
-    std::array<std::shared_ptr<const BorgGameplayProfile>,2> packages{};
+    std::array<std::shared_ptr<const BorgGameplayProfile>,kBattleMvpMaxActors> packages{};
+    unsigned declared_actors=2; // duel by default; 2..kBattleMvpMaxActors
+    std::array<u8,kBattleMvpMaxActors> teams{};
+    bool teams_declared=false;
     bool provisional_walk=false;
     bool provisional_jump=false; // opt-in lab jump, not a source actor's air-resource policy
     bool provisional_ground_dash=false;
@@ -428,8 +432,13 @@ public:
         for(f32 v:{config.ground_acceleration,config.ground_braking,config.air_acceleration,config.turn_per_tick})if(!std::isfinite(v)||v<=0)return false;
         if(config.ground_acceleration>config.move_speed*2||config.ground_braking>config.move_speed*2||config.air_acceleration>config.ground_acceleration||config.turn_per_tick>3.141593f)return false;
         if(!std::isfinite(config.dash_speed)||config.dash_speed<config.move_speed||config.dash_speed>config.actor_radius||!config.dash_duration||config.dash_duration>60||config.dash_cooldown<config.dash_duration||config.dash_cooldown>600||config.air_dashes>4)return false;
+        if(config.declared_actors<2||config.declared_actors>kBattleMvpMaxActors)return false;
         const bool package=bool(config.packages[0]);
-        if(package!=bool(config.packages[1])||(package&&config.solo())||(config.provisional_walk&&config.solo_model)||
+        const unsigned count=config.solo()?1u:config.declared_actors;
+        for(unsigned i=0;i<count;++i)if(bool(config.packages[i])!=package)return false;
+        for(unsigned i=count;i<kBattleMvpMaxActors;++i)if(config.packages[i])return false;
+        for(unsigned i=0;i<count;++i)if(config.teams_declared&&config.teams[i]>1)return false;
+        if((package&&config.solo())||(config.provisional_walk&&config.solo_model)||
            ((config.provisional_jump||config.provisional_ground_dash)&&!config.provisional_walk)||
            ((config.provisional_air_dash||config.provisional_glide)&&!config.provisional_jump)||
             (config.provisional_glide&&config.provisional_air_dash)||
@@ -438,12 +447,15 @@ public:
              (config.package_strafe&&!package)||
              (config.provisional_cruise&&(!config.provisional_walk||config.provisional_jump||
              config.provisional_ground_dash||!borg_cruise_boost_valid(*config.provisional_cruise))))return false;
-        if(package&&(config.packages[1]->movement==BorgBattleMovement::NormalGRed||
-           (config.packages[0]->movement==BorgBattleMovement::NormalGRed&&config.packages[1]->movement!=BorgBattleMovement::Stationary)))return false;
+        if(package){
+            for(unsigned i=1;i<count;++i)if(config.packages[i]->movement==BorgBattleMovement::NormalGRed)return false;
+            if(config.packages[0]->movement==BorgBattleMovement::NormalGRed)
+                for(unsigned i=1;i<count;++i)if(config.packages[i]->movement!=BorgBattleMovement::Stationary)return false;
+        }
         NativeBattleMvp next;next.config_=config;next.team_force_=config.team_force;
         next.force_global1f_=config.force_global1f;
         for(unsigned i=0;i<2;++i)next.force_counter10a_[i]=config.team_ledger[i].counter10a;
-        if(package)for(unsigned i=0;i<2;++i){
+        if(package)for(unsigned i=0;i<count;++i){
             const auto& p=*config.packages[i];
             if(!borg_gameplay_profile_valid(p))return false;
             if(std::any_of(p.projectiles.begin(),p.projectiles.end(),[](const auto& shot){
@@ -451,7 +463,6 @@ public:
             })&&(!terrain||!terrain->supports_projectile_stage()))return false;
             next.package_actions_[i].reset(p);
         }
-        const unsigned count=config.solo()?1u:2u;
         for(unsigned i=0;i<count;++i){
             const auto p=config.spawn[i];if(!std::isfinite(p.x)||!std::isfinite(p.z)||std::abs(p.x)>config.arena_half-config.actor_radius||std::abs(p.z)>config.arena_half-config.actor_radius)return false;
             if(!std::isfinite(config.spawn_query_y[i])||std::abs(config.spawn_query_y[i])>20000)return false;
@@ -466,7 +477,7 @@ public:
                 actor.damage_target_mask=config.packages[i]->damage_target_mask;
                 actor.damage_immunity=config.packages[i]->damage_immunity;
             }
-            actor.team=u8(i);
+            actor.team=config.teams_declared?config.teams[i]:u8(i%2);
             actor.position={p.x,0,p.z};actor.health=package?config.packages[i]->health:config.health;
             if(!floor(terrain,p.x,p.z,config.spawn_query_y[i],&actor.position[1]))return false;
             const auto& cruise=package?config.packages[i]->cruise:config.provisional_cruise;
@@ -479,9 +490,11 @@ public:
             next.actors_[1].health=0;
             next.actors_[0].facing={0,-1};
         }else{
-            const f32 dx=config.spawn[0].x-config.spawn[1].x,dz=config.spawn[0].z-config.spawn[1].z;
-            if(dx*dx+dz*dz<=4*config.actor_radius*config.actor_radius)return false;
-            next.face(0);next.face(1);
+            for(unsigned i=0;i<count;++i)for(unsigned j=0;j<i;++j){
+                const f32 dx=config.spawn[i].x-config.spawn[j].x,dz=config.spawn[i].z-config.spawn[j].z;
+                if(dx*dx+dz*dz<=4*config.actor_radius*config.actor_radius)return false;
+            }
+            for(unsigned i=0;i<count;++i)next.face(i);
         }
         for(unsigned i=0;i<count;++i)next.actors_[i].aim_facing=next.actors_[i].facing;
         next.motion_scope_=std::shared_ptr<const NativeBorgMotionScope>(new NativeBorgMotionScope(this));
@@ -492,6 +505,7 @@ public:
     bool step(std::array<GamePadState,2> pads,bool opponent_ai=true,const IBattleMvpTerrain* terrain=nullptr,const std::array<std::optional<BattleMvpVec>,2>* muzzles=nullptr,const NativeBorgMovementFrame* player_frame=nullptr,const NativeBorgMotionOffer* source_offer=nullptr,
               const std::array<BorgBattleInputs,2>& package_input={},const IBorgBattleOrigins* origins=nullptr){
         if(!ready_||tick_==std::numeric_limits<u32>::max())return false;
+        if(actor_count()>2)return false; // roster stepping lands next; the duel path is unchanged
         const bool solo=config_.solo();
         const bool package=bool(config_.packages[0]);
         if(package&&opponent_ai)return false; // inputs supplied by Battle Test
@@ -1948,13 +1962,15 @@ public:
         previous_=pads;return true;
     }
     bool ready()const{return ready_;}bool paused()const{return paused_;}u32 tick()const{return tick_;}
-    unsigned actor_count()const{return !ready_?0u:config_.solo()?1u:2u;}
+    unsigned target_count()const{return config_.solo()?1u:std::min(config_.declared_actors,kBattleMvpMaxActors);}
+    unsigned actor_count()const{return !ready_?0u:target_count();}
     bool set_paused(bool paused){
         if(!ready_)return false;
         if(paused!=paused_)for(auto& action:package_actions_)action.discard_input();
         paused_=paused;return true;
     }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
+    u8 target_of(unsigned actor)const{return actor<actor_count()?actor_target(actor):u8(255);}
     const auto& team_force()const{return team_force_;}const auto& team_tally()const{return team_tally_;}
     const auto& force_counter10a()const{return force_counter10a_;}
     u8 last_attacker()const{return last_attacker_;}u8 last_receiver()const{return last_receiver_;}
@@ -2206,7 +2222,7 @@ private:
             const auto& core=*field.spec.core_damage;
             const auto age=tick_-field.born;
             if(!age||age%core.interval)continue;
-            for(u8 i=0;i<actors_.size();++i){
+            for(u8 i=0;i<actor_count();++i){
                 const auto& actor=actors_[i];
                 if(!actor.health||!field_scope_matches(core.scope,field.owner,i))continue;
                 const f32 x=field.centre[0]-actor.position[0],y=field.centre[1]-actor.position[1]-config_.actor_height*.5f,
@@ -2233,7 +2249,7 @@ private:
             }
             if(age>=wave.spec.ticks)wave={};
         }
-        for(u8 owner=0;owner<actors_.size();++owner){
+        for(u8 owner=0;owner<actor_count();++owner){
             const auto& spec=config_.packages[owner]->walk_pulse;
             auto& carry=walk_pulse_distance_[owner];
             if(!spec||!actors_[owner].health||distance[owner]<=.05f){carry=0;continue;}
@@ -2995,7 +3011,7 @@ private:
             }
         }
         const f32 radius_squared=f32(blast.radius)*f32(blast.radius);
-        for(u8 i=0;blast.damage&&i<actors_.size();++i){
+        for(u8 i=0;blast.damage&&i<actor_count();++i){
             const auto& actor=actors_[i];
             if(!actor.health||(i==shot.owner&&!blast.include_owner))continue;
             const f32 x=actor.position[0]-shot.position[0],y=actor.position[1]+config_.actor_height*.5f-shot.position[1],
@@ -3466,7 +3482,21 @@ private:
     static f32 axis(s32 value){return f32(std::clamp(value,-128,127))/(value<0?128.f:127.f);}
     static void unit(f32& x,f32& z,bool always){const f32 length=std::sqrt(x*x+z*z);if(length>0&&(always||length>1)){x/=length;z/=length;}}
     static bool floor(const IBattleMvpTerrain* terrain,f32 x,f32 z,f32 current,f32* out){if(!terrain){*out=0;return true;}return terrain->height(x,z,current,out)&&std::isfinite(*out)&&std::abs(*out)<=20000;}
-    void face(unsigned i){f32 x=actors_[1-i].position[0]-actors_[i].position[0],z=actors_[1-i].position[2]-actors_[i].position[2];unit(x,z,true);if(x||z)actors_[i].facing={x,z};}
+    u8 actor_target(unsigned owner)const{
+        const auto& self=actors_[owner];u8 best=255;f32 best_squared=std::numeric_limits<f32>::max();
+        for(unsigned i=0;i<target_count();++i){
+            if(i==owner||!actors_[i].health||actors_[i].team==self.team)continue;
+            const f32 dx=actors_[i].position[0]-self.position[0],dz=actors_[i].position[2]-self.position[2];
+            const f32 squared=dx*dx+dz*dz;
+            if(squared<=best_squared){best_squared=squared;best=u8(i);}
+        }
+        return best;
+    }
+    void face(unsigned i){
+        const u8 target=actor_target(i);if(target==255){actors_[i].facing={0,1};return;}
+        f32 x=actors_[target].position[0]-actors_[i].position[0],z=actors_[target].position[2]-actors_[i].position[2];
+        unit(x,z,true);if(x||z)actors_[i].facing={x,z};
+    }
     GamePadState ai_input()const{
         GamePadState pad;if(!actors_[1].health)return pad;
         f32 x=actors_[0].position[0]-actors_[1].position[0],z=actors_[0].position[2]-actors_[1].position[2];const f32 distance=std::sqrt(x*x+z*z);unit(x,z,true);
@@ -3476,12 +3506,13 @@ private:
         pad.stick_x=s8(std::clamp(int(mx*127),-127,127));pad.stick_y=s8(std::clamp(int(mz*127),-127,127));pad.a=true;pad.b=tick_%240==100;return pad;
     }
     void fire(unsigned owner,bool secondary,const std::array<std::optional<BattleMvpVec>,2>* muzzles){
+        const u8 target_slot=actor_target(owner);if(target_slot==255)return;
         const auto weapon=owner?(secondary?BattleMvpWeapon::Bullet:BattleMvpWeapon::Shuriken):(secondary?BattleMvpWeapon::Bomb:BattleMvpWeapon::EnergyBeam);
         const unsigned count=weapon==BattleMvpWeapon::Shuriken?3:1;unsigned free=0;for(const auto& shot:projectiles_)free+=!shot.active;
         if(free<count||next_id_>std::numeric_limits<u32>::max()-count)return;
         auto& actor=actors_[owner];const auto aim=actor.aim_facing;BattleMvpVec muzzle{actor.position[0]+aim.x*(config_.actor_radius+12),actor.position[1]+config_.actor_height*.6f,actor.position[2]+aim.z*(config_.actor_radius+12)};
         if(muzzles&&(*muzzles)[owner])muzzle=*(*muzzles)[owner];
-        const auto& target=actors_[1-owner];const f32 dx=target.position[0]-muzzle[0],dy=target.position[1]+config_.actor_height*.6f-muzzle[1],dz=target.position[2]-muzzle[2],horizontal=std::sqrt(dx*dx+dz*dz);
+        const auto& target=actors_[target_slot];const f32 dx=target.position[0]-muzzle[0],dy=target.position[1]+config_.actor_height*.6f-muzzle[1],dz=target.position[2]-muzzle[2],horizontal=std::sqrt(dx*dx+dz*dz);
         const f32 speed=weapon==BattleMvpWeapon::EnergyBeam?60:weapon==BattleMvpWeapon::Bullet?34:weapon==BattleMvpWeapon::Shuriken?24:10;
         const f32 pitch=weapon==BattleMvpWeapon::Bomb?10:std::clamp(speed*dy/std::max(horizontal,1.f),-speed,speed);
         for(unsigned n=0;n<count;++n){const f32 spread=count==3?(f32(n)-1)*.11f:0;const f32 c=std::cos(spread),s=std::sin(spread);
@@ -3492,7 +3523,7 @@ private:
     void impact(const BattleMvpVec& position,bool explosion,f32 radius=0,unsigned ticks=18){
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();
     }
-    BattleMvpConfig config_;std::array<BattleMvpActor,2> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
+    BattleMvpConfig config_;std::array<BattleMvpActor,kBattleMvpMaxActors> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
     std::array<unsigned,2> team_force_{};std::array<u32,2> team_tally_{};
     std::array<u8,2> force_counter10a_{};bool force_global1f_=false;u8 last_attacker_=255,last_receiver_=255;
     std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
@@ -3506,21 +3537,21 @@ private:
     BattleMvpResult result_=BattleMvpResult::Fighting;bool ready_=false,paused_=false;
     std::shared_ptr<const NativeBorgMotionScope> motion_scope_;NativeBorgMotionOffer last_offer_;NativeBorgMotionReceipt last_receipt_;
     std::weak_ptr<const NativeBorgMotionProducer> motion_producer_;
-    std::array<BorgBattleActionState,2> package_actions_{};
+    std::array<BorgBattleActionState,kBattleMvpMaxActors> package_actions_{};
     struct WalkModifier {u16 ticks=0,percent=0;u8 owner=0,move=255;u32 object=0;};
-    std::array<WalkModifier,2> walk_modifiers_{};
+    std::array<WalkModifier,kBattleMvpMaxActors> walk_modifiers_{};
     struct PendingPull {BattlePoint destination;u32 object=0;u16 units=0;u8 move=255,recipient=255;};
     std::array<PendingPull,2> pull_requests_{};
     struct MeleeWindow {u32 object=0;u8 move=255;u16 frame=0;bool hit=false;};
-    std::array<MeleeWindow,2> melee_windows_{};
+    std::array<MeleeWindow,kBattleMvpMaxActors> melee_windows_{};
     struct GuardWindow {u8 move=BorgBattleActionState::none,remaining=0;u16 frame=0;};
-    std::array<GuardWindow,2> guard_windows_{};
-    std::array<std::array<BattleMvpEmitter,kBorgBattleEmitters>,2> emitters_{};
+    std::array<GuardWindow,kBattleMvpMaxActors> guard_windows_{};
+    std::array<std::array<BattleMvpEmitter,kBorgBattleEmitters>,kBattleMvpMaxActors> emitters_{};
     struct Rewind {u32 id=0;BattleMvpAnchorPath path;u8 speed=0,move=255,issuer=255;u32 damage_serial=0;};
-    std::array<Rewind,2> rewinds_{};
-    std::array<std::array<BattleMvpAnchorPath,kBorgBattleAnchorSets>,2> anchor_paths_{};
+    std::array<Rewind,kBattleMvpMaxActors> rewinds_{};
+    std::array<std::array<BattleMvpAnchorPath,kBorgBattleAnchorSets>,kBattleMvpMaxActors> anchor_paths_{};
     struct PairReturn {bool pending=false;std::array<u32,2> ids{};u8 move=255;};
-    std::array<std::array<PairReturn,kBorgBattleStocks>,2> pair_returns_{};
+    std::array<std::array<PairReturn,kBorgBattleStocks>,kBattleMvpMaxActors> pair_returns_{};
     struct RemoteRequest {bool active=false;BorgBattleDetonation marker;u8 move=255;};
     std::array<RemoteRequest,2> remote_requests_{};
     std::array<std::array<bool,kBorgBattleAnchorSets>,2> fence_inside_{};

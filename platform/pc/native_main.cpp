@@ -1579,12 +1579,13 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         return fail("stage admission refused");
     }
     const std::array visuals{packages[0].visuals(),packages[1].visuals()};
+    const std::array<std::shared_ptr<const BorgGameplayProfile>,2> duel_packages{config.packages[0],config.packages[1]};
     if(stage){
         const std::array<std::string_view,2> markers{options.battle_stage_spawns[0],options.battle_stage_spawns[1]};
         if(!view.bind_stage(*stage,render,&error)||
            !view.configure_stage_duel(options.battle_stage,markers,&config,&error)||
-           !view.load_packages(render,config.packages,visuals,&error))return fail("portable stage admission refused");
-    }else if(!hosted&&!view.load_packages(context.files(),options.battle_mvp_assets,render,config.packages,visuals,&error,inputs))
+           !view.load_packages(render,duel_packages,visuals,&error))return fail("portable stage admission refused");
+    }else if(!hosted&&!view.load_packages(context.files(),options.battle_mvp_assets,render,duel_packages,visuals,&error,inputs))
         return fail("asset binding refused");
     gf::pc::GRedPracticeInput practice_input;
     BorgMovementAudio movement_audio;
@@ -1756,7 +1757,8 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                     auto trial_config=config;trial_config.packages[0]=candidate.definition;
                     NativeBattleMvp trial;
                     const std::array trial_visuals{candidate.visuals(),packages[1].visuals()};
-                    ok=pending->load_packages(context.files(),options.battle_mvp_assets,probe,trial_config.packages,trial_visuals,&error,inputs)&&
+                    const std::array<std::shared_ptr<const BorgGameplayProfile>,2> trial_packages{trial_config.packages[0],trial_config.packages[1]};
+                    ok=pending->load_packages(context.files(),options.battle_mvp_assets,probe,trial_packages,trial_visuals,&error,inputs)&&
                        !probe.shared_texture_upload_failed()&&trial.start(trial_config,pending.get())&&pending->update(trial,&error);
                     if(ok&&candidate.definition->movement==BorgBattleMovement::NormalGRed){
                         NativeGRedGroundDashDemo trial_source;NativeBorgAnimationSeed seed;const auto source_files=candidate.gred.views();

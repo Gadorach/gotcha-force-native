@@ -167,6 +167,12 @@ the MVP hit boundary through the `damage-attack-key`/`damage-mask`/
 `BattlePairFilter` supplied by the caller, so no retail-id branches enter the
 engine.
 
+The MVP roster now holds up to six actors. `BattleMvpConfig::declared_actors`
+defaults to 2, and `teams`/`teams_declared` assign up to two teams. Spawning,
+team assignment and nearest-enemy targeting (`target_of`) are tested with four
+actors; stepping more than two is explicitly refused until the roster input
+path replaces the two-pad step signature.
+
 The MVP now tracks the accepted-hit ledger: per-actor damage taken and
 credited, hit counts, an eight-entry history ring, a per-team force pool
 (`team_force`) and a per-team tally (`team_tally`). The ring writes type 3 for
