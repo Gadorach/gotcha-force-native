@@ -1868,7 +1868,14 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 }
             }
         }
-        const bool reset=!choosing&&pads[0].y&&!previous[0].y,pause=!choosing&&!source_blocked&&pads[0].start&&!previous[0].start;
+        // In the local roster both keyboard pads are players, so either can
+        // restart or pause. Other modes keep the second pad out of session
+        // control.
+        const bool second_human=options.demo_roster_battle;
+        const bool reset=!choosing&&((pads[0].y&&!previous[0].y)||
+            (second_human&&pads[1].y&&!previous[1].y)),
+            pause=!choosing&&!source_blocked&&((pads[0].start&&!previous[0].start)||
+            (second_human&&pads[1].start&&!previous[1].start));
         const auto dash_held=[](const GamePadState& pad){return pad.l||pad.trigger_l_pressed;};
         const bool source_dash_edge=!choosing&&dash_held(pads[0])&&!dash_held(previous[0]);
         if(hosted&&reset)break;
