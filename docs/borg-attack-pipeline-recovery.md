@@ -565,10 +565,11 @@ The amount function `8003CD5C` does materialise the matchup matrix
 `0x802C7CA0` (tier). The credit rows `0x802C4BA0`/`0x802C5D20` are **not**
 materialised directly; they are reached indirectly.
 
-The live matchup probe read row 0 / column 4 as `1.0`, which disagrees with the
-`0.867` applied at `D024`. So the pre-factor may be the matrix cell, the credit
-row product, or a combination; only the numeric `0.867` is measured. Do not
-claim the matrix is absent from the chain.
+The live matchup probe read row 0 / column 4 as `1.0`, and the static
+`D024` cell is the same neutral multiply. The `0.867` is applied **earlier**
+(the `CE94` `fmuls` group), from the credit rows reached indirectly. So the
+matrix participates as a neutral factor for this pair; it is not the `0.867`
+source, but it is not absent from the function either.
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 The measured record is exported as

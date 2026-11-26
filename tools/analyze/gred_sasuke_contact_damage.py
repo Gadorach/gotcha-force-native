@@ -101,7 +101,7 @@ def recover(image):
             "matchup": {
                 "value": round(matchup, 6),
                 "formula": "credit_difficulty x credit_rank",
-                "source_note": "0x802C5D60 is materialised in 8003CD5C; the exact pre-D024 source is not settled.",
+                "source_note": "0x802C5D60 is a neutral 1.0 cell at D024; 0.867 is applied earlier from the credit rows.",
             },
             "conditional_half": {
                 "applied": False,
