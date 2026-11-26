@@ -168,10 +168,12 @@ the MVP hit boundary through the `damage-attack-key`/`damage-mask`/
 engine.
 
 The MVP roster now holds up to six actors. `BattleMvpConfig::declared_actors`
-defaults to 2, and `teams`/`teams_declared` assign up to two teams. Spawning,
-team assignment and nearest-enemy targeting (`target_of`) are tested with four
-actors; stepping more than two is explicitly refused until the roster input
-path replaces the two-pad step signature.
+defaults to 2, and `teams`/`teams_declared` assign up to two teams. `step_roster`
+takes per-actor pads and package inputs; four-actor spawn, team assignment,
+nearest-enemy targeting, idle stepping and a beam hit are tested. The duel
+`step` wrapper keeps the two-pad signature. Non-package weapon choice and the
+source-contact path still assume the duel's first two actors, and the ledger
+supports two teams.
 
 The MVP now tracks the accepted-hit ledger: per-actor damage taken and
 credited, hit counts, an eight-entry history ring, a per-team force pool

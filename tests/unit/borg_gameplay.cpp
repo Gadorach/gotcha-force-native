@@ -2714,8 +2714,35 @@ int main(){
         check(world.target_of(0)==3&&world.target_of(1)==2&&
               world.target_of(2)==1&&world.target_of(3)==0,
               "each actor targets the nearest living enemy");
-        check(!world.step({},false,nullptr,nullptr,nullptr,nullptr,{},nullptr),
-              "four-actor stepping is refused until the roster input path lands");
+        std::array<GamePadState,4> pads{};
+        std::array<BorgBattleInputs,4> inputs{};
+        check(world.step_roster(pads,inputs,false),
+              "four actors step through the roster path");
+        check(world.tick()==1&&world.actor_count()==4,
+              "roster tick advances with four actors");
+        check(world.target_of(0)==3&&world.target_of(1)==2,
+              "roster targets survive a tick");
+    }
+
+    {
+        const auto fighter=parse(player);
+        const auto dummy=parse(target);
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={fighter,dummy,fighter,dummy};
+        config.declared_actors=4;
+        config.teams={0,1,0,1};config.teams_declared=true;
+        config.spawn={BattlePoint{-200,0},BattlePoint{200,0},
+                      BattlePoint{0,200},BattlePoint{0,-200}};
+        check(world.start(config),"four actor combat fixture");
+        std::array<GamePadState,4> pads{};
+        std::array<BorgBattleInputs,4> inputs{};
+        for(unsigned tick=0;tick<40;++tick){
+            inputs[0].pressed=u8(tick<2?BorgBattleInputs::b:0);
+            inputs[0].released=u8(tick==2?BorgBattleInputs::b:0);
+            check(world.step_roster(pads,inputs,false),"four actor combat step");
+        }
+        check(world.hits()>=1&&(world.actors()[1].health<500||world.actors()[3].health<500),
+              "four-actor combat reaches an enemy");
     }
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }
