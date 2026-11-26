@@ -24,6 +24,37 @@ class CollisionBranchMapTest(unittest.TestCase):
         self.assertEqual(branch["sense"], "true")
         self.assertEqual(branch["condition"]["kind"], "extsb.")
         self.assertEqual(branch["target"], "8002BD2C")
+        self.assertEqual(branch["gate"], "actor-active")
+
+    def test_named_broad_phase_gates(self):
+        data = json.loads(ARTIFACT.read_text())
+        broad = [b for b in data["branches"] if b["phase"] == "broad-phase"]
+        self.assertEqual(len(broad), 10)
+        self.assertTrue(all("gate" in b for b in broad))
+        gates = {b["site"]: b["gate"] for b in broad}
+        self.assertEqual(gates["8002BD3C"], "actor-loop-6")
+        self.assertEqual(gates["8002BD94"], "effect-slot-loop-12")
+
+    def test_operand_provenance(self):
+        data = json.loads(ARTIFACT.read_text())
+        calls = {b["site"]: b for b in data["branches"]}
+        actor = calls["8002BBA0"]["condition"]["operand"]
+        self.assertEqual(actor["kind"], "field")
+        self.assertEqual(actor["offset"], 0)
+        self.assertTrue(actor["sign_extended"])
+        self.assertEqual(actor["via"]["offset"], 20100)
+        peak = calls["8002BC10"]["condition"]["operands"]
+        self.assertEqual(peak["r3"]["offset"], 1268)
+        self.assertEqual(peak["r0"]["offset"], 1276)
+        linked = calls["8002BE38"]["condition"]["operand"]
+        self.assertEqual(linked["offset"], 477)
+        self.assertEqual(linked["via"]["offset"], 484)
+        flag = calls["8002BF10"]["condition"]["operand"]
+        self.assertEqual(flag["offset"], 628)
+        self.assertEqual(flag["mask"], "0x00000002")
+        table = calls["8002BFDC"]["condition"]["operand"]
+        self.assertEqual(table["kind"], "indexed")
+        self.assertEqual(table["op"], "lwzx")
 
     def test_all_conditions_decoded(self):
         data = json.loads(ARTIFACT.read_text())

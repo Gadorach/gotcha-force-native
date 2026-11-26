@@ -6,9 +6,26 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 0,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 4,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "actor-active",
+      "meaning": "s8(actor+0) == 0 skips the actor visit",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BBA0",
@@ -21,9 +38,26 @@
       "cond": "gt",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 2001,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 4,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r3)"
       },
       "cr": 0,
+      "gate": "actor-timer-2001",
+      "meaning": "s8(actor+2001) counts down; zero clears actor+2000",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BBAC",
@@ -37,10 +71,19 @@
       "condition": {
         "cr": 0,
         "kind": "cmpli",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 1078,
+          "op": "lbz",
+          "width": "u8"
+        },
         "signed": false,
         "text": "r0 cmpl 0"
       },
       "cr": 0,
+      "gate": "global-flag-1078",
+      "meaning": "u8(actor+1078) != 0 sets the battle-level flag",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BBF8",
@@ -54,10 +97,28 @@
       "condition": {
         "cr": 0,
         "kind": "cmpl",
+        "operands": {
+          "r0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 1276,
+            "op": "lhz",
+            "width": "u16"
+          },
+          "r3": {
+            "base": 23,
+            "kind": "field",
+            "offset": 1268,
+            "op": "lhz",
+            "width": "u16"
+          }
+        },
         "signed": false,
         "text": "r3 cmpl r0"
       },
       "cr": 0,
+      "gate": "peak-u16-1268-1276",
+      "meaning": "raise u16(actor+1276) to actor+1268",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BC10",
@@ -71,10 +132,19 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 1272,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r3 cmp 0"
       },
       "cr": 0,
+      "gate": "timer-1272",
+      "meaning": "s16(actor+1272) counts down; zero clears actor+1268",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BC20",
@@ -88,10 +158,28 @@
       "condition": {
         "cr": 0,
         "kind": "cmpl",
+        "operands": {
+          "r0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 1278,
+            "op": "lhz",
+            "width": "u16"
+          },
+          "r3": {
+            "base": 23,
+            "kind": "field",
+            "offset": 1270,
+            "op": "lhz",
+            "width": "u16"
+          }
+        },
         "signed": false,
         "text": "r3 cmpl r0"
       },
       "cr": 0,
+      "gate": "peak-u16-1270-1278",
+      "meaning": "raise u16(actor+1278) to actor+1270",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BC44",
@@ -105,10 +193,19 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 1274,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r3 cmp 0"
       },
       "cr": 0,
+      "gate": "timer-1274",
+      "meaning": "s16(actor+1274) counts down; zero clears actor+1270",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BC54",
@@ -126,6 +223,8 @@
         "text": "r24 cmp 6"
       },
       "cr": 0,
+      "gate": "actor-loop-6",
+      "meaning": "six actors, stride 0x1E00",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BD3C",
@@ -143,6 +242,8 @@
         "text": "r23 cmp 12"
       },
       "cr": 0,
+      "gate": "effect-slot-loop-12",
+      "meaning": "twelve 0x3E4 entries",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BD94",
@@ -155,9 +256,26 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 0,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 5,
+            "kind": "field",
+            "offset": 0,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "geometry-actor-active",
+      "meaning": "s8(actor+0) == 0 skips geometry",
       "phase": "broad-phase",
       "sense": "true",
       "site": "8002BDF8",
@@ -170,9 +288,26 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 477,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 5,
+            "kind": "field",
+            "offset": 0,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "geometry-subactive-477",
+      "meaning": "s8(actor+477) == 0 skips geometry",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BE04",
@@ -185,9 +320,26 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 475,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 5,
+            "kind": "field",
+            "offset": 0,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "height-extra-475",
+      "meaning": "s8(actor+475) adds the linked height+464",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BE28",
@@ -200,9 +352,33 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "offset": 477,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 23,
+            "kind": "field",
+            "offset": 484,
+            "op": "lwz",
+            "via": {
+              "base": 5,
+              "kind": "field",
+              "offset": 0,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "linked-subactive-477",
+      "meaning": "s8(*(actor+484)+477) gates the linked height",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BE38",
@@ -216,9 +392,24 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 36,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "kind": "expression",
+            "op": "fsub"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
+      "gate": "height-limit-36",
+      "meaning": "(height - actor+1744) > actor+36 skips",
       "phase": "geometry",
       "sense": "false",
       "site": "8002BE54",
@@ -232,9 +423,23 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31416,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "kind": "call"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
+      "gate": "actor-460-nonzero",
+      "meaning": "a nonzero actor+460 vector skips the state write",
       "phase": "geometry",
       "sense": "false",
       "site": "8002BE90",
@@ -248,9 +453,27 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31408,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "base": 1,
+            "kind": "field",
+            "offset": 24,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
+      "gate": "ground-normal-y",
+      "meaning": "the normalized actor+460 Y reaches the ground constant",
       "phase": "geometry",
       "sense": "false",
       "site": "8002BEB0",
@@ -280,9 +503,26 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 0,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 4,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "pair-actor-active",
+      "meaning": "s8(actor+0) == 0 skips the pair pass",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BF04",
@@ -295,10 +535,27 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000002",
+          "offset": 628,
+          "op": "lbz",
+          "via": {
+            "base": 4,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u8"
+        },
         "shift": 0,
         "text": "(r0 & 0x00000002)"
       },
       "cr": 0,
+      "gate": "pair-actor-628-bit1",
+      "meaning": "u8(actor+628) bit 1 gates the pair pass",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BF10",
@@ -312,10 +569,19 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 27,
+          "kind": "field",
+          "offset": 0,
+          "op": "lwz",
+          "width": "u32"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
       "cr": 0,
+      "gate": "global-1652-zero",
+      "meaning": "a global counter gates the pair pass",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BF1C",
@@ -329,9 +595,27 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 28,
+            "kind": "field",
+            "offset": 0,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "base": 26,
+            "kind": "field",
+            "offset": 0,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
+      "gate": "pair-order",
+      "meaning": "f32 slot comparison chooses the pair order",
       "phase": "geometry",
       "sense": "false",
       "site": "8002BF30",
@@ -344,6 +628,14 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 475,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -359,6 +651,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 131,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 24,
+            "kind": "field",
+            "offset": 484,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -375,6 +682,12 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 3,
+          "index": 0,
+          "kind": "indexed",
+          "op": "lwzx"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -392,6 +705,36 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 23,
+              "kind": "field",
+              "offset": 36,
+              "op": "lfs",
+              "via": {
+                "base": 24,
+                "kind": "field",
+                "offset": 484,
+                "op": "lwz",
+                "width": "u32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          },
+          "f4": {
+            "base": 24,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -408,6 +751,36 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 23,
+              "kind": "field",
+              "offset": 36,
+              "op": "lfs",
+              "via": {
+                "base": 24,
+                "kind": "field",
+                "offset": 484,
+                "op": "lwz",
+                "width": "u32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -424,6 +797,39 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 23,
+                "kind": "field",
+                "offset": 36,
+                "op": "lfs",
+                "via": {
+                  "base": 24,
+                  "kind": "field",
+                  "offset": 484,
+                  "op": "lwz",
+                  "width": "u32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          },
+          "f4": {
+            "kind": "call"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -440,6 +846,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 23,
+                "kind": "field",
+                "offset": 36,
+                "op": "lfs",
+                "via": {
+                  "base": 24,
+                  "kind": "field",
+                  "offset": 484,
+                  "op": "lwz",
+                  "width": "u32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -455,6 +898,14 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 475,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -470,6 +921,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 30,
+          "kind": "field",
+          "offset": 131,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 23,
+            "kind": "field",
+            "offset": 484,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -486,6 +952,12 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 3,
+          "index": 0,
+          "kind": "indexed",
+          "op": "lwzx"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -503,6 +975,36 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 30,
+              "kind": "field",
+              "offset": 36,
+              "op": "lfs",
+              "via": {
+                "base": 23,
+                "kind": "field",
+                "offset": 484,
+                "op": "lwz",
+                "width": "u32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          },
+          "f4": {
+            "base": 24,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -519,6 +1021,36 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 30,
+              "kind": "field",
+              "offset": 36,
+              "op": "lfs",
+              "via": {
+                "base": 23,
+                "kind": "field",
+                "offset": 484,
+                "op": "lwz",
+                "width": "u32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -535,6 +1067,36 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 30,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 30,
+              "kind": "field",
+              "offset": 36,
+              "op": "lfs",
+              "via": {
+                "base": 23,
+                "kind": "field",
+                "offset": 484,
+                "op": "lwz",
+                "width": "u32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -551,6 +1113,39 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 30,
+                "kind": "field",
+                "offset": 36,
+                "op": "lfs",
+                "via": {
+                  "base": 23,
+                  "kind": "field",
+                  "offset": 484,
+                  "op": "lwz",
+                  "width": "u32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          },
+          "f4": {
+            "kind": "call"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -567,6 +1162,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 30,
+                "kind": "field",
+                "offset": 36,
+                "op": "lfs",
+                "via": {
+                  "base": 23,
+                  "kind": "field",
+                  "offset": 484,
+                  "op": "lwz",
+                  "width": "u32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -583,6 +1215,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 30,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 30,
+                "kind": "field",
+                "offset": 36,
+                "op": "lfs",
+                "via": {
+                  "base": 23,
+                  "kind": "field",
+                  "offset": 484,
+                  "op": "lwz",
+                  "width": "u32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -599,6 +1268,39 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 2,
+                "kind": "field",
+                "offset": -31400,
+                "op": "lfs",
+                "via": {
+                  "base": 30,
+                  "kind": "field",
+                  "offset": 36,
+                  "op": "lfs",
+                  "width": "f32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          },
+          "f4": {
+            "kind": "call"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -615,6 +1317,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 2,
+                "kind": "field",
+                "offset": -31400,
+                "op": "lfs",
+                "via": {
+                  "base": 30,
+                  "kind": "field",
+                  "offset": 36,
+                  "op": "lfs",
+                  "width": "f32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -631,6 +1370,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 30,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 2,
+                "kind": "field",
+                "offset": -31400,
+                "op": "lfs",
+                "via": {
+                  "base": 30,
+                  "kind": "field",
+                  "offset": 36,
+                  "op": "lfs",
+                  "width": "f32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -647,6 +1423,39 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 2,
+                "kind": "field",
+                "offset": -31400,
+                "op": "lfs",
+                "via": {
+                  "base": 2,
+                  "kind": "field",
+                  "offset": -31400,
+                  "op": "lfs",
+                  "width": "f32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          },
+          "f4": {
+            "kind": "call"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -663,6 +1472,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 2,
+                "kind": "field",
+                "offset": -31400,
+                "op": "lfs",
+                "via": {
+                  "base": 2,
+                  "kind": "field",
+                  "offset": -31400,
+                  "op": "lfs",
+                  "width": "f32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -679,6 +1525,43 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 30,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "via": {
+              "base": 2,
+              "kind": "field",
+              "offset": -31400,
+              "op": "lfs",
+              "via": {
+                "base": 2,
+                "kind": "field",
+                "offset": -31400,
+                "op": "lfs",
+                "via": {
+                  "base": 2,
+                  "kind": "field",
+                  "offset": -31400,
+                  "op": "lfs",
+                  "width": "f32"
+                },
+                "width": "f32"
+              },
+              "width": "f32"
+            },
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -695,6 +1578,18 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f4": {
+            "kind": "call"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -711,6 +1606,22 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -727,6 +1638,22 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 30,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -743,6 +1670,18 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f4": {
+            "kind": "call"
+          }
+        },
         "text": "f4 fcmpo f2"
       },
       "cr": 0,
@@ -759,6 +1698,22 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -775,6 +1730,22 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 30,
+            "kind": "field",
+            "offset": 180,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f2": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31400,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f0 fcmpo f2"
       },
       "cr": 0,
@@ -791,6 +1762,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 131,
+          "op": "lbz",
+          "width": "u8"
+        },
         "signed": true,
         "text": "r0 cmp 22"
       },
@@ -824,6 +1802,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 0,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -839,6 +1832,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 477,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -854,6 +1862,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1635,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -870,6 +1893,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 24,
+          "op": "lbz",
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u8"
+        },
         "signed": true,
         "text": "r0 cmp 1"
       },
@@ -886,6 +1923,21 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000001",
+          "offset": 474,
+          "op": "lbz",
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u8"
+        },
         "shift": 0,
         "text": "(r0 & 0x00000001)"
       },
@@ -902,6 +1954,14 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1739,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -918,6 +1978,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 454,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -934,6 +2001,15 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000002",
+          "offset": 474,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "shift": 0,
         "text": "(r3 & 0x00000002)"
       },
@@ -951,6 +2027,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 2012,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -968,6 +2051,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 770"
       },
@@ -985,6 +2075,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 517"
       },
@@ -1001,6 +2098,10 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "kind": "call",
+          "mask": "0x00000020"
+        },
         "shift": 0,
         "text": "(r3 & 0x00000020)"
       },
@@ -1017,6 +2118,10 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "kind": "call",
+          "mask": "0x00000040"
+        },
         "shift": 0,
         "text": "(r3 & 0x00000040)"
       },
@@ -1033,6 +2138,12 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 3,
+          "index": 4,
+          "kind": "indexed",
+          "op": "lbzx"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -1048,6 +2159,12 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 3,
+          "index": 4,
+          "kind": "indexed",
+          "op": "lbzx"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -1063,6 +2180,15 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000004",
+          "offset": 474,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "shift": 0,
         "text": "(r5 & 0x00000004)"
       },
@@ -1079,6 +2205,14 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1433,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -1095,6 +2229,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1734,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -1111,6 +2252,15 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000002",
+          "offset": 1789,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "shift": 0,
         "text": "(r3 & 0x00000002)"
       },
@@ -1127,6 +2277,15 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000080",
+          "offset": 1789,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "shift": 0,
         "text": "(r3 & 0x00000080)"
       },
@@ -1143,6 +2302,10 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "kind": "call",
+          "mask": "0x00000010"
+        },
         "shift": 0,
         "text": "(r5 & 0x00000010)"
       },
@@ -1159,6 +2322,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 0,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -1175,6 +2353,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 454,
+          "op": "lha",
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -1192,6 +2384,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lha",
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 1793"
       },
@@ -1209,6 +2415,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lha",
+          "via": {
+            "base": 3,
+            "kind": "field",
+            "offset": 20100,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 1800"
       },
@@ -1243,6 +2463,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 454,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 0"
       },
@@ -1260,6 +2487,12 @@
       "condition": {
         "cr": 0,
         "kind": "cmpli",
+        "operand": {
+          "base": 3,
+          "index": 0,
+          "kind": "indexed",
+          "op": "lwzx"
+        },
         "signed": false,
         "text": "r4 cmpl 0"
       },
@@ -1276,6 +2509,14 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000004",
+          "offset": 473,
+          "op": "lbz",
+          "width": "u8"
+        },
         "shift": 0,
         "text": "(r0 & 0x00000004)"
       },
@@ -1292,6 +2533,14 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "mask": "0x00000001",
+          "offset": 628,
+          "op": "lbz",
+          "width": "u8"
+        },
         "shift": 0,
         "text": "(r0 & 0x00000001)"
       },
@@ -1309,6 +2558,12 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 3,
+          "index": 0,
+          "kind": "indexed",
+          "op": "lbzx"
+        },
         "signed": true,
         "text": "r0 cmp 3"
       },
@@ -1326,6 +2581,18 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31416,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "kind": "call"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
@@ -1342,6 +2609,22 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31388,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "base": 1,
+            "kind": "field",
+            "offset": 24,
+            "op": "lfs",
+            "width": "f32"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
@@ -1358,6 +2641,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 1794"
       },
@@ -1375,6 +2665,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 24,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lha",
+          "width": "s16"
+        },
         "signed": true,
         "text": "r0 cmp 1802"
       },
@@ -1392,6 +2689,22 @@
       "condition": {
         "cr": 0,
         "kind": "cmp",
+        "operands": {
+          "r0": {
+            "base": 24,
+            "kind": "field",
+            "offset": 454,
+            "op": "lha",
+            "width": "s16"
+          },
+          "r3": {
+            "base": 24,
+            "kind": "field",
+            "offset": 452,
+            "op": "lha",
+            "width": "s16"
+          }
+        },
         "signed": true,
         "text": "r0 cmp r3"
       },
@@ -1409,6 +2722,9 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "kind": "call"
+        },
         "signed": true,
         "text": "r3 cmp 0"
       },
@@ -1426,6 +2742,10 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "kind": "imm",
+          "value": 1
+        },
         "signed": true,
         "text": "r23 cmp 0"
       },
@@ -1459,6 +2779,14 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "offset": 16,
+          "op": "lbz",
+          "sign_extended": true,
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -1474,6 +2802,14 @@
       "cond": "lt",
       "condition": {
         "kind": "extsh.",
+        "operand": {
+          "base": 31,
+          "kind": "field",
+          "offset": 0,
+          "op": "lha",
+          "sign_extended": true,
+          "width": "s16"
+        },
         "text": "s16(r4)"
       },
       "cr": 0,
@@ -1490,6 +2826,23 @@
       "condition": {
         "cr": 0,
         "kind": "cmp",
+        "operands": {
+          "r0": {
+            "base": 31,
+            "kind": "field",
+            "offset": 0,
+            "op": "lha",
+            "sign_extended": true,
+            "width": "s16"
+          },
+          "r3": {
+            "base": 23,
+            "kind": "field",
+            "offset": 50,
+            "op": "lhz",
+            "width": "u16"
+          }
+        },
         "signed": true,
         "text": "r3 cmp r0"
       },
@@ -1506,6 +2859,14 @@
       "cond": "gt",
       "condition": {
         "kind": "extsh.",
+        "operand": {
+          "base": 31,
+          "kind": "field",
+          "offset": 0,
+          "op": "lha",
+          "sign_extended": true,
+          "width": "s16"
+        },
         "text": "s16(r4)"
       },
       "cr": 0,
@@ -1521,6 +2882,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "offset": 50,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 13,
+            "kind": "field",
+            "offset": -31856,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -1554,6 +2930,22 @@
       "condition": {
         "cr": 0,
         "kind": "cmpl",
+        "operands": {
+          "r0": {
+            "base": 23,
+            "kind": "field",
+            "offset": 50,
+            "op": "lhz",
+            "width": "u16"
+          },
+          "r3": {
+            "base": 23,
+            "kind": "field",
+            "offset": 48,
+            "op": "lhz",
+            "width": "u16"
+          }
+        },
         "signed": false,
         "text": "r0 cmpl r3"
       },
@@ -1590,8 +2982,9 @@
   "kind": "gf-collision-branch-map",
   "notes": [
     "Each branch records the nearest flag-setting compare/mask in the eight instructions before it.",
+    "`operand`/`operands` name the last load, immediate or mask that fed the tested register, following a sign extension or move. For float compares it is the last load into the compared register, not the whole expression.",
     "A 'sense' of true branches when the condition holds; false is the inverse test (for example beq vs bne).",
-    "This is control-flow data; handler semantics remain to be named."
+    "Named gates are the broad-phase and early geometry branches whose field loads are unambiguous; other handler semantics remain open."
   ],
   "pair_loop": "8002C4CC",
   "phases": {
@@ -1600,6 +2993,6 @@
     "geometry": 14,
     "post": 47
   },
-  "revision": 1,
+  "revision": 2,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

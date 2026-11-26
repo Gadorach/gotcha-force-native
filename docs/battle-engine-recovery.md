@@ -232,7 +232,14 @@ The collision walk has 68 direct calls in four phases: 14 broad-phase, 7
 geometry, 24 apply and 23 post. Its 98 conditional branches are decoded in
 [`api-map/collision-branch-map.json`](api-map/collision-branch-map.json):
 10 broad-phase, 14 geometry, 27 apply and 47 post, all with a compare or mask
-condition (`cmpi` 29, `fcmpo` 28, `extsb.` 21, `rlwinm.` 11, plus `cmp/cmpl`). The apply band ends at the pair-loop call
+condition (`cmpi` 29, `fcmpo` 28, `extsb.` 21, `rlwinm.` 11, plus `cmp/cmpl`).
+Each branch also records the last load/immediate that fed the tested register
+(field offset, sign extension, mask, indexed load or call result). The
+broad-phase band and the clear early-geometry gates are named: actor
+active/timer 2001/global flag 1078, the two u16 peaks and s16 timers, the
+6-actor and 12-entry loops, geometry active/subactive-477, height+475 and the
+height limit, the actor+460 vector gates, and the pair-pass gates. Float
+provenance is the nearest load, not the whole expression. The apply band ends at the pair-loop call
 `8002C4CC -> 8002DB58`, which is the entry to the reaction scaffold. The map is
 [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 

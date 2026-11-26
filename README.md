@@ -119,8 +119,10 @@ texture or audio bytes; each regenerates from a local roster.
   Tool: `tools/analyze/reaction_effect_map.py`.
 - [Collision branch map](docs/api-map/collision-branch-map.json) — the 98
   conditional branches of `8002BB14` with their decoded compare/mask
-  conditions (cmpi, cmpl, fcmpo, rlwinm./extsb./extsh. masks) and phases.
-  Tool: `tools/analyze/collision_branch_map.py`.
+  conditions (cmpi, cmpl, fcmpo, rlwinm./extsb./extsh. masks), phases, the
+  field/immediate provenance that fed each tested register, and named
+  broad-phase/early-geometry gates. Tool:
+  `tools/analyze/collision_branch_map.py`.
 - [Pair-loop branch map](docs/api-map/pair-loop-branch-map.json) — the 32
   conditional branches of `8002DB58` in prepare/inner/select/publish bands,
   including the mode, carrier-flag, validity, distance and CTR-copy gates.
