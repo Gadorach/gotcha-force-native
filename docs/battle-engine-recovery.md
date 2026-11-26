@@ -429,7 +429,11 @@ The action block itself is `pl####hit.bin` (7840 bytes, member block 2): a
 0x50-byte steps at `+0xAA0`; step `+4` is the attack-table index. For G-Red the
 used step indices 2/3/8/6/4/7/5 select attack-table entries 2..8, all mode 0.
 Mode 0 reads attacker-internal vectors the native actor does not carry, so the
-default mode-1 direction remains an explicit approximation for retail moves. The original
+default mode-1 direction remains an explicit approximation for retail moves.
+The queue group is selected by `8006F11C` from `s8(action_row[3])`, where
+`action_row = lbl_802D39B0 + actor[0x11]*0x34`. The static DOL rows show group
+0 for all five move slots, so the per-Borg runtime action rows still need
+tracing before a package can emit the exact mode/offset. The original
 `afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
