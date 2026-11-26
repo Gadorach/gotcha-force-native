@@ -19,6 +19,20 @@ class SelectorArtifactTest(unittest.TestCase):
         self.assertEqual(data["models"]["0615"], [2, 2, 2])
         self.assertEqual(data["models"]["030a"], [1, 2, 0])
 
+    def test_combined_models(self):
+        data = json.loads(ARTIFACT.read_text())
+        self.assertEqual(data["combined_count"], 13)
+        self.assertEqual(data["combined_models"]["0604"],
+                         [[3, 2, 2], [3, 2, 2]])
+        self.assertEqual(data["combined_models"]["0802"],
+                         [[0, 2, 2], [0, 2, 2]])
+
+    def test_models_without_block(self):
+        data = json.loads(ARTIFACT.read_text())
+        self.assertEqual(data["models_without_block"],
+                         ["0619", "061b", "061f", "0620", "0628",
+                          "0803", "080b", "0f07"])
+
     def test_offsets(self):
         data = json.loads(ARTIFACT.read_text())
         self.assertEqual(data["offsets"]["class"], 156)

@@ -315,7 +315,9 @@ callee of the amount routine) is a pointer table at `802F2E28`.
 
 The defender selectors are per-Borg bytes at `plXXXXdata.bin +156..158`
 (Sasuke `1,1,0`, G-Red `2,2,2`), exported as
-[`api-map/borg-damage-selectors.json`](api-map/borg-damage-selectors.json).
+[`api-map/borg-damage-selectors.json`](api-map/borg-damage-selectors.json)
+together with the 13 combined forms, whose `data2`/`data3` blocks carry one
+triple per component.
 The class row is `80433600[side][selector][settings[team]]`; the two HP rows
 use `+157` and `+158` with the post-hit HP index.
 

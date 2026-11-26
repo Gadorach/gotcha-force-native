@@ -101,8 +101,9 @@ texture or audio bytes; each regenerates from a local roster.
   and five captured amounts (`22, 33, 27, 16, 3`). Tool:
   `tools/analyze/damage_amount_model.py`.
 - [Borg damage selectors](docs/api-map/borg-damage-selectors.json) — the three
-  defender row selectors at `plXXXXdata.bin +156..158` for 198 roster models
-  (Sasuke `1,1,0`, G-Red `2,2,2`). Tool:
+  defender row selectors at `plXXXXdata.bin +156..158`: 198 single-block models
+  (Sasuke `1,1,0`, G-Red `2,2,2`) plus 13 combined forms with one triple per
+  component; eight asset-only ids have no block. Tool:
   `tools/analyze/borg_damage_selectors.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,

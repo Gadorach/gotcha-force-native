@@ -1,9 +1,188 @@
 {
   "archive": {
     "block_size": 432,
-    "blocks_sha256": "88df09c61d9eb7c4607c5d4652b5b93fda152a98e9546bb80a5137bbda5cc847",
+    "blocks_sha256": "b0edda30eb06d543e9bfe03a94d8c70a47254305a73c671d352b56625465e459",
     "member_count": 2857,
     "name_table_sha256": "11c0b09dbf49ffbe68d4ef065c155cca097c8d4794f08c42040f5646fbdc8d07"
+  },
+  "combined_count": 13,
+  "combined_models": {
+    "0604": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ]
+    ],
+    "0606": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ]
+    ],
+    "0610": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ]
+    ],
+    "0613": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ]
+    ],
+    "0618": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ]
+    ],
+    "061a": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ]
+    ],
+    "061e": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ]
+    ],
+    "0621": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ]
+    ],
+    "0623": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        3,
+        2,
+        2
+      ]
+    ],
+    "0625": [
+      [
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ]
+    ],
+    "0627": [
+      [
+        3,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2
+      ]
+    ],
+    "0802": [
+      [
+        0,
+        2,
+        2
+      ],
+      [
+        0,
+        2,
+        2
+      ]
+    ],
+    "080a": [
+      [
+        0,
+        2,
+        2
+      ],
+      [
+        0,
+        2,
+        2
+      ]
+    ]
   },
   "count": 198,
   "kind": "gf-borg-damage-selectors",
@@ -999,11 +1178,22 @@
       0
     ]
   },
+  "models_without_block": [
+    "0619",
+    "061b",
+    "061f",
+    "0620",
+    "0628",
+    "0803",
+    "080b",
+    "0f07"
+  ],
   "notes": [
-    "Selectors feed the defender rows of the amount pipeline: class at CE94/D100, HP 157 at D1EC, HP 158 at D260.",
+    "Selectors feed the defender rows of the amount pipeline: class at D100, HP 157 at D1EC, HP 158 at D260.",
     "The class row is 80433600[side][class][settings[team]]; the HP rows are 80433608/80433610[side][hp_n][post-hit HP index].",
-    "The roster has 198 data blocks; alternate forms share a model id or have no separate block.",
-    "Only three selector bytes per Borg are exported, not the block."
+    "Single-block models are in `models`; combined forms store one triple per component in `combined_models`.",
+    "Which combined-form component feeds model+156 is not yet verified; the components are listed without choosing one.",
+    "Eight asset-only ids have no data block (0604 cousins such as 0619, 061b, 061f, 0620, 0628, and 0803, 080b, 0f07); they are listed and their selectors are not recovered."
   ],
   "offsets": {
     "class": 156,

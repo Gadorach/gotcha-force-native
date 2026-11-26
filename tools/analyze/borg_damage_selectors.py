@@ -8,8 +8,10 @@ post-hit HP rows by `model+157` and `model+158`. Those three bytes live in the
     pl000adata.bin +156..158 = 1, 1, 0   (Sasuke)
     pl0615data.bin +156..158 = 2, 2, 2   (G-Red)
 
-This tool reads the AFS directory and those blocks only. It never writes to the
-archive and refuses to overwrite its output. Three selector bytes per Borg are
+Combined forms use `data2.bin` (864 bytes) and `data3.bin` (1296 bytes): one
+432-byte component block each, with its own selector triple. This tool reads
+the AFS directory and those blocks only. It never writes to the archive and
+refuses to overwrite its output. Three selector bytes per component are
 numeric metadata, not model, texture or audio bytes.
 """
 import argparse
@@ -25,7 +27,8 @@ AFS_COUNT = 2857
 BLOCK_SIZE = 432
 NAME_SIZE = 48
 SELECTOR_OFFSETS = {"class": 156, "hp_157": 157, "hp_158": 158}
-PATTERN = re.compile(r"pl([0-9a-f]{4})data\.bin")
+PATTERN = re.compile(r"pl([0-9a-f]{4})data(\d*)\.bin")
+ASSET = re.compile(r"pl([0-9a-f]{4}).+")
 KNOWN = {
     0x000A: (1, 1, 0),
     0x030A: (1, 2, 0),
@@ -43,8 +46,7 @@ def _directory(source):
     count = _u32(source, 4)
     if count != AFS_COUNT:
         raise ValueError("unexpected AFS member count")
-    table = source.read(8, count * 8)
-    pairs = list(struct.iter_unpack("<II", table))
+    pairs = list(struct.iter_unpack("<II", source.read(8, count * 8)))
     first = min((offset for offset, size in pairs if size), default=source.size)
     if first < 8 + count * 8 or first - 8 < 8 + count * 8:
         raise ValueError("invalid AFS payload start")
@@ -64,34 +66,53 @@ def _directory(source):
     return pairs, blob, names
 
 
+def _selectors(blocks):
+    return [tuple(block[SELECTOR_OFFSETS[key]]
+                  for key in ("class", "hp_157", "hp_158"))
+            for block in blocks]
+
+
 def recover(source):
     pairs, name_blob, names = _directory(source)
     models = {}
+    combined = {}
     blocks = []
+    asset_models = set()
     for index, name in enumerate(names):
+        asset = ASSET.fullmatch(name)
+        if asset is not None:
+            asset_models.add(int(asset.group(1), 16))
         match = PATTERN.fullmatch(name)
         if match is None:
             continue
         model = int(match.group(1), 16)
-        if model in models:
+        if model in models or model in combined:
             raise ValueError(f"duplicate Borg data block: {model:04x}")
+        parts = int(match.group(2) or 1)
         offset, size = pairs[index]
-        if size != BLOCK_SIZE:
+        if size != BLOCK_SIZE * parts:
             raise ValueError(f"{name} extent changed: {size}")
-        block = source.read(offset, size)
-        selectors = tuple(block[SELECTOR_OFFSETS[key]]
-                          for key in ("class", "hp_157", "hp_158"))
-        if not all(0 <= value < 16 for value in selectors):
-            raise ValueError(f"{name} selector range: {selectors}")
-        models[model] = selectors
-        blocks.append(struct.pack(">H", model) + block)
+        raw = source.read(offset, size)
+        rows = [raw[BLOCK_SIZE * part:BLOCK_SIZE * (part + 1)]
+                for part in range(parts)]
+        selectors = _selectors(rows)
+        for triple in selectors:
+            if not all(0 <= value < 16 for value in triple):
+                raise ValueError(f"{name} selector range: {triple}")
+        if parts == 1:
+            models[model] = selectors[0]
+        else:
+            combined[model] = selectors
+        blocks.append(struct.pack(">H", model) + raw)
     blocks.sort()
-    if len(models) != 198:
-        raise ValueError(f"Borg data block count changed: {len(models)}")
+    if len(models) != 198 or len(combined) != 13:
+        raise ValueError(f"data block counts changed: "
+                         f"{len(models)} single, {len(combined)} combined")
     for model, expected in KNOWN.items():
         if models.get(model) != expected:
             raise ValueError(f"selector mismatch for {model:04x}: "
                              f"{models.get(model)}")
+    missing = sorted(asset_models - set(models) - set(combined))
     return {
         "kind": "gf-borg-damage-selectors",
         "revision": 1,
@@ -103,16 +124,24 @@ def recover(source):
         },
         "offsets": SELECTOR_OFFSETS,
         "count": len(models),
+        "combined_count": len(combined),
         "models": {f"{model:04x}": list(selectors)
                    for model, selectors in sorted(models.items())},
+        "combined_models": {f"{model:04x}": [list(part) for part in parts]
+                            for model, parts in sorted(combined.items())},
+        "models_without_block": [f"{model:04x}" for model in missing],
         "notes": [
             "Selectors feed the defender rows of the amount pipeline: "
-            "class at CE94/D100, HP 157 at D1EC, HP 158 at D260.",
+            "class at D100, HP 157 at D1EC, HP 158 at D260.",
             "The class row is 80433600[side][class][settings[team]]; the HP "
             "rows are 80433608/80433610[side][hp_n][post-hit HP index].",
-            "The roster has 198 data blocks; alternate forms share a model id "
-            "or have no separate block.",
-            "Only three selector bytes per Borg are exported, not the block.",
+            "Single-block models are in `models`; combined forms store one "
+            "triple per component in `combined_models`.",
+            "Which combined-form component feeds model+156 is not yet "
+            "verified; the components are listed without choosing one.",
+            "Eight asset-only ids have no data block (0604 cousins such as "
+            "0619, 061b, 061f, 0620, 0628, and 0803, 080b, 0f07); they are "
+            "listed and their selectors are not recovered.",
         ],
     }
 
@@ -130,7 +159,8 @@ def export(afs, output):
     with output.open("xb") as stream:
         stream.write(raw)
     return {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
-            "models": payload["count"]}
+            "models": payload["count"],
+            "combined": payload["combined_count"]}
 
 
 def main():
