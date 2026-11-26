@@ -97,9 +97,13 @@ texture or audio bytes; each regenerates from a local roster.
   both confirmed by captured hits. Tool:
   `tools/analyze/contact_scalar_ladder.py`.
 - [Damage amount model](docs/api-map/damage-amount-model.json) — the translated
-  19-stage chain of `8003CD5C`, the eight table roots and their selection paths,
-  and the two captured hits (`22` and `3`). Tool:
+  19-stage chain of `8003CD5C`, the eight table roots, the model-index mapper
+  and five captured amounts (`22, 33, 27, 16, 3`). Tool:
   `tools/analyze/damage_amount_model.py`.
+- [Borg damage selectors](docs/api-map/borg-damage-selectors.json) — the three
+  defender row selectors at `plXXXXdata.bin +156..158` for 198 roster models
+  (Sasuke `1,1,0`, G-Red `2,2,2`). Tool:
+  `tools/analyze/borg_damage_selectors.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the

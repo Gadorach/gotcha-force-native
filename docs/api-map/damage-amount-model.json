@@ -8,6 +8,7 @@
     "The 1.13 is not a battle-wide settings scalar: it is the defender class row 802C6820[16] at D100, selected by model+156 and the per-team settings byte 803C4E60[defender+136].",
     "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
     "The matchup mapper 80066298 is a 256-entry pointer table at 802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
+    "The defender selectors at model+156/157/158 are the AFS bytes plXXXXdata.bin+156..158; the roster map is api-map/borg-damage-selectors.json (Sasuke 1,1,0; G-Red 2,2,2).",
     "The 0.85 rank is at 804335F8[side], not inside the 804335E0 credit-difficulty pair."
   ],
   "function": {
@@ -254,7 +255,7 @@
       "index": "settings[defender+136]",
       "name": "defender_class_row",
       "op": "mul",
-      "row": "model+156",
+      "row": "model+156 (plXXXXdata.bin)",
       "side": "defender+998 != 0",
       "site": "D100",
       "table": "defender_class_row"
@@ -276,7 +277,7 @@
       "index": "post-hit defender HP index",
       "name": "defender_hp_row_157",
       "op": "mul",
-      "row": "model+157",
+      "row": "model+157 (plXXXXdata.bin)",
       "side": "defender+998 != 0",
       "site": "D1EC",
       "table": "defender_hp_row_157"
@@ -285,7 +286,7 @@
       "index": "post-hit defender HP index",
       "name": "defender_hp_row_158",
       "op": "mul",
-      "row": "model+158",
+      "row": "model+158 (plXXXXdata.bin)",
       "side": "defender+998 != 0",
       "site": "D260",
       "table": "defender_hp_row_158"
@@ -357,7 +358,7 @@
       ]
     },
     "defender_class_row": {
-      "index": "model+156, then byte at 803C4E60",
+      "index": "model+156 (plXXXXdata.bin), then byte at 803C4E60",
       "kind": "row pointers",
       "root": "80433600",
       "sides": [
@@ -366,7 +367,7 @@
       ]
     },
     "defender_hp_row_157": {
-      "index": "model+157, then post-hit HP index",
+      "index": "model+157 (plXXXXdata.bin), then post-hit HP index",
       "kind": "row pointers",
       "root": "80433608",
       "sides": [
@@ -375,7 +376,7 @@
       ]
     },
     "defender_hp_row_158": {
-      "index": "model+158, then post-hit HP index",
+      "index": "model+158 (plXXXXdata.bin), then post-hit HP index",
       "kind": "row pointers",
       "root": "80433610",
       "sides": [

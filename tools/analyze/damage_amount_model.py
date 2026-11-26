@@ -37,9 +37,12 @@ ROOTS = {
     "attacker_hp_row": (0x804335E8, "row pointers", "record+6, then attacker HP index"),
     "team_force_row": (0x804335F0, "row pointers", "record+7, then team force index"),
     "attacker_rank": (0x804335F8, "float row", "attacker+1082 (difficulty)"),
-    "defender_class_row": (0x80433600, "row pointers", "model+156, then byte at 803C4E60"),
-    "defender_hp_row_157": (0x80433608, "row pointers", "model+157, then post-hit HP index"),
-    "defender_hp_row_158": (0x80433610, "row pointers", "model+158, then post-hit HP index"),
+    "defender_class_row": (0x80433600, "row pointers",
+                           "model+156 (plXXXXdata.bin), then byte at 803C4E60"),
+    "defender_hp_row_157": (0x80433608, "row pointers",
+                            "model+157 (plXXXXdata.bin), then post-hit HP index"),
+    "defender_hp_row_158": (0x80433610, "row pointers",
+                            "model+158 (plXXXXdata.bin), then post-hit HP index"),
     "receiver_rank": (0x80433618, "float row", "defender+1082 (difficulty)"),
 }
 
@@ -81,7 +84,7 @@ STAGES = (
     {"site": "D100", "name": "defender_class_row", "op": "mul",
      "table": "defender_class_row",
      "side": "defender+998 != 0",
-     "row": "model+156",
+     "row": "model+156 (plXXXXdata.bin)",
      "index": "settings[defender+136]"},
     {"site": "D128", "name": "defender_conditional_half", "op": "mul",
      "value": 0.5,
@@ -92,12 +95,12 @@ STAGES = (
     {"site": "D1EC", "name": "defender_hp_row_157", "op": "mul",
      "table": "defender_hp_row_157",
      "side": "defender+998 != 0",
-     "row": "model+157",
+     "row": "model+157 (plXXXXdata.bin)",
      "index": "post-hit defender HP index"},
     {"site": "D260", "name": "defender_hp_row_158", "op": "mul",
      "table": "defender_hp_row_158",
      "side": "defender+998 != 0",
-     "row": "model+158",
+     "row": "model+158 (plXXXXdata.bin)",
      "index": "post-hit defender HP index"},
     {"site": "D270", "name": "receiver_rank", "op": "mul",
      "table": "receiver_rank",
@@ -379,6 +382,9 @@ def recover(image):
             "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
             "The matchup mapper 80066298 is a 256-entry pointer table at "
             "802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
+            "The defender selectors at model+156/157/158 are the AFS bytes "
+            "plXXXXdata.bin+156..158; the roster map is "
+            "api-map/borg-damage-selectors.json (Sasuke 1,1,0; G-Red 2,2,2).",
             "The 0.85 rank is at 804335F8[side], not inside the 804335E0 "
             "credit-difficulty pair.",
         ],

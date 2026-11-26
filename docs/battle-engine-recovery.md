@@ -313,12 +313,19 @@ credit-difficulty pair. The D024 cell is
 `matrix[model_index(defender)][model_index(attacker)]`; the mapper (the only
 callee of the amount routine) is a pointer table at `802F2E28`.
 
+The defender selectors are per-Borg bytes at `plXXXXdata.bin +156..158`
+(Sasuke `1,1,0`, G-Red `2,2,2`), exported as
+[`api-map/borg-damage-selectors.json`](api-map/borg-damage-selectors.json).
+The class row is `80433600[side][selector][settings[team]]`; the two HP rows
+use `+157` and `+158` with the post-hit HP index.
+
 ## Next targets
 
 1. Emit the eight recovered table roles into packages: credit difficulty and
    attacker rank for the attacker, class row and receiver rank for the
    defender, plus the two HP/force rows where the packager can supply them.
-   The model-index mapper is already exported as part of the amount artifact.
+   The mapper and the per-Borg selectors are now exported; the remaining
+   choice is how the packager binds the battle settings index.
 2. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
    helpers and the new amount routine.
 3. `8002BB14`: branch-aware recovery of the collision walk.
