@@ -105,7 +105,9 @@ int main(int argc,char** argv){
         assets[i]={view(0),view(1),view(2),view(3)};
     }
     NativeBattleMvp world;NativeBattleMvpView scene;
-    const bool loaded=scene.load_packages(files,root+"/arena-wall",render,config.packages,assets,&error);
+    const std::array<std::shared_ptr<const BorgGameplayProfile>,2> packages{
+        config.packages[0],config.packages[1]};
+    const bool loaded=scene.load_packages(files,root+"/arena-wall",render,packages,assets,&error);
     check(loaded,error.c_str());
     check(world.start(config,&scene),"battle placement");
     check(scene.update(world,&error),"first pose publication");
