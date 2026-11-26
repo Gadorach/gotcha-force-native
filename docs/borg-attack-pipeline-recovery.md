@@ -548,8 +548,8 @@ row 0x802C6820: 0.97 0.98 0.99 1.00 1.01 ... 1.12 [1.13] 1.14 1.15 1.16
 So the `D100` factor is `0x802C6820[16] = 1.13`, a linear scalar ladder. The
 earlier `802C6BC0` was the pre-load pointer, which is why its `+0x40` read 1.0.
 
-The final attribution is therefore coherent, and the zero factor that was the
-matchup table is not in the chain:
+The final checkpoint values are measured, but the **static source of the
+`D024` factor is not settled**:
 
 | Checkpoint | Net factor | Source |
 | --- | --- | --- |
@@ -559,9 +559,16 @@ matchup table is not in the chain:
 | `D290` | 1.0 | tier row `0x802C7CA0[0]`, `actor+0x6CA = 0` |
 | `D16C` | 1.0 | relative neutral (`receiver+180 = 1.0`) |
 
-The live matchup probe read row 0 / column 4 of the `0x802C5D60` matrix as
-`1.0`, so that matrix is not the source of `0.867`; the two GFDA credit rows
-are. This also removes the last "unresolved factor" from the record.
+The amount function `8003CD5C` does materialise the matchup matrix
+`0x802C5D60` (at `8003D010`, used at `8003D024`), plus `0x803B068C`/`0x803B069C`
+(team/HP history), `0x80433610`/`0x80433618` (receiver force/rank) and
+`0x802C7CA0` (tier). The credit rows `0x802C4BA0`/`0x802C5D20` are **not**
+materialised directly; they are reached indirectly.
+
+The live matchup probe read row 0 / column 4 as `1.0`, which disagrees with the
+`0.867` applied at `D024`. So the pre-factor may be the matrix cell, the credit
+row product, or a combination; only the numeric `0.867` is measured. Do not
+claim the matrix is absent from the chain.
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 The measured record is exported as
