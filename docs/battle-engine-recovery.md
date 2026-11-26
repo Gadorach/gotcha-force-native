@@ -267,8 +267,11 @@ base (record+0)
 The two captured hits reproduce exactly:
 
 ```text
-Kakeru  20 x 1.02 x 0.85 x 1.13 x 1.15           = 22.533 -> 22
-Mana     5 x 0.92 x 0.85 x 0.5 x 1.40 x 1.15     =  3.148 -> 3
+Kakeru boost  20 x 1.02 x 0.85 x 1.13 x 1.15        = 22.533 -> 22
+Kakeru X      30 x 1.02 x 0.85 x 1.13 x 1.15        = 33.800 -> 33
+Kakeru X t1   33.8 x 0.8                            = 27.040 -> 27
+Kakeru X t2   33.8 x 0.5                            = 16.900 -> 16
+Mana           5 x 0.92 x 0.85 x 0.5 x 1.40 x 1.15  =  3.148 -> 3
 ```
 
 `0.867` is therefore `1.02 x 0.85`, not a stored float. The `1.13` is

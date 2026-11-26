@@ -83,6 +83,75 @@
       "state": "kakeru_battle"
     },
     {
+      "amount": 33,
+      "base": 30,
+      "derived": [
+        "credit_difficulty",
+        "attacker_rank",
+        "defender_class_row",
+        "receiver_rank"
+      ],
+      "factors": {
+        "attacker_rank": 0.85,
+        "credit_difficulty": 1.02,
+        "defender_class_row": 1.13,
+        "receiver_rank": 1.15,
+        "tier": 1.0
+      },
+      "note": "Per-move X record base 30 with the same pair factors: 33.8 -> 33.",
+      "probed": [
+        "tier"
+      ],
+      "product": 33.799995,
+      "state": "kakeru_x_tier0"
+    },
+    {
+      "amount": 27,
+      "base": 30,
+      "derived": [
+        "credit_difficulty",
+        "attacker_rank",
+        "defender_class_row",
+        "receiver_rank"
+      ],
+      "factors": {
+        "attacker_rank": 0.85,
+        "credit_difficulty": 1.02,
+        "defender_class_row": 1.13,
+        "receiver_rank": 1.15,
+        "tier": 0.8
+      },
+      "note": "Second successive hit, tier 0.8: 27.04 -> 27.",
+      "probed": [
+        "tier"
+      ],
+      "product": 27.039996,
+      "state": "kakeru_x_tier1"
+    },
+    {
+      "amount": 16,
+      "base": 30,
+      "derived": [
+        "credit_difficulty",
+        "attacker_rank",
+        "defender_class_row",
+        "receiver_rank"
+      ],
+      "factors": {
+        "attacker_rank": 0.85,
+        "credit_difficulty": 1.02,
+        "defender_class_row": 1.13,
+        "receiver_rank": 1.15,
+        "tier": 0.5
+      },
+      "note": "Third successive hit, tier 0.5: 16.9 -> 16.",
+      "probed": [
+        "tier"
+      ],
+      "product": 16.899997,
+      "state": "kakeru_x_tier2"
+    },
+    {
       "amount": 3,
       "base": 5,
       "derived": [

@@ -69,6 +69,17 @@ class DamageAmountModelTest(unittest.TestCase):
         self.assertAlmostEqual(product, 3.14755, places=5)
         self.assertEqual(amount, 3)
 
+    def test_x_tier_chain(self):
+        base = {
+            "credit_difficulty": 1.02,
+            "attacker_rank": 0.85,
+            "defender_class_row": 1.13,
+            "receiver_rank": 1.15,
+        }
+        for tier, expected in ((1.0, 33), (0.8, 27), (0.5, 16)):
+            amount, _ = model.evaluate(30, dict(base, tier=tier))
+            self.assertEqual(amount, expected)
+
     def test_missing_factors_are_neutral(self):
         amount, product = model.evaluate(7, {})
         self.assertEqual(amount, 7)
