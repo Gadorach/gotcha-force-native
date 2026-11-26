@@ -547,11 +547,12 @@ public:
         if(paused_||result_!=BattleMvpResult::Fighting){remember_pads(pads);return true;}
         if(!source_offer&&(actors_[0].source_ground_motion||config_.solo_model==0x0615||
             (package&&config_.packages[0]->movement==BorgBattleMovement::NormalGRed)))return false; //no legacy fallback
-        NativeBorgContactResult source_contact;
-        if(source_offer){
-            const auto& o=*source_offer;const auto& actor=actors_[0];const auto& other=actors_[1];
+        auto prepare_source = [&](unsigned source_index, const NativeBorgMotionOffer& o,
+                                  BattleMvpActor& actor, const BattleMvpActor& other,
+                                  const GamePadState& pad, const GamePadState& other_pad,
+                                  NativeBorgContactResult* contact) -> bool {
             const auto producer=o.producer.lock();
-            if(!producer||producer->world_.lock()!=motion_scope_||(actor.source_ground_motion&&producer!=motion_producers_[0].lock()))return false;
+            if(!producer||producer->world_.lock()!=motion_scope_||(actor.source_ground_motion&&producer!=motion_producers_[source_index].lock()))return false;
             const bool vertical=o.kind!=NativeBorgMotionKind::Ground;
             const bool moving=unsigned(o.kind)>=unsigned(NativeBorgMotionKind::JumpTakeoff);
             const bool air_dash=native_borg_motion_air_dash(o.kind),relaunch=native_borg_motion_relaunch(o.kind);
@@ -633,7 +634,7 @@ public:
             const bool controller_air_frame=controller_air_policy&&(air_dash||(o.kind==NativeBorgMotionKind::JumpTouchdown&&o.air_motion));
             const bool controller_relaunch_frame=controller_relaunch_policy&&relaunch;
             const bool jump_path=jump_policy&&jump_kind&&!controller_air_frame&&!controller_relaunch_frame&&
-                (o.kind!=NativeBorgMotionKind::JumpLanding||!actor.source_ground_motion||!last_offers_[0].walk_ledge);
+                (o.kind!=NativeBorgMotionKind::JumpLanding||!actor.source_ground_motion||!last_offers_[source_index].walk_ledge);
             const bool ledger_frame=ledge_policy&&!jump_path&&!controller_air_frame&&!controller_relaunch_frame;
             const unsigned phase=native_borg_motion_phase(o.kind);
              if(phase>4||(vertical&&producer->policy_==NativeBorgMotionPolicy::GroundOnly)||
@@ -672,31 +673,31 @@ public:
             if(opponent_ai||!motion_observation_current(o.observed)||!o.serial||
                (!vertical&&(!actor.grounded||actor.vertical_speed!=0||o.vertical_speed!=0))||
                 actor.attack_ticks||actor.hit_flash||actor.dash_ticks||
-                (!solo&&(other.attack_ticks||!other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}))||pads[1]!=GamePadState{}||
-               pads[0].a||pads[0].b||pads[0].x||pads[1].a||pads[1].b||pads[1].x||
+                (!solo&&(other.attack_ticks||!other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}))||other_pad!=GamePadState{}||
+               pad.a||pad.b||pad.x||other_pad.a||other_pad.b||other_pad.x||
                (!vertical&&o.action!=BattleMvpAction::Idle&&o.action!=BattleMvpAction::Move&&o.action!=BattleMvpAction::GroundDash)||
                !std::isfinite(o.facing.x)||!std::isfinite(o.facing.z)||std::abs(std::hypot(o.facing.x,o.facing.z)-1)>.001f)return false;
-             for(const auto& shot:projectiles_)if(shot.active&&(!package||!shot.from_package||shot.owner!=0))return false;
+             for(const auto& shot:projectiles_)if(shot.active&&(!package||!shot.from_package||shot.owner!=source_index))return false;
             for(auto value:o.proposed_position)if(!std::isfinite(value)||std::abs(value)>1e5f)return false;
             const BattlePoint delta{o.proposed_position[0]-actor.position[0],o.proposed_position[2]-actor.position[2]};
             if(std::hypot(delta.x,delta.z)>config_.actor_radius)return false; //native endpoint-terrain budget
-             const auto prior=actor.source_ground_motion?last_offers_[0].kind:NativeBorgMotionKind::Ground;
+             const auto prior=actor.source_ground_motion?last_offers_[source_index].kind:NativeBorgMotionKind::Ground;
              const unsigned prior_phase=native_borg_motion_phase(prior);
              const bool timed_repeat_candidate=controller_fall_push_frame&&
-                 o.controller_timer698>0.f&&last_offers_[0].controller_timer698>1.f&&
-                 prior==NativeBorgMotionKind::StaticPush&&last_offers_[0].static_push&&last_offers_[0].jump_motion&&
-                  last_offers_[0].jump_motion->timed_walk_relaunch_fall&&!last_offers_[0].jump_motion->third_timed_release_push&&
-                  !last_offers_[0].jump_motion->down_timed_release_push;
+                 o.controller_timer698>0.f&&last_offers_[source_index].controller_timer698>1.f&&
+                 prior==NativeBorgMotionKind::StaticPush&&last_offers_[source_index].static_push&&last_offers_[source_index].jump_motion&&
+                  last_offers_[source_index].jump_motion->timed_walk_relaunch_fall&&!last_offers_[source_index].jump_motion->third_timed_release_push&&
+                  !last_offers_[source_index].jump_motion->down_timed_release_push;
              const bool timed_release_second=timed_repeat_candidate&&behaviors.has(Behavior::TimedWalkReleaseSecondPush)&&
-                 !last_offers_[0].jump_motion->second_timed_release_push;
+                 !last_offers_[source_index].jump_motion->second_timed_release_push;
              const bool timed_release_third=timed_repeat_candidate&&behaviors.has(Behavior::TimedWalkReleaseThirdPush)&&
-                 last_offers_[0].jump_motion->second_timed_release_push&&
-                  NormalGRedMovementDefinition::third_timed_release_face(last_offers_[0].static_push->surface.triangle,last_offers_[0].static_push->angle);
+                 last_offers_[source_index].jump_motion->second_timed_release_push&&
+                  NormalGRedMovementDefinition::third_timed_release_face(last_offers_[source_index].static_push->surface.triangle,last_offers_[source_index].static_push->angle);
               bool timed_release_down=false;
               if(behaviors.has(Behavior::TimedWalkReleaseDownPush)&&controller_fall_push_frame&&prior==NativeBorgMotionKind::StaticPush&&
-                 last_offers_[0].controller_timer698==2.f&&o.controller_timer698==1.f&&last_offers_[0].jump_motion&&last_offers_[0].static_push&&
-                 last_offers_[0].jump_motion->third_timed_release_push&&last_offers_[0].jump_motion->timed_walk_relaunch_fall&&
-                 NormalGRedMovementDefinition::third_timed_release_face(last_offers_[0].static_push->surface.triangle,last_offers_[0].static_push->angle)&&
+                 last_offers_[source_index].controller_timer698==2.f&&o.controller_timer698==1.f&&last_offers_[source_index].jump_motion&&last_offers_[source_index].static_push&&
+                 last_offers_[source_index].jump_motion->third_timed_release_push&&last_offers_[source_index].jump_motion->timed_walk_relaunch_fall&&
+                 NormalGRedMovementDefinition::third_timed_release_face(last_offers_[source_index].static_push->surface.triangle,last_offers_[source_index].static_push->angle)&&
                  o.jump_motion&&o.jump_motion->drift_heading&&player_frame){
                   CharacterMovementHeadingFrame heading;
                   timed_release_down=native_borg_source_heading_frame(*player_frame,actor.facing,&heading)&&
@@ -705,12 +706,12 @@ public:
              const bool timed_release_push=behaviors.has(Behavior::TimedWalkReleasePush)&&controller_fall_push_frame&&
                  o.controller_timer698>0.f&&o.jump_motion&&o.jump_motion->timed_walk_relaunch_fall&&
                  !o.jump_motion->entry&&actor.vertical_speed<0.f;
-              const auto* walking_push=prior==NativeBorgMotionKind::GroundLossPush&&last_offers_[0].static_push&&
-                  last_offers_[0].walk_ledge&&last_offers_[0].walk_ledge->walk_origin?&*last_offers_[0].walk_ledge:nullptr;
+              const auto* walking_push=prior==NativeBorgMotionKind::GroundLossPush&&last_offers_[source_index].static_push&&
+                  last_offers_[source_index].walk_ledge&&last_offers_[source_index].walk_ledge->walk_origin?&*last_offers_[source_index].walk_ledge:nullptr;
                const bool expiring_windup_origin=behaviors.has(Behavior::WalkExpiringAirDash)&&walking_push&&actor.vertical_speed<0.f&&
-                   walking_push->timer698==1.f&&last_offers_[0].controller_timer698==1.f&&o.controller_timer698==0.f&&
-                   NormalGRedMovementDefinition::walk_expiring_air_dash_face(last_offers_[0].static_push->surface.triangle,
-                       last_offers_[0].static_push->angle);
+                   walking_push->timer698==1.f&&last_offers_[source_index].controller_timer698==1.f&&o.controller_timer698==0.f&&
+                   NormalGRedMovementDefinition::walk_expiring_air_dash_face(last_offers_[source_index].static_push->surface.triangle,
+                       last_offers_[source_index].static_push->angle);
                const bool expiring_push_windup=expiring_windup_origin&&o.kind==NativeBorgMotionKind::AirDashWindupEntry;
                const bool expiring_floor_windup=expiring_windup_origin&&behaviors.has(Behavior::WalkExpiringAirDashSnap)&&
                    o.kind==NativeBorgMotionKind::AirDashWindupEntryFloor&&o.air_dash_floor&&o.air_motion&&o.air_motion->timer568==6.f&&
@@ -721,8 +722,8 @@ public:
              // at rest. A new action cannot borrow this contact.
              if(recovery_recontact&&(!recovery_recontact_policy||o.kind!=NativeBorgMotionKind::JumpTouchdown||
                 !jump_path||!o.jump_motion||!o.jump_motion->entry||o.jump_motion->phase!=6||!o.jump_motion->air_dash_origin||
-                o.jump_motion->held_jump||(!recovery_drift_policy&&o.jump_motion->drift_heading)||!last_offers_[0].air_motion||
-                o.jump_motion->resource_before!=last_offers_[0].air_motion->resource_after||*o.controller_timer698!=0.f))return false;
+                o.jump_motion->held_jump||(!recovery_drift_policy&&o.jump_motion->drift_heading)||!last_offers_[source_index].air_motion||
+                o.jump_motion->resource_before!=last_offers_[source_index].air_motion->resource_after||*o.controller_timer698!=0.f))return false;
              const bool recovery_program=(recovery_recontact_policy||controller_recovery_push_frame)&&
                  controller_air_frame&&o.air_motion->phase==17;
              const auto completion=o.recovery_completion.lock();
@@ -742,7 +743,7 @@ public:
                  }
              }else if(completion)return false;
             if(controller_landing_jump_policy){
-                const f32 previous=actor.source_ground_motion?last_offers_[0].controller_timer698.value_or(-1.f):0.f;
+                const f32 previous=actor.source_ground_motion?last_offers_[source_index].controller_timer698.value_or(-1.f):0.f;
                 const f32 expected=o.kind==NativeBorgMotionKind::GroundLossEntry?30.f:std::max(0.f,previous-1.f);
                 const f32 timer=*o.controller_timer698;
                 if(previous<0||!std::isfinite(timer)||timer<0||timer>30||timer!=expected||
@@ -751,9 +752,9 @@ public:
                               (native_borg_motion_relaunch_entry(o.kind)&&!controller_ground_loss_relaunch_policy))))return false;
             }
             const bool active_landing=actor.source_ground_motion&&prior==NativeBorgMotionKind::JumpLanding&&
-                last_offers_[0].jump_motion&&last_offers_[0].jump_motion->phase==7&&last_offers_[0].jump_motion->next_selector==7;
+                last_offers_[source_index].jump_motion&&last_offers_[source_index].jump_motion->phase==7&&last_offers_[source_index].jump_motion->next_selector==7;
             if(o.landing_target){
-                if(controller_ground_loss_surface_policy&&last_offers_[0].walk_ledge&&last_offers_[0].walk_ledge->timer698>1.f&&
+                if(controller_ground_loss_surface_policy&&last_offers_[source_index].walk_ledge&&last_offers_[source_index].walk_ledge->timer698>1.f&&
                    (!controller_landing_jump_policy||(o.landing_target!=4&&!(controller_landing_dash_policy&&o.landing_target==12))))return false;
                 if(controller_landing_jump_policy&&*o.controller_timer698>0&&o.landing_target!=4&&
                    !(controller_landing_dash_policy&&o.landing_target==12))return false;
@@ -779,7 +780,7 @@ public:
                      NativeBorgStaticSurface start;
                      if(timer!=0.f||!native_borg_flat_surface(surface)||
                          !terrain->static_surface(actor.position[0],actor.position[2],actor.position[1],&start)||
-                         (recovery_recontact&&(!last_offers_[0].surface_landing||last_offers_[0].surface_landing->surface!=start||
+                         (recovery_recontact&&(!last_offers_[source_index].surface_landing||last_offers_[source_index].surface_landing->surface!=start||
                             actor.position[1]!=surface.height||integrated[1]!=surface.height)))return false;
                      if(start!=surface){
                          const bool scoped_seam=recovery_recontact?
@@ -817,7 +818,7 @@ public:
             };
             if(controller_air_frame){
                 const auto& e=*o.air_motion;
-                const auto* previous=actor.source_ground_motion&&last_offers_[0].air_motion?&*last_offers_[0].air_motion:nullptr;
+                const auto* previous=actor.source_ground_motion&&last_offers_[source_index].air_motion?&*last_offers_[source_index].air_motion:nullptr;
                 const bool expiry_lineage=behaviors.has(Behavior::ExpiryPlainWindupRelaunch)&&e.phase==15&&
                     o.controller_timer698&&*o.controller_timer698==0.f&&
                     (e.entry?(o.kind==NativeBorgMotionKind::AirDashWindupEntry&&walking_push&&walking_push->timer698==0.f):
@@ -845,9 +846,9 @@ public:
                  if(e.expiring_snap_windup_step!=expiring_snap_step)return false;
                  bool rising_windup=false;
                  if(behaviors.has(Behavior::RisingPlainWindupRelaunch)&&e.phase==15&&
-                    last_offers_[0].controller_timer698==0.f&&o.controller_timer698==0.f&&actor.vertical_speed>0.f&&o.vertical_speed>0.f){
+                    last_offers_[source_index].controller_timer698==0.f&&o.controller_timer698==0.f&&actor.vertical_speed>0.f&&o.vertical_speed>0.f){
                      if(e.entry){
-                         const auto& lift=last_offers_[0].relaunch_motion;
+                         const auto& lift=last_offers_[source_index].relaunch_motion;
                          rising_windup=o.kind==NativeBorgMotionKind::AirDashWindupEntry&&
                              NormalGRedMovementDefinition::rising_relaunch_windup_length(behaviors,e.timer568)&&
                              prior==NativeBorgMotionKind::RelaunchActive&&lift&&!lift->direction&&
@@ -861,20 +862,20 @@ public:
                     const auto& selected=o.air_dash_floor->surface;
                     if(e.entry){
                         timed_floor_lineage=o.kind==NativeBorgMotionKind::AirDashWindupEntryFloor&&
-                            native_borg_motion_relaunch_floor(prior)&&last_offers_[0].relaunch_floor&&
-                            last_offers_[0].relaunch_floor->surface==selected&&actor.vertical_speed<0.f&&
-                            last_offers_[0].controller_timer698>1.f&&*o.controller_timer698>0.f;
+                            native_borg_motion_relaunch_floor(prior)&&last_offers_[source_index].relaunch_floor&&
+                            last_offers_[source_index].relaunch_floor->surface==selected&&actor.vertical_speed<0.f&&
+                            last_offers_[source_index].controller_timer698>1.f&&*o.controller_timer698>0.f;
                     }else if(o.kind==NativeBorgMotionKind::AirDashWindupFloor&&previous&&previous->phase==15&&
-                        previous->timed_relaunch_floor_windup&&last_offers_[0].air_dash_floor){
-                        const auto& start=last_offers_[0].air_dash_floor->surface;
+                        previous->timed_relaunch_floor_windup&&last_offers_[source_index].air_dash_floor){
+                        const auto& start=last_offers_[source_index].air_dash_floor->surface;
                         timed_floor_lineage=selected.height==start.height&&actor.position[1]==start.height&&
                             (selected==start||(terrain&&terrain->coplanar_crossing(start.triangle,selected.triangle,
                                 actor.position,o.proposed_position)));
                     }
                 }
                 if(e.timed_relaunch_floor_windup!=timed_floor_lineage)return false;
-                const auto* jump=actor.source_ground_motion&&last_offers_[0].jump_motion?&*last_offers_[0].jump_motion:nullptr;
-                const auto* relaunched=controller_relaunch_policy&&last_offers_[0].relaunch_motion?&*last_offers_[0].relaunch_motion:nullptr;
+                const auto* jump=actor.source_ground_motion&&last_offers_[source_index].jump_motion?&*last_offers_[source_index].jump_motion:nullptr;
+                const auto* relaunched=controller_relaunch_policy&&last_offers_[source_index].relaunch_motion?&*last_offers_[source_index].relaunch_motion:nullptr;
                 const f32 prior_speed=previous?previous->speed44:jump?jump->speed44:relaunched?relaunched->speed44:0;
                 s16 prior_resource=previous?previous->resource_after:jump?jump->resource_before:relaunched?relaunched->resource_after:0;
                 if(jump&&jump->phase==5)prior_resource=s16(std::max(0,int(prior_resource)-meter.lift_cost(jump->entry)));
@@ -897,7 +898,7 @@ public:
                 if(e.phase==15){
                     if(e.entry){
                         if((!jump&&!relaunched&&(!previous||previous->phase!=17))||(jump&&(jump->phase!=5&&jump->phase!=6))||
-                            (jump&&jump->ground_loss&&last_offers_[0].walk_ledge&&last_offers_[0].walk_ledge->timer698>0&&!controller_ground_loss_air_policy)||
+                            (jump&&jump->ground_loss&&last_offers_[source_index].walk_ledge&&last_offers_[source_index].walk_ledge->timer698>0&&!controller_ground_loss_air_policy)||
                            e.stage_before||timer<5||timer>9||std::floor(timer)!=timer)return false;
                         speed=f32(speed*.5f);vertical=f32(vertical*.5f);
                          if((o.kind!=NativeBorgMotionKind::AirDashWindupEntry&&!windup_entry_floor&&!controller_windup_entry_push_frame)||touchdown||
@@ -974,12 +975,12 @@ public:
                  const auto& e=*o.relaunch_motion;
                  const bool timed_walk_tap=behaviors.has(Behavior::TimedWalkReleasePush)&&e.entry&&!e.direction&&
                      o.kind==NativeBorgMotionKind::RelaunchEntry&&o.controller_timer698>0.f&&
-                     prior==NativeBorgMotionKind::GroundLossAir&&last_offers_[0].walk_ledge&&last_offers_[0].walk_ledge->walk_origin;
+                     prior==NativeBorgMotionKind::GroundLossAir&&last_offers_[source_index].walk_ledge&&last_offers_[source_index].walk_ledge->walk_origin;
                  if(e.timed_walk_relaunch_tap!=timed_walk_tap)return false;
                 if(controller_relaunch_push_frame&&(e.entry!=relaunch_entry_push||*o.controller_timer698!=0.f))return false;
-                const auto* previous=actor.source_ground_motion&&last_offers_[0].relaunch_motion?&*last_offers_[0].relaunch_motion:nullptr;
-                const auto* air=actor.source_ground_motion&&last_offers_[0].air_motion?&*last_offers_[0].air_motion:nullptr;
-                const auto* jump=actor.source_ground_motion&&last_offers_[0].jump_motion?&*last_offers_[0].jump_motion:nullptr;
+                const auto* previous=actor.source_ground_motion&&last_offers_[source_index].relaunch_motion?&*last_offers_[source_index].relaunch_motion:nullptr;
+                const auto* air=actor.source_ground_motion&&last_offers_[source_index].air_motion?&*last_offers_[source_index].air_motion:nullptr;
+                const auto* jump=actor.source_ground_motion&&last_offers_[source_index].jump_motion?&*last_offers_[source_index].jump_motion:nullptr;
                 const f32 speed=previous?previous->speed44:air?air->speed44:jump?jump->speed44:0;
                 const s16 resource=previous?previous->resource_after:air?air->resource_after:jump?jump->resource_before:0;
                 if(!std::isfinite(e.speed_before)||e.speed_before<0||e.speed_before>30||e.speed_before!=speed||
@@ -991,14 +992,14 @@ public:
                           prior==NativeBorgMotionKind::AirDashWindupPush;
                       const bool plain_handoff=completed_windup&&
                           prior==NativeBorgMotionKind::AirDashWindup&&o.kind==NativeBorgMotionKind::RelaunchEntry&&
-                          last_offers_[0].controller_timer698&&o.controller_timer698;
+                          last_offers_[source_index].controller_timer698&&o.controller_timer698;
                       const bool timed_plain_handoff=plain_handoff&&behaviors.has(Behavior::TimedPlainWindupRelaunch)&&
-                          *last_offers_[0].controller_timer698>1.f&&
-                          *o.controller_timer698==*last_offers_[0].controller_timer698-1.f;
+                          *last_offers_[source_index].controller_timer698>1.f&&
+                          *o.controller_timer698==*last_offers_[source_index].controller_timer698-1.f;
                        const bool expiry_plain_handoff=plain_handoff&&behaviors.has(Behavior::ExpiryPlainWindupRelaunch)&&
-                           air->walk_expiry_windup&&*last_offers_[0].controller_timer698==0.f&&*o.controller_timer698==0.f;
+                           air->walk_expiry_windup&&*last_offers_[source_index].controller_timer698==0.f&&*o.controller_timer698==0.f;
                        bool expiring_walk_handoff=false;
-                       if(plain_handoff&&*last_offers_[0].controller_timer698==0.f&&*o.controller_timer698==0.f&&
+                       if(plain_handoff&&*last_offers_[source_index].controller_timer698==0.f&&*o.controller_timer698==0.f&&
                            ((behaviors.has(Behavior::WalkExpiringAirDashRelaunch)&&
                               air->expiring_walk_windup_step==NormalGRedMovementDefinition::expiring_walk_windup_end(air->expiring_walk_windup_short))||
                             (behaviors.has(Behavior::WalkExpiringAirDashSnapRelaunch)&&
@@ -1007,14 +1008,14 @@ public:
                            expiring_walk_handoff=!e.direction&&travel==actor.facing&&o.facing==actor.facing&&actor.vertical_speed<0.f&&
                                e.vertical_before>0.f&&o.vertical_speed>0.f;
                        }
-                      const bool floor_handoff_clock=last_offers_[0].controller_timer698&&o.controller_timer698&&
-                          NormalGRedMovementDefinition::floor_windup_handoff_clock(behaviors,*last_offers_[0].controller_timer698,*o.controller_timer698);
+                      const bool floor_handoff_clock=last_offers_[source_index].controller_timer698&&o.controller_timer698&&
+                          NormalGRedMovementDefinition::floor_windup_handoff_clock(behaviors,*last_offers_[source_index].controller_timer698,*o.controller_timer698);
                       const bool timed_floor_handoff=completed_windup&&behaviors.has(Behavior::TimedSnapWindupRelaunch)&&
                           prior==NativeBorgMotionKind::AirDashWindupFloor&&air->timed_relaunch_floor_windup&&
-                          last_offers_[0].air_dash_floor&&floor_handoff_clock&&
+                          last_offers_[source_index].air_dash_floor&&floor_handoff_clock&&
                           o.kind==NativeBorgMotionKind::RelaunchEntry;
                       if(timed_floor_handoff){
-                          const auto& floor=last_offers_[0].air_dash_floor->surface;
+                          const auto& floor=last_offers_[source_index].air_dash_floor->surface;
                           NativeBorgStaticSurface start,end;
                           BattlePoint facing;source_heading_xz(e.travel5ae,&facing.x,&facing.z);
                           if(!terrain||actor.vertical_speed||e.direction||facing!=actor.facing||o.facing!=actor.facing||
@@ -1027,7 +1028,7 @@ public:
                            relaunch_floor?NativeBorgMotionKind::RelaunchEntryFloor:NativeBorgMotionKind::RelaunchEntry;
                         const bool rising_handoff=plain_handoff&&behaviors.has(Behavior::RisingPlainWindupRelaunch)&&
                             air->rising_relaunch_windup&&air->resource_before-air->resource_after==meter.cost(AirMeterCharge::DashHandoff)&&
-                            last_offers_[0].controller_timer698==0.f&&o.controller_timer698==0.f&&actor.vertical_speed>0.f&&o.vertical_speed>0.f&&
+                            last_offers_[source_index].controller_timer698==0.f&&o.controller_timer698==0.f&&actor.vertical_speed>0.f&&o.vertical_speed>0.f&&
                             !e.direction&&o.facing==actor.facing;
                         if(previous||(!air&&!jump)||(air&&air->phase!=16&&air->phase!=17&&
                              !windup_push_handoff&&!timed_plain_handoff&&!expiry_plain_handoff&&!timed_floor_handoff&&!expiring_walk_handoff&&!rising_handoff)||
@@ -1073,15 +1074,15 @@ public:
                 if(o.proposed_position!=expected)return false;
             }
             if(jump_policy){
-                const auto* previous=actor.source_ground_motion&&last_offers_[0].jump_motion?&*last_offers_[0].jump_motion:nullptr;
+                const auto* previous=actor.source_ground_motion&&last_offers_[source_index].jump_motion?&*last_offers_[source_index].jump_motion:nullptr;
                 if(o.kind==NativeBorgMotionKind::Ground&&previous&&previous->next_selector&&o.landing_target!=12)return false;
                 if(o.jump_motion){
                      const auto& e=*o.jump_motion;
                      const bool timed_walk_fall=behaviors.has(Behavior::TimedWalkReleasePush)&&e.phase==6&&e.relaunch_origin&&
                           o.controller_timer698>0.f&&!e.held_jump&&(!e.drift_heading||timed_release_down)&&
                          (o.kind==NativeBorgMotionKind::JumpAir||controller_fall_push_frame)&&
-                         (e.entry?(prior==NativeBorgMotionKind::RelaunchEntry&&last_offers_[0].relaunch_motion&&
-                             last_offers_[0].relaunch_motion->timed_walk_relaunch_tap):
+                         (e.entry?(prior==NativeBorgMotionKind::RelaunchEntry&&last_offers_[source_index].relaunch_motion&&
+                             last_offers_[source_index].relaunch_motion->timed_walk_relaunch_tap):
                              ((prior==NativeBorgMotionKind::JumpAir&&previous&&previous->timed_walk_relaunch_fall)||
                                 timed_release_second||timed_release_third||timed_release_down));
                       if(e.timed_walk_relaunch_fall!=timed_walk_fall||
@@ -1099,9 +1100,9 @@ public:
                     if(e.relaunch_coarse57d>3||(!e.relaunch_origin&&e.relaunch_coarse57d)||
                        (e.relaunch_origin&&(!controller_relaunch_policy||e.ground_loss)))return false;
                     const f32 previous_speed=previous?previous->speed44:
-                        controller_air_policy&&last_offers_[0].air_motion?last_offers_[0].air_motion->speed44:
-                        controller_relaunch_policy&&last_offers_[0].relaunch_motion?last_offers_[0].relaunch_motion->speed44:
-                        actor.source_ground_motion&&last_offers_[0].walk_ledge?last_offers_[0].walk_ledge->speed44:0.f;
+                        controller_air_policy&&last_offers_[source_index].air_motion?last_offers_[source_index].air_motion->speed44:
+                        controller_relaunch_policy&&last_offers_[source_index].relaunch_motion?last_offers_[source_index].relaunch_motion->speed44:
+                        actor.source_ground_motion&&last_offers_[source_index].walk_ledge?last_offers_[source_index].walk_ledge->speed44:0.f;
                     if(e.speed_before!=previous_speed)return false;
                     if(e.phase==4){
                         const bool first=prior==NativeBorgMotionKind::Ground||
@@ -1113,7 +1114,7 @@ public:
                     }else if(e.phase==7){
                         const bool first=prior==NativeBorgMotionKind::JumpTouchdown||prior==NativeBorgMotionKind::GroundLossTouchdown;
                         if(o.kind!=NativeBorgMotionKind::JumpLanding||e.entry!=first||
-                            e.air_dash_origin!=(previous?previous->air_dash_origin:bool(controller_air_policy&&last_offers_[0].air_motion))||
+                            e.air_dash_origin!=(previous?previous->air_dash_origin:bool(controller_air_policy&&last_offers_[source_index].air_motion))||
                             e.relaunch_origin!=(previous&&previous->relaunch_origin)||
                             e.relaunch_coarse57d!=(previous?previous->relaunch_coarse57d:0)||
                            (!first&&(prior!=NativeBorgMotionKind::JumpLanding||!previous||previous->next_selector!=7))||
@@ -1130,8 +1131,8 @@ public:
                                 e.speed44!=f32(e.move_speed*push_damping))return false;
                          }else if(e.move_speed!=e.speed44)return false;
                     }else{
-                        const auto* air_previous=controller_air_policy&&last_offers_[0].air_motion?&*last_offers_[0].air_motion:nullptr;
-                        const auto* relaunch_previous=controller_relaunch_policy&&last_offers_[0].relaunch_motion?&*last_offers_[0].relaunch_motion:nullptr;
+                        const auto* air_previous=controller_air_policy&&last_offers_[source_index].air_motion?&*last_offers_[source_index].air_motion:nullptr;
+                        const auto* relaunch_previous=controller_relaunch_policy&&last_offers_[source_index].relaunch_motion?&*last_offers_[source_index].relaunch_motion:nullptr;
                         if((!previous&&!air_previous&&!relaunch_previous)||(previous&&previous->ground_loss)||o.ordered_ground||o.walk_ledge||
                             (o.kind!=NativeBorgMotionKind::JumpAir&&o.kind!=NativeBorgMotionKind::JumpTouchdown&&!controller_fall_push_frame))return false;
                         auto expected=actor.position;f32 x=0,z=0,speed=e.speed_before,vertical=actor.vertical_speed,change=0,acceleration=0;
@@ -1199,7 +1200,7 @@ public:
             }
              bool inclined_departure=false;
              if(ordered_policy&&(o.kind==NativeBorgMotionKind::Ground||departure)){
-                const auto* previous=actor.source_ground_motion&&last_offers_[0].ordered_ground?&*last_offers_[0].ordered_ground:nullptr;
+                const auto* previous=actor.source_ground_motion&&last_offers_[source_index].ordered_ground?&*last_offers_[source_index].ordered_ground:nullptr;
                 if(!o.ordered_ground){
                     if(o.action==BattleMvpAction::GroundDash||(previous&&previous->next_selector))return false;
                 }else{
@@ -1283,7 +1284,7 @@ public:
                 }
             }
                const bool expiring_walking_push=behaviors.has(Behavior::WalkExpiringDirectRelaunch)&&walking_push&&
-                   walking_push->timer698==1.f&&last_offers_[0].controller_timer698==1.f;
+                   walking_push->timer698==1.f&&last_offers_[source_index].controller_timer698==1.f;
                const bool descending_up_entry=walking_push&&o.controller_timer698==0.f&&o.relaunch_motion&&o.relaunch_motion->entry&&o.relaunch_motion->direction&&
                    o.relaunch_motion->vertical_before<0.f&&o.vertical_speed<0.f&&player_frame&&
                    native_gred_relaunch_up_turn(*player_frame,actor.facing,o.relaunch_motion->travel5ae,o.facing);
@@ -1291,8 +1292,8 @@ public:
                    (walking_push->timer698==0.f||expiring_walking_push)&&o.kind==NativeBorgMotionKind::RelaunchEntry&&descending_up_entry;
                const bool direct_expiring_entry_push=behaviors.has(Behavior::WalkExpiringDirectRelaunchPush)&&expiring_walking_push&&
                    controller_relaunch_push_frame&&relaunch_entry_push&&o.static_push&&descending_up_entry&&
-                   NormalGRedMovementDefinition::expiry_relaunch_push_faces(last_offers_[0].static_push->surface.triangle,
-                       last_offers_[0].static_push->angle,o.static_push->surface.triangle,o.static_push->angle,
+                   NormalGRedMovementDefinition::expiry_relaunch_push_faces(last_offers_[source_index].static_push->surface.triangle,
+                       last_offers_[source_index].static_push->angle,o.static_push->surface.triangle,o.static_push->angle,
                        behaviors.has(Behavior::WalkExpiringAdjacentRelaunchPush));
               bool direct_timed_relaunch=false;
               if(behaviors.has(Behavior::WalkTimedDirectRelaunch)&&walking_push&&walking_push->timer698>1.f&&
@@ -1329,14 +1330,14 @@ public:
                 const auto& e=*o.walk_ledge;
                 if(!terrain||e.frame_start!=actor.position||!std::isfinite(e.timer698)||e.timer698<0||e.timer698>30||
                    !std::isfinite(e.speed44)||e.speed44<0||e.speed44>(dash_ledge_policy?25.f:12.f))return false;
-                if(actor.source_ground_motion&&!last_offers_[0].walk_ledge&&
-                   (!jump_policy||o.kind!=NativeBorgMotionKind::Ground||!last_offers_[0].jump_motion||
-                    (last_offers_[0].jump_motion->next_selector&&o.landing_target!=12)))return false;
-                const auto previous_timer=controller_landing_jump_policy&&actor.source_ground_motion?*last_offers_[0].controller_timer698:
-                    actor.source_ground_motion&&last_offers_[0].walk_ledge?last_offers_[0].walk_ledge->timer698:0.f;
+                if(actor.source_ground_motion&&!last_offers_[source_index].walk_ledge&&
+                   (!jump_policy||o.kind!=NativeBorgMotionKind::Ground||!last_offers_[source_index].jump_motion||
+                    (last_offers_[source_index].jump_motion->next_selector&&o.landing_target!=12)))return false;
+                const auto previous_timer=controller_landing_jump_policy&&actor.source_ground_motion?*last_offers_[source_index].controller_timer698:
+                    actor.source_ground_motion&&last_offers_[source_index].walk_ledge?last_offers_[source_index].walk_ledge->timer698:0.f;
                 const f32 timer=o.kind==NativeBorgMotionKind::GroundLossEntry?30.f:std::max(0.f,previous_timer-1.f);
                 const bool walked=walk_loss_push_policy&&
-                    (departure?!o.ordered_ground:ground_loss&&last_offers_[0].walk_ledge&&last_offers_[0].walk_ledge->walk_origin);
+                    (departure?!o.ordered_ground:ground_loss&&last_offers_[source_index].walk_ledge&&last_offers_[source_index].walk_ledge->walk_origin);
                 if(e.walk_origin!=walked)return false;
                 NativeBorgStaticSurface selected;
                 if(e.timer698!=timer||!terrain->static_surface(o.proposed_position[0],o.proposed_position[2],actor.position[1],&selected)||
@@ -1373,9 +1374,9 @@ public:
                        (entry?prior!=NativeBorgMotionKind::GroundDeparture:
                          prior!=NativeBorgMotionKind::GroundLossEntry&&prior!=NativeBorgMotionKind::GroundLossAir&&
                          prior!=NativeBorgMotionKind::GroundLossPush)||
-                       (entry&&actor.vertical_speed!=0)||e.travel5ae!=last_offers_[0].walk_ledge->travel5ae||o.facing!=actor.facing||
+                       (entry&&actor.vertical_speed!=0)||e.travel5ae!=last_offers_[source_index].walk_ledge->travel5ae||o.facing!=actor.facing||
                         (e.timer698>0&&e.drift_heading))return false;
-                    const f32 travel_speed=f32(last_offers_[0].walk_ledge->speed44*bits_to_f32(0x3f7d70a4u));
+                    const f32 travel_speed=f32(last_offers_[source_index].walk_ledge->speed44*bits_to_f32(0x3f7d70a4u));
                     if(ground_loss_push){
                         // One witnessed boundary only: a neutral update
                         // immediately after the accepted positive-timer push.
@@ -1488,9 +1489,9 @@ public:
                 //the old policy deliberately cannot borrow this entry contract.
                 const bool history_entry=(history_push_policy&&
                     (native_borg_motion_recovery(prior)||native_borg_motion_relaunch(prior)))||
-                     (controller_air_fall_push_policy&&native_borg_motion_recovery(prior)&&last_offers_[0].air_motion&&
-                     last_offers_[0].air_motion->phase==17&&last_offers_[0].air_motion->next_selector==6&&last_offers_[0].air_motion->lower_done)||
-                    (controller_relaunch_fall_push_policy&&native_borg_motion_relaunch(prior)&&last_offers_[0].relaunch_motion);
+                     (controller_air_fall_push_policy&&native_borg_motion_recovery(prior)&&last_offers_[source_index].air_motion&&
+                     last_offers_[source_index].air_motion->phase==17&&last_offers_[source_index].air_motion->next_selector==6&&last_offers_[source_index].air_motion->lower_done)||
+                    (controller_relaunch_fall_push_policy&&native_borg_motion_relaunch(prior)&&last_offers_[source_index].relaunch_motion);
                 const bool active_prior=native_borg_motion_active_entry(prior)||native_borg_motion_active_update(prior);
                 const bool recovery_prior=active_prior||
                     native_borg_motion_recovery(prior);
@@ -1526,8 +1527,8 @@ public:
                    std::abs(e.integrated_position[1]-actor.position[1])>50||
                    !terrain->static_surface(e.integrated_position[0],e.integrated_position[2],actor.position[1],&surface)||
                    surface!=e.surface||!std::isfinite(surface.height)||e.integrated_position[1]>surface.height)return false;
-                 if((timed_release_second||timed_release_third)&&(surface.triangle!=last_offers_[0].static_push->surface.triangle||
-                    surface.normal!=last_offers_[0].static_push->surface.normal))return false;
+                 if((timed_release_second||timed_release_third)&&(surface.triangle!=last_offers_[source_index].static_push->surface.triangle||
+                    surface.normal!=last_offers_[source_index].static_push->surface.normal))return false;
                  s16 angle=0;BattleMvpVec projected;
                  if(!source_surface_angle(surface.normal,&angle)||angle!=e.angle||
                     (ground_loss_push?(angle<=(o.walk_ledge->timer698>0?6144:10240)||
@@ -1544,12 +1545,12 @@ public:
                  bool expiry_same_face=false;
                  const auto* jump=o.jump_motion?&*o.jump_motion:nullptr;
                  if(checked.terrain_blocked&&behaviors.has(Behavior::WalkReleaseExpirySameFacePush)&&controller_fall_push_frame&&
-                    prior==NativeBorgMotionKind::StaticPush&&last_offers_[0].jump_motion&&last_offers_[0].jump_motion->down_timed_release_push&&
-                    last_offers_[0].static_push&&last_offers_[0].controller_timer698==1.f&&o.controller_timer698==0.f&&
+                    prior==NativeBorgMotionKind::StaticPush&&last_offers_[source_index].jump_motion&&last_offers_[source_index].jump_motion->down_timed_release_push&&
+                    last_offers_[source_index].static_push&&last_offers_[source_index].controller_timer698==1.f&&o.controller_timer698==0.f&&
                     jump&&jump->phase==6&&jump->relaunch_origin&&!jump->entry&&!jump->held_jump&&jump->drift_heading&&
                     player_frame&&actor.vertical_speed<0.f&&NormalGRedMovementDefinition::down_timed_release_face(surface.triangle,angle)&&
-                    last_offers_[0].static_push->surface.triangle==surface.triangle&&last_offers_[0].static_push->surface.normal==surface.normal&&
-                    last_offers_[0].static_push->angle==angle){
+                    last_offers_[source_index].static_push->surface.triangle==surface.triangle&&last_offers_[source_index].static_push->surface.normal==surface.normal&&
+                    last_offers_[source_index].static_push->angle==angle){
                      CharacterMovementHeadingFrame heading;
                      NativeBorgStaticSurface start;
                      expiry_same_face=native_borg_source_heading_frame(*player_frame,actor.facing,&heading)&&
@@ -1572,13 +1573,13 @@ public:
             const bool air=phase==2||phase==3;
             NativeBorgContactRequest request{actor.position,other.position,delta,config_.arena_half,config_.actor_radius,config_.actor_height,config_.step_height,air?false:actor.grounded,other.health!=0};
             if(air)request.vertical_end_y=o.proposed_position[1];
-            if(!native_borg_resolve_contact(request,terrain,&source_contact))return false;
-            if((push||floor_snap||ledge_policy||ordered_policy)&&(source_contact.body_hit||source_contact.bounds_hit||source_contact.terrain_blocked||
-               source_contact.position[0]!=o.proposed_position[0]||source_contact.position[2]!=o.proposed_position[2]))return false;
+            if(!native_borg_resolve_contact(request,terrain,contact))return false;
+            if((push||floor_snap||ledge_policy||ordered_policy)&&(contact->body_hit||contact->bounds_hit||contact->terrain_blocked||
+               contact->position[0]!=o.proposed_position[0]||contact->position[2]!=o.proposed_position[2]))return false;
             if(vertical){
                 f32 y=0;
                 if((!moving&&(delta!=BattlePoint{}||o.facing!=actor.facing))||
-                   !floor(terrain,source_contact.position[0],source_contact.position[2],actor.position[1],&y)||
+                   !floor(terrain,contact->position[0],contact->position[2],actor.position[1],&y)||
                    std::abs(o.proposed_position[1]-actor.position[1])>50||
                    (o.action!=(air_dash?BattleMvpAction::AirDash:phase==4?BattleMvpAction::Land:BattleMvpAction::Jump)))return false;
                 if(phase==1){
@@ -1624,9 +1625,14 @@ public:
                 //the ordinary inward horizontal contact before this check.
                 if(moving&&air&&other.health&&std::min(actor.position[1],o.proposed_position[1])<other.position[1]+config_.actor_height&&
                    std::max(actor.position[1],o.proposed_position[1])>other.position[1]-config_.actor_height&&
-                   std::hypot(source_contact.position[0]-other.position[0],source_contact.position[2]-other.position[2])<2*config_.actor_radius-.001f)return false;
-                source_contact.position[1]=o.proposed_position[1];source_contact.grounded=phase!=2;
-            }else if(!source_contact.grounded||std::abs(source_contact.position[1]-o.proposed_position[1])>.01f)return false;
+                   std::hypot(contact->position[0]-other.position[0],contact->position[2]-other.position[2])<2*config_.actor_radius-.001f)return false;
+                contact->position[1]=o.proposed_position[1];contact->grounded=phase!=2;
+            }else if(!contact->grounded||std::abs(contact->position[1]-o.proposed_position[1])>.01f)return false;
+            return true;
+        };
+        NativeBorgContactResult source_contact;
+        if(source_offer){
+            if(!prepare_source(0,*source_offer,actors_[0],actors_[1],pads[0],pads[1],&source_contact))return false;
         }
         if(opponent_ai)for(unsigned i=1;i<actor_count();++i)pad_store[i]=ai_input(i);
         //Preflight terrain before mutating a tick. A missing grid is not floor0.
