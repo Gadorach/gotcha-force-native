@@ -2,6 +2,7 @@
 // identically, and the touch overlay must never fight a physical controller.
 #include "engine/core/headless_backends.hpp"
 #include "engine/input/input_router.hpp"
+#include "platform/pc/keyboard_layout.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -51,6 +52,21 @@ int main() {
         const gf::GamePadState pad = router.route(devices, 0);
         check(pad.a, "keyboard A reaches the game");
         check(!pad.b, "unpressed button stays up");
+        ++cases;
+    }
+
+    // 1b. The second keyboard pad reaches port 1 and never leaks to port 0.
+    {
+        gf::InputSnapshot devices;
+        devices.port_count = 2;
+        gf::pc::KeyboardPad second;
+        second.a = true;
+        second.axis_down = true;
+        gf::pc::map_keyboard_pad(second, &devices.pad(1));
+        const gf::GamePadState first = router.route(devices, 0);
+        const gf::GamePadState other = router.route(devices, 1);
+        check(!first.a && first.stick_y == 0, "P2 keyboard pad does not leak to port 0");
+        check(other.a && other.stick_y > 0, "P2 keyboard pad reaches port 1");
         ++cases;
     }
 
