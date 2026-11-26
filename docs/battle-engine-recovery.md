@@ -173,6 +173,13 @@ credited, hit counts, an eight-entry history ring, a per-team force pool
 another team's slot and type 4 for a same-team slot other than the defender;
 the duel has only the attacker slot, so it records type 3.
 
+The opt-in `force_policy` / `team_ledger` / `actor_flag3e6` /
+`actor_flag1ea` config reproduces the `8002F8DC` mode 0/1/2 force gates, the
+`+0x109` counter branch and the last-attacker/receiver writes. The default
+policy keeps the simple always-decrement pool. A nonzero defender
+`damage-kind` skips the ledger, matching the source's early return, while the
+health damage still applies.
+
 The native engine is already data-driven in the same sense as the original: a
 package declares moves, buttons and ranges, and shared systems execute them. The
 remaining work is to move the **open** collision/pair/reaction logic into shared

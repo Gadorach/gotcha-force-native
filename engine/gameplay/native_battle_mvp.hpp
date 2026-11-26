@@ -149,6 +149,8 @@ struct BattleMvpEmitter {
     u32 id=0;BattleMvpVec position{};
     u16 remaining=0;u8 deployment_move=BorgBattleActionState::none;
 };
+struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
+struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
 struct BattleMvpConfig {
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
     unsigned health=100;
@@ -157,6 +159,12 @@ struct BattleMvpConfig {
     f32 dash_speed=12;unsigned dash_duration=12,dash_cooldown=30,air_dashes=1;
     f32 damage_scalar=1; // battle/team scalar from the recovered settings ladder
     std::array<unsigned,2> team_force{}; // recovered ledger pool; zero = untracked
+    // Opt-in recovery of the 8002F8DC force gate. Disabled keeps the simple
+    // always-decrement pool used by the duel.
+    std::array<BattleMvpForcePolicy,2> force_policy{};
+    std::array<BattleMvpTeamLedgerFlags,2> team_ledger{};
+    std::array<bool,2> actor_flag3e6{},actor_flag1ea{};
+    bool force_global1f=false;
     //Native-only static-floor query reference, NOT an air spawn or recovered
     //actor constructor. Default0 preserves the ordinary MVP's selection.
     std::array<f32,2> spawn_query_y{};
@@ -433,6 +441,8 @@ public:
         if(package&&(config.packages[1]->movement==BorgBattleMovement::NormalGRed||
            (config.packages[0]->movement==BorgBattleMovement::NormalGRed&&config.packages[1]->movement!=BorgBattleMovement::Stationary)))return false;
         NativeBattleMvp next;next.config_=config;next.team_force_=config.team_force;
+        next.force_global1f_=config.force_global1f;
+        for(unsigned i=0;i<2;++i)next.force_counter10a_[i]=config.team_ledger[i].counter10a;
         if(package)for(unsigned i=0;i<2;++i){
             const auto& p=*config.packages[i];
             if(!borg_gameplay_profile_valid(p))return false;
@@ -1946,6 +1956,8 @@ public:
     }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
     const auto& team_force()const{return team_force_;}const auto& team_tally()const{return team_tally_;}
+    const auto& force_counter10a()const{return force_counter10a_;}
+    u8 last_attacker()const{return last_attacker_;}u8 last_receiver()const{return last_receiver_;}
     const auto& impact_records()const{return impact_records_;}
     const auto& walk_pulses()const{return walk_pulses_;}
     const auto& smoke_clouds()const{return smoke_clouds_;}
@@ -2333,6 +2345,40 @@ private:
         bool ok=false;std::string error;
         return battle_pair_relation_ok(a,b,2,&ok,&error)&&ok;
     }
+    // 8002F8DC force pool. The opt-in policy reproduces the mode-dependent
+    // decrement and the last-attacker/last-receiver writes.
+    void ledger_force(unsigned owner,u8 recipient,unsigned amount){
+        auto& target=actors_[recipient];
+        const u8 team=target.team;
+        bool decrement=true,b=false;
+        if(config_.force_policy[team].enabled){
+            const auto& policy=config_.force_policy[team];
+            const auto& flags=config_.team_ledger[team];
+            const bool flag3e6=config_.actor_flag3e6[recipient];
+            if(policy.mode==0){
+                decrement=flags.flag108&&(team!=0||!flag3e6);
+                if(flags.flag109&&config_.actor_flag1ea[recipient]&&force_counter10a_[team]>0){
+                    --force_counter10a_[team];
+                    if(!force_global1f_){
+                        if(actors_[owner].damage_kind==0)last_attacker_=u8(owner);
+                        b=true;last_receiver_=u8(recipient);
+                    }
+                }
+            }else if(policy.mode==1){
+                decrement=team!=0||!flag3e6;
+            }else{
+                decrement=flags.flag_f6?!flag3e6:flag3e6;
+            }
+        }
+        if(decrement)team_force_[team]=team_force_[team]>=amount?team_force_[team]-amount:0u;
+        if(team_force_[team]<1){
+            team_force_[team]=0;
+            if(!force_global1f_&&!b){
+                if(actors_[owner].damage_kind==0)last_attacker_=u8(owner);
+                last_receiver_=u8(recipient);
+            }
+        }
+    }
     u16 package_damage(unsigned owner,u8 recipient,u16 base){
         if(owner>=config_.packages.size()||!config_.packages[owner])return base;
         const auto& profile=*config_.packages[owner];
@@ -2353,18 +2399,20 @@ private:
         const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
         damage(recipient,amount);impact(position,false);
         auto& target=actors_[recipient];
-        ++target.hits_taken;target.damage_taken+=amount;
-        if(owner!=recipient){
-            auto& attacker=actors_[owner];++attacker.hits_dealt;attacker.damage_credited+=amount;
-            if(attacker.damage_kind==0)team_tally_[attacker.team]+=100u;
-        }
-        team_force_[target.team]=team_force_[target.team]>=amount?team_force_[target.team]-amount:0u;
-        for(unsigned p=0;p<2;++p){
-            if(p==recipient)continue;
-            auto& slot=actors_[p];const u16 type=slot.team==target.team?4:3; // actor index doubles as the duel team
-            slot.hit_history[slot.hit_history_index]={type,u16(recipient)};
-            slot.hit_history_index=u8((slot.hit_history_index+1)%8);
-            if(type==4){++slot.hit_history_count;slot.hit_history_total+=amount;}
+        if(target.damage_kind==0){ // 8002F8DC returns before any ledger write
+            ++target.hits_taken;target.damage_taken+=amount;
+            if(owner!=recipient){
+                auto& attacker=actors_[owner];++attacker.hits_dealt;attacker.damage_credited+=amount;
+                if(attacker.damage_kind==0)team_tally_[attacker.team]+=100u;
+            }
+            ledger_force(owner,recipient,amount);
+            for(unsigned p=0;p<2;++p){
+                if(p==recipient)continue;
+                auto& slot=actors_[p];const u16 type=slot.team==target.team?4:3; // actor index doubles as the duel team
+                slot.hit_history[slot.hit_history_index]={type,u16(recipient)};
+                slot.hit_history_index=u8((slot.hit_history_index+1)%8);
+                if(type==4){++slot.hit_history_count;slot.hit_history_total+=amount;}
+            }
         }
         record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);
     }
@@ -3445,7 +3493,9 @@ private:
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();
     }
     BattleMvpConfig config_;std::array<BattleMvpActor,2> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
-    std::array<unsigned,2> team_force_{};std::array<u32,2> team_tally_{};std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
+    std::array<unsigned,2> team_force_{};std::array<u32,2> team_tally_{};
+    std::array<u8,2> force_counter10a_{};bool force_global1f_=false;u8 last_attacker_=255,last_receiver_=255;
+    std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
     std::array<BattleMvpImpactRecord,16> impact_records_{};
     struct ImpactHazard {BattleMvpVec centre;u32 id=0;u8 owner=0,move=0;u16 remaining=0,radius=0,height=0,damage=0,warmup=0;};
     std::array<ImpactPattern<BorgImpactTrail>,8> impact_trails_{};

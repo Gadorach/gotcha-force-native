@@ -2597,6 +2597,47 @@ int main(){
               world.actors()[0].hit_history[0]==BattleMvpHitRecord{3,1}&&
               world.actors()[1].hit_history_index==0,
               "recovered damage ledger, team force, tally and history ring track the hit");
+        auto run=[&](BattleMvpConfig c,const std::shared_ptr<const BorgGameplayProfile>& opponent,
+                     std::array<unsigned,2> force={500,500}){
+            c.packages={ledger_attacker,opponent};
+            c.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+            c.team_force=force;
+            check(world.start(c),"force gate fixture");
+            for(unsigned i=0;i<12;++i)
+                check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                    {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"force gate step");
+        };
+        BattleMvpConfig gate;
+        gate.force_policy[1]={true,2};
+        run(gate,parse(target));
+        check(world.team_force()[1]==500,"mode-2 without 3E6 keeps force");
+        gate.actor_flag3e6[1]=true;
+        run(gate,parse(target));
+        check(world.team_force()[1]==480,"mode-2 with 3E6 decrements force");
+        gate={};gate.force_policy[1]={true,0};
+        run(gate,parse(target));
+        check(world.team_force()[1]==500,"mode-0 without flag108 keeps force");
+        gate.team_ledger[1].flag108=true;
+        run(gate,parse(target));
+        check(world.team_force()[1]==480,"mode-0 with flag108 decrements force");
+        gate={};gate.force_policy[1]={true,0};
+        gate.team_ledger[1].flag109=true;gate.team_ledger[1].counter10a=1;
+        gate.actor_flag1ea[1]=true;
+        run(gate,parse(target));
+        check(world.team_force()[1]==500&&world.force_counter10a()[1]==0&&
+              world.last_attacker()==0&&world.last_receiver()==1,
+              "mode-0 counter branch writes the last pair without a force change");
+        gate={};run(gate,parse(target));
+        check(world.last_attacker()==255&&world.last_receiver()==255,
+              "unreached force zero leaves the last pair unset");
+        BattleMvpConfig empty;empty.team_force={500,20};
+        run(empty,parse(target),{500,20});
+        check(world.team_force()[1]==0&&world.last_attacker()==0&&world.last_receiver()==1,
+              "force reaching zero records the last pair");
+        run(BattleMvpConfig{},parse(std::string(target)+"damage-kind=1\n"),{0,0});
+        check(world.actors()[1].health==480&&world.actors()[1].damage_taken==0&&
+              world.team_force()[1]==0&&world.team_force()[0]==0&&world.team_tally()[0]==0,
+              "nonzero defender kind skips the ledger but keeps the damage");
     }
     const std::string damage_text=std::string(player)+
         "damage-factors=0.867|1.13|1.15|1.0\n"
