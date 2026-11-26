@@ -1,592 +1,2093 @@
 {
   "count": 64,
-  "entries": [
-    {
-      "flags": 46,
-      "index": 0,
-      "mode": 0,
-      "pitch": 44,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 1
-    },
-    {
-      "flags": 536,
-      "index": 1,
-      "mode": 0,
-      "pitch": 40,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 281,
-      "index": 2,
-      "mode": 0,
-      "pitch": 32,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 130,
-      "index": 3,
-      "mode": 0,
-      "pitch": 0,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 294,
-      "index": 4,
-      "mode": 0,
-      "pitch": 36,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 0,
-      "index": 5,
-      "mode": -1,
-      "pitch": 13,
-      "repeat": 10,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 536,
-      "index": 6,
-      "mode": 0,
-      "pitch": 10,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 536,
-      "index": 7,
-      "mode": 0,
-      "pitch": 41,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 540,
-      "index": 8,
-      "mode": 0,
-      "pitch": 86,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 1,
-      "index": 9,
-      "mode": 2,
-      "pitch": 24,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 3,
-      "index": 10,
-      "mode": 2,
-      "pitch": 25,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 1
-    },
-    {
-      "flags": 544,
-      "index": 11,
-      "mode": 0,
-      "pitch": 110,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": -1,
-      "index": 12,
-      "mode": 2,
-      "pitch": 0,
-      "repeat": 3,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 1799,
-      "index": 13,
-      "mode": 0,
-      "pitch": 0,
-      "repeat": 5,
-      "validated": true,
-      "yaw": 64
-    },
-    {
-      "flags": 260,
-      "index": 14,
-      "mode": 0,
-      "pitch": 46,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 2050,
-      "index": 15,
-      "mode": 2,
-      "pitch": -1,
-      "repeat": 255,
-      "validated": true,
-      "yaw": -1
-    },
-    {
-      "flags": 258,
-      "index": 16,
-      "mode": 0,
-      "pitch": 46,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 536,
-      "index": 17,
-      "mode": 0,
-      "pitch": 1,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 544,
-      "index": 18,
-      "mode": 0,
-      "pitch": 102,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": -1,
-      "index": 19,
-      "mode": 1,
-      "pitch": 2,
-      "repeat": 3,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 260,
-      "index": 20,
-      "mode": 0,
-      "pitch": 4,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 1
-    },
-    {
-      "flags": 260,
-      "index": 21,
-      "mode": 0,
-      "pitch": 46,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 525,
-      "index": 22,
-      "mode": 3,
-      "pitch": 31,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 1
-    },
-    {
-      "flags": 13,
-      "index": 23,
-      "mode": 0,
-      "pitch": 13,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 121,
-      "index": 24,
-      "mode": 0,
-      "pitch": 13,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 294,
-      "index": 25,
-      "mode": 0,
-      "pitch": 24,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 13,
-      "index": 26,
-      "mode": 2,
-      "pitch": 28,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 124,
-      "index": 27,
-      "mode": 0,
-      "pitch": 14,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 536,
-      "index": 28,
-      "mode": 0,
-      "pitch": 0,
-      "repeat": 2,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 540,
-      "index": 29,
-      "mode": 0,
-      "pitch": 123,
-      "repeat": 1,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 14,
-      "index": 30,
-      "mode": 2,
-      "pitch": 28,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 0,
-      "index": 31,
-      "mode": -1,
-      "pitch": 14,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 8192,
-      "index": 32,
-      "mode": 1,
-      "pitch": -1,
-      "repeat": 255,
-      "validated": true,
-      "yaw": -1
-    },
-    {
-      "flags": 0,
-      "index": 33,
-      "mode": 0,
-      "pitch": 1,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 139,
-      "index": 34,
-      "mode": 0,
-      "pitch": 24,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 2000,
-      "index": 35,
-      "mode": 1,
-      "pitch": 100,
-      "repeat": 1,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 2,
-      "index": 36,
-      "mode": 1,
-      "pitch": 9,
-      "repeat": 1,
-      "validated": true,
-      "yaw": 0
-    },
-    {
-      "flags": 0,
-      "index": 37,
-      "mode": -1,
-      "pitch": 14,
-      "repeat": 0,
-      "validated": true,
-      "yaw": 2
-    },
-    {
-      "flags": 16384,
-      "index": 38,
-      "mode": 16,
-      "pitch": -1,
-      "repeat": 255,
-      "validated": false,
-      "yaw": -1
-    },
-    {
-      "flags": -1,
-      "index": 39,
-      "mode": 2,
-      "pitch": 0,
-      "repeat": 3,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 0,
-      "index": 40,
-      "mode": -1,
-      "pitch": 14,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 2
-    },
-    {
-      "flags": 526,
-      "index": 41,
-      "mode": 3,
-      "pitch": 11,
-      "repeat": 3,
-      "validated": false,
-      "yaw": 9
-    },
-    {
-      "flags": 258,
-      "index": 42,
-      "mode": 0,
-      "pitch": 2,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 1
-    },
-    {
-      "flags": -1,
-      "index": 43,
-      "mode": 0,
-      "pitch": 0,
-      "repeat": 2,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 46,
-      "index": 44,
-      "mode": 0,
-      "pitch": 31,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 1
-    },
-    {
-      "flags": 100,
-      "index": 45,
-      "mode": 0,
-      "pitch": 2,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 0,
-      "index": 46,
-      "mode": 0,
-      "pitch": 2,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 1544,
-      "index": 47,
-      "mode": 0,
-      "pitch": 0,
-      "repeat": 1,
-      "validated": false,
-      "yaw": 64
-    },
-    {
-      "flags": 260,
-      "index": 48,
-      "mode": 0,
-      "pitch": 46,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 526,
-      "index": 49,
-      "mode": 3,
-      "pitch": 1,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 1
-    },
-    {
-      "flags": 2058,
-      "index": 50,
-      "mode": 0,
-      "pitch": 0,
-      "repeat": 1,
-      "validated": false,
-      "yaw": 64
-    },
-    {
-      "flags": 258,
-      "index": 51,
-      "mode": 0,
-      "pitch": 46,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 526,
-      "index": 52,
-      "mode": 2,
-      "pitch": 7,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 1
-    },
-    {
-      "flags": 0,
-      "index": 53,
-      "mode": 0,
-      "pitch": 1,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 197,
-      "index": 54,
-      "mode": 0,
-      "pitch": 12,
-      "repeat": 16,
-      "validated": false,
-      "yaw": 10
-    },
-    {
-      "flags": 300,
-      "index": 55,
-      "mode": 0,
-      "pitch": 31,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 1
-    },
-    {
-      "flags": 30,
-      "index": 56,
-      "mode": 0,
-      "pitch": 2,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 540,
-      "index": 57,
-      "mode": 0,
-      "pitch": -120,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 536,
-      "index": 58,
-      "mode": 0,
-      "pitch": 30,
-      "repeat": 2,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 0,
-      "index": 59,
-      "mode": 2,
-      "pitch": 32,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 2
-    },
-    {
-      "flags": 16384,
-      "index": 60,
-      "mode": 0,
-      "pitch": -1,
-      "repeat": 255,
-      "validated": false,
-      "yaw": -1
-    },
-    {
-      "flags": -1,
-      "index": 61,
-      "mode": 2,
-      "pitch": 0,
-      "repeat": 3,
-      "validated": false,
-      "yaw": 0
-    },
-    {
-      "flags": 0,
-      "index": 62,
-      "mode": -1,
-      "pitch": 14,
-      "repeat": 0,
-      "validated": false,
-      "yaw": 2
-    },
-    {
-      "flags": 536,
-      "index": 63,
-      "mode": 0,
-      "pitch": 28,
-      "repeat": 2,
-      "validated": false,
-      "yaw": 0
-    }
-  ],
+  "default_table": {
+    "entries": [
+      {
+        "flags": 46,
+        "index": 0,
+        "mode": 0,
+        "pitch": 44,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 536,
+        "index": 1,
+        "mode": 0,
+        "pitch": 40,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 281,
+        "index": 2,
+        "mode": 0,
+        "pitch": 32,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 130,
+        "index": 3,
+        "mode": 0,
+        "pitch": 0,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 294,
+        "index": 4,
+        "mode": 0,
+        "pitch": 36,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 0,
+        "index": 5,
+        "mode": -1,
+        "pitch": 13,
+        "repeat": 10,
+        "yaw": 2
+      },
+      {
+        "flags": 536,
+        "index": 6,
+        "mode": 0,
+        "pitch": 10,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 536,
+        "index": 7,
+        "mode": 0,
+        "pitch": 41,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 540,
+        "index": 8,
+        "mode": 0,
+        "pitch": 86,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 1,
+        "index": 9,
+        "mode": 2,
+        "pitch": 24,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 3,
+        "index": 10,
+        "mode": 2,
+        "pitch": 25,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 544,
+        "index": 11,
+        "mode": 0,
+        "pitch": 110,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": -1,
+        "index": 12,
+        "mode": 2,
+        "pitch": 0,
+        "repeat": 3,
+        "yaw": 0
+      },
+      {
+        "flags": 1799,
+        "index": 13,
+        "mode": 0,
+        "pitch": 0,
+        "repeat": 5,
+        "yaw": 64
+      },
+      {
+        "flags": 260,
+        "index": 14,
+        "mode": 0,
+        "pitch": 46,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 2050,
+        "index": 15,
+        "mode": 2,
+        "pitch": -1,
+        "repeat": 255,
+        "yaw": -1
+      },
+      {
+        "flags": 258,
+        "index": 16,
+        "mode": 0,
+        "pitch": 46,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 536,
+        "index": 17,
+        "mode": 0,
+        "pitch": 1,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 544,
+        "index": 18,
+        "mode": 0,
+        "pitch": 102,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": -1,
+        "index": 19,
+        "mode": 1,
+        "pitch": 2,
+        "repeat": 3,
+        "yaw": 0
+      },
+      {
+        "flags": 260,
+        "index": 20,
+        "mode": 0,
+        "pitch": 4,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 260,
+        "index": 21,
+        "mode": 0,
+        "pitch": 46,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 525,
+        "index": 22,
+        "mode": 3,
+        "pitch": 31,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 13,
+        "index": 23,
+        "mode": 0,
+        "pitch": 13,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 121,
+        "index": 24,
+        "mode": 0,
+        "pitch": 13,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 294,
+        "index": 25,
+        "mode": 0,
+        "pitch": 24,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 13,
+        "index": 26,
+        "mode": 2,
+        "pitch": 28,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 124,
+        "index": 27,
+        "mode": 0,
+        "pitch": 14,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 536,
+        "index": 28,
+        "mode": 0,
+        "pitch": 0,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 540,
+        "index": 29,
+        "mode": 0,
+        "pitch": 123,
+        "repeat": 1,
+        "yaw": 0
+      },
+      {
+        "flags": 14,
+        "index": 30,
+        "mode": 2,
+        "pitch": 28,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 0,
+        "index": 31,
+        "mode": -1,
+        "pitch": 14,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 8192,
+        "index": 32,
+        "mode": 1,
+        "pitch": -1,
+        "repeat": 255,
+        "yaw": -1
+      },
+      {
+        "flags": 0,
+        "index": 33,
+        "mode": 0,
+        "pitch": 1,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 139,
+        "index": 34,
+        "mode": 0,
+        "pitch": 24,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 2000,
+        "index": 35,
+        "mode": 1,
+        "pitch": 100,
+        "repeat": 1,
+        "yaw": 0
+      },
+      {
+        "flags": 2,
+        "index": 36,
+        "mode": 1,
+        "pitch": 9,
+        "repeat": 1,
+        "yaw": 0
+      },
+      {
+        "flags": 0,
+        "index": 37,
+        "mode": -1,
+        "pitch": 14,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 16384,
+        "index": 38,
+        "mode": 16,
+        "pitch": -1,
+        "repeat": 255,
+        "yaw": -1
+      },
+      {
+        "flags": -1,
+        "index": 39,
+        "mode": 2,
+        "pitch": 0,
+        "repeat": 3,
+        "yaw": 0
+      },
+      {
+        "flags": 0,
+        "index": 40,
+        "mode": -1,
+        "pitch": 14,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 526,
+        "index": 41,
+        "mode": 3,
+        "pitch": 11,
+        "repeat": 3,
+        "yaw": 9
+      },
+      {
+        "flags": 258,
+        "index": 42,
+        "mode": 0,
+        "pitch": 2,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": -1,
+        "index": 43,
+        "mode": 0,
+        "pitch": 0,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 46,
+        "index": 44,
+        "mode": 0,
+        "pitch": 31,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 100,
+        "index": 45,
+        "mode": 0,
+        "pitch": 2,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 0,
+        "index": 46,
+        "mode": 0,
+        "pitch": 2,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 1544,
+        "index": 47,
+        "mode": 0,
+        "pitch": 0,
+        "repeat": 1,
+        "yaw": 64
+      },
+      {
+        "flags": 260,
+        "index": 48,
+        "mode": 0,
+        "pitch": 46,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 526,
+        "index": 49,
+        "mode": 3,
+        "pitch": 1,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 2058,
+        "index": 50,
+        "mode": 0,
+        "pitch": 0,
+        "repeat": 1,
+        "yaw": 64
+      },
+      {
+        "flags": 258,
+        "index": 51,
+        "mode": 0,
+        "pitch": 46,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 526,
+        "index": 52,
+        "mode": 2,
+        "pitch": 7,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 0,
+        "index": 53,
+        "mode": 0,
+        "pitch": 1,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 197,
+        "index": 54,
+        "mode": 0,
+        "pitch": 12,
+        "repeat": 16,
+        "yaw": 10
+      },
+      {
+        "flags": 300,
+        "index": 55,
+        "mode": 0,
+        "pitch": 31,
+        "repeat": 0,
+        "yaw": 1
+      },
+      {
+        "flags": 30,
+        "index": 56,
+        "mode": 0,
+        "pitch": 2,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 540,
+        "index": 57,
+        "mode": 0,
+        "pitch": -120,
+        "repeat": 0,
+        "yaw": 0
+      },
+      {
+        "flags": 536,
+        "index": 58,
+        "mode": 0,
+        "pitch": 30,
+        "repeat": 2,
+        "yaw": 0
+      },
+      {
+        "flags": 0,
+        "index": 59,
+        "mode": 2,
+        "pitch": 32,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 16384,
+        "index": 60,
+        "mode": 0,
+        "pitch": -1,
+        "repeat": 255,
+        "yaw": -1
+      },
+      {
+        "flags": -1,
+        "index": 61,
+        "mode": 2,
+        "pitch": 0,
+        "repeat": 3,
+        "yaw": 0
+      },
+      {
+        "flags": 0,
+        "index": 62,
+        "mode": -1,
+        "pitch": 14,
+        "repeat": 0,
+        "yaw": 2
+      },
+      {
+        "flags": 536,
+        "index": 63,
+        "mode": 0,
+        "pitch": 28,
+        "repeat": 2,
+        "yaw": 0
+      }
+    ],
+    "table": "80354160"
+  },
   "entry_size": 24,
   "kind": "gf-reaction-attack-table",
+  "models": [
+    {
+      "entries": [
+        {
+          "flags": 0,
+          "index": 0,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 1,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 2,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 3,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 4,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 5,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 6,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 7,
+          "mode": 4,
+          "pitch": -56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 8,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 9,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 10,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 11,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 12,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 13,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 14,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 15,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 16,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 17,
+          "mode": 4,
+          "pitch": 40,
+          "repeat": 7,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 18,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 19,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 20,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 21,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 22,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 23,
+          "mode": 4,
+          "pitch": -56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 24,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 25,
+          "mode": 4,
+          "pitch": 56,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 26,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 27,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 28,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 29,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 30,
+          "mode": 4,
+          "pitch": 48,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 31,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 32,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 33,
+          "mode": 4,
+          "pitch": 40,
+          "repeat": 7,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 34,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 35,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 266,
+          "index": 36,
+          "mode": 0,
+          "pitch": 38,
+          "repeat": 1,
+          "yaw": 1
+        },
+        {
+          "flags": 510,
+          "index": 37,
+          "mode": 1,
+          "pitch": 54,
+          "repeat": 2,
+          "yaw": 2
+        },
+        {
+          "flags": 594,
+          "index": 38,
+          "mode": 2,
+          "pitch": 122,
+          "repeat": 2,
+          "yaw": 2
+        },
+        {
+          "flags": 926,
+          "index": 39,
+          "mode": 3,
+          "pitch": -50,
+          "repeat": 3,
+          "yaw": 3
+        },
+        {
+          "flags": 1028,
+          "index": 40,
+          "mode": 3,
+          "pitch": 4,
+          "repeat": 4,
+          "yaw": 4
+        },
+        {
+          "flags": 1146,
+          "index": 41,
+          "mode": 4,
+          "pitch": 50,
+          "repeat": 11,
+          "yaw": 10
+        },
+        {
+          "flags": 3314,
+          "index": 42,
+          "mode": 12,
+          "pitch": -114,
+          "repeat": 13,
+          "yaw": 12
+        },
+        {
+          "flags": 1074,
+          "index": 43,
+          "mode": 11,
+          "pitch": -110,
+          "repeat": 6,
+          "yaw": 10
+        },
+        {
+          "flags": 1782,
+          "index": 44,
+          "mode": 6,
+          "pitch": -114,
+          "repeat": 9,
+          "yaw": 8
+        },
+        {
+          "flags": -1,
+          "index": 45,
+          "mode": 15,
+          "pitch": 26,
+          "repeat": 16,
+          "yaw": 16
+        },
+        {
+          "flags": 2560,
+          "index": 46,
+          "mode": 0,
+          "pitch": -1,
+          "repeat": 0,
+          "yaw": 2
+        },
+        {
+          "flags": 256,
+          "index": 47,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 10
+        },
+        {
+          "flags": 0,
+          "index": 48,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 1
+        },
+        {
+          "flags": 0,
+          "index": 49,
+          "mode": 0,
+          "pitch": 1,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 768,
+          "index": 50,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 51,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 3
+        },
+        {
+          "flags": 256,
+          "index": 52,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 9
+        },
+        {
+          "flags": 0,
+          "index": 53,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 3
+        },
+        {
+          "flags": 767,
+          "index": 54,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 55,
+          "mode": 11,
+          "pitch": -1,
+          "repeat": 0,
+          "yaw": 2
+        },
+        {
+          "flags": 256,
+          "index": 56,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 4
+        },
+        {
+          "flags": 1,
+          "index": 57,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 14,
+          "yaw": 1
+        },
+        {
+          "flags": 0,
+          "index": 58,
+          "mode": 0,
+          "pitch": 1,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 768,
+          "index": 59,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 60,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 3
+        },
+        {
+          "flags": 767,
+          "index": 61,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 2304,
+          "index": 62,
+          "mode": 14,
+          "pitch": 1,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 768,
+          "index": 63,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        }
+      ],
+      "installer": "8018CCFC",
+      "model": "0615",
+      "table": "80365EC0"
+    },
+    {
+      "entries": [
+        {
+          "flags": 0,
+          "index": 0,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 1,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 2,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 3,
+          "mode": 4,
+          "pitch": 40,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 4,
+          "mode": 0,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 5,
+          "mode": 1,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 6,
+          "mode": 1,
+          "pitch": -64,
+          "repeat": 6,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 7,
+          "mode": 4,
+          "pitch": 64,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 8,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 9,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 4,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 10,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 11,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": -32761,
+          "index": 12,
+          "mode": 33,
+          "pitch": 7,
+          "repeat": 33,
+          "yaw": -128
+        },
+        {
+          "flags": 0,
+          "index": 13,
+          "mode": 33,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": -32761,
+          "index": 14,
+          "mode": 69,
+          "pitch": 7,
+          "repeat": 34,
+          "yaw": -128
+        },
+        {
+          "flags": 16840,
+          "index": 15,
+          "mode": 0,
+          "pitch": 7,
+          "repeat": 35,
+          "yaw": -128
+        },
+        {
+          "flags": -32761,
+          "index": 16,
+          "mode": 35,
+          "pitch": 7,
+          "repeat": 35,
+          "yaw": -128
+        },
+        {
+          "flags": -32761,
+          "index": 17,
+          "mode": 39,
+          "pitch": 7,
+          "repeat": 36,
+          "yaw": -128
+        },
+        {
+          "flags": -32761,
+          "index": 18,
+          "mode": 38,
+          "pitch": 7,
+          "repeat": 41,
+          "yaw": -128
+        },
+        {
+          "flags": -32761,
+          "index": 19,
+          "mode": 46,
+          "pitch": 7,
+          "repeat": 47,
+          "yaw": -128
+        },
+        {
+          "flags": -32761,
+          "index": 20,
+          "mode": 37,
+          "pitch": 7,
+          "repeat": 37,
+          "yaw": -128
+        },
+        {
+          "flags": -32761,
+          "index": 21,
+          "mode": 53,
+          "pitch": 7,
+          "repeat": 54,
+          "yaw": -128
+        },
+        {
+          "flags": 14,
+          "index": 22,
+          "mode": 58,
+          "pitch": 103,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 29,
+          "index": 23,
+          "mode": 0,
+          "pitch": 103,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 24,
+          "index": 24,
+          "mode": -1,
+          "pitch": 103,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 27,
+          "index": 25,
+          "mode": 0,
+          "pitch": 103,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 9,
+          "index": 26,
+          "mode": -1,
+          "pitch": 9,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 20,
+          "index": 27,
+          "mode": -1,
+          "pitch": 9,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 13,
+          "index": 28,
+          "mode": -1,
+          "pitch": 9,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 18,
+          "index": 29,
+          "mode": -1,
+          "pitch": 9,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 49,
+          "index": 30,
+          "mode": 0,
+          "pitch": 103,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 17,
+          "index": 31,
+          "mode": 0,
+          "pitch": 103,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 10,
+          "index": 32,
+          "mode": -1,
+          "pitch": 9,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 768,
+          "index": 33,
+          "mode": 20,
+          "pitch": 1,
+          "repeat": 255,
+          "yaw": 3
+        },
+        {
+          "flags": 0,
+          "index": 34,
+          "mode": 2,
+          "pitch": 1,
+          "repeat": 2,
+          "yaw": 3
+        },
+        {
+          "flags": 0,
+          "index": 35,
+          "mode": 2,
+          "pitch": -37,
+          "repeat": 153,
+          "yaw": 66
+        },
+        {
+          "flags": 17091,
+          "index": 36,
+          "mode": 0,
+          "pitch": -37,
+          "repeat": 153,
+          "yaw": 66
+        },
+        {
+          "flags": 2057,
+          "index": 37,
+          "mode": 2,
+          "pitch": 5,
+          "repeat": 6,
+          "yaw": 4
+        },
+        {
+          "flags": 0,
+          "index": 38,
+          "mode": 0,
+          "pitch": 3,
+          "repeat": 4,
+          "yaw": 2
+        },
+        {
+          "flags": 0,
+          "index": 39,
+          "mode": 18,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 40,
+          "mode": -1,
+          "pitch": -1,
+          "repeat": 1,
+          "yaw": -1
+        },
+        {
+          "flags": 6144,
+          "index": 41,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 4,
+          "yaw": 0
+        },
+        {
+          "flags": 32,
+          "index": 42,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 43,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 257,
+          "index": 44,
+          "mode": 0,
+          "pitch": 3,
+          "repeat": 4,
+          "yaw": 3
+        },
+        {
+          "flags": 3341,
+          "index": 45,
+          "mode": 0,
+          "pitch": 15,
+          "repeat": 16,
+          "yaw": 15
+        },
+        {
+          "flags": -1,
+          "index": 46,
+          "mode": -1,
+          "pitch": -1,
+          "repeat": 255,
+          "yaw": -1
+        },
+        {
+          "flags": 12032,
+          "index": 47,
+          "mode": 0,
+          "pitch": -1,
+          "repeat": 255,
+          "yaw": -1
+        },
+        {
+          "flags": 11267,
+          "index": 48,
+          "mode": 0,
+          "pitch": 3,
+          "repeat": 0,
+          "yaw": 44
+        },
+        {
+          "flags": 11267,
+          "index": 49,
+          "mode": 0,
+          "pitch": 1,
+          "repeat": 0,
+          "yaw": 44
+        },
+        {
+          "flags": 11521,
+          "index": 50,
+          "mode": 0,
+          "pitch": 1,
+          "repeat": 0,
+          "yaw": 45
+        },
+        {
+          "flags": 11523,
+          "index": 51,
+          "mode": 0,
+          "pitch": 1,
+          "repeat": 0,
+          "yaw": 45
+        },
+        {
+          "flags": 11267,
+          "index": 52,
+          "mode": 0,
+          "pitch": 3,
+          "repeat": 1,
+          "yaw": 44
+        },
+        {
+          "flags": 11267,
+          "index": 53,
+          "mode": 1,
+          "pitch": 3,
+          "repeat": 2,
+          "yaw": 44
+        },
+        {
+          "flags": 11267,
+          "index": 54,
+          "mode": 2,
+          "pitch": 3,
+          "repeat": 2,
+          "yaw": 44
+        },
+        {
+          "flags": 11523,
+          "index": 55,
+          "mode": 2,
+          "pitch": 3,
+          "repeat": 2,
+          "yaw": 45
+        },
+        {
+          "flags": 11523,
+          "index": 56,
+          "mode": 2,
+          "pitch": 3,
+          "repeat": 2,
+          "yaw": 45
+        },
+        {
+          "flags": -32723,
+          "index": 57,
+          "mode": 2,
+          "pitch": 45,
+          "repeat": 70,
+          "yaw": -128
+        },
+        {
+          "flags": 10,
+          "index": 58,
+          "mode": 70,
+          "pitch": 25,
+          "repeat": 0,
+          "yaw": 25
+        },
+        {
+          "flags": 30,
+          "index": 59,
+          "mode": 0,
+          "pitch": 100,
+          "repeat": 0,
+          "yaw": 100
+        },
+        {
+          "flags": 20,
+          "index": 60,
+          "mode": 0,
+          "pitch": 50,
+          "repeat": 0,
+          "yaw": 50
+        },
+        {
+          "flags": 20,
+          "index": 61,
+          "mode": 0,
+          "pitch": 50,
+          "repeat": 0,
+          "yaw": 50
+        },
+        {
+          "flags": 10,
+          "index": 62,
+          "mode": 0,
+          "pitch": 50,
+          "repeat": 0,
+          "yaw": 50
+        },
+        {
+          "flags": 20,
+          "index": 63,
+          "mode": 0,
+          "pitch": 50,
+          "repeat": 0,
+          "yaw": 50
+        }
+      ],
+      "installer": "8006F4F8",
+      "model": "000A",
+      "table": "802D4160"
+    },
+    {
+      "entries": [
+        {
+          "flags": 0,
+          "index": 0,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 1,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 2,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 3,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 4,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 5,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 6,
+          "mode": 4,
+          "pitch": 32,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 7,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 8,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 9,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 10,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 6,
+          "yaw": 0
+        },
+        {
+          "flags": 1,
+          "index": 11,
+          "mode": 4,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 12,
+          "mode": 2,
+          "pitch": 24,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 102,
+          "index": 13,
+          "mode": 0,
+          "pitch": 102,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 102,
+          "index": 14,
+          "mode": 0,
+          "pitch": 102,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 102,
+          "index": 15,
+          "mode": 0,
+          "pitch": 102,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 134,
+          "index": 16,
+          "mode": 0,
+          "pitch": -90,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": -1,
+          "index": 17,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": -1,
+          "index": 18,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 1
+        },
+        {
+          "flags": 0,
+          "index": 19,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 0,
+          "index": 20,
+          "mode": 5,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 257,
+          "index": 21,
+          "mode": 1,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 22,
+          "mode": 11,
+          "pitch": -1,
+          "repeat": 1,
+          "yaw": -1
+        },
+        {
+          "flags": 0,
+          "index": 23,
+          "mode": 3,
+          "pitch": -1,
+          "repeat": 11,
+          "yaw": -1
+        },
+        {
+          "flags": 0,
+          "index": 24,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 3,
+          "yaw": 0
+        },
+        {
+          "flags": 258,
+          "index": 25,
+          "mode": 1,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 26,
+          "mode": 11,
+          "pitch": -1,
+          "repeat": 0,
+          "yaw": -1
+        },
+        {
+          "flags": 12,
+          "index": 27,
+          "mode": 0,
+          "pitch": 110,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 174,
+          "index": 28,
+          "mode": 0,
+          "pitch": -82,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 174,
+          "index": 29,
+          "mode": 0,
+          "pitch": -82,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 342,
+          "index": 30,
+          "mode": 1,
+          "pitch": 118,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 454,
+          "index": 31,
+          "mode": 0,
+          "pitch": -38,
+          "repeat": 1,
+          "yaw": 1
+        },
+        {
+          "flags": 10,
+          "index": 32,
+          "mode": -1,
+          "pitch": -18,
+          "repeat": 2,
+          "yaw": 1
+        },
+        {
+          "flags": 1280,
+          "index": 33,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 5
+        },
+        {
+          "flags": -256,
+          "index": 34,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 5
+        },
+        {
+          "flags": 256,
+          "index": 35,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": -1
+        },
+        {
+          "flags": 0,
+          "index": 36,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 0,
+          "index": 37,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 38,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 1280,
+          "index": 39,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 256,
+          "index": 40,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 5
+        },
+        {
+          "flags": -256,
+          "index": 41,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 0,
+          "yaw": 2
+        },
+        {
+          "flags": 256,
+          "index": 42,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": -1
+        },
+        {
+          "flags": 0,
+          "index": 43,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 0,
+          "index": 44,
+          "mode": 0,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 45,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 1280,
+          "index": 46,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 256,
+          "index": 47,
+          "mode": 4,
+          "pitch": 1,
+          "repeat": 255,
+          "yaw": 5
+        },
+        {
+          "flags": 1281,
+          "index": 48,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 49,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 1281,
+          "index": 50,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 256,
+          "index": 51,
+          "mode": 2,
+          "pitch": 1,
+          "repeat": 2,
+          "yaw": 5
+        },
+        {
+          "flags": -256,
+          "index": 52,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 256,
+          "index": 53,
+          "mode": 4,
+          "pitch": 0,
+          "repeat": 4,
+          "yaw": -1
+        },
+        {
+          "flags": 0,
+          "index": 54,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 0,
+          "index": 55,
+          "mode": -1,
+          "pitch": 42,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 168,
+          "index": 56,
+          "mode": 0,
+          "pitch": 112,
+          "repeat": 0,
+          "yaw": 0
+        },
+        {
+          "flags": 218,
+          "index": 57,
+          "mode": 0,
+          "pitch": 18,
+          "repeat": 0,
+          "yaw": 1
+        },
+        {
+          "flags": 218,
+          "index": 58,
+          "mode": 0,
+          "pitch": 18,
+          "repeat": 1,
+          "yaw": 1
+        },
+        {
+          "flags": 426,
+          "index": 59,
+          "mode": 1,
+          "pitch": -58,
+          "repeat": 1,
+          "yaw": 1
+        },
+        {
+          "flags": -1,
+          "index": 60,
+          "mode": 1,
+          "pitch": 0,
+          "repeat": 2,
+          "yaw": 0
+        },
+        {
+          "flags": 256,
+          "index": 61,
+          "mode": 2,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 0
+        },
+        {
+          "flags": 1281,
+          "index": 62,
+          "mode": -1,
+          "pitch": 0,
+          "repeat": 255,
+          "yaw": 1
+        },
+        {
+          "flags": 256,
+          "index": 63,
+          "mode": 2,
+          "pitch": 1,
+          "repeat": 2,
+          "yaw": 5
+        }
+      ],
+      "installer": "8015A494",
+      "model": "061E",
+      "table": "80344C88"
+    }
+  ],
   "notes": [
+    "The installer table at 802D3224 maps a model to its installer; the three pilot tables are the installer store constants.",
+    "The pair record copies actor+0x27C to +0x2C.",
     "Indices are the action-step byte (record+4) copied to pair+0x11.",
-    "The source switch handles modes 0..5; other values take the default actor+0x11C vector.",
-    "The validated prefix is 38 entries; later entries use the default mode and need the action-step mapping before use."
+    "The source switch handles modes 0..5; other values take the default actor+0x11C vector."
   ],
   "pointer_chain": {
     "actor_field": "+0x27C",
+    "default_setter": "8006F5EC",
+    "installer_table": "802D3224",
     "pair_allocator": "8008AC80",
     "pair_record": {
       "actor": "+0x20",
@@ -595,14 +2096,8 @@
       "step": "+0x28",
       "table": "+0x2C"
     },
-    "pair_update": "8008A65C",
-    "setters": {
-      "8006F5EC": "80354160",
-      "8008AE60": "80344760"
-    }
+    "pair_update": "8008A65C"
   },
-  "revision": 1,
-  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
-  "table": "80354160",
-  "validated_prefix": 38
+  "revision": 2,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

@@ -118,9 +118,10 @@ texture or audio bytes; each regenerates from a local roster.
   23 post), with the pair-loop call `8002C4CC -> 8002DB58` and its reaction
   link. Tool: `tools/analyze/collision_walk_map.py`.
 - [Reaction attack table](docs/api-map/reaction-attack-table.json) — the
-  shared 24-byte action table at `80354160` (mode `+0x0E`, flags `+0x10`,
-  yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`) and the actor/pair pointer
-  chain. Tool: `tools/analyze/reaction_attack_table.py`.
+  per-Borg 24-byte action tables (G-Red `80365EC0`, Sasuke `802D4160`,
+  Proto King `80344C88`; generic default `80354160`), with mode `+0x0E`,
+  flags `+0x10`, yaw/pitch `+0x14`/`+0x15`, repeat `+0x16` and the
+  installer/pair pointer chain. Tool: `tools/analyze/reaction_attack_table.py`.
 - [Reaction action map](docs/api-map/reaction-action-map.json) — the
   `pl####hit.bin` queue groups, 0x50-byte steps and their attack-table
   entries for G-Red, Sasuke and Proto King. Tool:

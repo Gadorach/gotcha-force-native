@@ -18,15 +18,18 @@ class ReactionActionMapTest(unittest.TestCase):
         models = {model["model"]: model for model in data["models"]}
         self.assertEqual(set(models), {"0615", "000a", "061e"})
         gred = models["0615"]
+        self.assertEqual(gred["table"], "80365EC0")
         self.assertEqual(gred["groups"][9]["steps"], [8, 48])
         self.assertEqual(gred["steps"]["8"]["table"], 9)
-        self.assertEqual(gred["steps"]["8"]["mode"], 2)
-        self.assertEqual(gred["steps"]["8"]["yaw"], 2)
-        self.assertEqual(gred["steps"]["8"]["pitch"], 24)
+        self.assertEqual(gred["steps"]["8"]["mode"], 4)
+        self.assertEqual(gred["steps"]["8"]["yaw"], 0)
+        self.assertEqual(gred["steps"]["8"]["pitch"], 56)
         sasuke = models["000a"]
+        self.assertEqual(sasuke["table"], "802D4160")
         self.assertEqual(sasuke["groups"][9]["steps"], [10])
         self.assertEqual(sasuke["steps"]["10"]["table"], 9)
-        self.assertEqual(sasuke["steps"]["10"]["mode"], 2)
+        self.assertEqual(sasuke["steps"]["10"]["mode"], 4)
+        self.assertEqual(sasuke["steps"]["10"]["pitch"], 24)
 
     @unittest.skipUnless(DOL.is_file() and AFS.is_file(),
                          "original DOL/AFS not available")

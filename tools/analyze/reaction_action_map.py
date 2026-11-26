@@ -11,7 +11,7 @@ import json
 import struct
 from pathlib import Path
 
-from tools.analyze.reaction_attack_table import COUNT, TABLE
+from tools.analyze.reaction_attack_table import COUNT, MODEL_TABLES, entry, installer_address
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.retail_borg_roster import RetailArchive
 from tools.extract.source_image import DolImage, ReadOnlyFile
@@ -24,19 +24,7 @@ GROUPS = 32
 MAX_STEP = 63
 
 
-def _entry(image, index):
-    row = image.read(TABLE + index * 24, 24, "data")
-    return {
-        "table": index,
-        "mode": struct.unpack_from(">b", row, 0x0E)[0],
-        "flags": struct.unpack_from(">h", row, 0x10)[0],
-        "yaw": struct.unpack_from(">b", row, 0x14)[0],
-        "pitch": struct.unpack_from(">b", row, 0x15)[0],
-        "repeat": row[0x16],
-    }
-
-
-def _model(image, payload, model):
+def _model(image, payload, model, base):
     groups = []
     used = []
     for group in range(GROUPS):
@@ -56,10 +44,12 @@ def _model(image, payload, model):
             raise ValueError(f"step index outside budget: {step}")
         row = payload[STEPS + step * STEP_SIZE:STEPS + (step + 1) * STEP_SIZE]
         index = struct.unpack_from(">H", row, 4)[0]
-        steps[str(step)] = {"step": step, **_entry(image, index)} if index < COUNT else {
-            "step": step, "table": index}
+        steps[str(step)] = ({"step": step, "table": index,
+                              **entry(image, base, index)}
+                            if index < COUNT else {"step": step, "table": index})
     return {
         "model": model,
+        "table": f"{base:08X}",
         "hit_block_sha256": hashlib.sha256(payload).hexdigest(),
         "groups": groups,
         "steps": steps,
@@ -80,7 +70,8 @@ def recover(dol_path, afs_path):
             payload = archive.payload(index, 1 << 20)
             if len(payload) != 7840:
                 raise ValueError(f"unexpected hit block extent: {model}")
-            models.append(_model(image, payload, model))
+            models.append(_model(image, payload, model,
+                                 MODEL_TABLES[int(model, 16)]))
         afs_sha = hashlib.sha256()
         # Record identity without copying the archive.
         with Path(afs_path).open("rb") as stream:
@@ -91,7 +82,6 @@ def recover(dol_path, afs_path):
         "revision": 1,
         "source_dol_sha256": SOURCE_SHA256,
         "source_afs_sha256": afs_sha.hexdigest(),
-        "table": f"{TABLE:08X}",
         "models": models,
         "notes": [
             "Group bytes are the 4-byte queue at +0xA20; 0xFF terminates.",

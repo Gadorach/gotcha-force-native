@@ -416,8 +416,10 @@ yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
 0x100 units, but their per-move retail values are not yet extracted. The
 `+0x1DA` mirror remains unrecovered. The pair record is allocated by
 `8008AC80`: `+0x20` actor, `+0x24` other, `+0x28` action step, `+0x2C` the
-attack table at `actor+0x27C` (set to `80354160` by `8006F5EC` for the battle
-actor; `8008AE60` uses `80344760` for another path). Entries are 24 bytes:
+attack table at `actor+0x27C`. The retail installers set that field per Borg:
+`8018CCFC` -> `80365EC0` (G-Red), `8006F4F8` -> `802D4160` (Sasuke),
+`8015A494` -> `80344C88` (Proto King); `8006F5EC` -> `80354160` is the generic
+default path. Entries are 24 bytes:
 mode `+0x0E`, flags `+0x10`, yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`; the
 index is the action-step byte copied to pair `+0x11`. The first 38 entries use
 the source modes 0..5; later entries take the default. The published table and
