@@ -274,6 +274,40 @@ def _condition(code, site, base):
     return {"kind": "unknown", "text": "unknown condition"}, None
 
 
+def _operand_keys(condition):
+    """Named operands tested by a condition, one key per register."""
+    values = list((condition.get("operands") or {}).values())
+    if "operand" in condition:
+        values.append(condition["operand"])
+    keys = []
+    for operand in values:
+        kind = operand.get("kind")
+        if kind == "field":
+            base = operand.get("base")
+            if base == 2:
+                keys.append(f"const:{operand['offset']:+d}")
+            elif base == 1:
+                keys.append(f"stack:{operand['offset']:+d}")
+            else:
+                keys.append(f"{operand.get('width', '?')}:{operand['offset']:+d}")
+        elif kind in ("call", "expression", "indexed"):
+            keys.append(kind)
+        elif kind == "imm":
+            keys.append("imm")
+        else:
+            keys.append(kind or "unknown")
+    return keys
+
+
+def _field_usage(branches):
+    usage = {}
+    for branch in branches:
+        for key in _operand_keys(branch["condition"]):
+            phase = usage.setdefault(branch["phase"], {})
+            phase[key] = phase.get(key, 0) + 1
+    return usage
+
+
 def recover(image):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
@@ -315,12 +349,13 @@ def recover(image):
         phases[branch["phase"]] = phases.get(branch["phase"], 0) + 1
     return {
         "kind": "gf-collision-branch-map",
-        "revision": 2,
+        "revision": 3,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {"address": f"{FUNCTION:08X}", "size": SIZE,
                      "branches": len(branches)},
         "pair_loop": f"{PAIR_LOOP_CALL:08X}",
         "phases": phases,
+        "field_usage": _field_usage(branches),
         "branches": branches,
         "notes": [
             "Each branch records the nearest flag-setting compare/mask in the "
@@ -333,6 +368,8 @@ def recover(image):
             "inverse test (for example beq vs bne).",
             "Named gates are the broad-phase and early geometry branches whose "
             "field loads are unambiguous; other handler semantics remain open.",
+            "`field_usage` counts the tested operand kinds per band; the apply "
+            "and post bands stay operands rather than speculative gate names.",
         ],
     }
 

@@ -44,6 +44,16 @@ class CollisionBranchMapTest(unittest.TestCase):
         self.assertEqual(gates["8002BED4"], "geometry-actor-loop")
         self.assertEqual(gates["8002BFDC"], "pair-model-table")
 
+    def test_field_usage(self):
+        data = json.loads(ARTIFACT.read_text())
+        usage = data["field_usage"]
+        self.assertEqual(usage["apply"]["const:-31400"], 22)
+        self.assertEqual(usage["apply"]["f32:+180"], 16)
+        self.assertEqual(usage["apply"]["call"], 6)
+        self.assertEqual(usage["post"]["s16:+1000"], 6)
+        self.assertEqual(usage["post"]["call"], 5)
+        self.assertEqual(usage["post"]["indexed"], 4)
+
     def test_operand_provenance(self):
         data = json.loads(ARTIFACT.read_text())
         calls = {b["site"]: b for b in data["branches"]}

@@ -2982,6 +2982,73 @@
       "target": "8002C8A8"
     }
   ],
+  "field_usage": {
+    "apply": {
+      "call": 6,
+      "const:-31400": 22,
+      "f32:+180": 16,
+      "indexed": 1,
+      "s8:+131": 1,
+      "s8:+475": 1,
+      "u8:+131": 1
+    },
+    "broad-phase": {
+      "s16:+1272": 1,
+      "s16:+1274": 1,
+      "s8:+0": 2,
+      "s8:+2001": 1,
+      "u16:+1268": 1,
+      "u16:+1270": 1,
+      "u16:+1276": 1,
+      "u16:+1278": 1,
+      "u8:+1078": 1
+    },
+    "geometry": {
+      "call": 1,
+      "const:-31408": 1,
+      "const:-31416": 1,
+      "expression": 1,
+      "f32:+0": 2,
+      "f32:+36": 1,
+      "indexed": 1,
+      "s8:+0": 1,
+      "s8:+131": 1,
+      "s8:+475": 2,
+      "s8:+477": 2,
+      "stack:+24": 1,
+      "u32:+0": 1,
+      "u8:+628": 1
+    },
+    "post": {
+      "call": 5,
+      "const:-31388": 1,
+      "const:-31416": 1,
+      "imm": 1,
+      "indexed": 4,
+      "s16:+0": 3,
+      "s16:+1000": 6,
+      "s16:+1734": 1,
+      "s16:+2012": 1,
+      "s16:+452": 1,
+      "s16:+454": 4,
+      "s8:+0": 2,
+      "s8:+1433": 1,
+      "s8:+16": 1,
+      "s8:+1635": 1,
+      "s8:+1739": 1,
+      "s8:+1789": 2,
+      "s8:+474": 2,
+      "s8:+477": 1,
+      "s8:+50": 1,
+      "stack:+24": 1,
+      "u16:+48": 1,
+      "u16:+50": 2,
+      "u8:+24": 1,
+      "u8:+473": 1,
+      "u8:+474": 1,
+      "u8:+628": 1
+    }
+  },
   "function": {
     "address": "8002BB14",
     "branches": 98,
@@ -2992,7 +3059,8 @@
     "Each branch records the nearest flag-setting compare/mask in the eight instructions before it.",
     "`operand`/`operands` name the last load, immediate or mask that fed the tested register, following a sign extension or move. For float compares it is the last load into the compared register, not the whole expression.",
     "A 'sense' of true branches when the condition holds; false is the inverse test (for example beq vs bne).",
-    "Named gates are the broad-phase and early geometry branches whose field loads are unambiguous; other handler semantics remain open."
+    "Named gates are the broad-phase and early geometry branches whose field loads are unambiguous; other handler semantics remain open.",
+    "`field_usage` counts the tested operand kinds per band; the apply and post bands stay operands rather than speculative gate names."
   ],
   "pair_loop": "8002C4CC",
   "phases": {
@@ -3001,6 +3069,6 @@
     "geometry": 14,
     "post": 47
   },
-  "revision": 2,
+  "revision": 3,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }
