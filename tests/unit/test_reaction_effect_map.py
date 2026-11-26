@@ -43,6 +43,8 @@ class ReactionEffectMapTest(unittest.TestCase):
         self.assertIn("(0,0,-1)", data["effects"]["800300BC"]["fallback"])
         self.assertEqual(data["effects"]["8002FC18"]["thresholds"]["80436FBC"], 3.5)
         self.assertIn("803D3AE8", data["effects"]["800F088C"]["counter_row"])
+        self.assertEqual(data["effects"]["8002F8DC"]["fields"][0], "actor+0x4AA")
+        self.assertIn("every branch", data["effects"]["8002FCBC"]["volume_branch"])
 
     def test_scaffold_reaction_direction(self):
         data = json.loads(SCAFFOLD.read_text())

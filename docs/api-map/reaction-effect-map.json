@@ -17,6 +17,13 @@
       },
       "confidence": "open",
       "effect": {
+        "fields": [
+          "actor+0x4AA",
+          "actor+0x424",
+          "attacker+0x420",
+          "team+0x118",
+          "ring +0x464/+0x484"
+        ],
         "role": "force/ledger update"
       },
       "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
@@ -43,6 +50,13 @@
       },
       "confidence": "open",
       "effect": {
+        "fields": [
+          "actor+0x4AA",
+          "actor+0x424",
+          "attacker+0x420",
+          "team+0x118",
+          "ring +0x464/+0x484"
+        ],
         "role": "force/ledger update"
       },
       "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
@@ -825,6 +839,13 @@
       "table": "802C7ED0"
     },
     "8002F8DC": {
+      "fields": [
+        "actor+0x4AA",
+        "actor+0x424",
+        "attacker+0x420",
+        "team+0x118",
+        "ring +0x464/+0x484"
+      ],
       "role": "force/ledger update"
     },
     "8002FC18": {

@@ -81,7 +81,6 @@ EFFECTS = {
         "behavior": "mode==0 lookup in 80436354+0x1518 by (arg1<<28)|(arg0<<16); "
                     "random 1..16 delta; returns 0..15",
     },
-    "8002F8DC": {"role": "force/ledger update"},
     "800300BC": {
         "role": "reaction-direction",
         "modes": {
