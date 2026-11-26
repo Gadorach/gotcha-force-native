@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT = ROOT / "docs/api-map/collision-branch-map.json"
+WALK = ROOT / "docs/api-map/collision-walk-map.json"
 
 
 class CollisionBranchMapTest(unittest.TestCase):
@@ -43,6 +44,15 @@ class CollisionBranchMapTest(unittest.TestCase):
         gates = {b["site"]: b["gate"] for b in geometry}
         self.assertEqual(gates["8002BED4"], "geometry-actor-loop")
         self.assertEqual(gates["8002BFDC"], "pair-model-table")
+
+    def test_apply_effect_scale(self):
+        data = json.loads(WALK.read_text())
+        scale = data["apply_effect_scale"]
+        self.assertEqual(scale["function"], "8002CAA8")
+        self.assertEqual(scale["scaled"], "+0xB4")
+        self.assertEqual(scale["timer"], "+0x1E8")
+        self.assertIn("+0x58", scale["copies"])
+        self.assertIn("+0x1CC", scale["cleared"])
 
     def test_field_usage(self):
         data = json.loads(ARTIFACT.read_text())

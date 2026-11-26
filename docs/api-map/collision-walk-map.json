@@ -1,4 +1,23 @@
 {
+  "apply_effect_scale": {
+    "cleanup": "800466DC",
+    "cleared": [
+      "+0x1CC",
+      "+0x1D0",
+      "+0x1D4"
+    ],
+    "copies": [
+      "+0x58",
+      "+0x5C",
+      "+0x60",
+      "+0xC0",
+      "+0xC4"
+    ],
+    "function": "8002CAA8",
+    "rule": "scale +0xB4 by the height-derived fraction, copy it to +0x58/+0x5C/+0x60/+0xC0/+0xC4, set +0x1E8 = 1 and clear +0x1CC/+0x1D0/+0x1D4 before calling 800466DC",
+    "scaled": "+0xB4",
+    "timer": "+0x1E8"
+  },
   "calls": [
     {
       "confidence": "open",
@@ -548,6 +567,6 @@
     "geometry": 7,
     "post": 23
   },
-  "revision": 1,
+  "revision": 2,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

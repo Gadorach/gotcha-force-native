@@ -93,7 +93,7 @@ def recover(image):
         counts[call["phase"]] = counts.get(call["phase"], 0) + 1
     return {
         "kind": "gf-collision-walk-map",
-        "revision": 1,
+        "revision": 2,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {
             "address": f"{FUNCTION:08X}",
@@ -134,6 +134,17 @@ def recover(image):
             "nearest_distance": "8020BC88",
         },
         "phases": counts,
+        "apply_effect_scale": {
+            "function": "8002CAA8",
+            "rule": "scale +0xB4 by the height-derived fraction, copy it to "
+                    "+0x58/+0x5C/+0x60/+0xC0/+0xC4, set +0x1E8 = 1 and clear "
+                    "+0x1CC/+0x1D0/+0x1D4 before calling 800466DC",
+            "scaled": "+0xB4",
+            "copies": ["+0x58", "+0x5C", "+0x60", "+0xC0", "+0xC4"],
+            "timer": "+0x1E8",
+            "cleared": ["+0x1CC", "+0x1D0", "+0x1D4"],
+            "cleanup": "800466DC",
+        },
         "calls": calls,
         "notes": [
             "Direct bl sites only; internal branches and tail calls are not "
