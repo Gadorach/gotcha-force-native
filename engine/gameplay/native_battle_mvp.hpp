@@ -3623,13 +3623,24 @@ private:
             for(auto& shot:projectiles_)if(!shot.active){shot={true,++next_id_,u8(owner),weapon,muzzle,muzzle,{speed*(aim.x*c-aim.z*s),pitch,speed*(aim.z*c+aim.x*s)},weapon==BattleMvpWeapon::Bomb?70u:120u,false};++shots_;break;}}
         actor.cooldown[secondary?1:0]=weapon==BattleMvpWeapon::Bomb?120:weapon==BattleMvpWeapon::EnergyBeam?18:24;actor.attack_ticks=10;
     }
+    // The source reads the attacker's current attack-table index (+0x11), so a
+    // field or wave hit without an explicit move uses the active move.
+    u8 reaction_move(unsigned attacker,u8 move)const{
+        if(move==BorgBattleActionState::none&&attacker<actors_.size()){
+            const u8 current=actors_[attacker].package_move;
+            if(current!=BorgBattleActionState::none)return current;
+        }
+        return move;
+    }
     u8 reaction_mode(unsigned attacker,u8 move)const{
+        move=reaction_move(attacker,move);
         if(attacker<config_.packages.size()&&config_.packages[attacker]&&
            move<config_.packages[attacker]->moves.size())
             return config_.packages[attacker]->moves[move].reaction_mode;
         return u8(NativeBattleReactionMode::AttackerToReceiver);
     }
     std::pair<s8,s8> reaction_offsets(unsigned attacker,u8 move)const{
+        move=reaction_move(attacker,move);
         if(attacker<config_.packages.size()&&config_.packages[attacker]&&
            move<config_.packages[attacker]->moves.size()){
             const auto& row=config_.packages[attacker]->moves[move];

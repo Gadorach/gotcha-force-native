@@ -542,7 +542,9 @@ release=arc-twin|6|arc-stock|1|arc
   (`+0x14`/`+0x15`) subtracted from the reaction angles. Each value is a signed
   byte in 0x100 16-bit-angle units (one full turn per 256), from -128 to 127.
   The default is 0|0. The per-move retail values are not yet extracted; the key
-  lets a package carry them once they are.
+  lets a package carry them once they are. A hit without an explicit move (a
+  field core or wave) uses the attacker's active package move, matching the
+  source's current attack-table index.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a
