@@ -1,4 +1,5 @@
 """Pin the translated damage-amount chain and its two observations."""
+import json
 import unittest
 from pathlib import Path
 
@@ -91,6 +92,16 @@ class DamageAmountModelTest(unittest.TestCase):
         self.assertEqual(amount, 5)
         amount, _ = model.evaluate(1, {"credit_difficulty": 0.5})
         self.assertEqual(amount, 0)
+
+    def test_runtime_mirrors(self):
+        artifact = (Path(__file__).resolve().parents[2]
+                    / "docs/api-map/damage-amount-model.json")
+        mirrors = json.loads(artifact.read_text())["runtime_mirrors"]
+        self.assertEqual(mirrors["borg_hp"]["array"], "803B069C")
+        self.assertEqual(mirrors["borg_hp"]["source"],
+                         "actor+454 (current HP)")
+        self.assertEqual(mirrors["team_force"]["array"], "803B068C")
+        self.assertIn("+0x118", mirrors["team_force"]["source"])
 
     def test_division_stage(self):
         amount, product = model.evaluate(40, {"scale_divisor_40": 40.0})

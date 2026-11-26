@@ -65,12 +65,14 @@ STAGES = (
      "side": "attacker+998 != 0",
      "row": "record+6",
      "index": "32 - borg_hp[attacker+996] * 32 / "
-              "(attacker+452 < 200 ? attacker+452 : 25)"},
+              "(attacker+452 < 200 ? attacker+452 : 25); borg_hp is the "
+              "803B069C mirror of actor+454"},
     {"site": "CFC0", "name": "team_force_row", "op": "mul",
      "table": "team_force_row",
      "side": "attacker+998 != 0",
      "row": "record+7",
-     "index": "32 - team_force[attacker+136] * 32 / team_force_cap[attacker+136]"},
+     "index": "32 - team_force[attacker+136] * 32 / team_force_cap[attacker+136]; "
+              "team_force is the 803B068C mirror of team+0x118"},
     {"site": "CFC8", "name": "attacker_rank", "op": "mul",
      "table": "attacker_rank",
      "side": "attacker+998 != 0",
@@ -345,6 +347,20 @@ def recover(image):
         "stages": list(STAGES),
         "tables": tables,
         "hp_index": HP_INDEX,
+        "runtime_mirrors": {
+            "borg_hp": {
+                "array": "803B069C",
+                "source": "actor+454 (current HP)",
+                "slots": 6,
+                "refresh": "8002BBEC with a two-byte stride in 8002BB14",
+            },
+            "team_force": {
+                "array": "803B068C",
+                "source": "team_base+team*0x3C+0x118",
+                "teams": 4,
+                "refresh": "8002BB5C/BB74/BB80/BB8C",
+            },
+        },
         "settings": {
             "address": "803C4E60",
             "index": "actor+136",
@@ -391,6 +407,9 @@ def recover(image):
             "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
             "The matchup mapper 80066298 is a 256-entry pointer table at "
             "802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
+            "The force/HP rows read per-frame mirrors: 803B068C[team] is "
+            "team+0x118 and 803B069C[slot] is actor+454, both refreshed at "
+            "the top of the collision walk 8002BB14.",
             "The per-slot settings byte 803C4E60 is written by 80006ABC: "
             "state 1 uses a complementary d / 31-d pair, state 2 writes 7.",
             "The defender selectors at model+156/157/158 are the AFS bytes "

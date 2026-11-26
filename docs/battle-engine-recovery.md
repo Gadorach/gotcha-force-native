@@ -322,9 +322,15 @@ The ledger fields are:
 | `slot+0x464`, `slot+0x484` | eight-entry hit ring and its index |
 | `slot+0x430`, `slot+0x437` | ring total and count |
 
-The amount routine reads a per-team current at `803B068C` and the cap at
-`team_base+team*0x3C+0x114`; how that current relates to the decremented
-`+0x118` pool is not settled. The branch
+The amount routine's force/HP rows read per-frame mirrors refreshed at the top
+of the collision walk:
+
+- `803B068C[team]` <- `team_base+team*0x3C+0x118` (force current), at
+  `8002BB5C/BB74/BB80/BB8C`;
+- `803B069C[slot]` <- `actor+454` (current HP) for the six physical slots, at
+  `8002BBEC` with a two-byte stride.
+
+The force cap is `team_base+team*0x3C+0x114`; the HP cap is `actor+452`. The branch
 conditions inside those bands remain open; the collision walk map is published
 as [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 
