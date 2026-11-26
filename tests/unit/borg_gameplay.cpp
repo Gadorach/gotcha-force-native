@@ -2578,5 +2578,18 @@ int main(){
               "damage-vs=10|0.5|1|1|1\ndamage-vs=10|1|1|1|1\n",
               &invalid_scope,&scope_error),
           "duplicate damage-vs model is refused");
+    const auto sides=parse(std::string(player)+
+        "damage-side=0|0.867|1.13|1.15|1.0\ndamage-side=1|0.5|1|1|1\n");
+    check(borg_damage_amount(*sides,20,0,99,0)==22&&
+          borg_damage_amount(*sides,20,0,99,1)==10,
+          "damage-side selects the paired credit row by attacker side");
+    const auto precedence=parse(std::string(player)+
+        "damage-side=1|0.5|1|1|1\ndamage-vs=10|2|1|1|1\n");
+    check(borg_damage_amount(*precedence,20,0,10,1)==40,
+          "a receiver damage-vs row takes precedence over the side row");
+    check(!borg_read_gameplay_profile(std::string(player)+
+              "damage-side=0|1|1|1|1\ndamage-side=0|1|1|1|1\n",
+              &invalid_scope,&scope_error),
+          "duplicate damage-side team is refused");
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

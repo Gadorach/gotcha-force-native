@@ -245,7 +245,7 @@ close hit tick=46 value=18
 
 The original rows are **paired by side** at `804335E0` (credit difficulty
 `[1.02, 0.92]`, credit rank `[0.85, 0.85]`) and at `80433618` (receiver rank
-`[1.15, 1.15]`). The native `damage-factors`/`damage-vs` keys are static per
-package, so a roster extractor must either bind one side or the engine needs a
-side-dependent row. That side matrix is the next API design step for automatic
-roster-wide factors.
+`[1.15, 1.15]`). The engine now supports the attacker half with
+`damage-side=team|...` (selected after a receiver `damage-vs` row and before the
+default). The remaining roster step is extraction: read the paired rows and emit
+both `damage-side` variants per package, rather than binding one side.

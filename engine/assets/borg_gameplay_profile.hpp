@@ -318,7 +318,9 @@ struct BorgGameplayProfile {
     u8 damage_chain_count=0;
     bool damage_factors_declared=false;
     struct DamageRow { u16 model=0; std::array<f32,4> factors{1,1,1,1}; };
-    std::vector<DamageRow> damage_rows; // per receiver model; default factors otherwise
+    struct DamageSideRow { u8 team=0; std::array<f32,4> factors{1,1,1,1}; };
+    std::vector<DamageRow> damage_rows; // per receiver model
+    std::vector<DamageSideRow> damage_side_rows; // per attacker side
     f32 flight_lift=0;u16 flight_ticks=0;
     std::optional<BorgCruiseBoost> cruise{};
     std::optional<BorgBattleClip> cruise_entry;
@@ -343,14 +345,15 @@ struct BorgGameplayProfile {
     std::array<std::string,4> movement_sound{};
     bool static_body()const{return static_cruise_body||static_grounded_body;}
 };
-inline const std::array<f32,4>* borg_damage_factors(const BorgGameplayProfile& profile,u16 model){
+inline const std::array<f32,4>* borg_damage_factors(const BorgGameplayProfile& profile,u16 model,u8 team){
     for(const auto& row:profile.damage_rows)if(row.model==model)return &row.factors;
+    for(const auto& row:profile.damage_side_rows)if(row.team==team)return &row.factors;
     return profile.damage_factors_declared?&profile.damage_factors:nullptr;
 }
 
-inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain,u16 model=0){
+inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain,u16 model=0,u8 team=0){
     f32 value=f32(base);
-    if(const auto* factors=borg_damage_factors(profile,model))
+    if(const auto* factors=borg_damage_factors(profile,model,team))
         for(f32 factor:*factors)value*=factor;
     if(profile.damage_chain_count)
         value*=profile.damage_chain[std::min<unsigned>(chain,profile.damage_chain_count-1)];
@@ -1110,6 +1113,16 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             for(unsigned i=0;i<4;++i)
                 if(!scalar(a[1+i],.01f,4.f,&row.factors[i]))return fail("invalid damage-vs factor");
             next.damage_rows.push_back(row);
+        }else if(key=="damage-side"){
+            std::array<std::string_view,5> a;
+            u16 team=0;
+            if(next.damage_side_rows.size()>=2||!split_fields(value,&a)||
+               !number(a[0],0,1,&team))return fail("invalid damage-side row");
+            for(const auto& row:next.damage_side_rows)if(row.team==u8(team))return fail("duplicate damage-side team");
+            BorgGameplayProfile::DamageSideRow row;row.team=u8(team);
+            for(unsigned i=0;i<4;++i)
+                if(!scalar(a[1+i],.01f,4.f,&row.factors[i]))return fail("invalid damage-side factor");
+            next.damage_side_rows.push_back(row);
         }else if(key=="damage-chain"){
             std::array<std::string_view,4> a;
             if(next.damage_chain_count||!split_fields(value,&a))return fail("invalid or duplicate damage chain");

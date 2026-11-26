@@ -511,6 +511,10 @@ release=arc-twin|6|arc-stock|1|arc
   without a branch on the Borg ID.
 - `damage-model=id` optionally declares the package's damage-row id. `damage-vs`
   matches this id; it does not change the actor's motion model.
+- `damage-side=team|credit|scalar|receiver-rank|relative` declares a row per
+  attacker side (`0`/`1`). Selection order is: receiver `damage-vs` row, then
+  attacker `damage-side` row, then the `damage-factors` default, then neutral.
+  This mirrors the original's side-paired credit rows.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a
