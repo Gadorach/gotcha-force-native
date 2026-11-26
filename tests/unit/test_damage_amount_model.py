@@ -1,0 +1,88 @@
+"""Pin the translated damage-amount chain and its two observations."""
+import unittest
+
+from tools.analyze import damage_amount_model as model
+
+
+class DamageAmountModelTest(unittest.TestCase):
+    def test_stage_order(self):
+        names = [stage["name"] for stage in model.STAGES]
+        self.assertEqual(len(names), 19)
+        order = {name: index for index, name in enumerate(names)}
+        self.assertLess(order["credit_difficulty"], order["matchup"])
+        self.assertLess(order["attacker_rank"], order["matchup"])
+        self.assertLess(order["matchup"], order["defender_class_row"])
+        self.assertLess(order["defender_class_row"], order["receiver_rank"])
+        self.assertLess(order["receiver_rank"], order["tier"])
+
+    def test_credit_split(self):
+        amount, product = model.evaluate(
+            20, {"credit_difficulty": 1.02, "attacker_rank": 0.85})
+        self.assertAlmostEqual(product, 17.34, places=6)
+        self.assertEqual(amount, 17)
+        amount, _ = model.evaluate(20, {"credit_difficulty": 1.02})
+        self.assertEqual(amount, 20)
+
+    def test_kakeru_checkpoints(self):
+        steps = (
+            ({"credit_difficulty": 1.02, "attacker_rank": 0.85}, 17.34),
+            ({"credit_difficulty": 1.02, "attacker_rank": 0.85,
+              "defender_class_row": 1.13}, 19.5942),
+            ({"credit_difficulty": 1.02, "attacker_rank": 0.85,
+              "defender_class_row": 1.13, "receiver_rank": 1.15},
+             22.533329),
+        )
+        for factors, expected in steps:
+            _, product = model.evaluate(20, factors)
+            self.assertAlmostEqual(product, expected, places=5)
+
+    def test_kakeru_observation(self):
+        amount, product = model.evaluate(
+            20,
+            {
+                "credit_difficulty": 1.02,
+                "attacker_rank": 0.85,
+                "matchup": 1.0,
+                "defender_class_row": 1.13,
+                "receiver_rank": 1.15,
+                "tier": 1.0,
+                "relative": 1.0,
+            },
+        )
+        self.assertAlmostEqual(product, 22.533329, places=5)
+        self.assertEqual(amount, 22)
+
+    def test_mana_observation(self):
+        amount, product = model.evaluate(
+            5,
+            {
+                "credit_difficulty": 0.92,
+                "attacker_rank": 0.85,
+                "attacker_conditional_half": 0.5,
+                "defender_class_row": 1.4,
+                "receiver_rank": 1.15,
+            },
+        )
+        self.assertAlmostEqual(product, 3.14755, places=5)
+        self.assertEqual(amount, 3)
+
+    def test_missing_factors_are_neutral(self):
+        amount, product = model.evaluate(7, {})
+        self.assertEqual(amount, 7)
+        self.assertAlmostEqual(product, 7.0)
+
+    def test_negative_clamps_and_fraction_truncates(self):
+        amount, _ = model.evaluate(20, {"credit_difficulty": 0.5,
+                                        "attacker_rank": 0.5})
+        self.assertEqual(amount, 5)
+        amount, _ = model.evaluate(1, {"credit_difficulty": 0.5})
+        self.assertEqual(amount, 0)
+
+    def test_division_stage(self):
+        amount, product = model.evaluate(40, {"scale_divisor_40": 40.0})
+        self.assertAlmostEqual(product, 1.0)
+        self.assertEqual(amount, 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

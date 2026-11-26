@@ -24,10 +24,16 @@
   },
   "kind": "gf-contact-side-rows",
   "notes": [
-    "These are the paired rows used by the credit side; the battle scalar and receiver health/force rows still come from their own tables.",
+    "804335E0 is the credit-difficulty pair; 804335F8 and 80433618 are the attacker and defender difficulty-rank pairs.",
+    "Each rank pair is a difficulty sheet evaluated at element 0 here; indices 0..7 are 0.85..1.2 (attacker) and 1.15..0.8 (receiver).",
     "Emit one damage-side row per variant instead of binding a single side."
   ],
   "revision": 1,
+  "roles": {
+    "credit_difficulty": "credit difficulty (CE94)",
+    "credit_rank": "attacker difficulty rank (CFC8), element 0",
+    "receiver_rank": "defender difficulty rank (D270), element 0"
+  },
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
   "variants": [
     {

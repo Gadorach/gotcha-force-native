@@ -86,14 +86,20 @@ texture or audio bytes; each regenerates from a local roster.
   resolved entry clip's lane group, choice, event and flags. Tool:
   `tools/extract/retail_borg_roster.py` with `--action-clips`.
 - [G-Red/Sasuke contact damage](docs/api-map/gred-sasuke-contact-damage.json) —
-  the first live original damage chain: base 20, multipliers 0.867, 1.13 and
-  1.15, amount 22, with the DOL addresses and the observation that produced it.
-  This is a measured single-pair contact record, not a general rule. Tool:
+  the first live original damage chain: base 20, credit difficulty 1.02,
+  attacker rank 0.85, defender class row 1.13 and receiver rank 1.15, amount 22,
+  with the DOL addresses and the observation that produced it. This is a
+  measured single-pair contact record, not a general rule. Tool:
   `tools/analyze/gred_sasuke_contact_damage.py`.
 - [Contact scalar ladder](docs/api-map/contact-scalar-ladder.json) — the
-  32-entry per-battle/team scalar selected by the settings byte. Index 16 is
-  1.13 (Kakeru) and index 30 is 1.4 (Mana), both confirmed by captured hits.
-  Tool: `tools/analyze/contact_scalar_ladder.py`.
+  32-entry defender class row reached from root `80433600` and indexed by the
+  per-team settings byte. Index 16 is 1.13 (Kakeru) and index 30 is 1.4 (Mana),
+  both confirmed by captured hits. Tool:
+  `tools/analyze/contact_scalar_ladder.py`.
+- [Damage amount model](docs/api-map/damage-amount-model.json) — the translated
+  19-stage chain of `8003CD5C`, the eight table roots and their selection paths,
+  and the two captured hits (`22` and `3`). Tool:
+  `tools/analyze/damage_amount_model.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the

@@ -1,10 +1,10 @@
 """Export the contact scalar ladder selected by the per-team settings byte.
 
-The boost/contact amount uses one scalar from a fixed 32-entry ladder at
-`0x802C6820`. The index is the byte at `0x803C4E60 + team`. This is a
-battle/team value, not a Borg value: the same credit record at `0x80365EC0`
-reads index 16 (1.13) in the Kakeru savestate and index 30 (1.4) in the Mana
-savestate.
+The D100 factor of the amount function is one cell of the 32-entry defender
+class row at `0x802C6820`, reached from root `0x80433600[side][model+156]`.
+The index is the per-team byte at `0x803C4E60 + actor+136`. It is a battle/team
+value, not a Borg value: the same row reads index 16 (1.13) in the Kakeru
+savestate and index 30 (1.4) in the Mana savestate.
 
 This is numeric API data, not model, texture or audio bytes.
 """
@@ -54,27 +54,34 @@ def recover(image):
         "address": f"{LADDER:08X}",
         "count": COUNT,
         "entries": [round(value, 6) for value in entries],
-        "formula": "trunc(base * credit_difficulty * credit_rank * "
-                   "(owner998 != 0 && owner136 == 0 ? 0.5 : 1) * "
-                   "scalar(settings+team) * receiver_rank * tier * relative)",
+        "formula": "trunc(base * credit_difficulty(side, settings[attacker+136]) "
+                   "* attacker_rank(attacker+1082) "
+                   "* (owner998 != 0 && owner136 == 0 ? 0.5 : 1) "
+                   "* defender_class_row(model+156, settings[defender+136]) "
+                   "* receiver_rank(defender+1082) * tier * relative)",
         "credit_rows": {
             "pointer_table": "804335E0",
             "variants": [
                 {"variant": 0, "difficulty": 1.02, "rank": 0.85},
                 {"variant": 1, "difficulty": 0.92, "rank": 0.85},
             ],
-            "note": "The difficulty/rank rows are paired by the credit side; the Kakeru hit uses variant 0, the Mana hit variant 1.",
+            "note": "804335E0 is the credit-difficulty pair. The 0.85 attacker rank is the separate pair at 804335F8, element 0.",
         },
         "settings": {
             "address": f"{SETTINGS:08X}",
-            "index_expression": "byte at settings + team",
+            "index_expression": "byte at settings + actor+136",
             "observations": list(OBSERVATIONS),
         },
+        "class_row": {
+            "root": "80433600",
+            "row": "model+156 = 1 -> 802C6820",
+            "role": "defender class row applied at D100",
+        },
         "notes": [
-            "The scalar is a battle/team value, not a Borg value.",
-            "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
+            "The row is a battle/team value, not a Borg value.",
+            "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the defender class row applied at D100.",
             "The Mana hit also applies the conditional 0.5: credit difficulty 0.92 x rank 0.85 x 0.5 = 0.391; the Kakeru hit does not (owner998 = 0).",
-            "The difficulty/rank rows at 804335E0 are paired [1.02, 0.92] and [0.85, 0.85]; the credit side selects the variant.",
+            "The credit difficulty pair at 804335E0 is [1.02, 0.92]; the 0.85 attacker rank is the separate pair at 804335F8.",
             "The pair entry carries each side's credit record at object +0x2C; the Mana record 802D4160 appears on the other-side object, so it is not a G-Red shot.",
             "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows.",
         ],

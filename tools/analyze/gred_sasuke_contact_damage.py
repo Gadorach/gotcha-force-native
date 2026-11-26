@@ -11,12 +11,12 @@ The live observation (kakeru_battle, boost+forward) was:
     20 x 0.867 x 1.13 x 1.15 = 22.533329 -> 22
     apply caller 8002F1DC, writer 8003D344, ledger actor+0x41C
 
-The 0.867 matchup scalar is not a stored float; it is the product of the
-credit difficulty row at 802C4BA0 (1.02) and the credit rank row at 802C5D20
-(0.85). The 1.13 scalar is the settings ladder at 802C6820 index 16, selected
-by settings 803C4E60, team 1, byte 16. The rank and tier rows are read at
-802C7C60 and 802C7CA0. Every scalar is checked against the DOL and must match
-exactly.
+The 0.867 pre-matchup factor is not a stored float; it is credit difficulty
+1.02 (root 804335E0, CE94) times the attacker difficulty rank 0.85 (root
+804335F8, CFC8). The 1.13 is the defender class row 802C6820[16] (root
+80433600, model+156 = 1, index = settings 803C4E60[defender+136]), applied at
+D100. The receiver rank 1.15 is 802C7C60[0] (root 80433618, D270) and the tier
+is 802C7CA0. Every scalar is checked against the DOL and must match exactly.
 """
 import argparse
 import hashlib
@@ -96,12 +96,14 @@ def recover(image):
                 "value": round(credit_rank, 6),
                 "address": f"{CREDIT_RANK_ROW:08X}",
                 "variant": 0,
-                "pointer_table": "804335E0",
+                "element_index": 0,
+                "role": "attacker difficulty rank (CFC8)",
+                "pointer_table": "804335F8",
             },
             "matchup": {
                 "value": round(matchup, 6),
                 "formula": "credit_difficulty x credit_rank",
-                "source_note": "0x802C5D60 is a neutral 1.0 cell at D024; CE94 selects a paired-table cell (1.02 inspected) and a second rank factor gives the measured 0.867. The exact split is not proven.",
+                "source_note": "0.867 = credit difficulty 1.02 (CE94, root 804335E0) x attacker difficulty rank 0.85 (CFC8, root 804335F8). The 0x802C5D60 matchup cell is a separate neutral 1.0 at D024.",
             },
             "conditional_half": {
                 "applied": False,
@@ -112,13 +114,16 @@ def recover(image):
                 "value": round(scalar, 6),
                 "address": f"{SCALAR_ROW:08X}",
                 "index": SCALAR_INDEX,
-                "row": "0.97..1.16 linear ladder",
-                "index_source": "settings 803C4E60, team 1, byte 16",
+                "row": "defender class row 1 (model+156 = 1)",
+                "root": "80433600",
+                "index_source": "per-team settings 803C4E60 at defender+136 = 16",
             },
             "receiver_rank": {
                 "value": round(rank, 6),
                 "address": f"{RANK_ROW:08X}",
                 "index": 0,
+                "role": "defender difficulty rank (D270)",
+                "pointer_table": "80433618",
             },
             "tier": {
                 "value": round(tier, 6),
@@ -144,11 +149,12 @@ def recover(image):
         },
         "notes": [
             "The amount is a live boost/contact observation, not a beam-table result.",
-            "The 0.867 matchup is credit difficulty 1.02 x credit rank 0.85, both GFDA rows; the 0x802C5D60 matrix is not in this chain.",
-            "The credit rows are paired at 804335E0: variant 0 is 1.02/0.85, variant 1 is 0.92/0.85.",
-            "The 1.13 scalar index 16 comes from settings 0x803C4E60, team 1, byte 16.",
+            "The 0.867 pre-matchup factor is credit difficulty 1.02 (CE94) x attacker difficulty rank 0.85 (CFC8).",
+            "The credit difficulty pair at 804335E0 is [1.02, 0.92]; the attacker rank pair at 804335F8 is [0.85, 0.85] at element 0.",
+            "The 1.13 is the defender class row 802C6820[16], selected by model+156 = 1 and the per-team settings byte 803C4E60[defender+136] = 16.",
+            "The receiver rank 1.15 is 802C7C60[defender+1082] at D270; the D024 matchup cell is a separate neutral 1.0.",
             "The raw GFDA beam replay gives 19/20 for the same pair and caps because it applies receiver difficulty 0.9 and the health/force rows.",
-            "generalises_to_other_pairs is false until the per-pair credit/rank rows and the battle settings index are read for other pairs.",
+            "generalises_to_other_pairs is false because this artifact records one measured pair; the amount model now covers all eight table roles, but per-pair rows are not emitted yet.",
         ],
         "retail_behaviour_verified": True,
         "generalises_to_other_pairs": False,

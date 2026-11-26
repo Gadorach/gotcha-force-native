@@ -136,10 +136,11 @@ The scene/actor layers use the same pattern:
 | Damage `8003C000-8003E000` | 16 | 1 | 15 | `8003CD5C` (amount), `8003C080`, `8003C614` |
 | Action `8006E000-80073000` | 132 | 84 | 48 | `8006EE14`, `80072BF0`, `800707B8` |
 
-The **action and scene scaffolding is largely matched**; the **collision, pair,
-reaction and amount core is still open**. That matches the live traces: the
-reaction tail (`8003D344`) is matched, while the pair (`8002E2A8`), collision
-(`8002BB14`) and amount (`8003CD5C`) are open.
+The **action and scene scaffolding is largely matched**; the **collision and
+pair core remains open**. The amount routine (`8003CD5C`) is still an open
+decompilation entry, but its behaviour is now translated from the static tables
+and validated against two live hits; the pair (`8002E2A8`) and collision
+(`8002BB14`) remain unimplemented.
 
 ## Native mapping
 
@@ -149,13 +150,15 @@ reaction tail (`8003D344`) is matched, while the pair (`8002E2A8`), collision
 | Shared action handlers | shared melee/projectile/field systems |
 | `8003D344` HP writer | `damage()` and actor health |
 | Recovered scale rows | `damage-factors` / `damage-vs` / `damage-side` / `damage-chain` profile keys |
-| Battle/team scalar | `BattleMvpConfig::damage_scalar` |
-| Pair/collision/amount functions | **not yet reimplemented** |
+| Attacker credit difficulty and rank | `damage-vs` / `damage-side` credit factors |
+| Defender class row and receiver rank | `damage-vs` receiver factors / `BattleMvpConfig::damage_scalar` |
+| Pair/collision/amount functions | amount translated; pair/collision not yet reimplemented |
 
 The native engine is already data-driven in the same sense as the original: a
 package declares moves, buttons and ranges, and shared systems execute them. The
-remaining work is to move the **open** collision/pair/reaction/amount logic into
-shared native systems and content data, not to add per-Borg branches.
+remaining work is to move the **open** collision/pair/reaction logic into shared
+native systems, emit the recovered amount rows as content, and keep per-Borg
+choices out of engine branches.
 
 ## Open core decomposition
 
@@ -163,8 +166,9 @@ The call graph splits the open core into a small amount routine and a broader
 reaction fan-out:
 
 - `8003CD5C` (amount, 1,512 B) calls only `80066298` (the category lookup,
-  matched). The rest of the factor math is inline. The live chain already
-  reproduces it; a native table-driven amount is the next step.
+  matched). The rest of the factor math is inline. It is now translated in
+  `tools/analyze/damage_amount_model.py`; only the `80066298` index mapper is
+  still open. Emitting the eight table roles into packages is the next step.
 - `8002E2A8` (pair/reaction, 5,672 B) calls 17 functions. The matched ones are
   `800061A8`, `80006C24`, `80019550`, `8002F8D0`, `8002FCBC`, `8003D344`
   (the HP writer), `8013F300`, `80176EC0`, `801DFF24`, `801EC1BC`. The open
@@ -234,21 +238,59 @@ close hit tick=46 value=18
 20 x 0.867 x 1.13 x 1.15 x 0.8 = 18.03 -> 18
 ```
 
+## Amount pipeline
+
+The amount function `8003CD5C` is translated in
+`tools/analyze/damage_amount_model.py` and exported as
+[`api-map/damage-amount-model.json`](api-map/damage-amount-model.json). It is a
+19-stage multiply chain over one integer base:
+
+```text
+base (record+0)
+  x carrier_relative
+  x credit_difficulty(side, settings[attacker+136])      CE94
+  x attacker_rank(attacker+1082)                         CFC8
+  x conditional_half                                     CEB8
+  x attacker_hp_row(record+6, HP index)                  CF48
+  x team_force_row(record+7, force index)                CFC0
+  x matchup(attacker model, defender model)              D024
+  x defender_class_row(model+156, settings[defender+136]) D100
+  x relative(defender+180)                               D16C
+  x defender_hp_row_157/158(post-hit HP index)           D1EC/D260
+  x receiver_rank(defender+1082)                         D270
+  x tier(defender+1738)                                  D290
+  x defender_1504_half / same_player_quarter / scale_divisor_40 flags
+```
+
+The two captured hits reproduce exactly:
+
+```text
+Kakeru  20 x 1.02 x 0.85 x 1.13 x 1.15           = 22.533 -> 22
+Mana     5 x 0.92 x 0.85 x 0.5 x 1.40 x 1.15     =  3.148 -> 3
+```
+
+`0.867` is therefore `1.02 x 0.85`, not a stored float. The `1.13` is
+`802C6820[16]`, the defender class row selected by `model+156 = 1` and the
+per-team settings byte; it is not a battle-wide scalar. The `0.85` is the
+attacker difficulty rank at `804335F8`, separate from the `804335E0`
+credit-difficulty pair.
+
 ## Next targets
 
-1. `8003CD5C`: turn the reproduced live amount into a native table-driven
-   routine with the category/factor-row selection.
-2. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
+1. Emit the eight recovered table roles into packages: credit difficulty and
+   attacker rank for the attacker, class row and receiver rank for the
+   defender, plus the two HP/force rows where the packager can supply them.
+2. `80066298`: recover the model-to-matchup-matrix index mapper (the only
+   open callee of the amount function).
+3. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
    helpers and the new amount routine.
-3. `8002BB14`: branch-aware recovery of the collision walk.
-4. The action-class table entries: reimplement the shared class handlers as
+4. `8002BB14`: branch-aware recovery of the collision walk.
+5. The action-class table entries: reimplement the shared class handlers as
    native move behaviours, with the class selected by content.
 
-The original rows are **paired by side** at `804335E0` (credit difficulty
-`[1.02, 0.92]`, credit rank `[0.85, 0.85]`) and at `80433618` (receiver rank
-`[1.15, 1.15]`). The engine now supports the attacker half with
-`damage-side=team|...` (selected after a receiver `damage-vs` row and before the
-default). The paired rows are exported as
+The credit-difficulty pair is exported as
 [`api-map/contact-side-rows.json`](api-map/contact-side-rows.json) by
-`tools/analyze/contact_side_rows.py`. The remaining roster step is emitting both
-variants into each package, rather than binding one side.
+`tools/analyze/contact_side_rows.py`. The engine supports the attacker half with
+`damage-side=team|...` (selected after a receiver `damage-vs` row and before the
+default). The remaining roster step is emitting both variants into each package,
+rather than binding one side.

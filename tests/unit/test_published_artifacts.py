@@ -10,6 +10,7 @@ from pathlib import Path
 from tools.analyze import (
     contact_scalar_ladder,
     contact_side_rows,
+    damage_amount_model,
     gred_sasuke_contact_damage,
     gred_sasuke_move_bases,
 )
@@ -21,6 +22,7 @@ ARTIFACTS = (
     ("contact-scalar-ladder.json", contact_scalar_ladder.export),
     ("gred-sasuke-move-bases.json", gred_sasuke_move_bases.export),
     ("contact-side-rows.json", contact_side_rows.export),
+    ("damage-amount-model.json", damage_amount_model.export),
 )
 
 

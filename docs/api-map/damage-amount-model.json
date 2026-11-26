@@ -1,0 +1,313 @@
+{
+  "base": {
+    "field": "record+0",
+    "type": "u16"
+  },
+  "corrections": [
+    "0.867 is not a single stored float: it is credit difficulty 1.02 (CE94) times attacker difficulty rank 0.85 (CFC8).",
+    "The 1.13 is not a battle-wide settings scalar: it is the defender class row 802C6820[16] at D100, selected by model+156 and the per-team settings byte 803C4E60[defender+136].",
+    "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
+    "The 0.85 rank is at 804335F8[side], not inside the 804335E0 credit-difficulty pair."
+  ],
+  "function": {
+    "address": "8003CD5C",
+    "arguments": {
+      "r3": "credit record (u16 base at +0, rows at +6/+7, flags +16)",
+      "r4": "attacker carrier (+144 actor, +196 relative)",
+      "r5": "defender carrier"
+    },
+    "instructions": 378
+  },
+  "hp_index": "post = max(0, borg_hp[+996] - base); if post > 200: skip; divisor = (+452 < 200 ? +452 : 25); index = min(32 - post * 32 / divisor, 31)",
+  "kind": "gf-damage-amount-model",
+  "matchup": {
+    "address": "802C5D60",
+    "index": "80066298(actor+1000) per side",
+    "note": "The model-to-index mapper 80066298 is still open; the observed cells are neutral for both recorded hits.",
+    "shape": "20 x 20 floats (row stride 80)"
+  },
+  "notes": [
+    "Numeric API data only; no code or asset bytes are reproduced.",
+    "The runtime tables (803C4E60 settings, 803B069C borg HP, 803B068C team force) are BSS and are supplied by an observation.",
+    "The chain is a reference translation; the native engine still consumes content scalars for these factors."
+  ],
+  "observed": [
+    {
+      "amount": 22,
+      "base": 20,
+      "derived": [
+        "credit_difficulty",
+        "attacker_rank"
+      ],
+      "factors": {
+        "attacker_rank": 0.85,
+        "credit_difficulty": 1.02,
+        "defender_class_row": 1.13,
+        "matchup": 1.0,
+        "receiver_rank": 1.15,
+        "relative": 1.0,
+        "tier": 1.0
+      },
+      "note": "The D024 product 0.867 is credit difficulty 1.02 x attacker rank 0.85; the attacker HP and team-force rows are neutral.",
+      "probed": [
+        "matchup",
+        "defender_class_row",
+        "receiver_rank",
+        "tier",
+        "relative"
+      ],
+      "product": 22.53333,
+      "state": "kakeru_battle"
+    },
+    {
+      "amount": 3,
+      "base": 5,
+      "derived": [
+        "credit_difficulty",
+        "attacker_rank",
+        "attacker_conditional_half",
+        "defender_class_row",
+        "receiver_rank"
+      ],
+      "factors": {
+        "attacker_conditional_half": 0.5,
+        "attacker_rank": 0.85,
+        "credit_difficulty": 0.92,
+        "defender_class_row": 1.4,
+        "receiver_rank": 1.15
+      },
+      "note": "0.92 x 0.85 x 0.5 x 1.4 x 1.15 x 5 = 3.147 -> 3. The recorded amount needs both the class row and receiver rank.",
+      "probed": [],
+      "product": 3.14755,
+      "state": "mana_combat_hud"
+    }
+  ],
+  "revision": 1,
+  "settings": {
+    "address": "803C4E60",
+    "index": "actor+136",
+    "role": "per-team byte that indexes the credit-difficulty and defender-class rows"
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "stages": [
+    {
+      "name": "carrier_relative",
+      "op": "mul",
+      "selection": "1 + 0.5 * (carrier+196 - 1)",
+      "site": "CE18"
+    },
+    {
+      "name": "attacker_1788",
+      "op": "mul",
+      "selection": "attacker+1788 != 0",
+      "site": "CE48",
+      "value": 2.0
+    },
+    {
+      "index": "settings[attacker+136]",
+      "name": "credit_difficulty",
+      "op": "mul",
+      "side": "attacker+998 != 0",
+      "site": "CE94",
+      "table": "credit_difficulty"
+    },
+    {
+      "condition": "settings[attacker+136] == 0 && attacker+998 != 0 && attacker+136 == 0",
+      "name": "attacker_conditional_half",
+      "op": "mul",
+      "site": "CEB8",
+      "value": 0.5
+    },
+    {
+      "index": "32 - borg_hp[attacker+996] * 32 / (attacker+452 < 200 ? attacker+452 : 25)",
+      "name": "attacker_hp_row",
+      "op": "mul",
+      "row": "record+6",
+      "side": "attacker+998 != 0",
+      "site": "CF48",
+      "table": "attacker_hp_row"
+    },
+    {
+      "index": "32 - team_force[attacker+136] * 32 / team_force_cap[attacker+136]",
+      "name": "team_force_row",
+      "op": "mul",
+      "row": "record+7",
+      "side": "attacker+998 != 0",
+      "site": "CFC0",
+      "table": "team_force_row"
+    },
+    {
+      "index": "attacker+1082",
+      "name": "attacker_rank",
+      "op": "mul",
+      "side": "attacker+998 != 0",
+      "site": "CFC8",
+      "table": "attacker_rank"
+    },
+    {
+      "index": "model_index(attacker+1000) * 80 + model_index(defender+1000) * 4",
+      "name": "matchup",
+      "op": "mul",
+      "site": "D024",
+      "table": "802C5D60"
+    },
+    {
+      "condition": "defender+1788 != 0",
+      "name": "defender_1788",
+      "op": "mul",
+      "site": "D0B0",
+      "value": 0.5
+    },
+    {
+      "index": "settings[defender+136]",
+      "name": "defender_class_row",
+      "op": "mul",
+      "row": "model+156",
+      "side": "defender+998 != 0",
+      "site": "D100",
+      "table": "defender_class_row"
+    },
+    {
+      "condition": "settings[defender+136] == 0 && defender+998 != 0 && defender+136 == 0",
+      "name": "defender_conditional_half",
+      "op": "mul",
+      "site": "D128",
+      "value": 0.5
+    },
+    {
+      "name": "relative",
+      "op": "mul",
+      "selection": "1 / (1 + 0.5 * (defender+180 - 1))",
+      "site": "D16C"
+    },
+    {
+      "index": "post-hit defender HP index",
+      "name": "defender_hp_row_157",
+      "op": "mul",
+      "row": "model+157",
+      "side": "defender+998 != 0",
+      "site": "D1EC",
+      "table": "defender_hp_row_157"
+    },
+    {
+      "index": "post-hit defender HP index",
+      "name": "defender_hp_row_158",
+      "op": "mul",
+      "row": "model+158",
+      "side": "defender+998 != 0",
+      "site": "D260",
+      "table": "defender_hp_row_158"
+    },
+    {
+      "index": "defender+1082",
+      "name": "receiver_rank",
+      "op": "mul",
+      "side": "defender+998 != 0",
+      "site": "D270",
+      "table": "receiver_rank"
+    },
+    {
+      "condition": "record+16 & 0x4000",
+      "index": "defender+1738",
+      "name": "tier",
+      "op": "mul",
+      "site": "D290",
+      "table": "802C7CA0"
+    },
+    {
+      "condition": "defender+1504 & 0x04000000 == 0",
+      "name": "defender_1504_half",
+      "op": "mul",
+      "site": "D2A4",
+      "value": 0.5
+    },
+    {
+      "condition": "attacker+136 == defender+136 && record+16 & 0x1000 == 0",
+      "name": "same_player_quarter",
+      "op": "mul",
+      "site": "D2D0",
+      "value": 0.25
+    },
+    {
+      "condition": "attacker+131 == 0 && record+16 & 0x1000 && defender+1436 & 0x1000",
+      "name": "scale_divisor_40",
+      "op": "div",
+      "site": "D2FC",
+      "value": 40.0
+    }
+  ],
+  "tables": {
+    "attacker_hp_row": {
+      "index": "record+6, then attacker HP index",
+      "kind": "row pointers",
+      "root": "804335E8",
+      "sides": [
+        "802C54A0",
+        "802C54C0"
+      ]
+    },
+    "attacker_rank": {
+      "index": "attacker+1082 (difficulty)",
+      "kind": "float row",
+      "root": "804335F8",
+      "sides": [
+        "802C5D20",
+        "802C5D40"
+      ]
+    },
+    "credit_difficulty": {
+      "index": "attacker+136 -> byte at 803C4E60",
+      "kind": "float row",
+      "root": "804335E0",
+      "sides": [
+        "802C4BA0",
+        "802C4C20"
+      ]
+    },
+    "defender_class_row": {
+      "index": "model+156, then byte at 803C4E60",
+      "kind": "row pointers",
+      "root": "80433600",
+      "sides": [
+        "802C6BA0",
+        "802C6BC0"
+      ]
+    },
+    "defender_hp_row_157": {
+      "index": "model+157, then post-hit HP index",
+      "kind": "row pointers",
+      "root": "80433608",
+      "sides": [
+        "802C73E0",
+        "802C7400"
+      ]
+    },
+    "defender_hp_row_158": {
+      "index": "model+158, then post-hit HP index",
+      "kind": "row pointers",
+      "root": "80433610",
+      "sides": [
+        "802C7C20",
+        "802C7C40"
+      ]
+    },
+    "receiver_rank": {
+      "index": "defender+1082 (difficulty)",
+      "kind": "float row",
+      "root": "80433618",
+      "sides": [
+        "802C7C60",
+        "802C7C80"
+      ]
+    },
+    "team_force_row": {
+      "index": "record+7, then team force index",
+      "kind": "row pointers",
+      "root": "804335F0",
+      "sides": [
+        "802C5CE0",
+        "802C5D00"
+      ]
+    }
+  }
+}

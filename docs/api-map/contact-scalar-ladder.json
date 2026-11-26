@@ -1,8 +1,13 @@
 {
   "address": "802C6820",
+  "class_row": {
+    "role": "defender class row applied at D100",
+    "root": "80433600",
+    "row": "model+156 = 1 -> 802C6820"
+  },
   "count": 32,
   "credit_rows": {
-    "note": "The difficulty/rank rows are paired by the credit side; the Kakeru hit uses variant 0, the Mana hit variant 1.",
+    "note": "804335E0 is the credit-difficulty pair. The 0.85 attacker rank is the separate pair at 804335F8, element 0.",
     "pointer_table": "804335E0",
     "variants": [
       {
@@ -51,20 +56,20 @@
     1.4,
     2.0
   ],
-  "formula": "trunc(base * credit_difficulty * credit_rank * (owner998 != 0 && owner136 == 0 ? 0.5 : 1) * scalar(settings+team) * receiver_rank * tier * relative)",
+  "formula": "trunc(base * credit_difficulty(side, settings[attacker+136]) * attacker_rank(attacker+1082) * (owner998 != 0 && owner136 == 0 ? 0.5 : 1) * defender_class_row(model+156, settings[defender+136]) * receiver_rank(defender+1082) * tier * relative)",
   "kind": "gf-contact-scalar-ladder",
   "notes": [
-    "The scalar is a battle/team value, not a Borg value.",
-    "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the ladder value used by the amount computation.",
+    "The row is a battle/team value, not a Borg value.",
+    "Index 16 was captured on the Kakeru hit and index 30 on the Mana hit; both select the defender class row applied at D100.",
     "The Mana hit also applies the conditional 0.5: credit difficulty 0.92 x rank 0.85 x 0.5 = 0.391; the Kakeru hit does not (owner998 = 0).",
-    "The difficulty/rank rows at 804335E0 are paired [1.02, 0.92] and [0.85, 0.85]; the credit side selects the variant.",
+    "The credit difficulty pair at 804335E0 is [1.02, 0.92]; the 0.85 attacker rank is the separate pair at 804335F8.",
     "The pair entry carries each side's credit record at object +0x2C; the Mana record 802D4160 appears on the other-side object, so it is not a G-Red shot.",
     "The raw GFDA beam path does not use this ladder; it applies the health/force/difficulty rows."
   ],
   "revision": 1,
   "settings": {
     "address": "803C4E60",
-    "index_expression": "byte at settings + team",
+    "index_expression": "byte at settings + actor+136",
     "observations": [
       {
         "byte": 16,

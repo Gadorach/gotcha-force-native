@@ -441,8 +441,9 @@ return   site=F10C r3=00000016   (22)
 
 `8003CF70` is `divw r3, r4, r3` followed by `subfic r9, r3, 32`, clamped to
 31. So the factor index is `32 - (r4 / r3)`: live `9600 / 300 = 32`, index 0.
-The index selects the first float of the `0x802C7C80` ladder (1.15), and the
-base damage times that factor gives the observed **22**. The two later
+The index selects the first float of the receiver-rank sheet
+(`0x802C7C60`/`0x802C7C80`, 1.15), and the base damage times that factor gives
+the observed **22**. The two later
 divisions return 0 and are the other factor rows (force/rank), which is the
 same shape as `GRedSasukeDamageTable` (32-entry health/force rows, 3/4-entry
 difficulty/rank/tier rows). This is the first live confirmation of that
@@ -507,7 +508,7 @@ projectile relative adjustment; with the live indices the full product lands
 around 17–21, not 22. The boost/contact path therefore applies a **reduced
 factor set** rather than the beam's full chain. The shared facts are the base
 `20`, the credit record and the `1.15/1.1` receiver-rank row; the exact
-per-hit factor selection is still open.
+per-hit factor selection is resolved below.
 
 That distinction matters for shipping: the live 22 is a genuine contact amount,
 but it must not be fed into the beam table as if it were the beam result.
@@ -541,46 +542,58 @@ reads `1.082251`; none produces a non-neutral relative.
 The `1.13` row is resolved by logging the **final** load address:
 
 ```text
-table=80433600 -> ptr=802C4BA0 -> row=802C6820, offset=0x40
+root 80433600[side 1] -> row table 802C6BC0 -> row 1 = 802C6820, offset 0x40
 row 0x802C6820: 0.97 0.98 0.99 1.00 1.01 ... 1.12 [1.13] 1.14 1.15 1.16
 ```
 
-So the `D100` factor is `0x802C6820[16] = 1.13`, a linear scalar ladder. The
-earlier `802C6BC0` was the pre-load pointer, which is why its `+0x40` read 1.0.
+So the `D100` factor is the defender class row cell `0x802C6820[16] = 1.13`,
+reached from root `0x80433600[side][model+156]` with the per-team settings byte
+as the element index. `802C6BC0` is the side-1 row table; row 1 of it is
+`802C6820`.
 
-The final checkpoint values are measured, but the **static source of the
-`D024` factor is not settled**:
+The whole pre-matchup split is now static:
+
+| Site | Net factor | Selection |
+| --- | --- | --- |
+| `CE94` | 1.02 | credit difficulty `804335E0[side][settings[attacker+136]]` → `802C4BA0` |
+| `CF48` | 1.0 | attacker HP row `804335E8[side][record+6][HP index]` |
+| `CFC0` | 1.0 | team-force row `804335F0[side][record+7][force index]` |
+| `CFC8` | 0.85 | attacker difficulty rank `804335F8[side][attacker+1082]` → `802C5D20[0]` |
+| `D024` | 1.0 | matchup `802C5D60[model row][model column]` |
+
+`1.02 × 1.0 × 1.0 × 0.85 = 0.867`. The `D024` matchup cell is a separate
+neutral multiply, not the source of `0.867`.
+
+`owner998` in the older probe notes is the byte at `actor+998`; the code only
+tests it as a nonzero flag (`(x | -x) < 0`), so it selects the side pair and
+gates the conditional half. It is not an owner pointer.
+
+The function materialises eight two-entry root pairs. `side` is a flag
+(`actor+998 != 0`), not a signed owner id:
+
+| Root | Role | Row / index |
+| --- | --- | --- |
+| `804335E0` | credit difficulty | direct float row, `settings[attacker+136]` |
+| `804335E8` | attacker HP row | `record+6`, then attacker HP index |
+| `804335F0` | team-force row | `record+7`, then force index |
+| `804335F8` | attacker difficulty rank | direct float row, `attacker+1082` |
+| `80433600` | defender class row | `model+156`, then `settings[defender+136]` |
+| `80433608` | defender HP row 157 | `model+157`, then post-hit HP index |
+| `80433610` | defender HP row 158 | `model+158`, then post-hit HP index |
+| `80433618` | defender difficulty rank | direct float row, `defender+1082` |
+
+The remaining checkpoint values are:
 
 | Checkpoint | Net factor | Source |
 | --- | --- | --- |
-| `D024` | 0.867 | credit difficulty `1.02` (`0x802C4BA0[0]`) × credit rank `0.85` (`0x802C5D20[0]`) |
-| `D100` | 1.13 | row `0x802C6820`, index 16; index from settings `0x803C4E60`, team 1, byte 16 |
-| `D270` | 1.15 | ReceiverRank `0x802C7C60[0]` |
-| `D290` | 1.0 | tier row `0x802C7CA0[0]`, `actor+0x6CA = 0` |
-| `D16C` | 1.0 | relative neutral (`receiver+180 = 1.0`) |
+| `D100` | 1.13 | class row `802C6820[16]`; index from settings `803C4E60[defender+136] = 16` |
+| `D270` | 1.15 | defender rank `802C7C60[defender+1082 = 0]` |
+| `D290` | 1.0 | tier row `802C7CA0[0]`, `actor+0x6CA = 0` |
+| `D16C` | 1.0 | relative neutral (`defender+180 = 1.0`) |
 
-The amount function `8003CD5C` does materialise the matchup matrix
-`0x802C5D60` (at `8003D010`, used at `8003D024`), plus `0x803B068C`/`0x803B069C`
-(team/HP history), `0x80433610`/`0x80433618` (receiver force/rank) and
-`0x802C7CA0` (tier). The credit rows `0x802C4BA0`/`0x802C5D20` are **not**
-materialised directly; they are reached indirectly.
-
-The live matchup probe read row 0 / column 4 as `1.0`, and the static
-`D024` cell is the same neutral multiply. The `0.867` is applied **earlier**:
-
-```text
-CE70  settings[team]          (factor-row index)
-CE80  ptr = table[owner998 sign] at 803335E0/E8
-CE8C  f0  = ptr[index]
-CE94  f31 *= f0
-```
-
-So the `CE94` multiply takes a cell from the paired pointer table at
-`803335E0/E8` (runtime `804335E0/E8`), selected by the `owner998` sign and the
-settings/team byte. The inspected cell is `1.02`, while the measured pre-`D024`
-product is `0.867`, so a second factor (the `0.85` rank) must apply nearby. The
-exact split between the two multiplies is **not proven**; only the resulting
-`0.867` is measured. The `D024` matchup matrix is a separate neutral multiply.
+The full 19-stage translation is recorded in
+[`api-map/damage-amount-model.json`](api-map/damage-amount-model.json) and
+`tools/analyze/damage_amount_model.py`.
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 The measured record is exported as
@@ -588,9 +601,9 @@ The measured record is exported as
 by `tools/analyze/gred_sasuke_contact_damage.py`; it is one pair and one
 contact path, and explicitly does not generalise yet.
 
-The scalar is not a Borg value. `0x803C4E60 + team` is a **battle/team** byte
-that indexes a fixed 32-entry ladder at `0x802C6820` (`0.97 … 2.0`). Both
-indices are now confirmed by captured hits:
+The class row is not a Borg value. `0x803C4E60 + actor+136` is a **battle/team**
+byte that indexes the 32-entry defender class row at `0x802C6820`
+(`0.97 … 2.0`). Both indices are now confirmed by captured hits:
 
 | State | team byte | scalar | hit |
 | --- | --- | --- | --- |
@@ -600,16 +613,17 @@ indices are now confirmed by captured hits:
 The Mana hit is the generalisation check: a different credit record (base 5),
 different receiver (model 261) and a different settings byte all flow through
 the same computation, and the `D100` factor is exactly **1.400000**. The amount
-is `trunc(base × credit_factor × scalar(settings+team) × receiver_rank × tier ×
-relative)`; only the base, credit factor and receiver rank vary per pair.
+is `trunc(base × credit_difficulty × attacker_rank × conditional_half ×
+defender_class_row(settings[team]) × receiver_rank × tier × relative)`; only the
+base, credit difficulty, class row and receiver rank vary per pair.
 
 The per-pair factor is resolved too. The Mana pre-`D024` factor `0.391` is
-**credit difficulty × rank × a conditional 0.5**:
+**credit difficulty × attacker rank × a conditional 0.5**:
 
-- credit difficulty for that category is `0.92` (`0x802C4C20[0]`);
-- credit rank is `0.85`;
-- the code at `8003CEBC` applies `×0.5` when `owner998 != 0` and
-  `owner136 == 0`.
+- credit difficulty for that side is `0.92` (`0x802C4C20[0]`);
+- attacker rank is `0.85` (`0x802C5D20[0]`);
+- the code at `8003CEB8` applies `×0.5` when the settings byte is 0, the
+  `+998` flag is set and `+136 == 0`.
 
 `0.92 × 0.85 × 0.5 = 0.391`, and the full amount is:
 
@@ -624,27 +638,34 @@ So the complete contact formula is:
 
 ```text
 amount = trunc(base
-               × credit_difficulty(category)
-               × credit_rank
-               × (owner998 != 0 && owner136 == 0 ? 0.5 : 1)
-               × scalar(settings+team)
-               × receiver_rank
-               × tier
-               × relative)
+               × carrier_relative
+               × credit_difficulty(side, settings[attacker+136])
+               × attacker_rank(attacker+1082)
+               × (conditional_half ? 0.5 : 1)
+               × attacker_hp_row(record+6, HP index)
+               × team_force_row(record+7, force index)
+               × matchup(attacker model, defender model)
+               × defender_class_row(model+156, settings[defender+136])
+               × relative(defender+180)
+               × defender_hp_row_157/158(post-hit HP index)
+               × receiver_rank(defender+1082)
+               × tier(defender+1738))
 ```
 
-Both captured hits reproduce exactly. The credit rows themselves are **paired
-by side** at `0x804335E0`:
+Both captured hits reproduce exactly. The **credit difficulty** is a pair by
+side at `0x804335E0`; the difficulty **ranks** are separate pairs:
 
-| Variant | Difficulty | Rank | Hit |
+| Root | Side 0 | Side 1 | Element |
 | --- | --- | --- | --- |
-| 0 | 1.02 | 0.85 | Kakeru (G-Red's side) |
-| 1 | 0.92 | 0.85 | Mana (the other side) |
+| `804335E0` credit difficulty | 1.02 | 0.92 | `settings[attacker+136]` |
+| `804335F8` attacker rank | 0.85 | 0.85 | `attacker+1082` |
+| `80433618` defender rank | 1.15 | 1.15 | `defender+1082` |
 
-So the credit factor is not a per-pair category lookup: it is the credit
-side's variant plus the conditional half. The only unnamed input is the
-semantic of `owner998`; it behaves as a half-damage guard/critical flag, but the
-name is not recovered.
+So the credit factor is not a per-pair category lookup: it is the side's
+difficulty row at the team settings index, times the separate attacker rank,
+plus the conditional half. The only unnamed input is the semantic of the
+`+998` flag; it behaves as a side/half-damage flag, but the name is not
+recovered.
 
 The per-move **base** is the first halfword of the selected attack record. Two
 records are now identified:
@@ -662,7 +683,8 @@ its `base 30 → 33` is inferred from the stride and marked `verified=false`
 until a ranged hit captures it. No pad sequence tried here reached that context.
 
 The X hit confirms the per-move mapping: `30 × 0.867 × 1.13 × 1.15 = 33.8 → 33`,
-with the same credit factor, scalar and receiver rank as the boost hit. Both
+with the same credit factor, defender class row and receiver rank as the boost
+hit. Both
 G-Red moves therefore select **per-Borg config records**, and the shared pool at
 `0x802D4148` is used by a different carrier path.
 

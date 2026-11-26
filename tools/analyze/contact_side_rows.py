@@ -1,8 +1,9 @@
 """Export the side-paired contact rows from the original tables.
 
-The credit difficulty, credit rank and receiver rank roots each hold two row
-pointers (team 0 and team 1). This tool reads the first scalar of each row and
-emits the paired values used by `damage-side` content. Numeric API data only.
+The credit difficulty, attacker rank and receiver rank roots each hold two row
+pointers (side 0 and side 1). This tool reads element 0 of each row and emits
+the paired values used by `damage-side` content. The rank rows are 16-entry
+difficulty sheets; element 0 is the base difficulty. Numeric API data only.
 """
 import argparse
 import hashlib
@@ -14,9 +15,12 @@ from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
 ROOTS = {
-    "credit_difficulty": (0x804335E0, (1.02, 0.92)),
-    "credit_rank": (0x804335F8, (0.85, 0.85)),
-    "receiver_rank": (0x80433618, (1.15, 1.15)),
+    "credit_difficulty": (0x804335E0, (1.02, 0.92),
+                          "credit difficulty (CE94)"),
+    "credit_rank": (0x804335F8, (0.85, 0.85),
+                    "attacker difficulty rank (CFC8), element 0"),
+    "receiver_rank": (0x80433618, (1.15, 1.15),
+                      "defender difficulty rank (D270), element 0"),
 }
 
 
@@ -25,7 +29,9 @@ def recover(image):
         raise ValueError("unqualified source revision")
     rows = {}
     addresses = {}
-    for name, (root, expected) in ROOTS.items():
+    roles = {}
+    for name, (root, expected, role) in ROOTS.items():
+        roles[name] = role
         values = []
         pointers = []
         for variant in range(2):
@@ -52,8 +58,10 @@ def recover(image):
              "receiver_rank": rows["receiver_rank"][1]},
         ],
         "addresses": addresses,
+        "roles": roles,
         "notes": [
-            "These are the paired rows used by the credit side; the battle scalar and receiver health/force rows still come from their own tables.",
+            "804335E0 is the credit-difficulty pair; 804335F8 and 80433618 are the attacker and defender difficulty-rank pairs.",
+            "Each rank pair is a difficulty sheet evaluated at element 0 here; indices 0..7 are 0.85..1.2 (attacker) and 1.15..0.8 (receiver).",
             "Emit one damage-side row per variant instead of binding a single side.",
         ],
     }

@@ -7,7 +7,7 @@ Both G-Red records live in the actor configuration block at `0x80365AC8`:
     80366058  X                        base 30  amount 33
 
 The factors are the measured ones for this pair and side: credit difficulty
-1.02, credit rank 0.85, no conditional half, scalar 1.13, receiver rank 1.15,
+1.02, attacker rank 0.85, no conditional half, defender class row 1.13, receiver rank 1.15,
 tier 1.0, relative 1.0. This is numeric API data, not model/texture/audio
 bytes.
 """
