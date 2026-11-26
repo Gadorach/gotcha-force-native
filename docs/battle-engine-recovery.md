@@ -445,10 +445,11 @@ those lines to the authored `basic-shot` gameplay, using the group's first
 step; modes outside 1/3 declare an explicit `reaction-mode=1` fallback with a
 comment naming the source mode.
 
-The native engine implements modes 1/3. Mode 0/2 read a pair-position delta
-(`p+0x20 - p+0x2C` / `p+0x30 - p+0x3C`), mode 4/5 the `+0x8DC/8EC/8FC` vectors
-and the default `+0x11C/12C/13C`; these are left as explicit fallbacks until
-the vectors are verified, rather than mapped to native velocity/aim by analogy.
+The native engine implements modes 0/1/2/3: modes 0/2 read a source
+pair-position delta (`p+0x20 - p+0x2C` / `p+0x30 - p+0x3C`) and use the
+attacker's per-tick velocity as the native analogue; 1/3 use the actor
+positions. Modes 4/5 (`+0x8DC/8EC/8FC`) and the default (`+0x11C/12C/13C`) are
+left as explicit mode-1 content fallbacks until those vectors are verified.
 A generated-package smoke is also blocked here: `retail_borg_roster.convert`
 requires the qualified GFBC catalog (`b5321301...`), and the local extraction
 has the AFS but not that catalog. The original
@@ -613,7 +614,7 @@ one bar per actor, and the camera frames actor 0 against its nearest enemy.
    exported; the remaining choice is how the packager binds the battle settings
    index.
 2. `8002E2A8`: the force ledger, amount/HP boundary, reaction direction
-   (modes 1/3), signed offsets, impact-record cooldown and pitch axis are
+   (modes 0..3), signed offsets, impact-record cooldown and pitch axis are
    native. The remaining scaffold effects are the object spawns and color,
    published as data without a native presenter. The per-move reaction bytes
    (`+0x0E`/`+0x14`/`+0x15`) need the extracted retail Borg character block;

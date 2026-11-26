@@ -43,7 +43,7 @@ def content_lines(image, archive, model, context, move="basic-shot"):
     if entry is None:
         return []
     lines = []
-    if entry["mode"] in (1, 3):
+    if entry["mode"] in (0, 1, 2, 3):
         lines.append(f"reaction-mode={move}|{entry['mode']}")
     else:
         lines.append(f"# source reaction mode {entry['mode']} not native; fallback mode 1")

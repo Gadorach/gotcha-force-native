@@ -3657,12 +3657,13 @@ private:
         const u8 mode=attacker<actor_count()&&attacker!=target?reaction_mode(attacker,move):0;
         if(native_battle_reaction_mode_valid(mode)){
             const auto& source=actors_[attacker];
-            // Modes 1 (link positions) and 3 (side positions +0x64) both map
-            // to the native actor positions: the native actor has no second
-            // body origin. The receiver-relative angles carry the recovered
-            // atan2 stage and the (0,0,1) degenerate fallback.
-            const f32 direction[3]{actor.position[0]-source.position[0],actor.position[1]-source.position[1],
-                                   actor.position[2]-source.position[2]};
+            // Modes 0/2 read a source position delta; the native analogue is
+            // the attacker's per-tick velocity. Modes 1/3 map to the receiver
+            // minus attacker positions. The receiver-relative angles carry the
+            // recovered atan2 stage and the (0,0,-1) degenerate fallback.
+            f32 direction[3];
+            native_battle_reaction_direction(mode,source.position.data(),
+                source.velocity,actor.position.data(),direction);
             auto reaction=native_battle_reaction_angles(direction,actor.facing);
             const auto offsets=reaction_offsets(attacker,move);
             reaction.yaw=native_battle_reaction_wrap(

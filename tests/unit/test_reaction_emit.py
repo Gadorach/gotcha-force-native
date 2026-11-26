@@ -26,8 +26,7 @@ class ReactionEmitTest(unittest.TestCase):
             self.assertEqual(reaction_emit.content_lines(image, archive, 0x000A, (2, 0)),
                              expected)
             self.assertEqual(reaction_emit.content_lines(image, archive, 0x061E, (0, 0)),
-                             ["# source reaction mode 2 not native; fallback mode 1",
-                              "reaction-mode=basic-shot|1",
+                             ["reaction-mode=basic-shot|2",
                               "reaction-offset=basic-shot|0|24"])
 
 

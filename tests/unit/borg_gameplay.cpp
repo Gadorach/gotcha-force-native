@@ -2793,17 +2793,27 @@ int main(){
         reaction=native_battle_reaction_angles(small,BattlePoint{0,1});
         check(std::abs(reaction.yaw-1.5707964f)<1e-4f,
               "a direction above squared 0.01 keeps its own yaw");
-        check(!native_battle_reaction_mode_valid(0)&&native_battle_reaction_mode_valid(1)&&
-              !native_battle_reaction_mode_valid(2)&&native_battle_reaction_mode_valid(3)&&
+        check(native_battle_reaction_mode_valid(0)&&native_battle_reaction_mode_valid(1)&&
+              native_battle_reaction_mode_valid(2)&&native_battle_reaction_mode_valid(3)&&
               !native_battle_reaction_mode_valid(4),
-              "only reaction modes with native inputs are admitted");
+              "modes 0..3 have native inputs; later modes are refused");
+        const f32 origin[3]{0,0,0},target[3]{0,0,-1};
+        f32 direction[3];
+        native_battle_reaction_direction(2,origin,BattlePoint{1,0},target,direction);
+        check(direction[0]==1&&direction[1]==0&&direction[2]==0,
+              "mode 2 uses the attacker velocity as the direction");
+        native_battle_reaction_direction(1,origin,BattlePoint{1,0},target,direction);
+        check(direction[2]==-1,"mode 1 uses receiver minus attacker");
     }
 
     {
         BorgGameplayProfile rejected;std::string error;
-        check(!borg_read_gameplay_profile(std::string(player)+"reaction-mode=b-shot|2\n",
+        check(!borg_read_gameplay_profile(std::string(player)+"reaction-mode=b-shot|4\n",
                                           &rejected,&error),
-              "reaction-mode refuses a source mode with no native inputs");
+              "reaction-mode refuses a mode with no native analogue");
+        const auto velocity=parse(std::string(player)+"reaction-mode=b-shot|2\n");
+        check(velocity->moves.size()>0&&velocity->moves[0].reaction_mode==2,
+              "reaction-mode declares the velocity analogue");
         const auto centre=parse(std::string(player)+"reaction-mode=b-shot|3\n");
         check(centre->moves.size()>0&&centre->moves[0].reaction_mode==3,
               "reaction-mode declares the recovered centre-to-centre mode");

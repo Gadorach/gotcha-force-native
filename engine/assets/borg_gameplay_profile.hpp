@@ -637,7 +637,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     }
     unsigned release_sound_count=0;
     for(const auto& m:p.moves){
-        if(m.reaction_mode!=1&&m.reaction_mode!=3)return false;
+        if(m.reaction_mode>3)return false;
         if(m.pose_authored_loop_window&&(m.static_pose||!p.record_zero_body||p.movement!=BorgBattleMovement::Grounded))return false;
         if((p.static_body()&&!m.static_pose)||(m.static_pose&&(m.pose_start||!m.part_motions.empty()||
            !m.part_spins.empty()||!m.part_scrolls.empty()||!m.part_swaps.empty())))return false;
@@ -1324,7 +1324,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         }else if(key=="reaction-mode"){
             std::array<std::string_view,2> a;u16 mode=0;
             if(reaction_mode.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
-               !number(a[1],1,5,&mode)||(mode!=1&&mode!=3))
+               !number(a[1],0,3,&mode))
                 return fail("unsupported or invalid reaction mode");
             reaction_mode.push_back({line,std::string(a[0]),u8(mode)});
         }else if(key=="reaction-offset"){

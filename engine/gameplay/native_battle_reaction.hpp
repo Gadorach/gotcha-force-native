@@ -12,9 +12,21 @@ namespace gf {
 // Source modes. Only the modes whose native inputs exist are admitted.
 // 1: attacker/receiver link positions (base positions)
 // 3: attacker/receiver side positions (+0x64; modelled as actor centre)
-enum class NativeBattleReactionMode:u8 {AttackerToReceiver=1,CentreToCentre=3};
+enum class NativeBattleReactionMode:u8 {
+    AttackerVelocity=0, AttackerToReceiver=1, PairVelocity=2, CentreToCentre=3};
 struct NativeBattleReaction {f32 yaw=0,pitch=0;};
 constexpr f32 kNativeBattleReactionEpsilon=0.01f; // lbl_80436FC0
+
+// Source modes 0/2 read a pair-position delta; the native analogue is the
+// attacker's per-tick velocity. Modes 1/3 use receiver - attacker.
+inline void native_battle_reaction_direction(unsigned mode,const f32 source[3],
+        BattlePoint velocity,const f32 receiver[3],f32 out[3]){
+    if(mode==unsigned(NativeBattleReactionMode::AttackerVelocity)||
+       mode==unsigned(NativeBattleReactionMode::PairVelocity)){
+        out[0]=velocity.x;out[1]=0;out[2]=velocity.z;return;
+    }
+    for(unsigned k=0;k<3;++k)out[k]=receiver[k]-source[k];
+}
 constexpr f32 kNativeBattleReactionPi=3.14159265358979323846f;
 // The source subtracts the attack-table offsets (+0x14/+0x15) in 0x100
 // 16-bit angle units, i.e. one turn / 256 per signed byte.
@@ -27,8 +39,7 @@ inline f32 native_battle_reaction_wrap(f32 angle){
 }
 
 inline bool native_battle_reaction_mode_valid(unsigned mode){
-    return mode==unsigned(NativeBattleReactionMode::AttackerToReceiver)||
-           mode==unsigned(NativeBattleReactionMode::CentreToCentre);
+    return mode<=unsigned(NativeBattleReactionMode::CentreToCentre);
 }
 // `direction` is receiver minus attacker. `facing` is the receiver's current
 // unit heading. A degenerate vector takes the source (0,0,-1) fallback, so the
