@@ -16,6 +16,7 @@ int main(){
     using namespace gf;auto font=force_name_fixture::font();auto art=force_name_fixture::art();auto fixture=hsd_record_animation_fixture::Fixture{};auto bytes=fixture.archive();HsdRecordAnimationBank bank;std::string error;check(bank.load({bytes.data(),bytes.size()},&error),"owned bank");art.bank_hash=bank.hash();art.colours={{{0xe6e6e600,0x00004d00},{0xe6e6e600,0x4d000000}}};
     AttachmentAlternateProfile style;style.words={0x20080000,0x50140000,4,10,0x60002001,0x400a,0x20,7};style.alpha=.4f;style.loaded=true;Backend backend;RenderEngine render(backend);Camera camera;ForceNameScene scene;
     check(scene.load({bytes.data(),bytes.size()},art,font,style,camera,render,{},&error),"owned scene");ForceNameKeyboard keyboard;check(keyboard.open(art,font,std::string("\x82\x60",2)),"owned name");
+    ForceNameEvents opening;for(unsigned i=0;i<33;++i)check(keyboard.step(0,0,&opening),"opening completion");
     render.begin_frame({});render.reset_arena();check(scene.draw(render,keyboard,&error)&&render.end_frame(),"draw actual name scene entry");std::vector<DrawCall> text;for(const auto& d:backend.draws)if(d.texture==12000)text.push_back(d);
     check(text.size()==3,"selected key, text and cursor");check(text[0].texture_low_colour==0x4d000000&&text[0].texture_high_colour==0xe6e6e600,"preview source TEV0 then KONST");
     for(unsigned i=1;i<3;++i)check(text[i].texture_low_colour==0x00004d00&&text[i].texture_high_colour==0xe6e6e600,"white fill and blue glow for name/cursor");
