@@ -491,7 +491,7 @@ teams 0/1/0/1):
   admission rule.
 
 The host drives the second G-Red with a forward AI pad through a per-actor
-camera frame; attack input for actors 2/3 is still unauthored. The host smoke
+camera frame, and gives actors 2/3 periodic B attack input. The host smoke
 asserts `actors=4 ... shots=2 hits=2` for both. The HUD draws
 one bar per actor, and the camera frames actor 0 against its nearest enemy.
 

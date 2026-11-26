@@ -1931,6 +1931,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 // must see the same empty pads as the duel source path.
                 std::array<GamePadState,4> roster_pads{};
                 std::array<BorgBattleInputs,4> roster_input{action_input[0],action_input[1],{},{}};
+                const unsigned ai_cycle=world.tick()%90;
+                roster_input[2].pressed=u8(ai_cycle==20?BorgBattleInputs::b:0);
+                roster_input[2].released=u8(ai_cycle==22?BorgBattleInputs::b:0);
+                roster_input[3].pressed=u8(ai_cycle==65?BorgBattleInputs::b:0);
+                roster_input[3].released=u8(ai_cycle==67?BorgBattleInputs::b:0);
                 const bool advanced=origins.source_local[0]&&origins.source_local[2]&&
                     world.step_roster(roster_pads,roster_input,false,&view,{},&movement,nullptr,&origins,offers);
                 origins.source_local={};
