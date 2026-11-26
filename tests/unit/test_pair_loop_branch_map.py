@@ -24,6 +24,15 @@ class PairLoopBranchMapTest(unittest.TestCase):
         self.assertEqual(calls["8002DC04"]["condition"]["text"],
                          "(r4 & 0x00000800)")
 
+    def test_named_gates(self):
+        data = json.loads(ARTIFACT.read_text())
+        calls = {b["site"]: b for b in data["branches"]}
+        self.assertEqual(calls["8002DBC8"]["gate"], "direct-category")
+        self.assertEqual(calls["8002DC60"]["gate"], "validity-8002FD7C")
+        self.assertEqual(calls["8002DD94"]["gate"], "handler-80030490")
+        self.assertEqual(calls["8002DD20"]["gate"], "matrix-copy")
+        self.assertTrue(all("gate" in b for b in data["branches"]))
+
     def test_ctr_copies(self):
         data = json.loads(ARTIFACT.read_text())
         kinds = Counter(b["condition"]["kind"] for b in data["branches"])

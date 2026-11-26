@@ -11,6 +11,8 @@
         "text": "r0 cmp 2"
       },
       "cr": 0,
+      "gate": "direct-category",
+      "meaning": "[outer+0x88] == 2 selects direct mode",
       "phase": "prepare",
       "sense": "false",
       "site": "8002DBC8",
@@ -27,6 +29,8 @@
         "text": "(r0 & 0x00000001)"
       },
       "cr": 0,
+      "gate": "record-direct-bit",
+      "meaning": "record+0x10 bit 0 also selects direct",
       "phase": "prepare",
       "sense": "true",
       "site": "8002DBD4",
@@ -43,6 +47,8 @@
         "text": "(r4 & 0x00000800)"
       },
       "cr": 0,
+      "gate": "inner-carrier-0x800",
+      "meaning": "inner carrier node+2 bit 0x800",
       "phase": "inner",
       "sense": "true",
       "site": "8002DC04",
@@ -59,6 +65,8 @@
         "text": "(r0 & 0x00008000)"
       },
       "cr": 0,
+      "gate": "record-0x8000",
+      "meaning": "record+0x12 bit 0x8000",
       "phase": "inner",
       "sense": "true",
       "site": "8002DC10",
@@ -75,6 +83,8 @@
         "text": "(r3 & 0x00001000)"
       },
       "cr": 0,
+      "gate": "outer-carrier-0x1000",
+      "meaning": "outer carrier node+2 bit 0x1000",
       "phase": "inner",
       "sense": "false",
       "site": "8002DC20",
@@ -91,6 +101,8 @@
         "text": "(r4 & 0x00002000)"
       },
       "cr": 0,
+      "gate": "inner-carrier-0x2000",
+      "meaning": "inner carrier node+2 bit 0x2000",
       "phase": "inner",
       "sense": "false",
       "site": "8002DC28",
@@ -107,6 +119,8 @@
         "text": "(r3 & 0x00004000)"
       },
       "cr": 0,
+      "gate": "outer-carrier-0x4000",
+      "meaning": "outer carrier node+2 bit 0x4000",
       "phase": "inner",
       "sense": "true",
       "site": "8002DC30",
@@ -123,6 +137,8 @@
         "text": "(r4 & 0x00002000)"
       },
       "cr": 0,
+      "gate": "inner-carrier-0x2000-pair",
+      "meaning": "paired 0x2000 test",
       "phase": "inner",
       "sense": "true",
       "site": "8002DC38",
@@ -139,6 +155,8 @@
         "text": "(r0 & 0x00000002)"
       },
       "cr": 0,
+      "gate": "receiver-474-bit1",
+      "meaning": "receiver+0x474 bit 1",
       "phase": "inner",
       "sense": "false",
       "site": "8002DC48",
@@ -156,6 +174,8 @@
         "text": "r3 cmp 0"
       },
       "cr": 0,
+      "gate": "validity-8002FD7C",
+      "meaning": "side validity filter result",
       "phase": "inner",
       "sense": "true",
       "site": "8002DC60",
@@ -171,6 +191,8 @@
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "partner-a-active",
+      "meaning": "inner linked object +131",
       "phase": "inner",
       "sense": "false",
       "site": "8002DC74",
@@ -186,6 +208,8 @@
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "partner-b-active",
+      "meaning": "outer linked object +131",
       "phase": "inner",
       "sense": "false",
       "site": "8002DC80",
@@ -203,6 +227,8 @@
         "text": "r5 cmp r0"
       },
       "cr": 0,
+      "gate": "partner-team-equal",
+      "meaning": "linked-object team equality",
       "phase": "inner",
       "sense": "false",
       "site": "8002DC98",
@@ -218,6 +244,8 @@
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "partner-a-flag475",
+      "meaning": "inner linked +475",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCA4",
@@ -235,6 +263,8 @@
         "text": "r0 cmp 14"
       },
       "cr": 0,
+      "gate": "partner-a-model14",
+      "meaning": "inner linked model 14",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCB0",
@@ -252,6 +282,8 @@
         "text": "r0 cmpl r3"
       },
       "cr": 0,
+      "gate": "partner-a-link",
+      "meaning": "inner linked link compare",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCBC",
@@ -267,6 +299,8 @@
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "partner-b-flag475",
+      "meaning": "outer linked +475",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCC8",
@@ -284,6 +318,8 @@
         "text": "r0 cmp 14"
       },
       "cr": 0,
+      "gate": "partner-b-model14",
+      "meaning": "outer linked model 14",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCD4",
@@ -301,6 +337,8 @@
         "text": "r0 cmpl r4"
       },
       "cr": 0,
+      "gate": "partner-b-link",
+      "meaning": "outer linked link compare",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCE0",
@@ -318,6 +356,8 @@
         "text": "r3 cmp 0"
       },
       "cr": 0,
+      "gate": "sphere-80039F6C",
+      "meaning": "sphere overlap result",
       "phase": "inner",
       "sense": "true",
       "site": "8002DCF4",
@@ -333,6 +373,8 @@
         "text": "decrement CTR"
       },
       "cr": 0,
+      "gate": "matrix-copy",
+      "meaning": "45-dword matrix copy",
       "phase": "inner",
       "sense": "false",
       "site": "8002DD20",
@@ -347,6 +389,8 @@
         "text": "decrement CTR"
       },
       "cr": 0,
+      "gate": "matrix-copy-pair",
+      "meaning": "second 45-dword matrix copy",
       "phase": "inner",
       "sense": "false",
       "site": "8002DD4C",
@@ -363,6 +407,8 @@
         "text": "r3 cmp 0"
       },
       "cr": 0,
+      "gate": "handler-80030490",
+      "meaning": "pair category handler result",
       "phase": "select",
       "sense": "true",
       "site": "8002DD94",
@@ -380,6 +426,8 @@
         "text": "r22 cmp 0"
       },
       "cr": 0,
+      "gate": "direct-vs-nearest",
+      "meaning": "r22 chooses direct or nearest",
       "phase": "select",
       "sense": "true",
       "site": "8002DD9C",
@@ -396,6 +444,8 @@
         "text": "f1 fcmpo f31"
       },
       "cr": 0,
+      "gate": "nearest-distance",
+      "meaning": "nearest distance <= best",
       "phase": "select",
       "sense": "false",
       "site": "8002DDC4",
@@ -413,6 +463,8 @@
         "text": "r24 cmp r0"
       },
       "cr": 0,
+      "gate": "inner-loop",
+      "meaning": "inner actor count",
       "phase": "select",
       "sense": "true",
       "site": "8002DE04",
@@ -430,6 +482,8 @@
         "text": "r22 cmp 0"
       },
       "cr": 0,
+      "gate": "direct-mode-kept",
+      "meaning": "direct pair is kept",
       "phase": "publish",
       "sense": "false",
       "site": "8002DE0C",
@@ -447,6 +501,8 @@
         "text": "r21 cmp 0"
       },
       "cr": 0,
+      "gate": "nearest-found",
+      "meaning": "a nearest target was found",
       "phase": "publish",
       "sense": "true",
       "site": "8002DE14",
@@ -463,6 +519,8 @@
         "text": "(r0 & 0x000003C0)"
       },
       "cr": 0,
+      "gate": "aim-record-0x3C0",
+      "meaning": "record+0x12 bits 0x3C0",
       "phase": "publish",
       "sense": "false",
       "site": "8002DE4C",
@@ -479,6 +537,8 @@
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
+      "gate": "aim-length",
+      "meaning": "aim vector length test",
       "phase": "publish",
       "sense": "false",
       "site": "8002DE6C",
@@ -496,6 +556,8 @@
         "text": "r12 cmpl 0"
       },
       "cr": 0,
+      "gate": "owner-callback",
+      "meaning": "owner+256 callback presence",
       "phase": "publish",
       "sense": "true",
       "site": "8002DEBC",
@@ -513,6 +575,8 @@
         "text": "r25 cmp r0"
       },
       "cr": 0,
+      "gate": "outer-loop",
+      "meaning": "outer actor count",
       "phase": "publish",
       "sense": "true",
       "site": "8002DEE8",

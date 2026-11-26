@@ -239,7 +239,11 @@ condition (`cmpi` 29, `fcmpo` 28, `extsb.` 21, `rlwinm.` 11, plus `cmp/cmpl`). T
 The pair loop is **target selection**, not a blind pair walk. Its 32
 conditional branches are decoded in
 [`api-map/pair-loop-branch-map.json`](api-map/pair-loop-branch-map.json)
-(prepare 2, inner 20, select 4, publish 6):
+(prepare 2, inner 20, select 4, publish 6). The named gates are the
+direct-category/record-bit mode, the carrier flags, the `8002FD7C` and
+`80039F6C` validity results, the partner checks, the two matrix copies, the
+`80030490` category handler, the direct-vs-nearest choice, the nearest
+distance, the aim record/length and the owner callback.
 
 - outer list `803C477C` (count at `r13-21328`), inner list `803C417C`
   (count at `r13-21330`);

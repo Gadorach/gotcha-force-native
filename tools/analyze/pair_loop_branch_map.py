@@ -22,6 +22,42 @@ SELECT = 0x8002DD90
 PUBLISH = 0x8002DE08
 
 
+GATES = {
+    "8002DBC8": ("direct-category", "[outer+0x88] == 2 selects direct mode"),
+    "8002DBD4": ("record-direct-bit", "record+0x10 bit 0 also selects direct"),
+    "8002DC04": ("inner-carrier-0x800", "inner carrier node+2 bit 0x800"),
+    "8002DC10": ("record-0x8000", "record+0x12 bit 0x8000"),
+    "8002DC20": ("outer-carrier-0x1000", "outer carrier node+2 bit 0x1000"),
+    "8002DC28": ("inner-carrier-0x2000", "inner carrier node+2 bit 0x2000"),
+    "8002DC30": ("outer-carrier-0x4000", "outer carrier node+2 bit 0x4000"),
+    "8002DC38": ("inner-carrier-0x2000-pair", "paired 0x2000 test"),
+    "8002DC48": ("receiver-474-bit1", "receiver+0x474 bit 1"),
+    "8002DC60": ("validity-8002FD7C", "side validity filter result"),
+    "8002DC74": ("partner-a-active", "inner linked object +131"),
+    "8002DC80": ("partner-b-active", "outer linked object +131"),
+    "8002DC98": ("partner-team-equal", "linked-object team equality"),
+    "8002DCA4": ("partner-a-flag475", "inner linked +475"),
+    "8002DCB0": ("partner-a-model14", "inner linked model 14"),
+    "8002DCBC": ("partner-a-link", "inner linked link compare"),
+    "8002DCC8": ("partner-b-flag475", "outer linked +475"),
+    "8002DCD4": ("partner-b-model14", "outer linked model 14"),
+    "8002DCE0": ("partner-b-link", "outer linked link compare"),
+    "8002DCF4": ("sphere-80039F6C", "sphere overlap result"),
+    "8002DD20": ("matrix-copy", "45-dword matrix copy"),
+    "8002DD4C": ("matrix-copy-pair", "second 45-dword matrix copy"),
+    "8002DD94": ("handler-80030490", "pair category handler result"),
+    "8002DD9C": ("direct-vs-nearest", "r22 chooses direct or nearest"),
+    "8002DDC4": ("nearest-distance", "nearest distance <= best"),
+    "8002DE04": ("inner-loop", "inner actor count"),
+    "8002DE0C": ("direct-mode-kept", "direct pair is kept"),
+    "8002DE14": ("nearest-found", "a nearest target was found"),
+    "8002DE4C": ("aim-record-0x3C0", "record+0x12 bits 0x3C0"),
+    "8002DE6C": ("aim-length", "aim vector length test"),
+    "8002DEBC": ("owner-callback", "owner+256 callback presence"),
+    "8002DEE8": ("outer-loop", "outer actor count"),
+}
+
+
 def _phase(site):
     if site < INNER:
         return "prepare"
@@ -52,7 +88,7 @@ def recover(image):
             condition, source = {"kind": "bdnz", "text": "decrement CTR"}, None
         else:
             condition, source = _condition(code, site, FUNCTION)
-        branches.append({
+        entry = {
             "site": f"{site:08X}",
             "target": f"{target & 0xFFFFFFFF:08X}",
             "phase": _phase(site),
@@ -63,7 +99,10 @@ def recover(image):
             "sense": "true" if bo & 8 else "false",
             "condition": condition,
             **({"source": f"{source:08X}"} if source is not None else {}),
-        })
+        }
+        if f"{site:08X}" in GATES:
+            entry["gate"], entry["meaning"] = GATES[f"{site:08X}"]
+        branches.append(entry)
     if len(branches) != 32:
         raise ValueError(f"branch count changed: {len(branches)}")
     phases = {}
