@@ -317,6 +317,8 @@ g++ -std=c++20 -O1 -I . tests/unit/battle_pair_targeting.cpp -o build/direct/bat
 ./build/direct/battle_pair_targeting
 # recovered tables -> content row -> real host (needs the original DOL)
 PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
+# emitted reaction keys in the real package battle
+PYTHONPATH=. python3 -B tests/host/reaction_content_smoke.py
 # host package/roster, presentation, stage, collection, arrange and Story
 PYTHONPATH=. python3 -B tests/host/borg_api_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/borg_presentation_smoke.py build/direct/gf_native
