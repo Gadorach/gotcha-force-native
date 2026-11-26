@@ -26,12 +26,13 @@ enum class BattleMvpAction:u8 {Idle,Move,Jump,Attack,Defeated,Land,GroundDash,Ai
 enum class BattleMvpDashDirection:u8 {Forward,Backward,Left,Right};
 enum class BattleMvpWeapon:u8 {EnergyBeam,Bullet,Shuriken,Bomb,Orb};
 enum class BattleMvpResult:u8 {Fighting,GRedWins,SasukeWins,Draw};
+struct BattleMvpHitRecord {u16 type=0;u16 slot=0;bool operator==(const BattleMvpHitRecord&)const=default;};
 struct BattleMvpActor {
     static constexpr unsigned takeoff_duration=6,landing_duration=6; //native MVP phase windows
     static constexpr unsigned lab_air_windup=5,lab_air_burst=8,lab_air_recovery=6;
     static constexpr unsigned lab_glide_entry=6;
     static constexpr f32 lab_glide_sink=1.5f;
-    u16 model=0;u16 damage_model=0;BattleMvpVec position{};BattlePoint facing{0,1};f32 vertical_speed=0;
+    u16 model=0;u16 damage_model=0;u8 team=0;BattleMvpVec position{};BattlePoint facing{0,1};f32 vertical_speed=0;
     unsigned health=100;bool grounded=true;BattleMvpAction action=BattleMvpAction::Idle;
     std::array<unsigned,2> cooldown{};unsigned attack_ticks=0,hit_flash=0;
     BattlePoint velocity{};f32 movement_speed=0,move_forward=0,move_right=0;
@@ -58,6 +59,9 @@ struct BattleMvpActor {
     u16 damage_attack_key=0,damage_target_mask=0;
     std::vector<u16> damage_immunity;
     unsigned damage_taken=0,damage_credited=0,hits_taken=0,hits_dealt=0;
+    std::array<BattleMvpHitRecord,8> hit_history{};
+    u8 hit_history_index=0,hit_history_count=0;
+    unsigned hit_history_total=0;
     u8 package_movement_cues=0;
     u8 package_air_points_used=0;
     u16 package_flight_used=0;
@@ -452,6 +456,7 @@ public:
                 actor.damage_target_mask=config.packages[i]->damage_target_mask;
                 actor.damage_immunity=config.packages[i]->damage_immunity;
             }
+            actor.team=u8(i);
             actor.position={p.x,0,p.z};actor.health=package?config.packages[i]->health:config.health;
             if(!floor(terrain,p.x,p.z,config.spawn_query_y[i],&actor.position[1]))return false;
             const auto& cruise=package?config.packages[i]->cruise:config.provisional_cruise;
@@ -1940,7 +1945,7 @@ public:
         paused_=paused;return true;
     }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
-    const auto& team_force()const{return team_force_;}
+    const auto& team_force()const{return team_force_;}const auto& team_tally()const{return team_tally_;}
     const auto& impact_records()const{return impact_records_;}
     const auto& walk_pulses()const{return walk_pulses_;}
     const auto& smoke_clouds()const{return smoke_clouds_;}
@@ -2316,12 +2321,12 @@ private:
         if(owner>=actors_.size()||recipient>=actors_.size())return false;
         BattlePairFields a{},b{};
         a.declared=a.exists=a.active=true;
-        a.actor_key=u32(owner)+1u;a.owner_key=u32(owner)+1u;a.team=u8(owner);
+        a.actor_key=u32(owner)+1u;a.owner_key=u32(owner)+1u;a.team=actors_[owner].team;
         a.kind=actors_[owner].damage_kind;
         a.attack_key=actors_[owner].damage_attack_key;
         b.declared=b.exists=b.active=true;
         b.actor_key=u32(recipient)+1u;b.owner_key=u32(recipient)+1u;
-        b.team=u8(recipient);b.kind=actors_[recipient].damage_kind;
+        b.team=actors_[recipient].team;b.kind=actors_[recipient].damage_kind;
         b.target_mask=actors_[recipient].damage_target_mask;
         b.immunity_count=u8(std::min<std::size_t>(48,actors_[recipient].damage_immunity.size()));
         for(unsigned i=0;i<b.immunity_count;++i)b.immunity[i]=actors_[recipient].damage_immunity[i];
@@ -2349,8 +2354,18 @@ private:
         damage(recipient,amount);impact(position,false);
         auto& target=actors_[recipient];
         ++target.hits_taken;target.damage_taken+=amount;
-        if(owner!=recipient){auto& attacker=actors_[owner];++attacker.hits_dealt;attacker.damage_credited+=amount;}
-        team_force_[recipient]=team_force_[recipient]>=amount?team_force_[recipient]-amount:0u;
+        if(owner!=recipient){
+            auto& attacker=actors_[owner];++attacker.hits_dealt;attacker.damage_credited+=amount;
+            if(attacker.damage_kind==0)team_tally_[attacker.team]+=100u;
+        }
+        team_force_[target.team]=team_force_[target.team]>=amount?team_force_[target.team]-amount:0u;
+        for(unsigned p=0;p<2;++p){
+            if(p==recipient)continue;
+            auto& slot=actors_[p];const u16 type=slot.team==target.team?4:3; // actor index doubles as the duel team
+            slot.hit_history[slot.hit_history_index]={type,u16(recipient)};
+            slot.hit_history_index=u8((slot.hit_history_index+1)%8);
+            if(type==4){++slot.hit_history_count;slot.hit_history_total+=amount;}
+        }
         record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);
     }
     void retire_package_guard(unsigned defender){
@@ -3430,7 +3445,7 @@ private:
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();
     }
     BattleMvpConfig config_;std::array<BattleMvpActor,2> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
-    std::array<unsigned,2> team_force_{};std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
+    std::array<unsigned,2> team_force_{};std::array<u32,2> team_tally_{};std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
     std::array<BattleMvpImpactRecord,16> impact_records_{};
     struct ImpactHazard {BattleMvpVec centre;u32 id=0;u8 owner=0,move=0;u16 remaining=0,radius=0,height=0,damage=0,warmup=0;};
     std::array<ImpactPattern<BorgImpactTrail>,8> impact_trails_{};

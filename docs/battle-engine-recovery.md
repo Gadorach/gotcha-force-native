@@ -154,7 +154,7 @@ and validated against two live hits; the pair (`8002E2A8`) and collision
 | Defender class row and receiver rank | `damage-vs` receiver factors / `BattleMvpConfig::damage_scalar` |
 | `8002DB58` direct/nearest selection | `battle_pair_select` in `engine/gameplay/battle_pair_targeting.hpp` |
 | `8002FD7C` relation filter | `battle_pair_relation_ok` in the same header |
-| `8002F8DC` force/ledger | actor `damage_taken`/`damage_credited`/hits and `BattleMvpConfig::team_force` |
+| `8002F8DC` force/ledger | actor `damage_taken`/`damage_credited`/hits, eight-entry history ring, `team_force` and `team_tally` |
 | Pair/collision/amount functions | amount and selection translated; the wider pair/collision walk is not yet reimplemented |
 
 The native pair seam implements the recovered order: the direct path collects
@@ -168,9 +168,10 @@ the MVP hit boundary through the `damage-attack-key`/`damage-mask`/
 engine.
 
 The MVP now tracks the accepted-hit ledger: per-actor damage taken and
-credited, hit counts, and a per-team force pool (`team_force`) decremented by
-the applied amount. This is the runtime consumer for the recovered `8002F8DC`
-accounting; the six-slot history ring and team tally remain to be wired.
+credited, hit counts, an eight-entry history ring, a per-team force pool
+(`team_force`) and a per-team tally (`team_tally`). The ring writes type 3 for
+another team's slot and type 4 for a same-team slot other than the defender;
+the duel has only the attacker slot, so it records type 3.
 
 The native engine is already data-driven in the same sense as the original: a
 package declares moves, buttons and ranges, and shared systems execute them. The

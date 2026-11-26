@@ -2592,8 +2592,11 @@ int main(){
                 {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"damage ledger step");
         check(world.actors()[1].damage_taken==20&&world.actors()[0].damage_credited==20&&
               world.actors()[1].hits_taken==1&&world.actors()[0].hits_dealt==1&&
-              world.team_force()[1]==480&&world.team_force()[0]==500,
-              "recovered damage ledger and team force track the hit");
+              world.team_force()[1]==480&&world.team_force()[0]==500&&
+              world.team_tally()[0]==100&&world.actors()[0].hit_history_index==1&&
+              world.actors()[0].hit_history[0]==BattleMvpHitRecord{3,1}&&
+              world.actors()[1].hit_history_index==0,
+              "recovered damage ledger, team force, tally and history ring track the hit");
     }
     const std::string damage_text=std::string(player)+
         "damage-factors=0.867|1.13|1.15|1.0\n"
