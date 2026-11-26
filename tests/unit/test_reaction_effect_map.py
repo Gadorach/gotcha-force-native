@@ -31,6 +31,19 @@ class ReactionEffectMapTest(unittest.TestCase):
                          "target+0x20 - attacker+0x20")
         self.assertEqual(data["effects"]["8018214C"]["role"], "reaction-id")
 
+    def test_constants_and_fallback(self):
+        data = json.loads(ARTIFACT.read_text())
+        constants = data["constants"]
+        self.assertEqual(constants["80436F68"], 0.0)
+        self.assertEqual(constants["80436F74"], -1.0)
+        self.assertEqual(constants["80436FB8"], 1.5)
+        self.assertEqual(constants["80436F94"], 2.5)
+        self.assertEqual(constants["80436FBC"], 3.5)
+        self.assertAlmostEqual(constants["80436FC0"], 0.01, places=6)
+        self.assertIn("(0,0,-1)", data["effects"]["800300BC"]["fallback"])
+        self.assertEqual(data["effects"]["8002FC18"]["thresholds"]["80436FBC"], 3.5)
+        self.assertIn("803D3AE8", data["effects"]["800F088C"]["counter_row"])
+
     def test_scaffold_reaction_direction(self):
         data = json.loads(SCAFFOLD.read_text())
         calls = {call["site"]: call for call in data["calls"]}

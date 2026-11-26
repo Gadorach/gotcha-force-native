@@ -30,14 +30,24 @@ EFFECTS = {
         "opcode": "0x26",
         "state": "object+0x2AE = 4",
         "volume": "object+0x7FC",
+        "thresholds": {"80436FB8": 1.5, "80436F94": 2.5},
+        "volume_branch": "object+0x83 gates the read; the matched source calls "
+                         "800F04B4(0x26, callback, s8(object+0x96)) in every branch",
         "role": "impact record",
     },
     "8002FC18": {
         "dispatch": "800F088C",
-        "selector": "value from record+10",
+        "selector": "value & 0xFFFFFF7C, plus one per exceeded volume threshold",
         "state": "object+0x2AE = 4",
-        "thresholds": ["80436FB8", "80436F94", "80436FBC"],
+        "thresholds": {"80436FB8": 1.5, "80436F94": 2.5, "80436FBC": 3.5},
         "role": "impact record variant",
+    },
+    "800F088C": {
+        "role": "impact-record-variant",
+        "state": "object+0x2AE = 4",
+        "counter_row": "803D3AE8 + s8(object+0x96)*13",
+        "slot": "code & ~0xC0, +12 when code&0x40",
+        "alternate": "value += row[slot] & 1 before incrementing the row counter",
     },
     "8002F8DC": {
         "role": "force/ledger update",
@@ -83,7 +93,11 @@ EFFECTS = {
             "5": "linked+0x8DC/8EC/8FC",
             "default": "actor+0x11C/12C/13C",
         },
+        "yaw": "atan2(x,z)",
+        "pitch": "-atan2(y,x*x+z*z)",
+        "fallback": "(0,0,-1) when x*x+y*y+z*z < 0.01",
         "writes": "receiver+0x284 yaw, receiver+0x282 pitch; mirrored to linked actor when +0x1DA bit1",
+        "table_offsets": "table+0x14/+0x15 * 0x100 subtracted; not recovered",
     },
     "8003CD5C": {"role": "amount"},
     "8003D344": {"role": "HP write"},
@@ -167,6 +181,17 @@ def call_arguments(code, site):
     return args
 
 
+CONSTANT_ADDRS = (
+    "80436F68", "80436F74", "80436F94",
+    "80436FB8", "80436FBC", "80436FC0",
+)
+
+
+def _constants(image):
+    return {addr: struct.unpack(">f", image.read(int(addr, 16), 4, "data"))[0]
+            for addr in CONSTANT_ADDRS}
+
+
 def recover(image):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
@@ -196,10 +221,13 @@ def recover(image):
         "function": {"address": f"{FUNCTION:08X}", "size": SIZE,
                      "calls": len(mapped)},
         "effects": {key: value for key, value in sorted(EFFECTS.items())},
+        "constants": _constants(image),
         "calls": mapped,
         "notes": [
             "The argument map is the last write to r3-r7 in the 12-instruction "
             "window before each call.",
+            "`constants` holds the float thresholds and fallback operands read "
+            "from the initialized data section.",
             "Immediates and field offsets are decoded from the DOL; the effect "
             "labels come from matched helper summaries.",
             "This is presentation/reaction data, not a recovered renderer.",

@@ -442,7 +442,12 @@
         "opcode": "0x26",
         "role": "impact record",
         "state": "object+0x2AE = 4",
-        "volume": "object+0x7FC"
+        "thresholds": {
+          "80436F94": 2.5,
+          "80436FB8": 1.5
+        },
+        "volume": "object+0x7FC",
+        "volume_branch": "object+0x83 gates the read; the matched source calls 800F04B4(0x26, callback, s8(object+0x96)) in every branch"
       },
       "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
       "role": "impact-effect",
@@ -510,7 +515,12 @@
         "opcode": "0x26",
         "role": "impact record",
         "state": "object+0x2AE = 4",
-        "volume": "object+0x7FC"
+        "thresholds": {
+          "80436F94": 2.5,
+          "80436FB8": 1.5
+        },
+        "volume": "object+0x7FC",
+        "volume_branch": "object+0x83 gates the read; the matched source calls 800F04B4(0x26, callback, s8(object+0x96)) in every branch"
       },
       "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
       "role": "impact-effect",
@@ -784,13 +794,13 @@
       "effect": {
         "dispatch": "800F088C",
         "role": "impact record variant",
-        "selector": "value from record+10",
+        "selector": "value & 0xFFFFFF7C, plus one per exceeded volume threshold",
         "state": "object+0x2AE = 4",
-        "thresholds": [
-          "80436FB8",
-          "80436F94",
-          "80436FBC"
-        ]
+        "thresholds": {
+          "80436F94": 2.5,
+          "80436FB8": 1.5,
+          "80436FBC": 3.5
+        }
       },
       "note": "impact effect variant 800F088C with a threshold-derived selector",
       "role": "impact-effect",
@@ -798,6 +808,14 @@
       "target": "8002FC18"
     }
   ],
+  "constants": {
+    "80436F68": 0.0,
+    "80436F74": -1.0,
+    "80436F94": 2.5,
+    "80436FB8": 1.5,
+    "80436FBC": 3.5,
+    "80436FC0": 0.009999999776482582
+  },
   "effects": {
     "80006C24": {
       "role": "slot update"
@@ -812,22 +830,28 @@
     "8002FC18": {
       "dispatch": "800F088C",
       "role": "impact record variant",
-      "selector": "value from record+10",
+      "selector": "value & 0xFFFFFF7C, plus one per exceeded volume threshold",
       "state": "object+0x2AE = 4",
-      "thresholds": [
-        "80436FB8",
-        "80436F94",
-        "80436FBC"
-      ]
+      "thresholds": {
+        "80436F94": 2.5,
+        "80436FB8": 1.5,
+        "80436FBC": 3.5
+      }
     },
     "8002FCBC": {
       "dispatch": "800F04B4",
       "opcode": "0x26",
       "role": "impact record",
       "state": "object+0x2AE = 4",
-      "volume": "object+0x7FC"
+      "thresholds": {
+        "80436F94": 2.5,
+        "80436FB8": 1.5
+      },
+      "volume": "object+0x7FC",
+      "volume_branch": "object+0x83 gates the read; the matched source calls 800F04B4(0x26, callback, s8(object+0x96)) in every branch"
     },
     "800300BC": {
+      "fallback": "(0,0,-1) when x*x+y*y+z*z < 0.01",
       "modes": {
         "0": "actor+0x20 - actor+0x2C",
         "1": "target+0x20 - attacker+0x20",
@@ -837,8 +861,11 @@
         "5": "linked+0x8DC/8EC/8FC",
         "default": "actor+0x11C/12C/13C"
       },
+      "pitch": "-atan2(y,x*x+z*z)",
       "role": "reaction-direction",
-      "writes": "receiver+0x284 yaw, receiver+0x282 pitch; mirrored to linked actor when +0x1DA bit1"
+      "table_offsets": "table+0x14/+0x15 * 0x100 subtracted; not recovered",
+      "writes": "receiver+0x284 yaw, receiver+0x282 pitch; mirrored to linked actor when +0x1DA bit1",
+      "yaw": "atan2(x,z)"
     },
     "8003CD5C": {
       "role": "amount"
@@ -856,6 +883,13 @@
       "owner": "+0x8C = src",
       "role": "effect-values",
       "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
+    },
+    "800F088C": {
+      "alternate": "value += row[slot] & 1 before incrementing the row counter",
+      "counter_row": "803D3AE8 + s8(object+0x96)*13",
+      "role": "impact-record-variant",
+      "slot": "code & ~0xC0, +12 when code&0x40",
+      "state": "object+0x2AE = 4"
     },
     "8010E158": {
       "allocator": "80088AA0(owner, 2, 0x18, 0, entry[0])",
@@ -895,6 +929,7 @@
   "kind": "gf-reaction-effect-map",
   "notes": [
     "The argument map is the last write to r3-r7 in the 12-instruction window before each call.",
+    "`constants` holds the float thresholds and fallback operands read from the initialized data section.",
     "Immediates and field offsets are decoded from the DOL; the effect labels come from matched helper summaries.",
     "This is presentation/reaction data, not a recovered renderer."
   ],

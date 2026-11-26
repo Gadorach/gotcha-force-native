@@ -2773,6 +2773,7 @@ int main(){
     }
     {
         const f32 forward[3]{0,0,1},right[3]{1,0,0},up[3]{0,1,0},none[3]{0,0,0};
+        const f32 tiny[3]{0.05f,0,0},small[3]{0.2f,0,0};
         auto reaction=native_battle_reaction_angles(forward,BattlePoint{0,1});
         check(std::abs(reaction.yaw)<1e-5f&&std::abs(reaction.pitch)<1e-5f,
               "a direction along the receiver heading has zero relative angles");
@@ -2783,8 +2784,15 @@ int main(){
         check(std::abs(reaction.pitch+1.5707964f)<1e-4f,
               "an upward direction pitches the receiver down");
         reaction=native_battle_reaction_angles(none,BattlePoint{0,1});
-        check(reaction.yaw==0&&reaction.pitch==0,
-              "a degenerate direction uses the source (0,0,1) fallback");
+        check(std::abs(std::abs(reaction.yaw)-3.1415927f)<1e-4f&&
+              std::abs(reaction.pitch)<1e-5f,
+              "a degenerate direction uses the source (0,0,-1) fallback");
+        reaction=native_battle_reaction_angles(tiny,BattlePoint{0,1});
+        check(std::abs(std::abs(reaction.yaw)-3.1415927f)<1e-4f,
+              "a direction below squared 0.01 uses the fallback");
+        reaction=native_battle_reaction_angles(small,BattlePoint{0,1});
+        check(std::abs(reaction.yaw-1.5707964f)<1e-4f,
+              "a direction above squared 0.01 keeps its own yaw");
         check(!native_battle_reaction_mode_valid(0)&&native_battle_reaction_mode_valid(1)&&
               !native_battle_reaction_mode_valid(2)&&native_battle_reaction_mode_valid(3)&&
               !native_battle_reaction_mode_valid(4),

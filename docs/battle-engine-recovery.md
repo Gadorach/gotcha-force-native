@@ -403,7 +403,7 @@ spawns and color.
 The reaction direction is now implemented natively for the two modes whose
 inputs exist. `800300BC` takes its mode from a signed byte at the attacker's
 attack-table entry `+0x0E` (the only direct `bl` site is `8002F064`), subtracts
-the chosen vectors, applies the `(0,0,1)` degenerate fallback, then writes
+the chosen vectors, applies the `(0,0,-1)` degenerate fallback when `|v|^2 < 0.01`, then writes
 `atan2(x,z)` to the receiver yaw `+0x284` and `-atan2(y,x*x+z*z)` to the pitch
 `+0x282`, followed by the attack-table offsets and the `+0x1DA` bit-1 mirror.
 Native stores the receiver-relative yaw/pitch and presents them on the
