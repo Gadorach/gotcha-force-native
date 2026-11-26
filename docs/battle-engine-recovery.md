@@ -291,6 +291,30 @@ It is reached only when `receiver+474 & 0x02 == 0` or `receiver+131 != 0`;
 otherwise `r4` is forced to 0 and the call is skipped. The HP writer remains
 `8003D344`.
 
+The hit-acceptance exits that branch to the function epilogue are:
+
+| Site | Condition | Effect |
+| --- | --- | --- |
+| `E34C` | `receiver+131 == 0`, `record+16 & 0x0800`, `receiver+1436 & 0x0800` | OR flags at `+1433`/`+474`/`+1789` from `record+11`; return |
+| `E374` | `record+16 & 2`, `receiver+1436 & 2` | return |
+| `E398` | `record+16 & 0x0800`, `receiver+131 == 16`, receiver-linked model `770` | return |
+| `E72C` | `record+18 & 0x0400`, `receiver+1438 & 0x0400` | return |
+| `E738` | same pair, receiver model `2053` | return |
+| `E740` | same pair, receiver model `2061` | return |
+| `E748` | same pair, receiver model `2062` | return |
+| `E754` | same pair, `receiver+1788 != 0` | return |
+| `E760` | same pair, `receiver+1184 != 0` | return |
+| `E774` | same pair, `receiver+1804 < record+5` | return |
+| `E77C` | after storing `record+5` into `receiver+1804` | return |
+| `E790` | `record+18 & 0x0800`, `receiver+1438 & 0x0400` | return |
+| `E79C` | after setting `receiver+1805 = 1` | return |
+| `F51C` | `receiver+131 == 32` (post-effect) | return |
+| `F8A0` | `receiver+131 != 0` (end gate) | return |
+| `F8AC` | `receiver+1184 != 1` (end gate) | return |
+
+These are the direct branches to the epilogue; the meanings of the flag bits and
+the special model ids are not recovered, so they are recorded as numeric gates.
+
 The reaction class pair is verified. `receiver+0x5A0` is a class bitmask and
 `receiver+0x71A` the class index. In the amount routine a nonzero mask with bit
 `1 << class` set returns 0, which suppresses duplicate damage for a pending
