@@ -124,8 +124,8 @@ public:
         snapshot_.clear();
         // Keyboard feeds ports 0 and 1 alongside any controller, so local
         // play works without a device. Player 1: arrows/WASD, Space, Shift,
-        // E, Q, L, R, Z, Enter. Player 2: IJKL, U, H, O, N, M, comma,
-        // period, keypad Enter.
+        // E, Q, L, R, Z, Enter. Player 2: I/J/K/semicolon, U, H, O, N, M,
+        // comma, period, keypad Enter; L stays P1's dash.
         RawInputState& keyboard = snapshot_.pad(0);
         const Uint8* keys = SDL_GetKeyboardState(nullptr);
         if (keys) {
@@ -161,7 +161,7 @@ public:
             second.dpad_up=second.axis_up=keys[SDL_SCANCODE_I]!=0;
             second.dpad_down=second.axis_down=keys[SDL_SCANCODE_K]!=0;
             second.dpad_left=second.axis_left=keys[SDL_SCANCODE_J]!=0;
-            second.dpad_right=second.axis_right=keys[SDL_SCANCODE_L]!=0;
+            second.dpad_right=second.axis_right=keys[SDL_SCANCODE_SEMICOLON]!=0;
             second.l=keys[SDL_SCANCODE_M]!=0;
             second.r=keys[SDL_SCANCODE_COMMA]!=0;
             second.z=keys[SDL_SCANCODE_PERIOD]!=0;
