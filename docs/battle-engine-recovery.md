@@ -265,6 +265,12 @@ It is reached only when `receiver+474 & 0x02 == 0` or `receiver+131 != 0`;
 otherwise `r4` is forced to 0 and the call is skipped. The HP writer remains
 `8003D344`.
 
+The reaction class pair is verified. `receiver+0x5A0` is a class bitmask and
+`receiver+0x71A` the class index. In the amount routine a nonzero mask with bit
+`1 << class` set returns 0, which suppresses duplicate damage for a pending
+reaction class. The live fixture sets `+0x5A0 = 4` to suppress class 2, exactly
+this pair. `8002E2A8` uses the same test before running the reaction branch.
+
 The live pair entry `r3=80681A40 r4=8067FAC0` carried `+0x2C`/`+0x1EC` links to
 `80365EC0` and `802D4160`, but the X hit applied `80366058` instead. Those links
 are side defaults, not the applied credit; the credit must be read at the amount
