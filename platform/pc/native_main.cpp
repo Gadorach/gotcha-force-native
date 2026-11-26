@@ -1521,7 +1521,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                         gf::pc::PortableBattleHost* hosted=nullptr,gf::pc::PortableBattleHostReport* report=nullptr,
                         BattlePickerSession* selection=nullptr){
     using namespace gf;
-    NativeBattleMvp world;NativeGRedGroundDashDemo source;
+    NativeBattleMvp world;NativeGRedGroundDashDemo source,source2;
     std::string error;
     auto fail=[&](const char* reason){
         gf::log_error(context,"package-battle","%s: %s",reason,error.c_str());render.shutdown();return 2;
@@ -1540,14 +1540,10 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     const auto tick_limit=accepted?accepted->request.tick_limit:0;
     if(!hosted)for(unsigned i=0;i<2;++i)config.packages[i]=packages[i].definition;
     if(!hosted&&options.demo_roster_battle){
-        if(packages[0].definition->movement==BorgBattleMovement::NormalGRed||
-           packages[1].definition->movement==BorgBattleMovement::NormalGRed){
-            error="roster demo uses authored movement; the per-actor source producer is not host-wired yet";
-            return fail("roster source producer not wired");
-        }
         config.packages[2]=packages[0].definition;config.packages[3]=packages[1].definition;
         config.declared_actors=4;
         config.teams={0,1,0,1};config.teams_declared=true;
+        config.allow_multi_source=true;
     }
     config.package_strafe=selection||options.exercise_battle_mobility;
     if(!hosted&&options.package_battle_distance){
@@ -1640,7 +1636,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     unsigned impact_audio_starts=0;
     bool wait_for_jump_release=false;
     auto restart=[&](){
-        source.reject();view.reset_control_test_pose();practice_input={};wait_for_jump_release=false;
+        source.reject();source2.reject();view.reset_control_test_pose();practice_input={};wait_for_jump_release=false;
         movement_audio.reset();if(audible)context.audio().discard_queued();
         if(!world.start(config,&view)){
             error=stage||hosted?"pinned stage or Borg definitions refused":
@@ -1652,6 +1648,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             NativeBorgAnimationSeed seed;
             if(!view.source_seed(0,world,&seed)||!source.bind(0,context.files(),options.battle_mvp_assets,inputs,
                world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush,&practice))return false;
+            if(options.demo_roster_battle){
+                NativeBorgAnimationSeed seed2;
+                if(!view.source_seed(2,world,&seed2)||!source2.bind(2,context.files(),options.battle_mvp_assets,inputs,
+                   world,seed2,&error,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush,&practice))return false;
+            }
         }
         return true;
     };
@@ -1909,7 +1910,40 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             const auto prior_facing=world.actors()[0].facing;
             const auto prior_dash=world.actors()[0].dash_ticks;
             const auto movement=NativeBattleMvpView::movement_frame(world,width,height);
-            if(source_movement){
+            if(source_movement&&options.demo_roster_battle){
+                auto input=pads[0];practice_input.take(input);NativeBorgMotionOffer offer;
+                const bool touchdown=source.battle_landing_entry_pending();
+                if(!input.b)wait_for_jump_release=false;
+                if(touchdown&&input.b)wait_for_jump_release=true;
+                if(wait_for_jump_release)input.b=false;
+                if(!source.prepare_battle_tick(world,view.source_binding(0),movement,input,&offer,&error)){
+                    source.reject();return fail("recovered movement refused; no provisional fallback");
+                }
+                NativeBorgMotionOffer offer2;GamePadState pad2{};
+                if(!source2.prepare_battle_tick(world,view.source_binding(2),movement,pad2,&offer2,&error)){
+                    source.reject();source2.reject();return fail("second source movement refused");
+                }
+                origins.source_local[0]=source.prepared_local(world,offer);
+                origins.source_local[2]=source2.prepared_local(world,offer2);
+                std::array<const NativeBorgMotionOffer*,4> offers{&offer,nullptr,&offer2,nullptr};
+                // The source offer already consumed the input; the validator
+                // must see the same empty pads as the duel source path.
+                std::array<GamePadState,4> roster_pads{};
+                std::array<BorgBattleInputs,4> roster_input{action_input[0],action_input[1],{},{}};
+                const bool advanced=origins.source_local[0]&&origins.source_local[2]&&
+                    world.step_roster(roster_pads,roster_input,false,&view,{},&movement,nullptr,&origins,offers);
+                origins.source_local={};
+                if(!advanced){source.reject();source2.reject();return fail("roster source contact refused");}
+                NativeBorgSourcePose pose0,pose2;
+                if(!source.commit(world,view.source_binding(0),&error)||!source.pose(world,&pose0)||
+                   !source2.commit(world,view.source_binding(2),&error)||!source2.pose(world,&pose2))
+                    return fail("roster source pose was not published");
+                const std::array<NativeBattleMvpView::SourcePoseView,2> poses{
+                    NativeBattleMvpView::SourcePoseView{0,&pose0},
+                    NativeBattleMvpView::SourcePoseView{2,&pose2}};
+                if(!view.update_sources(world,poses,&error))return fail("roster source publication refused");
+                if(touchdown&&source.landing_entry_accepted()&&offer.kind==NativeBorgMotionKind::JumpLanding)touchdown_entry=true;
+            }else if(source_movement){
                 auto input=pads[0];practice_input.take(input);NativeBorgMotionOffer offer;
                 const bool touchdown=source.battle_landing_entry_pending();
                 if(!input.b)wait_for_jump_release=false;
@@ -1985,7 +2019,10 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 previous_cues[i]=cues;
             }
             for(const auto& e:world.package_events()){
-                if((e.kind==BorgBattleEventKind::Hit||e.kind==BorgBattleEventKind::BlastHit)&&e.actor==0&&e.recipient==1)
+                const bool credited_hit=e.actor==0&&(options.demo_roster_battle?
+                    (e.recipient<world.actor_count()&&world.actors()[e.recipient].team!=world.actors()[0].team):
+                    e.recipient==1);
+                if((e.kind==BorgBattleEventKind::Hit||e.kind==BorgBattleEventKind::BlastHit)&&credited_hit)
                     (restarts?after_restart_hit:first_hit)=true;
                 if(!options.trace_package_battle)continue;
                 const auto& moves=config.packages[e.actor]->moves;

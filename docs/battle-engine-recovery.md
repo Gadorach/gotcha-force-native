@@ -480,16 +480,18 @@ Source-owned motion now has a per-actor engine path:
 - the step refuses any source package that has no offer instead of falling
   back to legacy motion.
 
-The host source demo still owns one body, so `start` continues to refuse a
-second `NormalGRed` package until the per-actor producer is wired. The view now
-holds maxima-sized Borg/effect slots and accepts a package span, so it can bind
-a roster. The host now has a headless four-actor roster demo for authored-movement
-packages (`--demo-roster-battle`, duplicate teams 0/1/0/1). It uses the roster
-step, binds four view slots and passes the host smoke. The HUD now draws one bar per
-actor, and the camera frames actor 0 against its nearest enemy (the duel's
-actor 1). G-Red source 2v2 still needs the per-actor producer. A two-G-Red source test
-still needs a second shipped package, which the C++ unit suite cannot
-construct.
+The view holds maxima-sized Borg/effect slots and accepts a package span. The
+host now runs the four-actor roster in both variants (`--demo-roster-battle`,
+teams 0/1/0/1):
+
+- authored packages;
+- a G-Red/Sasuke source roster with two demos, per-actor offers and one
+  batched source publication. `allow_multi_source` admits the second
+  `NormalGRed` package; the single-source duel keeps the stationary-opponent
+  admission rule.
+
+The host smoke asserts `actors=4 ... shots=2 hits=2` for both. The HUD draws
+one bar per actor, and the camera frames actor 0 against its nearest enemy.
 
 ## Next targets
 
