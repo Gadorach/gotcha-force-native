@@ -492,13 +492,28 @@ public:
                         const BorgBattleSocket& spec,const CharacterLocalPose* source_local,BattleMvpVec* out)const{
         return ready_&&owner<borgs_.size()&&borgs_[owner].package_socket(actor,tick,move,frame,spec,source_local,out);
     }
+    struct SourcePoseView {unsigned actor=0;const NativeBorgSourcePose* pose=nullptr;};
     bool update_source(const NativeBattleMvp& world,const NativeBorgSourcePose& source,std::string* error){
+        const SourcePoseView one{0,&source};
+        return update_sources(world,std::span<const SourcePoseView>(&one,1),error);
+    }
+    bool update_sources(const NativeBattleMvp& world,std::span<const SourcePoseView> poses,std::string* error){
         source_practice_frame_.reset();rendered_scope_.reset();
-        if(!ready_||!world.motion_receipt_current(source.receipt)){borgs_[0].refuse_source_pose();if(error)*error="source view: stale/foreign native contact receipt";return false;}
-        if(source_publication_==std::numeric_limits<u64>::max()){borgs_[0].refuse_source_pose();if(error)*error="source view: publication exhausted";return false;}
-        if(!borgs_[0].update_source_pose(world,source,error)||
-           (world.actor_count()==2&&!borgs_[1].update(world.actors()[1],world.tick(),error)))return false;
-        if(source_practice_)source_practice_frame_=source.frame_scope;
+        if(!ready_){if(error)*error="source view: not ready";return false;}
+        if(source_publication_==std::numeric_limits<u64>::max()){if(error)*error="source view: publication exhausted";return false;}
+        std::array<bool,kBattleMvpMaxActors> posed{};
+        for(const auto& entry:poses){
+            if(!entry.pose||entry.actor>=world.actor_count()){if(error)*error="source view: actor/pose outside the world";return false;}
+            const unsigned slot=model_slot(world,entry.actor);
+            if(!world.motion_receipt_current(entry.pose->receipt,entry.actor)){
+                borgs_[slot].refuse_source_pose();if(error)*error="source view: stale/foreign native contact receipt";return false;
+            }
+            if(!borgs_[slot].update_source_pose(entry.actor,world,*entry.pose,error))return false;
+            posed[entry.actor]=true;
+        }
+        for(unsigned i=0;i<world.actor_count();++i)
+            if(!posed[i]&&!borgs_[model_slot(world,i)].update(world.actors()[i],world.tick(),error))return false;
+        if(source_practice_&&!poses.empty())source_practice_frame_=poses[0].pose->frame_scope;
         rendered_scope_=world.presentation_scope();rendered_tick_=world.tick();++source_publication_;publish_movement_fx(world);return true;
     }
     // Proves publication of the exact source frame without sampling any bones.

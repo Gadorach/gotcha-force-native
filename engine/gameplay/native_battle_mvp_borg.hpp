@@ -412,11 +412,15 @@ public:
         last_tick_=std::numeric_limits<u32>::max();
     }
     bool update_source_pose(const NativeBattleMvp& accepted,const NativeBorgSourcePose& source,std::string* error){
-        const auto& actor=accepted.actors()[0];const auto tick=accepted.tick();
+        return update_source_pose(0,accepted,source,error);
+    }
+    bool update_source_pose(unsigned index,const NativeBattleMvp& accepted,const NativeBorgSourcePose& source,std::string* error){
+        if(index>=accepted.actor_count())return false;
+        const auto& actor=accepted.actors()[index];const auto tick=accepted.tick();
         presentation_ready_=false;
         const auto owned=source.frame_scope.lock();const auto binding=scene_.instance_binding();
         if(!ready_||!owned||!binding||source.binding.lock()!=binding||owned->binding_.lock()!=binding||
-           !accepted.motion_receipt_current(source.receipt)||!accepted.motion_receipt_current(owned->receipt_)||
+           !accepted.motion_receipt_current(source.receipt,index)||!accepted.motion_receipt_current(owned->receipt_,index)||
            !actor.source_ground_motion||model_id_!=0x615||actor.model!=0x615){
             if(error)*error="native Borg source pose: foreign/reloaded model binding";
             return false;
