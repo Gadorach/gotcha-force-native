@@ -3629,6 +3629,14 @@ private:
             return config_.packages[attacker]->moves[move].reaction_mode;
         return u8(NativeBattleReactionMode::AttackerToReceiver);
     }
+    std::pair<s8,s8> reaction_offsets(unsigned attacker,u8 move)const{
+        if(attacker<config_.packages.size()&&config_.packages[attacker]&&
+           move<config_.packages[attacker]->moves.size()){
+            const auto& row=config_.packages[attacker]->moves[move];
+            return {row.reaction_yaw_offset,row.reaction_pitch_offset};
+        }
+        return {0,0};
+    }
     void damage(unsigned target,unsigned amount,unsigned attacker=255,u8 move=255){
         auto& actor=actors_[target];
         actor.health-=std::min(actor.health,amount);actor.hit_flash=8;
@@ -3642,7 +3650,12 @@ private:
             // atan2 stage and the (0,0,1) degenerate fallback.
             const f32 direction[3]{actor.position[0]-source.position[0],actor.position[1]-source.position[1],
                                    actor.position[2]-source.position[2]};
-            const auto reaction=native_battle_reaction_angles(direction,actor.facing);
+            auto reaction=native_battle_reaction_angles(direction,actor.facing);
+            const auto offsets=reaction_offsets(attacker,move);
+            reaction.yaw=native_battle_reaction_wrap(
+                reaction.yaw-f32(offsets.first)*kNativeBattleReactionUnit);
+            reaction.pitch=native_battle_reaction_wrap(
+                reaction.pitch-f32(offsets.second)*kNativeBattleReactionUnit);
             actor.reaction_yaw=reaction.yaw;actor.reaction_pitch=reaction.pitch;
             actor.reaction_ticks=BattleMvpActor::reaction_duration;
         }

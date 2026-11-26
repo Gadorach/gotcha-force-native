@@ -278,6 +278,8 @@ struct BorgBattleMove {
     std::vector<BorgBattlePartSwap> part_swaps;
     u8 reaction_mode=1; // recovered attacker move-table +0x0E; modes 1/3
     bool reaction_mode_declared=false;
+    s8 reaction_yaw_offset=0,reaction_pitch_offset=0; // table +0x14/+0x15
+    bool reaction_offset_declared=false;
     unsigned last_marker()const{
         if(held_fire)return duration-1; // every frame in the presentation loop must exist
         unsigned deploy=0;
@@ -899,6 +901,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct FieldDebitRef {unsigned line;std::string move;BorgFieldDebit spec;};
     struct MoveChargeRef {unsigned line;std::string move;BorgMoveCharge spec;};
     struct ReactionModeRef {unsigned line;std::string move;u8 mode;};
+    struct ReactionOffsetRef {unsigned line;std::string move;s8 yaw,pitch;};
     struct FreeReleaseRef {unsigned line;std::string move;};
     struct FieldTextureRef {unsigned line;std::string move,path;};
     struct FieldSocketRef {unsigned line;std::string move;BorgBattleSocket socket;};
@@ -986,6 +989,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<FieldDebitRef> field_debit;
     std::vector<MoveChargeRef> move_charge;
     std::vector<ReactionModeRef> reaction_mode;
+    std::vector<ReactionOffsetRef> reaction_offsets;
     std::vector<FreeReleaseRef> free_release;
     std::vector<FieldTextureRef> field_textures;
     std::vector<FieldSocketRef> field_sockets;
@@ -1323,6 +1327,18 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !number(a[1],1,5,&mode)||(mode!=1&&mode!=3))
                 return fail("unsupported or invalid reaction mode");
             reaction_mode.push_back({line,std::string(a[0]),u8(mode)});
+        }else if(key=="reaction-offset"){
+            std::array<std::string_view,3> a;int yaw=0,pitch=0;
+            const auto integer=[](std::string_view s,int* out){
+                if(s.empty()||s.size()>4)return false;
+                int n=0;const auto r=std::from_chars(s.data(),s.data()+s.size(),n);
+                if(r.ec!=std::errc{}||r.ptr!=s.data()+s.size()||n<-128||n>127)return false;
+                *out=n;return true;
+            };
+            if(reaction_offsets.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !integer(a[1],&yaw)||!integer(a[2],&pitch))
+                return fail("invalid reaction offset");
+            reaction_offsets.push_back({line,std::string(a[0]),s8(yaw),s8(pitch)});
         }else if(key=="free-release"){
             if(!value.empty()&&(!id(value)||value.find('|')!=value.npos))return fail("invalid free release");
             free_release.push_back({line,std::string(value)});
@@ -2087,6 +2103,14 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             return fail("reaction-mode needs one declared move");
         next.moves[mi].reaction_mode=r.mode;
         next.moves[mi].reaction_mode_declared=true;
+    }
+    for(const auto& r:reaction_offsets){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].reaction_offset_declared)
+            return fail("reaction-offset needs one declared move");
+        next.moves[mi].reaction_yaw_offset=r.yaw;
+        next.moves[mi].reaction_pitch_offset=r.pitch;
+        next.moves[mi].reaction_offset_declared=true;
     }
     for(const auto& r:free_release){
         line=r.line;const auto mi=index(next.moves,r.move);

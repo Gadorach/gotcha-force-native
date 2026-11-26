@@ -410,8 +410,10 @@ Native stores the receiver-relative yaw/pitch and presents them on the
 upper-body root for an authored eight-tick window; moves declare the mode with
 `reaction-mode`. Modes 0/2/4/5/default read attacker-internal vectors the
 native actor does not carry, so they are refused at load. The attack-table
-yaw/pitch offsets (`+0x14`/`+0x15`) and the `+0x1DA` mirror remain
-unrecovered, and the native pitch bone axis is an authored mapping.
+yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
+0x100 units, but their per-move retail values are not yet extracted. The
+`+0x1DA` mirror remains unrecovered, and the native pitch bone axis is an
+authored mapping.
 
 The ledger fields are:
 

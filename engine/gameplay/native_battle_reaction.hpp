@@ -16,6 +16,15 @@ enum class NativeBattleReactionMode:u8 {AttackerToReceiver=1,CentreToCentre=3};
 struct NativeBattleReaction {f32 yaw=0,pitch=0;};
 constexpr f32 kNativeBattleReactionEpsilon=0.01f; // lbl_80436FC0
 constexpr f32 kNativeBattleReactionPi=3.14159265358979323846f;
+// The source subtracts the attack-table offsets (+0x14/+0x15) in 0x100
+// 16-bit angle units, i.e. one turn / 256 per signed byte.
+constexpr f32 kNativeBattleReactionUnit=kNativeBattleReactionPi/128.f;
+
+inline f32 native_battle_reaction_wrap(f32 angle){
+    while(angle>kNativeBattleReactionPi)angle-=2*kNativeBattleReactionPi;
+    while(angle<-kNativeBattleReactionPi)angle+=2*kNativeBattleReactionPi;
+    return angle;
+}
 
 inline bool native_battle_reaction_mode_valid(unsigned mode){
     return mode==unsigned(NativeBattleReactionMode::AttackerToReceiver)||
@@ -35,8 +44,7 @@ inline NativeBattleReaction native_battle_reaction_angles(const f32 direction[3]
     const f32 pitch=-std::atan2(y,xz);
     if(std::isfinite(facing.x)&&std::isfinite(facing.z)&&(facing.x||facing.z)){
         yaw-=std::atan2(facing.x,facing.z);
-        while(yaw>kNativeBattleReactionPi)yaw-=2*kNativeBattleReactionPi;
-        while(yaw<-kNativeBattleReactionPi)yaw+=2*kNativeBattleReactionPi;
+        yaw=native_battle_reaction_wrap(yaw);
     }
     return {yaw,pitch};
 }

@@ -2810,6 +2810,19 @@ int main(){
         const auto base=parse(player);
         check(base->moves.size()>0&&base->moves[0].reaction_mode==1,
               "a move defaults to the attacker-to-receiver mode");
+        check(base->moves.size()>0&&base->moves[0].reaction_yaw_offset==0&&
+              base->moves[0].reaction_pitch_offset==0,
+              "reaction offsets default to zero");
+        const auto shifted=parse(std::string(player)+"reaction-offset=b-shot|64|-32\n");
+        check(shifted->moves.size()>0&&shifted->moves[0].reaction_yaw_offset==64&&
+              shifted->moves[0].reaction_pitch_offset==-32,
+              "reaction-offset declares the signed attack-table offsets");
+        check(!borg_read_gameplay_profile(std::string(player)+"reaction-offset=b-shot|200|0\n",
+                                          &rejected,&error),
+              "reaction-offset refuses an out-of-range value");
+        check(!borg_read_gameplay_profile(std::string(player)+
+              "reaction-offset=b-shot|1|0\nreaction-offset=b-shot|2|0\n",&rejected,&error),
+              "reaction-offset needs one row per move");
     }
 
     {
@@ -2824,7 +2837,7 @@ int main(){
         check(world.actors()[1].facing.z>0,"the receiver starts facing the attacker");
         std::array<GamePadState,4> pads{};
         std::array<BorgBattleInputs,4> inputs{};
-        bool saw=false;
+        bool saw=false;f32 base_yaw=0,base_pitch=0;
         for(unsigned tick=0;tick<80&&!saw;++tick){
             inputs[0].pressed=u8(tick<2?BorgBattleInputs::b:0);
             inputs[0].released=u8(tick==2?BorgBattleInputs::b:0);
@@ -2832,6 +2845,8 @@ int main(){
             check(world.step_roster(pads,inputs,false),"reaction combat step");
             if(world.hits()!=before){
                 saw=true;
+                base_yaw=world.actors()[1].reaction_yaw;
+                base_pitch=world.actors()[1].reaction_pitch;
                 check(world.actors()[1].reaction_ticks>=1&&
                       world.actors()[1].reaction_ticks<=BattleMvpActor::reaction_duration,
                       "a resolved hit opens the reaction window");
@@ -2847,6 +2862,32 @@ int main(){
         check(world.actors()[1].reaction_ticks==0&&world.actors()[1].reaction_yaw==0&&
               world.actors()[1].reaction_pitch==0,
               "the reaction window closes to rest");
+
+        const auto offsets=parse(std::string(player)+"reaction-offset=b-shot|64|-32\n");
+        NativeBattleMvp shifted;BattleMvpConfig offset_config=config;
+        offset_config.packages={offsets,dummy};
+        check(shifted.start(offset_config),"reaction offset fixture");
+        bool shifted_hit=false;
+        for(unsigned tick=0;tick<80&&!shifted_hit;++tick){
+            inputs[0].pressed=u8(tick<2?BorgBattleInputs::b:0);
+            inputs[0].released=u8(tick==2?BorgBattleInputs::b:0);
+            const auto before=shifted.hits();
+            check(shifted.step_roster(pads,inputs,false),"reaction offset step");
+            if(shifted.hits()!=before){
+                shifted_hit=true;
+                const f32 yaw=native_battle_reaction_wrap(
+                    shifted.actors()[1].reaction_yaw-base_yaw);
+                const f32 pitch=native_battle_reaction_wrap(
+                    shifted.actors()[1].reaction_pitch-base_pitch);
+                check(std::abs(native_battle_reaction_wrap(
+                          yaw+64.f*kNativeBattleReactionUnit))<1e-4f,
+                      "reaction-offset subtracts the yaw table byte");
+                check(std::abs(native_battle_reaction_wrap(
+                          pitch-32.f*kNativeBattleReactionUnit))<1e-4f,
+                      "reaction-offset subtracts the pitch table byte");
+            }
+        }
+        check(shifted_hit,"the reaction offset fixture resolves a hit");
     }
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }
