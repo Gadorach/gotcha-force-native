@@ -476,6 +476,22 @@ implementation must make these per-actor:
 - the movement branch's `last_offer_` reads;
 - the view's `source_seed` / `update_source` pair and its single motion scope.
 
+The engine block is a single-actor validator that also encodes the
+`pads[0]`/`pads[1]`, `actors_[0]`/`actors_[1]` and projectile-owner
+preconditions. The safe order is:
+
+1. replace the single state with arrays (`last_offers_`, `last_receipts_`,
+   `motion_producers_`, `source_contacts_`);
+2. add a `source_offers` span to `step_roster` and have the duel wrapper pass
+   a one-entry span for actor 0;
+3. extract the validator into `validate_source_offer(actor, offer, pads,
+   target, ...)`, replacing the actor-0/actor-1 and pad-0/pad-1 references;
+4. run the preflight per offered actor and store its contact;
+5. read `last_offer_[i]` in the movement branch and assign the per-actor
+   receipt/producer at the end;
+6. extend the view's source seed/update pair;
+7. test with two synthetic producers before wiring the host.
+
 ## Next targets
 
 1. Emit the eight recovered table roles into packages: credit difficulty and
