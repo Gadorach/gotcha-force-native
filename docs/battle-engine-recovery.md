@@ -481,10 +481,12 @@ Source-owned motion now has a per-actor engine path:
   back to legacy motion.
 
 The host source demo still owns one body, so `start` continues to refuse a
-second `NormalGRed` package until the per-actor producer is wired. The
-remaining work is that host/view producer and a two-G-Red roster test; the C++
-unit suite cannot construct a second valid G-Red package without the shipped
-assets.
+second `NormalGRed` package until the per-actor producer is wired. The view now
+holds maxima-sized Borg/effect slots and accepts a package span, so it can bind
+a roster. The host still supplies two packages, two stage markers and a duel
+camera/HUD; those are the next host-facing pieces. A two-G-Red source test
+still needs a second shipped package, which the C++ unit suite cannot
+construct.
 
 ## Next targets
 

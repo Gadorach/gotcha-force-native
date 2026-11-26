@@ -178,8 +178,8 @@ public:
         source_practice_package_=practice!=nullptr;ready_=true;return true;
     }
     bool load_packages(IFileSystem& files,const std::string& directory,RenderEngine& render,
-                       const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions,
-                       const std::array<BorgBattleVisualAssets,2>& assets,std::string* error,const std::string& stage_collision={}){
+                       std::span<const std::shared_ptr<const BorgGameplayProfile>> definitions,
+                       std::span<const BorgBattleVisualAssets> assets,std::string* error,const std::string& stage_collision={}){
         clear_stage();
         auto read=[&](const std::string& name,std::vector<u8>* out){
             u64 size=0;const auto path=directory+"/"+name;
@@ -310,8 +310,8 @@ public:
         if(dx*dx+dz*dz<=4*next.actor_radius*next.actor_radius)return fail("stage spawn markers overlap the duel bodies");
         *config=std::move(next);if(error)error->clear();return true;
     }
-    bool load_packages(RenderEngine& render,const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions,
-                       const std::array<BorgBattleVisualAssets,2>& assets,std::string* error){
+    bool load_packages(RenderEngine& render,std::span<const std::shared_ptr<const BorgGameplayProfile>> definitions,
+                       std::span<const BorgBattleVisualAssets> assets,std::string* error){
         ready_=false;
         if(!stage_manifest_){
             if(error)*error="exact portable stage binding required";
@@ -328,8 +328,8 @@ public:
         return bind_package_borgs(render,definitions,assets,error);
     }
 private:
-    bool bind_package_borgs(RenderEngine& render,const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions,
-                            const std::array<BorgBattleVisualAssets,2>& assets,std::string* error){
+    bool bind_package_borgs(RenderEngine& render,std::span<const std::shared_ptr<const BorgGameplayProfile>> definitions,
+                            std::span<const BorgBattleVisualAssets> assets,std::string* error){
         projectile_records_={};
         impact_record_scenes_={};
         u32 next_projectile_texture=118000;
@@ -349,7 +349,11 @@ private:
             }
             next_projectile_texture+=u32(count);return true;
         };
-        for(unsigned i=0;i<2;++i){
+        if(definitions.size()!=assets.size()||definitions.empty()||definitions.size()>kBattleMvpMaxActors){
+            if(error)*error="Borg Battle Test: package/visual count";
+            return false;
+        }
+        for(unsigned i=0;i<definitions.size();++i){
             const auto& a=assets[i];
             if(!borgs_[i].load_package(definitions[i],a.model,a.prefix,a.pose,a.motions,error))return false;
             borgs_[i].upload(render,10000+i*2000);
@@ -1031,7 +1035,7 @@ private:
             }
         }
     }
-    static bool needs_projectile_stage(const std::array<std::shared_ptr<const BorgGameplayProfile>,2>& definitions){
+    static bool needs_projectile_stage(std::span<const std::shared_ptr<const BorgGameplayProfile>> definitions){
         for(const auto& def:definitions)if(def)for(const auto& shot:def->projectiles)
             if(borg_projectile_uses_stage(shot.floor)||shot.attraction.has_value())return true;
         return false;
@@ -1165,13 +1169,13 @@ private:
          provisional_glide_view_=false,provisional_cruise_view_=false;
     struct ProjectileRecordDraw {AnimatedModelScene scene;std::optional<AnimatedModelScene> trail;
                                  u16 scale_percent=100,trail_scale=100;u8 trail_capacity=0;};
-    std::array<std::map<u8,ProjectileRecordDraw>,2> projectile_records_;
+    std::array<std::map<u8,ProjectileRecordDraw>,kBattleMvpMaxActors> projectile_records_;
     struct ImpactRecordDraw {AnimatedModelScene scene;u16 scale_percent=100,end_scale=0,ticks=0;};
-    std::array<std::map<u8,ImpactRecordDraw>,2> impact_record_scenes_;
+    std::array<std::map<u8,ImpactRecordDraw>,kBattleMvpMaxActors> impact_record_scenes_;
     unsigned projectile_record_draws_=0;
     unsigned projectile_trail_draws_=0;
     unsigned impact_record_draws_=0;
-    std::array<unsigned,2> package_part_draws_{},package_body_draws_{};
+    std::array<unsigned,kBattleMvpMaxActors> package_part_draws_{},package_body_draws_{};
     static constexpr u32 walk_texture_base_=76000;
     unsigned walk_texture_slot_=0,walk_textures_=0;
     u64 source_publication_=0;
@@ -1229,7 +1233,7 @@ private:
     std::array<unsigned,2> source_practice_force_slot_{};
     std::string source_practice_start_label_;
     std::optional<StagePackageManifest> stage_manifest_;
-    StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,2> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
+    StihGrid floor_;HsdRecordAnimationBank stage_bank_;std::array<AttachmentModelScene,2> stage_;std::array<NativeBattleMvpBorg,kBattleMvpMaxActors> borgs_;std::vector<Vertex> geometry_;TextRenderer text_;
     struct StageViewObstacle {
         StageViewFadeProfile profile;
         std::array<StageViewFadeState,2> views{};
