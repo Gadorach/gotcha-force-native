@@ -276,6 +276,8 @@ struct BorgBattleMove {
     std::vector<BorgBattlePartMotion> part_motions;
     std::vector<BorgBattlePartScroll> part_scrolls;
     std::vector<BorgBattlePartSwap> part_swaps;
+    u8 reaction_mode=1; // recovered attacker move-table +0x0E; modes 1/3
+    bool reaction_mode_declared=false;
     unsigned last_marker()const{
         if(held_fire)return duration-1; // every frame in the presentation loop must exist
         unsigned deploy=0;
@@ -633,6 +635,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     }
     unsigned release_sound_count=0;
     for(const auto& m:p.moves){
+        if(m.reaction_mode!=1&&m.reaction_mode!=3)return false;
         if(m.pose_authored_loop_window&&(m.static_pose||!p.record_zero_body||p.movement!=BorgBattleMovement::Grounded))return false;
         if((p.static_body()&&!m.static_pose)||(m.static_pose&&(m.pose_start||!m.part_motions.empty()||
            !m.part_spins.empty()||!m.part_scrolls.empty()||!m.part_swaps.empty())))return false;
@@ -895,6 +898,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct FieldCoreDamageRef {unsigned line;std::string move;BorgFieldCoreDamage spec;};
     struct FieldDebitRef {unsigned line;std::string move;BorgFieldDebit spec;};
     struct MoveChargeRef {unsigned line;std::string move;BorgMoveCharge spec;};
+    struct ReactionModeRef {unsigned line;std::string move;u8 mode;};
     struct FreeReleaseRef {unsigned line;std::string move;};
     struct FieldTextureRef {unsigned line;std::string move,path;};
     struct FieldSocketRef {unsigned line;std::string move;BorgBattleSocket socket;};
@@ -981,6 +985,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<FieldCoreDamageRef> field_core_damage;
     std::vector<FieldDebitRef> field_debit;
     std::vector<MoveChargeRef> move_charge;
+    std::vector<ReactionModeRef> reaction_mode;
     std::vector<FreeReleaseRef> free_release;
     std::vector<FieldTextureRef> field_textures;
     std::vector<FieldSocketRef> field_sockets;
@@ -1312,6 +1317,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(move_charge.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
                !number(a[1],2,60,&spec.ticks))return fail("invalid move charge");
             move_charge.push_back({line,std::string(a[0]),spec});
+        }else if(key=="reaction-mode"){
+            std::array<std::string_view,2> a;u16 mode=0;
+            if(reaction_mode.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,5,&mode)||(mode!=1&&mode!=3))
+                return fail("unsupported or invalid reaction mode");
+            reaction_mode.push_back({line,std::string(a[0]),u8(mode)});
         }else if(key=="free-release"){
             if(!value.empty()&&(!id(value)||value.find('|')!=value.npos))return fail("invalid free release");
             free_release.push_back({line,std::string(value)});
@@ -2069,6 +2080,13 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(mi==next.moves.size()||next.moves[mi].charge)
             return fail("move-charge needs one declared move");
         next.moves[mi].charge=r.spec;
+    }
+    for(const auto& r:reaction_mode){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].reaction_mode_declared)
+            return fail("reaction-mode needs one declared move");
+        next.moves[mi].reaction_mode=r.mode;
+        next.moves[mi].reaction_mode_declared=true;
     }
     for(const auto& r:free_release){
         line=r.line;const auto mi=index(next.moves,r.move);

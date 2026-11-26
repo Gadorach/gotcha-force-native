@@ -2771,5 +2771,74 @@ int main(){
               world.actors()[1].health==0&&world.actors()[3].health==0,
               "a four-actor team is eliminated and the surviving team wins");
     }
+    {
+        const f32 forward[3]{0,0,1},right[3]{1,0,0},up[3]{0,1,0},none[3]{0,0,0};
+        auto reaction=native_battle_reaction_angles(forward,BattlePoint{0,1});
+        check(std::abs(reaction.yaw)<1e-5f&&std::abs(reaction.pitch)<1e-5f,
+              "a direction along the receiver heading has zero relative angles");
+        reaction=native_battle_reaction_angles(right,BattlePoint{0,1});
+        check(std::abs(reaction.yaw-1.5707964f)<1e-4f,
+              "a receiver on +x turns +90 degrees");
+        reaction=native_battle_reaction_angles(up,BattlePoint{0,1});
+        check(std::abs(reaction.pitch+1.5707964f)<1e-4f,
+              "an upward direction pitches the receiver down");
+        reaction=native_battle_reaction_angles(none,BattlePoint{0,1});
+        check(reaction.yaw==0&&reaction.pitch==0,
+              "a degenerate direction uses the source (0,0,1) fallback");
+        check(!native_battle_reaction_mode_valid(0)&&native_battle_reaction_mode_valid(1)&&
+              !native_battle_reaction_mode_valid(2)&&native_battle_reaction_mode_valid(3)&&
+              !native_battle_reaction_mode_valid(4),
+              "only reaction modes with native inputs are admitted");
+    }
+
+    {
+        BorgGameplayProfile rejected;std::string error;
+        check(!borg_read_gameplay_profile(std::string(player)+"reaction-mode=b-shot|2\n",
+                                          &rejected,&error),
+              "reaction-mode refuses a source mode with no native inputs");
+        const auto centre=parse(std::string(player)+"reaction-mode=b-shot|3\n");
+        check(centre->moves.size()>0&&centre->moves[0].reaction_mode==3,
+              "reaction-mode declares the recovered centre-to-centre mode");
+        const auto base=parse(player);
+        check(base->moves.size()>0&&base->moves[0].reaction_mode==1,
+              "a move defaults to the attacker-to-receiver mode");
+    }
+
+    {
+        const auto fighter=parse(player);
+        const auto dummy=parse(target);
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={fighter,dummy};
+        config.declared_actors=2;
+        config.teams={0,1};config.teams_declared=true;
+        config.spawn={BattlePoint{0,0},BattlePoint{0,-200}};
+        check(world.start(config),"reaction hit fixture");
+        check(world.actors()[1].facing.z>0,"the receiver starts facing the attacker");
+        std::array<GamePadState,4> pads{};
+        std::array<BorgBattleInputs,4> inputs{};
+        bool saw=false;
+        for(unsigned tick=0;tick<80&&!saw;++tick){
+            inputs[0].pressed=u8(tick<2?BorgBattleInputs::b:0);
+            inputs[0].released=u8(tick==2?BorgBattleInputs::b:0);
+            const auto before=world.hits();
+            check(world.step_roster(pads,inputs,false),"reaction combat step");
+            if(world.hits()!=before){
+                saw=true;
+                check(world.actors()[1].reaction_ticks>=1&&
+                      world.actors()[1].reaction_ticks<=BattleMvpActor::reaction_duration,
+                      "a resolved hit opens the reaction window");
+                check(std::abs(std::abs(world.actors()[1].reaction_yaw)-3.14159265f)<1e-3f,
+                      "the receiver turns away from the attacker");
+                check(std::abs(world.actors()[1].reaction_pitch)<1e-5f,
+                      "a level attacker and receiver produce no pitch");
+            }
+        }
+        check(saw,"the reaction fixture resolves a hit");
+        for(unsigned i=0;i<BattleMvpActor::reaction_duration;++i)
+            check(world.step_roster(pads,inputs,false),"reaction decay step");
+        check(world.actors()[1].reaction_ticks==0&&world.actors()[1].reaction_yaw==0&&
+              world.actors()[1].reaction_pitch==0,
+              "the reaction window closes to rest");
+    }
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

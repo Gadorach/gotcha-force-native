@@ -33,6 +33,9 @@ ROLE_NOTES = {
                 "selector",
     0x8003D344: "writes the amount to actor+0x1C6 HP and actor+0x41C ledger",
     0x8003CD5C: "the 19-stage amount routine",
+    0x800300BC: "takes the mode from s8(attacker move-table entry +0x0E); "
+                "writes receiver yaw +0x284 and pitch +0x282; native "
+                "implements modes 1 and 3",
 }
 
 # What each target does, from the matched source or the inspected call shape.
@@ -40,7 +43,7 @@ ROLE_NOTES = {
 ROLES = {
     0x8002F8D0: ("set-flag", "matched"),
     0x800061A8: ("queue-reaction", "matched"),
-    0x800300BC: ("impact-mode", "open"),
+    0x800300BC: ("reaction-direction", "open"),
     0x8003CD5C: ("amount", "recovered"),
     0x8003D344: ("hp-write", "matched"),
     0x8002F8DC: ("force-ledger-update", "open"),

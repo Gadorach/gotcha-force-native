@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT = ROOT / "docs/api-map/reaction-effect-map.json"
+SCAFFOLD = ROOT / "docs/api-map/reaction-scaffold-map.json"
 
 
 class ReactionEffectMapTest(unittest.TestCase):
@@ -29,6 +30,13 @@ class ReactionEffectMapTest(unittest.TestCase):
         self.assertEqual(data["effects"]["800300BC"]["modes"]["1"],
                          "target+0x20 - attacker+0x20")
         self.assertEqual(data["effects"]["8018214C"]["role"], "reaction-id")
+
+    def test_scaffold_reaction_direction(self):
+        data = json.loads(SCAFFOLD.read_text())
+        calls = {call["site"]: call for call in data["calls"]}
+        self.assertEqual(calls["8002F064"]["target"], "800300BC")
+        self.assertEqual(calls["8002F064"]["role"], "reaction-direction")
+        self.assertIn("+0x0E", calls["8002F064"]["note"])
 
 
 if __name__ == "__main__":

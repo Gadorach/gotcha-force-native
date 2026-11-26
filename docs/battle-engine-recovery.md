@@ -388,6 +388,19 @@ ledger: it subtracts the amount from the team force record, adds the per-actor
 ledgers and a six-slot hit-history ring. The rest are impact effects, object
 spawns and color.
 
+The reaction direction is now implemented natively for the two modes whose
+inputs exist. `800300BC` takes its mode from a signed byte at the attacker's
+attack-table entry `+0x0E` (the only call site is `8002F064`), subtracts the
+chosen vectors, applies the `(0,0,1)` degenerate fallback, then writes
+`atan2(x,z)` to the receiver yaw `+0x284` and `-atan2(y,x*x+z*z)` to the pitch
+`+0x282`, followed by the attack-table offsets and the `+0x1DA` bit-1 mirror.
+Native stores the receiver-relative yaw/pitch and presents them on the
+upper-body root for an authored eight-tick window; moves declare the mode with
+`reaction-mode`. Modes 0/2/4/5/default read attacker-internal vectors the
+native actor does not carry, so they are refused at load. The attack-table
+yaw/pitch offsets (`+0x14`/`+0x15`) and the `+0x1DA` mirror remain
+unrecovered, and the native pitch bone axis is an authored mapping.
+
 The ledger fields are:
 
 | Field | Meaning |
@@ -526,11 +539,12 @@ one bar per actor, and the camera frames actor 0 against its nearest enemy.
    The mapper, per-Borg selectors and the `damage_content_row` builder are now
    exported; the remaining choice is how the packager binds the battle settings
    index.
-2. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
-   helpers, the new amount routine, the `battle_pair_select` seam and the
-   published call map.
-3. `8002BB14`: recover the branch conditions inside the collision walk; the
-   call map is already published.
+2. `8002E2A8`: the force ledger, amount/HP boundary and the reaction direction
+   (modes 1/3) are native; the remaining scaffold effects are impact records,
+   object spawns and color, published as data without a native presenter.
+3. `8002BB14`: the 98 conditional branches are decoded in
+   `api-map/collision-branch-map.json`; the next step is naming the
+   broad-phase/geometry gates where the field evidence is clear.
 4. The action-class table entries: reimplement the shared class handlers as
    native move behaviours, with the class selected by content.
 

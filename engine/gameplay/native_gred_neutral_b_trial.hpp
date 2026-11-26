@@ -179,7 +179,7 @@ private:
     GRedNeutralBLocalLibrary library_;
     CharacterProgramVm vm_;
     CharacterProgramDirectionalControl controls_;
-    std::array<BattleMvpActor,2> initial_;
+    std::array<BattleMvpActor,kBattleMvpMaxActors> initial_;
     WeaponStockModeZeroState stock_;
     std::optional<Pending> pending_;
     std::optional<GRedNeutralBReleasePlan> paid_;

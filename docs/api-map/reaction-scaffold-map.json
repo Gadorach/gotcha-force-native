@@ -112,8 +112,9 @@
     },
     {
       "confidence": "open",
+      "note": "takes the mode from s8(attacker move-table entry +0x0E); writes receiver yaw +0x284 and pitch +0x282; native implements modes 1 and 3",
       "phase": "pre-amount",
-      "role": "impact-mode",
+      "role": "reaction-direction",
       "site": "8002F064",
       "target": "800300BC"
     },

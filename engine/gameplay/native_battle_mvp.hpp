@@ -16,6 +16,7 @@
 #include "engine/gameplay/battle_pair_targeting.hpp"
 #include "engine/gameplay/native_borg_movement.hpp"
 #include "engine/gameplay/native_borg_contact.hpp"
+#include "engine/gameplay/native_battle_reaction.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/borgs/normal_gred_movement.hpp"
 #include "engine/gameplay/borg_gameplay.hpp"
@@ -38,6 +39,10 @@ struct BattleMvpActor {
     BattlePoint velocity{};f32 movement_speed=0,move_forward=0,move_right=0;
     f64 travel_distance=0;unsigned landing_ticks=0;
     BattlePoint aim_facing{0,1};f32 upper_body_yaw=0;
+    // Recovered 800300BC presentation state. The angles are relative to
+    // `facing`; the decay window is authored (matches hit_flash).
+    static constexpr unsigned reaction_duration=8;
+    f32 reaction_yaw=0,reaction_pitch=0;unsigned reaction_ticks=0;
     std::optional<BattlePoint> package_aim_heading;
     f32 package_aim_slope=0;
     bool package_target_visible=true;
@@ -1693,7 +1698,12 @@ public:
         for(auto& effect:impacts_)if(effect.ticks)--effect.ticks;
         for(auto& effect:impact_records_)if(effect.ticks)--effect.ticks;
         for(unsigned i=0;i<actor_count();++i){
-            auto& actor=actors_[i];if(!actor.health){actor.action=BattleMvpAction::Defeated;continue;}
+            auto& actor=actors_[i];
+            if(actor.reaction_ticks){
+                if(!--actor.reaction_ticks){actor.reaction_yaw=actor.reaction_pitch=0;}
+                else{actor.reaction_yaw*=.75f;actor.reaction_pitch*=.75f;}
+            }
+            if(!actor.health){actor.action=BattleMvpAction::Defeated;continue;}
             for(auto& cooldown:actor.cooldown)if(cooldown)--cooldown;
             if(actor.attack_ticks)--actor.attack_ticks;
             if(actor.hit_flash)--actor.hit_flash;
@@ -1974,14 +1984,14 @@ public:
                 if(!shot.landed){for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k];shot.velocity[1]-=config_.gravity*.65f;
                     f32 y=0;if(!floor(terrain,shot.position[0],shot.position[2],shot.position[1],&y)){ready_=false;return false;}
                     if(shot.position[1]<=y){shot.position[1]=y;shot.landed=true;}}
-                if(--shot.life==0){impact(shot.position,true);for(unsigned i=0;i<actor_count();++i)if(i!=shot.owner&&actors_[i].health){f32 squared=0;for(unsigned k=0;k<3;++k){const f32 d=actors_[i].position[k]+(k==1?config_.actor_height*.5f:0)-shot.position[k];squared+=d*d;}if(squared<=180.f*180.f)damage(i,35);}shot.active=false;}
+                if(--shot.life==0){impact(shot.position,true);for(unsigned i=0;i<actor_count();++i)if(i!=shot.owner&&actors_[i].health){f32 squared=0;for(unsigned k=0;k<3;++k){const f32 d=actors_[i].position[k]+(k==1?config_.actor_height*.5f:0)-shot.position[k];squared+=d*d;}if(squared<=180.f*180.f)damage(i,35,shot.owner);}shot.active=false;}
             }else{
                 const u8 target=actor_target(shot.owner);f32 t=0;bool hit=false;
                 if(target==255){shot.active=false;continue;}
                 if(actors_[target].health&&battle_swept_hit({shot.position[0],shot.position[2]},{shot.velocity[0],shot.velocity[2]},{actors_[target].position[0],actors_[target].position[2]},config_.actor_radius+8,&t)){
                     const f32 y=shot.position[1]+shot.velocity[1]*t;hit=y>=actors_[target].position[1]-8&&y<=actors_[target].position[1]+config_.actor_height+8;
                 }
-                if(hit){for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k]*t;damage(target,shot.weapon==BattleMvpWeapon::EnergyBeam?12:shot.weapon==BattleMvpWeapon::Shuriken?4:6);impact(shot.position,false);shot.active=false;}
+                if(hit){for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k]*t;damage(target,shot.weapon==BattleMvpWeapon::EnergyBeam?12:shot.weapon==BattleMvpWeapon::Shuriken?4:6,shot.owner);impact(shot.position,false);shot.active=false;}
                 else{for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k];if(--shot.life==0)shot.active=false;}
             }
             if(std::abs(shot.position[0])>config_.arena_half+300||std::abs(shot.position[2])>config_.arena_half+300||shot.position[1]<-10000)shot.active=false;
@@ -2492,7 +2502,7 @@ private:
     void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,const BattleMvpVec& position){
         if(!package_hit_relation(owner,recipient))return;
         const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
-        damage(recipient,amount);impact(position,false);
+        damage(recipient,amount,owner,move);impact(position,false);
         auto& target=actors_[recipient];
         if(target.damage_kind==0){ // 8002F8DC returns before any ledger write
             ++target.hits_taken;target.damage_taken+=amount;
@@ -3107,7 +3117,7 @@ private:
             if(x*x+y*y+z*z>radius_squared)continue;
             if(try_package_guard(i,shot.owner,BorgBattleAttackKind::Blast,{-x,-z},shot.id))continue;
             const auto amount=u16(std::min(actor.health,unsigned(blast.damage)));
-            damage(i,amount);
+            damage(i,amount,shot.owner,shot.package_move);
             record_package(BorgBattleEventKind::BlastHit,shot.owner,shot.package_move,0,shot.id,amount,i);
             if(definition.ink&&actor.health){
                 ink_[i]={shot.id,tick_,*definition.ink};
@@ -3613,7 +3623,30 @@ private:
             for(auto& shot:projectiles_)if(!shot.active){shot={true,++next_id_,u8(owner),weapon,muzzle,muzzle,{speed*(aim.x*c-aim.z*s),pitch,speed*(aim.z*c+aim.x*s)},weapon==BattleMvpWeapon::Bomb?70u:120u,false};++shots_;break;}}
         actor.cooldown[secondary?1:0]=weapon==BattleMvpWeapon::Bomb?120:weapon==BattleMvpWeapon::EnergyBeam?18:24;actor.attack_ticks=10;
     }
-    void damage(unsigned target,unsigned amount){auto& actor=actors_[target];actor.health-=std::min(actor.health,amount);actor.hit_flash=8;actor.package_damage_serial=++hits_;actor.package_last_hit_tick=tick_;}
+    u8 reaction_mode(unsigned attacker,u8 move)const{
+        if(attacker<config_.packages.size()&&config_.packages[attacker]&&
+           move<config_.packages[attacker]->moves.size())
+            return config_.packages[attacker]->moves[move].reaction_mode;
+        return u8(NativeBattleReactionMode::AttackerToReceiver);
+    }
+    void damage(unsigned target,unsigned amount,unsigned attacker=255,u8 move=255){
+        auto& actor=actors_[target];
+        actor.health-=std::min(actor.health,amount);actor.hit_flash=8;
+        actor.package_damage_serial=++hits_;actor.package_last_hit_tick=tick_;
+        const u8 mode=attacker<actor_count()&&attacker!=target?reaction_mode(attacker,move):0;
+        if(native_battle_reaction_mode_valid(mode)){
+            const auto& source=actors_[attacker];
+            // Modes 1 (link positions) and 3 (side positions +0x64) both map
+            // to the native actor positions: the native actor has no second
+            // body origin. The receiver-relative angles carry the recovered
+            // atan2 stage and the (0,0,1) degenerate fallback.
+            const f32 direction[3]{actor.position[0]-source.position[0],actor.position[1]-source.position[1],
+                                   actor.position[2]-source.position[2]};
+            const auto reaction=native_battle_reaction_angles(direction,actor.facing);
+            actor.reaction_yaw=reaction.yaw;actor.reaction_pitch=reaction.pitch;
+            actor.reaction_ticks=BattleMvpActor::reaction_duration;
+        }
+    }
     void impact(const BattleMvpVec& position,bool explosion,f32 radius=0,unsigned ticks=18){
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();
     }

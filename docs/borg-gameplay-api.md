@@ -525,6 +525,19 @@ release=arc-twin|6|arc-stock|1|arc
   packages keep every hit. `damage-kind=0..255` declares the actor class for
   the class rules; the MVP supplies zero record flags, so only the immunity and
   mask rules change behaviour today.
+- `reaction-mode=move|1|3` selects the recovered `800300BC` reaction direction
+  for hits from that move. Mode 1 uses the attacker/receiver link positions and
+  mode 3 the side positions (`+0x64`); a native actor has one body origin, so
+  both map to the actor positions. The source reads the mode from a signed byte
+  at the attacker's move-table entry `+0x0E`; the other modes use fields the
+  native actor does not have and are refused at load. The default is 1. The
+  engine writes the receiver's yaw/pitch relative to its facing (the source
+  writes absolute link-object angles) and presents them on the upper-body root
+  for an authored 8-tick window. The provisional G-Red exact-clip path keeps
+  its existing no-extra-angle rule, so the reaction pose is injected only where
+  the upper-body aim was already applied. The attack-table yaw/pitch offsets
+  (`+0x14`/`+0x15`) are not yet recovered, and the pitch bone axis is an
+  authored native mapping.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a

@@ -353,7 +353,7 @@ public:
             provisional_jump_&&actor.landing_ticks?NativeBorgMotion::Land:native_borg_select_motion(actor,map_);
         const unsigned base=unsigned(motion);
         const unsigned upper=actor.attack_ticks?2:base;
-        if(presentation_ready_&&scene_.ready()&&tick==last_tick_&&base==base_&&upper==upper_&&actor.position==last_position_&&actor.facing==last_facing_&&actor.upper_body_yaw==last_aim_yaw_)return true;
+        if(presentation_ready_&&scene_.ready()&&tick==last_tick_&&base==base_&&upper==upper_&&actor.position==last_position_&&actor.facing==last_facing_&&actor.upper_body_yaw==last_aim_yaw_&&actor.reaction_yaw==last_reaction_yaw_&&actor.reaction_pitch==last_reaction_pitch_)return true;
         presentation_ready_=false;
         const bool reset=last_tick_==std::numeric_limits<u32>::max()||tick<last_tick_;
         const u32 elapsed=reset?0:tick-last_tick_;
@@ -394,10 +394,9 @@ public:
         }
         const auto root=mat4_multiply(mat4_translation(actor.position.data()),mat4_rotation_y(std::atan2(actor.facing.x,actor.facing.z)));
         if(!character_pose_initial_frame(scene_.rig(),root,&frame,error))return false;
-        if(!provisional_walk_)
-            frame.extra_angles[torso_][1]=std::bit_cast<s16>(u16(s32(std::lround(actor.upper_body_yaw*32768.f/3.14159265359f))));
+        if(!provisional_walk_)apply_reaction_angles(actor,frame);
         if(!character_pose_direct_world(scene_.rig(),local,frame,&world_,error)||!scene_.set_world_pose(world_,{},error))return false;
-        displayed_=std::move(local);base_=base;upper_=upper;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;
+        displayed_=std::move(local);base_=base;upper_=upper;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;last_reaction_yaw_=actor.reaction_yaw;last_reaction_pitch_=actor.reaction_pitch;
         source_pose_active_=false;source_frame_scope_.reset();presentation_ready_=true;return true;
     }
     bool animation_seed(const BattleMvpActor& actor,u32 tick,NativeBorgAnimationSeed* out)const{
@@ -437,6 +436,7 @@ public:
         if(!character_pose_direct_world(scene_.rig(),*local,frame,&world,error)||
            !present_package_pose(actor,tick,*local,frame,world,error))return false;
         world_=std::move(world);displayed_=*local;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;
+        last_reaction_yaw_=actor.reaction_yaw;last_reaction_pitch_=actor.reaction_pitch;
         source_pose_active_=true;source_frame_scope_=source.frame_scope;presentation_ready_=true;return true;
     }
     bool observe_source_world_matrices(const NativeBattleMvp& world,NativeGRedPracticeWorldMatrices* out)const{
@@ -512,6 +512,17 @@ private:
         }
         return hsd_bone_motion_load(selected.archive,scene_.rig().binding,out,error,mode);
     }
+    // Recovered 800300BC leftover: yaw on the upper-body root's Y axis and
+    // pitch on X. The pitch axis is an authored native mapping; the source
+    // writes +0x282, whose native bone axis is not yet verified on screen.
+    void apply_reaction_angles(const BattleMvpActor& actor,CharacterPoseFrame& frame)const{
+        if(torso_==kHsdNoBone)return;
+        const auto angle=[](f32 value){
+            return std::bit_cast<s16>(u16(s32(std::lround(value*32768.f/3.14159265359f))));
+        };
+        frame.extra_angles[torso_][1]=angle(actor.upper_body_yaw+actor.reaction_yaw);
+        if(actor.reaction_pitch)frame.extra_angles[torso_][0]=angle(actor.reaction_pitch);
+    }
     bool apply_package_action(const BattleMvpActor& actor,CharacterLocalPose* local,CharacterPoseFrame* frame,std::string* error)const{
         if(actor.package_move==BorgBattleActionState::none)return true;
         if(!package_profile_||actor.package_move>=package_profile_->moves.size())return false;
@@ -524,7 +535,7 @@ private:
         CharacterLocalPose attack;
         if(!character_pose_sample(rig,lanes,&attack,error))return false;
         for(unsigned i=rig.cuts[0];i<rig.cuts[1];++i)local->bones[rig.order[i]]=attack.bones[rig.order[i]];
-        if(torso_!=kHsdNoBone)frame->extra_angles[torso_][1]=std::bit_cast<s16>(u16(s32(std::lround(actor.upper_body_yaw*32768.f/3.14159265359f))));
+        apply_reaction_angles(actor,*frame);
         return true;
     }
     unsigned package_locomotion_role(const BattleMvpActor& actor)const{
@@ -570,8 +581,10 @@ private:
     bool build_package_pose(const BattleMvpActor& actor,CharacterLocalPose& local,CharacterPoseFrame* frame,
                             CharacterWorldPose* out,std::string* error)const{
         const auto root=mat4_multiply(mat4_translation(actor.position.data()),mat4_rotation_y(std::atan2(actor.facing.x,actor.facing.z)));
-        return character_pose_initial_frame(scene_.rig(),root,frame,error)&&apply_package_action(actor,&local,frame,error)&&
-            character_pose_direct_world(scene_.rig(),local,*frame,out,error);
+        if(!character_pose_initial_frame(scene_.rig(),root,frame,error)||
+           !apply_package_action(actor,&local,frame,error))return false;
+        apply_reaction_angles(actor,*frame);
+        return character_pose_direct_world(scene_.rig(),local,*frame,out,error);
     }
     bool present_package_pose(const BattleMvpActor& actor,u32 tick,const CharacterLocalPose& local,
                               const CharacterPoseFrame& frame,const CharacterWorldPose& bound,std::string* error,
@@ -682,14 +695,14 @@ private:
         CharacterPoseFrame frame;
         if(!sample_package_local(actor,clock,&local,error)||!build_package_pose(actor,local,&frame,&world_,error)||
            !present_package_pose(actor,tick,local,frame,world_,error,terrain))return false;
-        displayed_=std::move(local);base_=role;clock_=clock;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;
+        displayed_=std::move(local);base_=role;clock_=clock;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;last_reaction_yaw_=actor.reaction_yaw;last_reaction_pitch_=actor.reaction_pitch;
         source_pose_active_=false;source_frame_scope_.reset();presentation_ready_=true;return true;
     }
     bool observe_receiver_key2(const BattleMvpActor& actor,u32 tick,Mat4* out)const{
         if(!out||!ready_||!presentation_ready_||!scene_.ready()||source_pose_active_||
            model_id_!=0x000a||actor.model!=model_id_||!actor.health||actor.source_ground_motion||
            tick!=last_tick_||actor.position!=last_position_||actor.facing!=last_facing_||
-           actor.upper_body_yaw!=last_aim_yaw_||world_.matrices.size()<=2)return false;
+           actor.upper_body_yaw!=last_aim_yaw_||actor.reaction_yaw!=last_reaction_yaw_||actor.reaction_pitch!=last_reaction_pitch_||world_.matrices.size()<=2)return false;
         *out=world_.matrices[2];return true;
     }
     std::shared_ptr<const NativeBorgSourcePoseScope> current_source_frame(const NativeBattleMvp& world)const{
@@ -708,7 +721,7 @@ private:
     CharacterModelScene scene_;CharacterMotionBank bank_;NativeBorgMotionMap map_;std::array<HsdBoneMotionClip,unsigned(NativeBorgMotion::Count)> clips_;std::array<f32,unsigned(NativeBorgMotion::Count)> stride_{};CharacterWorldPose world_;
     CharacterLocalPose displayed_;std::array<CharacterLocalPose,4> blend_from_;std::array<f32,4> blend_remaining_{};
     std::array<u16,unsigned(NativeBorgMotion::Count)> lab_start_frames_{};
-    u16 model_id_=0;u8 torso_=kHsdNoBone;unsigned base_=0,upper_=0;u32 clock_=0,attack_clock_=0,last_tick_=0;bool ready_=false,presentation_ready_=false,source_pose_active_=false;BattleMvpVec last_position_{};BattlePoint last_facing_{};f32 last_aim_yaw_=0;
+    u16 model_id_=0;u8 torso_=kHsdNoBone;unsigned base_=0,upper_=0;u32 clock_=0,attack_clock_=0,last_tick_=0;bool ready_=false,presentation_ready_=false,source_pose_active_=false;BattleMvpVec last_position_{};BattlePoint last_facing_{};f32 last_aim_yaw_=0,last_reaction_yaw_=0,last_reaction_pitch_=0;
     bool provisional_walk_=false,provisional_jump_=false,provisional_dash_=false,provisional_air_dash_=false,
           provisional_glide_=false,provisional_cruise_=false,provisional_animated_cruise_=false;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_frame_scope_;
