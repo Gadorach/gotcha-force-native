@@ -394,7 +394,8 @@ public:
         }
         const auto root=mat4_multiply(mat4_translation(actor.position.data()),mat4_rotation_y(std::atan2(actor.facing.x,actor.facing.z)));
         if(!character_pose_initial_frame(scene_.rig(),root,&frame,error))return false;
-        if(!provisional_walk_)apply_reaction_angles(actor,frame);
+        if(provisional_walk_)apply_reaction_pose(actor,frame);
+        else apply_reaction_angles(actor,frame);
         if(!character_pose_direct_world(scene_.rig(),local,frame,&world_,error)||!scene_.set_world_pose(world_,{},error))return false;
         displayed_=std::move(local);base_=base;upper_=upper;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;last_reaction_yaw_=actor.reaction_yaw;last_reaction_pitch_=actor.reaction_pitch;
         source_pose_active_=false;source_frame_scope_.reset();presentation_ready_=true;return true;
@@ -515,13 +516,20 @@ private:
     // Recovered 800300BC leftover: yaw on the upper-body root's Y axis and
     // pitch on X. The pitch axis is an authored native mapping; the source
     // writes +0x282, whose native bone axis is not yet verified on screen.
+    static s16 pose_angle(f32 value){
+        return std::bit_cast<s16>(u16(s32(std::lround(value*32768.f/3.14159265359f))));
+    }
     void apply_reaction_angles(const BattleMvpActor& actor,CharacterPoseFrame& frame)const{
         if(torso_==kHsdNoBone)return;
-        const auto angle=[](f32 value){
-            return std::bit_cast<s16>(u16(s32(std::lround(value*32768.f/3.14159265359f))));
-        };
-        frame.extra_angles[torso_][1]=angle(actor.upper_body_yaw+actor.reaction_yaw);
-        if(actor.reaction_pitch)frame.extra_angles[torso_][0]=angle(actor.reaction_pitch);
+        frame.extra_angles[torso_][1]=pose_angle(actor.upper_body_yaw+actor.reaction_yaw);
+        if(actor.reaction_pitch)frame.extra_angles[torso_][0]=pose_angle(actor.reaction_pitch);
+    }
+    // The provisional exact-clip path keeps its no-aim rule but still shows a
+    // hit reaction: only the reaction angles are added.
+    void apply_reaction_pose(const BattleMvpActor& actor,CharacterPoseFrame& frame)const{
+        if(torso_==kHsdNoBone||(!actor.reaction_yaw&&!actor.reaction_pitch))return;
+        frame.extra_angles[torso_][1]=pose_angle(actor.reaction_yaw);
+        if(actor.reaction_pitch)frame.extra_angles[torso_][0]=pose_angle(actor.reaction_pitch);
     }
     bool apply_package_action(const BattleMvpActor& actor,CharacterLocalPose* local,CharacterPoseFrame* frame,std::string* error)const{
         if(actor.package_move==BorgBattleActionState::none)return true;

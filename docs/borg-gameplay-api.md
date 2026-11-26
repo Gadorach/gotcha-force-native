@@ -534,8 +534,8 @@ release=arc-twin|6|arc-stock|1|arc
   engine writes the receiver's yaw/pitch relative to its facing (the source
   writes absolute link-object angles) and presents them on the upper-body root
   for an authored 8-tick window. The provisional G-Red exact-clip path keeps
-  its existing no-extra-angle rule, so the reaction pose is injected only where
-  the upper-body aim was already applied. The attack-table yaw/pitch offsets
+  its existing no-aim rule but adds the reaction angles, so the hit pose shows
+  without injecting attack aim. The attack-table yaw/pitch offsets
   (`+0x14`/`+0x15`) are not yet recovered, and the pitch bone axis is an
   authored native mapping.
 - `activation=move|release-window|min ticks|max ticks` opts a move into

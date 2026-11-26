@@ -24,6 +24,24 @@ int main(){
         actor={};actor.model=pair.second;
         check(borg.update(actor,0,&error)&&borg.bounds(&low,&high),"owned source bytes survive caller buffer release");
         BattleMvpVec foot;check(borg.bone_point(16,{},&foot),"evaluated native actor has a real skeleton");
+        std::array<BattleMvpVec,20> rest{};
+        for(unsigned bone=0;bone<rest.size();++bone)check(borg.bone_point(bone,{},&rest[bone]),"rest pose bone exists");
+        actor.reaction_yaw=.5f;actor.reaction_pitch=.2f;actor.reaction_ticks=BattleMvpActor::reaction_duration;
+        check(borg.update(actor,0,&error),"a reaction republishes the pose on the same tick");
+        bool reaction_moved=false;
+        for(unsigned bone=0;bone<rest.size();++bone){
+            BattleMvpVec posed;check(borg.bone_point(bone,{},&posed),"reaction pose bone exists");
+            for(unsigned k=0;k<3;++k)reaction_moved|=std::abs(posed[k]-rest[bone][k])>.001f;
+        }
+        check(reaction_moved,"reaction angles rotate the upper body");
+        actor.reaction_yaw=actor.reaction_pitch=0;actor.reaction_ticks=0;
+        check(borg.update(actor,0,&error),"clearing the reaction republishes the pose");
+        bool reaction_restored=true;
+        for(unsigned bone=0;bone<rest.size();++bone){
+            BattleMvpVec posed;check(borg.bone_point(bone,{},&posed),"cleared reaction bone exists");
+            for(unsigned k=0;k<3;++k)reaction_restored&=std::abs(posed[k]-rest[bone][k])<.001f;
+        }
+        check(reaction_restored,"clearing the reaction restores the rest pose");
         actor.position={30,0,-20};actor.movement_speed=5;actor.move_forward=1;actor.travel_distance=40;actor.action=BattleMvpAction::Move;
         for(u32 tick=1;tick<20;++tick){actor.travel_distance+=5;check(borg.update(actor,tick,&error),"distance-based locomotion and transition sampling");}
         actor.move_forward=0;actor.move_right=1;
