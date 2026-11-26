@@ -33,6 +33,22 @@ class DamageContentRowTest(unittest.TestCase):
         self.assertEqual(row["stages"]["defender_class"], 1.13)
         self.assertEqual(row["stages"]["receiver_rank"], 1.15)
 
+    def test_multiple_defender_rows(self):
+        block = row_tool.load_rows(
+            DOL, SELECTORS, ATTACKER,
+            [DEFENDER, dict(DEFENDER, model=0x0615)], 20, 1.0)
+        self.assertEqual(len(block["rows"]), 2)
+        self.assertEqual([row["amount"] for row in block["rows"]], [22, 20])
+        self.assertIn("damage-vs=10|", block["block"])
+        self.assertIn("damage-vs=1557|", block["block"])
+        self.assertNotEqual(block["rows"][0]["stages"]["defender_class"],
+                            block["rows"][1]["stages"]["defender_class"])
+
+    def test_duplicate_defender_model_refused(self):
+        with self.assertRaises(ValueError):
+            row_tool.load_rows(DOL, SELECTORS, ATTACKER,
+                               [DEFENDER, dict(DEFENDER)], 20, 1.0)
+
     def test_settings_select_a_different_class_cell(self):
         low = row_tool.load(DOL, SELECTORS, ATTACKER, DEFENDER, 20, 1.0)
         changed = row_tool.load(DOL, SELECTORS, ATTACKER,

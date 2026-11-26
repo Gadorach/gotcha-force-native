@@ -8,8 +8,10 @@ and emit the content factors the native engine consumes:
     rank   = receiver_rank(side, difficulty)
 
 The four engine factors are `credit`, `class`, `rank` and `relative`; their
-product is the original pre-tier product. The known G-Red -> Sasuke hit
-reproduces `damage-vs=000a|0.867|1.13|1.15|1.0` and amount 22.
+product is the original pre-tier product. A battle can request several defender
+models and receives a ready-to-append `damage-vs` block, capped at the engine's
+16 rows. The known G-Red -> Sasuke hit reproduces
+`damage-vs=10|0.867|1.13|1.15|1.0` and amount 22.
 
 Read-only: the DOL and the public selector JSON are inputs.
 """
@@ -103,6 +105,29 @@ def build(image, selectors, attacker, defender, base, relative):
     }
 
 
+def build_rows(image, selectors, attacker, defenders, base, relative):
+    if not 1 <= len(defenders) <= 16:
+        raise ValueError("a battle needs between 1 and 16 defender rows")
+    models = [defender["model"] for defender in defenders]
+    if len(set(models)) != len(models):
+        raise ValueError("duplicate defender model")
+    rows = [build(image, selectors, attacker, defender, base, relative)
+            for defender in defenders]
+    return {
+        "kind": "gf-damage-content-block",
+        "revision": 1,
+        "source_dol_sha256": SOURCE_SHA256,
+        "attacker": dict(attacker),
+        "base": base,
+        "rows": rows,
+        "block": "\n".join(row["content"]["line"] for row in rows),
+        "notes": [
+            "One row per defender model, capped at the engine's 16-row limit.",
+            "`block` is the ready-to-append damage-vs block for a battle.",
+        ],
+    }
+
+
 def load(dol, selectors_path, attacker, defender, base, relative):
     with ReadOnlyFile(dol) as source:
         if not 0 < source.size <= 8 << 20:
@@ -114,14 +139,25 @@ def load(dol, selectors_path, attacker, defender, base, relative):
         return build(image, selectors, attacker, defender, base, relative)
 
 
+def load_rows(dol, selectors_path, attacker, defenders, base, relative):
+    with ReadOnlyFile(dol) as source:
+        if not 0 < source.size <= 8 << 20:
+            raise ValueError("source DOL extent")
+        image = DolImage(source.read(0, source.size), SOURCE_SHA256)
+        selectors = json.loads(Path(selectors_path).read_bytes())
+        if selectors.get("kind") != "gf-borg-damage-selectors":
+            raise ValueError("wrong selector artifact")
+        return build_rows(image, selectors, attacker, defenders, base, relative)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("dol", type=Path)
     parser.add_argument("selectors", type=Path)
     parser.add_argument("--attacker-model", type=lambda text: int(text, 16),
                         required=True)
-    parser.add_argument("--defender-model", type=lambda text: int(text, 16),
-                        required=True)
+    parser.add_argument("--defender-model", action="append", required=True,
+                        type=lambda text: int(text, 16))
     parser.add_argument("--attacker-side", type=int, choices=(0, 1), default=0)
     parser.add_argument("--defender-side", type=int, choices=(0, 1), default=1)
     parser.add_argument("--attacker-settings", type=int, choices=range(32),
@@ -137,10 +173,11 @@ def main():
     args = parser.parse_args()
     attacker = {"model": args.attacker_model, "side": args.attacker_side,
                 "settings": args.attacker_settings, "rank": args.attacker_rank}
-    defender = {"model": args.defender_model, "side": args.defender_side,
-                "settings": args.defender_settings, "rank": args.defender_rank}
-    print(json.dumps(load(args.dol, args.selectors, attacker, defender,
-                          args.base, args.relative), sort_keys=True))
+    defenders = [{"model": model, "side": args.defender_side,
+                  "settings": args.defender_settings, "rank": args.defender_rank}
+                 for model in args.defender_model]
+    print(json.dumps(load_rows(args.dol, args.selectors, attacker, defenders,
+                               args.base, args.relative), sort_keys=True))
 
 
 if __name__ == "__main__":

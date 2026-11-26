@@ -450,8 +450,9 @@ defender slot values 16 and 30 correspond to d = 15 and d = 1; that is
 consistent with, not proof of, that writer for those battles.
 
 `tools/analyze/damage_content_row.py` turns the tables and the public selector
-artifact into the native content row. The known hit reproduces the fixture line
-exactly:
+artifact into native content rows. A battle can pass up to 16 defender models
+and receive a ready-to-append `damage-vs` block; the known hit reproduces the
+fixture line exactly:
 
 ```sh
 python3 -B -m tools.analyze.damage_content_row <dol> \
@@ -463,6 +464,9 @@ python3 -B -m tools.analyze.damage_content_row <dol> \
 ```text
 damage-vs=10|0.867|1.13|1.15|1.0   product 1.126666   amount 22
 ```
+
+A second defender uses its own selector; G-Red's class row at the same
+settings gives `damage-vs=1557|0.867|1.05|1.15|1.0` (amount 20).
 
 ## Per-actor source movement
 
