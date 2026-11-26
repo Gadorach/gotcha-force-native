@@ -432,10 +432,12 @@ The action block itself is `pl####hit.bin` (7840 bytes, member block 2): a
 used step indices 2/3/8/6/4/7/5 select attack-table entries 2..8, all mode 0.
 Mode 0 reads attacker-internal vectors the native actor does not carry, so the
 default mode-1 direction remains an explicit approximation for retail moves.
-The queue group is selected by `8006F11C` from `s8(action_row[3])`, where
-`action_row = lbl_802D39B0 + actor[0x11]*0x34`. The static DOL rows show group
-0 for all five move slots, so the per-Borg runtime action rows still need
-tracing before a package can emit the exact mode/offset. The original
+The queue group is selected by `8006F11C` from `s8(action_row[3])`. In the
+per-Borg action candidates, the first byte of each row's context is the group
+index: G-Red B-shot contexts 0..5 select queue groups 0..5, each of which maps
+to the per-Borg table entry through its step list. That is the move → reaction
+path; the pilot groups and tables are published, while a packager still needs
+to carry each move's source context. The original
 `afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
