@@ -242,3 +242,10 @@ close hit tick=46 value=18
 3. `8002BB14`: branch-aware recovery of the collision walk.
 4. The action-class table entries: reimplement the shared class handlers as
    native move behaviours, with the class selected by content.
+
+The original rows are **paired by side** at `804335E0` (credit difficulty
+`[1.02, 0.92]`, credit rank `[0.85, 0.85]`) and at `80433618` (receiver rank
+`[1.15, 1.15]`). The native `damage-factors`/`damage-vs` keys are static per
+package, so a roster extractor must either bind one side or the engine needs a
+side-dependent row. That side matrix is the next API design step for automatic
+roster-wide factors.
