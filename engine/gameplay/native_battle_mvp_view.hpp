@@ -952,6 +952,7 @@ public:
             status=std::string("PACKAGE BATTLE TEST / TEST COMBAT\n")+
                 (has_b?"SPACE B":"B NOT IMPLEMENTED")+"   Q RESTART\n"+
                 (has_x?"E: X MOVE":"X NOT IMPLEMENTED");
+            if(world.actor_count()>2)status+="\nP2: IJKL MOVE   U B   H JUMP   O X";
         }
         if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(
             world.result()==BattleMvpResult::GRedWins?(package?"PLAYER 1 WINS":"G-RED WINS"):
