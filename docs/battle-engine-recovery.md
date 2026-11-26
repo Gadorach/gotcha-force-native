@@ -165,10 +165,12 @@ choices out of engine branches.
 The call graph splits the open core into a small amount routine and a broader
 reaction fan-out:
 
-- `8003CD5C` (amount, 1,512 B) calls only `80066298` (the category lookup,
-  matched). The rest of the factor math is inline. It is now translated in
-  `tools/analyze/damage_amount_model.py`; only the `80066298` index mapper is
-  still open. Emitting the eight table roles into packages is the next step.
+- `8003CD5C` (amount, 1,512 B) calls only `80066298` (the model-to-matchup
+  index mapper). The rest of the factor math is inline. Both are now
+  translated in `tools/analyze/damage_amount_model.py`: the mapper is a
+  256-entry pointer table at `802F2E28` (G-Red `0615 -> 4`, Sasuke `000a -> 0`,
+  cell `[0][4] = 1.0`). Emitting the eight table roles into packages is the
+  next step.
 - `8002E2A8` (pair/reaction, 5,672 B) calls 17 functions. The matched ones are
   `800061A8`, `80006C24`, `80019550`, `8002F8D0`, `8002FCBC`, `8003D344`
   (the HP writer), `8013F300`, `80176EC0`, `801DFF24`, `801EC1BC`. The open
@@ -253,7 +255,7 @@ base (record+0)
   x conditional_half                                     CEB8
   x attacker_hp_row(record+6, HP index)                  CF48
   x team_force_row(record+7, force index)                CFC0
-  x matchup(attacker model, defender model)              D024
+  x matchup[model_index(defender)][model_index(attacker)] D024
   x defender_class_row(model+156, settings[defender+136]) D100
   x relative(defender+180)                               D16C
   x defender_hp_row_157/158(post-hit HP index)           D1EC/D260
@@ -273,19 +275,20 @@ Mana     5 x 0.92 x 0.85 x 0.5 x 1.40 x 1.15     =  3.148 -> 3
 `802C6820[16]`, the defender class row selected by `model+156 = 1` and the
 per-team settings byte; it is not a battle-wide scalar. The `0.85` is the
 attacker difficulty rank at `804335F8`, separate from the `804335E0`
-credit-difficulty pair.
+credit-difficulty pair. The D024 cell is
+`matrix[model_index(defender)][model_index(attacker)]`; the mapper (the only
+callee of the amount routine) is a pointer table at `802F2E28`.
 
 ## Next targets
 
 1. Emit the eight recovered table roles into packages: credit difficulty and
    attacker rank for the attacker, class row and receiver rank for the
    defender, plus the two HP/force rows where the packager can supply them.
-2. `80066298`: recover the model-to-matchup-matrix index mapper (the only
-   open callee of the amount function).
-3. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
+   The model-index mapper is already exported as part of the amount artifact.
+2. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
    helpers and the new amount routine.
-4. `8002BB14`: branch-aware recovery of the collision walk.
-5. The action-class table entries: reimplement the shared class handlers as
+3. `8002BB14`: branch-aware recovery of the collision walk.
+4. The action-class table entries: reimplement the shared class handlers as
    native move behaviours, with the class selected by content.
 
 The credit-difficulty pair is exported as

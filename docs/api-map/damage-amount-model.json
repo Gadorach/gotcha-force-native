@@ -7,6 +7,7 @@
     "0.867 is not a single stored float: it is credit difficulty 1.02 (CE94) times attacker difficulty rank 0.85 (CFC8).",
     "The 1.13 is not a battle-wide settings scalar: it is the defender class row 802C6820[16] at D100, selected by model+156 and the per-team settings byte 803C4E60[defender+136].",
     "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
+    "The matchup mapper 80066298 is a 256-entry pointer table at 802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
     "The 0.85 rank is at 804335F8[side], not inside the 804335E0 credit-difficulty pair."
   ],
   "function": {
@@ -22,8 +23,30 @@
   "kind": "gf-damage-amount-model",
   "matchup": {
     "address": "802C5D60",
-    "index": "80066298(actor+1000) per side",
-    "note": "The model-to-index mapper 80066298 is still open; the observed cells are neutral for both recorded hits.",
+    "index": "matrix[model_index(defender+1000)][model_index(attacker+1000)]",
+    "mapper": {
+      "address": "802F2E28",
+      "function": "80066298",
+      "observed": [
+        {
+          "index": 4,
+          "model": "0615"
+        },
+        {
+          "index": 0,
+          "model": "000a"
+        }
+      ],
+      "rule": "row = s8(high model byte); index = s16(row[low model byte])"
+    },
+    "note": "The mapper is the only function the amount routine calls; it is now resolved. The observed Kakeru cell is neutral at [defender 0][attacker 4].",
+    "observed_cell": {
+      "attacker": "0615",
+      "column": 4,
+      "defender": "000a",
+      "row": 0,
+      "value": 1.0
+    },
     "shape": "20 x 20 floats (row stride 80)"
   },
   "notes": [
@@ -145,7 +168,7 @@
       "table": "attacker_rank"
     },
     {
-      "index": "model_index(attacker+1000) * 80 + model_index(defender+1000) * 4",
+      "index": "model_index(defender+1000) * 80 + model_index(attacker+1000) * 4",
       "name": "matchup",
       "op": "mul",
       "site": "D024",

@@ -1,7 +1,10 @@
 """Pin the translated damage-amount chain and its two observations."""
 import unittest
+from pathlib import Path
 
 from tools.analyze import damage_amount_model as model
+
+DOL = Path("/home/gadorach/Projects/GotchaForce/original/extracted/sys/main.dol")
 
 
 class DamageAmountModelTest(unittest.TestCase):
@@ -82,6 +85,25 @@ class DamageAmountModelTest(unittest.TestCase):
         amount, product = model.evaluate(40, {"scale_divisor_40": 40.0})
         self.assertAlmostEqual(product, 1.0)
         self.assertEqual(amount, 1)
+
+
+@unittest.skipUnless(DOL.is_file(), "original DOL not available")
+class ModelIndexTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from tools.extract.battle_initial_target import SOURCE_SHA256
+        from tools.extract.source_image import DolImage, ReadOnlyFile
+
+        with ReadOnlyFile(DOL) as source:
+            cls.image = DolImage(source.read(0, source.size), SOURCE_SHA256)
+
+    def test_observed_models(self):
+        self.assertEqual(model.model_index(self.image, 0x0615), 4)
+        self.assertEqual(model.model_index(self.image, 0x000A), 0)
+
+    def test_observed_matchup_cell(self):
+        self.assertAlmostEqual(
+            model.matchup_cell(self.image, 0x0615, 0x000A), 1.0)
 
 
 if __name__ == "__main__":

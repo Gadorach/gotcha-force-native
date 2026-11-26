@@ -24,6 +24,12 @@ from tools.extract.source_image import DolImage, ReadOnlyFile
 FUNCTION = 0x8003CD5C
 INSTRUCTIONS = 378
 
+# The model-to-matchup index mapper 80066298: a 256-entry pointer table, each
+# row a signed halfword array. The caller passes the model id as a big-endian
+# u16, so byte 0 is the family and byte 1 the variant.
+MODEL_INDEX_TABLE = 0x802F2E28
+MATCHUP_MATRIX = 0x802C5D60
+
 # The eight 2-entry pointer tables. `root[side]` is the row set for that side.
 # Side is `actor+998 != 0`; it is a flag, not a signed owner id.
 ROOTS = {
@@ -68,7 +74,8 @@ STAGES = (
      "index": "attacker+1082"},
     {"site": "D024", "name": "matchup", "op": "mul",
      "table": "802C5D60",
-     "index": "model_index(attacker+1000) * 80 + model_index(defender+1000) * 4"},
+     "index": "model_index(defender+1000) * 80 "
+              "+ model_index(attacker+1000) * 4"},
     {"site": "D0B0", "name": "defender_1788", "op": "mul",
      "value": 0.5, "condition": "defender+1788 != 0"},
     {"site": "D100", "name": "defender_class_row", "op": "mul",
@@ -192,6 +199,22 @@ def _check(value, expected, what):
         raise ValueError(f"{what} changed: {value}")
 
 
+def model_index(image, model):
+    """Translate 80066298: model id -> matchup matrix index."""
+    family = (model >> 8) & 0xFF
+    if family >= 128:
+        family -= 256
+    row = _u32(image, MODEL_INDEX_TABLE + 4 * family)
+    return struct.unpack(">h", _data(image, row + 2 * (model & 0xFF), 2))[0]
+
+
+def matchup_cell(image, attacker, defender):
+    """D024: matrix[defender index][attacker index], 20 floats per row."""
+    return _f32(image, MATCHUP_MATRIX
+                + model_index(image, defender) * 80
+                + model_index(image, attacker) * 4)
+
+
 def _table_map(image):
     tables = {}
     for name, (root, kind, index) in ROOTS.items():
@@ -220,6 +243,13 @@ def recover(image):
     _check(_f32(image, _u32(image, 0x804335FC)), 0.85, "attacker rank side 1")
     _check(_f32(image, _u32(image, 0x80433618)), 1.15, "receiver rank side 0")
     _check(_f32(image, _u32(image, 0x8043361C)), 1.15, "receiver rank side 1")
+
+    # 80066298 maps G-Red 0x0615 to index 4 and Sasuke 0x000A to index 0;
+    # the live probe read matrix row 0 / column 4 as 1.0.
+    if model_index(image, 0x0615) != 4 or model_index(image, 0x000A) != 0:
+        raise ValueError("model index mapping changed")
+    _check(matchup_cell(image, 0x0615, 0x000A), 1.0, "matchup cell")
+    _check(matchup_cell(image, 0x0615, 0x0615), 1.0, "mirror matchup cell")
 
     # Defender class row 1 for side 1 is 802C6820: index 16 = 1.13, 30 = 1.4.
     class_rows = _u32(image, 0x80433604)
@@ -270,11 +300,25 @@ def recover(image):
                     "defender-class rows",
         },
         "matchup": {
-            "address": "802C5D60",
+            "address": f"{MATCHUP_MATRIX:08X}",
             "shape": "20 x 20 floats (row stride 80)",
-            "index": "80066298(actor+1000) per side",
-            "note": "The model-to-index mapper 80066298 is still open; the "
-                    "observed cells are neutral for both recorded hits.",
+            "index": "matrix[model_index(defender+1000)]"
+                     "[model_index(attacker+1000)]",
+            "mapper": {
+                "address": f"{MODEL_INDEX_TABLE:08X}",
+                "function": "80066298",
+                "rule": "row = s8(high model byte); "
+                        "index = s16(row[low model byte])",
+                "observed": [
+                    {"model": "0615", "index": 4},
+                    {"model": "000a", "index": 0},
+                ],
+            },
+            "observed_cell": {"attacker": "0615", "defender": "000a",
+                              "row": 0, "column": 4, "value": 1.0},
+            "note": "The mapper is the only function the amount routine "
+                    "calls; it is now resolved. The observed Kakeru cell is "
+                    "neutral at [defender 0][attacker 4].",
         },
         "observed": observed,
         "corrections": [
@@ -284,6 +328,8 @@ def recover(image):
             "class row 802C6820[16] at D100, selected by model+156 and the "
             "per-team settings byte 803C4E60[defender+136].",
             "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
+            "The matchup mapper 80066298 is a 256-entry pointer table at "
+            "802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
             "The 0.85 rank is at 804335F8[side], not inside the 804335E0 "
             "credit-difficulty pair.",
         ],
