@@ -10,7 +10,7 @@ int main(){using namespace gf;using namespace editor_review_corrections_fixture;
     const std::array<u8,5> variants={2,0,0,1,0};const std::array<u32,5> experience={0,100,300,200,300};
     for(unsigned i=0;i<variants.size();++i){auto borg=force_inventory_fixture::borg(0,variants[i]);borg.experience=experience[i];check(f.owner.acquire(borg)==ForceChange::Applied&&f.owner.to_warehouse(3)==ForceChange::Applied,"actual stored warehouse instances, not merged model copies");}
     WarehouseTools tools;WarehouseToolEvent event;WarehouseListView view;check(tools.open(f.owner,f.data,{true,true})&&WarehouseListView::build(f.owner,tools,&view,&error),"model grouping read-only view");const auto revision=f.owner.revision();
-    check(view.current(f.owner)&&view.view().domain==ForceListDomain::Components&&view.view().count==1&&view.visible_rows()==10&&view.first_row()==0&&view.title()=="WAREHOUSE","same Items ten-row presentation, explicit new title");
+    check(view.current(f.owner)&&view.view().domain==ForceListDomain::Warehouse&&view.view().count==1&&view.visible_rows()==10&&view.first_row()==0&&view.title()=="WAREHOUSE","same Items ten-row presentation, explicit new title");
     check(view.row(0)&&view.row(0)->has_borg&&view.row(0)->source_slot==-1&&!view.row(0)->virtual_entry&&view.row(0)->borg.model==0x1001&&!view.row(1),"model metadata row is not an actual warehouse slot");
     check(tools.step(f.owner,0,0x100,0,&event)&&WarehouseListView::build(f.owner,tools,&view,&error),"model→actual instance rows");
     const std::array<s16,5> order={2,4,1,3,0};
