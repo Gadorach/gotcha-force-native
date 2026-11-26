@@ -483,11 +483,16 @@ public:
         movement_pulses_={};
         for(auto& obstacle:stage_fades_)obstacle.views={};
     }
-    bool source_seed(const NativeBattleMvp& world,NativeBorgAnimationSeed* out)const{
-        if(!ready_||!world.ready()||!out||rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_)||!borgs_[0].animation_seed(world.actors()[0],world.tick(),out))return false;
+    bool source_seed(const NativeBattleMvp& world,NativeBorgAnimationSeed* out)const{return source_seed(0,world,out);}
+    bool source_seed(unsigned actor,const NativeBattleMvp& world,NativeBorgAnimationSeed* out)const{
+        if(!ready_||actor>=world.actor_count()||!world.ready()||!out||rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_)||
+           !borgs_[model_slot(world,actor)].animation_seed(world.actors()[actor],world.tick(),out))return false;
         out->stage_hash=stage_bank_.hash();out->floor_hash=floor_hash_;out->world_scope=rendered_scope_;return true;
     }
-    std::weak_ptr<const CharacterModelBinding> source_binding()const{return borgs_[0].render_binding();}
+    std::weak_ptr<const CharacterModelBinding> source_binding()const{return source_binding(0);}
+    std::weak_ptr<const CharacterModelBinding> source_binding(unsigned actor)const{
+        return actor<borgs_.size()?borgs_[actor].render_binding():std::weak_ptr<const CharacterModelBinding>{};
+    }
     bool package_socket(unsigned owner,const BattleMvpActor& actor,u32 tick,u8 move,u16 frame,
                         const BorgBattleSocket& spec,const CharacterLocalPose* source_local,BattleMvpVec* out)const{
         return ready_&&owner<borgs_.size()&&borgs_[owner].package_socket(actor,tick,move,frame,spec,source_local,out);

@@ -62,12 +62,17 @@ public:
     bool bind(IFileSystem& files,const std::string& art,const std::string& inputs,const NativeBattleMvp& world,
               const NativeBorgAnimationSeed& seed,std::string* error,Mode mode=Mode::DashOnly,
               const NativeGRedPracticeAssets* practice=nullptr){
+        return bind(0,files,art,inputs,world,seed,error,mode,practice);
+    }
+    bool bind(unsigned actor,IFileSystem& files,const std::string& art,const std::string& inputs,const NativeBattleMvp& world,
+              const NativeBorgAnimationSeed& seed,std::string* error,Mode mode=Mode::DashOnly,
+              const NativeGRedPracticeAssets* practice=nullptr){
         retire();NativeBorgMotionObservation observed;
-        mode_=mode;
+        mode_=mode;actor_=actor;
         const auto binding=seed.binding.lock();
-        if(!world.observe_motion(&observed)||seed.world_scope.lock()!=observed.scope.lock()||seed.tick!=observed.tick||
-           seed.position!=observed.position||seed.facing!=observed.facing||!observed.grounded||world.actors()[0].source_ground_motion||
-           world.actors()[0].movement_speed||!binding||binding->model_hash!=0xe2b4439au||seed.stage_hash!=0xbdf8e542u||seed.floor_hash!=0x0d913901u)
+        if(!world.observe_motion(actor_,&observed)||seed.world_scope.lock()!=observed.scope.lock()||seed.tick!=observed.tick||
+           seed.position!=observed.position||seed.facing!=observed.facing||!observed.grounded||world.actors()[actor_].source_ground_motion||
+           world.actors()[actor_].movement_speed||!binding||binding->model_hash!=0xe2b4439au||seed.stage_hash!=0xbdf8e542u||seed.floor_hash!=0x0d913901u)
             return fail(error,"fresh same-world/model/stage pose seed required");
         std::vector<u8> encoded,height,movement,motion,model,motions;
         ByteView program_bytes,height_bytes,input_bytes,motion_bytes,model_bytes,bank_bytes;
@@ -174,7 +179,7 @@ private:
                   bool battle_landing_barrier){
         if(error)error->clear();
         NativeBorgMotionObservation observed;
-        if(!ready_||pending_||!out||!world.observe_motion(&observed)||observed.scope.lock()!=world_scope_.lock()||observed.tick!=expected_tick_||
+        if(!ready_||pending_||!out||!world.observe_motion(actor_,&observed)||observed.scope.lock()!=world_scope_.lock()||observed.tick!=expected_tick_||
            current_binding.lock()!=binding_.lock()||binding_.expired()||
             (!observed.grounded&&((mode_!=Mode::VerticalJump&&!moving_mode(mode_))||
                  (!state_.jump.selector&&!(ledge_mode(mode_)&&state_.ground_pending))))||
@@ -663,7 +668,7 @@ public:
     // proposal or a previous render publication.
     const CharacterLocalPose* prepared_local(const NativeBattleMvp& world,const NativeBorgMotionOffer& offer)const{
         return ready_&&pending_&&offer.serial==pending_->offer.serial&&offer.producer.lock()==producer_&&
-            world.motion_observation_current(offer.observed)?&pending_->local:nullptr;
+            world.motion_observation_current(offer.observed,actor_)?&pending_->local:nullptr;
     }
     bool withdraw_battle_offer(const NativeBattleMvp& world,const NativeBorgMotionOffer& offer){
         if(!prepared_local(world,offer)||!world.ready())return false;
@@ -671,7 +676,7 @@ public:
     }
     bool commit(const NativeBattleMvp& world,const std::weak_ptr<const CharacterModelBinding>& current_binding,std::string* error){
         NativeBorgMotionReceipt receipt;
-        if(!ready_||!pending_||current_binding.lock()!=binding_.lock()||binding_.expired()||!world.motion_receipt(pending_->offer,&receipt))return fail(error,"source frame has no matching native contact receipt");
+        if(!ready_||!pending_||current_binding.lock()!=binding_.lock()||binding_.expired()||!world.motion_receipt(pending_->offer,&receipt,actor_))return fail(error,"source frame has no matching native contact receipt");
         const f32 previous_y=pending_->offer.observed.position[1];
         const auto& falling=pending_->offer.jump_motion;
         const bool windup_from_relaunch_snap=state_.relaunch_floor&&native_borg_motion_windup_floor_entry(pending_->offer.kind);
@@ -687,7 +692,7 @@ public:
             const auto from=state_.surface_landing->surface.triangle,to=pending_->offer.surface_landing->surface.triangle;
             if(from!=to)recovery_seam=std::array{from,to};
         }
-        state_=std::move(pending_->state);state_.motion.position=world.actors()[0].position;state_.previous_y=previous_y;expected_tick_=world.tick();
+        state_=std::move(pending_->state);state_.motion.position=world.actors()[actor_].position;state_.previous_y=previous_y;expected_tick_=world.tick();
         ++accepted_frames_;body_contacts_+=receipt.contact().body_hit;
         air_frames_+=native_borg_motion_phase(pending_->offer.kind)==2;
         landings_+=native_borg_motion_phase(pending_->offer.kind)==3;
@@ -805,7 +810,7 @@ public:
     }
     void reject(){retire();}
     bool pose(const NativeBattleMvp& world,NativeBorgSourcePose* out)const{
-        if(!out||!ready_||pending_||!frame_scope_||binding_.expired()||!world.motion_receipt_current(pose_.receipt))return false;
+        if(!out||!ready_||pending_||!frame_scope_||binding_.expired()||!world.motion_receipt_current(pose_.receipt,actor_))return false;
         *out=pose_;return true;
     }
     u64 accepted_frames()const{return accepted_frames_;}
@@ -1071,7 +1076,10 @@ private:
         GRedGroundDashOrderedState initial{s.dash,s.dash_recovery546,s.dash_exit545};GRedGroundDashOrderedPlan plan;
         if(!gred_ground_dash_ordered_plan(motion_,initial,before,control_before,&plan))return refuse("plan/forced-continuation refused");
         auto steer=[&](f32 speed){
-            const auto& actor=world.actors()[0];const auto& target=world.actors()[1];if(!target.health&&!world.config().solo_model)return false;
+            const auto& actor=world.actors()[actor_];
+            const unsigned target_slot=world.target_of(actor_);
+            const auto& target=world.actors()[target_slot==255?actor_:target_slot];
+            if(!target.health&&!world.config().solo_model)return false;
             s.steering.body72=s.body;s.steering.camera5b0=frame.camera5b0;s.steering.speed44=speed;
             s.steering.direction57c=s.dash.direction_class;s.steering.coarse57d=s.dash.coarse57d;
             s.steering.distance75c=world.config().solo_model?motion_.dash_steering[1]:
@@ -1618,6 +1626,6 @@ private:
     std::array<u16,2> last_push_programs_{0xffff,0xffff};
     std::array<u16,2> last_active_push_programs_{0xffff,0xffff};
     std::array<u16,2> last_relaunch_push_programs_{0xffff,0xffff};
-    Mode mode_=Mode::DashOnly;
+    Mode mode_=Mode::DashOnly;unsigned actor_=0;
 };
 }
