@@ -586,6 +586,13 @@ public:
     static NativeBorgMovementFrame movement_frame(const NativeBattleMvp& world,s32 width,s32 height){
         const auto camera=camera_for(world,width,height);NativeBorgMovementFrame frame;native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);return frame;
     }
+    static NativeBorgMovementFrame movement_frame_for(const NativeBattleMvp& world,unsigned actor,s32 width,s32 height){
+        if(actor>=world.actor_count())actor=0;
+        const u8 target=world.target_of(actor);
+        const unsigned other=target==255?(actor==0?1:0):unsigned(target);
+        const auto camera=camera_for_actors(world.actors()[actor],world.actors()[other],width,height);
+        NativeBorgMovementFrame frame;native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);return frame;
+    }
     std::optional<NativeBorgMotion> provisional_motion(const NativeBattleMvp& world)const{
         if(!provisional_walk_view_||!world.ready()||rendered_tick_!=world.tick()||
            !world.owns_motion_scope(rendered_scope_)||!borgs_[0].presentation_ready_)return std::nullopt;

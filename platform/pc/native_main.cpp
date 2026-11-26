@@ -1919,8 +1919,9 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 if(!source.prepare_battle_tick(world,view.source_binding(0),movement,input,&offer,&error)){
                     source.reject();return fail("recovered movement refused; no provisional fallback");
                 }
-                NativeBorgMotionOffer offer2;GamePadState pad2{};
-                if(!source2.prepare_battle_tick(world,view.source_binding(2),movement,pad2,&offer2,&error)){
+                NativeBorgMotionOffer offer2;GamePadState pad2{};pad2.stick_y=-127;
+                const auto movement2=NativeBattleMvpView::movement_frame_for(world,2,width,height);
+                if(!source2.prepare_battle_tick(world,view.source_binding(2),movement2,pad2,&offer2,&error)){
                     source.reject();source2.reject();return fail("second source movement refused");
                 }
                 origins.source_local[0]=source.prepared_local(world,offer);
