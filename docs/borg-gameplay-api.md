@@ -514,6 +514,8 @@ release=arc-twin|6|arc-stock|1|arc
 - `damage-side=team|credit|scalar|receiver-rank|relative` declares a row per
   attacker side (`0`/`1`). Selection order is: receiver `damage-vs` row, then
   attacker `damage-side` row, then the `damage-factors` default, then neutral.
+  The side is the attacker actor's team, not its roster index. A package may
+  declare only `damage-vs`/`damage-side` rows; the default factors are optional.
   This mirrors the original's side-paired credit rows. The battle host also
   supplies a damage scalar (the recovered settings-ladder value); it multiplies
   the profile factors before the hit-chain row.

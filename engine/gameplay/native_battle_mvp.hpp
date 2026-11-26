@@ -2489,14 +2489,18 @@ private:
     u16 package_damage(unsigned owner,u8 recipient,u16 base){
         if(owner>=config_.packages.size()||!config_.packages[owner])return base;
         const auto& profile=*config_.packages[owner];
-        if(!profile.damage_factors_declared&&!profile.damage_chain_count)return base;
+        if(!profile.damage_factors_declared&&!profile.damage_chain_count&&
+           profile.damage_rows.empty()&&profile.damage_side_rows.empty())return base;
         auto& target=actors_[recipient];
         if(target.package_hit_chain_owner!=u8(owner)||tick_-target.package_last_hit_tick>30){
             target.package_hit_chain=0;
             target.package_hit_chain_owner=u8(owner);
         }
+        // `damage-side` rows are paired with the attacker's team, not its
+        // actor index, so rosters with more than two actors keep the side.
         const u16 value=borg_damage_amount(profile,base,target.package_hit_chain,
-                                          actors_[recipient].damage_model,u8(owner),
+                                          actors_[recipient].damage_model,
+                                          actors_[owner].team,
                                           config_.damage_scalar);
         if(profile.damage_chain_count&&target.package_hit_chain<255)++target.package_hit_chain;
         return value;

@@ -140,9 +140,10 @@ texture or audio bytes; each regenerates from a local roster.
   Tool: `tools/analyze/reaction_emit.py`.
 - Damage row emission — authored `basic-shot` packages append the recovered
   `damage-vs` row for the training target (attacker settings 0, defender 16,
-  labelled as authored test state) with neutral `damage-factors`; the target
-  fixture declares `damage-model=10`. Smoke:
-  `tests/host/damage_row_content_smoke.py`.
+  labelled as authored test state) with neutral `damage-factors` and both
+  side-paired `damage-side` rows; the target fixture declares
+  `damage-model=10`. Smokes: `tests/host/damage_row_content_smoke.py` and
+  `tests/host/damage_side_content_smoke.py`.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.
@@ -325,6 +326,7 @@ PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
 # emitted reaction keys and damage row in the real package battle
 PYTHONPATH=. python3 -B tests/host/reaction_content_smoke.py
 PYTHONPATH=. python3 -B tests/host/damage_row_content_smoke.py
+PYTHONPATH=. python3 -B tests/host/damage_side_content_smoke.py
 # host package/roster, presentation, stage, collection, arrange and Story
 PYTHONPATH=. python3 -B tests/host/borg_api_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/borg_presentation_smoke.py build/direct/gf_native

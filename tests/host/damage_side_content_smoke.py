@@ -1,0 +1,66 @@
+"""Load emitted damage-side rows in the real host package battle."""
+import argparse
+import re
+import sys
+from pathlib import Path
+from subprocess import run
+from tempfile import TemporaryDirectory
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from tools.extract.native_battle_mvp import read
+from tools.extract.portable_borg_preview import prepare
+
+DEFAULT_ART = ROOT / "local/content/native-battle-mvp-v1"
+DEFAULT_MOVEMENT = ROOT / "local/content/source-gred-ground-v9"
+DEFAULT_EXE = ROOT / "build/publication-compile-v1/gf_native"
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--executable", type=Path, default=DEFAULT_EXE)
+    parser.add_argument("--art", type=Path, default=DEFAULT_ART)
+    parser.add_argument("--movement", type=Path, default=DEFAULT_MOVEMENT)
+    args = parser.parse_args()
+    executable = args.executable.resolve(strict=True)
+    art = args.art.resolve(strict=True)
+    movement = args.movement.resolve(strict=True)
+    with TemporaryDirectory(prefix="gf-damage-side-") as name:
+        root = Path(name)
+        def add_sides(rules):
+            # No default factors or damage-vs row: only the side rows can
+            # scale this hit, which also covers the row-only package gate.
+            return rules + (b"damage-side=0|0.867|1.0|1.15|1.0\n"
+                            b"damage-side=1|0.782|1.0|1.15|1.0\n")
+        prepare("g-red", art, root / "borgs/g-red", movement, True,
+                gameplay_transform=add_sides)
+        prepare("target", art, root / "borgs/target", None, True,
+                gameplay_transform=lambda rules: rules.replace(
+                    b"damage-model=10\n", b"damage-model=99\n"))
+        stage = root / "stage-only"
+        stage.mkdir()
+        for asset in ("stage.hsd", "floor.stih"):
+            (stage / asset).write_bytes(read(art / asset, 32 << 20))
+        result = run([
+            str(executable), "--battle-borg", "gg4e08:0615",
+            "--against-borg", "test:target", "--battle-mvp-assets", str(stage),
+            "--source-ground-assets", str(movement), "--demo-package-battle",
+            "--trace-package-battle", "--no-audio", "--frames", "60",
+            "--headless",
+        ], cwd=root, capture_output=True, text=True, timeout=60)
+        log = result.stdout + result.stderr
+        if result.returncode:
+            raise SystemExit(log or f"exit {result.returncode}")
+        hits = [line for line in log.splitlines()
+                if "move=beam-test event=hit" in line]
+        if not hits:
+            raise SystemExit("damage side fixture did not hit:\n" + log[-4000:])
+        value = re.search(r"value=(\d+)", hits[0])
+        if not value or int(value.group(1)) != 18:
+            raise SystemExit("damage side row not applied:\n" + log[-4000:])
+        print("Damage side: team-paired credit row applies in the package battle PASS")
+
+
+if __name__ == "__main__":
+    main()

@@ -2553,6 +2553,43 @@ int main(){
     }
 
     {
+        // A package may declare only damage rows; no default factors or chain
+        // are needed to make them apply.
+        const auto row_only=parse(std::string(player)+
+            "move=hit|b|30|grounded|18|0:0\nrange=hit|145\n"
+            "melee=hit|4|8|90|40|60|22|20\n"
+            "damage-vs=10|0.867|1.13|1.15|1.0\n");
+        const auto row_target=parse(std::string(target)+"damage-model=10\n");
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={row_only,row_target};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+        check(world.start(config),"damage-row-only battle fixture");
+        for(unsigned i=0;i<12;++i)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"damage-row-only step");
+        check(world.hits()==1&&world.actors()[1].health==478,
+              "a damage-vs row applies without a default factor block");
+    }
+
+    {
+        // `damage-side` follows the attacker's team, not the actor index.
+        const auto sided=parse(std::string(player)+
+            "move=hit|b|30|grounded|18|0:0\nrange=hit|145\n"
+            "melee=hit|4|8|90|40|60|22|20\n"
+            "damage-side=0|1|1|1|1\ndamage-side=1|0.5|1|1|1\n");
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={sided,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+        config.teams={1,0};config.teams_declared=true;
+        check(world.start(config),"damage-side team battle fixture");
+        for(unsigned i=0;i<12;++i)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"damage-side team step");
+        check(world.hits()==1&&world.actors()[1].health==490,
+              "damage-side selects the row for the attacker's team");
+    }
+
+    {
         const auto keyed=parse(std::string(player)+
             "move=hit|b|30|grounded|18|0:0\nrange=hit|145\n"
             "melee=hit|4|8|90|40|60|22|20\n"

@@ -827,10 +827,32 @@ def cruise_entry_candidate(roles, timing, joint_count):
 
 
 DAMAGE_SELECTORS = Path(__file__).resolve().parents[2] / "docs/api-map/borg-damage-selectors.json"
+CONTACT_SIDE_ROWS = Path(__file__).resolve().parents[2] / "docs/api-map/contact-side-rows.json"
+
+
+def _damage_number(value):
+    text = f"{value:.6f}".rstrip("0").rstrip(".")
+    return text if "." in text else text + ".0"
+
+
+def contact_side_lines():
+    """Recovered side-paired credit rows, emitted for both attacker teams."""
+    if not CONTACT_SIDE_ROWS.is_file():
+        return []
+    variants = json.loads(CONTACT_SIDE_ROWS.read_text()).get("variants", [])
+    if not variants:
+        return []
+    lines = ["# authored: side rows carry the recovered credit and receiver-rank pair;",
+             "# the per-receiver class row stays in the damage-vs line."]
+    for variant in sorted(variants, key=lambda item: item["team"]):
+        credit = variant["credit_difficulty"] * variant["credit_rank"]
+        lines.append(f"damage-side={variant['team']}|{_damage_number(credit)}|1.0|"
+                     f"{_damage_number(variant['receiver_rank'])}|1.0")
+    return lines
 
 
 def basic_shot_damage_lines(dol, model):
-    """Recovered test-battle row for the authored basic shot (settings 0/16)."""
+    """Recovered test-battle rows for the authored basic shot (settings 0/16)."""
     if not DAMAGE_SELECTORS.is_file():
         return []
     selectors = json.loads(DAMAGE_SELECTORS.read_text())
@@ -841,8 +863,9 @@ def basic_shot_damage_lines(dol, model):
             {"model": 0x000A, "side": 1, "settings": 16, "rank": 0}, 8, 1.0)
     except ValueError:
         return []
-    return ["# authored test damage-vs: attacker settings 0, defender settings 16; not universal battle state",
+    return ["# authored test damage rows: attacker settings 0, defender settings 16; not universal battle state",
             "damage-factors=1.0|1.0|1.0|1.0",
+            *contact_side_lines(),
             row["content"]["line"]]
 
 
