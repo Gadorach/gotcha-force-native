@@ -69,4 +69,13 @@ if __name__ == "__main__":
     parser.add_argument("binary", type=Path)
     parser.add_argument("--replay", type=Path)
     args = parser.parse_args()
-    smoke(args.binary, args.replay or args.binary.with_name("gred_practice_replay"))
+    replay = args.replay
+    if replay is None:
+        for candidate in (args.binary.with_name("gred_practice_replay"),
+                          args.binary.parent.parent / "direct" / "gred_practice_replay"):
+            if candidate.is_file():
+                replay = candidate
+                break
+    if replay is None:
+        parser.error("practice replay binary not found; pass --replay")
+    smoke(args.binary, replay)
