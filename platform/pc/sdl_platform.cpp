@@ -1,6 +1,7 @@
 // SDL2 platform backends. Everything platform-specific for the desktop target
 // lives here; engine code only sees the interfaces.
 #include "platform/pc/sdl_platform.hpp"
+#include "platform/pc/keyboard_layout.hpp"
 
 #include <SDL.h>
 
@@ -20,22 +21,9 @@
 namespace gf::sdl {
 namespace {
 
-// Device bit layout is a backend detail; base code maps raw bits to game
-// buttons through its own table, so changing this does not touch game logic.
-enum DeviceButton : u32 {
-    kButtonA = 1u << 0,
-    kButtonB = 1u << 1,
-    kButtonX = 1u << 2,
-    kButtonY = 1u << 3,
-    kButtonStart = 1u << 4,
-    kButtonDpadUp = 1u << 5,
-    kButtonDpadDown = 1u << 6,
-    kButtonDpadLeft = 1u << 7,
-    kButtonDpadRight = 1u << 8,
-    kButtonL = 1u << 9,
-    kButtonR = 1u << 10,
-    kButtonZ = 1u << 11,
-};
+// The device bit layout is shared with the pure keyboard mapper; base code
+// still maps raw bits to game buttons through its own table.
+using namespace gf::pc;
 
 class Window final : public IWindowBackend {
 public:
@@ -134,34 +122,52 @@ public:
     void pump() override {
         if(ready_){refresh();SDL_GameControllerUpdate();}
         snapshot_.clear();
-        // Keyboard feeds port 0 alongside any controller, so the game is
-        // playable without a device.
+        // Keyboard feeds ports 0 and 1 alongside any controller, so local
+        // play works without a device. Player 1: arrows/WASD, Space, Shift,
+        // E, Q, L, R, Z, Enter. Player 2: IJKL, U, H, O, N, M, comma,
+        // period, keypad Enter.
         RawInputState& keyboard = snapshot_.pad(0);
         const Uint8* keys = SDL_GetKeyboardState(nullptr);
         if (keys) {
-            if (keys[SDL_SCANCODE_RETURN]) keyboard.buttons |= kButtonStart;
             snapshot_.frame_step = keys[SDL_SCANCODE_P] != 0;
             snapshot_.camera_toggle = keys[SDL_SCANCODE_C] != 0;
             snapshot_.alt_arrow=(keys[SDL_SCANCODE_LALT]||keys[SDL_SCANCODE_RALT])&&
                 (keys[SDL_SCANCODE_UP]!=keys[SDL_SCANCODE_DOWN]||keys[SDL_SCANCODE_LEFT]!=keys[SDL_SCANCODE_RIGHT]);
             if (keys[SDL_SCANCODE_ESCAPE]) keyboard.quit = true;
-            if (keys[SDL_SCANCODE_SPACE]) keyboard.buttons |= kButtonA;
-            if (keys[SDL_SCANCODE_LSHIFT]) keyboard.buttons |= kButtonB;
-            if (keys[SDL_SCANCODE_E]) keyboard.buttons |= kButtonX;
-            if (keys[SDL_SCANCODE_Q]) keyboard.buttons |= kButtonY;
-            if (keys[SDL_SCANCODE_UP]) keyboard.buttons |= kButtonDpadUp;
-            if (keys[SDL_SCANCODE_DOWN]) keyboard.buttons |= kButtonDpadDown;
-            if (keys[SDL_SCANCODE_LEFT]) keyboard.buttons |= kButtonDpadLeft;
-            if (keys[SDL_SCANCODE_RIGHT]) keyboard.buttons |= kButtonDpadRight;
-            if (keys[SDL_SCANCODE_L]) keyboard.buttons |= kButtonL;
-            if (keys[SDL_SCANCODE_R]) keyboard.buttons |= kButtonR;
-            if (keys[SDL_SCANCODE_Z]) keyboard.buttons |= kButtonZ;
-            if (keys[SDL_SCANCODE_W]) keyboard.axis[1] = -20000;
-            if (keys[SDL_SCANCODE_S]) keyboard.axis[1] = 20000;
-            if (keys[SDL_SCANCODE_A]) keyboard.axis[0] = -20000;
-            if (keys[SDL_SCANCODE_D]) keyboard.axis[0] = 20000;
+            KeyboardPad first;
+            first.start=keys[SDL_SCANCODE_RETURN]!=0;
+            first.a=keys[SDL_SCANCODE_SPACE]!=0;
+            first.b=keys[SDL_SCANCODE_LSHIFT]!=0;
+            first.x=keys[SDL_SCANCODE_E]!=0;
+            first.y=keys[SDL_SCANCODE_Q]!=0;
+            first.dpad_up=keys[SDL_SCANCODE_UP]!=0;
+            first.dpad_down=keys[SDL_SCANCODE_DOWN]!=0;
+            first.dpad_left=keys[SDL_SCANCODE_LEFT]!=0;
+            first.dpad_right=keys[SDL_SCANCODE_RIGHT]!=0;
+            first.l=keys[SDL_SCANCODE_L]!=0;
+            first.r=keys[SDL_SCANCODE_R]!=0;
+            first.z=keys[SDL_SCANCODE_Z]!=0;
+            first.axis_up=keys[SDL_SCANCODE_W]!=0;
+            first.axis_down=keys[SDL_SCANCODE_S]!=0;
+            first.axis_left=keys[SDL_SCANCODE_A]!=0;
+            first.axis_right=keys[SDL_SCANCODE_D]!=0;
+            map_keyboard_pad(first,&keyboard);
+            KeyboardPad second;
+            second.start=keys[SDL_SCANCODE_KP_ENTER]!=0;
+            second.a=keys[SDL_SCANCODE_U]!=0;
+            second.b=keys[SDL_SCANCODE_H]!=0;
+            second.x=keys[SDL_SCANCODE_O]!=0;
+            second.y=keys[SDL_SCANCODE_N]!=0;
+            second.dpad_up=second.axis_up=keys[SDL_SCANCODE_I]!=0;
+            second.dpad_down=second.axis_down=keys[SDL_SCANCODE_K]!=0;
+            second.dpad_left=second.axis_left=keys[SDL_SCANCODE_J]!=0;
+            second.dpad_right=second.axis_right=keys[SDL_SCANCODE_L]!=0;
+            second.l=keys[SDL_SCANCODE_M]!=0;
+            second.r=keys[SDL_SCANCODE_COMMA]!=0;
+            second.z=keys[SDL_SCANCODE_PERIOD]!=0;
+            map_keyboard_pad(second,&snapshot_.pad(1));
         }
-        snapshot_.port_count=1;
+        snapshot_.port_count=2;
         for(unsigned i=0;i<InputSnapshot::kMaxPorts;++i)if(pads_[i])snapshot_.port_count=i+1;
 
         // Mouse / pointer. Screen space; the game decides what it means.

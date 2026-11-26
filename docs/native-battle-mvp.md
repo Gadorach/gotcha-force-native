@@ -46,7 +46,11 @@ build/direct/gf_native --battle-mvp --no-audio
 ```
 
 Controls: WASD move, L dash, Shift jump, Space primary, E secondary, Q restart,
-Enter pause, Esc close. `--demo-battle-mvp --frames 90` runs scripted input.
+Enter pause, Esc close. A second local keyboard player uses IJKL move, M dash,
+H jump, U primary, O secondary, N restart, M dash, comma R, period Z and
+keypad Enter pause; both keyboard pads are merged with any attached
+controller.
+`--demo-battle-mvp --frames 90` runs scripted input.
 `--battle-mvp-assets DIR` selects the loose art directory. Prepare it with
 `tools/extract/native_battle_mvp.py --help` from existing normal native bundles
 and pose profiles; inputs remain read-only and output overwrites refuse.
