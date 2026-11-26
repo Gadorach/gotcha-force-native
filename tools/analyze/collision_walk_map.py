@@ -104,6 +104,23 @@ def recover(image):
             "call": f"{PAIR_LOOP_CALL:08X}",
             "target": f"{PAIR_LOOP_TARGET:08X}",
             "reaction": f"{REACTION:08X}",
+            "outer": {"array": "803C477C", "count": "r13-21328"},
+            "inner": {"array": "803C417C", "count": "r13-21330"},
+            "mode": {
+                "direct": "[actor+88] == 2 or record+16 bit 0 set",
+                "nearest": "otherwise one nearest valid target; initial "
+                           "distance 400000000.0",
+            },
+            "filters": [
+                "carrier node+2 bit 0x0800 and record+18 bit 0x8000",
+                "carrier node+2 bits 0x1000/0x2000 and record+18 bit 0x4000",
+                "receiver+474 bit 0x02",
+                "8002FD7C(outer, inner, 2)",
+                "80039F6C(outer+88, inner+88)",
+                "80030490(scratchA, scratchB, key)",
+            ],
+            "scratch": ["803B04D0", "803B0368", "803B0720"],
+            "nearest_distance": "8020BC88",
         },
         "phases": counts,
         "calls": calls,
@@ -112,6 +129,8 @@ def recover(image):
             "listed.",
             "The apply band ends at the pair-loop call, which is the entry to "
             "the reaction scaffold.",
+            "The pair loop selects direct hits or the nearest valid target; "
+            "the target arrays and counts are runtime BSS.",
             "Roles come from the target's own source shape; 'open' and "
             "'unknown' labels are inferred and can move with better evidence.",
         ],

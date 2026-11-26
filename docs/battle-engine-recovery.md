@@ -198,6 +198,20 @@ geometry, 24 apply and 23 post. The apply band ends at the pair-loop call
 `8002C4CC -> 8002DB58`, which is the entry to the reaction scaffold. The map is
 [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 
+The pair loop is **target selection**, not a blind pair walk:
+
+- outer list `803C477C` (count at `r13-21328`), inner list `803C417C`
+  (count at `r13-21330`);
+- direct mode (`[actor+88] == 2` or `record+16` bit 0) calls `8002E2A8` for
+  every valid pair;
+- otherwise it keeps the nearest valid target (distance `8020BC88`, initial
+  sentinel `400000000.0`) and calls `8002E2A8` once with that target;
+- validity filters include the carrier node flags `0x0800/0x1000/0x2000`,
+  `receiver+474` bit `0x02`, `8002FD7C`, `80039F6C` and `80030490`;
+- both actor matrices are copied to scratch `803B04D0`/`803B0368`, the aim
+  vector is stored at `803B0720`, and an owner callback at `owner+256` runs
+  before the reaction call.
+
 So the reaction path is mostly a scaffold of matched helpers around the open
 amount and a handful of open per-class effect functions.
 

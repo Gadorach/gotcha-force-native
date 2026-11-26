@@ -24,6 +24,15 @@ class CollisionWalkTest(unittest.TestCase):
         self.assertEqual(calls["8002C4CC"]["role"], "pair-loop")
         self.assertEqual(calls["8002C4CC"]["phase"], "apply")
 
+    def test_pair_loop_targeting(self):
+        data = json.loads(ARTIFACT.read_text())
+        loop = data["pair_loop"]
+        self.assertEqual(loop["outer"]["array"], "803C477C")
+        self.assertEqual(loop["inner"]["array"], "803C417C")
+        self.assertIn("400000000.0", loop["mode"]["nearest"])
+        self.assertEqual(len(loop["filters"]), 6)
+        self.assertEqual(loop["nearest_distance"], "8020BC88")
+
     def test_post_band_has_no_pair_loop(self):
         data = json.loads(ARTIFACT.read_text())
         roles = {call["role"] for call in data["calls"]
