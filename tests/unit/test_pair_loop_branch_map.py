@@ -33,6 +33,24 @@ class PairLoopBranchMapTest(unittest.TestCase):
         self.assertEqual(calls["8002DD20"]["gate"], "matrix-copy")
         self.assertTrue(all("gate" in b for b in data["branches"]))
 
+    def test_category_dispatch(self):
+        data = json.loads(ARTIFACT.read_text())
+        dispatch = data["category_dispatch"]
+        self.assertEqual(dispatch["index_table"], "802CFF68")
+        self.assertEqual(dispatch["handler_table"], "802CFF2C")
+        self.assertEqual(len(dispatch["categories"]), 48)
+        self.assertEqual(len(dispatch["handlers"]), 15)
+        self.assertEqual(dispatch["handlers"][0], "80030500")
+        self.assertEqual(dispatch["handlers"][14], "80032E44")
+        self.assertEqual(dispatch["categories"][5]["handler"], 12)
+        self.assertEqual(dispatch["categories"][5]["address"], "80032DA4")
+        swapped = dispatch["categories"][8]
+        self.assertTrue(swapped["swap"])
+        self.assertEqual(swapped["handler"], 1)
+        self.assertEqual(swapped["address"], "800305D8")
+        self.assertIsNone(dispatch["categories"][6]["handler"])
+        self.assertIsNone(dispatch["categories"][47]["address"])
+
     def test_operand_provenance(self):
         data = json.loads(ARTIFACT.read_text())
         calls = {b["site"]: b for b in data["branches"]}

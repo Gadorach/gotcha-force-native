@@ -939,6 +939,365 @@
       "target": "8002DBA4"
     }
   ],
+  "category_dispatch": {
+    "categories": [
+      {
+        "address": "80030500",
+        "byte": 0,
+        "category": 0,
+        "handler": 0,
+        "swap": false
+      },
+      {
+        "address": "800305D8",
+        "byte": 1,
+        "category": 1,
+        "handler": 1,
+        "swap": false
+      },
+      {
+        "address": "80030A3C",
+        "byte": 2,
+        "category": 2,
+        "handler": 2,
+        "swap": false
+      },
+      {
+        "address": "80030C30",
+        "byte": 3,
+        "category": 3,
+        "handler": 3,
+        "swap": false
+      },
+      {
+        "address": "80030FE0",
+        "byte": 4,
+        "category": 4,
+        "handler": 4,
+        "swap": false
+      },
+      {
+        "address": "80032DA4",
+        "byte": 12,
+        "category": 5,
+        "handler": 12,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 6,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 7,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "800305D8",
+        "byte": 129,
+        "category": 8,
+        "handler": 1,
+        "swap": true
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 9,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "80031160",
+        "byte": 5,
+        "category": 10,
+        "handler": 5,
+        "swap": false
+      },
+      {
+        "address": "80031AA8",
+        "byte": 6,
+        "category": 11,
+        "handler": 6,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 12,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 13,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 14,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 15,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "80030A3C",
+        "byte": 130,
+        "category": 16,
+        "handler": 2,
+        "swap": true
+      },
+      {
+        "address": "80031160",
+        "byte": 133,
+        "category": 17,
+        "handler": 5,
+        "swap": true
+      },
+      {
+        "address": "80031E50",
+        "byte": 7,
+        "category": 18,
+        "handler": 7,
+        "swap": false
+      },
+      {
+        "address": "80031F30",
+        "byte": 8,
+        "category": 19,
+        "handler": 8,
+        "swap": false
+      },
+      {
+        "address": "8003226C",
+        "byte": 9,
+        "category": 20,
+        "handler": 9,
+        "swap": false
+      },
+      {
+        "address": "80032DF4",
+        "byte": 13,
+        "category": 21,
+        "handler": 13,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 22,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 23,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "80030C30",
+        "byte": 131,
+        "category": 24,
+        "handler": 3,
+        "swap": true
+      },
+      {
+        "address": "80031AA8",
+        "byte": 134,
+        "category": 25,
+        "handler": 6,
+        "swap": true
+      },
+      {
+        "address": "80031F30",
+        "byte": 136,
+        "category": 26,
+        "handler": 8,
+        "swap": true
+      },
+      {
+        "address": "80032630",
+        "byte": 10,
+        "category": 27,
+        "handler": 10,
+        "swap": false
+      },
+      {
+        "address": "80032984",
+        "byte": 11,
+        "category": 28,
+        "handler": 11,
+        "swap": false
+      },
+      {
+        "address": "80032E44",
+        "byte": 142,
+        "category": 29,
+        "handler": 14,
+        "swap": true
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 30,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 31,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "80030FE0",
+        "byte": 132,
+        "category": 32,
+        "handler": 4,
+        "swap": true
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 33,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "8003226C",
+        "byte": 137,
+        "category": 34,
+        "handler": 9,
+        "swap": true
+      },
+      {
+        "address": "80032984",
+        "byte": 139,
+        "category": 35,
+        "handler": 11,
+        "swap": true
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 36,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 37,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 38,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 39,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "80032DA4",
+        "byte": 140,
+        "category": 40,
+        "handler": 12,
+        "swap": true
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 41,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": "80032DF4",
+        "byte": 141,
+        "category": 42,
+        "handler": 13,
+        "swap": true
+      },
+      {
+        "address": "80032E44",
+        "byte": 14,
+        "category": 43,
+        "handler": 14,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 44,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 45,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 46,
+        "handler": null,
+        "swap": false
+      },
+      {
+        "address": null,
+        "byte": 255,
+        "category": 47,
+        "handler": null,
+        "swap": false
+      }
+    ],
+    "handler_table": "802CFF2C",
+    "handlers": [
+      "80030500",
+      "800305D8",
+      "80030A3C",
+      "80030C30",
+      "80030FE0",
+      "80031160",
+      "80031AA8",
+      "80031E50",
+      "80031F30",
+      "8003226C",
+      "80032630",
+      "80032984",
+      "80032DA4",
+      "80032DF4",
+      "80032E44"
+    ],
+    "index_table": "802CFF68"
+  },
   "function": {
     "address": "8002DB58",
     "branches": 32,
@@ -949,6 +1308,7 @@
     "Each branch records the nearest flag-setting compare/mask in the eight instructions before it.",
     "The two CTR branches are the 45-dword matrix copies.",
     "`operand`/`operands` name the last load, immediate, mask, indexed load or call result that fed the tested register; float provenance is the nearest load, not the whole expression.",
+    "`category_dispatch` decodes 80030490: 48 category bytes index a 15-entry handler table; bit 0x80 swaps the two arguments.",
     "Named gates and the pair validity rules are documented separately."
   ],
   "phases": {
@@ -957,6 +1317,6 @@
     "publish": 6,
     "select": 4
   },
-  "revision": 2,
+  "revision": 3,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

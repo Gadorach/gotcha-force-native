@@ -20,6 +20,9 @@ SIZE = 944
 INNER = 0x8002DBF4
 SELECT = 0x8002DD90
 PUBLISH = 0x8002DE08
+CATEGORY_TABLE = 0x802CFF68
+CATEGORY_COUNT = 48  # the following word starts the 0x8003A0C8 table
+HANDLER_TABLE = 0x802CFF2C
 
 
 GATES = {
@@ -68,6 +71,28 @@ def _phase(site):
     return "publish"
 
 
+def _category_dispatch(image):
+    values = list(image.read(CATEGORY_TABLE, CATEGORY_COUNT, "data"))
+    peak = max((value & 0x7F) for value in values if value != 0xFF)
+    raw = image.read(HANDLER_TABLE, (peak + 1) * 4, "data")
+    handlers = [f"{struct.unpack_from('>I', raw, i * 4)[0]:08X}"
+                for i in range(peak + 1)]
+    categories = []
+    for index, value in enumerate(values):
+        if value == 0xFF:
+            categories.append({"category": index, "byte": value,
+                               "handler": None, "swap": False,
+                               "address": None})
+            continue
+        handler = value & 0x7F
+        categories.append({"category": index, "byte": value,
+                           "handler": handler, "swap": bool(value & 0x80),
+                           "address": handlers[handler]})
+    return {"index_table": f"{CATEGORY_TABLE:08X}",
+            "handler_table": f"{HANDLER_TABLE:08X}",
+            "handlers": handlers, "categories": categories}
+
+
 def recover(image):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
@@ -112,12 +137,13 @@ def recover(image):
         phases[branch["phase"]] = phases.get(branch["phase"], 0) + 1
     return {
         "kind": "gf-pair-loop-branch-map",
-        "revision": 2,
+        "revision": 3,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {"address": f"{FUNCTION:08X}", "size": SIZE,
                      "branches": len(branches)},
         "phases": phases,
         "branches": branches,
+        "category_dispatch": _category_dispatch(image),
         "notes": [
             "Each branch records the nearest flag-setting compare/mask in the "
             "eight instructions before it.",
@@ -125,6 +151,8 @@ def recover(image):
             "`operand`/`operands` name the last load, immediate, mask, indexed "
             "load or call result that fed the tested register; float provenance "
             "is the nearest load, not the whole expression.",
+            "`category_dispatch` decodes 80030490: 48 category bytes index a "
+            "15-entry handler table; bit 0x80 swaps the two arguments.",
             "Named gates and the pair validity rules are documented separately.",
         ],
     }

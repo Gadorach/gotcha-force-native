@@ -126,8 +126,9 @@ texture or audio bytes; each regenerates from a local roster.
 - [Pair-loop branch map](docs/api-map/pair-loop-branch-map.json) — the 32
   conditional branches of `8002DB58` in prepare/inner/select/publish bands,
   including the mode, carrier-flag, validity, distance and CTR-copy gates,
-  with field/call provenance for each tested register. Tool:
-  `tools/analyze/pair_loop_branch_map.py`.
+  field/call provenance for each tested register, and the `80030490` category
+  dispatch (48 category bytes -> 15 handlers, bit `0x80` swaps the arguments).
+  Tool: `tools/analyze/pair_loop_branch_map.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the
