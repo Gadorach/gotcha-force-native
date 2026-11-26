@@ -542,7 +542,7 @@ public:
         if(package&&opponent_ai)return false; // inputs supplied by Battle Test
         if(!package)for(unsigned i=0;i<actor_count();++i)if(package_input[i]!=BorgBattleInputs{})return false;
         for(unsigned i=0;i<actor_count();++i)if(!package_input[i].valid())return false;
-        if(solo)for(unsigned i=1;i<actor_count();++i)if(pads[i]!=GamePadState{})return false;
+        if(solo)for(unsigned i=1;i<pads.size();++i)if(pads[i]!=GamePadState{})return false;
         if(solo&&opponent_ai)return false;
         auto offered=[&](unsigned i)->const NativeBorgMotionOffer*{
             if(!source_offers.empty())return i<source_offers.size()?source_offers[i]:nullptr;
