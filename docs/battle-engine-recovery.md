@@ -283,7 +283,8 @@ call. The 47 direct calls are ordered in
 [`api-map/reaction-scaffold-map.json`](api-map/reaction-scaffold-map.json):
 16 pre-amount calls, the amount call and HP write, then 29 reaction and
 presentation calls (impact effects, object spawns, color). The branch
-conditions inside those bands and the collision walk `8002BB14` remain open.
+conditions inside those bands remain open; the collision walk map is published
+as [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 
 ## Amount pipeline
 
@@ -359,11 +360,13 @@ damage-vs=000a|0.867|1.13|1.15|1.0   product 1.126666   amount 22
 1. Emit the eight recovered table roles into packages: credit difficulty and
    attacker rank for the attacker, class row and receiver rank for the
    defender, plus the two HP/force rows where the packager can supply them.
-   The mapper and the per-Borg selectors are now exported; the remaining
-   choice is how the packager binds the battle settings index.
+   The mapper, per-Borg selectors and the `damage_content_row` builder are now
+   exported; the remaining choice is how the packager binds the battle settings
+   index.
 2. `8002E2A8`: reimplement the pair/reaction scaffold, reusing the matched
-   helpers and the new amount routine.
-3. `8002BB14`: branch-aware recovery of the collision walk.
+   helpers, the new amount routine and the published call map.
+3. `8002BB14`: recover the branch conditions inside the collision walk; the
+   call map is already published.
 4. The action-class table entries: reimplement the shared class handlers as
    native move behaviours, with the class selected by content.
 
