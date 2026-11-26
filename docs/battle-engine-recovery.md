@@ -256,7 +256,9 @@ PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
 ```
 
 It appends the close move and `damage-model=10` only inside the temporary
-packages and asserts the real host applies the chained amount:
+packages, builds the `damage-vs` row from the recovered tables and selector
+artifact (it needs the original DOL), and asserts the real host applies the
+chained amount:
 
 ```text
 beam hit tick=23
@@ -400,7 +402,7 @@ python3 -B -m tools.analyze.damage_content_row <dol> \
 ```
 
 ```text
-damage-vs=000a|0.867|1.13|1.15|1.0   product 1.126666   amount 22
+damage-vs=10|0.867|1.13|1.15|1.0   product 1.126666   amount 22
 ```
 
 ## Next targets

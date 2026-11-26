@@ -271,6 +271,6 @@ python3 -B -m unittest discover -s tests/unit -p 'test_*.py'
 # native API and battle-damage fixture
 g++ -std=c++20 -O1 -I . tests/unit/borg_gameplay.cpp -o build/direct/borg_gameplay
 ./build/direct/borg_gameplay
-# extracted content in the real host
+# recovered tables -> content row -> real host (needs the original DOL)
 PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
 ```

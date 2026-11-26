@@ -71,7 +71,7 @@ def build(image, selectors, attacker, defender, base, relative):
     product = credit * attacker_rank * class_value * rank_value * relative
     factors = [credit * attacker_rank, class_value, rank_value, relative]
     amount = int(base * product)
-    line = (f"damage-vs={defender['model']:04x}|"
+    line = (f"damage-vs={defender['model']}|"
             + "|".join(_number(value) for value in factors))
     return {
         "kind": "gf-damage-content-row",

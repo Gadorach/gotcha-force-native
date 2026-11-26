@@ -27,7 +27,7 @@ class DamageContentRowTest(unittest.TestCase):
         self.assertEqual(row["amount"], 22)
         self.assertAlmostEqual(row["product"], 1.126666, places=5)
         self.assertEqual(row["content"]["line"],
-                         "damage-vs=000a|0.867|1.13|1.15|1.0")
+                         "damage-vs=10|0.867|1.13|1.15|1.0")
         self.assertEqual(row["stages"]["credit_difficulty"], 1.02)
         self.assertEqual(row["stages"]["attacker_rank"], 0.85)
         self.assertEqual(row["stages"]["defender_class"], 1.13)
