@@ -145,6 +145,7 @@ struct BattleMvpConfig {
     std::array<BattlePoint,2> spawn{BattlePoint{-240,300},BattlePoint{240,-300}};
     f32 ground_acceleration=.9f,ground_braking=1.4f,air_acceleration=.25f,turn_per_tick=.18f;
     f32 dash_speed=12;unsigned dash_duration=12,dash_cooldown=30,air_dashes=1;
+    f32 damage_scalar=1; // battle/team scalar from the recovered settings ladder
     //Native-only static-floor query reference, NOT an air spawn or recovered
     //actor constructor. Default0 preserves the ordinary MVP's selection.
     std::array<f32,2> spawn_query_y{};
@@ -2305,7 +2306,8 @@ private:
             target.package_hit_chain_owner=u8(owner);
         }
         const u16 value=borg_damage_amount(profile,base,target.package_hit_chain,
-                                          actors_[recipient].damage_model,u8(owner));
+                                          actors_[recipient].damage_model,u8(owner),
+                                          config_.damage_scalar);
         if(profile.damage_chain_count&&target.package_hit_chain<255)++target.package_hit_chain;
         return value;
     }

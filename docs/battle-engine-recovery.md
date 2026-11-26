@@ -148,7 +148,8 @@ reaction tail (`8003D344`) is matched, while the pair (`8002E2A8`), collision
 | `lbl_802D3B68[actor+0x580]` class dispatch | `moves` selected by button, priority, range and state |
 | Shared action handlers | shared melee/projectile/field systems |
 | `8003D344` HP writer | `damage()` and actor health |
-| Recovered scale rows | `damage-factors` / `damage-chain` profile keys |
+| Recovered scale rows | `damage-factors` / `damage-vs` / `damage-side` / `damage-chain` profile keys |
+| Battle/team scalar | `BattleMvpConfig::damage_scalar` |
 | Pair/collision/amount functions | **not yet reimplemented** |
 
 The native engine is already data-driven in the same sense as the original: a

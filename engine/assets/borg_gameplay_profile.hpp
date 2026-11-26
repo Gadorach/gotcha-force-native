@@ -351,10 +351,12 @@ inline const std::array<f32,4>* borg_damage_factors(const BorgGameplayProfile& p
     return profile.damage_factors_declared?&profile.damage_factors:nullptr;
 }
 
-inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain,u16 model=0,u8 team=0){
+inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain,
+                              u16 model=0,u8 team=0,f32 scalar=1.f){
     f32 value=f32(base);
     if(const auto* factors=borg_damage_factors(profile,model,team))
         for(f32 factor:*factors)value*=factor;
+    value*=scalar;
     if(profile.damage_chain_count)
         value*=profile.damage_chain[std::min<unsigned>(chain,profile.damage_chain_count-1)];
     if(!(value>0))return 0;

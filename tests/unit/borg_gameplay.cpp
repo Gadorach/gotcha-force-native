@@ -2591,5 +2591,8 @@ int main(){
               "damage-side=0|1|1|1|1\ndamage-side=0|1|1|1|1\n",
               &invalid_scope,&scope_error),
           "duplicate damage-side team is refused");
+    const auto scaled=parse(std::string(player)+"damage-vs=10|0.867|1.15|1|1\n");
+    check(borg_damage_amount(*scaled,20,0,10,0,1.13f)==22,
+          "the battle scalar multiplies the recovered factors");
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }
