@@ -176,6 +176,7 @@ struct BattleMvpConfig {
     std::array<u8,kBattleMvpMaxActors> teams{};
     bool teams_declared=false;
     bool allow_multi_source=false; // host roster with per-actor source producers
+    bool source_allow_active_opponent=false; // roster source with a moving/attacking opponent
     bool provisional_walk=false;
     bool provisional_jump=false; // opt-in lab jump, not a source actor's air-resource policy
     bool provisional_ground_dash=false;
@@ -681,11 +682,13 @@ public:
                       (bool(o.controller_timer698)!=controller_landing_jump_policy)||
                 !std::isfinite(o.vertical_speed)||std::abs(o.vertical_speed)>50||!std::isfinite(o.entry_vertical_delta)||
                 (native_borg_motion_relaunch_entry(o.kind)?(o.entry_vertical_delta<=0||o.entry_vertical_delta>50):o.entry_vertical_delta!=0))return false;
+            const bool active_opponent=config_.source_allow_active_opponent;
             if(opponent_ai||!motion_observation_current(o.observed,source_index)||!o.serial||
                (!vertical&&(!actor.grounded||actor.vertical_speed!=0||o.vertical_speed!=0))||
                 actor.attack_ticks||actor.hit_flash||actor.dash_ticks||
-                (!solo&&(other.attack_ticks||!other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}))||other_pad!=GamePadState{}||
-               pad.a||pad.b||pad.x||other_pad.a||other_pad.b||other_pad.x||
+                (!active_opponent&&!solo&&(other.attack_ticks||!other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}))||
+                (!active_opponent&&other_pad!=GamePadState{})||
+               pad.a||pad.b||pad.x||(!active_opponent&&(other_pad.a||other_pad.b||other_pad.x))||
                (!vertical&&o.action!=BattleMvpAction::Idle&&o.action!=BattleMvpAction::Move&&o.action!=BattleMvpAction::GroundDash)||
                !std::isfinite(o.facing.x)||!std::isfinite(o.facing.z)||std::abs(std::hypot(o.facing.x,o.facing.z)-1)>.001f)return false;
              for(const auto& shot:projectiles_)if(shot.active&&(!package||!shot.from_package))return false;

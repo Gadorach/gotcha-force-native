@@ -1544,6 +1544,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         config.declared_actors=4;
         config.teams={0,1,0,1};config.teams_declared=true;
         config.allow_multi_source=true;
+        config.source_allow_active_opponent=true;
     }
     config.package_strafe=selection||options.exercise_battle_mobility;
     if(!hosted&&options.package_battle_distance){
@@ -1930,6 +1931,8 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 // The source offer already consumed the input; the validator
                 // must see the same empty pads as the duel source path.
                 std::array<GamePadState,4> roster_pads{};
+                roster_pads[1]=pads[1];
+                roster_pads[3]=router.route(snapshot,3);
                 std::array<BorgBattleInputs,4> roster_input{action_input[0],action_input[1],{},{}};
                 const unsigned ai_cycle=world.tick()%90;
                 roster_input[2].pressed=u8(ai_cycle==20?BorgBattleInputs::b:0);
