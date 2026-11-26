@@ -1,0 +1,542 @@
+{
+  "branches": [
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r0 cmp 2"
+      },
+      "cr": 0,
+      "phase": "prepare",
+      "sense": "false",
+      "site": "8002DBC8",
+      "source": "8002DBC0",
+      "target": "8002DBE8"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r0 & 0x00000001)"
+      },
+      "cr": 0,
+      "phase": "prepare",
+      "sense": "true",
+      "site": "8002DBD4",
+      "source": "8002BB8C",
+      "target": "8002DBE0"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r4 & 0x00000800)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DC04",
+      "source": "8002BBBC",
+      "target": "8002DC14"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r0 & 0x00008000)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DC10",
+      "source": "8002BBC8",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r3 & 0x00001000)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DC20",
+      "source": "8002BBD8",
+      "target": "8002DC2C"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r4 & 0x00002000)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DC28",
+      "source": "8002BBE0",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r3 & 0x00004000)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DC30",
+      "source": "8002BBE8",
+      "target": "8002DC3C"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r4 & 0x00002000)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DC38",
+      "source": "8002BBF0",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r0 & 0x00000002)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DC48",
+      "source": "8002BC00",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r3 cmp 0"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DC60",
+      "source": "8002DC5C",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "kind": "extsb.",
+        "text": "s8(r0)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DC74",
+      "source": "8002BC2C",
+      "target": "8002DCE4"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "kind": "extsb.",
+        "text": "s8(r0)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DC80",
+      "source": "8002BC38",
+      "target": "8002DCE4"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmp",
+        "signed": true,
+        "text": "r5 cmp r0"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DC98",
+      "source": "8002BC50",
+      "target": "8002DCE4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "extsb.",
+        "text": "s8(r0)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCA4",
+      "source": "8002BC5C",
+      "target": "8002DCC0"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r0 cmp 14"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCB0",
+      "source": "8002DCAC",
+      "target": "8002DCC0"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpl",
+        "signed": false,
+        "text": "r0 cmpl r3"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCBC",
+      "source": "8002BC74",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "kind": "extsb.",
+        "text": "s8(r0)"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCC8",
+      "source": "8002BC80",
+      "target": "8002DCE4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r0 cmp 14"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCD4",
+      "source": "8002DCD0",
+      "target": "8002DCE4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpl",
+        "signed": false,
+        "text": "r0 cmpl r4"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCE0",
+      "source": "8002BC98",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r3 cmp 0"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "true",
+      "site": "8002DCF4",
+      "source": "8002DCF0",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 0,
+      "bo": 16,
+      "cond": "lt",
+      "condition": {
+        "kind": "bdnz",
+        "text": "decrement CTR"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DD20",
+      "target": "8002DD10"
+    },
+    {
+      "bi": 0,
+      "bo": 16,
+      "cond": "lt",
+      "condition": {
+        "kind": "bdnz",
+        "text": "decrement CTR"
+      },
+      "cr": 0,
+      "phase": "inner",
+      "sense": "false",
+      "site": "8002DD4C",
+      "target": "8002DD3C"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r3 cmp 0"
+      },
+      "cr": 0,
+      "phase": "select",
+      "sense": "true",
+      "site": "8002DD94",
+      "source": "8002DD90",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r22 cmp 0"
+      },
+      "cr": 0,
+      "phase": "select",
+      "sense": "true",
+      "site": "8002DD9C",
+      "source": "8002DD98",
+      "target": "8002DDB0"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "fcmpo",
+        "text": "f1 fcmpo f31"
+      },
+      "cr": 0,
+      "phase": "select",
+      "sense": "false",
+      "site": "8002DDC4",
+      "source": "8002BD78",
+      "target": "8002DDF4"
+    },
+    {
+      "bi": 0,
+      "bo": 12,
+      "cond": "lt",
+      "condition": {
+        "cr": 0,
+        "kind": "cmp",
+        "signed": true,
+        "text": "r24 cmp r0"
+      },
+      "cr": 0,
+      "phase": "select",
+      "sense": "true",
+      "site": "8002DE04",
+      "source": "8002BDBC",
+      "target": "8002DBF4"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r22 cmp 0"
+      },
+      "cr": 0,
+      "phase": "publish",
+      "sense": "false",
+      "site": "8002DE0C",
+      "source": "8002DE08",
+      "target": "8002DED8"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpi",
+        "signed": true,
+        "text": "r21 cmp 0"
+      },
+      "cr": 0,
+      "phase": "publish",
+      "sense": "true",
+      "site": "8002DE14",
+      "source": "8002DE10",
+      "target": "8002DED8"
+    },
+    {
+      "bi": 2,
+      "bo": 4,
+      "cond": "eq",
+      "condition": {
+        "kind": "rlwinm.",
+        "shift": 0,
+        "text": "(r0 & 0x000003C0)"
+      },
+      "cr": 0,
+      "phase": "publish",
+      "sense": "false",
+      "site": "8002DE4C",
+      "source": "8002BE04",
+      "target": "8002DECC"
+    },
+    {
+      "bi": 1,
+      "bo": 4,
+      "cond": "gt",
+      "condition": {
+        "cr": 0,
+        "kind": "fcmpo",
+        "text": "f1 fcmpo f0"
+      },
+      "cr": 0,
+      "phase": "publish",
+      "sense": "false",
+      "site": "8002DE6C",
+      "source": "8002BE24",
+      "target": "8002DECC"
+    },
+    {
+      "bi": 2,
+      "bo": 12,
+      "cond": "eq",
+      "condition": {
+        "cr": 0,
+        "kind": "cmpli",
+        "signed": false,
+        "text": "r12 cmpl 0"
+      },
+      "cr": 0,
+      "phase": "publish",
+      "sense": "true",
+      "site": "8002DEBC",
+      "source": "8002DEB8",
+      "target": "8002DECC"
+    },
+    {
+      "bi": 0,
+      "bo": 12,
+      "cond": "lt",
+      "condition": {
+        "cr": 0,
+        "kind": "cmp",
+        "signed": true,
+        "text": "r25 cmp r0"
+      },
+      "cr": 0,
+      "phase": "publish",
+      "sense": "true",
+      "site": "8002DEE8",
+      "source": "8002BEA0",
+      "target": "8002DBA4"
+    }
+  ],
+  "function": {
+    "address": "8002DB58",
+    "branches": 32,
+    "size": 944
+  },
+  "kind": "gf-pair-loop-branch-map",
+  "notes": [
+    "Each branch records the nearest flag-setting compare/mask in the eight instructions before it.",
+    "The two CTR branches are the 45-dword matrix copies.",
+    "Conditions are operands; the pair validity rules are documented separately."
+  ],
+  "phases": {
+    "inner": 20,
+    "prepare": 2,
+    "publish": 6,
+    "select": 4
+  },
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

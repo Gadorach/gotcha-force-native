@@ -41,11 +41,11 @@ def _mask(mb, me):
     return value
 
 
-def _condition(code, site):
+def _condition(code, site, base):
     """Decode the last flag-setting compare/mask before a branch."""
-    base = site - FUNCTION
+    offset = site - base
     for step in range(1, 9):
-        at = base - step * 4
+        at = offset - step * 4
         if at < 0:
             break
         word = struct.unpack_from(">I", code, at)[0]
@@ -121,7 +121,7 @@ def recover(image):
         if displacement & 0x8000:
             displacement -= 0x10000
         target = site + displacement if not (word & 2) else displacement
-        condition, source = _condition(code, site)
+        condition, source = _condition(code, site, FUNCTION)
         branches.append({
             "site": f"{site:08X}",
             "target": f"{target & 0xFFFFFFFF:08X}",

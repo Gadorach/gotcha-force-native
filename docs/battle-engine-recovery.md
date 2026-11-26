@@ -236,7 +236,10 @@ condition (`cmpi` 29, `fcmpo` 28, `extsb.` 21, `rlwinm.` 11, plus `cmp/cmpl`). T
 `8002C4CC -> 8002DB58`, which is the entry to the reaction scaffold. The map is
 [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 
-The pair loop is **target selection**, not a blind pair walk:
+The pair loop is **target selection**, not a blind pair walk. Its 32
+conditional branches are decoded in
+[`api-map/pair-loop-branch-map.json`](api-map/pair-loop-branch-map.json)
+(prepare 2, inner 20, select 4, publish 6):
 
 - outer list `803C477C` (count at `r13-21328`), inner list `803C417C`
   (count at `r13-21330`);

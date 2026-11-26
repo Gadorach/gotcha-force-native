@@ -15,6 +15,7 @@ from tools.analyze import (
     damage_amount_model,
     gred_sasuke_contact_damage,
     gred_sasuke_move_bases,
+    pair_loop_branch_map,
     reaction_effect_map,
     reaction_scaffold_map,
 )
@@ -31,6 +32,7 @@ ARTIFACTS = (
     ("collision-walk-map.json", collision_walk_map.export),
     ("reaction-effect-map.json", reaction_effect_map.export),
     ("collision-branch-map.json", collision_branch_map.export),
+    ("pair-loop-branch-map.json", pair_loop_branch_map.export),
 )
 
 

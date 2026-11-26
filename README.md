@@ -121,6 +121,10 @@ texture or audio bytes; each regenerates from a local roster.
   conditional branches of `8002BB14` with their decoded compare/mask
   conditions (cmpi, cmpl, fcmpo, rlwinm./extsb./extsh. masks) and phases.
   Tool: `tools/analyze/collision_branch_map.py`.
+- [Pair-loop branch map](docs/api-map/pair-loop-branch-map.json) — the 32
+  conditional branches of `8002DB58` in prepare/inner/select/publish bands,
+  including the mode, carrier-flag, validity, distance and CTR-copy gates.
+  Tool: `tools/analyze/pair_loop_branch_map.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the
