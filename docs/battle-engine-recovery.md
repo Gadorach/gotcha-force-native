@@ -415,7 +415,10 @@ native actor does not carry, so they are refused at load. The attack-table
 yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
 0x100 units, but their per-move retail values are not yet extracted. The
 `+0x1DA` mirror remains unrecovered, and the native pitch bone axis is an
-authored mapping.
+authored mapping. A rendered comparison is under
+`../local/recomp-evidence/contact-sheets/reaction-direction-v1/`: the default
+beam hit turns the receiver away from the attacker, while
+`reaction-offset=beam-test|-128|0` turns it back toward the attacker.
 
 The ledger fields are:
 
