@@ -57,6 +57,7 @@ struct BattleMvpActor {
     u8 damage_kind=0;             // declared 8002FD7C relation fields
     u16 damage_attack_key=0,damage_target_mask=0;
     std::vector<u16> damage_immunity;
+    unsigned damage_taken=0,damage_credited=0,hits_taken=0,hits_dealt=0;
     u8 package_movement_cues=0;
     u8 package_air_points_used=0;
     u16 package_flight_used=0;
@@ -151,6 +152,7 @@ struct BattleMvpConfig {
     f32 ground_acceleration=.9f,ground_braking=1.4f,air_acceleration=.25f,turn_per_tick=.18f;
     f32 dash_speed=12;unsigned dash_duration=12,dash_cooldown=30,air_dashes=1;
     f32 damage_scalar=1; // battle/team scalar from the recovered settings ladder
+    std::array<unsigned,2> team_force{}; // recovered ledger pool; zero = untracked
     //Native-only static-floor query reference, NOT an air spawn or recovered
     //actor constructor. Default0 preserves the ordinary MVP's selection.
     std::array<f32,2> spawn_query_y{};
@@ -426,7 +428,7 @@ public:
              config.provisional_ground_dash||!borg_cruise_boost_valid(*config.provisional_cruise))))return false;
         if(package&&(config.packages[1]->movement==BorgBattleMovement::NormalGRed||
            (config.packages[0]->movement==BorgBattleMovement::NormalGRed&&config.packages[1]->movement!=BorgBattleMovement::Stationary)))return false;
-        NativeBattleMvp next;next.config_=config;
+        NativeBattleMvp next;next.config_=config;next.team_force_=config.team_force;
         if(package)for(unsigned i=0;i<2;++i){
             const auto& p=*config.packages[i];
             if(!borg_gameplay_profile_valid(p))return false;
@@ -1938,6 +1940,7 @@ public:
         paused_=paused;return true;
     }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
+    const auto& team_force()const{return team_force_;}
     const auto& impact_records()const{return impact_records_;}
     const auto& walk_pulses()const{return walk_pulses_;}
     const auto& smoke_clouds()const{return smoke_clouds_;}
@@ -2344,6 +2347,10 @@ private:
         if(!package_hit_relation(owner,recipient))return;
         const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
         damage(recipient,amount);impact(position,false);
+        auto& target=actors_[recipient];
+        ++target.hits_taken;target.damage_taken+=amount;
+        if(owner!=recipient){auto& attacker=actors_[owner];++attacker.hits_dealt;attacker.damage_credited+=amount;}
+        team_force_[recipient]=team_force_[recipient]>=amount?team_force_[recipient]-amount:0u;
         record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);
     }
     void retire_package_guard(unsigned defender){
@@ -3423,7 +3430,7 @@ private:
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();
     }
     BattleMvpConfig config_;std::array<BattleMvpActor,2> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
-    std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
+    std::array<unsigned,2> team_force_{};std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,2> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
     std::array<BattleMvpImpactRecord,16> impact_records_{};
     struct ImpactHazard {BattleMvpVec centre;u32 id=0;u8 owner=0,move=0;u16 remaining=0,radius=0,height=0,damage=0,warmup=0;};
     std::array<ImpactPattern<BorgImpactTrail>,8> impact_trails_{};

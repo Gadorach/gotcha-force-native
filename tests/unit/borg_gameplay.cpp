@@ -2577,6 +2577,24 @@ int main(){
         check(relation_battle(parse(std::string(target)+"damage-mask=1\n"))==480,
               "unrelated target mask bit keeps the hit");
     }
+
+    {
+        const auto ledger_attacker=parse(std::string(player)+
+            "move=hit|b|30|grounded|18|0:0\nrange=hit|145\n"
+            "melee=hit|4|8|90|40|60|22|20\n");
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={ledger_attacker,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+        config.team_force={500,500};
+        check(world.start(config),"damage ledger fixture");
+        for(unsigned i=0;i<12;++i)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{u8(i<2?BorgBattleInputs::b:0),0,0},{}}),"damage ledger step");
+        check(world.actors()[1].damage_taken==20&&world.actors()[0].damage_credited==20&&
+              world.actors()[1].hits_taken==1&&world.actors()[0].hits_dealt==1&&
+              world.team_force()[1]==480&&world.team_force()[0]==500,
+              "recovered damage ledger and team force track the hit");
+    }
     const std::string damage_text=std::string(player)+
         "damage-factors=0.867|1.13|1.15|1.0\n"
         "damage-chain=1.0|0.8|0.5|0.25\n";
