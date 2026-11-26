@@ -2744,5 +2744,28 @@ int main(){
         check(world.hits()>=1&&(world.actors()[1].health<500||world.actors()[3].health<500),
               "four-actor combat reaches an enemy");
     }
+
+    {
+        const auto fighter=parse(player);
+        const auto glass=parse(replace_one(std::string(target),"health=500","health=1"));
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={fighter,glass,fighter,glass};
+        config.declared_actors=4;
+        config.teams={0,1,0,1};config.teams_declared=true;
+        config.spawn={BattlePoint{-200,0},BattlePoint{200,0},
+                      BattlePoint{0,200},BattlePoint{0,-200}};
+        check(world.start(config),"four actor team result fixture");
+        std::array<GamePadState,4> pads{};
+        std::array<BorgBattleInputs,4> inputs{};
+        for(unsigned tick=0;tick<140&&world.result()==BattleMvpResult::Fighting;++tick){
+            const unsigned cycle=tick%22;
+            inputs[0].pressed=u8(cycle<2?BorgBattleInputs::b:0);
+            inputs[0].released=u8(cycle==2?BorgBattleInputs::b:0);
+            check(world.step_roster(pads,inputs,false),"four actor team result step");
+        }
+        check(world.result()==BattleMvpResult::GRedWins&&
+              world.actors()[1].health==0&&world.actors()[3].health==0,
+              "a four-actor team is eliminated and the surviving team wins");
+    }
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

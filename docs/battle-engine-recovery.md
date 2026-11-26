@@ -170,7 +170,8 @@ engine.
 The MVP roster now holds up to six actors. `BattleMvpConfig::declared_actors`
 defaults to 2, and `teams`/`teams_declared` assign up to two teams. `step_roster`
 takes per-actor pads and package inputs; four-actor spawn, team assignment,
-nearest-enemy targeting, idle stepping and a beam hit are tested. The duel
+nearest-enemy targeting, idle stepping, a beam hit and a team-elimination win
+are tested. The duel
 `step` wrapper keeps the two-pad signature. Non-package weapon choice and the
 source-contact path still assume the duel's first two actors, and the ledger
 supports two teams.
