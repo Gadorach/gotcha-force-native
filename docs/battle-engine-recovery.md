@@ -528,8 +528,11 @@ The host drives the second G-Red with a forward AI pad through a per-actor
 camera frame, and gives actors 2/3 periodic B attack input. The roster sets
 `source_allow_active_opponent`, so the source validator no longer requires the
 opponent to be idle or pad-free; authored opponents can use ports 1/3. The host smoke
-asserts `actors=4 ... shots=2 hits=2` for both. The HUD draws
-one bar per actor, and the camera frames actor 0 against its nearest enemy.
+asserts the authored roster `actors=4 ... shots=2 hits=2 reactions=2` and the
+source roster `actors=4 ... shots=5 hits=4 reactions=4`; `reactions` counts
+hits that opened a reaction window, so it verifies the new direction stage in
+the real host. The HUD draws one bar per actor, and the camera frames actor 0
+against its nearest enemy.
 
 ## Next targets
 

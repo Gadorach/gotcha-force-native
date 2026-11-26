@@ -37,10 +37,10 @@ def smoke(executable, art, movement, opengl=False):
             return log
 
         gred = launch("gg4e08:0615", "test:target")
-        assert "restarts=1 moved=1 airborne=1 shots=2 hits=2" in gred, gred
+        assert "restarts=1 moved=1 airborne=1 shots=2 hits=2 reactions=2" in gred, gred
         assert "move=beam-test event=debit frame=16" in gred, gred
         sasuke = launch("gg4e08:000a", "test:target")
-        assert "restarts=1 moved=1 airborne=1 shots=3 hits=3" in sasuke, sasuke
+        assert "restarts=1 moved=1 airborne=1 shots=3 hits=3 reactions=3" in sasuke, sasuke
         assert "move=shuriken-test event=repeat frame=0 object=0 recipient=255 value=2" in sasuke, sasuke
         arc = launch("test:arc-scout", "gg4e08:000a")
         assert "restarts=1 moved=1 airborne=1 shots=6 hits=6" in arc, arc
@@ -169,9 +169,9 @@ def smoke(executable, art, movement, opengl=False):
         source_duel = launch("gg4e08:0615", "gg4e08:000a", expected=2, frames="1")
         assert "against an explicit stationary package" in source_duel, source_duel
         roster = launch("gg4e08:000a", "gg4e08:000a", "--demo-roster-battle", expected=0, frames="60")
-        assert "actors=4 restarts=0 moved=1 airborne=1 shots=2 hits=2" in roster, roster
+        assert "actors=4 restarts=0 moved=1 airborne=1 shots=2 hits=2 reactions=2" in roster, roster
         roster_source = launch("gg4e08:0615", "gg4e08:000a", "--demo-roster-battle", expected=0)
-        assert "actors=4 restarts=1 moved=1 airborne=1 shots=5 hits=4" in roster_source, roster_source
+        assert "actors=4 restarts=1 moved=1 airborne=1 shots=5 hits=4 reactions=4" in roster_source, roster_source
     print("Package actors, guidance, impacts, synchronized emitters, stock and restart PASS"
           f" ({'OpenGL' if opengl else 'headless'})")
 

@@ -1713,11 +1713,12 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     const bool demo_anchor_double_tap=std::any_of(config.packages[0]->moves.begin(),config.packages[0]->moves.end(),
         [](const auto& move){return move.button==BorgBattleButton::X&&move.activation==BorgBattleActivation::DoubleTap;});
     const auto start=context.clock().monotonic_ns();auto last=start;u64 phase=0;
-    unsigned frame=0,restarts=0,total_shots=0,total_hits=0;
+    unsigned frame=0,restarts=0,total_shots=0,total_hits=0,total_reactions=0;
     unsigned max_flight=0;
     bool captured=false,paused=false,first_hit=false,after_restart_hit=false,moved=false,airborne=false;
     auto end=PortableDuelEnd::Fighting;
     std::array<u8,gf::kBattleMvpMaxActors> previous_cues{};
+    std::array<unsigned,gf::kBattleMvpMaxActors> previous_reaction_ticks{};
     std::optional<f32> previous_fade;
     std::string picker_notice;
     std::string movement_notice;
@@ -1985,6 +1986,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             }else if(!world.step(pads,false,&view,nullptr,&movement,nullptr,action_input,&origins)||!view.update(world,&error))
                 return fail("authored battle update refused");
             for(auto& input:action_input)input.pressed=input.released=0;
+            for(unsigned i=0;i<world.actor_count();++i){
+                const unsigned ticks=world.actors()[i].reaction_ticks;
+                total_reactions+=ticks>previous_reaction_ticks[i];
+                previous_reaction_ticks[i]=ticks;
+            }
             moved|=before!=world.actors()[0].position;airborne|=!world.actors()[0].grounded;
             if(options.exercise_battle_mobility){
                 const auto& actor=world.actors()[0];
@@ -2095,8 +2101,8 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         }
         if(options.frames&&frame>=options.frames)break;
     }
-    gf::log_info(context,"package-battle","frames=%u actors=%u restarts=%u moved=%u airborne=%u shots=%u hits=%u",
-        frame,world.actor_count(),restarts,unsigned(moved),unsigned(airborne),total_shots+world.shots_spawned(),total_hits+world.hits());
+    gf::log_info(context,"package-battle","frames=%u actors=%u restarts=%u moved=%u airborne=%u shots=%u hits=%u reactions=%u",
+        frame,world.actor_count(),restarts,unsigned(moved),unsigned(airborne),total_shots+world.shots_spawned(),total_hits+world.hits(),total_reactions);
     if(options.trace_package_battle&&has_sounds)
         gf::log_info(context,"borg-audio","device=%s frames-accepted=%llu",audible?"open":"off",
             static_cast<unsigned long long>(movement_audio_frames));
