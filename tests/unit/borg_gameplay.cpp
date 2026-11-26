@@ -2731,6 +2731,7 @@ int main(){
         config.packages={fighter,dummy,fighter,dummy};
         config.declared_actors=4;
         config.teams={0,1,0,1};config.teams_declared=true;
+        config.team_force={500,500};
         config.spawn={BattlePoint{-200,0},BattlePoint{200,0},
                       BattlePoint{0,200},BattlePoint{0,-200}};
         check(world.start(config),"four actor combat fixture");
@@ -2743,6 +2744,9 @@ int main(){
         }
         check(world.hits()>=1&&(world.actors()[1].health<500||world.actors()[3].health<500),
               "four-actor combat reaches an enemy");
+        check(world.team_force()[1]<500&&world.team_tally()[0]>0&&
+              (world.actors()[1].damage_taken>0||world.actors()[3].damage_taken>0),
+              "four-actor combat updates the team force, tally and receiver ledger");
     }
 
     {
