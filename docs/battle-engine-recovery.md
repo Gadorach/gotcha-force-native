@@ -483,8 +483,10 @@ Source-owned motion now has a per-actor engine path:
 The host source demo still owns one body, so `start` continues to refuse a
 second `NormalGRed` package until the per-actor producer is wired. The view now
 holds maxima-sized Borg/effect slots and accepts a package span, so it can bind
-a roster. The host still supplies two packages, two stage markers and a duel
-camera/HUD; those are the next host-facing pieces. A two-G-Red source test
+a roster. The host now has a headless four-actor roster demo for authored-movement
+packages (`--demo-roster-battle`, duplicate teams 0/1/0/1). It uses the roster
+step, binds four view slots and passes the host smoke. G-Red source 2v2 still
+needs the per-actor producer, and the camera/HUD remain two-actor. A two-G-Red source test
 still needs a second shipped package, which the C++ unit suite cannot
 construct.
 

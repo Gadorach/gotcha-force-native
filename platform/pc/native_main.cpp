@@ -99,7 +99,7 @@ struct Options {
     bool browse_force=false;
     bool borg_controls=false,demo_borg_controls=false,lab_jump=false,lab_dash=false,lab_air_dash=false,lab_glide=false,lab_landing_audio=false,
          lab_cruise=false,lab_source_pace=false,demo_lab_picker=false;
-    bool demo_package_battle=false,trace_package_battle=false,battle_picker=false,exercise_battle_mobility=false,
+    bool demo_package_battle=false,demo_roster_battle=false,trace_package_battle=false,battle_picker=false,exercise_battle_mobility=false,
          exercise_gred_touchdown=false;
     std::string demo_battle_pick;
     std::string battle_borg,against_borg,against_variant,walk_borg;
@@ -341,6 +341,7 @@ bool parse(int argc, char** argv, Options* options) {
             options->battle_stage_spawns={argv[i+1],argv[i+2]};i+=2;
         }
         else if(arg=="--demo-package-battle")options->demo_package_battle=true;
+        else if(arg=="--demo-roster-battle"){options->demo_roster_battle=true;options->demo_package_battle=true;}
         else if(arg=="--battle-picker")options->battle_picker=true;
         else if(arg=="--exercise-battle-mobility")options->exercise_battle_mobility=true;
         else if(arg=="--exercise-gred-touchdown")options->exercise_gred_touchdown=true;
@@ -787,7 +788,7 @@ bool parse(int argc, char** argv, Options* options) {
                           "                 [--arrange-from-force | --practice-from-picker]\n"
                           "       gf_native --cheat-offer-picker (metadata offers only; no ownership or save changes)\n"
                           "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--preview-clip ID] [--preview-origin ID] [--headless] [--frames N]\n"
-                          "       gf_native --battle-borg NAMESPACE:ID --against-borg NAMESPACE:ID [--demo-package-battle] [--trace-package-battle]\n"
+                          "       gf_native --battle-borg NAMESPACE:ID --against-borg NAMESPACE:ID [--demo-package-battle] [--demo-roster-battle] [--trace-package-battle]\n"
                            "       gf_native --list-stages\n"
                            "       gf_native --list-challenges\n"
                            "       gf_native --run-challenge NAMESPACE:ID ENCOUNTER SAVE_ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
@@ -1538,6 +1539,16 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     auto config=hosted?hosted->config():BattleMvpConfig{};
     const auto tick_limit=accepted?accepted->request.tick_limit:0;
     if(!hosted)for(unsigned i=0;i<2;++i)config.packages[i]=packages[i].definition;
+    if(!hosted&&options.demo_roster_battle){
+        if(packages[0].definition->movement==BorgBattleMovement::NormalGRed||
+           packages[1].definition->movement==BorgBattleMovement::NormalGRed){
+            error="roster demo requires authored-movement packages until the per-actor source producer is wired";
+            return fail("roster source producer not wired");
+        }
+        config.packages[2]=packages[0].definition;config.packages[3]=packages[1].definition;
+        config.declared_actors=4;
+        config.teams={0,1,0,1};config.teams_declared=true;
+    }
     config.package_strafe=selection||options.exercise_battle_mobility;
     if(!hosted&&options.package_battle_distance){
         const auto scale=f32(options.package_battle_distance)/std::hypot(config.spawn[0].x-config.spawn[1].x,config.spawn[0].z-config.spawn[1].z);
@@ -1580,13 +1591,25 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     }
     const std::array visuals{packages[0].visuals(),packages[1].visuals()};
     const std::array<std::shared_ptr<const BorgGameplayProfile>,2> duel_packages{config.packages[0],config.packages[1]};
+    const std::array<std::shared_ptr<const BorgGameplayProfile>,4> roster_packages{config.packages[0],config.packages[1],config.packages[2],config.packages[3]};
+    const std::array<BorgBattleVisualAssets,4> roster_visuals{visuals[0],visuals[1],visuals[0],visuals[1]};
+    const std::span<const std::shared_ptr<const BorgGameplayProfile>> view_packages=
+        options.demo_roster_battle?std::span<const std::shared_ptr<const BorgGameplayProfile>>(roster_packages):
+                                   std::span<const std::shared_ptr<const BorgGameplayProfile>>(duel_packages);
+    const std::span<const BorgBattleVisualAssets> view_visuals=
+        options.demo_roster_battle?std::span<const BorgBattleVisualAssets>(roster_visuals):
+                                   std::span<const BorgBattleVisualAssets>(visuals);
     if(stage){
         const std::array<std::string_view,2> markers{options.battle_stage_spawns[0],options.battle_stage_spawns[1]};
         if(!view.bind_stage(*stage,render,&error)||
            !view.configure_stage_duel(options.battle_stage,markers,&config,&error)||
-           !view.load_packages(render,duel_packages,visuals,&error))return fail("portable stage admission refused");
-    }else if(!hosted&&!view.load_packages(context.files(),options.battle_mvp_assets,render,duel_packages,visuals,&error,inputs))
+           !view.load_packages(render,view_packages,view_visuals,&error))return fail("portable stage admission refused");
+    }else if(!hosted&&!view.load_packages(context.files(),options.battle_mvp_assets,render,view_packages,view_visuals,&error,inputs))
         return fail("asset binding refused");
+    if(!hosted&&options.demo_roster_battle){
+        config.spawn[2]={config.spawn[0].x,-config.spawn[0].z};
+        config.spawn[3]={config.spawn[1].x,-config.spawn[1].z};
+    }
     gf::pc::GRedPracticeInput practice_input;
     BorgMovementAudio movement_audio;
     const std::array<const BorgMovementSoundBank*,2> sound_banks{&packages[0].movement_sounds,&packages[1].movement_sounds};
@@ -1691,7 +1714,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     unsigned max_flight=0;
     bool captured=false,paused=false,first_hit=false,after_restart_hit=false,moved=false,airborne=false;
     auto end=PortableDuelEnd::Fighting;
-    std::array<u8,2> previous_cues{};
+    std::array<u8,gf::kBattleMvpMaxActors> previous_cues{};
     std::optional<f32> previous_fade;
     std::string picker_notice;
     std::string movement_notice;
@@ -1910,6 +1933,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 if(!source.commit(world,view.source_binding(),&error)||!source.pose(world,&pose)||!view.update_source(world,pose,&error))
                     return fail("accepted source pose was not published");
                 if(touchdown&&source.landing_entry_accepted()&&offer.kind==NativeBorgMotionKind::JumpLanding)touchdown_entry=true;
+            }else if(options.demo_roster_battle){
+                std::array<GamePadState,4> roster_pads{pads[0],pads[1],{},{}};
+                std::array<BorgBattleInputs,4> roster_input{action_input[0],action_input[1],{},{}};
+                if(!world.step_roster(roster_pads,roster_input,false,&view,{},&movement,nullptr,&origins)||!view.update(world,&error))
+                    return fail("authored roster update refused");
             }else if(!world.step(pads,false,&view,nullptr,&movement,nullptr,action_input,&origins)||!view.update(world,&error))
                 return fail("authored battle update refused");
             for(auto& input:action_input)input.pressed=input.released=0;

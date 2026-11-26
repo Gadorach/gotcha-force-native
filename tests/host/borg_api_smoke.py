@@ -168,6 +168,8 @@ def smoke(executable, art, movement, opengl=False):
         assert "exact base variant" in wrong_variant, wrong_variant
         source_duel = launch("gg4e08:0615", "gg4e08:000a", expected=2, frames="1")
         assert "against an explicit stationary package" in source_duel, source_duel
+        roster = launch("gg4e08:000a", "gg4e08:000a", "--demo-roster-battle", expected=0, frames="60")
+        assert "actors=4 restarts=0 moved=1 airborne=1 shots=2 hits=2" in roster, roster
     print("Package actors, guidance, impacts, synchronized emitters, stock and restart PASS"
           f" ({'OpenGL' if opengl else 'headless'})")
 

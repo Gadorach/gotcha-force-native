@@ -1265,6 +1265,6 @@ private:
     StageRayParameters projectile_bounds_;
     bool projectile_source_stage_=false;
     bool projectile_stage_ready_=false;
-    std::array<std::array<MovementPulse,kBorgBattleMovementFx>,2> movement_pulses_{};
+    std::array<std::array<MovementPulse,kBorgBattleMovementFx>,kBattleMvpMaxActors> movement_pulses_{};
 };
 }
