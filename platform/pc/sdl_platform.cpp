@@ -167,7 +167,11 @@ public:
             second.z=keys[SDL_SCANCODE_PERIOD]!=0;
             map_keyboard_pad(second,&snapshot_.pad(1));
         }
-        snapshot_.port_count=2;
+        // Report the second keyboard port only while it has input, so an
+        // idle P2 does not appear as a connected device in a one-player menu.
+        snapshot_.port_count=1;
+        if(snapshot_.pad(1).buttons||snapshot_.pad(1).axis[0]||snapshot_.pad(1).axis[1])
+            snapshot_.port_count=2;
         for(unsigned i=0;i<InputSnapshot::kMaxPorts;++i)if(pads_[i])snapshot_.port_count=i+1;
 
         // Mouse / pointer. Screen space; the game decides what it means.
