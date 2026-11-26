@@ -348,8 +348,17 @@ def recover(image):
         "settings": {
             "address": "803C4E60",
             "index": "actor+136",
-            "role": "per-team byte that indexes the credit-difficulty and "
+            "role": "per-slot byte that indexes the credit-difficulty and "
                     "defender-class rows",
+            "writer": {
+                "function": "80006ABC",
+                "state_1": "slot 0 = d & 31; slot 1 = (31 - d) & 31; "
+                           "d = s16(*80433934 + 0x46)",
+                "state_2": "slots 0..3 = 7",
+                "consistency": "observed slot 1 = 16 (d = 15) and 30 "
+                               "(d = 1); consistent, not proven for those "
+                               "battles",
+            },
         },
         "matchup": {
             "address": f"{MATCHUP_MATRIX:08X}",
@@ -382,6 +391,8 @@ def recover(image):
             "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
             "The matchup mapper 80066298 is a 256-entry pointer table at "
             "802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
+            "The per-slot settings byte 803C4E60 is written by 80006ABC: "
+            "state 1 uses a complementary d / 31-d pair, state 2 writes 7.",
             "The defender selectors at model+156/157/158 are the AFS bytes "
             "plXXXXdata.bin+156..158; the roster map is "
             "api-map/borg-damage-selectors.json (Sasuke 1,1,0; G-Red 2,2,2).",

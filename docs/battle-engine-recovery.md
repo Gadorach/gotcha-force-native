@@ -318,8 +318,12 @@ The defender selectors are per-Borg bytes at `plXXXXdata.bin +156..158`
 [`api-map/borg-damage-selectors.json`](api-map/borg-damage-selectors.json)
 together with the 13 combined forms, whose `data2`/`data3` blocks carry one
 triple per component.
-The class row is `80433600[side][selector][settings[team]]`; the two HP rows
-use `+157` and `+158` with the post-hit HP index.
+The class row is `80433600[side][selector][settings[slot]]`; the two HP rows
+use `+157` and `+158` with the post-hit HP index. The per-slot settings byte is
+written by `80006ABC`: state 1 sets slot 0 = `d` and slot 1 = `31 - d` (with
+`d` from `*80433934 + 0x46`), state 2 sets slots 0..3 to 7. The observed
+defender slot values 16 and 30 correspond to d = 15 and d = 1; that is
+consistent with, not proof of, that writer for those battles.
 
 ## Next targets
 
