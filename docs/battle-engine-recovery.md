@@ -235,11 +235,12 @@ geometry, 24 apply and 23 post. Its 98 conditional branches are decoded in
 condition (`cmpi` 29, `fcmpo` 28, `extsb.` 21, `rlwinm.` 11, plus `cmp/cmpl`).
 Each branch also records the last load/immediate that fed the tested register
 (field offset, sign extension, mask, indexed load or call result). The
-broad-phase band and the clear early-geometry gates are named: actor
-active/timer 2001/global flag 1078, the two u16 peaks and s16 timers, the
-6-actor and 12-entry loops, geometry active/subactive-477, height+475 and the
-height limit, the actor+460 vector gates, and the pair-pass gates. Float
-provenance is the nearest load, not the whole expression. The apply band ends at the pair-loop call
+broad-phase and geometry bands are fully named (24 gates): actor active/timer
+2001/global flag 1078, the two u16 peaks and s16 timers, the 6-actor,
+12-entry and geometry loops, geometry active/subactive-477, height+475 and the
+height limit, the actor+460 vector gates, and the pair pass (actor/flag475/
+linked/model table, the 0x1652 table and the f32 order). Float provenance is
+the nearest load, not the whole expression. The apply band ends at the pair-loop call
 `8002C4CC -> 8002DB58`, which is the entry to the reaction scaffold. The map is
 [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 

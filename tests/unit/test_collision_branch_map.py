@@ -35,6 +35,15 @@ class CollisionBranchMapTest(unittest.TestCase):
         self.assertEqual(gates["8002BD3C"], "actor-loop-6")
         self.assertEqual(gates["8002BD94"], "effect-slot-loop-12")
 
+    def test_named_geometry_gates(self):
+        data = json.loads(ARTIFACT.read_text())
+        geometry = [b for b in data["branches"] if b["phase"] == "geometry"]
+        self.assertEqual(len(geometry), 14)
+        self.assertTrue(all("gate" in b for b in geometry))
+        gates = {b["site"]: b["gate"] for b in geometry}
+        self.assertEqual(gates["8002BED4"], "geometry-actor-loop")
+        self.assertEqual(gates["8002BFDC"], "pair-model-table")
+
     def test_operand_provenance(self):
         data = json.loads(ARTIFACT.read_text())
         calls = {b["site"]: b for b in data["branches"]}

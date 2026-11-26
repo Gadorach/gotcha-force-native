@@ -34,6 +34,7 @@ GATES = {
     "8002BC54": ("timer-1274", "s16(actor+1274) counts down; zero clears actor+1270"),
     "8002BD3C": ("actor-loop-6", "six actors, stride 0x1E00"),
     "8002BD94": ("effect-slot-loop-12", "twelve 0x3E4 entries"),
+    "8002BED4": ("geometry-actor-loop", "six actors, stride 0x1E00"),
     "8002BDF8": ("geometry-actor-active", "s8(actor+0) == 0 skips geometry"),
     "8002BE04": ("geometry-subactive-477", "s8(actor+477) == 0 skips geometry"),
     "8002BE28": ("height-extra-475", "s8(actor+475) adds the linked height+464"),
@@ -45,6 +46,9 @@ GATES = {
     "8002BF10": ("pair-actor-628-bit1", "u8(actor+628) bit 1 gates the pair pass"),
     "8002BF1C": ("global-1652-zero", "a global counter gates the pair pass"),
     "8002BF30": ("pair-order", "f32 slot comparison chooses the pair order"),
+    "8002BFAC": ("pair-flag475", "s8(actor+475) == 0 skips the pair pass"),
+    "8002BFBC": ("pair-linked-active", "s8(*(actor+484)+131) == 0 skips the model-table path"),
+    "8002BFDC": ("pair-model-table", "a zero global[1652+index*4] entry takes the C0F8 path"),
 }
 
 

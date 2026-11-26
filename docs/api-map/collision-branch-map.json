@@ -491,6 +491,8 @@
         "text": "r24 cmp 6"
       },
       "cr": 0,
+      "gate": "geometry-actor-loop",
+      "meaning": "six actors, stride 0x1E00",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BED4",
@@ -639,6 +641,8 @@
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "pair-flag475",
+      "meaning": "s8(actor+475) == 0 skips the pair pass",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BFAC",
@@ -669,6 +673,8 @@
         "text": "s8(r0)"
       },
       "cr": 0,
+      "gate": "pair-linked-active",
+      "meaning": "s8(*(actor+484)+131) == 0 skips the model-table path",
       "phase": "geometry",
       "sense": "false",
       "site": "8002BFBC",
@@ -692,6 +698,8 @@
         "text": "r0 cmp 0"
       },
       "cr": 0,
+      "gate": "pair-model-table",
+      "meaning": "a zero global[1652+index*4] entry takes the C0F8 path",
       "phase": "geometry",
       "sense": "true",
       "site": "8002BFDC",
