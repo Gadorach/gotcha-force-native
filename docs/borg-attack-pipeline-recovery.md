@@ -566,10 +566,18 @@ The amount function `8003CD5C` does materialise the matchup matrix
 materialised directly; they are reached indirectly.
 
 The live matchup probe read row 0 / column 4 as `1.0`, and the static
-`D024` cell is the same neutral multiply. The `0.867` is applied **earlier**
-(the `CE94` `fmuls` group), from the credit rows reached indirectly. So the
-matrix participates as a neutral factor for this pair; it is not the `0.867`
-source, but it is not absent from the function either.
+`D024` cell is the same neutral multiply. The `0.867` is applied **earlier**:
+
+```text
+CE70  settings[team]          (factor-row index)
+CE80  ptr = table[owner998 sign] at 803335E0/E8
+CE8C  f0  = ptr[index]
+CE94  f31 *= f0
+```
+
+So the `0.867` is a cell of the paired pointer table at `803335E0/E8`
+(runtime `804335E0/E8`), selected by the `owner998` sign and the
+settings/team byte. The `D024` matchup matrix is a separate neutral multiply.
 
 The exact arithmetic is `20 × 0.867 × 1.13 × 1.15 = 22.533329 → 22`.
 The measured record is exported as
