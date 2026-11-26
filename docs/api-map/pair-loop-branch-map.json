@@ -7,6 +7,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 27,
+          "kind": "field",
+          "offset": 88,
+          "op": "lwz",
+          "via": {
+            "base": 20,
+            "kind": "field",
+            "offset": 0,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u32"
+        },
         "signed": true,
         "text": "r0 cmp 2"
       },
@@ -25,6 +39,14 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "mask": "0x00000001",
+          "offset": 16,
+          "op": "lha",
+          "width": "s16"
+        },
         "shift": 0,
         "text": "(r0 & 0x00000001)"
       },
@@ -34,7 +56,7 @@
       "phase": "prepare",
       "sense": "true",
       "site": "8002DBD4",
-      "source": "8002BB8C",
+      "source": "8002DBD0",
       "target": "8002DBE0"
     },
     {
@@ -43,6 +65,28 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "mask": "0x00000800",
+          "offset": 2,
+          "op": "lhz",
+          "via": {
+            "base": 26,
+            "kind": "field",
+            "offset": 40,
+            "op": "lwz",
+            "via": {
+              "base": 28,
+              "kind": "field",
+              "offset": 0,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "u32"
+          },
+          "width": "u16"
+        },
         "shift": 0,
         "text": "(r4 & 0x00000800)"
       },
@@ -52,7 +96,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DC04",
-      "source": "8002BBBC",
+      "source": "8002DC00",
       "target": "8002DC14"
     },
     {
@@ -61,6 +105,14 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 23,
+          "kind": "field",
+          "mask": "0x00008000",
+          "offset": 18,
+          "op": "lha",
+          "width": "s16"
+        },
         "shift": 0,
         "text": "(r0 & 0x00008000)"
       },
@@ -70,7 +122,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DC10",
-      "source": "8002BBC8",
+      "source": "8002DC0C",
       "target": "8002DDF4"
     },
     {
@@ -79,6 +131,21 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "mask": "0x00001000",
+          "offset": 2,
+          "op": "lhz",
+          "via": {
+            "base": 27,
+            "kind": "field",
+            "offset": 40,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u16"
+        },
         "shift": 0,
         "text": "(r3 & 0x00001000)"
       },
@@ -88,7 +155,7 @@
       "phase": "inner",
       "sense": "false",
       "site": "8002DC20",
-      "source": "8002BBD8",
+      "source": "8002DC1C",
       "target": "8002DC2C"
     },
     {
@@ -97,6 +164,28 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "mask": "0x00002000",
+          "offset": 2,
+          "op": "lhz",
+          "via": {
+            "base": 26,
+            "kind": "field",
+            "offset": 40,
+            "op": "lwz",
+            "via": {
+              "base": 28,
+              "kind": "field",
+              "offset": 0,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "u32"
+          },
+          "width": "u16"
+        },
         "shift": 0,
         "text": "(r4 & 0x00002000)"
       },
@@ -106,7 +195,7 @@
       "phase": "inner",
       "sense": "false",
       "site": "8002DC28",
-      "source": "8002BBE0",
+      "source": "8002DC24",
       "target": "8002DDF4"
     },
     {
@@ -115,6 +204,21 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "mask": "0x00004000",
+          "offset": 2,
+          "op": "lhz",
+          "via": {
+            "base": 27,
+            "kind": "field",
+            "offset": 40,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u16"
+        },
         "shift": 0,
         "text": "(r3 & 0x00004000)"
       },
@@ -124,7 +228,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DC30",
-      "source": "8002BBE8",
+      "source": "8002DC2C",
       "target": "8002DC3C"
     },
     {
@@ -133,6 +237,21 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "mask": "0x00002000",
+          "offset": 2,
+          "op": "lhz",
+          "via": {
+            "base": 26,
+            "kind": "field",
+            "offset": 40,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u16"
+        },
         "shift": 0,
         "text": "(r4 & 0x00002000)"
       },
@@ -142,7 +261,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DC38",
-      "source": "8002BBF0",
+      "source": "8002DC34",
       "target": "8002DDF4"
     },
     {
@@ -151,6 +270,28 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "mask": "0x00000002",
+          "offset": 474,
+          "op": "lbz",
+          "via": {
+            "base": 26,
+            "kind": "field",
+            "offset": 32,
+            "op": "lwz",
+            "via": {
+              "base": 28,
+              "kind": "field",
+              "offset": 0,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "u32"
+          },
+          "width": "u8"
+        },
         "shift": 0,
         "text": "(r0 & 0x00000002)"
       },
@@ -160,7 +301,7 @@
       "phase": "inner",
       "sense": "false",
       "site": "8002DC48",
-      "source": "8002BC00",
+      "source": "8002DC44",
       "target": "8002DDF4"
     },
     {
@@ -170,6 +311,9 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "kind": "call"
+        },
         "signed": true,
         "text": "r3 cmp 0"
       },
@@ -188,6 +332,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 4,
+          "kind": "field",
+          "offset": 131,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 26,
+            "kind": "field",
+            "offset": 36,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -196,7 +355,7 @@
       "phase": "inner",
       "sense": "false",
       "site": "8002DC74",
-      "source": "8002BC2C",
+      "source": "8002DC70",
       "target": "8002DCE4"
     },
     {
@@ -205,6 +364,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "offset": 131,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 27,
+            "kind": "field",
+            "offset": 36,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -213,7 +387,7 @@
       "phase": "inner",
       "sense": "false",
       "site": "8002DC80",
-      "source": "8002BC38",
+      "source": "8002DC7C",
       "target": "8002DCE4"
     },
     {
@@ -223,6 +397,38 @@
       "condition": {
         "cr": 0,
         "kind": "cmp",
+        "operands": {
+          "r0": {
+            "base": 3,
+            "kind": "field",
+            "offset": 136,
+            "op": "lbz",
+            "sign_extended": true,
+            "via": {
+              "base": 27,
+              "kind": "field",
+              "offset": 36,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "s8"
+          },
+          "r5": {
+            "base": 4,
+            "kind": "field",
+            "offset": 136,
+            "op": "lbz",
+            "sign_extended": true,
+            "via": {
+              "base": 26,
+              "kind": "field",
+              "offset": 36,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "s8"
+          }
+        },
         "signed": true,
         "text": "r5 cmp r0"
       },
@@ -232,7 +438,7 @@
       "phase": "inner",
       "sense": "false",
       "site": "8002DC98",
-      "source": "8002BC50",
+      "source": "8002DC94",
       "target": "8002DCE4"
     },
     {
@@ -241,6 +447,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 4,
+          "kind": "field",
+          "offset": 475,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 26,
+            "kind": "field",
+            "offset": 36,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -249,7 +470,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DCA4",
-      "source": "8002BC5C",
+      "source": "8002DCA0",
       "target": "8002DCC0"
     },
     {
@@ -259,6 +480,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lbz",
+          "via": {
+            "base": 27,
+            "kind": "field",
+            "offset": 36,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u8"
+        },
         "signed": true,
         "text": "r0 cmp 14"
       },
@@ -278,6 +513,29 @@
       "condition": {
         "cr": 0,
         "kind": "cmpl",
+        "operands": {
+          "r0": {
+            "base": 4,
+            "kind": "field",
+            "offset": 484,
+            "op": "lwz",
+            "via": {
+              "base": 26,
+              "kind": "field",
+              "offset": 36,
+              "op": "lwz",
+              "width": "u32"
+            },
+            "width": "u32"
+          },
+          "r3": {
+            "base": 27,
+            "kind": "field",
+            "offset": 36,
+            "op": "lwz",
+            "width": "u32"
+          }
+        },
         "signed": false,
         "text": "r0 cmpl r3"
       },
@@ -287,7 +545,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DCBC",
-      "source": "8002BC74",
+      "source": "8002DCB8",
       "target": "8002DDF4"
     },
     {
@@ -296,6 +554,21 @@
       "cond": "eq",
       "condition": {
         "kind": "extsb.",
+        "operand": {
+          "base": 3,
+          "kind": "field",
+          "offset": 475,
+          "op": "lbz",
+          "sign_extended": true,
+          "via": {
+            "base": 27,
+            "kind": "field",
+            "offset": 36,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "s8"
+        },
         "text": "s8(r0)"
       },
       "cr": 0,
@@ -304,7 +577,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DCC8",
-      "source": "8002BC80",
+      "source": "8002DCC4",
       "target": "8002DCE4"
     },
     {
@@ -314,6 +587,13 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "base": 4,
+          "kind": "field",
+          "offset": 1000,
+          "op": "lbz",
+          "width": "u8"
+        },
         "signed": true,
         "text": "r0 cmp 14"
       },
@@ -333,6 +613,15 @@
       "condition": {
         "cr": 0,
         "kind": "cmpl",
+        "operands": {
+          "r0": {
+            "base": 3,
+            "kind": "field",
+            "offset": 484,
+            "op": "lwz",
+            "width": "u32"
+          }
+        },
         "signed": false,
         "text": "r0 cmpl r4"
       },
@@ -342,7 +631,7 @@
       "phase": "inner",
       "sense": "true",
       "site": "8002DCE0",
-      "source": "8002BC98",
+      "source": "8002DCDC",
       "target": "8002DDF4"
     },
     {
@@ -352,6 +641,9 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "kind": "call"
+        },
         "signed": true,
         "text": "r3 cmp 0"
       },
@@ -403,6 +695,9 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "kind": "call"
+        },
         "signed": true,
         "text": "r3 cmp 0"
       },
@@ -441,6 +736,11 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f1": {
+            "kind": "call"
+          }
+        },
         "text": "f1 fcmpo f31"
       },
       "cr": 0,
@@ -449,7 +749,7 @@
       "phase": "select",
       "sense": "false",
       "site": "8002DDC4",
-      "source": "8002BD78",
+      "source": "8002DDBC",
       "target": "8002DDF4"
     },
     {
@@ -459,6 +759,15 @@
       "condition": {
         "cr": 0,
         "kind": "cmp",
+        "operands": {
+          "r0": {
+            "base": 13,
+            "kind": "field",
+            "offset": -21330,
+            "op": "lhz",
+            "width": "u16"
+          }
+        },
         "signed": true,
         "text": "r24 cmp r0"
       },
@@ -468,7 +777,7 @@
       "phase": "select",
       "sense": "true",
       "site": "8002DE04",
-      "source": "8002BDBC",
+      "source": "8002DE00",
       "target": "8002DBF4"
     },
     {
@@ -497,6 +806,10 @@
       "condition": {
         "cr": 0,
         "kind": "cmpi",
+        "operand": {
+          "kind": "imm",
+          "value": 1
+        },
         "signed": true,
         "text": "r21 cmp 0"
       },
@@ -515,6 +828,13 @@
       "cond": "eq",
       "condition": {
         "kind": "rlwinm.",
+        "operand": {
+          "base": 5,
+          "index": 0,
+          "kind": "indexed",
+          "mask": "0x000003C0",
+          "op": "lhax"
+        },
         "shift": 0,
         "text": "(r0 & 0x000003C0)"
       },
@@ -524,7 +844,7 @@
       "phase": "publish",
       "sense": "false",
       "site": "8002DE4C",
-      "source": "8002BE04",
+      "source": "8002DE48",
       "target": "8002DECC"
     },
     {
@@ -534,6 +854,18 @@
       "condition": {
         "cr": 0,
         "kind": "fcmpo",
+        "operands": {
+          "f0": {
+            "base": 2,
+            "kind": "field",
+            "offset": -31416,
+            "op": "lfs",
+            "width": "f32"
+          },
+          "f1": {
+            "kind": "call"
+          }
+        },
         "text": "f1 fcmpo f0"
       },
       "cr": 0,
@@ -542,7 +874,7 @@
       "phase": "publish",
       "sense": "false",
       "site": "8002DE6C",
-      "source": "8002BE24",
+      "source": "8002DE68",
       "target": "8002DECC"
     },
     {
@@ -552,6 +884,20 @@
       "condition": {
         "cr": 0,
         "kind": "cmpli",
+        "operand": {
+          "base": 21,
+          "kind": "field",
+          "offset": 256,
+          "op": "lwz",
+          "via": {
+            "base": 27,
+            "kind": "field",
+            "offset": 32,
+            "op": "lwz",
+            "width": "u32"
+          },
+          "width": "u32"
+        },
         "signed": false,
         "text": "r12 cmpl 0"
       },
@@ -571,6 +917,15 @@
       "condition": {
         "cr": 0,
         "kind": "cmp",
+        "operands": {
+          "r0": {
+            "base": 13,
+            "kind": "field",
+            "offset": -21328,
+            "op": "lhz",
+            "width": "u16"
+          }
+        },
         "signed": true,
         "text": "r25 cmp r0"
       },
@@ -580,7 +935,7 @@
       "phase": "publish",
       "sense": "true",
       "site": "8002DEE8",
-      "source": "8002BEA0",
+      "source": "8002DEE4",
       "target": "8002DBA4"
     }
   ],
@@ -593,7 +948,8 @@
   "notes": [
     "Each branch records the nearest flag-setting compare/mask in the eight instructions before it.",
     "The two CTR branches are the 45-dword matrix copies.",
-    "Conditions are operands; the pair validity rules are documented separately."
+    "`operand`/`operands` name the last load, immediate, mask, indexed load or call result that fed the tested register; float provenance is the nearest load, not the whole expression.",
+    "Named gates and the pair validity rules are documented separately."
   ],
   "phases": {
     "inner": 20,
@@ -601,6 +957,6 @@
     "publish": 6,
     "select": 4
   },
-  "revision": 1,
+  "revision": 2,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

@@ -235,7 +235,7 @@ def _condition(code, site, base):
                 fb = (word >> 11) & 31
                 name = "fcmpu" if xo == 0 else "fcmpo"
                 return {"kind": name, "cr": cr,
-                        "text": f"f{fa} {name} f{fb}"}, FUNCTION + at
+                        "text": f"f{fa} {name} f{fb}"}, base + at
         if op == 31:
             xo = (word >> 1) & 0x3FF
             ra = (word >> 16) & 31
@@ -243,30 +243,30 @@ def _condition(code, site, base):
             rb = (word >> 11) & 31
             if xo == 0:
                 return {"kind": "cmp", "cr": (word >> 23) & 7,
-                        "text": f"r{ra} cmp r{rb}", "signed": True}, FUNCTION + at
+                        "text": f"r{ra} cmp r{rb}", "signed": True}, base + at
             if xo == 32:
                 return {"kind": "cmpl", "cr": (word >> 23) & 7,
-                        "text": f"r{ra} cmpl r{rb}", "signed": False}, FUNCTION + at
+                        "text": f"r{ra} cmpl r{rb}", "signed": False}, base + at
             if xo == 28 and (word & 1):
-                return {"kind": "and.", "text": f"(r{ra} & r{rb})"}, FUNCTION + at
+                return {"kind": "and.", "text": f"(r{ra} & r{rb})"}, base + at
             if xo == 954 and (word & 1):
-                return {"kind": "extsb.", "text": f"s8(r{rs})"}, FUNCTION + at
+                return {"kind": "extsb.", "text": f"s8(r{rs})"}, base + at
             if xo == 922 and (word & 1):
-                return {"kind": "extsh.", "text": f"s16(r{rs})"}, FUNCTION + at
+                return {"kind": "extsh.", "text": f"s16(r{rs})"}, base + at
         if op == 21 and (word & 1):
             rs = (word >> 21) & 31
             sh = (word >> 11) & 31
             mb = (word >> 6) & 31
             me = (word >> 1) & 31
             return {"kind": "rlwinm.", "text": f"(r{rs} & 0x{_mask(mb, me):08X})",
-                    "shift": sh}, FUNCTION + at
+                    "shift": sh}, base + at
         if op in (28, 29) and (word & 1):
             ra = (word >> 16) & 31
             rs = (word >> 21) & 31
             imm = word & 0xFFFF
             if op == 29:
                 imm <<= 16
-            return {"kind": "andi.", "text": f"(r{rs} & 0x{imm:08X})"}, FUNCTION + at
+            return {"kind": "andi.", "text": f"(r{rs} & 0x{imm:08X})"}, base + at
     return {"kind": "unknown", "text": "unknown condition"}, None
 
 

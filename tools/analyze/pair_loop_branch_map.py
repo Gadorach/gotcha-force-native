@@ -11,7 +11,7 @@ import json
 import struct
 from pathlib import Path
 
-from tools.analyze.collision_branch_map import CONDS, _condition
+from tools.analyze.collision_branch_map import CONDS, _attach, _condition
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
@@ -88,6 +88,8 @@ def recover(image):
             condition, source = {"kind": "bdnz", "text": "decrement CTR"}, None
         else:
             condition, source = _condition(code, site, FUNCTION)
+            if source is not None:
+                condition = _attach(condition, source, code, FUNCTION)
         entry = {
             "site": f"{site:08X}",
             "target": f"{target & 0xFFFFFFFF:08X}",
@@ -110,7 +112,7 @@ def recover(image):
         phases[branch["phase"]] = phases.get(branch["phase"], 0) + 1
     return {
         "kind": "gf-pair-loop-branch-map",
-        "revision": 1,
+        "revision": 2,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {"address": f"{FUNCTION:08X}", "size": SIZE,
                      "branches": len(branches)},
@@ -120,8 +122,10 @@ def recover(image):
             "Each branch records the nearest flag-setting compare/mask in the "
             "eight instructions before it.",
             "The two CTR branches are the 45-dword matrix copies.",
-            "Conditions are operands; the pair validity rules are documented "
-            "separately.",
+            "`operand`/`operands` name the last load, immediate, mask, indexed "
+            "load or call result that fed the tested register; float provenance "
+            "is the nearest load, not the whole expression.",
+            "Named gates and the pair validity rules are documented separately.",
         ],
     }
 
