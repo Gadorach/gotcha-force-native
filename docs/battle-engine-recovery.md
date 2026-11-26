@@ -339,6 +339,21 @@ written by `80006ABC`: state 1 sets slot 0 = `d` and slot 1 = `31 - d` (with
 defender slot values 16 and 30 correspond to d = 15 and d = 1; that is
 consistent with, not proof of, that writer for those battles.
 
+`tools/analyze/damage_content_row.py` turns the tables and the public selector
+artifact into the native content row. The known hit reproduces the fixture line
+exactly:
+
+```sh
+python3 -B -m tools.analyze.damage_content_row <dol> \
+  docs/api-map/borg-damage-selectors.json \
+  --attacker-model 0615 --defender-model 000a --attacker-side 0 \
+  --defender-side 1 --attacker-settings 0 --defender-settings 16 --base 20
+```
+
+```text
+damage-vs=000a|0.867|1.13|1.15|1.0   product 1.126666   amount 22
+```
+
 ## Next targets
 
 1. Emit the eight recovered table roles into packages: credit difficulty and
