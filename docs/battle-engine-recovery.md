@@ -464,6 +464,18 @@ python3 -B -m tools.analyze.damage_content_row <dol> \
 damage-vs=10|0.867|1.13|1.15|1.0   product 1.126666   amount 22
 ```
 
+## Per-actor source movement
+
+Source-owned motion is still actor-0 only. `start` refuses a `NormalGRed`
+package beyond actor 0, so a 2v2 with two source-driven G-Reds is explicitly
+rejected rather than silently running a legacy fallback. The next
+implementation must make these per-actor:
+
+- `last_offer_`, `last_receipt_`, `motion_producer_` and the source-contact
+  preflight/result;
+- the movement branch's `last_offer_` reads;
+- the view's `source_seed` / `update_source` pair and its single motion scope.
+
 ## Next targets
 
 1. Emit the eight recovered table roles into packages: credit difficulty and
