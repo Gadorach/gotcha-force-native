@@ -443,7 +443,15 @@ its queue group, step and per-Borg table entry. A packager can emit
 source modes still need a labelled fallback. `reaction_emit.py` now appends
 those lines to the authored `basic-shot` gameplay, using the group's first
 step; modes outside 1/3 declare an explicit `reaction-mode=1` fallback with a
-comment naming the source mode. The original
+comment naming the source mode.
+
+The native engine implements modes 1/3. Mode 0/2 read a pair-position delta
+(`p+0x20 - p+0x2C` / `p+0x30 - p+0x3C`), mode 4/5 the `+0x8DC/8EC/8FC` vectors
+and the default `+0x11C/12C/13C`; these are left as explicit fallbacks until
+the vectors are verified, rather than mapped to native velocity/aim by analogy.
+A generated-package smoke is also blocked here: `retail_borg_roster.convert`
+requires the qualified GFBC catalog (`b5321301...`), and the local extraction
+has the AFS but not that catalog. The original
 `afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
