@@ -43,6 +43,7 @@ struct BattleMvpActor {
     // `facing`; the decay window is authored (matches hit_flash).
     static constexpr unsigned reaction_duration=8;
     f32 reaction_yaw=0,reaction_pitch=0;unsigned reaction_ticks=0;
+    u8 impact_state=0; // recovered +0x2AE: 4-tick impact-record cooldown
     std::optional<BattlePoint> package_aim_heading;
     f32 package_aim_slope=0;
     bool package_target_visible=true;
@@ -1703,6 +1704,7 @@ public:
                 if(!--actor.reaction_ticks){actor.reaction_yaw=actor.reaction_pitch=0;}
                 else{actor.reaction_yaw*=.75f;actor.reaction_pitch*=.75f;}
             }
+            if(actor.impact_state)--actor.impact_state;
             if(!actor.health){actor.action=BattleMvpAction::Defeated;continue;}
             for(auto& cooldown:actor.cooldown)if(cooldown)--cooldown;
             if(actor.attack_ticks)--actor.attack_ticks;
@@ -1991,7 +1993,7 @@ public:
                 if(actors_[target].health&&battle_swept_hit({shot.position[0],shot.position[2]},{shot.velocity[0],shot.velocity[2]},{actors_[target].position[0],actors_[target].position[2]},config_.actor_radius+8,&t)){
                     const f32 y=shot.position[1]+shot.velocity[1]*t;hit=y>=actors_[target].position[1]-8&&y<=actors_[target].position[1]+config_.actor_height+8;
                 }
-                if(hit){for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k]*t;damage(target,shot.weapon==BattleMvpWeapon::EnergyBeam?12:shot.weapon==BattleMvpWeapon::Shuriken?4:6,shot.owner);impact(shot.position,false);shot.active=false;}
+                if(hit){for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k]*t;damage(target,shot.weapon==BattleMvpWeapon::EnergyBeam?12:shot.weapon==BattleMvpWeapon::Shuriken?4:6,shot.owner);hit_impact(target,shot.position);shot.active=false;}
                 else{for(unsigned k=0;k<3;++k)shot.position[k]+=shot.velocity[k];if(--shot.life==0)shot.active=false;}
             }
             if(std::abs(shot.position[0])>config_.arena_half+300||std::abs(shot.position[2])>config_.arena_half+300||shot.position[1]<-10000)shot.active=false;
@@ -2502,7 +2504,7 @@ private:
     void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,const BattleMvpVec& position){
         if(!package_hit_relation(owner,recipient))return;
         const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
-        damage(recipient,amount,owner,move);impact(position,false);
+        damage(recipient,amount,owner,move);hit_impact(recipient,position);
         auto& target=actors_[recipient];
         if(target.damage_kind==0){ // 8002F8DC returns before any ledger write
             ++target.hits_taken;target.damage_taken+=amount;
@@ -3670,6 +3672,15 @@ private:
             actor.reaction_yaw=reaction.yaw;actor.reaction_pitch=reaction.pitch;
             actor.reaction_ticks=BattleMvpActor::reaction_duration;
         }
+    }
+    // Recovered +0x2AE gate: an impact record plays only when the receiver's
+    // 4-tick state is zero, then sets it to 4. Explosions and terrain marks do
+    // not use this gate.
+    void hit_impact(unsigned target,const BattleMvpVec& position){
+        auto& actor=actors_[target];
+        if(actor.impact_state)return;
+        actor.impact_state=4;
+        impact(position,false);
     }
     void impact(const BattleMvpVec& position,bool explosion,f32 radius=0,unsigned ticks=18){
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();

@@ -2889,5 +2889,26 @@ int main(){
         }
         check(shifted_hit,"the reaction offset fixture resolves a hit");
     }
+    {
+        const auto fighter=parse(player);const auto dummy=parse(target);
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={fighter,dummy};config.declared_actors=2;
+        config.teams={0,1};config.teams_declared=true;
+        config.spawn={BattlePoint{0,0},BattlePoint{0,-120}};
+        check(world.start(config),"impact cooldown fixture");
+        std::array<GamePadState,4> pads{};std::array<BorgBattleInputs,4> inputs{};
+        unsigned peak=0;
+        for(unsigned tick=0;tick<40;++tick){
+            inputs[0].pressed=u8(tick==0?BorgBattleInputs::x:0);
+            inputs[0].held=u8(tick<2?BorgBattleInputs::x:0);
+            inputs[0].released=u8(tick==2?BorgBattleInputs::x:0);
+            check(world.step_roster(pads,inputs,false),"impact cooldown step");
+            unsigned rings=0;for(const auto& effect:world.impacts())rings+=effect.ticks>0;
+            peak=std::max(peak,rings);
+        }
+        check(world.hits()==3,"two bullets and one beam hit the target");
+        check(peak==1,"the recovered 4-tick state suppresses the rapid impact rings");
+        check(world.actors()[1].impact_state==0,"the impact state drains to zero");
+    }
     std::puts("Borg gameplay API: guards, guidance, blast arbitration, remotes, stock returns and restart PASS");
 }

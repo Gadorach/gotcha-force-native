@@ -418,7 +418,10 @@ yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
 authored mapping. A rendered comparison is under
 `../local/recomp-evidence/contact-sheets/reaction-direction-v1/`: the default
 beam hit turns the receiver away from the attacker, while
-`reaction-offset=beam-test|-128|0` turns it back toward the attacker.
+`reaction-offset=beam-test|-128|0` turns it back toward the attacker. The
+per-actor `+0x2AE` impact state is decremented by `8002CE04`; native uses the
+recovered 4-tick window to gate the direct hit ring, so the fixture's two
+bullets at tick 2 and beam at tick 4 share one ring.
 
 The ledger fields are:
 
