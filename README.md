@@ -244,3 +244,14 @@ The first publication consolidates the paused native menu/editor, Challenge,
 Story and graphics work, plus relevant reusable Borg asset-analysis utilities.
 It deliberately starts a new Git history: the older decompilation/controller
 research repository and its private data remain separate.
+
+Recovery checks for the contact model:
+
+```sh
+python3 -B -m unittest discover -s tests/unit -p 'test_*.py'
+# native API and battle-damage fixture
+g++ -std=c++20 -O1 -I . tests/unit/borg_gameplay.cpp -o build/direct/borg_gameplay
+./build/direct/borg_gameplay
+# extracted content in the real host
+PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
+```
