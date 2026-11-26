@@ -65,8 +65,7 @@ def main():
         close = close_rules(args.dol)
         prepare("g-red", art, root / "borgs/g-red", movement, True,
                 gameplay_transform=lambda rules: transform(rules, close))
-        prepare("target", art, root / "borgs/target", None, True,
-                gameplay_transform=lambda rules: transform(rules, b"damage-model=10\n"))
+        prepare("target", art, root / "borgs/target", None, True)
         stage = root / "stage-only"
         stage.mkdir()
         for asset in ("stage.hsd", "floor.stih"):

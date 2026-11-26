@@ -19,7 +19,7 @@ from tools.analyze.retail_action_sfx import DIRECT, action_sfx_index
 
 RELAY_SOUND_ID = 162
 from tools.analyze.retail_actor_data_binding import actor_record_binding, binding_schema
-from tools.analyze import reaction_emit
+from tools.analyze import damage_content_row, reaction_emit
 from tools.analyze.retail_basic_shot_test import (
     ACTOR_RELEASE_SOUND, ANIMATED_CRUISE_SHOTS, CLOCKED_GROUND_SHOTS, COHORT as BASIC_SHOT_COHORT, CRUISE_CHARGE_SHOTS,
     PREFERRED_B_SHOT, STATIC_CRUISE_PHASE_SHOTS, STATIC_CRUISE_SHOTS, STATIC_GROUND_MODELS, basic_shot_test, cruise_charge_shot_test, pilot_launch_tone,
@@ -826,6 +826,26 @@ def cruise_entry_candidate(roles, timing, joint_count):
     return g,c
 
 
+DAMAGE_SELECTORS = Path(__file__).resolve().parents[2] / "docs/api-map/borg-damage-selectors.json"
+
+
+def basic_shot_damage_lines(dol, model):
+    """Recovered test-battle row for the authored basic shot (settings 0/16)."""
+    if not DAMAGE_SELECTORS.is_file():
+        return []
+    selectors = json.loads(DAMAGE_SELECTORS.read_text())
+    try:
+        row = damage_content_row.build(
+            dol, selectors,
+            {"model": model, "side": 0, "settings": 0, "rank": 0},
+            {"model": 0x000A, "side": 1, "settings": 16, "rank": 0}, 8, 1.0)
+    except ValueError:
+        return []
+    return ["# authored test damage-vs: attacker settings 0, defender settings 16; not universal battle state",
+            "damage-factors=1.0|1.0|1.0|1.0",
+            row["content"]["line"]]
+
+
 def package(archive, dol, row, *, preview_extras=False, role_clips=False, source_variants=False,
             move_labels=(), launch_tables=None, linker=None, landing_pcm=None, origin_markers=False, action_clips=False,
              cruise_lab=False, movement_operands=False, source_pace=False, basic_shot=False, stock_guards=None,
@@ -1167,10 +1187,14 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         if basic_shot and basic_shot_gameplay:
             context=PREFERRED_B_SHOT.get(row.model,(0,0))
             lines=reaction_emit.content_lines(dol,archive,row.model,context)
-            if lines:
-                gameplay += ("\n".join(lines)+"\n").encode("ascii")
+            damage_lines=basic_shot_damage_lines(dol,row.model)
+            if lines or damage_lines:
+                gameplay += ("\n".join(lines+damage_lines)+"\n").encode("ascii")
                 battle_receipt = dict(battle_receipt)
-                battle_receipt["reaction"]={"context":list(context),"lines":lines}
+                if lines:
+                    battle_receipt["reaction"]={"context":list(context),"lines":lines}
+                if damage_lines:
+                    battle_receipt["damage_rows"]=damage_lines
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         for cue in battle_receipt.get("authored_launch_sounds",()):
             if "path" in cue:

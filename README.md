@@ -135,9 +135,14 @@ texture or audio bytes; each regenerates from a local roster.
   queue group, step and per-Borg attack-table entry. Tool:
   `tools/analyze/reaction_context_map.py`.
 - Reaction emission — authored `basic-shot` gameplay appends
-  `reaction-offset` (and `reaction-mode` for source modes 1/3) from the
-  selected context; unsupported modes keep the native default direction
-  and are labelled. Tool: `tools/analyze/reaction_emit.py`.
+  `reaction-offset` and the supported source mode from the selected context;
+  unsupported modes declare an explicit mode-1 fallback with a comment.
+  Tool: `tools/analyze/reaction_emit.py`.
+- Damage row emission — authored `basic-shot` packages append the recovered
+  `damage-vs` row for the training target (attacker settings 0, defender 16,
+  labelled as authored test state) with neutral `damage-factors`; the target
+  fixture declares `damage-model=10`. Smoke:
+  `tests/host/damage_row_content_smoke.py`.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.
@@ -317,8 +322,9 @@ g++ -std=c++20 -O1 -I . tests/unit/battle_pair_targeting.cpp -o build/direct/bat
 ./build/direct/battle_pair_targeting
 # recovered tables -> content row -> real host (needs the original DOL)
 PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
-# emitted reaction keys in the real package battle
+# emitted reaction keys and damage row in the real package battle
 PYTHONPATH=. python3 -B tests/host/reaction_content_smoke.py
+PYTHONPATH=. python3 -B tests/host/damage_row_content_smoke.py
 # host package/roster, presentation, stage, collection, arrange and Story
 PYTHONPATH=. python3 -B tests/host/borg_api_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/borg_presentation_smoke.py build/direct/gf_native

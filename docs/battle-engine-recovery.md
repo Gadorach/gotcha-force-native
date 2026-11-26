@@ -614,8 +614,10 @@ one bar per actor, and the camera frames actor 0 against its nearest enemy.
    attacker rank for the attacker, class row and receiver rank for the
    defender, plus the two HP/force rows where the packager can supply them.
    The mapper, per-Borg selectors and the `damage_content_row` builder are now
-   exported; the remaining choice is how the packager binds the battle settings
-   index.
+   exported. The basic-shot packager emits the recovered row for the training
+   target with the labelled test settings (attacker 0, defender 16) and neutral
+   `damage-factors`; the target fixture declares `damage-model=10`. Binding the
+   universal battle settings index remains open.
 2. `8002E2A8`: the force ledger, amount/HP boundary, reaction direction
    (modes 0..3), signed offsets, impact-record cooldown and pitch axis are
    native. The remaining scaffold effects are the object spawns and color,

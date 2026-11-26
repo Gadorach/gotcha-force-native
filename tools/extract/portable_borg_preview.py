@@ -235,6 +235,7 @@ TEST_BATTLES = {
     "target": (
         "GFBORG-GAMEPLAY 1\nvariant=normal\nmovement=stationary-v1\nhealth=500\n"
         "rig-prefix=visual/body.prefix\npose-profile=visual/body.pose\nidle=0:0\n"
+        "damage-model=10\n"
     ),
 }
 CUSTOM_NAMES = {"arc-scout": "Arc Scout", "grapple-scout": "Grapple Scout",
