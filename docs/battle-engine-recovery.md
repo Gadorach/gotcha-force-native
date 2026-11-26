@@ -414,14 +414,16 @@ upper-body root for an authored eight-tick window; moves declare the mode with
 native actor does not carry, so they are refused at load. The attack-table
 yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
 0x100 units, but their per-move retail values are not yet extracted. The
-`+0x1DA` mirror remains unrecovered, and the native pitch bone axis is an
-authored mapping. A rendered comparison is under
+`+0x1DA` mirror remains unrecovered. The native pitch bone axis is X; a
+rendered `reaction-offset=beam-test|0|64` capture tilts the torso without
+yawing it. A rendered comparison is under
 `../local/recomp-evidence/contact-sheets/reaction-direction-v1/`: the default
 beam hit turns the receiver away from the attacker, while
 `reaction-offset=beam-test|-128|0` turns it back toward the attacker. The
 per-actor `+0x2AE` impact state is decremented by `8002CE04`; native uses the
 recovered 4-tick window to gate the direct hit ring, so the fixture's two
-bullets at tick 2 and beam at tick 4 share one ring.
+bullets at tick 2 and beam at tick 4 share one ring. The contact sheet also
+holds the pitch capture.
 
 The ledger fields are:
 
