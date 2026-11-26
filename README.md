@@ -117,6 +117,10 @@ texture or audio bytes; each regenerates from a local roster.
   calls of `8002BB14` in four phases (14 broad-phase, 7 geometry, 24 apply,
   23 post), with the pair-loop call `8002C4CC -> 8002DB58` and its reaction
   link. Tool: `tools/analyze/collision_walk_map.py`.
+- [Reaction attack table](docs/api-map/reaction-attack-table.json) — the
+  shared 24-byte action table at `80354160` (mode `+0x0E`, flags `+0x10`,
+  yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`) and the actor/pair pointer
+  chain. Tool: `tools/analyze/reaction_attack_table.py`.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.

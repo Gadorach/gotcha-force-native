@@ -414,7 +414,15 @@ upper-body root for an authored eight-tick window; moves declare the mode with
 native actor does not carry, so they are refused at load. The attack-table
 yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
 0x100 units, but their per-move retail values are not yet extracted. The
-`+0x1DA` mirror remains unrecovered. The original `afs_data.afs` is present
+`+0x1DA` mirror remains unrecovered. The pair record is allocated by
+`8008AC80`: `+0x20` actor, `+0x24` other, `+0x28` action step, `+0x2C` the
+attack table at `actor+0x27C` (set to `80354160` by `8006F5EC` for the battle
+actor; `8008AE60` uses `80344760` for another path). Entries are 24 bytes:
+mode `+0x0E`, flags `+0x10`, yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`; the
+index is the action-step byte copied to pair `+0x11`. The first 38 entries use
+the source modes 0..5; later entries take the default. The published table and
+pointer chain are in `api-map/reaction-attack-table.json`. The original
+`afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
 attack table: the 7680-byte actor constructor `800536E0` sets the model/spec
