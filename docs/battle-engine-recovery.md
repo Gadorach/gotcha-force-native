@@ -229,7 +229,10 @@ The full chain is therefore:
 ```
 
 The collision walk has 68 direct calls in four phases: 14 broad-phase, 7
-geometry, 24 apply and 23 post. The apply band ends at the pair-loop call
+geometry, 24 apply and 23 post. Its 98 conditional branches are decoded in
+[`api-map/collision-branch-map.json`](api-map/collision-branch-map.json):
+10 broad-phase, 14 geometry, 27 apply and 47 post, all with a compare or mask
+condition (`cmpi` 29, `fcmpo` 28, `extsb.` 21, `rlwinm.` 11, plus `cmp/cmpl`). The apply band ends at the pair-loop call
 `8002C4CC -> 8002DB58`, which is the entry to the reaction scaffold. The map is
 [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 

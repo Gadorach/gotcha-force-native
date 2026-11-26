@@ -117,6 +117,10 @@ texture or audio bytes; each regenerates from a local roster.
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.
   Tool: `tools/analyze/reaction_effect_map.py`.
+- [Collision branch map](docs/api-map/collision-branch-map.json) — the 98
+  conditional branches of `8002BB14` with their decoded compare/mask
+  conditions (cmpi, cmpl, fcmpo, rlwinm./extsb./extsh. masks) and phases.
+  Tool: `tools/analyze/collision_branch_map.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the

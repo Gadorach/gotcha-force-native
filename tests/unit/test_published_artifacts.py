@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from tools.analyze import (
+    collision_branch_map,
     collision_walk_map,
     contact_scalar_ladder,
     contact_side_rows,
@@ -29,6 +30,7 @@ ARTIFACTS = (
     ("reaction-scaffold-map.json", reaction_scaffold_map.export),
     ("collision-walk-map.json", collision_walk_map.export),
     ("reaction-effect-map.json", reaction_effect_map.export),
+    ("collision-branch-map.json", collision_branch_map.export),
 )
 
 
