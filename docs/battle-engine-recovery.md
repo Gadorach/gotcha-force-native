@@ -450,6 +450,9 @@ pair-position delta (`p+0x20 - p+0x2C` / `p+0x30 - p+0x3C`) and use the
 attacker's per-tick velocity as the native analogue; 1/3 use the actor
 positions. Modes 4/5 (`+0x8DC/8EC/8FC`) and the default (`+0x11C/12C/13C`) are
 left as explicit mode-1 content fallbacks until those vectors are verified.
+`8000E014` copies the `+0x8DC/+0x8EC/+0x8FC` triple as a 3-float vector, but no
+direct DOL writer of those fields is visible, so their native analogue is not
+inferred.
 A generated-package smoke is also blocked here: `retail_borg_roster.convert`
 requires the qualified GFBC catalog (`b5321301...`), and the local extraction
 has the AFS but not that catalog. The original
