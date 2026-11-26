@@ -211,6 +211,7 @@
         }
       ],
       "hit_block_sha256": "da9d7d33b1c8b66f93c0beb7572e5140f82ae120558e5f908398526fbd37e4c3",
+      "installer": "8018CCFC",
       "model": "0615",
       "steps": {
         "1": {
@@ -835,6 +836,7 @@
         }
       ],
       "hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "installer": "8006F4F8",
       "model": "000a",
       "steps": {
         "0": {
@@ -1184,6 +1186,7 @@
         }
       ],
       "hit_block_sha256": "8c4acfb449936853eccc42382acce6f467d5d242f2e5c96eeb34f94cfaa4bbb8",
+      "installer": "8015A494",
       "model": "061e",
       "steps": {
         "1": {

@@ -10,9 +10,11 @@ ARTIFACT = ROOT / "docs/api-map/reaction-attack-table.json"
 class ReactionAttackTableTest(unittest.TestCase):
     def test_per_borg_tables(self):
         data = json.loads(ARTIFACT.read_text())
-        self.assertEqual(data["revision"], 2)
+        self.assertEqual(data["revision"], 3)
         self.assertEqual(data["entry_size"], 24)
         self.assertEqual(data["count"], 64)
+        self.assertEqual(len(data["models"]), 42)
+        self.assertEqual(len(data["tables"]), 22)
         default = data["default_table"]
         self.assertEqual(default["table"], "80354160")
         self.assertEqual(len(default["entries"]), 64)
@@ -21,10 +23,10 @@ class ReactionAttackTableTest(unittest.TestCase):
         self.assertEqual(models["0615"]["installer"], "8018CCFC")
         self.assertEqual(models["000A"]["table"], "802D4160")
         self.assertEqual(models["061E"]["table"], "80344C88")
-        gred = {entry["index"]: entry for entry in models["0615"]["entries"]}
+        gred = {entry["index"]: entry for entry in data["tables"]["80365EC0"]}
         self.assertEqual((gred[9]["mode"], gred[9]["yaw"], gred[9]["pitch"]),
                          (4, 0, 56))
-        sasuke = {entry["index"]: entry for entry in models["000A"]["entries"]}
+        sasuke = {entry["index"]: entry for entry in data["tables"]["802D4160"]}
         self.assertEqual((sasuke[9]["mode"], sasuke[9]["pitch"]), (4, 24))
 
     def test_pointer_chain(self):

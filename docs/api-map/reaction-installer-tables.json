@@ -1,0 +1,223 @@
+{
+  "installer_table": "802D3224",
+  "kind": "gf-reaction-installer-tables",
+  "models": [
+    {
+      "installer": "8006F4F8",
+      "model": "0000",
+      "table": "802D4160"
+    },
+    {
+      "installer": "800CFE9C",
+      "model": "0002",
+      "table": "8030E1B8"
+    },
+    {
+      "installer": "8006F60C",
+      "model": "0003",
+      "table": "8033B198"
+    },
+    {
+      "installer": "800A6F4C",
+      "model": "0007",
+      "table": "802F83A0"
+    },
+    {
+      "installer": "8019E9A4",
+      "model": "0008",
+      "table": "80376960"
+    },
+    {
+      "installer": "8006F4F8",
+      "model": "000A",
+      "table": "802D4160"
+    },
+    {
+      "installer": "800CFE9C",
+      "model": "000B",
+      "table": "8030E1B8"
+    },
+    {
+      "installer": "8019E9A4",
+      "model": "000C",
+      "table": "80376960"
+    },
+    {
+      "installer": "80072048",
+      "model": "0100",
+      "table": "802D46E0"
+    },
+    {
+      "installer": "801301F8",
+      "model": "0103",
+      "table": "80336340"
+    },
+    {
+      "installer": "80198490",
+      "model": "0105",
+      "table": "8036FFD0"
+    },
+    {
+      "installer": "800C91BC",
+      "model": "0600",
+      "table": "8030A398"
+    },
+    {
+      "installer": "800CC454",
+      "model": "0602",
+      "table": "8030C570"
+    },
+    {
+      "installer": "80129608",
+      "model": "0606",
+      "table": "80331E20"
+    },
+    {
+      "installer": "800C91BC",
+      "model": "0608",
+      "table": "8030A398"
+    },
+    {
+      "installer": "800CC454",
+      "model": "060A",
+      "table": "8030C570"
+    },
+    {
+      "installer": "800CC454",
+      "model": "060C",
+      "table": "8030C570"
+    },
+    {
+      "installer": "800CC454",
+      "model": "060E",
+      "table": "8030C570"
+    },
+    {
+      "installer": "8015A494",
+      "model": "0610",
+      "table": "80344C88"
+    },
+    {
+      "installer": "8018CCFC",
+      "model": "0615",
+      "table": "80365EC0"
+    },
+    {
+      "installer": "800C91BC",
+      "model": "0616",
+      "table": "8030A398"
+    },
+    {
+      "installer": "80129608",
+      "model": "061A",
+      "table": "80331E20"
+    },
+    {
+      "installer": "800C91BC",
+      "model": "061C",
+      "table": "8030A398"
+    },
+    {
+      "installer": "8015A494",
+      "model": "061E",
+      "table": "80344C88"
+    },
+    {
+      "installer": "8015A494",
+      "model": "0621",
+      "table": "80344C88"
+    },
+    {
+      "installer": "8015A494",
+      "model": "0623",
+      "table": "80344C88"
+    },
+    {
+      "installer": "8018CCFC",
+      "model": "0629",
+      "table": "80365EC0"
+    },
+    {
+      "installer": "8018CCFC",
+      "model": "062A",
+      "table": "80365EC0"
+    },
+    {
+      "installer": "80076784",
+      "model": "0800",
+      "table": "802D6258"
+    },
+    {
+      "installer": "800A3B34",
+      "model": "0801",
+      "table": "802F7C18"
+    },
+    {
+      "installer": "8010F5AC",
+      "model": "080C",
+      "table": "80327070"
+    },
+    {
+      "installer": "80079410",
+      "model": "0900",
+      "table": "802D6930"
+    },
+    {
+      "installer": "8014D200",
+      "model": "0901",
+      "table": "80340B78"
+    },
+    {
+      "installer": "8015D674",
+      "model": "0902",
+      "table": "80348910"
+    },
+    {
+      "installer": "80151790",
+      "model": "0903",
+      "table": "80341C00"
+    },
+    {
+      "installer": "801A10E8",
+      "model": "0906",
+      "table": "803785E8"
+    },
+    {
+      "installer": "801B3C6C",
+      "model": "0907",
+      "table": "80381448"
+    },
+    {
+      "installer": "80079410",
+      "model": "0908",
+      "table": "802D6930"
+    },
+    {
+      "installer": "8015D674",
+      "model": "0909",
+      "table": "80348910"
+    },
+    {
+      "installer": "80151790",
+      "model": "090A",
+      "table": "80341C00"
+    },
+    {
+      "installer": "801B3C6C",
+      "model": "090C",
+      "table": "80381448"
+    },
+    {
+      "installer": "80079410",
+      "model": "090D",
+      "table": "802D6930"
+    }
+  ],
+  "notes": [
+    "The table address is the lis/addi pair feeding stw ..., 0x27C in the model's installer.",
+    "A null table means the installer does not use the direct literal pattern.",
+    "Models cover the authored basic-shot cohort."
+  ],
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

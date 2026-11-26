@@ -5,9 +5,9 @@ pair record copies that pointer to `+0x2C`; the pair code indexes the table
 with the action-step byte and reads the reaction mode (+0x0E), flags
 (+0x10), yaw/pitch offsets (+0x14/+0x15) and repeat byte (+0x16).
 
-`80354160` is the generic default written by `8006F5EC`; the retail Borg
-installers override it (G-Red `80365EC0`, Sasuke `802D4160`, Proto King
-`80344C88`). The artifact records both the default and the pilot tables.
+The installer's literal table address is decoded from the DOL, so the
+artifact covers the authored basic-shot cohort and deduplicates the
+tables shared by several models.
 """
 import argparse
 import hashlib
@@ -15,27 +15,13 @@ import json
 import struct
 from pathlib import Path
 
+from tools.analyze import reaction_installer_tables
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
 DEFAULT_TABLE = 0x80354160
-INSTALLER_TABLE = 0x802D3224
-MODELS = (0x0615, 0x000A, 0x061E)
-# The installer writes a literal table address; these are the three pilot
-# installers' `stw ..., 0x27C` constants.
-MODEL_TABLES = {0x0615: 0x80365EC0, 0x000A: 0x802D4160, 0x061E: 0x80344C88}
 SIZE = 24
 COUNT = 64
-
-
-def _source_table(image, table, model, stride=4):
-    base, = struct.unpack(">I", image.read(table + 4 * (model >> 8), 4, "data"))
-    return base + stride * (model & 255)
-
-
-def installer_address(image, model):
-    address = _source_table(image, INSTALLER_TABLE, model)
-    return struct.unpack(">I", image.read(address, 4, "data"))[0]
 
 
 def entry(image, table, index):
@@ -57,34 +43,40 @@ def _entries(image, table):
 def recover(image):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
+    installer = reaction_installer_tables.recover(image)
+    tables = {}
     models = []
-    for model in MODELS:
-        table = MODEL_TABLES[model]
-        models.append({"model": f"{model:04X}", "table": f"{table:08X}",
-                       "installer": f"{installer_address(image, model):08X}",
-                       "entries": _entries(image, table)})
+    for row in installer["models"]:
+        table = row["table"]
+        models.append({"model": row["model"], "installer": row["installer"],
+                       "table": table})
+        if table and table not in tables:
+            tables[table] = _entries(image, int(table, 16))
     return {
         "kind": "gf-reaction-attack-table",
-        "revision": 2,
+        "revision": 3,
         "source_dol_sha256": SOURCE_SHA256,
         "entry_size": SIZE,
         "count": COUNT,
         "default_table": {"table": f"{DEFAULT_TABLE:08X}",
                           "entries": _entries(image, DEFAULT_TABLE)},
+        "tables": tables,
         "models": models,
         "pointer_chain": {
             "actor_field": "+0x27C",
             "pair_record": {"actor": "+0x20", "other": "+0x24",
                             "step": "+0x28", "table": "+0x2C",
                             "move": "+0x11"},
-            "installer_table": f"{INSTALLER_TABLE:08X}",
+            "installer_table": "802D3224",
             "default_setter": "8006F5EC",
             "pair_allocator": "8008AC80",
             "pair_update": "8008A65C",
         },
         "notes": [
-            "The installer table at 802D3224 maps a model to its installer; "
-            "the three pilot tables are the installer store constants.",
+            "The installer's lis/addi pair feeding stw ..., 0x27C selects "
+            "the model table.",
+            "Models are the authored basic-shot cohort; tables are "
+            "deduplicated by address.",
             "The pair record copies actor+0x27C to +0x2C.",
             "Indices are the action-step byte (record+4) copied to pair+0x11.",
             "The source switch handles modes 0..5; other values take the "
@@ -106,7 +98,7 @@ def export(dol, output):
     with output.open("xb") as stream:
         stream.write(raw)
     return {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
-            "models": len(payload["models"])}
+            "models": len(payload["models"]), "tables": len(payload["tables"])}
 
 
 def main():

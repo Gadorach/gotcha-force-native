@@ -117,6 +117,10 @@ texture or audio bytes; each regenerates from a local roster.
   calls of `8002BB14` in four phases (14 broad-phase, 7 geometry, 24 apply,
   23 post), with the pair-loop call `8002C4CC -> 8002DB58` and its reaction
   link. Tool: `tools/analyze/collision_walk_map.py`.
+- [Reaction installer tables](docs/api-map/reaction-installer-tables.json) —
+  the 42-model basic-shot cohort's installer and per-Borg 24-byte table
+  addresses, decoded from the `lis`+`addi` feeding `stw ..., 0x27C`.
+  Tool: `tools/analyze/reaction_installer_tables.py`.
 - [Reaction attack table](docs/api-map/reaction-attack-table.json) — the
   per-Borg 24-byte action tables (G-Red `80365EC0`, Sasuke `802D4160`,
   Proto King `80344C88`; generic default `80354160`), with mode `+0x0E`,

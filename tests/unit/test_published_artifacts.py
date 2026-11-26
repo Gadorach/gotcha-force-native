@@ -18,6 +18,7 @@ from tools.analyze import (
     pair_loop_branch_map,
     reaction_attack_table,
     reaction_effect_map,
+    reaction_installer_tables,
     reaction_scaffold_map,
 )
 
@@ -35,6 +36,7 @@ ARTIFACTS = (
     ("collision-branch-map.json", collision_branch_map.export),
     ("pair-loop-branch-map.json", pair_loop_branch_map.export),
     ("reaction-attack-table.json", reaction_attack_table.export),
+    ("reaction-installer-tables.json", reaction_installer_tables.export),
 )
 
 

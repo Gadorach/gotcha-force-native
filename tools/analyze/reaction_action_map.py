@@ -11,7 +11,8 @@ import json
 import struct
 from pathlib import Path
 
-from tools.analyze.reaction_attack_table import COUNT, MODEL_TABLES, entry, installer_address
+from tools.analyze import reaction_installer_tables
+from tools.analyze.reaction_attack_table import COUNT, entry
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.retail_borg_roster import RetailArchive
 from tools.extract.source_image import DolImage, ReadOnlyFile
@@ -24,7 +25,7 @@ GROUPS = 32
 MAX_STEP = 63
 
 
-def _model(image, payload, model, base):
+def _model(image, payload, model, base, installer):
     groups = []
     used = []
     for group in range(GROUPS):
@@ -49,6 +50,7 @@ def _model(image, payload, model, base):
                             if index < COUNT else {"step": step, "table": index})
     return {
         "model": model,
+        "installer": f"{installer:08X}",
         "table": f"{base:08X}",
         "hit_block_sha256": hashlib.sha256(payload).hexdigest(),
         "groups": groups,
@@ -70,8 +72,9 @@ def recover(dol_path, afs_path):
             payload = archive.payload(index, 1 << 20)
             if len(payload) != 7840:
                 raise ValueError(f"unexpected hit block extent: {model}")
-            models.append(_model(image, payload, model,
-                                 MODEL_TABLES[int(model, 16)]))
+            installer, base = reaction_installer_tables.model_table(
+                image, int(model, 16))
+            models.append(_model(image, payload, model, base, installer))
         afs_sha = hashlib.sha256()
         # Record identity without copying the archive.
         with Path(afs_path).open("rb") as stream:
