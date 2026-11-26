@@ -1542,7 +1542,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     if(!hosted&&options.demo_roster_battle){
         if(packages[0].definition->movement==BorgBattleMovement::NormalGRed||
            packages[1].definition->movement==BorgBattleMovement::NormalGRed){
-            error="roster demo requires authored-movement packages until the per-actor source producer is wired";
+            error="roster demo uses authored movement; the per-actor source producer is not host-wired yet";
             return fail("roster source producer not wired");
         }
         config.packages[2]=packages[0].definition;config.packages[3]=packages[1].definition;
@@ -1650,7 +1650,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         if(!view.update(world,&error))return false;
         if(source_movement){
             NativeBorgAnimationSeed seed;
-            if(!view.source_seed(world,&seed)||!source.bind(context.files(),options.battle_mvp_assets,inputs,
+            if(!view.source_seed(0,world,&seed)||!source.bind(0,context.files(),options.battle_mvp_assets,inputs,
                world,seed,&error,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush,&practice))return false;
         }
         return true;
@@ -1691,10 +1691,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     struct Origins final:IBorgBattleOrigins {
         explicit Origins(const NativeBattleMvpView& observed):view(observed){}
         const NativeBattleMvpView& view;
-        const CharacterLocalPose* source_local=nullptr;
+        std::array<const CharacterLocalPose*,kBattleMvpMaxActors> source_local{};
         bool socket(unsigned owner,const BattleMvpActor& actor,u32 tick,u8 move,u16 frame,const BorgBattleSocket& spec,
                     BattleMvpVec* out)const override{
-            return view.package_socket(owner,actor,tick,move,frame,spec,owner==0?source_local:nullptr,out);
+            return view.package_socket(owner,actor,tick,move,frame,spec,
+                owner<source_local.size()?source_local[owner]:nullptr,out);
         }
     } origins(view);
     InputRouter router;std::array<GamePadState,2> previous{};std::array<BorgBattleInputs,2> action_input{};
@@ -1921,9 +1922,9 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                     }
                     source.reject();return fail("recovered movement refused; no provisional fallback");
                 }
-                origins.source_local=source.prepared_local(world,offer);
-                const bool advanced=origins.source_local&&world.step({},false,&view,nullptr,&movement,&offer,action_input,&origins);
-                origins.source_local=nullptr;
+                origins.source_local[0]=source.prepared_local(world,offer);
+                const bool advanced=origins.source_local[0]&&world.step({},false,&view,nullptr,&movement,&offer,action_input,&origins);
+                origins.source_local={};
                 if(!advanced){
                     if(error.empty())error="native world declined the staged contact offer";
                     if(selection&&source.withdraw_battle_offer(world,offer)){block_movement();break;}

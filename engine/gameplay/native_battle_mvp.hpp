@@ -175,6 +175,7 @@ struct BattleMvpConfig {
     unsigned declared_actors=2; // duel by default; 2..kBattleMvpMaxActors
     std::array<u8,kBattleMvpMaxActors> teams{};
     bool teams_declared=false;
+    bool allow_multi_source=false; // host roster with per-actor source producers
     bool provisional_walk=false;
     bool provisional_jump=false; // opt-in lab jump, not a source actor's air-resource policy
     bool provisional_ground_dash=false;
@@ -447,10 +448,10 @@ public:
              (config.package_strafe&&!package)||
              (config.provisional_cruise&&(!config.provisional_walk||config.provisional_jump||
              config.provisional_ground_dash||!borg_cruise_boost_valid(*config.provisional_cruise))))return false;
-        if(package){
-            // The host source demo still owns one source body. A second
-            // NormalGRed package stays refused until its per-actor producer is
-            // wired; the engine span already supports it.
+        if(package&&!config.allow_multi_source){
+            // A single-source host keeps the stationary-opponent rule. A
+            // roster host sets allow_multi_source and supplies one offer per
+            // source actor.
             for(unsigned i=1;i<count;++i)if(config.packages[i]->movement==BorgBattleMovement::NormalGRed)return false;
             if(config.packages[0]->movement==BorgBattleMovement::NormalGRed)
                 for(unsigned i=1;i<count;++i)if(config.packages[i]->movement!=BorgBattleMovement::Stationary)return false;
@@ -687,7 +688,7 @@ public:
                pad.a||pad.b||pad.x||other_pad.a||other_pad.b||other_pad.x||
                (!vertical&&o.action!=BattleMvpAction::Idle&&o.action!=BattleMvpAction::Move&&o.action!=BattleMvpAction::GroundDash)||
                !std::isfinite(o.facing.x)||!std::isfinite(o.facing.z)||std::abs(std::hypot(o.facing.x,o.facing.z)-1)>.001f)return false;
-             for(const auto& shot:projectiles_)if(shot.active&&(!package||!shot.from_package||shot.owner!=source_index))return false;
+             for(const auto& shot:projectiles_)if(shot.active&&(!package||!shot.from_package))return false;
             for(auto value:o.proposed_position)if(!std::isfinite(value)||std::abs(value)>1e5f)return false;
             const BattlePoint delta{o.proposed_position[0]-actor.position[0],o.proposed_position[2]-actor.position[2]};
             if(std::hypot(delta.x,delta.z)>config_.actor_radius)return false; //native endpoint-terrain budget
