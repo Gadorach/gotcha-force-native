@@ -66,7 +66,8 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "reaction helper"
+        "behavior": "mode==0 lookup in 80436354+0x1518 by (arg1<<28)|(arg0<<16); random 1..16 delta; returns 0..15",
+        "role": "reaction-id"
       },
       "role": "reaction-helper",
       "site": "8002F278",
@@ -88,7 +89,8 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "reaction helper"
+        "behavior": "mode==0 lookup in 80436354+0x1518 by (arg1<<28)|(arg0<<16); random 1..16 delta; returns 0..15",
+        "role": "reaction-id"
       },
       "role": "reaction-helper",
       "site": "8002F288",
@@ -110,7 +112,8 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "reaction helper"
+        "behavior": "mode==0 lookup in 80436354+0x1518 by (arg1<<28)|(arg0<<16); random 1..16 delta; returns 0..15",
+        "role": "reaction-id"
       },
       "role": "reaction-helper",
       "site": "8002F298",
@@ -133,7 +136,8 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "reaction helper"
+        "behavior": "mode==0 lookup in 80436354+0x1518 by (arg1<<28)|(arg0<<16); random 1..16 delta; returns 0..15",
+        "role": "reaction-id"
       },
       "role": "reaction-helper",
       "site": "8002F2B8",
@@ -198,7 +202,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F544",
@@ -223,7 +235,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F5A0",
@@ -248,7 +268,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F5FC",
@@ -273,7 +301,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F614",
@@ -298,7 +334,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F62C",
@@ -323,7 +367,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F644",
@@ -348,7 +400,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F65C",
@@ -408,7 +468,15 @@
       },
       "confidence": "open",
       "effect": {
-        "role": "effect values"
+        "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+        "callbacks": [
+          "800DB378@+0x0C",
+          "800DB838@+0x10C"
+        ],
+        "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+        "owner": "+0x8C = src",
+        "role": "effect-values",
+        "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
       },
       "role": "effect-values",
       "site": "8002F698",
@@ -463,8 +531,15 @@
       },
       "confidence": "open",
       "effect": {
-        "allocator": "80088AA0",
-        "role": "effect spawn"
+        "allocator": "80088AA0(owner, 2, 0x18, 0, entry[0])",
+        "callbacks": [
+          "8010E2A8@+0x0C",
+          "8010E80C@+0x10C"
+        ],
+        "fields": "+0x1C entry+2, +0x54 entry+4, +0x8C owner",
+        "object": "type=1, +0x10=0x15, +0x11=index, +0x12=entry[1]",
+        "owner_bit": "owner+0x8C4 |= 1<<index when entry[1]==1",
+        "role": "effect-spawn"
       },
       "role": "effect-spawn",
       "site": "8002F6DC",
@@ -753,7 +828,17 @@
       "volume": "object+0x7FC"
     },
     "800300BC": {
-      "role": "impact mode"
+      "modes": {
+        "0": "actor+0x20 - actor+0x2C",
+        "1": "target+0x20 - attacker+0x20",
+        "2": "side+0x30 - side+0x3C",
+        "3": "side+0x64 - other+0x64",
+        "4": "actor+0x8DC/8EC/8FC",
+        "5": "linked+0x8DC/8EC/8FC",
+        "default": "actor+0x11C/12C/13C"
+      },
+      "role": "reaction-direction",
+      "writes": "receiver+0x284 yaw, receiver+0x282 pitch; mirrored to linked actor when +0x1DA bit1"
     },
     "8003CD5C": {
       "role": "amount"
@@ -762,11 +847,26 @@
       "role": "HP write"
     },
     "800DB250": {
-      "role": "effect values"
+      "allocator": "8008893C(2, 0x18, 1, 8031227C[index*2])",
+      "callbacks": [
+        "800DB378@+0x0C",
+        "800DB838@+0x10C"
+      ],
+      "object": "type=1, +0x10=0x0F, +0x11=index, +0x13=definition",
+      "owner": "+0x8C = src",
+      "role": "effect-values",
+      "values": "values[0..2] -> +0x20/+0x24/+0x28 (0x803B0720 vector)"
     },
     "8010E158": {
-      "allocator": "80088AA0",
-      "role": "effect spawn"
+      "allocator": "80088AA0(owner, 2, 0x18, 0, entry[0])",
+      "callbacks": [
+        "8010E2A8@+0x0C",
+        "8010E80C@+0x10C"
+      ],
+      "fields": "+0x1C entry+2, +0x54 entry+4, +0x8C owner",
+      "object": "type=1, +0x10=0x15, +0x11=index, +0x12=entry[1]",
+      "owner_bit": "owner+0x8C4 |= 1<<index when entry[1]==1",
+      "role": "effect-spawn"
     },
     "8013F300": {
       "allocator": "80088AA0",
@@ -777,7 +877,8 @@
       "role": "object spawn"
     },
     "8018214C": {
-      "role": "reaction helper"
+      "behavior": "mode==0 lookup in 80436354+0x1518 by (arg1<<28)|(arg0<<16); random 1..16 delta; returns 0..15",
+      "role": "reaction-id"
     },
     "801DFF24": {
       "role": "reaction effect"

@@ -361,6 +361,15 @@ The live pair entry `r3=80681A40 r4=8067FAC0` carried `+0x2C`/`+0x1EC` links to
 are side defaults, not the applied credit; the credit must be read at the amount
 call. The 29 reaction-band calls and their decoded argument registers are in
 [`api-map/reaction-effect-map.json`](api-map/reaction-effect-map.json). The
+matched/open helpers resolve to:
+
+| Helper | Role |
+| --- | --- |
+| `800DB250` | allocate an effect at the `803B0720` vector, copy `values[0..2]` to `+0x20/+0x24/+0x28`, callbacks `800DB378`/`800DB838` |
+| `8010E158` | spawn effect type `0x15`, copy the entry fields and owner, set `owner+0x8C4` when `entry[1]==1` |
+| `800300BC` | reaction direction: seven source modes, writes receiver yaw `+0x284` and pitch `+0x282` (mirrored when `+0x1DA` bit 1) |
+| `8018214C` | per-battle reaction-ID allocator, random 1–16 delta |
+| `8002FCBC` / `8002FC18` | impact record with opcode `0x26` / `800F088C` and the `+0x7FC` volume thresholds | The
 scaffold itself is ordered in
 [`api-map/reaction-scaffold-map.json`](api-map/reaction-scaffold-map.json):
 16 pre-amount calls, the amount call and HP write, then 29 reaction and

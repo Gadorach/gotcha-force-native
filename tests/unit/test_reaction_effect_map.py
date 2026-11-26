@@ -24,6 +24,11 @@ class ReactionEffectMapTest(unittest.TestCase):
         self.assertEqual(data["effects"]["8002FCBC"]["dispatch"], "800F04B4")
         self.assertEqual(data["effects"]["8002FC18"]["dispatch"], "800F088C")
         self.assertEqual(data["effects"]["80019550"]["table"], "802C7ED0")
+        self.assertEqual(data["effects"]["800DB250"]["role"], "effect-values")
+        self.assertIn("803B0720", data["effects"]["800DB250"]["values"])
+        self.assertEqual(data["effects"]["800300BC"]["modes"]["1"],
+                         "target+0x20 - attacker+0x20")
+        self.assertEqual(data["effects"]["8018214C"]["role"], "reaction-id")
 
 
 if __name__ == "__main__":
