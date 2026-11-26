@@ -568,14 +568,23 @@ one bar per actor, and the camera frames actor 0 against its nearest enemy.
    The mapper, per-Borg selectors and the `damage_content_row` builder are now
    exported; the remaining choice is how the packager binds the battle settings
    index.
-2. `8002E2A8`: the force ledger, amount/HP boundary and the reaction direction
-   (modes 1/3) are native; the remaining scaffold effects are impact records,
-   object spawns and color, published as data without a native presenter.
-3. `8002BB14`: the 98 conditional branches are decoded in
-   `api-map/collision-branch-map.json`; the next step is naming the
-   broad-phase/geometry gates where the field evidence is clear.
+2. `8002E2A8`: the force ledger, amount/HP boundary, reaction direction
+   (modes 1/3), signed offsets, impact-record cooldown and pitch axis are
+   native. The remaining scaffold effects are the object spawns and color,
+   published as data without a native presenter. The per-move reaction bytes
+   (`+0x0E`/`+0x14`/`+0x15`) need the extracted retail Borg character block;
+   the block-0 record is 432 bytes, but the original disc is not present in
+   this workspace.
+3. `8002BB14`: all 24 broad-phase/geometry gates are named and the apply/post
+   branches carry operand provenance (`api-map/collision-branch-map.json`).
+   `8002CAA8`'s scale rule is in `api-map/collision-walk-map.json`; the
+   remaining work is the apply/post handler semantics, not more gate names.
 4. The action-class table entries: reimplement the shared class handlers as
-   native move behaviours, with the class selected by content.
+   native move behaviours, with the class selected by content. The 15
+   category handlers are `80030500..80032E44`; twelve are open and large, and
+   the three small matchers (`80032DA4`/`80032DF4`/`80032E44`) call
+   `80030A3C`/`80031E50`/`80031F30` plus the `80032E94` geometry check, so
+   this needs handler translation before a content mapping.
 
 The credit-difficulty pair is exported as
 [`api-map/contact-side-rows.json`](api-map/contact-side-rows.json) by
