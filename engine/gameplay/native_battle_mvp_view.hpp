@@ -956,8 +956,11 @@ public:
                 return "P"+std::to_string(actor+1)+" ["+bar+"] "+
                        std::to_string(int(a.health))+"/"+std::to_string(int(maximum));
             };
-            std::string hud=health_bars(0);
-            if(world.actor_count()>1)hud+="   "+health_bars(1);
+            std::string hud;
+            for(unsigned i=0;i<world.actor_count();++i){
+                if(i)hud+=world.actor_count()>2?"\n":"   ";
+                hud+=health_bars(i);
+            }
             const auto gauge=battle_charge_gauge(self.package_charge_total,self.package_action_born,world.tick());
             if(gauge.total){
                 constexpr unsigned cells=16;

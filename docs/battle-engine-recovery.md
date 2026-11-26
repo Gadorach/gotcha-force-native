@@ -485,8 +485,9 @@ second `NormalGRed` package until the per-actor producer is wired. The view now
 holds maxima-sized Borg/effect slots and accepts a package span, so it can bind
 a roster. The host now has a headless four-actor roster demo for authored-movement
 packages (`--demo-roster-battle`, duplicate teams 0/1/0/1). It uses the roster
-step, binds four view slots and passes the host smoke. G-Red source 2v2 still
-needs the per-actor producer, and the camera/HUD remain two-actor. A two-G-Red source test
+step, binds four view slots and passes the host smoke. The HUD now draws one bar per
+actor. G-Red source 2v2 still needs the per-actor producer; the camera still
+frames actors 0 and 1. A two-G-Red source test
 still needs a second shipped package, which the C++ unit suite cannot
 construct.
 
