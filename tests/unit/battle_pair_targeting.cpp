@@ -29,6 +29,16 @@ BattlePairFields actor(bool active, f32 x = 0, f32 radius = 1) {
 bool accept_all(const BattlePairFields&, const BattlePairFields&) {
     return true;
 }
+
+BattlePairFields related(u32 key) {
+    auto f = actor(true, 0, 1);
+    f.actor_key = key;
+    f.owner_key = key;
+    f.team = 0;
+    f.kind = 1;
+    f.attack_key = 7;
+    return f;
+}
 } // namespace
 
 int main() {
@@ -137,6 +147,82 @@ int main() {
               "owner outside the pool refuses");
     }
 
-    std::puts("Battle pair targeting: direct/nearest, sphere and refusals PASS");
+    {
+        bool ok = true;
+        auto a = related(1);
+        auto b = related(2);
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && ok,
+              "distinct actors and owners pass");
+
+        b.actor_key = 1;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "same actor is rejected");
+        b.actor_key = 2;
+
+        b.owner_key = 1;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "same owner with clear flags is rejected");
+        a.record_flags10 = 0x40;
+        b.record_flags10 = 0x40;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && ok,
+              "same owner with both flags set passes");
+        a.record_flags10 = 0;
+        b.record_flags10 = 0;
+        b.owner_key = 2;
+
+        a.record_flags10 = 0x80;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "same team with flag 0x80 is rejected");
+        a.record_flags10 = 0;
+
+        b.record_flags12 = 0x40;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "target attack class rejects a non-0x10 kind");
+        a.kind = 0x10;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && ok,
+              "kind 0x10 bypasses the target class");
+        a.kind = 1;
+        b.record_flags12 = 0;
+
+        a.record_flags12 = 0x400;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "source class rejects a normal target kind");
+        b.kind = 0x20;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && ok,
+              "kind 0x20 bypasses the source class");
+        b.kind = 1;
+        a.record_flags12 = 0;
+
+        b.immunity[10] = 7;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "target immunity key is rejected");
+        b.immunity[10] = 0;
+
+        b.owner_flags2 = 0x40;
+        b.owner_immunity[3] = 7;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "owner immunity key is rejected");
+        b.owner_flags2 = 0;
+        b.owner_immunity[3] = 0;
+
+        b.target_mask = 2;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "target mask bit is rejected");
+        check(battle_pair_relation_ok(a, b, 4, &ok, &error) && ok,
+              "unrelated mask bit passes");
+
+        a.kind = 0;
+        b.kind = 0;
+        b.actor_6fc = true;
+        check(battle_pair_relation_ok(a, b, 2, &ok, &error) && !ok,
+              "same-team zero-kind 6FC rule is rejected");
+        b.actor_6fc = false;
+
+        b.declared = false;
+        check(!battle_pair_relation_ok(a, b, 2, &ok, &error),
+              "undeclared relation fields refuse");
+    }
+
+    std::puts("Battle pair targeting: direct/nearest, sphere, relation and refusals PASS");
     return 0;
 }

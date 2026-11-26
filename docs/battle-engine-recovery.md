@@ -153,14 +153,16 @@ and validated against two live hits; the pair (`8002E2A8`) and collision
 | Attacker credit difficulty and rank | `damage-vs` / `damage-side` credit factors |
 | Defender class row and receiver rank | `damage-vs` receiver factors / `BattleMvpConfig::damage_scalar` |
 | `8002DB58` direct/nearest selection | `battle_pair_select` in `engine/gameplay/battle_pair_targeting.hpp` |
+| `8002FD7C` relation filter | `battle_pair_relation_ok` in the same header |
 | Pair/collision/amount functions | amount and selection translated; the wider pair/collision walk is not yet reimplemented |
 
 The native pair seam implements the recovered order: the direct path collects
 every accepted pair, the indirect path keeps the nearest candidate with the
 `400000000.0` sentinel and last-wins ties, and the `0.1` sphere gate is shared.
-The retail relation filter (`8002FD7C`) and category dispatch (`80030490`) are
-a `BattlePairFilter` supplied by the caller, so no model-id branches enter the
-engine.
+The relation filter (`8002FD7C`) is reimplemented as
+`battle_pair_relation_ok` over declared actor/record fields. The category
+dispatch (`80030490`) remains a `BattlePairFilter` supplied by the caller, so no
+retail-id branches enter the engine.
 
 The native engine is already data-driven in the same sense as the original: a
 package declares moves, buttons and ranges, and shared systems execute them. The

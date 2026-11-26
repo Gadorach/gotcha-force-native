@@ -2,10 +2,10 @@
 // Recovered 8002DB58: the pair loop selects either every valid pair (direct)
 // or the single nearest valid target, then triggers the reaction.
 //
-// This seam owns the recovered selection order, the sphere gate and the
-// direct/nearest switch. The retail relation filter (8002FD7C) and category
-// dispatch (80030490) stay with the caller as `BattlePairFilter`, so engine
-// code does not grow branches on retail model ids.
+// This seam owns the recovered selection order, the sphere gate, the
+// direct/nearest switch and the relation filter (8002FD7C) over declared
+// fields. The category dispatch (80030490) stays with the caller as
+// `BattlePairFilter`, so engine code does not grow branches on retail ids.
 #include <array>
 #include <cmath>
 #include <functional>
@@ -20,6 +20,21 @@ struct BattlePairFields {
     bool declared = false;
     bool exists = false;
     bool active = false;
+    // 8002FD7C relation fields.
+    u32 actor_key = 0;                    // pair side+0x20 identity
+    u32 owner_key = 0;                    // pair side+0x24 identity
+    u8 team = 0;                          // actor+0x88
+    u8 kind = 0;                          // actor+0x83
+    u16 actor_1c = 0;                     // actor+0x1C (0xFF sentinel)
+    u16 record_flags10 = 0;               // pair record +0x10
+    u16 record_flags12 = 0;               // pair record +0x12
+    u16 target_mask = 0;                  // actor+0x272
+    u16 attack_key = 0;                   // actor+0x26C
+    std::array<u16, 48> immunity{};       // actor+0x20C, six eight-entry keys
+    std::array<u16, 48> owner_immunity{}; // owner +0x20C
+    u16 owner_flags2 = 0;                 // [side+0x28]+2
+    bool actor_6fc = false;               // actor+0x6FC
+    // Geometry.
     std::array<f32, 3> position{};
     f32 radius = 0;
 };
@@ -30,7 +45,8 @@ struct BattlePairProfile {
     f32 initial_best_squared = 400000000.0f; // 8002DB58 sentinel
 };
 
-// A true result means the pair passes the caller's relation/dispatch tests.
+// Caller-supplied category dispatch (80030490); compose
+// battle_pair_relation_ok for the 8002FD7C test.
 using BattlePairFilter = std::function<bool(const BattlePairFields&,
                                             const BattlePairFields&)>;
 
@@ -59,6 +75,79 @@ inline f32 squared_distance(const std::array<f32, 3>& a,
     return dx * dx + dy * dy + dz * dz;
 }
 } // namespace battle_pair_detail
+
+// 8002FD7C: the recovered relation filter. The masks are mechanics, not
+// retail ids; the caller still supplies the pair through declared fields.
+inline bool battle_pair_relation_ok(const BattlePairFields& a,
+                                    const BattlePairFields& b,
+                                    u16 relation_mask, bool* out,
+                                    std::string* error) {
+    if (out) *out = false;
+    auto fail = [&]() {
+        if (error) *error = "battle pair relation: undeclared fields";
+        return false;
+    };
+    if (!out || !a.declared || !b.declared) return fail();
+    if (a.actor_key == b.actor_key) {
+        if (error) error->clear();
+        return true;
+    }
+    if (a.owner_key == b.owner_key) {
+        if (((a.record_flags10 & 0x40u) == 0 || a.actor_1c == 0xFFu) &&
+            (b.kind == 0 || (b.record_flags10 & 0x40u) == 0 ||
+             b.actor_1c == 0xFFu)) {
+            if (error) error->clear();
+            return true;
+        }
+    }
+    if ((a.record_flags10 & 0x80u) && a.team == b.team) {
+        if (error) error->clear();
+        return true;
+    }
+    const u16 flags = u16(b.record_flags12 & 0x3C0u);
+    if (flags != 0 && a.kind != 0x10u) {
+        if (error) error->clear();
+        return true;
+    }
+    if ((a.record_flags12 & 0xC00u) && b.kind != 0 && b.kind != 0x20u) {
+        if (error) error->clear();
+        return true;
+    }
+    for (unsigned i = 0; i < 6; ++i) {
+        for (unsigned j = 0; j < 8; ++j) {
+            const unsigned at = i * 8 + j;
+            if (b.immunity[at] == a.attack_key) {
+                if (error) error->clear();
+                return true;
+            }
+        }
+    }
+    if ((b.owner_flags2 & 0x40u) != 0) {
+        for (unsigned i = 0; i < 6; ++i) {
+            for (unsigned j = 0; j < 8; ++j) {
+                const unsigned at = i * 8 + j;
+                if (b.owner_immunity[at] == a.attack_key) {
+                    if (error) error->clear();
+                    return true;
+                }
+            }
+        }
+    }
+    if ((b.target_mask & relation_mask) != 0) {
+        if (error) error->clear();
+        return true;
+    }
+    // The source computes `flags = record+0x12 & 0x3C0` and then tests
+    // `flags & 0x10`, which is always zero for that mask. Keep it literal.
+    if (a.kind == 0 && b.kind == 0 && b.actor_6fc && a.team == b.team &&
+        (flags & 0x10u) == 0) {
+        if (error) error->clear();
+        return true;
+    }
+    *out = true;
+    if (error) error->clear();
+    return true;
+}
 
 // 80039F6C: both radii above 0.1 and centre distance within the radius sum.
 inline bool battle_pair_sphere_overlap(const BattlePairFields& a,
