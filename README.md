@@ -296,4 +296,14 @@ g++ -std=c++20 -O1 -I . tests/unit/battle_pair_targeting.cpp -o build/direct/bat
 ./build/direct/battle_pair_targeting
 # recovered tables -> content row -> real host (needs the original DOL)
 PYTHONPATH=. python3 -B tests/host/gred_sasuke_contact_fixture.py
+# host package/roster, presentation, stage, collection, arrange and Story
+PYTHONPATH=. python3 -B tests/host/borg_api_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/borg_presentation_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/portable_stage_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/borg_collection_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/borg_arrange_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/portable_story_smoke.py build/direct/gf_native
+# rendered variants (no window needed)
+SDL_VIDEODRIVER=offscreen PYTHONPATH=. python3 -B tests/host/borg_api_smoke.py build/direct/gf_native --opengl
+SDL_VIDEODRIVER=offscreen PYTHONPATH=. python3 -B tests/host/borg_presentation_smoke.py build/direct/gf_native --opengl
 ```
