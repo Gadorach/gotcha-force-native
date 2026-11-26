@@ -529,7 +529,7 @@ public:
         return ready_&&!world.config().packages[0]&&rendered_tick_==world.tick()&&world.owns_motion_scope(rendered_scope_)&&
             borgs_[0].observe_source_world_matrices(world,out);
     }
-    bool actor_bounds(unsigned actor,BattleMvpVec* low,BattleMvpVec* high)const{return actor<2&&borgs_[actor].bounds(low,high);}
+    bool actor_bounds(unsigned actor,BattleMvpVec* low,BattleMvpVec* high)const{return actor<borgs_.size()&&borgs_[actor].bounds(low,high);}
     static Camera camera_for_actors(const BattleMvpActor& player,const BattleMvpActor& target,s32 width,s32 height){
         Camera camera;const auto line=native_borg_direction({player.position[0],player.position[2]},{target.position[0],target.position[2]});
         camera.eye[0]=player.position[0]-line.x*650+line.z*220;camera.eye[1]=player.position[1]+340;camera.eye[2]=player.position[2]-line.z*650-line.x*220;
@@ -553,7 +553,11 @@ public:
         return camera;
     }
     static Camera camera_for(const NativeBattleMvp& world,s32 width,s32 height){
-        if(world.actor_count()!=1)return camera_for_actors(world.actors()[0],world.actors()[1],width,height);
+        if(world.actor_count()!=1){
+            const u8 target=world.target_of(0);
+            const unsigned other=target==255?1u:unsigned(target);
+            return camera_for_actors(world.actors()[0],world.actors()[other],width,height);
+        }
         Camera camera;const auto& p=world.actors()[0].position;
         camera.target[0]=p[0];camera.target[1]=p[1]+76;camera.target[2]=p[2];
         camera.eye[0]=p[0]+168;camera.eye[1]=p[1]+244;camera.eye[2]=p[2]+490;
