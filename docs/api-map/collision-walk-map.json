@@ -1,0 +1,504 @@
+{
+  "calls": [
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "clear-contact-accumulators",
+      "site": "8002BBE4",
+      "target": "8002CDA4"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "actor-list-walk",
+      "site": "8002BD44",
+      "target": "8002CC78"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "actor-list-walk",
+      "site": "8002BD4C",
+      "target": "8002CC78"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "actor-list-walk",
+      "site": "8002BD54",
+      "target": "8002CC78"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "actor-list-walk",
+      "site": "8002BD5C",
+      "target": "8002CC78"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "actor-list-walk",
+      "site": "8002BD64",
+      "target": "8002CC78"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "actor-list-walk",
+      "site": "8002BD6C",
+      "target": "8002CC78"
+    },
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "clear-contact-accumulators",
+      "site": "8002BD84",
+      "target": "8002CDA4"
+    },
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "walk-helper",
+      "site": "8002BD98",
+      "target": "8002CF80"
+    },
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "walk-helper",
+      "site": "8002BD9C",
+      "target": "8002D35C"
+    },
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "walk-helper",
+      "site": "8002BDA0",
+      "target": "8002D58C"
+    },
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "walk-helper",
+      "site": "8002BDA4",
+      "target": "8002D198"
+    },
+    {
+      "confidence": "matched",
+      "phase": "broad-phase",
+      "role": "global-state-init",
+      "site": "8002BDA8",
+      "target": "8002E1C8"
+    },
+    {
+      "confidence": "open",
+      "phase": "broad-phase",
+      "role": "list-scan",
+      "site": "8002BDAC",
+      "target": "8002CB20"
+    },
+    {
+      "confidence": "unknown",
+      "phase": "geometry",
+      "role": "unclassified",
+      "site": "8002BE14",
+      "target": "8003D6E4"
+    },
+    {
+      "confidence": "open",
+      "phase": "geometry",
+      "role": "length-squared",
+      "site": "8002BE84",
+      "target": "8020BAFC"
+    },
+    {
+      "confidence": "open",
+      "phase": "geometry",
+      "role": "vector-normalize",
+      "site": "8002BE9C",
+      "target": "8020BAB8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "geometry",
+      "role": "terrain-height-query",
+      "site": "8002BF44",
+      "target": "8003F320"
+    },
+    {
+      "confidence": "matched",
+      "phase": "geometry",
+      "role": "terrain-height-query",
+      "site": "8002BF7C",
+      "target": "8003F320"
+    },
+    {
+      "confidence": "matched",
+      "phase": "geometry",
+      "role": "apply-effect-scale",
+      "site": "8002BF9C",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "geometry",
+      "role": "terrain-height-query",
+      "site": "8002BFF0",
+      "target": "8003F320"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C058",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C0A4",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C0E4",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C0F0",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "terrain-height-query",
+      "site": "8002C13C",
+      "target": "8003F320"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C1C0",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C218",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C270",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C2DC",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C2E8",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C354",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C360",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C3D0",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C3DC",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C428",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C434",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C440",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "terrain-height-query",
+      "site": "8002C460",
+      "target": "8003F320"
+    },
+    {
+      "confidence": "open",
+      "phase": "apply",
+      "role": "matrix-vector",
+      "site": "8002C488",
+      "target": "8020B7A8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "apply-effect-scale",
+      "site": "8002C49C",
+      "target": "8002CAA8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "apply",
+      "role": "register-effect-ids",
+      "site": "8002C4C0",
+      "target": "8002CE44"
+    },
+    {
+      "confidence": "open",
+      "phase": "apply",
+      "role": "walk-helper",
+      "site": "8002C4C4",
+      "target": "8002D7C4"
+    },
+    {
+      "confidence": "open",
+      "phase": "apply",
+      "role": "walk-helper",
+      "site": "8002C4C8",
+      "target": "8002DF08"
+    },
+    {
+      "confidence": "open",
+      "phase": "apply",
+      "role": "pair-loop",
+      "site": "8002C4CC",
+      "target": "8002DB58"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "reaction-state",
+      "site": "8002C534",
+      "target": "8002F8DC"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "floor-correction-7d6",
+      "site": "8002C584",
+      "target": "8003D444"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "state-dispatch",
+      "site": "8002C5A0",
+      "target": "8005C290"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "actor-update",
+      "site": "8002C5D0",
+      "target": "800681E4"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "set-state",
+      "site": "8002C5F4",
+      "target": "8006ACE8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "actor-compare",
+      "site": "8002C600",
+      "target": "800680D4"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "set-state",
+      "site": "8002C620",
+      "target": "8006ACE8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "actor-compare",
+      "site": "8002C62C",
+      "target": "800680D4"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "set-flag-data",
+      "site": "8002C65C",
+      "target": "8006AB04"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "actor-compare",
+      "site": "8002C668",
+      "target": "800680D4"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "state-dispatch",
+      "site": "8002C680",
+      "target": "8005C290"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "floor-correction-6c4",
+      "site": "8002C6B8",
+      "target": "8003D3E8"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "state-dispatch",
+      "site": "8002C6C0",
+      "target": "8005C290"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "actor-compare",
+      "site": "8002C6D0",
+      "target": "800680D4"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "actor-helper",
+      "site": "8002C6DC",
+      "target": "8005BBC0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "node-allocate",
+      "site": "8002C720",
+      "target": "80159168"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "pair-collision-check",
+      "site": "8002C768",
+      "target": "8006ABD4"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "set-flag-data",
+      "site": "8002C798",
+      "target": "8006AB04"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "length-squared",
+      "site": "8002C7E4",
+      "target": "8020BAFC"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "vector-normalize",
+      "site": "8002C7FC",
+      "target": "8020BAB8"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "actor-helper",
+      "site": "8002C86C",
+      "target": "8005A580"
+    },
+    {
+      "confidence": "matched",
+      "phase": "post",
+      "role": "effect-cleanup",
+      "site": "8002C888",
+      "target": "800466DC"
+    },
+    {
+      "confidence": "open",
+      "phase": "post",
+      "role": "effect-process",
+      "site": "8002C91C",
+      "target": "8002C994"
+    }
+  ],
+  "function": {
+    "address": "8002BB14",
+    "instructions": 928,
+    "size": 3712
+  },
+  "kind": "gf-collision-walk-map",
+  "notes": [
+    "Direct bl sites only; internal branches and tail calls are not listed.",
+    "The apply band ends at the pair-loop call, which is the entry to the reaction scaffold.",
+    "Roles come from the target's own source shape; 'open' and 'unknown' labels are inferred and can move with better evidence."
+  ],
+  "pair_loop": {
+    "call": "8002C4CC",
+    "reaction": "8002E2A8",
+    "target": "8002DB58"
+  },
+  "phases": {
+    "apply": 24,
+    "broad-phase": 14,
+    "geometry": 7,
+    "post": 23
+  },
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

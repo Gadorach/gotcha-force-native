@@ -193,6 +193,11 @@ The full chain is therefore:
         -> matched reaction/effect helpers
 ```
 
+The collision walk has 68 direct calls in four phases: 14 broad-phase, 7
+geometry, 24 apply and 23 post. The apply band ends at the pair-loop call
+`8002C4CC -> 8002DB58`, which is the entry to the reaction scaffold. The map is
+[`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
+
 So the reaction path is mostly a scaffold of matched helpers around the open
 amount and a handful of open per-class effect functions.
 
