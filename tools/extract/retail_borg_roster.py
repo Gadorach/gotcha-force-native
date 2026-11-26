@@ -19,6 +19,7 @@ from tools.analyze.retail_action_sfx import DIRECT, action_sfx_index
 
 RELAY_SOUND_ID = 162
 from tools.analyze.retail_actor_data_binding import actor_record_binding, binding_schema
+from tools.analyze import reaction_emit
 from tools.analyze.retail_basic_shot_test import (
     ACTOR_RELEASE_SOUND, ANIMATED_CRUISE_SHOTS, CLOCKED_GROUND_SHOTS, COHORT as BASIC_SHOT_COHORT, CRUISE_CHARGE_SHOTS,
     PREFERRED_B_SHOT, STATIC_CRUISE_PHASE_SHOTS, STATIC_CRUISE_SHOTS, STATIC_GROUND_MODELS, basic_shot_test, cruise_charge_shot_test, pilot_launch_tone,
@@ -1083,6 +1084,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         stop=next((r[1:] for r in candidates if r[0]=="ground-stop"),None)
         stop_at=next((at for g,c,at in clips if (g,c)==stop),None)
         idle_timing=next((r for r in timing if r["archive_offset"]==stop_at),None)
+        basic_shot_gameplay=False
         if dragon_pilot:
             if not motion or mounts or not dragon_impact_art:
                 raise ValueError("elemental pilot requires exact unmounted body and local motion bank")
@@ -1161,6 +1163,14 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
                                                        actor_sfx=action_sfx_index(actions,tone_banks)
                                                        if launch_pcm is not None and row.model==ACTOR_RELEASE_SOUND[0] else (),
                                                        idle_timing=idle_timing)
+            basic_shot_gameplay=True
+        if basic_shot and basic_shot_gameplay:
+            context=PREFERRED_B_SHOT.get(row.model,(0,0))
+            lines=reaction_emit.content_lines(dol,archive,row.model,context)
+            if lines:
+                gameplay += ("\n".join(lines)+"\n").encode("ascii")
+                battle_receipt = dict(battle_receipt)
+                battle_receipt["reaction"]={"context":list(context),"lines":lines}
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         for cue in battle_receipt.get("authored_launch_sounds",()):
             if "path" in cue:

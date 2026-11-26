@@ -134,6 +134,10 @@ texture or audio bytes; each regenerates from a local roster.
   source move group and context rows (B-shot, B-close, X) joined to the
   queue group, step and per-Borg attack-table entry. Tool:
   `tools/analyze/reaction_context_map.py`.
+- Reaction emission — authored `basic-shot` gameplay appends
+  `reaction-offset` (and `reaction-mode` for source modes 1/3) from the
+  selected context; unsupported modes keep the native default direction
+  and are labelled. Tool: `tools/analyze/reaction_emit.py`.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.
