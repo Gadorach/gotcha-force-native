@@ -38,6 +38,8 @@ class PairLoopBranchMapTest(unittest.TestCase):
         dispatch = data["category_dispatch"]
         self.assertEqual(dispatch["index_table"], "802CFF68")
         self.assertEqual(dispatch["handler_table"], "802CFF2C")
+        self.assertEqual(dispatch["call_site"], "8002DD8C")
+        self.assertEqual(dispatch["index_expression"], "(slot << 3) | record+0x58")
         self.assertEqual(len(dispatch["categories"]), 48)
         self.assertEqual(len(dispatch["handlers"]), 15)
         self.assertEqual(dispatch["handlers"][0], "80030500")

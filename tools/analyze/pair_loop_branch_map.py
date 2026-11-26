@@ -90,6 +90,8 @@ def _category_dispatch(image):
                            "address": handlers[handler]})
     return {"index_table": f"{CATEGORY_TABLE:08X}",
             "handler_table": f"{HANDLER_TABLE:08X}",
+            "call_site": "8002DD8C",
+            "index_expression": "(slot << 3) | record+0x58",
             "handlers": handlers, "categories": categories}
 
 
@@ -137,7 +139,7 @@ def recover(image):
         phases[branch["phase"]] = phases.get(branch["phase"], 0) + 1
     return {
         "kind": "gf-pair-loop-branch-map",
-        "revision": 3,
+        "revision": 4,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {"address": f"{FUNCTION:08X}", "size": SIZE,
                      "branches": len(branches)},
@@ -152,7 +154,8 @@ def recover(image):
             "load or call result that fed the tested register; float provenance "
             "is the nearest load, not the whole expression.",
             "`category_dispatch` decodes 80030490: 48 category bytes index a "
-            "15-entry handler table; bit 0x80 swaps the two arguments.",
+            "15-entry handler table; bit 0x80 swaps the two arguments. The "
+            "call site passes (slot << 3) | record+0x58, not a constant.",
             "Named gates and the pair validity rules are documented separately.",
         ],
     }

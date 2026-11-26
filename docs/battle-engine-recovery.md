@@ -251,7 +251,8 @@ conditional branches are decoded in
 direct-category/record-bit mode, the carrier flags, the `8002FD7C` and
 `80039F6C` validity results, the partner checks, the two matrix copies, the
 `80030490` category handler (48 categories indexing 15 handlers, bit `0x80`
-swaps the argument order), the direct-vs-nearest choice, the nearest
+swaps the argument order; the call site uses `(slot << 3) | record+0x58`), the
+direct-vs-nearest choice, the nearest
 distance, the aim record/length and the owner callback. Provenance now
 confirms the field reads: `[outer+0x88]`, the carrier `node+2` masks, the
 record bits at `+0x10`/`+0x12`, receiver `+0x474`, partner link `record+0x24`
