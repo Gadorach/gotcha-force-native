@@ -46,6 +46,7 @@ def content_lines(image, archive, model, context, move="basic-shot"):
     if entry["mode"] in (1, 3):
         lines.append(f"reaction-mode={move}|{entry['mode']}")
     else:
-        lines.append(f"# source reaction mode {entry['mode']} not native; default direction")
+        lines.append(f"# source reaction mode {entry['mode']} not native; fallback mode 1")
+        lines.append(f"reaction-mode={move}|1")
     lines.append(f"reaction-offset={move}|{entry['yaw']}|{entry['pitch']}")
     return lines

@@ -442,7 +442,8 @@ its queue group, step and per-Borg table entry. A packager can emit
 `reaction-mode`/`reaction-offset` from the selected context; unsupported
 source modes still need a labelled fallback. `reaction_emit.py` now appends
 those lines to the authored `basic-shot` gameplay, using the group's first
-step; modes outside 1/3 keep the native default direction with a comment. The original
+step; modes outside 1/3 declare an explicit `reaction-mode=1` fallback with a
+comment naming the source mode. The original
 `afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
