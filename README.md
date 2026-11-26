@@ -121,6 +121,10 @@ texture or audio bytes; each regenerates from a local roster.
   shared 24-byte action table at `80354160` (mode `+0x0E`, flags `+0x10`,
   yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`) and the actor/pair pointer
   chain. Tool: `tools/analyze/reaction_attack_table.py`.
+- [Reaction action map](docs/api-map/reaction-action-map.json) — the
+  `pl####hit.bin` queue groups, 0x50-byte steps and their attack-table
+  entries for G-Red, Sasuke and Proto King. Tool:
+  `tools/analyze/reaction_action_map.py`.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.

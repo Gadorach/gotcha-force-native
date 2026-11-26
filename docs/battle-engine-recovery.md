@@ -421,7 +421,8 @@ actor; `8008AE60` uses `80344760` for another path). Entries are 24 bytes:
 mode `+0x0E`, flags `+0x10`, yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`; the
 index is the action-step byte copied to pair `+0x11`. The first 38 entries use
 the source modes 0..5; later entries take the default. The published table and
-pointer chain are in `api-map/reaction-attack-table.json`.
+pointer chain are in `api-map/reaction-attack-table.json`; the pilot queue →
+step → table map is in `api-map/reaction-action-map.json`.
 
 The action block itself is `pl####hit.bin` (7840 bytes, member block 2): a
 4-byte queue at `+0xA20` (first byte = step index, `0xFF` terminates) and
