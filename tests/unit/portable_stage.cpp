@@ -120,6 +120,8 @@ int main(int argc,char** argv){
     BattleMvpConfig config;
     config.packages={packages[0].definition,packages[1].definition};
     const auto visuals=std::array{packages[0].visuals(),packages[1].visuals()};
+    const std::array<std::shared_ptr<const BorgGameplayProfile>,2> definitions{
+        config.packages[0],config.packages[1]};
     const std::array<std::string_view,2> markers{"east","west"};
     check(!view.configure_stage_duel("fixture:room",markers,&config,&error),"not a different stage");
     check(!view.configure_stage_duel(view.stage_id(),{"missing","west"},&config,&error)&&error.find("missing stage spawn")!=std::string::npos,
@@ -127,7 +129,7 @@ int main(int argc,char** argv){
     check(!view.configure_stage_duel(view.stage_id(),{"east","east"},&config,&error),"same marker refused");
     check(view.configure_stage_duel(view.stage_id(),markers,&config,&error),&error);
     check(config.spawn[0].x==240&&config.spawn[1].x==-240&&config.spawn_query_y[0]==-10&&config.spawn_query_y[1]==20,"ordered markers and floor queries");
-    check(view.load_packages(render,config.packages,visuals,&error),&error);
+    check(view.load_packages(render,definitions,visuals,&error),&error);
     NativeBattleMvp world;
     check(world.start(config,&view)&&view.update(world,&error),"engine starts ordinary packaged duel");
     check(world.actors()[0].position==BattleMvpVec{240,0,-300}&&world.actors()[1].position==BattleMvpVec{-240,0,300}&&
@@ -162,7 +164,7 @@ int main(int argc,char** argv){
     check(other.bind_stage(incompatible,render,&error)&&!other.supports_projectile_stage(),"fade does not require projectile capabilities");
     check(!other.configure_stage_duel(other.stage_id(),markers,&config,&error)&&error.find("no supported floor")!=std::string::npos,
           "unsupported spawn cannot use default floor");
-    check(!other.load_packages(render,config.packages,visuals,&error)&&error.find("unsupported stage projectile capability")!=std::string::npos,
+    check(!other.load_packages(render,definitions,visuals,&error)&&error.find("unsupported stage projectile capability")!=std::string::npos,
           "Borg requiring collision cannot use a floor-only stage");
     incompatible=*snapshot;
     incompatible.bytes[unsigned(StageAsset::ProjectileStage)][0]=0;
