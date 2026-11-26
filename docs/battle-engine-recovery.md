@@ -240,6 +240,37 @@ close hit tick=46 value=18
 20 x 0.867 x 1.13 x 1.15 x 0.8 = 18.03 -> 18
 ```
 
+## Reaction scaffold boundary
+
+`8002E2A8(r3 = attacker side object, r4 = receiver side object)` is the
+reaction entry one level above the amount routine. The fields the entry reads
+are verified from the static instruction stream:
+
+| Field | Use |
+| --- | --- |
+| `side+17` | attack-record index |
+| `side+44` | attack-record table base; row = base + index * 24 |
+| `side+32` | actor pointer |
+| `side+36`, `+40` | linked objects used by the reaction helpers |
+
+The amount call at `8002F108` receives exactly:
+
+```text
+r3 = [attacker side+44] + attacker side[17] * 24   credit row
+r4 = [attacker side+32]                             attacker actor
+r5 = [receiver side+32]                             receiver actor
+```
+
+It is reached only when `receiver+474 & 0x02 == 0` or `receiver+131 != 0`;
+otherwise `r4` is forced to 0 and the call is skipped. The HP writer remains
+`8003D344`.
+
+The live pair entry `r3=80681A40 r4=8067FAC0` carried `+0x2C`/`+0x1EC` links to
+`80365EC0` and `802D4160`, but the X hit applied `80366058` instead. Those links
+are side defaults, not the applied credit; the credit must be read at the amount
+call. The remaining reaction branches (reaction classes, hit-stop/angle writes)
+and the collision walk `8002BB14` are still open.
+
 ## Amount pipeline
 
 The amount function `8003CD5C` is translated in
