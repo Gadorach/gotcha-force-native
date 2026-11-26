@@ -414,7 +414,12 @@ upper-body root for an authored eight-tick window; moves declare the mode with
 native actor does not carry, so they are refused at load. The attack-table
 yaw/pitch offsets (`+0x14`/`+0x15`) are expressible as `reaction-offset` in
 0x100 units, but their per-move retail values are not yet extracted. The
-`+0x1DA` mirror remains unrecovered. The native pitch bone axis is X; a
+`+0x1DA` mirror remains unrecovered. The original `afs_data.afs` is present
+locally; for each model, `pl####data.bin` is the 432-byte character spec and
+`pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
+attack table: the 7680-byte actor constructor `800536E0` sets the model/spec
+fields but not `+0x2C`, so locating that table still needs the pointer write or
+runtime memory. The native pitch bone axis is X; a
 rendered `reaction-offset=beam-test|0|64` capture tilts the torso without
 yawing it. A rendered comparison is under
 `../local/recomp-evidence/contact-sheets/reaction-direction-v1/`: the default
