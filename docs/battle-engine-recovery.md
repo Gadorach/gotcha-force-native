@@ -206,8 +206,13 @@ The pair loop is **target selection**, not a blind pair walk:
   every valid pair;
 - otherwise it keeps the nearest valid target (distance `8020BC88`, initial
   sentinel `400000000.0`) and calls `8002E2A8` once with that target;
-- validity filters include the carrier node flags `0x0800/0x1000/0x2000`,
-  `receiver+474` bit `0x02`, `8002FD7C`, `80039F6C` and `80030490`;
+- validity filters: carrier node flags `0x0800/0x1000/0x2000`,
+  `receiver+474` bit `0x02`, then `8002FD7C` (different actor,
+  owner-invulnerability, same-team flag `0x80`, attack-class flags
+  `0x3C0/0xC00`, six-eight-entry immunity keys at `+0x20C`, target mask at
+  `+0x272`), `80039F6C` (both radii > `0.1` and centre distance <= radius sum)
+  and `80030490` (dispatch `(outer category << 3) | inner category`; `0xFF`
+  rejects), with `80030348` running the two `+88` category setup handlers;
 - both actor matrices are copied to scratch `803B04D0`/`803B0368`, the aim
   vector is stored at `803B0720`, and an owner callback at `owner+256` runs
   before the reaction call.

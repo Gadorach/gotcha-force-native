@@ -30,7 +30,12 @@ class CollisionWalkTest(unittest.TestCase):
         self.assertEqual(loop["outer"]["array"], "803C477C")
         self.assertEqual(loop["inner"]["array"], "803C417C")
         self.assertIn("400000000.0", loop["mode"]["nearest"])
-        self.assertEqual(len(loop["filters"]), 6)
+        kinds = [item["kind"] for item in loop["filters"]]
+        self.assertEqual(kinds, ["carrier-flags", "receiver", "validity",
+                                 "volume", "handler"])
+        self.assertIn("0.1", loop["filters"][3]["rule"])
+        self.assertEqual(loop["filters"][4]["call"], "80030490")
+        self.assertEqual(loop["setup"]["call"], "80030348")
         self.assertEqual(loop["nearest_distance"], "8020BC88")
 
     def test_post_band_has_no_pair_loop(self):

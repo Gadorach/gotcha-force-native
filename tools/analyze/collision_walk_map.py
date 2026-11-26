@@ -112,13 +112,24 @@ def recover(image):
                            "distance 400000000.0",
             },
             "filters": [
-                "carrier node+2 bit 0x0800 and record+18 bit 0x8000",
-                "carrier node+2 bits 0x1000/0x2000 and record+18 bit 0x4000",
-                "receiver+474 bit 0x02",
-                "8002FD7C(outer, inner, 2)",
-                "80039F6C(outer+88, inner+88)",
-                "80030490(scratchA, scratchB, key)",
+                {"kind": "carrier-flags",
+                 "rule": "carrier node+2 bits 0x0800/0x1000/0x2000 and "
+                         "record+18 bits 0x8000/0x4000"},
+                {"kind": "receiver",
+                 "rule": "receiver+474 bit 0x02 clear"},
+                {"kind": "validity", "call": "8002FD7C", "argument": 2,
+                 "rule": "different actor; owner-invulnerability; same-team "
+                         "flag 0x80; attack-class flags 0x3C0/0xC00; six "
+                         "eight-entry immunity keys at +0x20C; target mask "
+                         "at +0x272"},
+                {"kind": "volume", "call": "80039F6C",
+                 "rule": "both radii > 0.1 and centre distance <= radius sum"},
+                {"kind": "handler", "call": "80030490",
+                 "rule": "dispatch (outer category << 3) | inner category; "
+                         "0xFF rejects"},
             ],
+            "setup": {"call": "80030348",
+                      "rule": "run the two +88 category setup handlers"},
             "scratch": ["803B04D0", "803B0368", "803B0720"],
             "nearest_distance": "8020BC88",
         },
