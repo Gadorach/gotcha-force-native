@@ -111,6 +111,9 @@ texture or audio bytes; each regenerates from a local roster.
   dispatch hierarchy: 32 family entries, six sub-tables and five phase tables
   selected by `actor+0x580`, `actor+0x581` and `actor+0x540`, with match status.
   Tool: `tools/analyze/action_class_map.py`.
+- [Contact side rows](docs/api-map/contact-side-rows.json) — the side-paired
+  credit difficulty/rank and receiver-rank rows for team 0 and team 1. Tool:
+  `tools/analyze/contact_side_rows.py`.
 
 Two recovery records carry the reasoning rather than the data:
 

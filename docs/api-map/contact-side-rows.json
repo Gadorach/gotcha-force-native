@@ -1,0 +1,46 @@
+{
+  "addresses": {
+    "credit_difficulty": {
+      "root": "804335E0",
+      "rows": [
+        "802C4BA0",
+        "802C4C20"
+      ]
+    },
+    "credit_rank": {
+      "root": "804335F8",
+      "rows": [
+        "802C5D20",
+        "802C5D40"
+      ]
+    },
+    "receiver_rank": {
+      "root": "80433618",
+      "rows": [
+        "802C7C60",
+        "802C7C80"
+      ]
+    }
+  },
+  "kind": "gf-contact-side-rows",
+  "notes": [
+    "These are the paired rows used by the credit side; the battle scalar and receiver health/force rows still come from their own tables.",
+    "Emit one damage-side row per variant instead of binding a single side."
+  ],
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "variants": [
+    {
+      "credit_difficulty": 1.02,
+      "credit_rank": 0.85,
+      "receiver_rank": 1.15,
+      "team": 0
+    },
+    {
+      "credit_difficulty": 0.92,
+      "credit_rank": 0.85,
+      "receiver_rank": 1.15,
+      "team": 1
+    }
+  ]
+}
