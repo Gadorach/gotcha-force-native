@@ -274,8 +274,11 @@ this pair. `8002E2A8` uses the same test before running the reaction branch.
 The live pair entry `r3=80681A40 r4=8067FAC0` carried `+0x2C`/`+0x1EC` links to
 `80365EC0` and `802D4160`, but the X hit applied `80366058` instead. Those links
 are side defaults, not the applied credit; the credit must be read at the amount
-call. The remaining reaction branches (reaction classes, hit-stop/angle writes)
-and the collision walk `8002BB14` are still open.
+call. The 47 direct calls are ordered in
+[`api-map/reaction-scaffold-map.json`](api-map/reaction-scaffold-map.json):
+16 pre-amount calls, the amount call and HP write, then 29 reaction and
+presentation calls (impact effects, object spawns, color). The branch
+conditions inside those bands and the collision walk `8002BB14` remain open.
 
 ## Amount pipeline
 

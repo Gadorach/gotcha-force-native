@@ -1,0 +1,360 @@
+{
+  "boundary": {
+    "amount_call": "8002F108",
+    "amount_data": "r3 = credit row, r4 = attacker actor, r5 = receiver actor",
+    "hp_write": "8002F1D8"
+  },
+  "calls": [
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002E35C",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "queue-reaction",
+      "site": "8002E6F8",
+      "target": "800061A8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "queue-reaction",
+      "site": "8002E714",
+      "target": "800061A8"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002E8A4",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002E8E4",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002E928",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002E978",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002E9C8",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EA00",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EA54",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EAC0",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EB00",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EB28",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EB50",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "pre-amount",
+      "role": "set-flag",
+      "site": "8002EB78",
+      "target": "8002F8D0"
+    },
+    {
+      "confidence": "open",
+      "phase": "pre-amount",
+      "role": "impact-mode",
+      "site": "8002F064",
+      "target": "800300BC"
+    },
+    {
+      "confidence": "recovered",
+      "phase": "amount",
+      "role": "amount",
+      "site": "8002F108",
+      "target": "8003CD5C"
+    },
+    {
+      "confidence": "matched",
+      "phase": "amount",
+      "role": "hp-write",
+      "site": "8002F1D8",
+      "target": "8003D344"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "reaction-state",
+      "site": "8002F200",
+      "target": "8002F8DC"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "reaction-state",
+      "site": "8002F21C",
+      "target": "8002F8DC"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "reaction-helper",
+      "site": "8002F278",
+      "target": "8018214C"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "reaction-helper",
+      "site": "8002F288",
+      "target": "8018214C"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "reaction-helper",
+      "site": "8002F298",
+      "target": "8018214C"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "reaction-helper",
+      "site": "8002F2B8",
+      "target": "8018214C"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "slot-update",
+      "site": "8002F2D4",
+      "target": "80006C24"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "slot-update",
+      "site": "8002F2EC",
+      "target": "80006C24"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F544",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F5A0",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F5FC",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F614",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F62C",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F644",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F65C",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "impact-effect",
+      "site": "8002F674",
+      "target": "8002FCBC"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-values",
+      "site": "8002F698",
+      "target": "800DB250"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "impact-effect",
+      "site": "8002F6B0",
+      "target": "8002FCBC"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "effect-spawn",
+      "site": "8002F6DC",
+      "target": "8010E158"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "object-spawn",
+      "site": "8002F728",
+      "target": "8013F300"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "object-spawn",
+      "site": "8002F758",
+      "target": "80176EC0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "object-spawn",
+      "site": "8002F778",
+      "target": "80176EC0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "object-spawn",
+      "site": "8002F798",
+      "target": "80176EC0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "reaction-effect",
+      "site": "8002F7BC",
+      "target": "801EC1BC"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "reaction-effect",
+      "site": "8002F7E8",
+      "target": "801DFF24"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "object-spawn",
+      "site": "8002F818",
+      "target": "8013F300"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "object-spawn",
+      "site": "8002F848",
+      "target": "80176EC0"
+    },
+    {
+      "confidence": "matched",
+      "phase": "reaction",
+      "role": "color",
+      "site": "8002F87C",
+      "target": "80019550"
+    },
+    {
+      "confidence": "open",
+      "phase": "reaction",
+      "role": "impact-effect",
+      "site": "8002F894",
+      "target": "8002FC18"
+    }
+  ],
+  "function": {
+    "address": "8002E2A8",
+    "arguments": {
+      "r3": "attacker side object",
+      "r4": "receiver side object"
+    },
+    "instructions": 1418,
+    "size": 5672
+  },
+  "kind": "gf-reaction-scaffold-map",
+  "notes": [
+    "Direct bl sites only; internal branches and tail calls are not listed.",
+    "The amount and HP write are the gameplay boundary; the reaction band is mostly presentation and reaction helpers.",
+    "Roles marked 'matched' come from matched helpers; 'open' and 'unknown' roles are inferred from the call shape."
+  ],
+  "phases": {
+    "amount": 2,
+    "pre-amount": 16,
+    "reaction": 29
+  },
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

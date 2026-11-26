@@ -105,6 +105,10 @@ texture or audio bytes; each regenerates from a local roster.
   (Sasuke `1,1,0`, G-Red `2,2,2`) plus 13 combined forms with one triple per
   component; eight asset-only ids have no block. Tool:
   `tools/analyze/borg_damage_selectors.py`.
+- [Reaction scaffold map](docs/api-map/reaction-scaffold-map.json) — the 47
+  direct calls of `8002E2A8` in order: 16 pre-amount, the amount and HP write,
+  then 29 reaction/presentation calls, with the amount boundary and labelled
+  helper roles. Tool: `tools/analyze/reaction_scaffold_map.py`.
 - [G-Red/Sasuke move bases](docs/api-map/gred-sasuke-move-bases.json) — the
   per-move base records: B-close/boost base 20 → 22 and X base 30 → 33 measured,
   B-shot base 30 → 33 inferred from the third 0x198-stride entry, with the

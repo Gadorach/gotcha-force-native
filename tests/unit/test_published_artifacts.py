@@ -13,6 +13,7 @@ from tools.analyze import (
     damage_amount_model,
     gred_sasuke_contact_damage,
     gred_sasuke_move_bases,
+    reaction_scaffold_map,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,6 +24,7 @@ ARTIFACTS = (
     ("gred-sasuke-move-bases.json", gred_sasuke_move_bases.export),
     ("contact-side-rows.json", contact_side_rows.export),
     ("damage-amount-model.json", damage_amount_model.export),
+    ("reaction-scaffold-map.json", reaction_scaffold_map.export),
 )
 
 
