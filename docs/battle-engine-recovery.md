@@ -555,7 +555,8 @@ opponent to be idle or pad-free; authored opponents can use ports 1/3. The host 
 asserts the authored roster `actors=4 ... shots=2 hits=2 reactions=2` and the
 source roster `actors=4 ... shots=5 hits=4 reactions=4`; `reactions` counts
 hits that opened a reaction window, so it verifies the new direction stage in
-the real host. The same smoke passes with `--opengl` under
+the real host. The roster demo's frame-85 restart is driven by P2's Y/N, so the
+smoke also guards the second local player's session control. The same smoke passes with `--opengl` under
 `SDL_VIDEODRIVER=offscreen`, and the 4-actor source roster renders 150 frames
 with the same counts and `reactions=4`. The HUD draws
 one bar per actor, and the camera frames actor 0 against its nearest enemy.

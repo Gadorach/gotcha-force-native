@@ -1832,7 +1832,11 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             if(demo_anchor_double_tap)
                 pads[0].x=frame==18||frame==29||frame==44||frame==47||frame==127||frame==130;
             if(demo_fence)pads[0].x=frame==2;
-            pads[0].y=frame==85;pads[0].dpad_right=!demo_gravity&&!demo_magnet&&!demo_fence&&frame>=2&&frame<=4;
+            // The roster demo exercises the second local player's session
+            // control; the ordinary demo keeps P1 restart.
+            if(options.demo_roster_battle)pads[1].y=frame==85;
+            else pads[0].y=frame==85;
+            pads[0].dpad_right=!demo_gravity&&!demo_magnet&&!demo_fence&&frame>=2&&frame<=4;
             if(config.packages[0]->walk_pulse)pads[0].dpad_right|=frame>=10&&frame<43;
             if(demo_gravity)pads[1].a=frame==11;
             pads[0].b=frame>=56&&frame<=60;
