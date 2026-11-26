@@ -421,7 +421,14 @@ actor; `8008AE60` uses `80344760` for another path). Entries are 24 bytes:
 mode `+0x0E`, flags `+0x10`, yaw/pitch `+0x14`/`+0x15`, repeat `+0x16`; the
 index is the action-step byte copied to pair `+0x11`. The first 38 entries use
 the source modes 0..5; later entries take the default. The published table and
-pointer chain are in `api-map/reaction-attack-table.json`. The original
+pointer chain are in `api-map/reaction-attack-table.json`.
+
+The action block itself is `pl####hit.bin` (7840 bytes, member block 2): a
+4-byte queue at `+0xA20` (first byte = step index, `0xFF` terminates) and
+0x50-byte steps at `+0xAA0`; step `+4` is the attack-table index. For G-Red the
+used step indices 2/3/8/6/4/7/5 select attack-table entries 2..8, all mode 0.
+Mode 0 reads attacker-internal vectors the native actor does not carry, so the
+default mode-1 direction remains an explicit approximation for retail moves. The original
 `afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
