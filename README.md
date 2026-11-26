@@ -126,6 +126,10 @@ texture or audio bytes; each regenerates from a local roster.
   `pl####hit.bin` queue groups, 0x50-byte steps and their attack-table
   entries for G-Red, Sasuke and Proto King. Tool:
   `tools/analyze/reaction_action_map.py`.
+- [Reaction context map](docs/api-map/reaction-context-map.json) — the
+  source move group and context rows (B-shot, B-close, X) joined to the
+  queue group, step and per-Borg attack-table entry. Tool:
+  `tools/analyze/reaction_context_map.py`.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.

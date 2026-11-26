@@ -436,8 +436,11 @@ The queue group is selected by `8006F11C` from `s8(action_row[3])`. In the
 per-Borg action candidates, the first byte of each row's context is the group
 index: G-Red B-shot contexts 0..5 select queue groups 0..5, each of which maps
 to the per-Borg table entry through its step list. That is the move → reaction
-path; the pilot groups and tables are published, while a packager still needs
-to carry each move's source context. The original
+path; the pilot groups and tables are published, and
+`api-map/reaction-context-map.json` joins each B-shot/B-close/X context row to
+its queue group, step and per-Borg table entry. A packager can emit
+`reaction-mode`/`reaction-offset` from the selected context; unsupported
+source modes still need a labelled fallback. The original
 `afs_data.afs` is present
 locally; for each model, `pl####data.bin` is the 432-byte character spec and
 `pl####hit.bin` the 7840-byte collision block. Neither carries the 24-byte
