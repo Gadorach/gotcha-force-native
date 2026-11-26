@@ -387,7 +387,7 @@ matched/open helpers resolve to:
 
 | Helper | Role |
 | --- | --- |
-| `800DB250` | allocate an effect at the `803B0720` vector, copy `values[0..2]` to `+0x20/+0x24/+0x28`, callbacks `800DB378`/`800DB838` |
+| `800DB250` | allocate an effect at the `803B0720` vector, copy `values[0..2]` to `+0x20/+0x24/+0x28`, callbacks `800DB378`/`800DB838`; the nine `8031227C` indices map to definition ids `2,1,1,1,1,1,1,1,2` |
 | `8010E158` | spawn effect type `0x15`, copy the entry fields and owner, set `owner+0x8C4` when `entry[1]==1` |
 | `800300BC` | reaction direction: seven source modes, writes receiver yaw `+0x284` and pitch `+0x282` (mirrored when `+0x1DA` bit 1) |
 | `8018214C` | per-battle reaction-ID allocator, random 1–16 delta |

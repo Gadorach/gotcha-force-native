@@ -184,11 +184,22 @@ CONSTANT_ADDRS = (
     "80436F68", "80436F74", "80436F94",
     "80436FB8", "80436FBC", "80436FC0",
 )
+VALUE_TABLE = 0x8031227C
 
 
 def _constants(image):
     return {addr: struct.unpack(">f", image.read(int(addr, 16), 4, "data"))[0]
             for addr in CONSTANT_ADDRS}
+
+
+def _value_definitions(image):
+    raw = image.read(VALUE_TABLE, 9 * 8, "data")
+    entries = []
+    for index in range(9):
+        definition, pointer = struct.unpack_from(">II", raw, index * 8)
+        entries.append({"index": index, "definition": definition,
+                        "pointer": f"{pointer:08X}"})
+    return entries
 
 
 def recover(image):
@@ -221,12 +232,18 @@ def recover(image):
                      "calls": len(mapped)},
         "effects": {key: value for key, value in sorted(EFFECTS.items())},
         "constants": _constants(image),
+        "effect_values": {
+            "table": f"{VALUE_TABLE:08X}",
+            "entries": _value_definitions(image),
+        },
         "calls": mapped,
         "notes": [
             "The argument map is the last write to r3-r7 in the 12-instruction "
             "window before each call.",
             "`constants` holds the float thresholds and fallback operands read "
             "from the initialized data section.",
+            "`effect_values` maps the nine 800DB250 indices to their definition "
+            "ids and definition pointers; indices 0 and 8 share definition 2.",
             "Immediates and field offsets are decoded from the DOL; the effect "
             "labels come from matched helper summaries.",
             "This is presentation/reaction data, not a recovered renderer.",

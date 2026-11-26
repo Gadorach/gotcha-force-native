@@ -830,6 +830,56 @@
     "80436FBC": 3.5,
     "80436FC0": 0.009999999776482582
   },
+  "effect_values": {
+    "entries": [
+      {
+        "definition": 2,
+        "index": 0,
+        "pointer": "80312210"
+      },
+      {
+        "definition": 1,
+        "index": 1,
+        "pointer": "80312228"
+      },
+      {
+        "definition": 1,
+        "index": 2,
+        "pointer": "80312234"
+      },
+      {
+        "definition": 1,
+        "index": 3,
+        "pointer": "80312240"
+      },
+      {
+        "definition": 1,
+        "index": 4,
+        "pointer": "8031224C"
+      },
+      {
+        "definition": 1,
+        "index": 5,
+        "pointer": "80312258"
+      },
+      {
+        "definition": 1,
+        "index": 6,
+        "pointer": "80312264"
+      },
+      {
+        "definition": 1,
+        "index": 7,
+        "pointer": "80312270"
+      },
+      {
+        "definition": 2,
+        "index": 8,
+        "pointer": "80312210"
+      }
+    ],
+    "table": "8031227C"
+  },
   "effects": {
     "80006C24": {
       "role": "slot update"
@@ -951,6 +1001,7 @@
   "notes": [
     "The argument map is the last write to r3-r7 in the 12-instruction window before each call.",
     "`constants` holds the float thresholds and fallback operands read from the initialized data section.",
+    "`effect_values` maps the nine 800DB250 indices to their definition ids and definition pointers; indices 0 and 8 share definition 2.",
     "Immediates and field offsets are decoded from the DOL; the effect labels come from matched helper summaries.",
     "This is presentation/reaction data, not a recovered renderer."
   ],

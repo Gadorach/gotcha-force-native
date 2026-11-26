@@ -46,6 +46,19 @@ class ReactionEffectMapTest(unittest.TestCase):
         self.assertEqual(data["effects"]["8002F8DC"]["fields"][0], "actor+0x4AA")
         self.assertIn("every branch", data["effects"]["8002FCBC"]["volume_branch"])
 
+    def test_effect_value_table(self):
+        data = json.loads(ARTIFACT.read_text())
+        values = data["effect_values"]
+        self.assertEqual(values["table"], "8031227C")
+        entries = values["entries"]
+        self.assertEqual(len(entries), 9)
+        self.assertEqual(entries[0]["definition"], 2)
+        self.assertEqual(entries[0]["pointer"], "80312210")
+        self.assertEqual(entries[1]["definition"], 1)
+        self.assertEqual(entries[7]["pointer"], "80312270")
+        self.assertEqual(entries[8]["definition"], 2)
+        self.assertEqual(entries[8]["pointer"], "80312210")
+
     def test_scaffold_reaction_direction(self):
         data = json.loads(SCAFFOLD.read_text())
         calls = {call["site"]: call for call in data["calls"]}
