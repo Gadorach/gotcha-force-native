@@ -16,6 +16,12 @@ class ReactionScaffoldTest(unittest.TestCase):
         self.assertEqual(map_tool.decode_calls(code, 0x80001000),
                          [{"site": "80001000", "target": "80002000"}])
 
+    def test_force_ledger_note(self):
+        data = json.loads(ARTIFACT.read_text())
+        calls = {call["site"]: call for call in data["calls"]}
+        self.assertEqual(calls["8002F200"]["role"], "force-ledger-update")
+        self.assertIn("team force", calls["8002F200"]["note"])
+
     def test_artifact_phases(self):
         data = json.loads(ARTIFACT.read_text())
         self.assertEqual(data["phases"],

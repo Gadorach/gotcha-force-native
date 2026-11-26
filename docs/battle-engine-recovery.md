@@ -301,7 +301,30 @@ are side defaults, not the applied credit; the credit must be read at the amount
 call. The 47 direct calls are ordered in
 [`api-map/reaction-scaffold-map.json`](api-map/reaction-scaffold-map.json):
 16 pre-amount calls, the amount call and HP write, then 29 reaction and
-presentation calls (impact effects, object spawns, color). The branch
+presentation calls. The first reaction-band call (`8002F8DC`) is the force
+ledger: it subtracts the amount from the team force record, adds the per-actor
+ledgers and a six-slot hit-history ring. The rest are impact effects, object
+spawns and color.
+
+The ledger fields are:
+
+| Field | Meaning |
+| --- | --- |
+| `actor+0x4AA` | applied amount (s16) |
+| `actor+0x424` | damage taken total (int) |
+| `actor+0x434` | hits taken (byte) |
+| `attacker+0x420` | credited damage total (int) |
+| `attacker+0x434` | hits dealt (byte) |
+| `team_base+team*0x3C+0x118` | team force pool, decremented by the amount |
+| `team_base+team*0x3C+0x108/0x109/0x10A` | force flags/count |
+| `lbl_80436154[team]` | team tally, `+= 100` on a cross-team hit |
+| `lbl_803C4E84 + slot*0x1E00` | six-slot actor array |
+| `slot+0x464`, `slot+0x484` | eight-entry hit ring and its index |
+| `slot+0x430`, `slot+0x437` | ring total and count |
+
+The amount routine reads a per-team current at `803B068C` and the cap at
+`team_base+team*0x3C+0x114`; how that current relates to the decremented
+`+0x118` pool is not settled. The branch
 conditions inside those bands remain open; the collision walk map is published
 as [`api-map/collision-walk-map.json`](api-map/collision-walk-map.json).
 

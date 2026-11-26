@@ -119,6 +119,7 @@
     },
     {
       "confidence": "recovered",
+      "note": "the 19-stage amount routine",
       "phase": "amount",
       "role": "amount",
       "site": "8002F108",
@@ -126,6 +127,7 @@
     },
     {
       "confidence": "matched",
+      "note": "writes the amount to actor+0x1C6 HP and actor+0x41C ledger",
       "phase": "amount",
       "role": "hp-write",
       "site": "8002F1D8",
@@ -133,15 +135,17 @@
     },
     {
       "confidence": "open",
+      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
       "phase": "reaction",
-      "role": "reaction-state",
+      "role": "force-ledger-update",
       "site": "8002F200",
       "target": "8002F8DC"
     },
     {
       "confidence": "open",
+      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
       "phase": "reaction",
-      "role": "reaction-state",
+      "role": "force-ledger-update",
       "site": "8002F21C",
       "target": "8002F8DC"
     },
@@ -238,6 +242,7 @@
     },
     {
       "confidence": "matched",
+      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
       "phase": "reaction",
       "role": "impact-effect",
       "site": "8002F674",
@@ -252,6 +257,7 @@
     },
     {
       "confidence": "matched",
+      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
       "phase": "reaction",
       "role": "impact-effect",
       "site": "8002F6B0",
@@ -329,6 +335,7 @@
     },
     {
       "confidence": "open",
+      "note": "impact effect variant 800F088C with a threshold-derived selector",
       "phase": "reaction",
       "role": "impact-effect",
       "site": "8002F894",

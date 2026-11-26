@@ -24,6 +24,17 @@ END = FUNCTION + SIZE
 AMOUNT = 0x8002F108
 HP_WRITE = 0x8002F1D8
 
+ROLE_NOTES = {
+    0x8002F8DC: "subtracts the amount from the team force record, adds the "
+                "per-actor ledgers and a six-slot hit-history ring",
+    0x8002FCBC: "guards object+0x2AE and calls impact effect 800F04B4 with a "
+                "volume-derived selector",
+    0x8002FC18: "impact effect variant 800F088C with a threshold-derived "
+                "selector",
+    0x8003D344: "writes the amount to actor+0x1C6 HP and actor+0x41C ledger",
+    0x8003CD5C: "the 19-stage amount routine",
+}
+
 # What each target does, from the matched source or the inspected call shape.
 # `confidence` distinguishes matched helpers from inferred presentation roles.
 ROLES = {
@@ -32,7 +43,7 @@ ROLES = {
     0x800300BC: ("impact-mode", "open"),
     0x8003CD5C: ("amount", "recovered"),
     0x8003D344: ("hp-write", "matched"),
-    0x8002F8DC: ("reaction-state", "open"),
+    0x8002F8DC: ("force-ledger-update", "open"),
     0x8018214C: ("reaction-helper", "open"),
     0x80006C24: ("slot-update", "matched"),
     0x800DB250: ("effect-values", "open"),
@@ -87,6 +98,9 @@ def recover(image):
         call["role"] = role
         call["confidence"] = confidence
         call["phase"] = _phase(int(call["site"], 16))
+        note = ROLE_NOTES.get(int(call["target"], 16))
+        if note is not None:
+            call["note"] = note
     if len(calls) != 47:
         raise ValueError(f"call count changed: {len(calls)}")
     sites = {call["site"]: call for call in calls}
