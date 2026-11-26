@@ -25,6 +25,10 @@ scripts, presentation, and fonts.
 - Challenge setup and ordered battle initialization in progress.
 - Story setup/progression/UI/audio components.
 - Standalone native G-Red/Sasuke duel MVP with provisional gameplay rules.
+- Recovered `800300BC` reaction direction and the `+0x2AE` 4-tick impact
+  cooldown, with content keys for per-move mode/offset and rendered torso
+  yaw/pitch. Local 2v2 accepts a second keyboard player (IJKL/U/H/O) or
+  controllers on ports 0-3.
 - Opt-in G-Red source walk/turn/stop/dash lab with native input, using the shared
   world, contact proxies and renderer; source jump/flight/combat remain unsupported.
 - Opt-in source moving-jump extension with takeoff, ascent turning, falling drift,
