@@ -470,31 +470,21 @@ settings gives `damage-vs=1557|0.867|1.05|1.15|1.0` (amount 20).
 
 ## Per-actor source movement
 
-Source-owned motion is still actor-0 only. `start` refuses a `NormalGRed`
-package beyond actor 0, so a 2v2 with two source-driven G-Reds is explicitly
-rejected rather than silently running a legacy fallback. The next
-implementation must make these per-actor:
+Source-owned motion now has a per-actor engine path:
 
-- `last_offer_`, `last_receipt_`, `motion_producer_` and the source-contact
-  preflight/result;
-- the movement branch's `last_offer_` reads;
-- the view's `source_seed` / `update_source` pair and its single motion scope.
+- `step_roster` takes a `source_offers` span (one pointer per actor);
+- the validator is `prepare_source(index, offer, actor, other, pad, other_pad,
+  contact)` and runs for every offered actor;
+- contacts, receipts, producer bindings and `observe_motion`/`motion_receipt`
+  are indexed by actor;
+- the step refuses any source package that has no offer instead of falling
+  back to legacy motion.
 
-The engine block is a single-actor validator that also encodes the
-`pads[0]`/`pads[1]`, `actors_[0]`/`actors_[1]` and projectile-owner
-preconditions. The safe order is:
-
-1. replace the single state with arrays (`last_offers_`, `last_receipts_`,
-   `motion_producers_`, `source_contacts_`);
-2. add a `source_offers` span to `step_roster` and have the duel wrapper pass
-   a one-entry span for actor 0;
-3. extract the validator into `validate_source_offer(actor, offer, pads,
-   target, ...)`, replacing the actor-0/actor-1 and pad-0/pad-1 references;
-4. run the preflight per offered actor and store its contact;
-5. read `last_offer_[i]` in the movement branch and assign the per-actor
-   receipt/producer at the end;
-6. extend the view's source seed/update pair;
-7. test with two synthetic producers before wiring the host.
+The host source demo still owns one body, so `start` continues to refuse a
+second `NormalGRed` package until the per-actor producer is wired. The
+remaining work is that host/view producer and a two-G-Red roster test; the C++
+unit suite cannot construct a second valid G-Red package without the shipped
+assets.
 
 ## Next targets
 

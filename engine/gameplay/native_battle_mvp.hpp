@@ -448,6 +448,9 @@ public:
              (config.provisional_cruise&&(!config.provisional_walk||config.provisional_jump||
              config.provisional_ground_dash||!borg_cruise_boost_valid(*config.provisional_cruise))))return false;
         if(package){
+            // The host source demo still owns one source body. A second
+            // NormalGRed package stays refused until its per-actor producer is
+            // wired; the engine span already supports it.
             for(unsigned i=1;i<count;++i)if(config.packages[i]->movement==BorgBattleMovement::NormalGRed)return false;
             if(config.packages[0]->movement==BorgBattleMovement::NormalGRed)
                 for(unsigned i=1;i<count;++i)if(config.packages[i]->movement!=BorgBattleMovement::Stationary)return false;
@@ -519,7 +522,8 @@ public:
                      std::span<const std::optional<BattleMvpVec>> muzzles={},
                      const NativeBorgMovementFrame* player_frame=nullptr,
                      const NativeBorgMotionOffer* source_offer=nullptr,
-                     const IBorgBattleOrigins* origins=nullptr){
+                     const IBorgBattleOrigins* origins=nullptr,
+                     std::span<const NativeBorgMotionOffer* const> source_offers={}){
         if(!ready_||tick_==std::numeric_limits<u32>::max())return false;
         const bool solo=config_.solo();
         const bool package=bool(config_.packages[0]);
@@ -533,8 +537,13 @@ public:
         for(unsigned i=0;i<actor_count();++i)if(!package_input[i].valid())return false;
         if(solo)for(unsigned i=1;i<actor_count();++i)if(pads[i]!=GamePadState{})return false;
         if(solo&&opponent_ai)return false;
+        auto offered=[&](unsigned i)->const NativeBorgMotionOffer*{
+            if(!source_offers.empty())return i<source_offers.size()?source_offers[i]:nullptr;
+            return i==0?source_offer:nullptr;
+        };
+        if(!source_offers.empty()&&source_offers.size()<actor_count())return false;
         if(config_.provisional_walk){
-            if(source_offer)return false;
+            if(offered(0))return false;
             pad_store[0].a=pad_store[0].x=false;
             if(!config_.provisional_ground_dash&&!config_.provisional_air_dash)pad_store[0].l=pad_store[0].trigger_l_pressed=false;
             if(!config_.provisional_jump&&!config_.provisional_cruise)pad_store[0].b=false;
@@ -545,8 +554,9 @@ public:
         if(human.y&&!previous_[0].y){const auto config=config_;if(!start(config,terrain))return false;previous_[0]=human;return true;}
         if(human.start&&!previous_[0].start){set_paused(!paused_);remember_pads(pads);return true;}
         if(paused_||result_!=BattleMvpResult::Fighting){remember_pads(pads);return true;}
-        if(!source_offer&&(actors_[0].source_ground_motion||config_.solo_model==0x0615||
-            (package&&config_.packages[0]->movement==BorgBattleMovement::NormalGRed)))return false; //no legacy fallback
+        for(unsigned i=0;i<actor_count();++i)
+            if(!offered(i)&&(actors_[i].source_ground_motion||config_.solo_model==0x0615||
+                (package&&config_.packages[i]->movement==BorgBattleMovement::NormalGRed)))return false; //no legacy fallback
         auto prepare_source = [&](unsigned source_index, const NativeBorgMotionOffer& o,
                                   BattleMvpActor& actor, const BattleMvpActor& other,
                                   const GamePadState& pad, const GamePadState& other_pad,
@@ -670,7 +680,7 @@ public:
                       (bool(o.controller_timer698)!=controller_landing_jump_policy)||
                 !std::isfinite(o.vertical_speed)||std::abs(o.vertical_speed)>50||!std::isfinite(o.entry_vertical_delta)||
                 (native_borg_motion_relaunch_entry(o.kind)?(o.entry_vertical_delta<=0||o.entry_vertical_delta>50):o.entry_vertical_delta!=0))return false;
-            if(opponent_ai||!motion_observation_current(o.observed)||!o.serial||
+            if(opponent_ai||!motion_observation_current(o.observed,source_index)||!o.serial||
                (!vertical&&(!actor.grounded||actor.vertical_speed!=0||o.vertical_speed!=0))||
                 actor.attack_ticks||actor.hit_flash||actor.dash_ticks||
                 (!solo&&(other.attack_ticks||!other.grounded||other.vertical_speed!=0||other.movement_speed!=0||other.velocity!=BattlePoint{}))||other_pad!=GamePadState{}||
@@ -1630,9 +1640,17 @@ public:
             }else if(!contact->grounded||std::abs(contact->position[1]-o.proposed_position[1])>.01f)return false;
             return true;
         };
-        NativeBorgContactResult source_contact;
-        if(source_offer){
-            if(!prepare_source(0,*source_offer,actors_[0],actors_[1],pads[0],pads[1],&source_contact))return false;
+        std::array<NativeBorgContactResult,kBattleMvpMaxActors> source_contacts{};
+        std::array<bool,kBattleMvpMaxActors> source_ready{};
+        for(unsigned i=0;i<actor_count();++i){
+            const auto* offer=offered(i);
+            if(!offer)continue;
+            const u8 target=actor_target(i);
+            const unsigned other_index=target==255?(i==0?1:0):target;
+            const GamePadState no_pad{};
+            const auto& other_pad=other_index<pads.size()?pads[other_index]:no_pad;
+            if(!prepare_source(i,*offer,actors_[i],actors_[other_index],pads[i],other_pad,&source_contacts[i]))return false;
+            source_ready[i]=true;
         }
         if(opponent_ai)for(unsigned i=1;i<actor_count();++i)pad_store[i]=ai_input(i);
         //Preflight terrain before mutating a tick. A missing grid is not floor0.
@@ -1676,14 +1694,17 @@ public:
             if(actor.attack_ticks)--actor.attack_ticks;
             if(actor.hit_flash)--actor.hit_flash;
             if(pulled[i])continue; // one accepted movement for this actor visit
-            if(i==0&&source_offer){
-                actor.position=source_contact.position;actor.velocity=source_contact.actual_delta;actor.facing=source_offer->facing;
+            if(source_ready[i]){
+                const auto& contact=source_contacts[i];const auto* offer=offered(i);
+                actor.position=contact.position;actor.velocity=contact.actual_delta;actor.facing=offer->facing;
                 actor.movement_speed=std::hypot(actor.velocity.x,actor.velocity.z);actor.travel_distance+=actor.movement_speed;
-                actor.grounded=source_contact.grounded;actor.vertical_speed=source_offer->vertical_speed;actor.action=source_offer->action;actor.source_ground_motion=true;
+                actor.grounded=contact.grounded;actor.vertical_speed=offer->vertical_speed;actor.action=offer->action;actor.source_ground_motion=true;
                 actor.takeoff_ticks=actor.landing_ticks=actor.dash_ticks=actor.dash_cooldown=actor.air_dashes_used=0;actor.dash_airborne=false;
                 actor.move_forward=actor.movement_speed?(actor.velocity.x*actor.facing.x+actor.velocity.z*actor.facing.z)/actor.movement_speed:0;
                 actor.move_right=actor.movement_speed?(-actor.velocity.x*actor.facing.z+actor.velocity.z*actor.facing.x)/actor.movement_speed:0;
-                actor.aim_facing=solo?actor.facing:native_borg_direction({actor.position[0],actor.position[2]},{actors_[1].position[0],actors_[1].position[2]},actor.facing);actor.upper_body_yaw=0;
+                const u8 aim_target=actor_target(i);
+                actor.aim_facing=solo||aim_target==255?actor.facing:native_borg_direction({actor.position[0],actor.position[2]},
+                    {actors_[aim_target].position[0],actors_[aim_target].position[2]},actor.facing);actor.upper_body_yaw=0;
                 continue;
             }
             actor.source_ground_motion=false;
@@ -1839,7 +1860,7 @@ public:
             if(previously_grounded[i]&&!actor.grounded&&actor.vertical_speed>0)cues|=u8(BorgMovementCue::Takeoff);
             if(!previously_grounded[i]&&actor.grounded)cues|=u8(BorgMovementCue::Landing);
             if(!actor.grounded&&actor.vertical_speed>0)cues|=u8(BorgMovementCue::Rise);
-            if((airborne_jump[i]&&!actor.grounded)||(i==0&&source_offer&&native_borg_motion_relaunch_entry(source_offer->kind)))
+            if((airborne_jump[i]&&!actor.grounded)||(source_ready[i]&&native_borg_motion_relaunch_entry(offered(i)->kind)))
                 cues|=u8(BorgMovementCue::AirJump);
             actor.package_movement_cues=cues;
         }
@@ -1994,12 +2015,16 @@ public:
                 for(unsigned i=0;i<actor_count();++i)if(rewinds_[i].id)finish_package_rewind(i,BorgBattlePullRefusal::RoundEnded);
             }
         }
-        if(source_offer){
-            last_offers_[0]=*source_offer;last_receipts_[0].scope_=motion_scope_;last_receipts_[0].tick_=tick_;last_receipts_[0].serial_=source_offer->serial;
-            last_receipts_[0].position_=actors_[0].position;last_receipts_[0].facing_=actors_[0].facing;last_receipts_[0].contact_=source_contact;
-            motion_producers_[0]=source_offer->producer;last_receipts_[0].producer_=source_offer->producer;
-            last_receipts_[0].grounded_=actors_[0].grounded;last_receipts_[0].vertical_speed_=actors_[0].vertical_speed;
-        }else last_receipts_[0]={};
+        for(unsigned i=0;i<actor_count();++i){
+            const auto* offer=offered(i);
+            if(!offer){last_receipts_[i]={};continue;}
+            last_offers_[i]=*offer;
+            auto& receipt=last_receipts_[i];
+            receipt.scope_=motion_scope_;receipt.tick_=tick_;receipt.serial_=offer->serial;
+            receipt.position_=actors_[i].position;receipt.facing_=actors_[i].facing;receipt.contact_=source_contacts[i];
+            motion_producers_[i]=offer->producer;receipt.producer_=offer->producer;
+            receipt.grounded_=actors_[i].grounded;receipt.vertical_speed_=actors_[i].vertical_speed;
+        }
         remember_pads(pads);return true;
     }
     void remember_pads(std::span<const GamePadState> pads){
@@ -2034,10 +2059,11 @@ public:
     std::span<const BorgBattleEvent> package_events()const{return {package_events_.data(),package_event_count_};}
     const BorgBattleActionState& package_action(unsigned slot)const{return package_actions_.at(slot);}
     unsigned maximum_health(unsigned slot)const{return config_.packages.at(slot)?config_.packages[slot]->health:config_.health;}
-    bool observe_motion(NativeBorgMotionObservation* out)const{
-        if(!out||!ready_||paused_||result_!=BattleMvpResult::Fighting||!motion_scope_||motion_scope_->owner_!=this||
-           actors_[0].model!=NormalGRedMovementDefinition::model||!actors_[0].health)return false;
-        *out={motion_scope_,tick_,actors_[0].model,actors_[0].position,actors_[0].facing,actors_[0].grounded,actors_[0].vertical_speed};return true;
+    bool observe_motion(NativeBorgMotionObservation* out)const{return observe_motion(0,out);}
+    bool observe_motion(unsigned actor,NativeBorgMotionObservation* out)const{
+        if(!out||actor>=actor_count()||!ready_||paused_||result_!=BattleMvpResult::Fighting||!motion_scope_||motion_scope_->owner_!=this||
+           actors_[actor].model!=NormalGRedMovementDefinition::model||!actors_[actor].health)return false;
+        *out={motion_scope_,tick_,actors_[actor].model,actors_[actor].position,actors_[actor].facing,actors_[actor].grounded,actors_[actor].vertical_speed};return true;
     }
     std::shared_ptr<const NativeBorgMotionProducer> new_motion_producer(bool vertical_jump=false)const{
         return new_motion_producer(vertical_jump?NativeBorgMotionPolicy::VerticalJump:NativeBorgMotionPolicy::GroundOnly);
@@ -2056,32 +2082,34 @@ public:
     bool owns_motion_scope(const std::weak_ptr<const NativeBorgMotionScope>& scope)const{
         return ready_&&motion_scope_&&motion_scope_->owner_==this&&scope.lock()==motion_scope_;
     }
-    bool motion_observation_current(const NativeBorgMotionObservation& observed)const{
+    bool motion_observation_current(const NativeBorgMotionObservation& observed,unsigned actor=0)const{
+        if(actor>=actor_count())return false;
         return ready_&&!paused_&&result_==BattleMvpResult::Fighting&&motion_scope_&&motion_scope_->owner_==this&&
-            observed.scope.lock()==motion_scope_&&observed.tick==tick_&&observed.model==actors_[0].model&&
-            observed.position==actors_[0].position&&observed.facing==actors_[0].facing&&observed.grounded==actors_[0].grounded&&observed.vertical_speed==actors_[0].vertical_speed;
+            observed.scope.lock()==motion_scope_&&observed.tick==tick_&&observed.model==actors_[actor].model&&
+            observed.position==actors_[actor].position&&observed.facing==actors_[actor].facing&&observed.grounded==actors_[actor].grounded&&observed.vertical_speed==actors_[actor].vertical_speed;
     }
-    bool motion_receipt(const NativeBorgMotionOffer& offer,NativeBorgMotionReceipt* out)const{
-        if(!out||!motion_receipt_current(last_receipts_[0])||offer.observed.scope.lock()!=motion_scope_||offer.producer.lock()!=last_offers_[0].producer.lock()||offer.serial!=last_offers_[0].serial||
-           offer.observed.tick!=last_offers_[0].observed.tick||offer.observed.position!=last_offers_[0].observed.position||offer.observed.facing!=last_offers_[0].observed.facing||
-           offer.observed.model!=last_offers_[0].observed.model||offer.observed.grounded!=last_offers_[0].observed.grounded||
-           offer.proposed_position!=last_offers_[0].proposed_position||offer.facing!=last_offers_[0].facing||offer.action!=last_offers_[0].action||
-           offer.kind!=last_offers_[0].kind||offer.vertical_speed!=last_offers_[0].vertical_speed||offer.observed.vertical_speed!=last_offers_[0].observed.vertical_speed||
-            offer.entry_vertical_delta!=last_offers_[0].entry_vertical_delta||offer.static_push!=last_offers_[0].static_push||offer.relaunch_floor!=last_offers_[0].relaunch_floor||
-            offer.air_dash_floor!=last_offers_[0].air_dash_floor||offer.walk_ledge!=last_offers_[0].walk_ledge||
-            offer.ordered_ground!=last_offers_[0].ordered_ground||offer.jump_motion!=last_offers_[0].jump_motion||
-            offer.landing_target!=last_offers_[0].landing_target||offer.air_motion!=last_offers_[0].air_motion||
-            offer.relaunch_motion!=last_offers_[0].relaunch_motion||offer.surface_landing!=last_offers_[0].surface_landing||
-             offer.controller_timer698!=last_offers_[0].controller_timer698||
-             offer.recovery_first_seam_start!=last_offers_[0].recovery_first_seam_start||
-             offer.recovery_completion.owner_before(last_offers_[0].recovery_completion)||
-             last_offers_[0].recovery_completion.owner_before(offer.recovery_completion))return false;
-        *out=last_receipts_[0];return true;
+    bool motion_receipt(const NativeBorgMotionOffer& offer,NativeBorgMotionReceipt* out,unsigned actor=0)const{
+        if(actor>=actor_count()||!out||!motion_receipt_current(last_receipts_[actor],actor)||offer.observed.scope.lock()!=motion_scope_||offer.producer.lock()!=last_offers_[actor].producer.lock()||offer.serial!=last_offers_[actor].serial||
+           offer.observed.tick!=last_offers_[actor].observed.tick||offer.observed.position!=last_offers_[actor].observed.position||offer.observed.facing!=last_offers_[actor].observed.facing||
+           offer.observed.model!=last_offers_[actor].observed.model||offer.observed.grounded!=last_offers_[actor].observed.grounded||
+           offer.proposed_position!=last_offers_[actor].proposed_position||offer.facing!=last_offers_[actor].facing||offer.action!=last_offers_[actor].action||
+           offer.kind!=last_offers_[actor].kind||offer.vertical_speed!=last_offers_[actor].vertical_speed||offer.observed.vertical_speed!=last_offers_[actor].observed.vertical_speed||
+            offer.entry_vertical_delta!=last_offers_[actor].entry_vertical_delta||offer.static_push!=last_offers_[actor].static_push||offer.relaunch_floor!=last_offers_[actor].relaunch_floor||
+            offer.air_dash_floor!=last_offers_[actor].air_dash_floor||offer.walk_ledge!=last_offers_[actor].walk_ledge||
+            offer.ordered_ground!=last_offers_[actor].ordered_ground||offer.jump_motion!=last_offers_[actor].jump_motion||
+            offer.landing_target!=last_offers_[actor].landing_target||offer.air_motion!=last_offers_[actor].air_motion||
+            offer.relaunch_motion!=last_offers_[actor].relaunch_motion||offer.surface_landing!=last_offers_[actor].surface_landing||
+             offer.controller_timer698!=last_offers_[actor].controller_timer698||
+             offer.recovery_first_seam_start!=last_offers_[actor].recovery_first_seam_start||
+             offer.recovery_completion.owner_before(last_offers_[actor].recovery_completion)||
+             last_offers_[actor].recovery_completion.owner_before(offer.recovery_completion))return false;
+        *out=last_receipts_[actor];return true;
     }
-    bool motion_receipt_current(const NativeBorgMotionReceipt& receipt)const{
-        return ready_&&motion_scope_&&motion_scope_->owner_==this&&receipt.scope_.lock()==motion_scope_&&!receipt.producer_.expired()&&receipt.producer_.lock()==motion_producers_[0].lock()&&receipt.serial_&&receipt.tick_==tick_&&
-            actors_[0].source_ground_motion&&receipt.position_==actors_[0].position&&receipt.facing_==actors_[0].facing&&
-            receipt.grounded_==actors_[0].grounded&&receipt.vertical_speed_==actors_[0].vertical_speed;
+    bool motion_receipt_current(const NativeBorgMotionReceipt& receipt,unsigned actor=0)const{
+        if(actor>=actor_count())return false;
+        return ready_&&motion_scope_&&motion_scope_->owner_==this&&receipt.scope_.lock()==motion_scope_&&!receipt.producer_.expired()&&receipt.producer_.lock()==motion_producers_[actor].lock()&&receipt.serial_&&receipt.tick_==tick_&&
+            actors_[actor].source_ground_motion&&receipt.position_==actors_[actor].position&&receipt.facing_==actors_[actor].facing&&
+            receipt.grounded_==actors_[actor].grounded&&receipt.vertical_speed_==actors_[actor].vertical_speed;
     }
 private:
     bool step_cruise(unsigned owner,const BorgCruiseBoost& spec,f32 base,f32 boost,f32 multiplier,

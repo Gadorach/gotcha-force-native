@@ -37,6 +37,18 @@ int main(){
     check(world.start()&&!world.motion_receipt_current(receipt),"restart retires old world receipt");
     check(!world.step({},false,nullptr,nullptr,nullptr,&offer)&&world.tick()==0,"restart invalidates old producer/world offer");
     check(world.step({},false)&&world.tick()==1,"explicit fresh restart restores normal MVP mode");
+    {
+        NativeBattleMvp span_world;check(span_world.start(),"source-offer span spawn");
+        auto span_producer=span_world.new_motion_producer();NativeBorgMotionObservation span_observed;
+        check(span_world.observe_motion(&span_observed),"span observation");
+        NativeBorgMotionOffer span_offer{span_observed,span_observed.position,span_observed.facing,BattleMvpAction::Idle,1,span_producer};
+        const std::array<const NativeBorgMotionOffer*,2> span_offers{&span_offer,nullptr};
+        std::array<GamePadState,2> span_pads{};std::array<BorgBattleInputs,2> span_inputs{};
+        check(span_world.step_roster(span_pads,span_inputs,false,nullptr,{},nullptr,nullptr,nullptr,span_offers)&&
+              span_world.actors()[0].source_ground_motion,"per-actor source-offer span accepts actor 0");
+        NativeBorgMotionReceipt span_receipt;
+        check(span_world.motion_receipt(span_offer,&span_receipt,0),"per-actor receipt reads actor 0");
+    }
     BattleMvpConfig close;close.spawn={BattlePoint{-100,0},BattlePoint{100,0}};
     check(world.start(close),"native source body-sweep spawn");producer=world.new_motion_producer();
     bool body_hit=false;
