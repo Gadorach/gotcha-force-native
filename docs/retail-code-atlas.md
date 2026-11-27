@@ -1139,6 +1139,47 @@ python3 -m tools.analyze.retail_type32_stream \
   /tmp/opencode/gf-type32-stream.json
 ```
 
+### Type-11 roster census: six parent callbacks
+
+The [type-11 census](api-map/gg4e08-type11-roster.json) resolves
+the key source at all **six** direct calls to `80139A6C`.
+It records **21 static action candidates across 16 normal
+Borgs**, including the existing type-32 segment routes.
+
+| Parent factory | Segment call | Selector scope |
+| --- | --- | --- |
+| `800E19A8` | `800E20C0` | Type-32 key row cached at `+0x14C` |
+| `800EC1F4` | `800EC75C` | Type-71 key 0, child group 2 |
+| `8018EEA4` | `8018F384` | Type-55 key 0, child group 8 |
+| `801DEB68` | `801DF2B0` | Positive-mode type-32 rows only; Saucer key 8 excluded |
+| `801F2BF8` | `801F33A4` | Indexed `+0x13` rows 0–7, all child group 1 |
+| `801F3784` | `801F3E80` | Indexed `+0x13` rows 0–7, all child group 2 |
+
+Ultimate Cannon `0c04` requests the type-71 carrier from both
+reviewed charged-X entry arms. Its normal group-2 descriptor
+contains **raw power 5000**. That is not an HP measurement; the
+native beam's authored damage, cost, timing, and geometry remain
+unchanged. `0704`'s separate type-55 route starts on the scoped
+charged-X cue and selects a four-descriptor normal group 8.
+
+For `0e00` and `0e05`, ordinary X remaps the actor row, while the
+reviewed charged-X arm uses ordered row pairs whose negative
+bytes suppress individual requests. Both reach the same parent
+factory and group 1. `0e03`'s paid B route instead uses its own
+direction-selected rows and group 2. The last two factories do
+not establish a numeric parent type, and zero rows outside the
+reviewed actor inlet are not admitted.
+
+These joins resolve a segment request and a normal queue, not
+shape admission, contact, active timing, or whole-move damage.
+
+```sh
+python3 -m tools.analyze.retail_type11_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type11-roster.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
