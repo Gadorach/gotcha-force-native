@@ -15,12 +15,18 @@ constexpr u32 bucket=31,row=pools+3*28,cell_stride=0x80;
 constexpr u32 render_context=0x81038000,draw_heads=0x803BB150,view_heads=0x803C6F1C;
 constexpr u32 source_bank=0x81400000,source_owner=0x81036800,source_globals=0x803BB374;
 constexpr u32 source_bank_basis=0x8043B5A0-21352,source_bank_delta=0x7AC400;
+constexpr u32 second_parent=0x8102A000,contender=0x8102C000;
 constexpr unsigned burst_masks[]{255,255,255,255,255,65535,65535,65535,65535,65535,
                                   65535,65535,65535,65535,65535,65535,65280,0,0,0};
 constexpr unsigned piece_masks[]{3,7,15,31,63,63,57,49,33,1,0,0,0};
 struct Case {unsigned selector,bursts,entries,count,total,retire;};
 struct Source {std::vector<u8> bytes;unsigned slot;};
 struct SourceCase {unsigned selector,parent_lane,credit_lane,scene_mode;};
+struct SourceModels {
+    struct Model {unsigned id,descriptor,root;};
+    std::array<Model,2> models{};
+    unsigned count=0;
+};
 constexpr SourceCase source_cases[]{
     {0,0,1,0},{1,0,1,0},{1,1,0,0},{1,1,0,3},{8,1,0,0},
 };
@@ -132,15 +138,32 @@ class Check {
             fail("original common effect scene table extent");
     }
 
-    bool heap_owns_block(){
+    bool heap_owns_block(u32 address=block){
         auto cur=word(arena+8);
         for(unsigned i=0;i<64&&cur;++i){
             if(cur<block||cur>=arena_end||(cur&31))fail("contact visual heap list escaped the declared arena");
-            if(cur==block)return true;
+            if(cur==address)return true;
             cur=word(cur+4);
         }
         if(cur)fail("contact visual allocation list exceeded the walk bound");
         return false;
+    }
+    bool heap_free_covers(u32 address,u32 length){
+        auto cur=word(arena+4);
+        for(unsigned i=0;i<64&&cur;++i){
+            if(cur<block||cur>arena_end-32||(cur&31))fail("contact visual free list escaped the declared arena");
+            const auto size=word(cur+8);
+            if(size<32||size>arena_end-cur||(size&31))fail("contact visual free block extent changed");
+            if(address>=cur&&length<=size&&address-cur<=size-length)return true;
+            cur=word(cur+4);
+        }
+        if(cur)fail("contact visual free list exceeded the walk bound");
+        return false;
+    }
+    u32 request_effect(u32 attack){
+        CPUState request{};request.gpr[3]=attack;request.gpr[4]=origin;request.gpr[5]=spec.selector;
+        mod.run(request,ram,0x80019550);
+        return request.gpr[3];
     }
     void allocation(bool at_frontier=false){
         if(word(effect+0xDC)!=visual_object||word(row+8)!=visual_object||word(row+12)||half(row+18)||
@@ -163,6 +186,9 @@ class Check {
            word(active_head+4*bucket)||half(contact::free_count+4)!=1||word(contact::free_head+8)!=effect||
            half(pools+18)!=descriptors)
             fail("contact visual failed to return a heap block, its type-3 cell or a battle resource");
+        returned_descriptors(descriptors);
+    }
+    void returned_descriptors(unsigned descriptors){
         auto cur=word(pools+12);
         unsigned seen=0;
         for(unsigned i=0;i<descriptors;++i){
@@ -219,6 +245,78 @@ class Check {
                 fail("unrotated contact piece did not apply its local scale");
         }
     }
+    void set_origin(const contact::Point& point){
+        for(unsigned i=0;i<point.size();++i)put_float(at(origin+4*i),point[i]);
+    }
+    u32 source_cell(unsigned index){
+        const auto cell=word(effect+0xE0+4*index);
+        const unsigned admitted=spec.selector==8?8:1;
+        if(cell<cells||(cell-cells)%cell_stride||(cell-cells)/cell_stride>=admitted)
+            fail("source model escaped its admitted descriptor list");
+        return cell;
+    }
+    unsigned source_view(unsigned mask){
+        call(0x80009790);call(0x80089554);call(0x8008A16C);call(0x80089CD0,24);call(0x80089EB4);
+        no_collider();
+        auto queued=word(draw_heads+5*4);
+        unsigned count=0;
+        for(unsigned i=spec.selector==8?8:1;i>0;--i){
+            if(!(mask&(1u<<(i-1))))continue;
+            const auto expected=source_cell(i-1);
+            if(queued!=expected||!word(expected+12))
+                fail("contact visual source models did not reach the expected lane 5 queue");
+            queued=word(expected+40);
+            ++count;
+        }
+        if(queued)fail("contact visual source model queue did not terminate");
+        return count;
+    }
+    unsigned source_tick(CallObservation& model){
+        CPUState visit{};visit.gpr[3]=bucket;
+        if(mod.run_to_or_return(visit,ram,0x80089A94,{0x80264290},&model,4096)){
+            std::fprintf(stderr,"source model assertion %08X/%u\n",visit.lr-4,visit.gpr[4]);
+            fail("original common effect model update");
+        }
+        return model.count;
+    }
+    SourceModels source_first_update(const Source& source,const SourceCase& route,u32 attack){
+        constexpr u32 model_entry=0x8024F834;
+        const auto scene_symbol=word(source_owner+16),records=word(scene_symbol);
+        const auto extent=be32(source.bytes.data()+4),data=source_bank+32;
+        const auto in_data=[&](u32 address,u32 length){return address>=data&&address<=data+extent-length;};
+        if(at(effect+0x88)[0]!=route.parent_lane||at(actor+0x88)[0]!=route.credit_lane||
+           word(effect+0x90)!=actor||word(effect+0x8C)!=attack)
+            fail("contact visual did not copy the parent lane independently of its credited actor");
+        CallObservation model{model_entry};
+        source_tick(model);
+        const bool pieces=route.selector==8,burst=route.selector==1;
+        const unsigned count=pieces?2:1,first_record=pieces?53:!burst?21:2+(route.scene_mode==3?0:route.parent_lane);
+        const auto caller=pieces?0x800072B0u:burst?0x800071F8u:0x80006FF8u;
+        if(model.count!=count||model.caller!=caller||at(effect+0x18)[0]!=1||at(effect+0x82)[0]!=1||
+           (pieces&&half(effect+0x1C)!=3)||(burst&&word(effect+0x158)!=1)||word(source_globals)!=source_owner)
+            fail("contact visual did not initialize the expected first-visit models");
+        if(burst){
+            const auto group=word(source_cell(0)+12);
+            if(group<block||group>arena_end-20)fail("contact visual lost its loaded joint group");
+            const auto child=word(group+16);
+            if(child<block||child>arena_end-12||child==group||word(child+8)||
+               half(scene+484)!=32||half(scene+486)!=512)
+                fail("one-entry burst did not return with one loaded joint child");
+        }
+        source_view(pieces?3:1);
+        SourceModels receipt{};
+        receipt.count=count;
+        for(unsigned i=0;i<count;++i){
+            const unsigned record=first_record+i;
+            const auto descriptor=word(records+record*4),cell=source_cell(i);
+            const auto root=model.first_arguments[i],joint=word(cell+12);
+            if(!in_data(descriptor,16)||!in_data(root,64)||word(descriptor)!=root||
+               word(cell+20)!=record||joint<block||joint>=arena_end||(i&&joint==word(source_cell(0)+12)))
+                fail("contact visual bound a different source record or failed to attach its original joint");
+            receipt.models[i]={record,descriptor-data,root-data};
+        }
+        return receipt;
+    }
 public:
     Check(const Module& m,const std::vector<u8>& original,const Case& c,bool render=false,
           const Source* source=nullptr,const SourceCase* source_case=nullptr):mod(m),spec(c),ram(original){
@@ -226,7 +324,7 @@ public:
         at(parent)[0]=1;at(actor)[0]=1;at(effect)[2]=2;at(shape)[2]=4;
         put32(at(parent+0x90),actor);put_float(at(parent+0xB4),1.f);
         put_float(at(actor+0x1DC8),1.f);
-        for(unsigned i=0;i<3;++i)put_float(at(origin+4*i),std::array{260.f,120.f,880.f}[i]);
+        set_origin({260.f,120.f,880.f});
         put32(at(0x8043B5A0-31852),scene);
         put16(at(scene+484),u16(spec.bursts));put16(at(scene+486),u16(spec.entries));
         put32(at(0x803C4E84),actor);
@@ -272,9 +370,7 @@ public:
         }
         if(render)put32(at(0x8043B5A0-31856),render_context);
 
-        CPUState request{};request.gpr[3]=parent;request.gpr[4]=origin;request.gpr[5]=spec.selector;
-        mod.run(request,ram,0x80019550);
-        if(request.gpr[3]!=effect||word(active_head+4*bucket)!=effect||half(pools+18)||
+        if(request_effect(parent)!=effect||word(active_head+4*bucket)!=effect||half(pools+18)||
            half(contact::free_count+4)||at(effect+0x13)[0]!=descriptors)
             fail("fixed-bucket visual constructor did not claim its battle resources");
     }
@@ -408,54 +504,98 @@ public:
     }
 
     void source_route(const Source& source,const SourceCase& route,unsigned scenario){
-        constexpr u32 model_entry=0x8024F834;
-        const auto scene_symbol=word(source_owner+16),records=word(scene_symbol);
-        const auto extent=be32(source.bytes.data()+4),data=source_bank+32;
-        const auto in_data=[&](u32 address,u32 length){return address>=data&&address<=data+extent-length;};
-        if(at(effect+0x88)[0]!=route.parent_lane||at(actor+0x88)[0]!=route.credit_lane||
-           word(effect+0x90)!=actor||word(effect+0x8C)!=parent)
-            fail("contact visual did not copy the parent lane independently of its credited actor");
-        // Run the original HSD object-pool initializer and observe the
-        // authentic source model installs during the first bucket update.
         call(0x80254288);
-        CPUState start{};start.gpr[3]=bucket;
-        CallObservation model{model_entry};
-        if(mod.run_to_or_return(start,ram,0x80089A94,{0x80264290},&model,4096)){
-            std::fprintf(stderr,"source model assertion %08X/%u\n",start.lr-4,start.gpr[4]);
-            fail("original common effect model initialization");
-        }
-        const bool pieces=route.selector==8,burst=route.selector==1;
-        const unsigned count=pieces?2:1,first_record=pieces?53:!burst?21:2+(route.scene_mode==3?0:route.parent_lane);
-        const auto caller=pieces?0x800072B0u:burst?0x800071F8u:0x80006FF8u;
-        if(model.count!=count||model.caller!=caller||at(effect+0x18)[0]!=1||at(effect+0x82)[0]!=1||
-           (pieces&&half(effect+0x1C)!=3)||(burst&&word(effect+0x158)!=1)||word(source_globals)!=source_owner)
-            fail("contact visual did not initialize the expected first-visit models");
-        if(burst){
-            const auto group=word(cells+12);
-            if(group<block||group>arena_end-20)fail("contact visual lost its loaded joint group");
-            const auto child=word(group+16);
-            if(child<block||child>arena_end-12||child==group||word(child+8)||
-               half(scene+484)!=32||half(scene+486)!=512)
-                fail("one-entry burst did not return with one loaded joint child");
-        }
-        call(0x80009790);call(0x80089554);call(0x8008A16C);call(0x80089CD0,24);call(0x80089EB4);
-        no_collider();
-        auto queued=word(draw_heads+5*4);
-        for(unsigned i=count;i>0;--i){
-            const auto expected=cells+(i-1)*cell_stride;
-            if(queued!=expected)fail("contact visual source models did not reach the expected lane 5 queue");
-            queued=word(expected+40);
-        }
-        if(queued)fail("contact visual source model queue did not terminate");
-        for(unsigned i=0;i<count;++i){
-            const unsigned record=first_record+i;
-            const auto descriptor=word(records+record*4),cell=cells+i*cell_stride;
-            const auto root=model.first_arguments[i],joint=word(cell+12);
-            if(!in_data(descriptor,16)||!in_data(root,64)||word(descriptor)!=root||
-               word(cell+20)!=record||joint<block||joint>=arena_end||(i&&joint==word(cells+12)))
-                fail("contact visual bound a different source record or failed to attach its original joint");
+        const auto first=source_first_update(source,route,parent);
+        for(unsigned i=0;i<first.count;++i){
+            const auto& m=first.models[i];
             std::printf("effect-source: %u %u %u %u %u %u %u %u %u\n",source.slot,scenario,route.selector,
-                        route.parent_lane,route.credit_lane,route.scene_mode,record,descriptor-data,root-data);
+                        route.parent_lane,route.credit_lane,route.scene_mode,m.id,m.descriptor,m.root);
+        }
+    }
+
+    void source_lifetime(const Source& source,SourceCase route){
+        call(0x80254288);
+        const bool burst=route.selector==1,pieces=route.selector==8;
+        const unsigned retire=burst?19:pieces?13:23,descriptors=pieces?8:1;
+        const auto archive_context=word(source_owner+12),archive_scene=word(source_owner+16);
+        const std::vector<u8> archive_after_relocation(at(source_bank),at(source_bank)+source.bytes.size());
+        for(u32 source_parent:{second_parent,contender}){
+            at(source_parent)[0]=1;
+            put32(at(source_parent+0x90),actor);put_float(at(source_parent+0xB4),1.f);
+        }
+        const auto intact_archive=[&](){
+            return word(source_globals)==source_owner&&word(source_owner+12)==archive_context&&
+                   word(source_owner+16)==archive_scene&&at(source_owner)[9]==1&&
+                   word(pools+28+8)==source_owner&&heap_owns_block();
+        };
+        for(unsigned epoch=1;epoch<=2;++epoch){
+            const auto attack=epoch==1?parent:second_parent;
+            if(epoch==2){
+                route.parent_lane^=1;route.credit_lane^=1;
+                at(second_parent+0x88)[0]=u8(route.parent_lane);at(actor+0x88)[0]=u8(route.credit_lane);
+                set_origin({440.f,-20.f,1200.f});
+                if(request_effect(attack)!=effect||word(active_head+4*bucket)!=effect||
+                   half(pools+18)||half(contact::free_count+4)||at(effect+0x18)[0]||
+                   !(word(effect+0x8C)==attack&&word(effect+0x90)==actor))
+                    fail("contact visual did not reuse the original battle cell for its new parent");
+            }
+            const auto first=source_first_update(source,route,attack);
+            const auto storage=word(visual_object+12);
+            const unsigned block_size=burst?96:pieces?288:0;
+            if(storage&&((storage&31)||storage<=archive_context||storage>=arena_end))
+                fail("source effect heap payload escaped its declared area");
+            const auto storage_block=storage?storage-32:0;
+            if(bool(storage)!=bool(block_size)||(storage&&(!heap_owns_block(storage_block)||word(storage_block+8)!=block_size)))
+                fail("source effect did not claim its separate visual payload");
+
+            // Keep the borrowed parent backing but make its live state and
+            // position disagree with the effect's saved origin.
+            at(attack)[0]=0;put_float(at(attack+0x20),-900.f);put_float(at(attack+0xB4),2.f);
+            unsigned model_loads=first.count,peak=first.count,last_queued=1,refused=0;
+            for(unsigned visit=2;visit<=retire;++visit){
+                CallObservation model{0x8024F834};
+                const auto loads=source_tick(model);
+                const bool more=pieces&&visit<=5;
+                const auto scene_records=word(archive_scene);
+                if(loads!=unsigned(more)||(more&&(model.caller!=0x800072B0||
+                   model.arguments[0]!=word(word(scene_records+54*4)))))
+                    fail("source visual did not install only the later selector-8 record-54 pieces");
+                model_loads+=loads;
+                const bool retired=visit==retire,enabled=visit<retire-1,charged=burst&&visit<retire-2;
+                const unsigned phase=visit<retire-2?1:visit==retire-2?2:3;
+                const auto mask=pieces?piece_masks[visit-1]:burst?unsigned(charged):unsigned(enabled);
+                if(at(effect+0x18)[0]!=phase||bool(at(effect)[0])==retired||at(effect+0x82)[0]!=unsigned(enabled)||
+                   half(scene+484)!=spec.bursts+unsigned(charged)||half(scene+486)!=spec.entries+unsigned(charged)||
+                   (burst&&word(effect+0x158)!=mask)||(pieces&&half(effect+0x1C)!=mask)||
+                   !intact_archive())
+                    fail("source visual changed its lifetime, scene charge, or borrowed archive owner");
+                const auto queued=source_view(mask);
+                if(queued){last_queued=visit;peak=std::max(peak,queued);}
+                if(!retired){
+                    if(word(effect+0x8C)!=attack||word(effect+0x90)!=actor||word(active_head+4*bucket)!=effect||
+                       half(contact::free_count+4)||half(pools+18)||
+                       (storage&&(!heap_owns_block(storage_block)||word(visual_object+12)!=storage||
+                                  word(row+8)!=visual_object||half(row+18)!=0||!at(visual_object)[9]))||
+                       (!storage&&(word(visual_object+12)||word(row+8)||half(row+18)!=1)))
+                        fail("source visual retired or changed ownership early");
+                    if(phase!=1){
+                        if(request_effect(contender)||word(active_head+4*bucket)!=effect||
+                           half(contact::free_count+4)||half(pools+18))
+                            fail("source visual reused a cell before retirement");
+                        ++refused;
+                    }
+                }
+            }
+            if(refused!=2||word(active_head+4*bucket)||half(contact::free_count+4)!=1||
+               word(contact::free_head+8)!=effect||half(pools+18)!=descriptors||word(effect+0xDC)||
+               word(row+8)||word(row+12)!=visual_object||half(row+18)!=1||at(visual_object)[9]||word(visual_object+12)||
+               (storage&&(heap_owns_block(storage_block)||!heap_free_covers(storage_block,block_size)))||
+               std::memcmp(archive_after_relocation.data(),at(source_bank),source.bytes.size()))
+                fail("source visual failed to return detached resources while retaining its original archive");
+            returned_descriptors(descriptors);
+            std::printf("effect-source-lifetime: %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                        source.slot,route.selector,epoch,first.models[0].id,first.count==2?first.models[1].id:0u,
+                        model_loads,peak,last_queued,retire,descriptors,block_size,refused);
         }
     }
 };
@@ -464,17 +604,19 @@ public:
 int main(int argc,char** argv){
     const bool render=argc==4&&!std::strcmp(argv[3],"--render-prep");
     const bool source_mode=argc==4&&!std::strcmp(argv[3],"--source-art");
-    if(argc!=3&&!render&&!source_mode)
-        fail("usage: contact-effect-storage-fixture qualified.dol unmodified-recomp.so [--render-prep|--source-art]");
+    const bool source_lifetime_mode=argc==4&&!std::strcmp(argv[3],"--source-lifetime");
+    if(argc!=3&&!render&&!source_mode&&!source_lifetime_mode)
+        fail("usage: contact-effect-storage-fixture qualified.dol unmodified-recomp.so [--render-prep|--source-art|--source-lifetime]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(source_mode){
+    if(source_mode||source_lifetime_mode){
         const auto source=read_source();
         for(unsigned i=0;i<std::size(source_cases);++i){
             const auto& route=source_cases[i];
             const bool burst=route.selector==1;
             const Case c{route.selector,burst?31u:0u,burst?511u:0u,0,0,0};
-            Check(mod,original,c,false,&source,&route).source_route(source,route,i);
+            if(source_mode)Check(mod,original,c,false,&source,&route).source_route(source,route,i);
+            else if(i==0||i==1||i==4)Check(mod,original,c,false,&source,&route).source_lifetime(source,route);
         }
         return 0;
     }

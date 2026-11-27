@@ -1055,12 +1055,51 @@ matching view queued their descriptors in lane 5.
 Ten cases and twelve model installs matched across O0, O1, and O2.
 This does not qualify DVD/decompression execution, texture-atlas
 upload, later animation and rendering with these models, or a live
-split-screen match. Native bindings are unchanged.
+split-screen match. The replay below follows the real models through
+update, retirement, and reuse, still without drawing. Native bindings
+are unchanged.
 
 ```sh
 python3 -m tools.analyze.retail_contact_effect_source_art \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-source-art.json
+```
+
+### Dynamic contact visuals: real-model retirement and resource reuse
+
+The [lifetime replay](api-map/gg4e08-contact-effect-source-lifetime.json)
+runs two consecutive effects per selector in each qualified common
+archive. The first update installs the real models. The fixture then
+moves the parent and marks it inactive, but retains its memory. The
+effect keeps its saved origin and outlives that change.
+
+| Selector | Last visit queued in lane 5 | Resources returned |
+| --- | ---: | --- |
+| 0 | 21 | Visit 23: class-2 cell and one descriptor |
+| 1, one entry | 16 | Visit 19: class-2 cell, one descriptor, and type-3 storage |
+| 8 | 10 | Visit 13: class-2 cell, eight descriptors, and type-3 storage |
+
+Selector 0 still queues its model on its phase-2 visit. Selector 1
+returns its scene-budget debit on visit 17 but still refuses a new
+effect while the only class-2 cell and descriptor are occupied.
+Selector 8 installs records 53 and 54 on visit 1, then installs
+one additional record-54 model on each of visits 2–5.
+
+Both phases 2 and 3 refuse a competing request in the one-cell
+fixture. After retirement the original helper reuses the battle cell
+with a new parent and origin; the selector-1 lane change loads record
+3 instead of record 2. The archive owner stays active, and all
+relocated archive bytes remain unchanged across both generations.
+The replay verifies effect cleanup and reuse, not archive teardown.
+
+All **12 lifetimes and 220 bucket visits** matched across O0, O1,
+and O2. GX drawing and live scene scheduling remain unverified.
+Native gameplay is unchanged.
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_source_lifetime \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-source-lifetime.json
 ```
 
 ### Contact-effect countdown: four collision-reset visits
