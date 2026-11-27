@@ -1574,13 +1574,43 @@ on that visit. The number refers to isolated callback visits, not
 seconds or verified live frames.
 
 All **20 cases** matched across O0/O1/O2. The scene, pose and initial
-size are bounded inlets. Repeated-contact refresh, live movement,
-type-33 lifetime and rendering, and native gameplay remain unqualified.
+size are bounded inlets. Live movement, type-33 lifetime and rendering,
+and native gameplay remain unqualified.
 
 ```sh
 python3 -m tools.analyze.retail_type60_scale \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type60-scale.json
+```
+
+#### Type-60 repeat contacts: stacking and cancellation
+
+The [repeat-contact replay](api-map/gg4e08-type60-refresh.json) uses
+separate original caster, carrier and shape cells for each fresh
+contact on Sasuke. The two contacts do not depend on a type-33 cell.
+
+- **Separate scene passes:** after three isolated size ticks, a second
+  `+1` or `−1` adds to the existing offset and restarts the timer at
+  900. A `+1` followed by `−2` crosses neutral to `−1` and also
+  restarts it. A second contact that exactly cancels the offset
+  sets the target back to neutral but leaves the timer at 897.
+  Applied size starts returning on the next size tick, not at the
+  scene write.
+- **One scene pass:** two accepted tokens contribute to a single signed
+  sum and one size-consumer call. Equal opposing deltas cancel in
+  either tested order without starting a timer. Two `+1` deltas start
+  at `+2`; `+1` and `−2` start at `−1`.
+- **Same retained token:** no new size-consumer call and no refresh.
+
+All **10 cases** matched across O0/O1/O2. HP stayed unchanged and the
+isolated callback returned applied scale to its starting value in
+each case. This does not qualify live recast timing, order in a full
+match, additional recipients, or visual-effect refresh.
+
+```sh
+python3 -m tools.analyze.retail_type60_refresh \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type60-refresh.json
 ```
 
 ### Contact rates through an original joint sample

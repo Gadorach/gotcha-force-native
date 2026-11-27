@@ -504,9 +504,11 @@ establish distinct paths despite an audited shared movement prefix.
   verifies a separate recipient size change and callback expiry on the
   tested routes; it does not rely on effect allocation. **API gap:** a
   signed cue-to-paid carrier path, independent size and presentation
-  requests, and a bounded size update. Live timing, refresh and full
-  team eligibility remain unqualified; do not substitute a walk-speed
-  modifier.
+  requests, and a bounded size update. The
+  [repeat-contact replay](retail-code-atlas.md#type-60-repeat-contacts-stacking-and-cancellation)
+  covers size stacking and cancellation, not visual-effect refresh.
+  Live timing and full team eligibility remain unqualified; do not
+  substitute a walk-speed modifier.
 
 Regenerate with keys `kung-fu-master`, `angel-nurse`, and `patra-witch`.
 `--check-borg-moves` validates the phase/outcome shape without applying
