@@ -17,8 +17,8 @@ class RetailType4RosterTest(unittest.TestCase):
         cls.data = json.loads(ARTIFACT.read_bytes())
 
     def test_static_census_does_not_assign_all_calls_to_borgs(self):
-        self.assertEqual(self.data["counts"], {"direct_sites": 33, "functions": 20, "scoped_sites": 4,
-                                               "candidate_rows": 7, "models": 3, "lifetime_cases": 4, "visits": 164})
+        self.assertEqual(self.data["counts"], {"direct_sites": 33, "functions": 20, "scoped_sites": 13,
+                                               "candidate_rows": 15, "models": 9, "lifetime_cases": 4, "visits": 164})
         for row in self.data["call_sites"]:
             self.assertEqual((row["key"], row["position_offset"]), (0, "0x20"))
             self.assertIn(row["position_base_register"], (30, 31))
@@ -28,6 +28,31 @@ class RetailType4RosterTest(unittest.TestCase):
         normal = [r for r in self.data["candidates"] if r["parent"]["type"] == 76]
         self.assertEqual({r["borg"] for r in normal}, {"gg4e08:0d01", "gg4e08:0d04"})
         self.assertTrue(all(r["descendant_sites"] == ["800FD144", "800FD16C"] for r in normal))
+
+    def test_extended_joins_pin_constructor_to_later_exit_not_contact_area(self):
+        chains = {r["type"]: r for r in self.data["parent_dispatch_links"]}
+        self.assertEqual({kind: r["phase"] for kind, r in chains.items()}, {33: 1, 52: 1, 74: 1, 77: 1, 98: 2})
+        extended = [r for r in self.data["candidates"] if r["parent"]["type"] in chains]
+        self.assertEqual(len(extended), 8)
+        seen = {(r["borg"], r["action"], r["parent"]["type"], tuple(r["parent"]["keys"])) for r in extended}
+        self.assertEqual(seen, {
+            ("gg4e08:0106", "B-shot", 33, (2,)), ("gg4e08:0106", "X", 33, (2,)),
+            ("gg4e08:0601", "B-shot", 52, (0,)), ("gg4e08:0617", "B-shot", 52, (1,)),
+            ("gg4e08:0d00", "X", 74, (0,)), ("gg4e08:0d01", "X", 77, (0,)),
+            ("gg4e08:0d05", "X", 77, (1,)), ("gg4e08:0e03", "X", 98, (0, 1)),
+        })
+        type5 = json.loads((ARTIFACT.parent / "gg4e08-type5-roster.json").read_bytes())
+        area_sites = {r["site"] for r in type5["call_sites"]}
+        for row in extended:
+            kind = row["parent"]["type"]
+            self.assertEqual((row["action_phase"], row["parent"]["constructor"]), (1, chains[kind]["constructor"]))
+            self.assertEqual(row["descendant_sites"], chains[kind]["type4_sites"])
+            self.assertTrue(area_sites.isdisjoint(row["descendant_sites"]))
+            self.assertNotIn("hp_loss", row)
+            if kind == 52:
+                self.assertIn("not bound", row["parent"]["selector_scope"])
+            elif kind == 98:
+                self.assertIn("+0x15B clear", row["scope"])
 
     def test_position_proof_requires_a_local_unclobbered_pointer(self):
         words = {0x100: 0x389E0020, 0x104: 0x38A00000}

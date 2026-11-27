@@ -1330,11 +1330,26 @@ python3 -m tools.analyze.retail_type76_incoming \
 
 The [type-4 census and lifetime replay](api-map/gg4e08-type4-roster.json)
 accounts for 33 direct sites in 20 functions calling `8001BDA8`.
-All pass literal key 0 and a `+0x20` position pointer. Four sites
-have scoped ancestry: the negative area-selector arms of Powered
-Gunman's charged type-15 sequence, and the zero-HP or expiry arms
-of Red Attacker and Orange Fighter's type-76 carriers. The other
-29 sites are not assigned to Borg actions here.
+All pass literal key 0 and a `+0x20` position pointer. Revision 2
+traces **13 sites** to **15 scoped action routes on nine Borgs**.
+The other 20 sites remain unassigned.
+
+The new joins pin each constructor's written type tag and update
+pointer, then its exact phase-table entry:
+
+| Normal Borgs and installed contexts | Parent | Type-4 branch |
+| --- | --- | --- |
+| Time Bomber `0106`, B-shot / X | Type 33, key 2 | Zero HP or expiry |
+| Machine Blue `0601` and Proto Blue `0617`, B-shot | Type 52, keys 0 and 1 respectively | Zero HP or expiry |
+| Blue Striker `0d00`, X | Type 74, key 0 | Zero HP or expiry |
+| Red Attacker `0d01` and Violet Attacker `0d05`, X | Type 77, keys 0 and 1 respectively | Zero HP or expiry |
+| Antares `0e03`, X | Type 98, keys 0 or 1 | Phase-two exit with `+0x15B` clear |
+
+These are static routes, not new live releases. The type-52 socket
+ordinal remains unbound. The zero-HP and expiry branches are not
+the separate actor-contact area branches. Powered Gunman's charged
+type-15 negative-selector routes and the two normal type-76 exits
+from revision 1 are unchanged.
 
 The object takes one class-2 cell and one descriptor. Counting
 initialization as visit 1, it selects visual record **67**, switches

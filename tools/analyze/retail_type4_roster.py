@@ -8,6 +8,7 @@ import struct
 from subprocess import run
 
 from tools.analyze import retail_type32_roster as beam, retail_type5_roster as area
+from tools.analyze import retail_type4_ancestors as ancestors
 from tools.analyze import retail_type9_lifetime as lifetime
 from tools.analyze.retail_action_links import ActionLinker, immediate_argument, literal_flow, written_register
 from tools.analyze.retail_projectile_census import AFS_SHA256, ATLAS_SHA256, SOURCE_SHA256, address, callers, export_census, read_metadata
@@ -97,7 +98,7 @@ def call_index(image, atlas):
     return result
 
 
-def candidate_index(image, selections, sites):
+def candidate_index(image, atlas, selections, sites):
     picked = {b["id"]: b for b in selections["borgs"]}
     if len(selections["borgs"]) != 206 or len(picked) != 206:
         raise ValueError("type-4 standalone selection scope changed")
@@ -134,7 +135,8 @@ def candidate_index(image, selections, sites):
                            "scope": "zero-HP or expiry arm, not the outgoing contact arm"})
     if len(candidates) != 7 or {r["borg"] for r in candidates} != {"gg4e08:0101", "gg4e08:0d01", "gg4e08:0d04"}:
         raise ValueError("type-4 scope join coverage changed")
-    return candidates
+    extended, parent_links = ancestors.recover(image, atlas, picked, sites)
+    return candidates+extended, parent_links
 
 
 def decode_report(report):
@@ -163,7 +165,7 @@ def export(dol, afs, atlas, selections, fixture, module, output):
         phases = struct.unpack(">4I", pinned_data(
             image, PHASES, 16, "03791f68e4fceb7aecc3cc8b0a03969b32220515d46c8815fed63655eea28667"))
         sites = call_index(image, code_atlas)
-        candidates = candidate_index(image, installed, sites)
+        candidates, parent_links = candidate_index(image, code_atlas, installed, sites)
         args = [str(Path(fixture).resolve(strict=True)), str(Path(dol).resolve(strict=True)),
                 str(Path(module).resolve(strict=True))]
         proc = run(args, capture_output=True, timeout=45)
@@ -172,17 +174,20 @@ def export(dol, afs, atlas, selections, fixture, module, output):
         cases = decode_report(proc.stdout.decode("ascii"))
         joined = {site for r in candidates for site in r["descendant_sites"]}
         return {
-            "kind": "gf-retail-type4-roster", "revision": 1, "source_dol_sha256": SOURCE_SHA256,
+            "kind": "gf-retail-type4-roster", "revision": 2, "source_dol_sha256": SOURCE_SHA256,
             "source_afs_sha256": AFS_SHA256, "code_atlas_sha256": ATLAS_SHA256,
             "small_parent_census_sha256": area.PARENT_CENSUS_SHA256, "type76_census_sha256": TYPE76_SHA256,
             "factory": address(FACTORY), "update": address(UPDATE), "class": 2, "bucket_request": 24,
             "dispatch": {"table": address(PHASES), "phases": [address(v) for v in phases]},
             "factory_rows": [row], "call_sites": list(sites.values()), "candidates": candidates, "lifetime_cases": cases,
+            "parent_dispatch_links": parent_links,
             "counts": {"direct_sites": len(sites), "functions": len({r["function"] for r in sites.values()}),
                        "scoped_sites": len(joined), "candidate_rows": len(candidates),
                        "models": len({r["borg"] for r in candidates}), "lifetime_cases": len(cases), "visits": 41*len(cases)},
             "notes": [
                 "Coverage is direct atlas edges into this factory, not every object tagged type 4. Unjoined source edges assign no Borg or damage.",
+                "Extended ancestry is static: an installed phase, paid leaf, exact constructor, and downstream exit branch are separate proofs.",
+                "Actor-contact area requests are not the zero-HP or expiry effects. The type-52 socket ordinal and forms remain unbound.",
                 "The row and lifecycle apply to key 0 only. The fixture uses the original actor-relative bucket and empty render records.",
                 "The parent scale at creation is 0.75; initialization reads the new value 2 from retained parent storage. Later setting it to 7 does not drive the child's scale.",
                 "The inactive-parent case retains the same storage; it does not simulate parent cell reuse or arbitrary lifetime.",
