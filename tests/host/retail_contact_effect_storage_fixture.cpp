@@ -13,16 +13,48 @@ constexpr u32 active_head=0x803C706C,scene=contact::scene,attack_count=0x8043B5A
 constexpr u32 os_table=0x80436408,os_current=0x80435C60,dispatch=0x803FA748;
 constexpr u32 bucket=31,row=pools+3*28,cell_stride=0x80;
 constexpr u32 render_context=0x81038000,draw_heads=0x803BB150,view_heads=0x803C6F1C;
+constexpr u32 source_bank=0x81400000,source_owner=0x81036800,source_globals=0x803BB374;
+constexpr u32 source_bank_basis=0x8043B5A0-21352,source_bank_delta=0x7AC400;
 constexpr unsigned burst_masks[]{255,255,255,255,255,65535,65535,65535,65535,65535,
                                   65535,65535,65535,65535,65535,65535,65280,0,0,0};
 constexpr unsigned piece_masks[]{3,7,15,31,63,63,57,49,33,1,0,0,0};
 struct Case {unsigned selector,bursts,entries,count,total,retire;};
+struct Source {std::vector<u8> bytes;unsigned slot;};
+struct SourceCase {unsigned selector,parent_lane,credit_lane,scene_mode;};
+constexpr SourceCase source_cases[]{
+    {0,0,1,0},{1,0,1,0},{1,1,0,0},{1,1,0,3},{8,1,0,0},
+};
 constexpr Case cases[]{
     {1,0,0,16,928,20},
     {1,31,511,1,96,19},
     {8,0,0,8,288,13},
     {8,32,512,8,288,13},
 };
+
+Source read_source(){
+    std::vector<u8> bytes(417957);
+    bytes.resize(std::fread(bytes.data(),1,bytes.size(),stdin));
+    if(std::ferror(stdin)||!std::feof(stdin)||(bytes.size()!=417956&&bytes.size()!=408296))
+        fail("common impact archive input extent");
+    const bool split=bytes.size()==408296;
+    const u32 data_size=split?389516:399084,relocs=split?4682:4705;
+    if(be32(bytes.data())!=bytes.size()-1||be32(bytes.data()+4)!=data_size||
+       be32(bytes.data()+8)!=relocs||be32(bytes.data()+12)!=1||be32(bytes.data()+16)||bytes.back())
+        fail("common impact archive input header");
+    std::vector<bool> seen(data_size/4);
+    for(unsigned i=0;i<relocs;++i){
+        const auto offset=be32(bytes.data()+32+data_size+i*4);
+        if(offset%4||offset>data_size-4||seen[offset/4]||be32(bytes.data()+32+offset)>=data_size)
+            fail("common impact archive relocation extent");
+        seen[offset/4]=true;
+    }
+    const auto symbol=32+data_size+relocs*4;
+    constexpr char name[]="scene_data";
+    if(be32(bytes.data()+symbol)>data_size-16||be32(bytes.data()+symbol+4)||
+       symbol+8+sizeof(name)!=bytes.size()-1||std::memcmp(bytes.data()+symbol+8,name,sizeof(name)))
+        fail("common impact archive scene symbol extent");
+    return {std::move(bytes),split?2u:1u};
+}
 
 class Check {
     const Module& mod;
@@ -58,6 +90,46 @@ class Check {
                          word(block),word(block+4),word(block+8));
             fail("original HSD heap did not start with one free block and no owner");
         }
+    }
+    void source_archive(const Source& source){
+        constexpr u32 source_pool=0x8036F5D4,owner_row=pools+28,destinations=0x803B0760;
+        if(half(source_pool+16)!=32||word(source_pool+20)!=0x80006E3C||word(source_pool+24)!=0x80006E8C)
+            fail("source common archive header pool row changed");
+        put32(at(owner_row),source_owner);put32(at(owner_row+4),32);
+        std::memcpy(at(owner_row+16),at(source_pool+16),12);
+        call(0x80197950,1);
+        put32(at(0x8043B5A0-31856),render_context);
+        at(render_context+41)[0]=u8(source.slot==2);
+        put32(at(source_bank_basis),source_bank-source_bank_delta);
+        CPUState stage{};
+        mod.run_to(stage,ram,0x80042878,{0x8000B07C});
+        const auto inactive_slot=source.slot==1?2u:1u;
+        if(stage.lr!=0x80042904||stage.gpr[3]!=697||stage.gpr[4]!=destinations||
+           word(destinations)!=source_bank-0x8800||
+           word(destinations+4*source.slot)!=source_bank||word(destinations+4*inactive_slot)!=0xF0000000||
+           word(source_globals)||word(source_globals+4)!=source_bank)
+            fail("original common effect archive staging selected the wrong PZZ slot");
+        // Supply decompressed bytes at the selected output, not a fabricated
+        // archive wrapper or a pre-relocated scene descriptor.
+        std::memcpy(at(source_bank),source.bytes.data(),source.bytes.size());
+        call(0x80042954);
+        const auto context=word(source_owner+12),scene_symbol=word(source_owner+16);
+        const auto data_extent=be32(source.bytes.data()+4),relocs=be32(source.bytes.data()+8);
+        const auto* reloc=source.bytes.data()+32+data_extent;
+        if(word(source_globals)!=source_owner||word(owner_row+8)!=source_owner||half(owner_row+18)||
+           at(source_owner)[8]!=1||at(source_owner)[9]!=1||at(source_owner)[10]!=1||
+           word(source_owner+20)!=source_bank||half(source_owner+26)!=157||
+           context!=payload||word(context+32)!=source_bank+32||
+           scene_symbol!=source_bank+32+be32(reloc+4*relocs))
+            fail("original common effect archive did not publish its relocated scene and owner");
+        for(unsigned i=0;i<relocs;++i){
+            const auto offset=be32(reloc+4*i);
+            if(word(source_bank+32+offset)!=source_bank+32+be32(source.bytes.data()+32+offset))
+                fail("original common effect archive relocation changed");
+        }
+        const auto records=word(scene_symbol);
+        if(records<source_bank+32||records>source_bank+32+data_extent-158*4||word(records+157*4))
+            fail("original common effect scene table extent");
     }
 
     bool heap_owns_block(){
@@ -148,7 +220,8 @@ class Check {
         }
     }
 public:
-    Check(const Module& m,const std::vector<u8>& original,const Case& c,bool render=false):mod(m),spec(c),ram(original){
+    Check(const Module& m,const std::vector<u8>& original,const Case& c,bool render=false,
+          const Source* source=nullptr,const SourceCase* source_case=nullptr):mod(m),spec(c),ram(original){
         init_heap();
         at(parent)[0]=1;at(actor)[0]=1;at(effect)[2]=2;at(shape)[2]=4;
         put32(at(parent+0x90),actor);put_float(at(parent+0xB4),1.f);
@@ -176,9 +249,17 @@ public:
         put16(at(contact::free_count+4),1);
         put32(at(contact::free_head+16),shape);put32(at(contact::free_tail+16),shape);
         put16(at(contact::free_count+8),1);
-        put32(at(0x803BB374),visual);put32(at(visual+16),link);put32(at(link),table);
-        for(auto id:{53u,54u})put32(at(table+4*id),empty);
-        if(spec.selector==1||render){
+        if(source){
+            if(!source_case)fail("missing contact visual archive route case");
+            at(parent+0x88)[0]=u8(source_case->parent_lane);
+            at(actor+0x88)[0]=u8(source_case->credit_lane);
+            at(scene+81)[0]=u8(source_case->scene_mode);
+            source_archive(*source);
+        }else{
+            put32(at(source_globals),visual);put32(at(visual+16),link);put32(at(link),table);
+            for(auto id:{53u,54u})put32(at(table+4*id),empty);
+        }
+        if(!source&&(spec.selector==1||render)){
             constexpr u32 record=empty+0x20,joint=empty+0x80;
             // Original HSD ID pool and declared single-joint template
             // (no children, animation or geometry).
@@ -325,14 +406,78 @@ public:
             }
         }
     }
+
+    void source_route(const Source& source,const SourceCase& route,unsigned scenario){
+        constexpr u32 model_entry=0x8024F834;
+        const auto scene_symbol=word(source_owner+16),records=word(scene_symbol);
+        const auto extent=be32(source.bytes.data()+4),data=source_bank+32;
+        const auto in_data=[&](u32 address,u32 length){return address>=data&&address<=data+extent-length;};
+        if(at(effect+0x88)[0]!=route.parent_lane||at(actor+0x88)[0]!=route.credit_lane||
+           word(effect+0x90)!=actor||word(effect+0x8C)!=parent)
+            fail("contact visual did not copy the parent lane independently of its credited actor");
+        // Run the original HSD object-pool initializer and observe the
+        // authentic source model installs during the first bucket update.
+        call(0x80254288);
+        CPUState start{};start.gpr[3]=bucket;
+        CallObservation model{model_entry};
+        if(mod.run_to_or_return(start,ram,0x80089A94,{0x80264290},&model,4096)){
+            std::fprintf(stderr,"source model assertion %08X/%u\n",start.lr-4,start.gpr[4]);
+            fail("original common effect model initialization");
+        }
+        const bool pieces=route.selector==8,burst=route.selector==1;
+        const unsigned count=pieces?2:1,first_record=pieces?53:!burst?21:2+(route.scene_mode==3?0:route.parent_lane);
+        const auto caller=pieces?0x800072B0u:burst?0x800071F8u:0x80006FF8u;
+        if(model.count!=count||model.caller!=caller||at(effect+0x18)[0]!=1||at(effect+0x82)[0]!=1||
+           (pieces&&half(effect+0x1C)!=3)||(burst&&word(effect+0x158)!=1)||word(source_globals)!=source_owner)
+            fail("contact visual did not initialize the expected first-visit models");
+        if(burst){
+            const auto group=word(cells+12);
+            if(group<block||group>arena_end-20)fail("contact visual lost its loaded joint group");
+            const auto child=word(group+16);
+            if(child<block||child>arena_end-12||child==group||word(child+8)||
+               half(scene+484)!=32||half(scene+486)!=512)
+                fail("one-entry burst did not return with one loaded joint child");
+        }
+        call(0x80009790);call(0x80089554);call(0x8008A16C);call(0x80089CD0,24);call(0x80089EB4);
+        no_collider();
+        auto queued=word(draw_heads+5*4);
+        for(unsigned i=count;i>0;--i){
+            const auto expected=cells+(i-1)*cell_stride;
+            if(queued!=expected)fail("contact visual source models did not reach the expected lane 5 queue");
+            queued=word(expected+40);
+        }
+        if(queued)fail("contact visual source model queue did not terminate");
+        for(unsigned i=0;i<count;++i){
+            const unsigned record=first_record+i;
+            const auto descriptor=word(records+record*4),cell=cells+i*cell_stride;
+            const auto root=model.first_arguments[i],joint=word(cell+12);
+            if(!in_data(descriptor,16)||!in_data(root,64)||word(descriptor)!=root||
+               word(cell+20)!=record||joint<block||joint>=arena_end||(i&&joint==word(cells+12)))
+                fail("contact visual bound a different source record or failed to attach its original joint");
+            std::printf("effect-source: %u %u %u %u %u %u %u %u %u\n",source.slot,scenario,route.selector,
+                        route.parent_lane,route.credit_lane,route.scene_mode,record,descriptor-data,root-data);
+        }
+    }
 };
 }
 
 int main(int argc,char** argv){
     const bool render=argc==4&&!std::strcmp(argv[3],"--render-prep");
-    if(argc!=3&&!render)fail("usage: contact-effect-storage-fixture qualified.dol unmodified-recomp.so [--render-prep]");
+    const bool source_mode=argc==4&&!std::strcmp(argv[3],"--source-art");
+    if(argc!=3&&!render&&!source_mode)
+        fail("usage: contact-effect-storage-fixture qualified.dol unmodified-recomp.so [--render-prep|--source-art]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(source_mode){
+        const auto source=read_source();
+        for(unsigned i=0;i<std::size(source_cases);++i){
+            const auto& route=source_cases[i];
+            const bool burst=route.selector==1;
+            const Case c{route.selector,burst?31u:0u,burst?511u:0u,0,0,0};
+            Check(mod,original,c,false,&source,&route).source_route(source,route,i);
+        }
+        return 0;
+    }
     if(render){
         for(unsigned i:{0u,2u})Check(mod,original,cases[i],true).render_prepare();
         return 0;

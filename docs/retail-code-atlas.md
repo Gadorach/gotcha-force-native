@@ -1026,6 +1026,43 @@ python3 -m tools.analyze.retail_contact_effect_render_prep \
   /tmp/opencode/gf-contact-effect-render-prep.json
 ```
 
+### Dynamic contact visuals: exact common archives and first model installs
+
+The [source-art replay](api-map/gg4e08-contact-effect-source-art.json)
+replaces the joint templates with exact local `efct.pzz` blocks
+from AFS member 697. The original staging function selects slot
+**1** for the declared single view and slot **2** for split.
+The fixture stops before DVD, supplies the qualified decompressed
+block to that destination, and runs the original owner allocation
+and HSD relocation. Both archives publish 157 scene records; all
+4,705 single and 4,682 split relocations were checked.
+
+| Selector / declared input | Models loaded on the first update, in either archive |
+| --- | --- |
+| 0 | Record 21 |
+| 1, parent lane 0 / credited actor lane 1 | Record 2 |
+| 1, parent lane 1 / credited actor lane 0 | Record 3 |
+| 1, same lanes, scene mode byte 3 | Record 2 |
+| 8 | Records 53 and 54, both in the same update |
+
+Selector 1 uses the byte copied from the **attacking parent**, not
+the credited actor. The scene-mode override is separate from the
+archive selection byte. Each selector-1 case leaves only one entry
+available, bounding the replay to one real model child. The original
+joint loader returned live joints from the selected records and the
+matching view queued their descriptors in lane 5.
+
+Ten cases and twelve model installs matched across O0, O1, and O2.
+This does not qualify DVD/decompression execution, texture-atlas
+upload, later animation and rendering with these models, or a live
+split-screen match. Native bindings are unchanged.
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_source_art \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-source-art.json
+```
+
 ### Contact-effect countdown: four collision-reset visits
 
 The [clock replay](api-map/gg4e08-contact-gate-clock.json) places

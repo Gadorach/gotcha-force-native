@@ -572,7 +572,14 @@ source slot record 2 or 3 and clones it into two randomized particle
 groups. Selectors 2–4 are variants of one family which draws **three**
 sublayers: records 144, 145, and 146. These are not one record per
 selector. Selector 8 references records 53 and 54; the source can
-delay the second layer.
+spawn more pieces after the first update.
+
+The [source-art replay](retail-code-atlas.md#dynamic-contact-visuals-exact-common-archives-and-first-model-installs)
+loads both records for selector 8 on its first tested update. It
+also verifies that selector 1 chooses from the parent lane byte,
+not from the credited actor, and that scene mode byte 3 forces
+record 2. This tests the original routes in both common archives,
+not the native recipe below.
 
 The [contact-effect census](retail-code-atlas.md#contact-effect-selectors-scoped-records-and-whole-descriptor-allocations)
 separately inventories selector bytes from scoped retail queues and
