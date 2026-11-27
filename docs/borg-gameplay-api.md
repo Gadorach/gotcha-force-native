@@ -990,6 +990,35 @@ braces for one direct hit. This doesn't implement reflection, armour,
 shield projectiles, or the retail
 [Shield Slash guard](borg-controller-audit.md#normal-knight-and-normal-samurai-shared-movement-distinct-melee).
 
+### Travelling shots that continue after contact
+
+Ordinary travelling shots retire on actor contact unless their definition
+opts in with `actor-contact=projectile|continue-once-per-actor`.
+
+The shot keeps its identity, velocity, remaining lifetime, and original
+damage credit. An accepted, unguarded contact ends that update at the
+contact point. On the next update the same shot can contact another
+eligible enemy. It skips actors it already contacted, using their stable
+round slots and the shot's own history. A new projectile starts with an
+empty history. The engine still owns the sweep, damage, and HP writes;
+this option does not spend additional stock.
+
+The existing first-touch rule applies, including stage or floor impact
+on a tie. A guard still retires the shot. A miss, ally, or relation-refused
+body does not spend the continuation. The remainder of a contact update
+is not replayed to search for simultaneous hits.
+
+Only a positive-power, single-projectile release from an ordinary
+direct move may opt in. Guided, landing, sustained, child, and detached
+shots, release sequences, stock returns, and other actor-retirement
+effects are refused in combination. Move-owned contact presentation
+can still run on each accepted hit. This is an authored native rule
+informed by the [bounded rifle comparison](retail-code-atlas.md#machine-red-one-carrier-two-receivers);
+it is not assigned to any retail package and does not replace the
+native sweep with the original collision scheduler. The
+[authored roster smoke](../tests/host/projectile_continuation_smoke.py)
+compares both policies without retail assets.
+
 ### Blast triggers and recipients
 
 `blast=projectile|trigger|radius|damage|recipients` adds one instantaneous

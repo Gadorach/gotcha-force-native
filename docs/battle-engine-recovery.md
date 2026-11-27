@@ -299,7 +299,10 @@ does not by itself establish a second hit. The
 [two-receiver replay](retail-code-atlas.md#machine-red-one-carrier-two-receivers)
 now verifies a fresh second recipient on the next carrier visit
 while the first recipient's token blocks repeat damage. Native shot
-consumption is unchanged.
+consumption is unchanged by default. Authored direct shots can use
+[`continue-once-per-actor`](borg-gameplay-api.md#travelling-shots-that-continue-after-contact)
+to retain the same shot and track accepted recipients. That option
+uses the native sweep and does not claim live retail scheduling.
 The [ordinary type-0 contact comparison](retail-code-atlas.md#type-0-contact-hp-and-retirement)
 observed the opposite continuation for keys 12, 45 and 125: the
 original hit generated `0x10`, and the next update stopped flight

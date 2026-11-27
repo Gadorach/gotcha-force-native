@@ -436,9 +436,10 @@ contact position.
 All three cases matched across O0, O1 and O2. This is a second
 recipient on a subsequent isolated visit, not simultaneous pair
 dispatch, live timing, or a rule for other carrier keys. Native
-direct shots still retire on a body hit. A portable continuation
-would need per-recipient history rather than globally ignoring
-the next contact.
+direct shots still retire on a body hit by default. The authored
+[continuation option](borg-gameplay-api.md#travelling-shots-that-continue-after-contact)
+uses per-recipient history instead of globally ignoring the next
+contact. No retail package selects it.
 
 ```sh
 python3 -m tools.analyze.retail_rifle_next_receiver \

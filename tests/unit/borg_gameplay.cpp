@@ -153,6 +153,118 @@ void roster_direct_contact_cases(){
     check(world.hits()==1&&victim==2&&world.actors()[2].health==476&&world.actors()[1].health==500&&world.target_of(0)==1,
           "the direct capsule hits an overlapping body instead of the elevated aim target");
 }
+void projectile_contact_continuation_cases(){
+    constexpr std::string_view setup=R"(GFBORG-GAMEPLAY 1
+variant=normal
+movement=grounded-v1|8|13|14
+health=250
+rig-prefix=visual/prefix
+pose-profile=visual/pose
+idle=0:0
+walk=0:1
+air=0:2
+dash=0:3
+stock=primary|2|180
+projectile=bolt|bullet|1|20|0|0|0|8|24|19|stop-on-stage
+move=fire|b|10|grounded|6|0:4
+release=fire|2|primary|1|bolt
+)";
+    const std::string policy="actor-contact=bolt|continue-once-per-actor\n";
+    const std::string base(setup),rules=base+policy;
+    const auto plain=parse(base),continuing=parse(rules),body=parse(target);
+    const auto guard=parse(base+"move=block|x|50|grounded|22|0:1\nguard=block|1|20|0.5|1|shots\n");
+    const auto immune=parse(std::string(target)+"damage-mask=2\n");
+    check(!plain->projectiles[0].continue_after_actor_hit&&continuing->projectiles[0].continue_after_actor_hit,
+          "recipient continuation is explicitly opted in");
+    BorgGameplayProfile invalid;
+    for(const auto& bad:std::array<std::string,7>{
+            rules+policy, rules+"actor-contact=bolt|ignore\n",
+            base+"actor-contact=missing|continue-once-per-actor\n",
+            rules+"blast=bolt|actor|24|19|opponent\n",
+            rules+"on-hit=bolt|walk-speed|25|3\n",
+            rules+"release=fire|4|none|0|bolt\n",
+            rules+"guidance=bolt|tracking|0.1|10\n"}){
+        check(!borg_read_gameplay_profile(bad,&invalid,nullptr),"ambiguous or out-of-scope actor continuation refuses");
+    }
+    const auto child_rows=
+        "projectile=seed|bullet|1|20|0|0|0|8|24|5|stop-on-stage\n"
+        "flight-children=seed|bolt|2|2|1\nmove=seed|x|20|grounded|6|0:5\nrelease=seed|2|none|0|seed\n";
+    check(borg_read_gameplay_profile(base+child_rows,&invalid,nullptr)&&
+          !borg_read_gameplay_profile(rules+child_rows,&invalid,nullptr),"an indirect carrier cannot inherit recipient continuation");
+    auto invalid_value=*continuing;
+    invalid_value.projectiles[0].count=2;
+    check(!borg_gameplay_profile_valid(invalid_value),"recipient continuation requires one shot per release");
+    invalid_value=*continuing;
+    invalid_value.moves.clear();
+    check(!borg_gameplay_profile_valid(invalid_value),"unreachable continuation declarations refuse");
+
+    enum class Scene {Default,Continue,SecondGuard,TiedWall,FirstImmune,FreshShot,Duel};
+    for(const auto scenario:{Scene::Default,Scene::Continue,Scene::SecondGuard,Scene::TiedWall,
+                             Scene::FirstImmune,Scene::FreshShot,Scene::Duel}){
+        WallGround terrain;
+        terrain.plane=1000;
+        BattleMvpConfig config;
+        config.declared_actors=scenario==Scene::Duel?2:scenario==Scene::SecondGuard?4:3;
+        config.teams_declared=true;config.teams={0,1,1,1};
+        config.packages={scenario==Scene::Default?plain:continuing,
+                         scenario==Scene::FirstImmune?immune:body,
+                         scenario==Scene::SecondGuard?guard:body,body};
+        for(unsigned i=config.declared_actors;i<config.packages.size();++i)config.packages[i].reset();
+        config.spawn={BattlePoint{0,0},BattlePoint{0,120},BattlePoint{0,230},BattlePoint{0,345}};
+        if(scenario==Scene::TiedWall)terrain.plane=config.spawn[2].z-config.actor_radius-8.f;
+        NativeBattleMvp world;
+        check(world.start(config,&terrain),"recipient continuation fixture starts");
+        struct Contact {u8 recipient;u32 object,tick;};
+        std::vector<Contact> contacts;
+        unsigned debit=0,blocked=0,stage=0;
+        const bool again=scenario==Scene::FreshShot;
+        for(unsigned tick=0;tick<(again?76u:36u);++tick){
+            std::array<GamePadState,kBattleMvpMaxActors> pads{};
+            std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+            if(!tick||(again&&tick==40))inputs[0].pressed=BorgBattleInputs::b;
+            if(!tick&&scenario==Scene::SecondGuard)inputs[2].pressed=BorgBattleInputs::x;
+            check(world.step_roster(pads,inputs,false,&terrain),"recipient continuation fixture steps");
+            unsigned this_visit=0;
+            for(const auto& event:world.package_events()){
+                if(event.kind==BorgBattleEventKind::StockSpent&&event.actor==0)++debit;
+                if(event.kind==BorgBattleEventKind::GuardBlocked){check(event.actor==2,"guard selects the actual second body");++blocked;}
+                if(event.kind==BorgBattleEventKind::StageImpact&&event.actor==0)++stage;
+                if(event.kind!=BorgBattleEventKind::Hit)continue;
+                ++this_visit;
+                check(event.actor==0&&event.value==19,"accepted contact keeps the original owner and damage");
+                contacts.push_back({event.recipient,event.object,tick});
+                if(scenario!=Scene::Default){
+                    const auto& shots=world.projectiles();
+                    const auto shot=std::find_if(shots.begin(),shots.end(),[&](auto& s){return s.id==event.object;});
+                    check(shot!=shots.end()&&shot->active&&(shot->package_hit_recipients&(1u<<event.recipient)),
+                          "accepted body is recorded on a surviving shot");
+                    check(std::abs(shot->position[2]-(config.spawn[event.recipient].z-config.actor_radius-8.f))<.001f,
+                          "continuing shot keeps the accepted point for the next visit");
+                }
+            }
+            check(this_visit<=1,"the continuation does not consume the rest of a step or hit twice in one visit");
+        }
+        std::vector<u8> recipients;
+        for(const auto& hit:contacts)recipients.push_back(hit.recipient);
+        if(scenario==Scene::Continue||again){
+            check(recipients==(again?std::vector<u8>{1,2,1,2}:std::vector<u8>{1,2}),
+                  "each shot visits both bodies once and a new shot has fresh history");
+            check(contacts[0].object==contacts[1].object&&contacts[0].tick<contacts[1].tick,
+                  "second recipient uses the same surviving shot on a later visit");
+            if(again)check(contacts[2].object==contacts[3].object&&contacts[2].object!=contacts[0].object,
+                           "reused pool storage carries a different shot identity");
+        }else if(scenario==Scene::FirstImmune){
+            check(recipients==std::vector<u8>{2}&&world.actors()[1].health==500,
+                  "immune first body does not spend the shot or hide the second body");
+        }else check(recipients==std::vector<u8>{1},"ordinary shot, guard, tied wall, or duel permits only the first hit");
+        check(blocked==unsigned(scenario==Scene::SecondGuard)&&stage==unsigned(scenario==Scene::TiedWall),
+              "guard and tied wall keep their terminal precedence");
+        check(debit==(again?2u:1u)&&world.package_action(0).stocks[0].current==(again?0:1)&&
+              world.shots_spawned()==debit&&std::none_of(world.projectiles().begin(),world.projectiles().end(),
+                                                          [](const auto& shot){return shot.active;}),
+              "continuation does not allocate or debit again and still expires");
+    }
+}
 void roster_body_motion_cases(){
     struct TwoLevels final:IBattleMvpTerrain {
         bool height(f32,f32,f32 current,f32* out)const override{
@@ -2948,6 +3060,7 @@ int main(){
     contact_impact_cases();
     contact_pose_hold_cases();
     roster_direct_contact_cases();
+    projectile_contact_continuation_cases();
     roster_body_motion_cases();
     roster_body_sweep_cases();
     roster_hit_history_cases();

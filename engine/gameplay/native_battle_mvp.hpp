@@ -154,6 +154,7 @@ struct BattleMvpProjectile {
     u8 record_trail_count=0,record_trail_cursor=0;
     bool package_direct_release=false; // ordinary move emission; not a detached emitter or spawned child
     u16 package_base_damage=0; // snapshotted at allocation, before field damage changes
+    u8 package_hit_recipients=0; // per-shot history; actors keep their round slots
 };
 struct BorgProjectileVisualSample {f32 scale=1,angle=0;};
 inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpProjectile& shot,u32 tick){
@@ -194,6 +195,7 @@ struct BattleMvpEmitter {
     u16 remaining=0;u8 deployment_move=BorgBattleActionState::none;
 };
 constexpr unsigned kBattleMvpMaxActors=kPackageBattleActorCapacity;
+static_assert(kBattleMvpMaxActors<=8, "projectile recipient history width");
 struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
 struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
 struct BattleMvpConfig {
@@ -3760,9 +3762,11 @@ private:
         const f32 travel=package_slow_fraction(shot);
         const BattleMvpVec step{shot.velocity[0]*travel,shot.velocity[1]*travel,shot.velocity[2]*travel};
         const auto& profile=*config_.packages[shot.owner];
+        const bool continuing=definition.continue_after_actor_hit&&shot.package_direct_release;
         const bool roster=actor_count()>2&&shot.package_direct_release&&shot.package_damage&&
             shot.package_move<profile.moves.size()&&borg_battle_direct_releases(profile,profile.moves[shot.package_move]);
-        const auto contact=package_body_contact(shot.owner,roster,[&](u8 candidate,f32* entry){
+        const auto contact=package_body_contact(shot.owner,roster||continuing,[&](u8 candidate,f32* entry){
+            if(continuing&&(shot.package_hit_recipients&(1u<<candidate)))return false;
             return package_segment_contact(shot,step,candidate,entry);
         });
         const u8 recipient=contact.recipient;
@@ -3840,7 +3844,10 @@ private:
             }
             if(shot.package_pull_units)queue_package_pull(shot,recipient,actor.position);
             if(shot.package_rewind_path.count)queue_package_recipient_rewind(shot,recipient);
-            retire=PackageRetirement::Actor;
+            // Resume on the next visit from the accepted contact point,
+            // not from the untested remainder of this step.
+            if(continuing)shot.package_hit_recipients|=u8(1u<<recipient);
+            else retire=PackageRetirement::Actor;
         }else if(retire==PackageRetirement::Stage){
             record_package(BorgBattleEventKind::StageImpact,shot.owner,shot.package_move,0,shot.id,stage_layer);
             plant_package_anchor(shot);
