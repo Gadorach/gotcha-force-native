@@ -71,6 +71,11 @@ struct BorgImpactPattern {
 };
 struct BorgImpactTrail : BorgImpactPattern {u16 mark_size=0,mark_ticks=0;};
 struct BorgImpactHazard : BorgImpactPattern {u16 hit_radius=0,height=0,ticks=0,damage=0,first_query=0;};
+struct BorgImpactArea {
+    BorgImpactLane lane=BorgImpactLane::Stage;
+    f32 initial_radius=0,gain=0,cap=0;
+    u16 queries=0,damage=0;
+};
 struct BorgBattleRewindHit {u8 set=0,speed=0,fallback=255;};
 struct BorgProjectileSpeedRamp {f32 gain=0,cap=0;};
 struct BorgBattleBlast {
@@ -108,6 +113,7 @@ struct BorgBattleProjectileDefinition {
     std::optional<BorgImpactChildren> impact_children;
     std::optional<BorgImpactTrail> impact_trail;
     std::optional<BorgImpactHazard> impact_hazard;
+    std::optional<BorgImpactArea> impact_area;
     bool impact_world_space=false;
     std::optional<BorgBattleRewindHit> rewind_hit;
     u8 plant_on_stage=255;
@@ -128,7 +134,7 @@ inline bool borg_hit_continuation_valid(const BorgBattleProjectileDefinition& a)
     return a.count==1&&a.damage&&!a.ignore_actors&&!a.sustained&&!a.guidance&&!a.blast&&
            a.floor!=BorgProjectileFloor::Land&&a.stock_return==BorgProjectileReturn::None&&
            !a.walk_ticks&&!a.pull_units&&!a.rewind_hit&&a.plant_on_stage==255&&
-           !a.flight_children&&!a.impact_children&&!a.impact_trail&&!a.impact_hazard&&
+           !a.flight_children&&!a.impact_children&&!a.impact_trail&&!a.impact_hazard&&!a.impact_area&&
            (!a.impact_record||a.impact_record->lane!=BorgImpactLane::Actor)&&
            (!a.impact_sound||a.impact_sound->lane!=BorgImpactLane::Actor);
 }
@@ -450,7 +456,7 @@ inline bool borg_battle_direct_releases(const BorgGameplayProfile& profile,const
         const auto& p=profile.projectiles[index];
         return p.damage&&!p.ignore_actors&&!p.blast&&!p.sustained&&!p.beam_sweep&&
                p.blast_children==255&&!p.flight_children&&!p.impact_children&&
-               !p.impact_hazard&&!p.rewind_hit&&p.plant_on_stage==255;
+                !p.impact_hazard&&!p.impact_area&&!p.rewind_hit&&p.plant_on_stage==255;
     };
     for(const auto& release:move.releases){
         if(!direct(release.projectile)||release.count>release.followups.size())return false;
@@ -775,9 +781,14 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
               !borg_impact_lane_reachable(a,a.impact_children->lane)))||
             (a.impact_trail&&(!borg_impact_pattern_valid(a,*a.impact_trail)||
               !a.impact_trail->mark_size||a.impact_trail->mark_size>180||!a.impact_trail->mark_ticks||a.impact_trail->mark_ticks>30))||
-            (a.impact_hazard&&(!borg_impact_pattern_valid(a,*a.impact_hazard)||!a.impact_hazard->hit_radius||
-              a.impact_hazard->hit_radius>180||a.impact_hazard->height>600||!a.impact_hazard->ticks||
-              a.impact_hazard->ticks>60||!a.impact_hazard->damage||a.impact_hazard->damage>10000||a.impact_hazard->first_query>60))||
+             (a.impact_hazard&&(!borg_impact_pattern_valid(a,*a.impact_hazard)||!a.impact_hazard->hit_radius||
+               a.impact_hazard->hit_radius>180||a.impact_hazard->height>600||!a.impact_hazard->ticks||
+               a.impact_hazard->ticks>60||!a.impact_hazard->damage||a.impact_hazard->damage>10000||a.impact_hazard->first_query>60))||
+             (a.impact_area&&(a.sustained||a.blast||a.impact_hazard||a.rewind_hit||a.plant_on_stage!=255||
+               !borg_impact_lane_reachable(a,a.impact_area->lane)||
+               !finite(a.impact_area->initial_radius,0,1200)||!finite(a.impact_area->gain,.01f,100)||
+               !finite(a.impact_area->cap,.01f,1200)||a.impact_area->cap<=a.impact_area->initial_radius||
+               !a.impact_area->queries||a.impact_area->queries>60||!a.impact_area->damage||a.impact_area->damage>10000))||
             (a.impact_world_space&&!a.impact_trail&&!a.impact_hazard)||
            (a.smoke&&(!a.blast||a.smoke->radius<8||a.smoke->radius>600||!a.smoke->ticks||a.smoke->ticks>600))||
            (a.ink&&(!a.blast||!a.blast->damage||!a.ink->ticks||a.ink->ticks>300||
@@ -800,7 +811,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            !finite(a.rise,-100,100)||!finite(a.gravity,0,8)||!finite(a.spread,0,.8f)||!finite(a.radius,1,60)||
             !a.lifetime||a.lifetime>600||
              (!a.damage&&!a.blast&&a.plant_on_stage==255&&!a.rewind_hit&&!a.flight_children&&!a.impact_children&&
-              !a.impact_trail&&!a.impact_hazard)||a.damage>10000||
+               !a.impact_trail&&!a.impact_hazard&&!a.impact_area)||a.damage>10000||
            (a.ignore_actors&&(a.damage||a.walk_ticks||a.pull_units))||!borg_projectile_return_reachable(a,a.stock_return)||
            (a.guidance&&(unsigned(a.guidance->target)>1||!finite(a.guidance->turn,.001f,1.f)||
                         !a.guidance->ticks||a.guidance->ticks>a.lifetime))||
@@ -820,7 +831,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            a.pull_units>kBorgBattlePullUnits||(a.pull_units&&p.movement!=BorgBattleMovement::Grounded)||
             (a.walk_ticks?(a.walk_ticks>600||a.walk_percent<25||a.walk_percent>200):a.walk_percent!=0))return false;
         const auto valid_child=[](const auto& child){
-             return !(child.blast_children!=255||child.flight_children||child.impact_children||child.impact_hazard||child.blast||child.smoke||
+              return !(child.blast_children!=255||child.flight_children||child.impact_children||child.impact_hazard||child.impact_area||child.blast||child.smoke||
                 child.sustained||child.socket||child.guidance||child.proximity||
                child.rewind_hit||child.plant_on_stage!=255||child.stock_return!=BorgProjectileReturn::None||
                 child.ignore_actors||!child.damage||child.launch_body_heading||child.continue_after_actor_hit);
@@ -840,6 +851,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            (p.moves[e.watches].releases.empty()&&!p.moves[e.watches].held_fire)||
            p.projectiles[e.projectile].stock_return!=BorgProjectileReturn::None||
            p.projectiles[e.projectile].rewind_hit||p.projectiles[e.projectile].plant_on_stage!=255||p.projectiles[e.projectile].socket||
+           p.projectiles[e.projectile].impact_area||
            p.projectiles[e.projectile].launch_body_heading||p.projectiles[e.projectile].continue_after_actor_hit||
            !finite(e.side,-120,120)||!finite(e.height,0,240)||!finite(e.behind,0,180)||!e.lifetime||e.lifetime>600)
             return false;
@@ -1157,6 +1169,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct ImpactChildrenRef {unsigned line;std::string projectile,child;BorgImpactChildren spec;};
     struct ImpactTrailRef {unsigned line;std::string projectile;BorgImpactTrail spec;};
     struct ImpactHazardRef {unsigned line;std::string projectile;BorgImpactHazard spec;};
+    struct ImpactAreaRef {unsigned line;std::string projectile;BorgImpactArea spec;};
     struct ImpactTimingRef {unsigned line;std::string projectile;u16 trail=0,hazard=0,query=0;};
     struct SmokeRef {unsigned line;std::string projectile;BorgSmoke spec;};
     struct InkRef {unsigned line;std::string projectile;BorgInkOverlay spec;};
@@ -1253,6 +1266,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<ImpactChildrenRef> impact_children;
     std::vector<ImpactTrailRef> impact_trails;
     std::vector<ImpactHazardRef> impact_hazards;
+    std::vector<ImpactAreaRef> impact_areas;
     std::vector<ImpactTimingRef> impact_timings;
     std::vector<std::pair<unsigned,std::string>> impact_world_space;
     std::vector<SmokeRef> smoke;
@@ -1772,6 +1786,16 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !number(a[10],1,60,&spec.ticks)||!number(a[11],1,10000,&spec.damage))
                 return fail("invalid impact-hazard binding");
             impact_hazards.push_back({line,std::string(a[0]),spec});
+        }else if(key=="impact-area"){
+            std::array<std::string_view,7> a;BorgImpactArea spec;
+            if(impact_areas.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage")||
+               !scalar(a[2],0,1200,&spec.initial_radius)||!scalar(a[3],.01f,100,&spec.gain)||
+               !scalar(a[4],.01f,1200,&spec.cap)||spec.cap<=spec.initial_radius||
+               !number(a[5],1,60,&spec.queries)||!number(a[6],1,10000,&spec.damage))
+                return fail("invalid impact-area binding");
+            spec.lane=a[1]=="actor"?BorgImpactLane::Actor:a[1]=="floor"?BorgImpactLane::Floor:BorgImpactLane::Stage;
+            impact_areas.push_back({line,std::string(a[0]),spec});
         }else if(key=="impact-children"){
             std::array<std::string_view,4> a;BorgImpactChildren spec;
             if(impact_children.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
@@ -2404,6 +2428,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(pi==next.projectiles.size()||next.projectiles[pi].impact_hazard)
             return fail("unknown projectile or duplicate impact hazard");
         next.projectiles[pi].impact_hazard=r.spec;
+    }
+    for(const auto& r:impact_areas){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].impact_area)
+            return fail("unknown projectile or duplicate impact area");
+        next.projectiles[pi].impact_area=r.spec;
     }
     for(const auto& r:impact_timings){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);

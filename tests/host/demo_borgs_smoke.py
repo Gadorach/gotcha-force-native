@@ -149,6 +149,16 @@ def smoke(binary, opengl=False):
             assert "move=paint-shot event=blast-trigger" not in log, log
             hits = [line for line in log.splitlines() if "move=paint-shot event=hit " in line]
             assert len(hits) == 2 and all("recipient=1 value=5" in line for line in hits), log
+            area = Path(scratch) / "impact-area"
+            prepare(area, impact_area=True)
+            result = run([*wall_cmd, "--package-battle-distance", "260"], cwd=area, capture_output=True, text=True, timeout=35)
+            log = result.stdout + result.stderr
+            placed = re.findall(r"tick=(\d+) actor=0 move=paint-shot event=impact-hazard-placed frame=0 object=(\d+)", log)
+            hits = re.findall(r"tick=(\d+) actor=0 move=paint-shot event=hit frame=0 object=(\d+) recipient=1 value=17", log)
+            ticks = {obj: int(tick) for tick, obj in placed}
+            assert result.returncode == 0 and placed and hits and len({obj for _, obj in hits}) == len(hits), log
+            assert all(obj in ticks and int(tick) > ticks[obj] for tick, obj in hits), log
+            assert "move=paint-shot event=blast-trigger" not in log, log
             elemental = Path(scratch) / "elemental"
             prepare(elemental, elemental_ball=True)
             result = run(["arena" if word == "arena-wall" else word for word in wall_cmd],

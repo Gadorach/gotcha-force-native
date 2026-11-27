@@ -82,6 +82,9 @@ rotating trail of fading rings instead of firing a damaging volley.
 that can each hit or be blocked once. The rings themselves stay visual-only.
 Use `--package-battle-distance 260` in the scripted wall demo to put
 Jump Stick within reach of the capsules.
+`--impact-area` gives Flight Stick's B one expanding area instead.
+Use `arena-wall` and the same distance. The area can hit only after
+it starts growing; the visible rings are separate markers.
 `--walk-pulse` adds passive ground shockwaves to Flight Stick. With
 `--gravity-field`, Flight Stick's X places a well that pulls enemy
 travelling shots and separately deals periodic damage near its core.

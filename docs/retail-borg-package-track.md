@@ -1167,8 +1167,10 @@ the same-pass area bind. The actor-contact replay unlinks in the
 impact visit's shape pass, but does not qualify earlier slot reuse.
 The [floor-contact replay](retail-code-atlas.md#ordinary-ninja-floor-blasts-growth-timing-and-hp)
 also separates direct damage from growth-dependent area damage.
-Neither the current immediate `blast` rule nor a constant-radius
-`impact-hazard` expresses both the growth and the verified slot ordering.
+The [authored `impact-area` rule](borg-gameplay-api.md#static-stage-impacts)
+expresses delayed growth and independent hit identity, but its native
+hazard pool does not reproduce the verified parent/child collision-slot
+ordering. No Ninja move uses the rule by default.
 Next missing witness: the accepted ordinary program cue and current
 key-11 pose through launch, including the target-dependent aim path.
 Live scheduler and prop response remain separate checks.

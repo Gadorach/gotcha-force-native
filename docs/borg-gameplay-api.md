@@ -1522,6 +1522,33 @@ independently of a spent hazard and do not represent its vertical
 extent. The `--impact-hazard` demo binds both declarations on Flight
 Stick's B. It does not use model 83 or the retail Dragon damage rules.
 
+`impact-area=carrier|stage|initial radius|radius gain|radius cap|queries|damage`
+opts into a single expanding sphere at the accepted impact point. Use
+`actor`, `floor`, or `stage` to select one reachable retirement reason.
+Unknown geometry, guard-only retirement, and expiry do not trigger it.
+For example, `impact-area=ball|stage|3.1|31|65.1|4|17` starts at radius
+3.1, does not query on the impact tick, and queries at radii 34.1, 65.1,
+65.1, and 65.1 on the next four ticks. Initial radius is nonnegative,
+gain is 0.01–100 per query, cap is greater than initial radius and at
+most 1200, and query count is 1–60.
+
+The area receives a separate object ID and uses the existing
+sphere-versus-capsule query. Each living opponent can be hit or block
+once per area, in actor-slot order; the area retains its credit and its
+remaining lifetime for other opponents. Damage uses the shared damage
+path with the authored value. The area consumes no stock and shares
+the existing 32-object hazard pool and `impact-hazard-placed` /
+`impact-hazard-refused` events; a full pool refuses at impact without
+retry. The same carrier cannot also declare `blast` or `impact-hazard`,
+and spawned projectile children and emitter shots cannot declare an area.
+Existing fixed-radius hazards retain their placement and contact clocks.
+
+This is an authored Battle Test capability, not a retail move binding.
+The projectile and the area do not share a shape pool, and area visuals
+remain separate. This rule does not reproduce retail collision-slot
+ordering, target-dependent launch, or frame scheduling.
+Try `--impact-area` in the Flight Stick `arena-wall` demo.
+
 `blast-smoke=carrier|radius|ticks|visual` requests a bounded world
 cloud from an accepted blast. A blast with smoke can have zero
 damage. The cloud uses generic translucent puffs; its sphere is

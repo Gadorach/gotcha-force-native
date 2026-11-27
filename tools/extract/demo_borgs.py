@@ -276,11 +276,13 @@ def prepare(output, clipped_beam=False, swept_beam=False, proximity_bomb=False, 
             fragmenting_bomb=False, smoke_bomb=False, ink_bomb=False, power_field=False, slow_field=False, field_demo=False,
             accuracy_ink=False, elemental_ball=False, impact_ball=False, impact_trail=False, impact_hazard=False,
             walk_pulse=False, gravity_field=False, magnet_field=False, repel_field=False, electric_fence=False,
-            cruise_boost=False):
+            cruise_boost=False, impact_area=False):
     if sum((clipped_beam, swept_beam, power_field, slow_field, field_demo, gravity_field, magnet_field, repel_field, electric_fence))>1:
         raise ValueError("select one Flight Stick X policy")
     if walk_pulse and cruise_boost:
         raise ValueError("select walk pulses or continuous flight")
+    if impact_area and any((elemental_ball, impact_ball, impact_trail, impact_hazard)):
+        raise ValueError("select one paint shot impact policy")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     write_new(output/"arena", arena())
@@ -385,9 +387,14 @@ def prepare(output, clipped_beam=False, swept_beam=False, proximity_bomb=False, 
         if cruise_boost and name == "flight-stick":
             package["gameplay.txt"] = package["gameplay.txt"].replace(
                 b"powered-flight=7|32\n", b"cruise-boost=80|18|4|2|7|4\n")
-        if (impact_trail or impact_hazard) and name == "flight-stick":
+        if (impact_trail or impact_hazard or impact_area) and name == "flight-stick":
             package["gameplay.txt"] = package["gameplay.txt"].replace(b"|8|110|8|ignore-floor", b"|8|110|0|stop-on-stage")
-            if impact_hazard:
+            if impact_area:
+                package["gameplay.txt"] += (
+                    b"impact-area=paint|stage|3.1|31|160|8|17\n"
+                    b"impact-trail=paint|stage|3|2|0|0|0|1|96|10\n"
+                )
+            elif impact_hazard:
                 package["gameplay.txt"] += (
                     b"impact-hazard=paint|stage|12|2|24|12|16|3|56|120|12|5\n"
                     b"impact-trail=paint|stage|12|2|24|12|16|3|56|12\n"
@@ -438,8 +445,10 @@ if __name__ == "__main__":
     balls.add_argument("--impact-ball", action="store_true", help="give Flight Stick's B a wall-triggered volley for arena-wall")
     balls.add_argument("--impact-trail", action="store_true", help="give Flight Stick's B a harmless rotating wall effect for arena-wall")
     balls.add_argument("--impact-hazard", action="store_true", help="give Flight Stick's B marked wall-impact hazards for arena-wall")
+    balls.add_argument("--impact-area", action="store_true", help="give Flight Stick's B an expanding area for arena-wall")
     args = parser.parse_args()
     prepare(args.output, args.clipped_beam, args.swept_beam, args.proximity_bomb, args.attracting_bomb,
             args.fragmenting_bomb, args.smoke_bomb, args.ink_bomb, args.power_field, args.slow_field, args.field_demo,
             args.accuracy_ink, args.elemental_ball, args.impact_ball, args.impact_trail, args.impact_hazard,
-            args.walk_pulse, args.gravity_field, args.magnet_field, args.repel_field, args.electric_fence, args.cruise_boost)
+            args.walk_pulse, args.gravity_field, args.magnet_field, args.repel_field, args.electric_fence, args.cruise_boost,
+            args.impact_area)

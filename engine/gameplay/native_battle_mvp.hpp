@@ -2298,6 +2298,10 @@ private:
     template<class Spec> struct ImpactPattern {
         BattleMvpVec centre;BattlePoint heading;u32 parent=0,born=0;u8 owner=0,move=0;bool world_space=false;Spec spec;
     };
+    struct ImpactHazard {
+        BattleMvpVec centre;u32 id=0,born=0;u8 owner=0,move=0,contacted=0;
+        u16 remaining=0,height=0,damage=0,warmup=0;f32 radius=0,gain=0,cap=0;
+    };
     bool sample_field_socket(unsigned owner,const BattleMvpActor& actor,const BorgBattleSocket& socket,
                              const IBorgBattleOrigins* origins,BattleMvpVec* centre)const{
         return origins&&origins->socket(owner,actor,tick_,actor.package_move,actor.package_frame,socket,centre)&&
@@ -3495,39 +3499,52 @@ private:
             impact(point,false,trail.spec.mark_size,trail.spec.mark_ticks);
         });
     }
+    void place_package_impact_hazard(ImpactHazard patch,u32 parent){
+        const auto slot=std::find_if(impact_hazards_.begin(),impact_hazards_.end(),[](const auto& p){return !p.id;});
+        if(slot==impact_hazards_.end()||next_id_==std::numeric_limits<u32>::max()){
+            record_package(BorgBattleEventKind::ImpactHazardRefused,patch.owner,patch.move,0,parent,0);
+            return;
+        }
+        patch.id=++next_id_;patch.born=tick_;*slot=patch;
+        record_package(BorgBattleEventKind::ImpactHazardPlaced,patch.owner,patch.move,0,patch.id,patch.remaining);
+    }
     void step_package_impact_hazards(){
-        // The room has two opposing actors. A resolved contact (including
-        // a guard) is terminal for this patch's only eligible recipient.
-        for(auto& patch:impact_hazards_)if(patch.id){
+        for(auto& patch:impact_hazards_)if(patch.id&&patch.born!=tick_){
             if(patch.warmup){--patch.warmup;continue;}
-            const auto target=u8(1-patch.owner);
-            const auto& actor=actors_[target];
-            if(actor.health){
+            const auto resolve=[&](u8 target){
+                if(target>=actor_count()||!actors_[target].health)return false;
+                const auto& actor=actors_[target];
                 const f32 x=patch.centre[0]-actor.position[0],z=patch.centre[2]-actor.position[2];
                 const f32 inset=std::min(config_.actor_radius,config_.actor_height*.5f);
                 const f32 actor_low=actor.position[1]+inset,actor_high=actor.position[1]+config_.actor_height-inset;
                 const f32 y=std::max({0.f,patch.centre[1]-actor_high,actor_low-(patch.centre[1]+patch.height)});
-                const f32 r=f32(patch.radius)+inset,squared=x*x+y*y+z*z;
+                const f32 r=patch.radius+inset,squared=x*x+y*y+z*z;
                 const bool overlaps=patch.height?squared<r*r:squared<=r*r;
-                if(overlaps){
-                    if(!try_package_guard(target,patch.owner,BorgBattleAttackKind::Blast,{x,z},patch.id))
-                        accept_package_hit(patch.owner,target,patch.move,0,patch.id,patch.damage,patch.centre);
-                    patch={};
-                    continue;
+                if(!overlaps)return false;
+                if(!try_package_guard(target,patch.owner,BorgBattleAttackKind::Blast,{x,z},patch.id))
+                    accept_package_hit(patch.owner,target,patch.move,0,patch.id,patch.damage,patch.centre);
+                return true;
+            };
+            if(patch.gain){
+                patch.radius=std::min(patch.cap,patch.radius+patch.gain);
+                for(u8 target=0;target<actor_count();++target){
+                    const u8 bit=u8(1u<<target);
+                    if(target==patch.owner||(patch.contacted&bit)||actors_[target].team==actors_[patch.owner].team||
+                       !actors_[target].health||!package_hit_relation(patch.owner,target))continue;
+                    if(resolve(target))patch.contacted|=bit;
                 }
+            }else if(patch.owner<2&&resolve(u8(1-patch.owner))){
+                // The legacy fixed hazard keeps its two-body, one-contact rule.
+                patch={};
+                continue;
             }
             if(!--patch.remaining)patch={};
         }
         visit_package_impact_patterns(hazard_patterns_,[&](const auto& pattern,const auto& point){
-            const auto slot=std::find_if(impact_hazards_.begin(),impact_hazards_.end(),[](const auto& patch){return !patch.id;});
-            if(slot==impact_hazards_.end()||next_id_==std::numeric_limits<u32>::max()){
-                record_package(BorgBattleEventKind::ImpactHazardRefused,pattern.owner,pattern.move,0,pattern.parent,0);
-                return;
-            }
             const auto& spec=pattern.spec;
-            *slot={point,++next_id_,pattern.owner,pattern.move,spec.ticks,spec.hit_radius,spec.height,spec.damage,
-                   u16(spec.first_query?spec.first_query-1:0)};
-            record_package(BorgBattleEventKind::ImpactHazardPlaced,pattern.owner,pattern.move,0,slot->id,spec.ticks);
+            place_package_impact_hazard({.centre=point,.owner=pattern.owner,.move=pattern.move,
+                .remaining=spec.ticks,.height=spec.height,.damage=spec.damage,
+                .warmup=u16(spec.first_query?spec.first_query-1:0),.radius=f32(spec.hit_radius)},pattern.parent);
         });
     }
     void retire_package_shot(BattleMvpProjectile& shot,PackageRetirement reason){
@@ -3551,7 +3568,11 @@ private:
                                          BorgBattleEventKind::ImpactTrailRefused);
         if(const auto& hazard=definition.impact_hazard;hazard&&matches_impact_lane(reason,hazard->lane))
             start_package_impact_pattern(shot,*hazard,definition.impact_world_space,hazard_patterns_,BorgBattleEventKind::ImpactHazardStarted,
-                                         BorgBattleEventKind::ImpactHazardRefused);
+                                        BorgBattleEventKind::ImpactHazardRefused);
+        if(const auto& area=definition.impact_area;area&&matches_impact_lane(reason,area->lane))
+            place_package_impact_hazard({.centre=shot.position,.owner=shot.owner,.move=shot.package_move,
+                .remaining=area->queries,.damage=area->damage,.radius=area->initial_radius,
+                .gain=area->gain,.cap=area->cap},shot.id);
         shot.active=false;
         shot.package_rewind_path={};
         record_package(BorgBattleEventKind::Retired,shot.owner,shot.package_move,0,shot.id,u16(reason));
@@ -4070,7 +4091,6 @@ private:
     std::array<u8,2> force_counter10a_{};bool force_global1f_=false;u8 last_attacker_=255,last_receiver_=255;
     std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,kBattleMvpMaxActors> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
     std::array<BattleMvpImpactRecord,16> impact_records_{};
-    struct ImpactHazard {BattleMvpVec centre;u32 id=0;u8 owner=0,move=0;u16 remaining=0,radius=0,height=0,damage=0,warmup=0;};
     std::array<ImpactPattern<BorgImpactTrail>,8> impact_trails_{};
     std::array<ImpactPattern<BorgImpactHazard>,8> hazard_patterns_{};
     std::array<ImpactHazard,32> impact_hazards_{};

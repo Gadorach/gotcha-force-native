@@ -2947,6 +2947,162 @@ release=toss|1|ball|1|ball
         check(placed==32&&refused==8&&returned==8&&!world.hits(),"hazard refusal doesn't retry or cancel stock return");
     }
 }
+void impact_area_cases(){
+    const std::string body=R"(GFBORG-GAMEPLAY 1
+variant=normal
+movement=grounded-v1|8|13|14
+health=250
+rig-prefix=visual/prefix
+pose-profile=visual/pose
+idle=0:0
+walk=0:1
+air=0:2
+dash=0:3
+stock=ball|1|3600
+projectile=ball|orb|1|55|0|0|0|9|12|0|stop-on-stage
+move=toss|b|10|any|4|0:4
+release=toss|1|ball|1|ball
+)";
+    const std::string row="impact-area=ball|stage|3.1|31|65.1|4|17\n";
+    const auto definition=parse(body+row);
+    const auto& spec=definition->projectiles[0].impact_area;
+    check(spec&&spec->initial_radius==3.1f&&spec->gain==31.f&&spec->cap==65.1f&&spec->queries==4&&spec->damage==17,
+          "impact area is an explicit authored projectile capability");
+    BorgGameplayProfile rejected;
+    for(const std::string_view extra:{"impact-area=missing|stage|3.1|31|65.1|4|17\n",
+          "impact-area=ball|actor|3.1|31|65.1|4|17\nimpact-area=ball|stage|0|1|2|4|17\n",
+          "impact-area=ball|floor|3.1|31|65.1|4|17\n","impact-area=ball|stage|3.1|0|65.1|4|17\n",
+          "impact-area=ball|stage|3.1|31|3.1|4|17\n","impact-area=ball|stage|3.1|31|1201|61|17\n"})
+        check(!borg_read_gameplay_profile(body+std::string(extra),&rejected,nullptr),
+              "unknown, duplicate, unreachable and out-of-domain areas refuse");
+    for(const std::string_view extra:{"blast=ball|stage|60|17|opponent\n",
+                                      "impact-hazard=ball|stage|1|1|0|0|0|1|60|0|4|17\n"})
+        check(!borg_read_gameplay_profile(body+row+std::string(extra),&rejected,nullptr),
+              "a carrier cannot bind two incompatible damage areas");
+    auto invalid=*definition;invalid.projectiles[0].impact_area->gain=std::numeric_limits<f32>::quiet_NaN();
+    check(!borg_gameplay_profile_valid(invalid),"programmatic nonfinite impact growth is refused");
+
+    const auto guard=parse(std::string(player)+"move=block|x|50|grounded|18|0:1\nguard=block|1|12|0.5|1|all\n");
+    const auto idle=parse(target);
+    for(unsigned scene=0;scene<6;++scene){
+        NativeBattleMvp world;BattleMvpConfig config;WallGround wall;
+        config.actor_radius=22;config.actor_height=120;wall.plane=scene==5?1600.f:150.f;
+        wall.available=scene!=4;
+        config.packages={definition,scene==3?guard:idle};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,scene==1?207.f:scene==2?238.f:206.f}};
+        check(world.start(config,&wall),"authored expanding impact area fixture");
+        unsigned placed=0,blocks=0,spent=0;
+        u32 id=0,born=0;
+        for(unsigned i=0;i<20;++i){
+            check(world.step({},false,&wall,nullptr,nullptr,nullptr,
+                  {BorgBattleInputs{u8(!i?BorgBattleInputs::b:0),0,0},
+                   BorgBattleInputs{u8(!i&&scene==3?BorgBattleInputs::x:0),0,0}}),"expanding area visit");
+            spent+=has(world,BorgBattleEventKind::StockSpent);
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::ImpactHazardPlaced){
+                    ++placed;born=e.tick;id=e.object;
+                    check(id>1&&has(world,BorgBattleEventKind::StageImpact)&&
+                          !world.projectiles()[0].active&&!world.hits(),"area starts on the committed impact with no same-tick query");
+                }
+                if(e.kind==BorgBattleEventKind::Hit)
+                    check(id&&e.object==id&&e.recipient==1&&e.value==17&&e.tick==born+(scene==1?2u:1u),
+                          "growth happens before queries and credits a separate area id");
+                if(e.kind==BorgBattleEventKind::GuardBlocked){
+                    ++blocks;check(id&&e.object==id&&e.actor==1&&e.tick==born+1,"guard spends this area's recipient contact once");
+                }
+            }
+        }
+        check(placed==unsigned(scene<4)&&blocks==unsigned(scene==3)&&world.hits()==unsigned(scene<2)&&
+              world.actors()[1].health==(scene<2?483u:scene==3?250u:500u)&&spent==1&&
+              !world.package_action(0).stocks[0].current&&world.shots_spawned()==1,
+              "near/far growth, cap, guard, unknown stage and expiry preserve authored damage and stock");
+    }
+    for(bool floor:{false,true}){
+        NativeBattleMvp world;BattleMvpConfig config;PullGround ground;
+        auto text=body;
+        constexpr std::string_view original="55|0|0|0|9|12|0|stop-on-stage";
+        text.replace(text.find(original),original.size(),floor?"20|-25|0|0|9|12|0|stop-on-floor":
+                                                              "55|0|0|0|9|12|12|ignore-floor");
+        text+=floor?"impact-area=ball|floor|3.1|31|100|4|17\n":"impact-area=ball|actor|3.1|31|100|4|17\n";
+        config.actor_radius=22;config.actor_height=120;
+        config.packages={parse(text),idle};config.spawn={BattlePoint{0,0},BattlePoint{0,floor?135.f:206.f}};
+        check(world.start(config,&ground),"explicit floor or actor impact lane starts");
+        u32 born=0,area=0,opening=0;
+        unsigned direct=0,followup=0;
+        for(unsigned i=0;i<18;++i){
+            check(world.step({},false,&ground,nullptr,nullptr,nullptr,
+                  {BorgBattleInputs{u8(!i?BorgBattleInputs::b:0),0,0},{}}),"floor or actor impact visit");
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::ImpactHazardPlaced){born=e.tick;area=e.object;}
+                if(e.kind==BorgBattleEventKind::Hit){
+                    if(e.value==12){++direct;opening=e.object;}
+                    else if(e.value==17){
+                        ++followup;check(area&&e.object==area&&area!=opening&&e.tick>born,
+                                         "area never borrows the opening hit ID or same-tick damage");
+                    }else check(false,"unexpected impact damage");
+                }
+            }
+        }
+        check(born&&direct==unsigned(!floor)&&followup==1&&world.actors()[1].health==(floor?483u:471u),
+              "floor-only area and separate actor/area damage use their explicit lanes");
+    }
+    {
+        NativeBattleMvp world;BattleMvpConfig config;WallGround wall;wall.plane=150;
+        config.actor_radius=22;config.actor_height=120;config.declared_actors=4;
+        config.teams_declared=true;config.teams={0,1,0,1};
+        config.packages={idle,idle,parse(body+"impact-area=ball|stage|3.1|31|125|5|17\n"),idle};
+        config.spawn={BattlePoint{-80,150},BattlePoint{0,206},BattlePoint{0,0},BattlePoint{80,225}};
+        check(world.start(config,&wall)&&world.target_of(2)==1,"area roster starts with one aimed opponent and two eligible bodies");
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+        u32 id=0,born=0;
+        std::array<unsigned,4> contacts{};
+        for(unsigned i=0;i<18;++i){
+            inputs[2].pressed=!i?BorgBattleInputs::b:0;
+            check(world.step_roster(pads,inputs,false,&wall),"area roster tick");
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::ImpactHazardPlaced){id=e.object;born=e.tick;}
+                if(e.kind==BorgBattleEventKind::Hit){
+                    check(e.actor==2&&(e.recipient==1||e.recipient==3)&&e.object==id&&e.value==17&&
+                          e.tick==born+(e.recipient==1?1u:3u),"area hits the first live overlap per opponent, not the aim slot");
+                    ++contacts[e.recipient];
+                }
+            }
+        }
+        check(contacts==std::array<unsigned,4>{0,1,0,1}&&world.hits()==2&&
+              world.actors()[0].health==500&&world.actors()[2].health==250,
+              "allies and caster are excluded while the same area persists for another opponent");
+    }
+    {
+        NativeBattleMvp world;BattleMvpConfig config;WallGround wall;wall.plane=150;
+        config.packages={parse(body+row+"projectile=seed|orb|1|55|0|0|0|9|12|0|stop-on-stage\n"
+            "move=seed|x|20|any|4|0:4\nrelease=seed|1|none|0|seed\n"
+            "impact-hazard=seed|stage|32|1|0|0|0|1|1|0|60|1\n"),idle};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,1200}};
+        check(world.start(config,&wall),"shared impact pool fixture");
+        unsigned fixed=0,refused=0,placed=0;
+        for(unsigned i=0;i<100;++i){
+            check(world.step({},false,&wall,nullptr,nullptr,nullptr,
+                  {BorgBattleInputs{u8(!i?BorgBattleInputs::x:i==40?BorgBattleInputs::b:0),0,0},{}}),"full impact pool visit");
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::ImpactHazardPlaced)(e.move?fixed:placed)++;
+                if(e.kind==BorgBattleEventKind::ImpactHazardRefused){
+                    ++refused;check(e.move==0&&fixed==32&&has(world,BorgBattleEventKind::StageImpact),
+                                    "full native pool refuses at impact without retry");
+                }
+            }
+        }
+        check(refused==1&&!placed&&fixed==32&&!world.package_action(0).stocks[0].current&&
+              world.shots_spawned()==2&&!world.hits(),"fixed and expanding objects share the existing pool and refusal does not refund");
+        check(world.start(config,&wall),"restart resets the impact pool");
+        for(unsigned i=0;i<10;++i){
+            check(world.step({},false,&wall,nullptr,nullptr,nullptr,
+                  {BorgBattleInputs{u8(!i?BorgBattleInputs::b:0),0,0},{}}),"restarted impact pool visit");
+            placed+=has(world,BorgBattleEventKind::ImpactHazardPlaced);
+        }
+        check(placed==1,"impact area can allocate again in the restarted round");
+    }
+}
 }
 int main(){
     const std::string scoped=std::string(player)+"body-record=0\n";
@@ -3146,6 +3302,7 @@ int main(){
     blast_accuracy_cases();
     flight_children_cases();
     impact_children_cases();
+    impact_area_cases();
     power_field_cases();
     slow_field_cases();
     resident_beam_field_cases();
