@@ -10,6 +10,10 @@ constexpr u32 descriptor_row=0x81030000,descriptors=0x81030100,cells=0x81032000;
 constexpr u32 descriptor_stride=0x80,cell_stride=0x800;
 constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC;
 constexpr u32 active_head=0x803C706C,active_tail=0x803C6F6C;
+constexpr u32 shapes=0x81034800,hit_block=0x81037000;
+constexpr u32 shape_stride=0x200;
+constexpr u32 bind=0x8008AC80,visit=0x80089A94;
+constexpr u32 attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
 constexpr u32 factory=0x8007DB5C, powered=0x8016711C, ninja=0x800715F8, alpha=0x801A0458;
 constexpr u32 audio=0x800F036C, normal_x_helper=0x8016D584, movement_tail=0x800B22F4;
 
@@ -17,6 +21,7 @@ struct Case {
     u16 model;
     u8 state, extra, stock, carriers, descriptors;
 };
+using HitBlock=std::array<u8,7840>;
 constexpr std::array cases{
     Case{0x0101,3,0,1,4,4}, Case{0x0101,3,0,0,4,4},
     Case{0x0101,3,0,1,2,4}, Case{0x0101,3,0,1,4,2},
@@ -67,7 +72,7 @@ class Check {
         // frontier too; no synthetic result or guest epilogue is supplied.
         put_float(a+0x38,300.f);
         put32(at(0x8043B5A0-31852),scene);put32(at(0x8043B5A0-31856),mode);
-        // Three distinct rigid sockets. The launcher uses the original
+        // Two distinct rigid sockets. The launcher uses the original
         // matrix math on these inlets; no scene or pose producer runs.
         for(const unsigned joint:{7u,11u}){
             auto* m=a+0x8D4+joint*48;
@@ -103,9 +108,64 @@ class Check {
            be32(at(descriptor_row+12))!=(c.descriptors>made?descriptor(made):0))
             fail("bomb allocator did not preserve the unused pools");
     }
+    void shape_pool(unsigned capacity){
+        if(capacity>4)fail("bomb shape pool capacity extent");
+        put32(at(free_head+16),capacity?shapes:0);
+        put32(at(free_tail+16),capacity?shapes+(capacity-1)*shape_stride:0);
+        put16(at(free_count+8),u16(capacity));
+        for(unsigned i=0;i<capacity;++i){
+            const u32 shape=shapes+i*shape_stride;
+            at(shape)[2]=4;
+            put32(at(shape+4),i+1<capacity?shape+shape_stride:0);
+        }
+    }
+    void bind_inlets(const Case& c,const HitBlock& block,unsigned capacity){
+        std::memcpy(at(hit_block),block.data(),block.size());
+        put32(at(actor+0x3FC),hit_block);
+        put32(at(actor+0x27C),c.model==0x0101?0x8034EAF8:0x802D4160);
+        // Scheduler seat zero visits bucket 9. Other seats have inert headers.
+        put32(at(0x803C4E84),actor);
+        for(unsigned i=1;i<6;++i)put32(at(0x803C4E84+4*i),0x8101A000);
+        shape_pool(capacity);
+        // Render inlets point to a declared missing model record; effect
+        // cells are unavailable, independently of the shape pool.
+        constexpr u32 resource=0x8103A000,link=resource+0x40,table=resource+0x80,row=resource+0x880;
+        put32(at(0x803BB4C0+0x600),resource);
+        put32(at(0x803BB32C+72),resource);
+        put32(at(resource+16),link);put32(at(link),table);
+        put32(at(table+4*14),row);put32(at(table+4*125),row);
+        // Supply an empty bounded stage, not a patched collision result.
+        constexpr u32 stage=0x81040000,grid=stage+0x100,refs=stage+0x200,side=128,empty=refs+side*side*4;
+        put32(at(0x8043B5A0-21316),stage);
+        for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+        put_float(at(stage+52),9000.f);put_float(at(stage+56),31000.f);
+        put_float(at(stage+60),-1000.f);put_float(at(stage+64),31000.f);put_float(at(stage+68),-1000.f);
+        put32(at(grid+12),side);put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));
+        put32(at(grid+24),refs);put32(at(empty),0xFFFFFFFFu);
+        for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),empty);
+    }
+    void retire_unbound(const Case& c,unsigned count,unsigned stock){
+        // A shape becomes free before the next visit. The refused carriers
+        // must take disposal phases instead of making a fresh bind attempt.
+        shape_pool(1);
+        for(unsigned phase:{3u,0u}){
+            CPUState cpu{};cpu.gpr[3]=8;
+            CallObservation observation{bind};
+            mod.run_observed(cpu,ram,visit,observation,1024);
+            if(observation.count||half(free_count+8)!=1||be32(at(active_head+49*4))||half(actor+0x784)!=stock)
+                fail("bomb refused shape was retried or stock changed");
+            for(unsigned i=0;i<count;++i)
+                if(phase?(!at(cell(i))[0]||at(cell(i))[0x18]!=phase):at(cell(i))[0])
+                    fail("bomb unbound carrier did not take its disposal phases");
+            if(half(free_count+6)!=(phase?c.carriers-count:c.carriers)||
+               half(descriptor_row+18)!=(phase?c.descriptors-count:c.descriptors)||
+               (phase?be32(at(active_head+9*4))!=cell(count-1):be32(at(active_head+9*4))!=0))
+                fail("bomb disposal did not return the carrier and descriptor pools");
+        }
+    }
 public:
     Check(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
-    void run_case(const Case& c){
+    void run_case(const Case& c,bool report=true){
         owner(c);free_pools(c.carriers,c.descriptors);
         const bool gun=c.model==0x0101,charged=gun&&c.state==3;
         const bool ordinary_paid=!charged&&c.stock;
@@ -151,9 +211,63 @@ public:
         if(remaining!=(ordinary_paid?c.stock-1:c.stock)||
            clock!=(ordinary_paid&&!remaining?(gun?120.f:300.f):0.f))
             fail("bomb stock debit or refill-clock mismatch");
-        std::printf("bomb: %u %u %u %u %u %u %u %u %u %u %u %.0f %u\n",
+        if(report)std::printf("bomb: %u %u %u %u %u %u %u %u %u %u %u %.0f %u\n",
                     c.model,c.state,c.extra,c.stock,c.carriers,c.descriptors,count,attempted,
                     made,published,remaining,double(clock),boundary==audio?1:boundary==normal_x_helper?2:boundary==movement_tail?3:0);
+    }
+    void first_bind(const Case& c,const HitBlock& block,unsigned capacity){
+        run_case(c,false);
+        bind_inlets(c,block,capacity);
+        const bool gun=c.model==0x0101;
+        const unsigned count=gun?std::min(c.carriers,c.descriptors):1;
+        const unsigned group=gun?15:1,step=gun?8:1,accepted=std::min(count,capacity);
+        CPUState cpu{};cpu.gpr[3]=8;
+        CallObservation observation{bind};
+        mod.run_observed(cpu,ram,visit,observation,1024);
+        if(observation.count!=count||observation.caller!=0x8007DE04)
+            fail("bomb scheduler did not bind every published carrier");
+        unsigned order=0,bound=0;
+        u32 last=0;
+        for(unsigned i=0;i<count;++i){
+            const auto obj=cell(count-1-i);
+            const auto* carrier=at(obj);
+            order=10*order+carrier[0x11];
+            if(observation.first_arguments[i]!=obj||observation.second_arguments[i]!=group||
+               carrier[0x18]!=(i<accepted?1:2)||carrier[0x86]!=unsigned(i<accepted)||
+               half(obj+0x1C)!=(i<accepted?599:0))
+                fail("bomb bind order, phase, or first-flight timer disagrees");
+            if(i>=accepted)continue;
+            bound=10*bound+carrier[0x11];
+            const u32 shape=shapes+shape_stride*i;
+            const u32 previous=i+1<accepted?shape+shape_stride:0;
+            if(at(shape)[0]!=1||at(shape)[1]!=49||at(shape)[2]!=4||at(shape)[0x12]!=step||
+               at(shape)[0x11]!=1||at(shape)[0x14]!=group||be32(at(shape+4))!=previous||
+               be32(at(shape+8))!=last||be32(at(shape+0x20))!=obj||be32(at(shape+0x24))!=actor||
+               be32(at(shape+0x28))!=hit_block+0xAA0+80*step||
+               be32(at(shape+0x2C))!=be32(at(actor+0x27C))||be32(at(shape+0x60))!=obj+0x114)
+                fail("bomb shape list, descriptor, or credit mismatch");
+            last=shape;
+        }
+        if(half(free_count+8)!=capacity-accepted||
+           be32(at(active_head+49*4))!=last||be32(at(active_tail+49*4))!=(accepted?shapes:0)||
+           half(actor+0x784)!=(gun?c.stock:c.stock-1))
+            fail("bomb post-bind pools or stock disagree");
+        for(u32 entry:{0x80089554u,0x8008A28Cu,0x80089AECu}){
+            CPUState pass{};
+            mod.run(pass,ram,entry,1024);
+        }
+        const auto registered=half(attack_count);
+        if(registered!=accepted)fail("bomb attack registry count disagrees");
+        unsigned registry_order=0;
+        for(unsigned i=0;i<registered;++i){
+            const auto shape=be32(at(attack_registry+4*i));
+            if(shape!=shapes+shape_stride*(accepted-1-i))fail("bomb attack registry order disagrees");
+            registry_order=10*registry_order+at(be32(at(shape+0x20)))[0x11];
+        }
+        const auto stock=half(actor+0x784);
+        if(!capacity)retire_unbound(c,count,stock);
+        std::printf("bomb-bind: %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",c.model,c.carriers,c.descriptors,
+                    capacity,count,order,accepted,bound,group,step,stock,registered,registry_order,capacity?0:3);
     }
     void wrong_parent(){
         // A reviewed charged key, offered to a different normal actor.
@@ -169,9 +283,29 @@ public:
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so");
+    if(argc!=3&&(argc!=4||std::strcmp(argv[3],"--first-bind")))
+        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so [--first-bind]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
+    if(argc==4){
+        HitBlock gun{},sasuke{};
+        if(std::fread(gun.data(),1,gun.size(),stdin)!=gun.size()||
+           std::fread(sasuke.data(),1,sasuke.size(),stdin)!=sasuke.size()||std::getc(stdin)!=EOF)
+            fail("bomb hit block extent");
+        for(unsigned capacity:{0u,1u,2u,4u}){
+            Check test(module,original);
+            test.first_bind(cases[0],gun,capacity);
+        }
+        for(unsigned i:{2u,3u}){
+            Check test(module,original);
+            test.first_bind(cases[i],gun,1);
+        }
+        for(unsigned capacity:{0u,1u}){
+            Check test(module,original);
+            test.first_bind(cases[14],sasuke,capacity);
+        }
+        return 0;
+    }
     for(const auto& c:cases){Check test(module,original);test.run_case(c);}
     Check wrong(module,original);wrong.wrong_parent();
 }

@@ -673,6 +673,46 @@ python3 -m tools.analyze.retail_bomb_release \
   /tmp/opencode/gf-bomb-release.json
 ```
 
+### Type-15 first visit: shape priority and registration
+
+The [first-bind receipt](api-map/gg4e08-bomb-first-bind.json) starts
+from the verified release paths, then runs the original bucket visitor
+and attack registration passes. It uses the exact normal AFS hit
+blocks for Powered Gunman and Sasuke.
+
+| Powered Gunman capacity | Published, in request order | Shapes bound, in visit order | Attack registry order |
+| --- | --- | --- | --- |
+| Four carriers, four descriptors, two shapes | `8, 9, 6, 7` | `7, 6` | `6, 7` |
+| Room for two carriers or descriptors, one shape | `8, 9` | `9` | `9` |
+| Four carriers, four descriptors, four shapes | `8, 9, 6, 7` | `7, 6, 9, 8` | `8, 9, 6, 7` |
+
+A scarce carrier or descriptor pool favors the earliest **requests**.
+A scarce shape pool favors the newest **published carriers** instead.
+Each accepted shape is also prepended, so the registry order is not
+the order that decided which bombs got shapes.
+
+With no shape cells at the first visit, both pilots enter phase 2
+without a shape. Supplying a free cell before visit two does not cause
+a retry: the carriers enter phase 3, then return their carrier and
+descriptor cells on visit three. Sasuke's paid release keeps its debit.
+The registered shapes identify Powered Gunman's group 15, descriptor 8,
+raw power 20, and Sasuke's group 1, descriptor 1, raw power 10. These
+are opening records, not verified damage amounts or blast effects.
+
+All eight cases matched across O0, O1, and O2. The fixture declares
+an empty stage and unavailable visual/effect
+resources; it does not run contact, HP writes, impact effects or live
+battle scheduling. No native package changes.
+
+Use the same fixture binary as above:
+
+```sh
+python3 -m tools.analyze.retail_bomb_first_bind \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-first-bind.json
+```
+
 ### Worm paid release, refunds and contact follow-up
 
 The [Worm contact receipt](api-map/gg4e08-worm-contact.json)

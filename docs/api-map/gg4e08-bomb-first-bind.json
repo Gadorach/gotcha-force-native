@@ -1,0 +1,324 @@
+{
+  "cases": [
+    {
+      "attack_registry_order": [],
+      "borg": "gg4e08:0101",
+      "bound_in_visit_order": [],
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "first_visit_order": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "free_carriers_at_release": 4,
+      "free_descriptors_at_release": 4,
+      "free_shapes_at_first_visit": 0,
+      "published_in_request_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "refused_carriers_control": {
+        "bind_attempts_after_visit_one": 0,
+        "carrier_and_descriptor_return_visit": 3,
+        "new_free_shapes_before_visit_two": 1,
+        "phase_on_visit_two": 3
+      },
+      "refused_in_visit_order": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "shape_descriptor": 8,
+      "shape_group": 15,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [
+        7
+      ],
+      "borg": "gg4e08:0101",
+      "bound_in_visit_order": [
+        7
+      ],
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "first_visit_order": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "free_carriers_at_release": 4,
+      "free_descriptors_at_release": 4,
+      "free_shapes_at_first_visit": 1,
+      "published_in_request_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "refused_carriers_control": null,
+      "refused_in_visit_order": [
+        6,
+        9,
+        8
+      ],
+      "shape_descriptor": 8,
+      "shape_group": 15,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [
+        6,
+        7
+      ],
+      "borg": "gg4e08:0101",
+      "bound_in_visit_order": [
+        7,
+        6
+      ],
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "first_visit_order": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "free_carriers_at_release": 4,
+      "free_descriptors_at_release": 4,
+      "free_shapes_at_first_visit": 2,
+      "published_in_request_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "refused_carriers_control": null,
+      "refused_in_visit_order": [
+        9,
+        8
+      ],
+      "shape_descriptor": 8,
+      "shape_group": 15,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "borg": "gg4e08:0101",
+      "bound_in_visit_order": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "first_visit_order": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "free_carriers_at_release": 4,
+      "free_descriptors_at_release": 4,
+      "free_shapes_at_first_visit": 4,
+      "published_in_request_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "refused_carriers_control": null,
+      "refused_in_visit_order": [],
+      "shape_descriptor": 8,
+      "shape_group": 15,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [
+        9
+      ],
+      "borg": "gg4e08:0101",
+      "bound_in_visit_order": [
+        9
+      ],
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "first_visit_order": [
+        9,
+        8
+      ],
+      "free_carriers_at_release": 2,
+      "free_descriptors_at_release": 4,
+      "free_shapes_at_first_visit": 1,
+      "published_in_request_order": [
+        8,
+        9
+      ],
+      "refused_carriers_control": null,
+      "refused_in_visit_order": [
+        8
+      ],
+      "shape_descriptor": 8,
+      "shape_group": 15,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [
+        9
+      ],
+      "borg": "gg4e08:0101",
+      "bound_in_visit_order": [
+        9
+      ],
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "first_visit_order": [
+        9,
+        8
+      ],
+      "free_carriers_at_release": 4,
+      "free_descriptors_at_release": 2,
+      "free_shapes_at_first_visit": 1,
+      "published_in_request_order": [
+        8,
+        9
+      ],
+      "refused_carriers_control": null,
+      "refused_in_visit_order": [
+        8
+      ],
+      "shape_descriptor": 8,
+      "shape_group": 15,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [],
+      "borg": "gg4e08:000a",
+      "bound_in_visit_order": [],
+      "factory_requests": [
+        3
+      ],
+      "first_visit_order": [
+        3
+      ],
+      "free_carriers_at_release": 1,
+      "free_descriptors_at_release": 1,
+      "free_shapes_at_first_visit": 0,
+      "published_in_request_order": [
+        3
+      ],
+      "refused_carriers_control": {
+        "bind_attempts_after_visit_one": 0,
+        "carrier_and_descriptor_return_visit": 3,
+        "new_free_shapes_before_visit_two": 1,
+        "phase_on_visit_two": 3
+      },
+      "refused_in_visit_order": [
+        3
+      ],
+      "shape_descriptor": 1,
+      "shape_group": 1,
+      "stock_after_bind": 1
+    },
+    {
+      "attack_registry_order": [
+        3
+      ],
+      "borg": "gg4e08:000a",
+      "bound_in_visit_order": [
+        3
+      ],
+      "factory_requests": [
+        3
+      ],
+      "first_visit_order": [
+        3
+      ],
+      "free_carriers_at_release": 1,
+      "free_descriptors_at_release": 1,
+      "free_shapes_at_first_visit": 1,
+      "published_in_request_order": [
+        3
+      ],
+      "refused_carriers_control": null,
+      "refused_in_visit_order": [],
+      "shape_descriptor": 1,
+      "shape_group": 1,
+      "stock_after_bind": 1
+    }
+  ],
+  "entries": {
+    "bind_group": "8008AC80",
+    "bucket_visit": "80089A94",
+    "initialize": "8007DD84",
+    "shape_list_visit": "80089AEC",
+    "type_15_dispatch": "8007DCEC"
+  },
+  "kind": "gf-retail-bomb-first-bind",
+  "normal_opening_records": [
+    {
+      "borg": "gg4e08:0101",
+      "descriptor": 8,
+      "group": 15,
+      "normal_hit_block_sha256": "ce5210cd200a24705ab8f2084e291e526367664acdfde28e15d21bbc9c4f36de",
+      "raw_power": 20,
+      "reaction_index": 1,
+      "reaction_record": "8034EB10"
+    },
+    {
+      "borg": "gg4e08:000a",
+      "descriptor": 1,
+      "group": 1,
+      "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "raw_power": 10,
+      "reaction_index": 1,
+      "reaction_record": "802D4178"
+    }
+  ],
+  "notes": [
+    "The original seat-zero bucket visitor processes prepended class-3 carriers from head to tail.",
+    "Accepted class-4 shapes are themselves prepended; registry order is not allocation priority.",
+    "No-retry and visit-three disposal were replayed in the initially empty-shape cases.",
+    "Stage queries saw declared empty cells; render resources and separate effect cells were unavailable.",
+    "Only opening shape registration is qualified, not contact, HP, impact effects or live battle scheduling."
+  ],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

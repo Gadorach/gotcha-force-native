@@ -19,6 +19,7 @@ struct CallObservation {
     u32 entry,caller=0,arguments[6]{};
     unsigned count=0;
     u32 second_arguments[8]{};
+    u32 first_arguments[8]{};
 };
 
 inline u32 be32(const u8* p){return u32(p[0])<<24|u32(p[1])<<16|u32(p[2])<<8|p[3];}
@@ -65,7 +66,10 @@ class Module {
                 obs->caller=cpu->lr-4;
                 for(unsigned i=0;i<6;++i)obs->arguments[i]=cpu->gpr[3+i];
             }
-            if(obs->count<8)obs->second_arguments[obs->count]=cpu->gpr[4];
+            if(obs->count<8){
+                obs->first_arguments[obs->count]=cpu->gpr[3];
+                obs->second_arguments[obs->count]=cpu->gpr[4];
+            }
             ++obs->count;
         }
         for(const u32 allowed:mark.addresses)if(address==allowed){
@@ -145,10 +149,11 @@ public:
         if(!reached)fail("fixture did not reach the requested call");
         return reached;
     }
-    void run_observed(CPUState& cpu,std::vector<u8>& ram,u32 entry,CallObservation& observation)const{
+    void run_observed(CPUState& cpu,std::vector<u8>& ram,u32 entry,CallObservation& observation,
+                      unsigned budget=256)const{
         Boundary mark{{},&observation};
         cpu.host_call=cut;cpu.external_user_data=&mark;
-        dispatch(cpu,ram,entry,true);
+        dispatch(cpu,ram,entry,true,nullptr,budget);
         cpu.host_call=nullptr;cpu.external_user_data=nullptr;
     }
     void finish_stopped_leaf(CPUState& cpu,u32 entry,u32 size)const{
