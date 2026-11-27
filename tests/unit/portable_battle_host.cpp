@@ -1087,6 +1087,70 @@ void roster_cpu_cruise_cases(){
     check(!near.movement.b&&near.attack.pressed==BorgBattleInputs::x,"in-range cruiser attacks instead of boosting");
 }
 
+void roster_cpu_cruise_extension_cases(){
+    struct Terrain final:IBattleMvpTerrain {
+        std::array<StageBodyPartition,1> boxes{{{"wall",-620,-6,620,6,true}}};
+        bool step=false;
+        std::span<const StageBodyPartition> body_partitions()const override{return boxes;}
+        bool height(f32,f32 z,f32,f32* out)const override{if(!out)return false;*out=step&&z>30?10:0;return true;}
+    } terrain;
+    const auto idle=definition("stationary-v1","health=1000\n");
+    const auto cruiser=definition("grounded-v1|0.4|13|15","health=1000\nwalk=0:1\nair=0:2\ndash=0:3\n"
+        "cruise-boost=50|10000|1|2000|0|30\nmove=wing|x|10|airborne|28|0:4\n"
+        "field=wing|3|sphere|240|240|240|30|0|40|190|90|220|120\n"
+        "field-core-damage=wing|enemies|240|10|6\nfield-follow=wing|source\n");
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;config.local_aim_cycle=true;
+    config.teams={0,0,1};config.packages={idle,idle,cruiser};
+    config.spawn={BattlePoint{-240,300},BattlePoint{-240,650},BattlePoint{600,-300}};
+    const auto route=battle_partition_route(terrain,config.spawn[2],config.spawn[0],config.arena_half,config.actor_radius);
+    check(route.count>1&&std::hypot(route.points[0].x-600,route.points[0].z+300)<450,
+          "the first corner alone is too close for this cruise minimum");
+    NativeBattleMvp world;PortableRosterAi cpu;
+    const auto start=[&](){cpu.reset();check(world.start(config,&terrain),"start cruise extension fixture");};
+    const auto step=[&](const PortableRosterInput& ai){
+        const std::array<u8,1> hints{ai.aim_target};
+        check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+            std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false,&terrain,{},nullptr,nullptr,nullptr,{},
+            {nullptr,0,ai.aim_target==255?std::span<const u8>{}:std::span<const u8>(hints)}),"advance native cruise extension");
+    };
+    start();
+    std::optional<unsigned> first_boost;
+    GamePadState planned;
+    bool passed_wall=false,hit=false;
+    for(unsigned n=0;n<220&&!hit;++n){
+        const auto ai=cpu.input(world,2,&terrain);
+        if(!first_boost&&ai.movement.b){first_boost=n;planned=ai.movement;}
+        if(first_boost&&n<*first_boost+30)
+            check(ai.movement.b&&ai.movement.stick_x==planned.stick_x&&ai.movement.stick_y==planned.stick_y&&!ai.attack.pressed,
+                  "hold only the checked movement input throughout the minimum boost");
+        const auto before=world.actors()[2].position[2];
+        step(ai);
+        const auto& actor=world.actors()[2];
+        check(actor.position[1]==50&&!actor.grounded,"same steady cruise height, not a wall climb");
+        if(before<0&&actor.position[2]>=0){
+            check(actor.position[0]>620+config.actor_radius&&first_boost&&n<*first_boost+30,
+                  "the extended minimum burst clears the corner's expanded footprint");
+            passed_wall=true;
+        }
+        for(const auto& e:world.package_events())
+            hit|=e.actor==2&&e.kind==BorgBattleEventKind::Hit&&e.recipient==0;
+    }
+    check(first_boost&&*first_boost<40&&passed_wall&&hit,"a slow cruiser clears the corner and lands its field");
+
+    const auto no_extension=[&](const char* reason){
+        start();
+        for(unsigned n=0;n<70;++n){
+            const auto ai=cpu.input(world,2,&terrain);
+            check(!ai.movement.b&&!ai.attack.pressed,reason);
+            step(ai);
+        }
+    };
+    terrain.step=true;
+    no_extension("don't extend a boost across a floor-height change");
+    terrain.step=false;config.teams[1]=1;config.spawn[1]={730,80};
+    no_extension("don't extend a boost through a live ally beyond the corner");
+}
+
 void one_local_roster_cases(){
     struct Terrain final:IBattleMvpTerrain {
         std::array<StageBodyPartition,1> boxes{{{"remote",600,-6,700,6}}};
@@ -1272,6 +1336,7 @@ int main(int argc,char** argv){
     roster_cpu_follow_charge_cases();
     roster_cpu_field_height_cases();
     roster_cpu_cruise_cases();
+    roster_cpu_cruise_extension_cases();
     one_local_roster_cases();
     coop_roster_cases();
 }

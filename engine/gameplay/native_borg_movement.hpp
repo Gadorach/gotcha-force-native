@@ -15,6 +15,7 @@ inline bool native_borg_movement_frame_valid(const NativeBorgMovementFrame& fram
     const auto f=frame.forward,r=frame.right;
     return std::abs(f.x*f.x+f.z*f.z-1)<.001f&&std::abs(r.x*r.x+r.z*r.z-1)<.001f&&std::abs(f.x*r.x+f.z*r.z)<.001f;
 }
+inline f32 native_borg_stick_axis(s32 value){return f32(std::clamp(value,-128,127))/(value<0?128.f:127.f);}
 inline BattlePoint native_borg_move_direction(f32 x,f32 y,const NativeBorgMovementFrame& frame){
     const f32 length=std::hypot(x,y);if(length>1){x/=length;y/=length;}
     return {frame.right.x*x-frame.forward.x*y,frame.right.z*x-frame.forward.z*y};

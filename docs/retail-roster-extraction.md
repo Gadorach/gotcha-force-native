@@ -1810,6 +1810,15 @@ of 19. All 206 still passed. A controlled contact test stalled with
 the old mover, then landed a strike with the new rule without moving
 through the rival. The same fixture kept local facing unchanged.
 
+Allowing a checked boost to continue past a short corner leg raised
+the 120-tick totals to **164 starts and 147 damaging hitters** and
+the 240-tick totals to **191 starts and 182 damaging hitters**. All
+206 still passed, with 11 quiet subjects still fighting at tick 240.
+Sirius (`0e00`) first hit at tick 108; `0e03` first hit at tick 71.
+Neither had started by tick 240 in the previous sweep. In isolation,
+Sirius also hit at tick 108, where the previous planner covered only
+96 units in 240 ticks without attacking.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

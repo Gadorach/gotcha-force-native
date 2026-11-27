@@ -48,6 +48,26 @@ def smoke(binary, opengl):
             if sealed:
                 assert "actor=2 move=wing event=start " not in log
 
+        # This cruise boosts for at least 30 ticks. The first leg is
+        # shorter than that burst, but the line can continue past the
+        # eastern corner and rejoin the route on the far side.
+        manifest.write_text(text)
+        profile = root / "borgs/jump-stick/gameplay.txt"
+        profile.write_text(profile.read_text().replace("grounded-v1|4|13|18", "grounded-v1|0.4|13|15")
+                           .replace("cruise-boost=50|160|2|2|12|4", "cruise-boost=50|10000|1|2000|0|30")
+                           .replace("|165|9|2", "|240|9|6").replace("|170|170|170|14|", "|240|240|240|30|"))
+        (root / "route.roster").write_text(
+            "GFROSTER 1\nstage=example:workshop\nround-seconds=5\n"
+            "fighter=0|example:flight-stick|normal|west\n"
+            "fighter=0|example:flight-stick|normal|west-rear\n"
+            "fighter=1|example:jump-stick|normal|east-outer\n"
+        )
+        battle = run([binary, mode, "--battle-roster", "route.roster", "--frames", "240",
+                      "--no-audio", "--trace-package-battle"], cwd=root, capture_output=True, text=True, timeout=45)
+        log = battle.stderr
+        assert battle.returncode == 0 and "frames=240 actors=3 " in log, log[-5000:]
+        assert re.search(r"actor=2 move=wing event=hit .*recipient=0 ", log), log[-5000:]
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)
@@ -55,5 +75,5 @@ if __name__ == "__main__":
     parser.add_argument("--opengl", action="store_true")
     args = parser.parse_args()
     smoke(args.binary, args.opengl)
-    print(f"Roster CPU cruise: clear detour reaches a real rival; sealed route holds fire PASS "
+    print(f"Roster CPU cruise: clear detour and extended corner boost hit; sealed route holds fire PASS "
           f"({'OpenGL' if args.opengl else 'headless'})")

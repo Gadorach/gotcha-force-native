@@ -3921,7 +3921,7 @@ private:
         current={shot.id,shot.package_rewind_path,policy.speed,shot.package_move,shot.owner,actor.package_damage_serial};
         record_package(BorgBattleEventKind::RewindQueued,shot.owner,shot.package_move,0,shot.id,current.path.count,recipient);
     }
-    static f32 axis(s32 value){return f32(std::clamp(value,-128,127))/(value<0?128.f:127.f);}
+    static f32 axis(s32 value){return native_borg_stick_axis(value);}
     static void unit(f32& x,f32& z,bool always){const f32 length=std::sqrt(x*x+z*z);if(length>0&&(always||length>1)){x/=length;z/=length;}}
     static bool floor(const IBattleMvpTerrain* terrain,f32 x,f32 z,f32 current,f32* out){if(!terrain){*out=0;return true;}return terrain->height(x,z,current,out)&&std::isfinite(*out)&&std::abs(*out)<=20000;}
     u8 actor_target(unsigned owner)const{

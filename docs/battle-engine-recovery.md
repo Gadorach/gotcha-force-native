@@ -1128,9 +1128,13 @@ turn uses the stick direction, not the aim target. It does not move
 either body, apply during a hit reaction, or alter local controls.
 Short-range continuous-cruise CPUs also route around full-height
 partitions. They only request a new boost when aligned on a clear leg
-with room and meter for the authored minimum. The normal movement
-controller still owns thrust, spend, release and recovery; the CPU
-does not climb over the partition or change the package's cruise height.
+with room and meter for the authored minimum. A short corner leg can
+extend straight past a waypoint if the whole boost fits on flat
+support, clears walls and bodies in the current snapshot, and shortens
+the remaining route. The CPU keeps that stick direction for the
+minimum boost; the normal movement controller still owns thrust,
+collision, spending, release and recovery. The CPU does not climb over
+the partition or change the package's cruise height.
 When an authored partition blocks the approach to the nearest enemy,
 the CPU normally prefers a clear rival, except when a valid detour to
 the nearer rival is less than half the clear walking distance. When

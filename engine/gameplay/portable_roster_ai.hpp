@@ -29,6 +29,7 @@ public:
         auto& state=slots_[cpu];
         const auto tick=world.tick();
         if(state.sampled==tick)return state.output;
+        const bool previous_boost=state.sampled!=unsampled&&state.output.movement.b;
         const auto opening=cpu==0?0u:30u-5u*cpu; // spread opening attacks by CPU order
         if(state.sampled==unsampled)state.next_start=opening;
         state.sampled=tick;
@@ -38,6 +39,14 @@ public:
 
         const auto& self=world.actors()[slot];
         const auto& action=world.package_action(slot);
+        if(state.cruise_leg_until>tick&&profile->cruise&&self.package_boosting&&!self.hit_flash&&
+           self.movement_speed>.05f&&self.package_boost_meter.value736>0&&action.move==BorgBattleActionState::none){
+            // Keep the checked stick direction through the minimum latch.
+            // Collision and the real boost meter can still end this plan.
+            pad.stick_x=state.cruise_leg_x;pad.stick_y=state.cruise_leg_y;pad.b=true;
+            return state.output;
+        }
+        state.cruise_leg_until=0;
         const auto preferred=std::any_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
             return move.button==BorgBattleButton::B&&supported(move);
         })?BorgBattleButton::B:BorgBattleButton::X;
@@ -225,16 +234,18 @@ public:
                 pad.stick_y=s8(std::lround(127*side->z));
             }
         };
-        const auto boost_toward=[&](BattlePoint destination,f32 reserve){
+        const auto boost_travel=[&]()->f32{
             if(!profile->cruise||self.grounded||profile->dash<=profile->walk||
-               self.hit_flash||state.button||action.move!=BorgBattleActionState::none)return false;
+               self.hit_flash||state.button||action.move!=BorgBattleActionState::none)return 0;
             const auto& spec=*profile->cruise;
             // A new boost cannot cancel until the authored minimum. Once
             // latched, release as the leg runs out; the mover owns the latch.
             const unsigned visits=self.package_boosting?1u:spec.minimum;
-            if(self.package_boost_meter.value736<int(visits*spec.cost))return false;
-            const f32 travel=profile->dash*visits;
-            if(std::hypot(destination.x-start.x,destination.z-start.z)<=travel+reserve)return false;
+            return self.package_boost_meter.value736>=int(visits*spec.cost)?profile->dash*visits:0.f;
+        };
+        const auto boost_toward=[&](BattlePoint destination,f32 reserve){
+            const f32 travel=boost_travel();
+            if(travel<=0||std::hypot(destination.x-start.x,destination.z-start.z)<=travel+reserve)return false;
             const auto direction=native_borg_direction(start,destination);
             if(std::abs(native_borg_aim_delta(self.facing,direction))>
                std::min(.08f,world.config().turn_per_tick*.5f))return false;
@@ -273,6 +284,12 @@ public:
                     // for this burst rather than dashing at the rival.
                     pad.l=dash_fits(step,span,radius);
                     pad.b=boost_toward(*waypoint,radius);
+                    if(!pad.b&&!previous_boost&&!self.package_boosting&&boost_travel()>span&&
+                       cruise_leg_extension_fits(world,slot,*terrain,state.route,state.waypoint,pad)){
+                        state.cruise_leg_x=s8(pad.stick_x);state.cruise_leg_y=s8(pad.stick_y);
+                        state.cruise_leg_until=u64(tick)+profile->cruise->minimum;
+                        pad.b=true;
+                    }
                     steer_around_ally({step.x/span,step.z/span},span);
                 }
             }
@@ -322,8 +339,9 @@ private:
     static constexpr u32 unsampled=std::numeric_limits<u32>::max();
     struct Slot {
         u32 sampled=unsampled;
-        u64 release_at=0,next_start=0,replan_at=0;
+        u64 release_at=0,next_start=0,replan_at=0,cruise_leg_until=0;
         u8 button=0,route_target=255;
+        s8 cruise_leg_x=0,cruise_leg_y=0;
         bool release_window=false;
         PortableRosterInput output{};
         BattlePoint route_goal{};
@@ -335,6 +353,46 @@ private:
     static bool body_blocks_leg(BattlePoint from,BattlePoint step,const BattleMvpActor& body,f32 radius,f32* fraction){
         const BattlePoint p{body.position[0],body.position[2]};
         return (p.x-from.x)*step.x+(p.z-from.z)*step.z>0&&battle_swept_hit(from,step,p,2*radius,fraction);
+    }
+
+    static bool cruise_leg_extension_fits(const NativeBattleMvp& world,unsigned owner,const IBattleMvpTerrain& terrain,
+                                           const BattlePartitionRoute& route,unsigned waypoint,const GamePadState& pad){
+        if(waypoint+1>=route.count||(!pad.stick_x&&!pad.stick_y))return false; // never extend past the goal
+        const auto& self=world.actors()[owner];
+        const auto& cfg=world.config();
+        const auto& profile=*cfg.packages[owner];
+        const auto& spec=*profile.cruise;
+        const auto wish=native_borg_move_direction(native_borg_stick_axis(pad.stick_x),native_borg_stick_axis(pad.stick_y),{});
+        if(std::abs(native_borg_aim_delta(self.facing,wish))>std::min(.08f,cfg.turn_per_tick*.5f))return false;
+        const auto direction=native_borg_turn(self.facing,wish,cfg.turn_per_tick);
+        const f32 travel=profile.dash*spec.minimum;
+        const BattlePoint from{self.position[0],self.position[2]},step{direction.x*travel,direction.z*travel};
+        const BattlePoint to{from.x+step.x,from.z+step.z};
+        const auto bound=cfg.arena_half-cfg.actor_radius-4.f;
+        if(std::abs(to.x)>bound||std::abs(to.z)>bound||
+           !battle_partition_route_clear(terrain,from,to,cfg.actor_radius+4.f))return false;
+        const auto remaining=battle_partition_route_length(from,route,waypoint);
+        bool progress=false;
+        for(unsigned i=waypoint+1;i<route.count&&!progress;++i)
+            progress=battle_partition_route_length(to,route,i)+cfg.actor_radius<remaining&&
+                battle_partition_route_clear(terrain,to,route.points[i],cfg.actor_radius);
+        if(!progress)return false;
+        for(unsigned i=0;i<world.actor_count();++i){
+            const auto& peer=world.actors()[i];
+            f32 portion=0;
+            if(i!=owner&&peer.health&&std::abs(peer.position[1]-self.position[1])<cfg.actor_height&&
+               body_blocks_leg(from,step,peer,cfg.actor_radius,&portion))return false;
+        }
+        // Only preview constant-height runs; unknown support or a height
+        // change needs ordinary steering, not a long boost commitment.
+        const f32 support=self.position[1]-spec.height;
+        for(unsigned n=1;n<=spec.minimum;++n){
+            const f32 length=n*profile.dash;
+            f32 floor=0;
+            if(!terrain.height(from.x+direction.x*length,from.z+direction.z*length,self.position[1],&floor)||
+               !std::isfinite(floor)||std::abs(floor-support)>.01f)return false;
+        }
+        return true;
     }
 
     static bool follow_charge_reaches(const NativeBattleMvp& world,unsigned owner,unsigned rival,const BorgBattleMove& move,
