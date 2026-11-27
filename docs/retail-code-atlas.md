@@ -1291,6 +1291,40 @@ python3 -m tools.analyze.retail_type76_opening \
   /tmp/opencode/gf-type76-opening.json
 ```
 
+### Type-76 incoming hits: carrier HP and the zero-HP exit
+
+The [incoming-hit replay](api-map/gg4e08-type76-incoming.json)
+uses the same normal parent rows and both socket ordinals. A
+separately constructed type-9/key-4 source, credited to Sasuke,
+hits the level carrier receiver while Sasuke's body stays 800
+units away. This is not a Sasuke action assignment. With only the
+carrier's attack shape admitted, the colocated source did not
+hit it. The two-shape control 400 units away also missed.
+
+With both carrier shapes present and the source centered on
+the receiver, common record `802C4838` reached the writer with
+amount **17**. The carrier had **10 HP**, so the write removed
+**10**, not 17. Neither fighter's HP or damage ledger changed.
+The carrier recorded the incoming token and receive flag, but
+its outgoing contact latch stayed clear.
+
+The next callback used the zero-HP helper and requested
+**type 4/key 0**, not the outgoing hit's type-8 child. Both parent
+shapes returned on that callback. The carrier and its descriptor
+returned on the third follow-up, even if the type-4 effect
+could not allocate a class-2 cell or descriptor.
+
+All 20 cases matched across O0, O1, and O2. The replay does not
+initialize the type-4 effect or qualify nonlethal hits, incoming
+reactions after the writer, terrain behavior, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_type76_incoming \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type76-paid "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type76-incoming.json
+```
+
 ### Type-32 model-relative segments: copied aim and live gate
 
 The [shared replay](api-map/gg4e08-type32-shared.json) runs the

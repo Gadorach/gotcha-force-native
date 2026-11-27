@@ -15,15 +15,132 @@ constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC,ac
 constexpr u32 allocate=0x80088AA0,debit_entry=0x8006DBE0;
 constexpr u32 hit_block=0x81034000,shapes=0x81039000,shape_stride=0x200,attack_count=0x8043B5A0-21328;
 constexpr u32 attack_registry=0x803C477C,bind=0x8008AC80,opening=0x800FCE50;
+using CommonBank=std::array<u8,21504>;
 struct Opening {
     unsigned ordinal,scenario;
     const contact::HitBlock& attack;
     const contact::HitBlock& body;
     const contact::ActorSpec& attacker;
     const contact::ActorSpec& defender;
+    const CommonBank* incoming=nullptr;
 };
 struct ShapeCase {unsigned slots;float z;int exit_cells=-1;};
 constexpr ShapeCase shape_cases[]={{0,25},{1,25},{2,25,1},{2,-40},{2,-80},{2,25,0}};
+struct IncomingCase {unsigned slots;float x;bool effect_cell, effect_descriptor;};
+constexpr IncomingCase incoming_cases[]={{1,0,false,false},{2,400,false,false},{2,0,true,true},
+                                          {2,0,false,true},{2,0,true,false}};
+
+void incoming_contact(const Module& mod,std::vector<u8>& ram,Route r,u32 carrier,const Opening& inlet,
+                      const contact::Point& root,auto publish){
+    const auto at=[&](u32 address){return contact::at(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    const auto half=[&](u32 address){return contact::half(ram,address);};
+    const auto scalar=[&](u32 address){return std::bit_cast<float>(word(address));};
+    const auto point=[&](u32 address){return contact::Point{scalar(address),scalar(address+4),scalar(address+8)};};
+    const auto rule=incoming_cases[inlet.scenario];
+    constexpr u32 stage=0x81050000,grid=stage+0x100,refs=stage+0x200,empty=refs+64*4,scene=contact::scene;
+    put32(at(0x8043B5A0-21316),stage);
+    for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+    put_float(at(stage+52),1000.f);
+    for(unsigned i=0;i<4;++i)put_float(at(stage+56+4*i),i%2?-1000.f:3000.f);
+    for(unsigned i=0;i<6;++i)put32(at(grid+4*i),std::array<u32,6>{500,500,8,8,u32(-1000),u32(-1000)}[i]);
+    put32(at(grid+24),refs);put32(at(empty),0xFFFFFFFF);
+    for(unsigned i=0;i<64;++i)put32(at(refs+4*i),empty);
+
+    constexpr u32 common=0x81048000,source=0x8103A000,source_shape=shapes+2*shape_stride,where=0x8103D000;
+    constexpr u32 visual=0x8103F000,link=visual+0x40,table=visual+0x80;
+    put32(at(0x803BB374),visual);put32(at(visual+16),link);put32(at(link),table);put32(at(table+4*68),visual+0x400);
+    put32(at(scene+152),common);
+    std::memcpy(at(common),inlet.incoming->data(),inlet.incoming->size());
+    put16(at(contact::receiver+0x94),0x000A);
+    auto origin=root;origin[0]+=rule.x;
+    for(unsigned i=0;i<3;++i)put_float(at(where+4*i),origin[i]);
+    put32(at(free_head+12),source);put32(at(free_tail+12),source);put16(at(free_count+6),1);at(source)[2]=3;
+    put32(at(free_head+16),source_shape);put32(at(free_tail+16),source_shape);put16(at(free_count+8),1);at(source_shape)[2]=4;
+    CPUState create{};create.gpr[3]=contact::receiver;create.gpr[4]=where;create.gpr[5]=4;
+    mod.run(create,ram,0x800FC6A0);
+    if(create.gpr[3]!=source||word(source+0x90)!=contact::receiver||word(source+0x8C)!=contact::receiver||
+       at(source)[0x10]!=9||at(source)[0x11]!=4||point(source+0x20)!=origin)
+        fail("type-76 incoming source was not the separate key-4 effect");
+    CPUState init{};init.gpr[3]=source;
+    mod.run(init,ram,0x800FC7C0,1024);
+    CPUState late{};late.gpr[3]=source;
+    mod.run(late,ram,0x80047AA4);
+    publish();
+    if(at(source)[0x18]!=1||half(attack_count)!=2||word(attack_registry)!=shapes||word(attack_registry+4)!=source_shape||
+       point(source_shape+0x64)!=origin||scalar(source_shape+0x7C)!=150.f||word(source_shape+0x24)!=contact::receiver||
+       half(source+0x26C)!=2||half(carrier+0x1C6)!=10||half(carrier+0x1C8)!=10||at(carrier)[0x1D9]||
+       half(carrier+0x20C)||half(free_count+6)||half(descriptor_row+18))
+        fail("type-76 incoming publication or carrier HP inlet changed");
+    CPUState apply{};
+    CallObservation amount{contact::amount_entry};
+    const auto cut=mod.run_to_or_return(apply,ram,contact::pair_pass,{contact::hp_write},&amount);
+    const bool hit=rule.slots==2&&rule.x==0;
+    if(cut!=(hit?contact::hp_write:0)||amount.count!=unsigned(hit)||
+       (hit&&(amount.caller!=0x8002F108||amount.arguments[0]!=0x802C4838||amount.arguments[1]!=source||
+              amount.arguments[2]!=carrier||apply.lr!=0x8002F1DC||apply.gpr[3]!=carrier))||half(carrier+0x1C6)!=10)
+        fail("type-76 incoming overlap reached the wrong amount or HP writer");
+    const unsigned requested=hit?apply.gpr[4]:0;
+    if(hit)mod.finish_stopped_leaf(apply,contact::hp_write,164);
+    const unsigned hp=half(carrier+0x1C6),token=half(carrier+0x20C);
+    const auto source_flags=at(source)[0x1D9],receive_flags=at(carrier)[0x1DA];
+    const auto clean_fighters=[&]{
+        return half(actor+0x1C6)==150&&half(contact::receiver+0x1C6)==180&&
+            !word(actor+0x418)&&!word(actor+0x41C)&&!word(contact::receiver+0x418)&&!word(contact::receiver+0x41C);
+    };
+    if(!clean_fighters()||hp!=(hit?0:10)||half(carrier+0x1C8)!=10||token!=(hit?2:0)||word(carrier+0x41C)||
+       source_flags!=(hit?64:0)||at(carrier)[0x1D9]||receive_flags!=unsigned(hit)||
+       at(carrier)[0x26E]!=unsigned(hit)||word(carrier+0x290)!=(hit?source:0)||word(source+0x290)!=(hit?carrier:0))
+        fail("type-76 incoming damage used pilot HP, ledgers or the outgoing latch");
+
+    unsigned effect_requests=0,allocated=0,returned_shapes=0,retired=0;
+    if(hit){
+        constexpr u32 fx=0x8103C000,fx_descriptor=0x8103D800,helper=0x8001BDA8;
+        put32(at(free_head+8),rule.effect_cell?fx:0);put32(at(free_tail+8),rule.effect_cell?fx:0);
+        put16(at(free_count+4),u16(rule.effect_cell));at(fx)[2]=2;
+        put32(at(descriptor_row+12),rule.effect_descriptor?fx_descriptor:0);
+        put16(at(descriptor_row+18),u16(rule.effect_descriptor));
+        const auto saved=ram;
+        CPUState exit{};exit.gpr[3]=carrier;
+        CallObservation request{helper};
+        mod.run_observed(exit,ram,opening,request,1024);
+        if(request.count!=1||request.caller!=0x800FD144||request.arguments[0]!=carrier||
+           request.arguments[1]!=carrier+0x20||request.arguments[2])
+            fail("type-76 incoming lethal hit did not reach the zero-HP helper");
+        std::memcpy(ram.data(),saved.data(),ram.size());
+
+        CPUState next{};next.gpr[3]=carrier;
+        CallObservation fx_alloc{allocate};
+        mod.run_observed(next,ram,opening,fx_alloc,1024);
+        const bool made=rule.effect_cell&&rule.effect_descriptor;
+        if(fx_alloc.count!=1||fx_alloc.caller!=0x8001BDE0||fx_alloc.arguments[0]!=actor||
+           fx_alloc.arguments[1]!=2||fx_alloc.arguments[2]!=24||fx_alloc.arguments[3]||fx_alloc.arguments[4]!=1||
+           at(carrier)[0x18]!=2||at(carrier)[0x1D8]!=1||half(free_count+6)||
+           half(free_count+4)!=unsigned(rule.effect_cell)-unsigned(made)||
+           half(descriptor_row+18)!=unsigned(rule.effect_descriptor)-unsigned(made)||
+           (made&&(at(fx)[0x10]!=4||at(fx)[0x11]||at(fx)[0x18]||word(fx+0x8C)!=carrier||
+                   word(fx+0x90)!=actor||point(fx+0x20)!=root)))
+            fail("type-76 zero-HP branch did not select the separate type-4 effect");
+        publish();
+        if(half(attack_count)!=1||word(attack_registry)!=source_shape||half(contact::receiver_count)!=1||
+           word(contact::receiver_registry)!=contact::body||word(active_head+49*4)!=0||half(free_count+8)!=2)
+            fail("type-76 incoming destruction did not return both parent shapes");
+        const auto desc_before_retire=half(descriptor_row+18);
+        for(unsigned n=0;n<2;++n){
+            CPUState retire{};retire.gpr[3]=carrier;
+            mod.run(retire,ram,opening);
+            if(bool(at(carrier)[0])!=(n==0)||at(carrier)[0x18]!=3||half(free_count+6)!=n||
+               word(free_head+12)!=(n?carrier:0)||half(descriptor_row+18)!=desc_before_retire+n||
+               word(active_head+9*4)!=(n?0:carrier)||!clean_fighters())
+                fail("type-76 incoming destruction did not retire separately from its shapes");
+        }
+        effect_requests=request.count;allocated=unsigned(at(fx)[0]!=0);returned_shapes=half(free_count+8);
+        retired=unsigned(at(carrier)[0]==0);
+    }
+    std::printf("type76-incoming: %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                r.model,inlet.ordinal,inlet.scenario,rule.slots,unsigned(rule.x),requested,hp,token,source_flags,receive_flags,
+                effect_requests,allocated,returned_shapes,retired);
+}
 
 void opening_contact(const Module& mod,std::vector<u8>& ram,Route r,u32 carrier,const Opening& inlet){
     const auto at=[&](u32 address){return contact::at(ram,address);};
@@ -32,22 +149,23 @@ void opening_contact(const Module& mod,std::vector<u8>& ram,Route r,u32 carrier,
     const auto scalar=[&](u32 address){return std::bit_cast<float>(word(address));};
     const auto point=[&](u32 address){return contact::Point{scalar(address),scalar(address+4),scalar(address+8)};};
     const auto cell=[](unsigned i){return shapes+i*shape_stride;};
-    const auto rule=shape_cases[inlet.scenario];
+    const auto rule=inlet.incoming?ShapeCase{incoming_cases[inlet.scenario].slots,0}:shape_cases[inlet.scenario];
     constexpr unsigned sockets[2][2]={{2,3},{8,10}};
     const unsigned socket=sockets[r.key/2][inlet.ordinal];
     auto* owner=at(actor);
     put32(owner+0x27C,r.table);put32(owner+0x3FC,hit_block);
     std::memcpy(at(hit_block),inlet.attack.data(),inlet.attack.size());
     // Distinct declared socket translations expose the original ordinal lookup.
-    const contact::Point translation{float(100*socket),200.f,300.f};
+    const float socket_drop=r.key==0?42.4f:30.5f;
+    const contact::Point translation{float(100*socket),inlet.incoming?socket_drop:200.f,300.f};
     const auto joint=actor+0x8D4+48*socket;
     for(unsigned axis=0;axis<3;++axis){
         put_float(at(joint+20*axis),1.f);put_float(at(joint+12+16*axis),translation[axis]);
     }
     auto root=translation;
-    root[1]+=r.key==0?-42.4f:-30.5f;
+    root[1]-=socket_drop;
     auto target=root;
-    target[2]+=rule.z;
+    if(inlet.incoming)target[0]+=800.f;else target[2]+=rule.z;
     put32(at(0x803C4E84),actor);
     for(unsigned i=1;i<6;++i)put32(at(0x803C4E84+4*i),0x8101A000);
     contact::bind_sasuke(mod,ram,target,inlet.body,inlet.attacker,inlet.defender,150);
@@ -90,6 +208,10 @@ void opening_contact(const Module& mod,std::vector<u8>& ram,Route r,u32 carrier,
            word(cell(i)+0x2C)!=r.table||at(cell(i))[0x11]!=(i?0:r.high_index)||at(cell(i))[0x10]!=1||
            point(cell(i)+0x64)!=center||scalar(cell(i)+0x7C)!=(i?55.f:30.f)||half(carrier+0x26C)!=1)
             fail("type-76 shape admission prefix, registry order or amount index changed");
+    }
+    if(inlet.incoming){
+        incoming_contact(mod,ram,r,carrier,inlet,root,publish);
+        return;
     }
     CPUState writer{};
     CallObservation amount{contact::amount_entry};
@@ -221,23 +343,27 @@ void replay(const Module& mod,std::vector<u8> ram,Route r,unsigned scenario,cons
 
 int main(int argc,char** argv){
     const bool opening_mode=argc==4&&!std::strcmp(argv[3],"--opening");
-    if(argc!=3&&!opening_mode)fail("usage: type76-paid-fixture qualified.dol unmodified-recomp.so [--opening]");
+    const bool incoming_mode=argc==4&&!std::strcmp(argv[3],"--incoming");
+    if(argc!=3&&!opening_mode&&!incoming_mode)
+        fail("usage: type76-paid-fixture qualified.dol unmodified-recomp.so [--opening|--incoming]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(opening_mode){
+    if(opening_mode||incoming_mode){
         contact::HitBlock body{};
         contact::ActorSpec defender{};
         const auto read=[](auto& row){
             if(std::fread(row.data(),1,row.size(),stdin)!=row.size())fail("type-76 opening payload extent");
         };
+        CommonBank common{};
+        if(incoming_mode)read(common);
         read(body);read(defender);
         for(const auto& route:routes){
             contact::HitBlock attack{};
             contact::ActorSpec attacker{};
             read(attack);read(attacker);
             for(unsigned ordinal=0;ordinal<2;++ordinal)
-                for(unsigned i=0;i<std::size(shape_cases);++i){
-                    const Opening inlet{ordinal,i,attack,body,attacker,defender};
+                for(unsigned i=0;i<(incoming_mode?std::size(incoming_cases):std::size(shape_cases));++i){
+                    const Opening inlet{ordinal,i,attack,body,attacker,defender,incoming_mode?&common:nullptr};
                     replay(mod,original,route,ordinal,&inlet);
                 }
         }
