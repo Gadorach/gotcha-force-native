@@ -1226,6 +1226,49 @@ python3 -m tools.analyze.retail_contact_pose_clock \
   /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-pose-clock.json
 ```
 
+### Opcode-10 melee arms both body clocks
+
+The [melee replay](api-map/gg4e08-melee-pose-clock.json) uses
+the exact opening commands and hit groups for **Tau** (`0807`)
+and **G-Red** (`0001`), with declared joint matrices and a
+stationary Sasuke receiver. The original opcode consumes four
+bytes even when lane zero is disabled. With the lane enabled,
+the published shapes keep the executing fighter as the attack
+object and the credited actor, rather than using a projectile.
+
+| Original opening | Published steps | Source seed | Slow visits per body from clear timers | HP removed |
+| --- | --- | ---: | ---: | ---: |
+| Tau group 1 | 2 | 4 | 3 | 20 |
+| G-Red group 4 | 6, 5 | 8 | 7 | 41 |
+
+Both timers are armed at the amount entry, before HP or rate
+writes. Each body keeps its own longer timer; holding the
+attacker longer does not extend the receiver's timer, and vice
+versa. A whiff arms neither. Re-running the retained pair after
+expiry does not re-arm either body.
+
+G-Red's two steps share amount record `8031B008`. Both overlap
+in the control case, but only step 5 reached amount calculation
+in that placement. Isolating either step still produced one
+41-HP hit and the same two timers. This does not qualify general
+shape order or attribution between steps with different amounts.
+
+The nine-row reviewed melee map statically references ten
+distinct amount records: two with seed 0, seven with seed 4,
+and one with seed 8. Only the two openings above were replayed.
+All 12 cases matched across O0, O1, and O2. This does not run
+live B input, clip progression, whole-frame hit-stop scheduling,
+or native gameplay.
+
+Compile [`retail_melee_pose_clock_fixture.cpp`](../tests/host/retail_melee_pose_clock_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_melee_pose_clock \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-melee-pose-clock.json
+```
+
 ### Contact sound: strict size bands and shared counter bytes
 
 The [sound replay](api-map/gg4e08-contact-sound-replay.json)

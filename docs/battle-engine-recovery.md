@@ -618,6 +618,9 @@ The [original body-clock replay](retail-code-atlas.md#contact-pose-clock-receive
 checks that distinction for four projectile contacts and verifies
 rate copying in the declared linked-body inlet. These body-clock
 visits are not native render ticks or evidence of frame scheduling.
+The [melee replay](retail-code-atlas.md#opcode-10-melee-arms-both-body-clocks)
+verifies the two body-local timer writes for the exact Tau and G-Red
+opcode-10 openings with declared poses.
 
 `--contact-pause-test` converts agreeing seeds to `seed - 1` held
 native render ticks for 83 melee moves and 34 projectile moves.
