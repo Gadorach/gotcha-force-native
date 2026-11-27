@@ -1679,6 +1679,13 @@ the cutoff. For a targeted run, `--trace-package-battle` also prints the
 final HP, position, planar travel, nearest rival and aimed rival for each
 explicit roster slot.
 
+For subjects that start a move without damaging an enemy, the audit
+also separates those with a recorded payload from those without one.
+Payload events are accepted projectile emissions, armed melee
+windows, placed fields, triggered blasts, emitter shots, or walking
+pulses. First stage-impact and interrupt ticks are separate observations;
+they do not prove why a particular move missed.
+
 All **206 of 206** passed preflight and ran the 120-frame budget across
 **42** presets. Allowing a normal dash on sufficiently long,
 clear detour legs raised the number of CPUs starting a move from
@@ -1859,6 +1866,21 @@ move's entry range or contact rule. All 206 profiles still passed.
 The 120-tick totals stayed at 163 starts and 147 damaging hitters;
 at 240 ticks the totals rose to **192 starts and 183 damaging
 hitters**, with 11 quiet subjects still fighting.
+
+In longer spot checks of the projectile users without an enemy hit
+at tick 240, Death ICBM (`0d06`) first hit at tick 313. `0602`,
+`0d07`, and Roach (`0f05`) still had no hit at tick 480. All four
+emitted projectiles and none logged a stage impact in those runs.
+In a separate fixture beginning 550 units from a parked foe, Roach
+triggered six blasts without hitting either enemy. That gives a
+concrete drop-range case to investigate rather than blaming the
+Workshop wall for these misses.
+
+The enhanced audit kept the same 206 admissions, 192 starts and 183
+damaging hitters by tick 240. Of the nine that started without
+damaging an enemy, four emitted projectiles. The other five recorded
+an interruption and no payload. None of the nine logged a stage
+impact. This is a breakdown of the trace, not a gameplay change.
 
 ## Baseline check
 

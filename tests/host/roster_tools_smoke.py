@@ -89,6 +89,9 @@ def smoke(binary):
         early, late = ko["checkpoints"]
         assert early["groups_ended"] == 0 and early["quiet_fighting"] == 1, ko
         assert late["groups_ended"] == 1 and late["quiet_round_ended"] == 1 and late["cpu_enemy_hit"] == 1, ko
+        shooter = group["activity"][0]
+        assert shooter["first_payload_kind"] == "emit" and shooter["first_move_tick"] < shooter["first_payload_tick"]
+        assert shooter["first_payload_tick"] <= shooter["first_enemy_hit_tick"] and late["cpu_payload_seen"] == 1, ko
         rules.write_text(rules_text)
         manifest.write_text(manifest_text)
 

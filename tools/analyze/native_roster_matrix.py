@@ -11,6 +11,8 @@ from tempfile import TemporaryDirectory
 ANCHOR = "example:flight-stick"
 STAGE = "example:workshop"
 BASE_ID = re.compile(r"[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*")
+PAYLOAD_EVENTS = frozenset(("emit", "extra-emit", "melee-armed", "field-placed", "blast-triggered",
+                            "emitter-fired", "walk-pulse-created"))
 
 
 def fixtures(ids):
@@ -39,6 +41,26 @@ def first_damaging_enemy_hits(trace, slots):
 
 def damaging_enemy_slots(trace, slots):
     return set(first_damaging_enemy_hits(trace, slots))
+
+
+def first_action_effects(trace, slot_count, accepted_ticks):
+    """Record observed effects, not inferred misses or hit causes."""
+    payloads, impacts, interrupts = {}, {}, {}
+    for t, s, kind, object_id in re.findall(r"borg-api: round=0 tick=(\d+) actor=(\d+) move=\S+ event=(\S+)"
+                                             r" frame=\d+ object=(\d+) ", trace):
+        if kind not in PAYLOAD_EVENTS and kind not in ("stage-impact", "interrupt"):
+            continue
+        tick, slot = int(t), int(s)
+        if not 1 <= tick <= accepted_ticks or slot >= slot_count:
+            raise ValueError("reported action effect outside accepted roster ticks or slots")
+        if kind in PAYLOAD_EVENTS:
+            if int(object_id) and (slot not in payloads or tick < payloads[slot][0]):
+                payloads[slot] = tick, kind
+        elif kind == "stage-impact":
+            impacts[slot] = min(tick, impacts.get(slot, tick))
+        else:
+            interrupts[slot] = min(tick, interrupts.get(slot, tick))
+    return payloads, impacts, interrupts
 
 
 def round_activity(trace, slots, budget):
@@ -84,7 +106,13 @@ def round_activity(trace, slots, budget):
 
 def checkpoint_totals(rows, checkpoint):
     summary = dict(tick=checkpoint, groups_ended=0, subjects_with_round_at_tick=0, cpu_move_started=0, cpu_enemy_hit=0,
-                   quiet_defeated=0, quiet_round_ended=0, quiet_fighting=0)
+                   quiet_defeated=0, quiet_round_ended=0, quiet_fighting=0, cpu_payload_seen=0,
+                   started_no_hit_with_payload=0, started_no_hit_no_payload=0,
+                   started_no_hit_stage_impact=0, started_no_hit_interrupted=0)
+
+    def observed(tick):
+        return tick is not None and tick <= checkpoint
+
     for row in rows:
         if not row["ran"]:
             continue
@@ -94,10 +122,17 @@ def checkpoint_totals(rows, checkpoint):
             summary["subjects_with_round_at_tick"] += len(row["subjects"])
         for entry in row["activity"]:
             started, hit, ko = (entry[key] for key in ("first_move_tick", "first_enemy_hit_tick", "ko_tick"))
-            summary["cpu_enemy_hit"] += hit is not None and hit <= checkpoint
-            if started is not None and started <= checkpoint:
+            payload_seen = observed(entry.get("first_payload_tick"))
+            damaged = observed(hit)
+            summary["cpu_payload_seen"] += payload_seen
+            summary["cpu_enemy_hit"] += damaged
+            if observed(started):
                 summary["cpu_move_started"] += 1
-            elif ko is not None and ko <= checkpoint:
+                if not damaged:
+                    summary["started_no_hit_with_payload" if payload_seen else "started_no_hit_no_payload"] += 1
+                    summary["started_no_hit_stage_impact"] += observed(entry.get("first_stage_impact_tick"))
+                    summary["started_no_hit_interrupted"] += observed(entry.get("first_interrupt_tick"))
+            elif observed(ko):
                 summary["quiet_defeated"] += 1
             elif ended:
                 summary["quiet_round_ended"] += 1
@@ -164,6 +199,7 @@ def audit(binary, content, namespace, expected, ticks=120, checkpoints=()):
                 continue
             try:
                 accepted, result, starts, hits, ko = round_activity(game.stderr, slots, ticks)
+                payloads, impacts, interrupts = first_action_effects(game.stderr, len(slots), accepted)
             except ValueError as error:
                 row["error"] = str(error)
                 print(f"{preset.name}: {error}", file=sys.stderr)
@@ -171,8 +207,11 @@ def audit(binary, content, namespace, expected, ticks=120, checkpoints=()):
             row.update(ran=True, accepted_ticks=accepted, result=result)
             row["cpu_move_started"] = [borg for n, borg in enumerate(ids, 1) if n in starts]
             row["cpu_enemy_hit"] = [borg for n, borg in enumerate(ids, 1) if n in hits]
-            row["activity"] = [dict(id=borg, first_move_tick=starts.get(n), first_enemy_hit_tick=hits.get(n), ko_tick=ko.get(n))
-                               for n, borg in enumerate(ids, 1)]
+            row["activity"] = [
+                dict(id=borg, first_move_tick=starts.get(n), first_enemy_hit_tick=hits.get(n), ko_tick=ko.get(n),
+                     first_payload_tick=payloads.get(n, (None, None))[0], first_payload_kind=payloads.get(n, (None, None))[1],
+                     first_stage_impact_tick=impacts.get(n), first_interrupt_tick=interrupts.get(n))
+                for n, borg in enumerate(ids, 1)]
 
     return {
         "scope": "native headless Workshop; normal variants, one idle local, subjects as CPUs",
