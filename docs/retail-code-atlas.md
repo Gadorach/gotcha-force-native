@@ -1724,7 +1724,8 @@ literal channel 2, and one receives a signed selector via `800E0E68`.
 For the four indexed type-41 factory keys, table keys 0 and 1
 supply `−1` (no return), while keys 2 and 3 supply channel 0.
 The initializer keeps that selector for the separate retirement
-leaf. This type-41 route is static, not a replay of its exits.
+leaf. The [next replay](#type-41-bombs-bucket-order-area-bind-and-stock-return)
+executes the qualified keys 2 and 3; keys 0 and 1 remain static.
 
 The original post callbacks for `0200`, `020A`, and `020F` restore
 depleted channel 2 when their tested owner gate is open, without a
@@ -1754,6 +1755,49 @@ unqualified.
 python3 -m tools.analyze.retail_stock_returns \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" /tmp/opencode/gf-stock-returns.json
+```
+
+### Type-41 bombs: bucket order, area bind and stock return
+
+The [type-41 replay](api-map/gg4e08-type41-bucket.json) runs the
+normal owner hook `801304B8` with declared eligible B/X inputs and
+the exact initialized stock. Time Bomber spends channel 0 and
+requests key 2, pose 10. Remote Bomber spends the same channel
+and requests key 3, with poses 12 then 11 from post-debit parity.
+Carrier or descriptor refusal returns one immediately through
+`800E0E68`. Opening-shape refusal instead returns on the next
+phase‑2 visit, after the actual initializer has stored channel 0.
+
+Two paid Remote bombs share the original bucket. One X command
+with stock below cap arms the latch without spending stock. The
+bucket walk selects the first placed bomb in both tested cell
+orders and clears the latch before the area request. Cell or
+descriptor refusal does not move the command to the sibling. The
+command visit leaves stock at 6; the selected bomb's phase‑2 visit
+returns it to 7 while the sibling stays active. At full stock the
+tested X request does not arm the latch.
+
+Time's declared near-expiry inlet requests area **19** without
+consuming the remote latch. Remote requests area **20**. Both use
+the parent root and preserve caster credit. With a separate shape
+cell, their areas bind common groups **179** and **180** respectively.
+Area allocation, shape bind, and stock are separate outcomes. The
+tested invalid-owner phase reaches the type‑41 return on that same
+visit, unlike the [tested Thunder Wire exit](#stock-returns-owner-gates-and-thunder-wire-exits).
+
+All **16 cases** matched on O0/O1/O2. The original bucket is tested
+in isolation; roots, the sibling substate, and Time's near-expiry
+counter are supplied. The randomized initialization seeds do not
+measure live lifetime. No area damage, live controller scheduling,
+or native gameplay is qualified.
+
+Compile [`retail_type41_bucket_fixture.cpp`](../tests/host/retail_type41_bucket_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type41_bucket \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type41-bucket.json
 ```
 
 ### Contact rates through an original joint sample

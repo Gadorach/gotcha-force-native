@@ -1651,6 +1651,13 @@ visit order, not a verified scheduler or area damage path.
 authored projectile pass. It does not adopt the retail retirement
 delay or contact policy.
 
+The [original bucket replay](retail-code-atlas.md#type-41-bombs-bucket-order-area-bind-and-stock-return)
+now joins paid placement, initialization, command and phase‑2 return
+for Time and Remote. The first placed Remote bomb consumes a single
+command in both tested cell orders, even if the area refuses. Both
+child shapes can be bound with a spare cell; no child HP or live
+controller timing is qualified.
+
 Regenerate with `time-bomber` and `remote-bomber`. Neither package
 admits gameplay or an alternate variant.
 
