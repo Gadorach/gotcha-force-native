@@ -1175,9 +1175,11 @@ expresses delayed growth and independent hit identity. Its optional
 for a bounded native budget. It does not reproduce retail capacity,
 body-slot admission, or the parent shape's post-impact contact on
 terrain. No Ninja move is bound to either rule.
-Next missing witness: the accepted ordinary program cue and current
-key-11 pose through launch, including the target-dependent aim path.
-Live scheduler and prop response remain separate checks.
+The [ordinary-X cue replay](retail-code-atlas.md#ordinary-x-installed-program-vm-cue-and-paid-bomb-release)
+now joins the original phase handler to its VM-generated cue, stock,
+and the constructor's later key-11 sample. It supplies the pose and
+does not run live controls or qualify the target-dependent aim path.
+Live scheduling and prop response remain separate checks.
 
 ### Command Girl: B and X do not request the same family of beam
 

@@ -50,6 +50,19 @@ constexpr std::array cases{
     Case{0x000A,2,0,1,0,1}, Case{0x000A,2,0,2,1,1},
     Case{0x000C,2,0,2,1,1},
 };
+struct CuePilot {
+    u16 model;
+    u8 key;
+    u32 installer,config,bank,handler;
+    std::array<u32,2> programs;
+};
+constexpr std::array cue_pilots{
+    CuePilot{0,0,0x8006F4F8,0x802D3DC8,0x802BDE80,0x80071598,{0x802BE5EE,0x802BE656}},
+    CuePilot{3,1,0x8006F60C,0x8033AF78,0x802BDE80,0x80071598,{0x802BE5EE,0x802BE656}},
+    CuePilot{10,3,0x8006F4F8,0x802D3EE0,0x802BDE80,0x80071598,{0x802BE5EE,0x802BE656}},
+    CuePilot{12,5,0x8019E9A4,0x803766F8,0x80376A60,0x801A0414,{0x80377188,0x803771E0}},
+};
+enum class CueCase {paid,empty_stock,empty_carriers,lower_only};
 
 class Check {
     const Module& mod;
@@ -395,6 +408,89 @@ class Check {
     }
 public:
     Check(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
+    void ordinary_x_cue(const CuePilot& pilot,bool flag,CueCase scenario){
+        constexpr unsigned visit_limit=24;
+        const bool lower_only=scenario==CueCase::lower_only;
+        const unsigned stock=scenario==CueCase::empty_stock?0:1;
+        const unsigned carriers=scenario==CueCase::empty_carriers?0:1;
+        const Case c{pilot.model,2,0,u8(stock),u8(carriers),1};
+        owner(c);free_pools(carriers,1);
+        put32(at(0x803C4D94),spec);
+        CPUState install{};install.gpr[3]=actor;
+        mod.run(install,ram,pilot.installer);
+        auto* a=at(actor);
+        if(be32(a+0x4B0)!=pilot.config||be32(a+0x4AC)!=spec||be32(a+0x1D80)!=pilot.bank||
+           at(pilot.config)[2]!=3)
+            fail("ordinary-X cue installer did not select the exact normal program profile");
+        a[0x579]=at(pilot.config)[2];
+        a[0x581]=0; // Declared ordinary-X substate; no controller selection runs.
+        put32(a+0x5E0,flag?0x40:0);
+        a[0x7C9]=1; // Original movement inhibit, not a supplied world-query result.
+        put_float(a+0x1DC8,1.f);
+        a[0x1CEF]=0x7E;
+        CPUState enter{};enter.gpr[3]=actor;
+        CallObservation request{0x8004BEB8};
+        mod.run_observed(enter,ram,pilot.handler,request,1024);
+        const auto cursor=be32(a+0x1CD4),program=pilot.programs[flag];
+        if(request.count!=1||request.caller!=0x800FF3F4||request.arguments[0]!=actor||
+           request.arguments[1]!=15||request.arguments[2]!=4||request.arguments[3]!=unsigned(flag)||
+           request.arguments[4]!=u32(-1)||request.arguments[5]!=u32(-1)||
+           a[0x540]!=1||a[0x1CEF]||cursor<=program||cursor>=program+80||half(actor+0x784)!=stock||
+           be32(at(active_head+9*4))){
+            std::fprintf(stderr,"ordinary X model=%04X flag=%u caller=%08X calls=%u choice=%u phase=%u cue=%u cursor=%08X\n",
+                         pilot.model,unsigned(flag),request.caller,request.count,request.arguments[3],a[0x540],a[0x1CEF],cursor);
+            fail("ordinary-X program request or opening cue clear mismatch");
+        }
+        if(lower_only)a[0x579]=2; // Do not advance the already-started upper lane.
+        auto* joint=a+0x8D4+11*48;
+        put_float(joint+12,150.f);put_float(joint+28,220.f);put_float(joint+44,345.f);
+        const unsigned expected_visit=pilot.model==12?22:21;
+        constexpr u32 debit_entry=0x8006DBE0;
+        unsigned count=0,cue_visit=0,visits=0,debit_count=0;
+        for(unsigned n=1;n<=visit_limit;++n){
+            // Re-run the cue visit from its entry to observe the stock
+            // leaf as well as the factory, including insufficient stock.
+            const auto before=n==expected_visit&&!lower_only?ram:std::vector<u8>{};
+            CPUState visit_cpu{};visit_cpu.gpr[3]=actor;
+            CallObservation bomb{lower_only?debit_entry:factory};
+            mod.run_observed(visit_cpu,ram,pilot.handler,bomb,1024);
+            ++visits;
+            if(a[0x1CEF]){
+                cue_visit=n;count=bomb.count;
+                const u32 call=pilot.model==12?0x801A04D8:
+                               pilot.model==10?0x800716C0:pilot.model==3?0x80071690:0x80071678;
+                if(lower_only||n!=expected_visit||before.empty()||a[0x1CEF]!=1||a[0x540]!=2||count!=stock||
+                   (count&&(bomb.caller!=call||bomb.arguments[0]!=actor||bomb.arguments[1]!=pilot.key)))
+                    fail("positive X cue selected the wrong phase, factory or key");
+                const auto next_cursor=be32(a+0x1CD4);
+                std::memcpy(ram.data(),before.data(),ram.size());
+                CPUState replay{};replay.gpr[3]=actor;
+                CallObservation debit{debit_entry};
+                mod.run_observed(replay,ram,pilot.handler,debit,1024);
+                debit_count=debit.count;
+                if(debit_count!=1||debit.caller!=(pilot.model==12?0x801A04B8:0x80071658)||debit.arguments[0]!=actor||
+                   debit.arguments[1]!=2||debit.arguments[2]!=1||debit.arguments[3]!=1||
+                   a[0x1CEF]!=1||a[0x540]!=2||be32(a+0x1CD4)!=next_cursor)
+                    fail("ordinary X did not run the exact stock guard on the cue visit");
+                break;
+            }
+            if(bomb.count||a[0x540]!=1||half(actor+0x784)!=stock||be32(at(active_head+9*4)))
+                fail("bomb release preceded its positive X cue");
+        }
+        const bool paid=stock&&!lower_only,created=paid&&carriers;
+        if(bool(cue_visit)==lower_only||half(actor+0x784)!=stock-unsigned(paid)||
+           fp(actor+0x788)!=(paid?300.f:0.f)||be32(at(active_head+9*4))!=(created?cell(0):0)||
+           half(free_count+6)!=carriers-unsigned(created)||half(descriptor_row+18)!=1-unsigned(created)||
+           (lower_only&&be32(a+0x1CD4)!=cursor))
+            fail("ordinary-X cue gate changed an unqualified pool, clock or stock");
+        if(created&&(at(cell(0))[0x10]!=15||at(cell(0))[0x11]!=pilot.key||
+           be32(at(cell(0)+0x90))!=actor||be32(at(cell(0)+0xE0))!=descriptor(0)||
+           fp(cell(0)+0x20)!=205.f||fp(cell(0)+0x24)!=220.f||fp(cell(0)+0x28)!=345.f))
+            fail("ordinary-X constructor did not sample the later supplied key-11 socket");
+        std::printf("bomb-x-cue: %u %u %u %08X %08X %08X %u %u %u %u %u %u %u %.0f\n",
+                    pilot.model,unsigned(flag),unsigned(scenario),program,cursor,be32(a+0x1CD4),visits,cue_visit,
+                    a[0x540],debit_count,count,unsigned(created),half(actor+0x784),double(fp(actor+0x788)));
+    }
     void run_case(const Case& c,bool report=true){
         owner(c);free_pools(c.carriers,c.descriptors);
         const bool gun=c.model==0x0101,charged=gun&&c.state==3;
@@ -897,11 +993,20 @@ int main(int argc,char** argv){
     const bool floor=argc==4&&!std::strcmp(argv[3],"--floor");
     const bool floor_contact=argc==4&&!std::strcmp(argv[3],"--floor-contact");
     const bool actor_area=argc==4&&!std::strcmp(argv[3],"--actor-area");
-    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&!actor_area&&std::strcmp(argv[3],"--first-bind"))))
+    const bool x_cue=argc==4&&!std::strcmp(argv[3],"--x-cue");
+    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&!actor_area&&!x_cue&&std::strcmp(argv[3],"--first-bind"))))
         fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so "
-             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact|--actor-area]");
+             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact|--actor-area|--x-cue]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
+    if(x_cue){
+        for(const auto& pilot:cue_pilots)for(bool flag:{false,true})
+            for(auto scenario:{CueCase::paid,CueCase::empty_stock,CueCase::empty_carriers,CueCase::lower_only}){
+                Check test(module,original);
+                test.ordinary_x_cue(pilot,flag,scenario);
+            }
+        return 0;
+    }
     if(floor||floor_contact||actor_area){
         constexpr std::array<u16,2> models{0,0x000A};
         std::array<HitBlock,models.size()> blocks{};

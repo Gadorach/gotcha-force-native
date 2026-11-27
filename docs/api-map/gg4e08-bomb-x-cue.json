@@ -1,0 +1,891 @@
+{
+  "entries": {
+    "consumer_cue_byte": "0x1CEF",
+    "cue_writer": "8004C424",
+    "phase_one": "800FF418",
+    "phase_zero": "800FF30C",
+    "program_request": "8004BEB8",
+    "vm_visit": "8004CD24"
+  },
+  "inlets": {
+    "actor_state": 2,
+    "actor_substate": 0,
+    "double_ninja_clone_flag": 0,
+    "movement_inhibit_byte_0x7c9": 1,
+    "time_multiplier": 1
+  },
+  "kind": "gf-retail-bomb-x-cue",
+  "notes": [
+    "The original installer selects the checked normal bank. The fixture starts at its ordinary-X handler with state declared.",
+    "The original phase-one handler advances the VM and consumes its own generated positive cue. No positive cue is seeded.",
+    "The debit observation reruns the one cue visit from the same entry snapshot, without returning a supplied helper result.",
+    "The later logical-key-11 pose is supplied; no animation evaluator, live controller, target solve, clock producer, or world visit runs.",
+    "Counts are bounded phase-one visits, not hardware frames or native release markers."
+  ],
+  "pilots": [
+    {
+      "borg": "gg4e08:0000",
+      "cases": [
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE606",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "802BE5EE",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE672",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "802BE656",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        }
+      ],
+      "source": {
+        "choice_table": "802BDF66",
+        "configuration": "802D3DC8",
+        "constructor_joint": 11,
+        "debit_call_site": "80071658",
+        "factory_call_site": "80071678",
+        "factory_key": 0,
+        "installer": "8006F4F8",
+        "local_bank": "802BDE80",
+        "normal_lane_mask_seed": 3,
+        "profile": "p000",
+        "program_group": 4,
+        "programs": [
+          {
+            "choice": 0,
+            "opening_clear_site": "802BE5F6",
+            "positive_cue_site": "802BE61E",
+            "prefix_sha256": "cf04f726bad0f8f07356840ccec3430ae357caba1b9440a480e39734bde02224",
+            "program": "802BE5EE",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "802BE606",
+                "threshold": 2
+              },
+              {
+                "flags": 2,
+                "site": "802BE612",
+                "threshold": 11
+              },
+              {
+                "flags": 2,
+                "site": "802BE61A",
+                "threshold": 14
+              }
+            ]
+          },
+          {
+            "choice": 1,
+            "opening_clear_site": "802BE65E",
+            "positive_cue_site": "802BE682",
+            "prefix_sha256": "d37cae4ed0ee4ebc5b7b9f5984613b2756087cf9d942e9b90e205f46040e1763",
+            "program": "802BE656",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "802BE672",
+                "threshold": 1
+              },
+              {
+                "flags": 2,
+                "site": "802BE67E",
+                "threshold": 14
+              }
+            ]
+          }
+        ],
+        "requested_lane_mask": 15,
+        "stock_channel": 2,
+        "stock_cost": 1
+      }
+    },
+    {
+      "borg": "gg4e08:0003",
+      "cases": [
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE606",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "802BE5EE",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE672",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "802BE656",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        }
+      ],
+      "source": {
+        "choice_table": "802BDF66",
+        "configuration": "8033AF78",
+        "constructor_joint": 11,
+        "debit_call_site": "80071658",
+        "factory_call_site": "80071690",
+        "factory_key": 1,
+        "installer": "8006F60C",
+        "local_bank": "802BDE80",
+        "normal_lane_mask_seed": 3,
+        "profile": "p004",
+        "program_group": 4,
+        "programs": [
+          {
+            "choice": 0,
+            "opening_clear_site": "802BE5F6",
+            "positive_cue_site": "802BE61E",
+            "prefix_sha256": "cf04f726bad0f8f07356840ccec3430ae357caba1b9440a480e39734bde02224",
+            "program": "802BE5EE",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "802BE606",
+                "threshold": 2
+              },
+              {
+                "flags": 2,
+                "site": "802BE612",
+                "threshold": 11
+              },
+              {
+                "flags": 2,
+                "site": "802BE61A",
+                "threshold": 14
+              }
+            ]
+          },
+          {
+            "choice": 1,
+            "opening_clear_site": "802BE65E",
+            "positive_cue_site": "802BE682",
+            "prefix_sha256": "d37cae4ed0ee4ebc5b7b9f5984613b2756087cf9d942e9b90e205f46040e1763",
+            "program": "802BE656",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "802BE672",
+                "threshold": 1
+              },
+              {
+                "flags": 2,
+                "site": "802BE67E",
+                "threshold": 14
+              }
+            ]
+          }
+        ],
+        "requested_lane_mask": 15,
+        "stock_channel": 2,
+        "stock_cost": 1
+      }
+    },
+    {
+      "borg": "gg4e08:000a",
+      "cases": [
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE62E",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE5EE",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE606",
+          "cursor_at_observation_end": "802BE606",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "802BE5EE",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE692",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 21,
+          "positive_cue_first_visit": 21,
+          "program": "802BE656",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "802BE672",
+          "cursor_at_observation_end": "802BE672",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "802BE656",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        }
+      ],
+      "source": {
+        "choice_table": "802BDF66",
+        "configuration": "802D3EE0",
+        "constructor_joint": 11,
+        "debit_call_site": "80071658",
+        "factory_call_site": "800716C0",
+        "factory_key": 3,
+        "installer": "8006F4F8",
+        "local_bank": "802BDE80",
+        "normal_lane_mask_seed": 3,
+        "profile": "p013",
+        "program_group": 4,
+        "programs": [
+          {
+            "choice": 0,
+            "opening_clear_site": "802BE5F6",
+            "positive_cue_site": "802BE61E",
+            "prefix_sha256": "cf04f726bad0f8f07356840ccec3430ae357caba1b9440a480e39734bde02224",
+            "program": "802BE5EE",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "802BE606",
+                "threshold": 2
+              },
+              {
+                "flags": 2,
+                "site": "802BE612",
+                "threshold": 11
+              },
+              {
+                "flags": 2,
+                "site": "802BE61A",
+                "threshold": 14
+              }
+            ]
+          },
+          {
+            "choice": 1,
+            "opening_clear_site": "802BE65E",
+            "positive_cue_site": "802BE682",
+            "prefix_sha256": "d37cae4ed0ee4ebc5b7b9f5984613b2756087cf9d942e9b90e205f46040e1763",
+            "program": "802BE656",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "802BE672",
+                "threshold": 1
+              },
+              {
+                "flags": 2,
+                "site": "802BE67E",
+                "threshold": 14
+              }
+            ]
+          }
+        ],
+        "requested_lane_mask": 15,
+        "stock_channel": 2,
+        "stock_cost": 1
+      }
+    },
+    {
+      "borg": "gg4e08:000c",
+      "cases": [
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "803771A0",
+          "cursor_at_observation_end": "803771BC",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 22,
+          "positive_cue_first_visit": 22,
+          "program": "80377188",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "803771A0",
+          "cursor_at_observation_end": "803771BC",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 22,
+          "positive_cue_first_visit": 22,
+          "program": "80377188",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "803771A0",
+          "cursor_at_observation_end": "803771BC",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 22,
+          "positive_cue_first_visit": 22,
+          "program": "80377188",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "803771A0",
+          "cursor_at_observation_end": "803771A0",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": false,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "80377188",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": true,
+          "case": "paid",
+          "constructor_origin": [
+            205,
+            220,
+            345
+          ],
+          "cursor_after_request": "803771FC",
+          "cursor_at_observation_end": "80377210",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 22,
+          "positive_cue_first_visit": 22,
+          "program": "803771E0",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "stock-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "803771FC",
+          "cursor_at_observation_end": "80377210",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 22,
+          "positive_cue_first_visit": 22,
+          "program": "803771E0",
+          "refill_clock": 0,
+          "stock_after": 0,
+          "stock_before": 0
+        },
+        {
+          "carrier_created": false,
+          "case": "carrier-pool-empty",
+          "constructor_origin": null,
+          "cursor_after_request": "803771FC",
+          "cursor_at_observation_end": "80377210",
+          "debit_attempts": 1,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 1,
+          "phase_after": 2,
+          "phase_one_lane_mask": 3,
+          "phase_one_visits": 22,
+          "positive_cue_first_visit": 22,
+          "program": "803771E0",
+          "refill_clock": 300,
+          "stock_after": 0,
+          "stock_before": 1
+        },
+        {
+          "carrier_created": false,
+          "case": "upper-lane-masked",
+          "constructor_origin": null,
+          "cursor_after_request": "803771FC",
+          "cursor_at_observation_end": "803771FC",
+          "debit_attempts": 0,
+          "declared_actor_flag_5e0_bit_0x40": true,
+          "factory_calls": 0,
+          "phase_after": 1,
+          "phase_one_lane_mask": 2,
+          "phase_one_visits": 24,
+          "positive_cue_first_visit": null,
+          "program": "803771E0",
+          "refill_clock": 0,
+          "stock_after": 1,
+          "stock_before": 1
+        }
+      ],
+      "source": {
+        "choice_table": "80376B42",
+        "configuration": "803766F8",
+        "constructor_joint": 11,
+        "debit_call_site": "801A04B8",
+        "factory_call_site": "801A04D8",
+        "factory_key": 5,
+        "installer": "8019E9A4",
+        "local_bank": "80376A60",
+        "normal_lane_mask_seed": 3,
+        "profile": "p011",
+        "program_group": 4,
+        "programs": [
+          {
+            "choice": 0,
+            "opening_clear_site": "80377190",
+            "positive_cue_site": "803771AC",
+            "prefix_sha256": "8635cb1a27298f245c4fcc9221319c07fb6508f7edb22fb6eb4dfa3e9d83dee2",
+            "program": "80377188",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "803771A0",
+                "threshold": 11
+              },
+              {
+                "flags": 2,
+                "site": "803771A8",
+                "threshold": 15
+              }
+            ]
+          },
+          {
+            "choice": 1,
+            "opening_clear_site": "803771E8",
+            "positive_cue_site": "80377200",
+            "prefix_sha256": "48125f238db67598cc0258a0a8957420fd0a5ae05120a3551de177f4d4a7ed1f",
+            "program": "803771E0",
+            "waits": [
+              {
+                "flags": 2,
+                "site": "803771FC",
+                "threshold": 15
+              }
+            ]
+          }
+        ],
+        "requested_lane_mask": 15,
+        "stock_channel": 2,
+        "stock_cost": 1
+      }
+    }
+  ],
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

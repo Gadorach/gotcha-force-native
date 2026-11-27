@@ -633,6 +633,42 @@ python3 -m tools.analyze.retail_small_projectile_roster \
   /tmp/opencode/gf-small-projectile-roster.json
 ```
 
+### Ordinary X: installed program, VM cue, and paid bomb release
+
+The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
+ordinary-X handler with state 2, substate 0 declared. The installed class
+requests local program group 4. Actor flag `+0x5E0 & 0x40` selects choice
+0 or 1; both choices clear a stale cue at entry. No positive cue is
+supplied by the fixture.
+
+| Normal owner | Positive cue, both choices | Factory key if paid |
+| --- | ---: | ---: |
+| Normal Ninja | Phase-one visit 21 | 0 |
+| Double Ninja, clone flag clear | Phase-one visit 21 | 1 |
+| Sasuke | Phase-one visit 21 | 3 |
+| Alpha II | Phase-one visit 22 | 5 |
+
+On that visit the original VM writes `+0x1CEF = 1` and the **same
+handler visit** attempts the channel-2 debit. Empty stock still
+advances the phase but never reaches the factory. With stock and no
+carrier cell, the factory refuses and the debit remains. Masking the
+already-started upper lane leaves its cursor at the first wait through
+24 visits: no positive cue, debit, or factory call.
+
+The paid constructors use a later supplied logical-key-11 matrix,
+not the matrix present at program entry. All 32 cases matched across
+O0, O1 and O2. Movement inhibition, unit VM time and the matrices are
+declared inputs. The visit counts are not native release frames, and
+this does not qualify live controls, pose evaluation, the clone-active
+branch, or target-dependent launch. No native packages changed.
+
+```sh
+python3 -m tools.analyze.retail_bomb_x_cue \
+  "$GF_RETAIL_ROOT/sys/main.dol" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-x-cue.json
+```
+
 ### Type-15 bomb requests under pool pressure
 
 The [bomb release receipt](api-map/gg4e08-bomb-release.json) runs
