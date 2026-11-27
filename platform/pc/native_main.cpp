@@ -1958,7 +1958,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         "impact-trail-started","impact-trail-refused","impact-hazard-started","impact-hazard-placed","impact-hazard-refused",
         "extra-emit","extra-emit-refused","walk-pulse-created","walk-pulse-refused","field-shot-pulled",
         "field-actor-pulled","field-actor-pull-refused","fence-recoil","fence-recoil-refused","entry-stock-refused","field-replaced",
-        "launch-sound","release-sound","impact-sound","action-sound","contact-sound"};
+        "launch-sound","release-sound","impact-sound","action-sound","contact-sound","projectile-shape-refused"};
     struct Origins final:IBorgBattleOrigins {
         explicit Origins(const NativeBattleMvpView& observed):view(observed){}
         const NativeBattleMvpView& view;

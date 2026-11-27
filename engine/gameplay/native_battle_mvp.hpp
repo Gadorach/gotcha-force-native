@@ -156,6 +156,7 @@ struct BattleMvpProjectile {
     u16 package_base_damage=0; // snapshotted at allocation, before field damage changes
     u8 package_hit_recipients=0; // per-shot history; actors keep their round slots
     bool package_ramp_deflected=false; // a shot-pull field owns subsequent velocity
+    bool package_impact_shape=false;
 };
 struct BorgProjectileVisualSample {f32 scale=1,angle=0;};
 inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpProjectile& shot,u32 tick){
@@ -200,6 +201,7 @@ static_assert(kBattleMvpMaxActors<=8, "projectile recipient history width");
 struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
 struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
 struct BattleMvpConfig {
+    static constexpr u8 max_impact_shape_slots=32;
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
     unsigned health=100;
     std::array<BattlePoint,kBattleMvpMaxActors> spawn{BattlePoint{-240,300},BattlePoint{240,-300}};
@@ -235,6 +237,7 @@ struct BattleMvpConfig {
     bool package_strafe=false; // opt-in host control; no automatic aim or camera-driven body turn
     bool local_aim_cycle=false; // standalone authored rosters
     u8 roster_local_players=2; // the first one or two actor slots
+    u8 impact_shape_slots=max_impact_shape_slots; // opt-in carriers and impact areas only
     bool solo()const{return solo_model!=0||provisional_walk;}
 };
 struct BattleMvpLocalRosterInput {
@@ -501,7 +504,8 @@ public:
         for(f32 v:{config.ground_acceleration,config.ground_braking,config.air_acceleration,config.turn_per_tick})if(!std::isfinite(v)||v<=0)return false;
         if(config.ground_acceleration>config.move_speed*2||config.ground_braking>config.move_speed*2||config.air_acceleration>config.ground_acceleration||config.turn_per_tick>3.141593f)return false;
         if(!std::isfinite(config.dash_speed)||config.dash_speed<config.move_speed||config.dash_speed>config.actor_radius||!config.dash_duration||config.dash_duration>60||config.dash_cooldown<config.dash_duration||config.dash_cooldown>600||config.air_dashes>4)return false;
-        if(config.declared_actors<2||config.declared_actors>kBattleMvpMaxActors)return false;
+        if(config.declared_actors<2||config.declared_actors>kBattleMvpMaxActors||
+           !config.impact_shape_slots||config.impact_shape_slots>BattleMvpConfig::max_impact_shape_slots)return false;
         const bool package=bool(config.packages[0]);
         const unsigned count=config.solo()?1u:config.declared_actors;
         if(!battle_mvp_damage_indices_valid(config,count))return false;
@@ -2108,6 +2112,7 @@ public:
                 record_package(BorgBattleEventKind::Detonation,i,request.move,request.marker.frame,0,0);
             }
             flush_package_children();step_package_impact_hazards();step_package_impact_trails();
+            recycle_package_impact_shapes();
         }
         if(!solo){
             for(unsigned i=0;i<actor_count();++i)if(auto& actor=actors_[i];!actor.health){
@@ -2300,8 +2305,9 @@ private:
     };
     struct ImpactHazard {
         BattleMvpVec centre;u32 id=0,born=0;u8 owner=0,move=0,contacted=0;
-        u16 remaining=0,height=0,damage=0,warmup=0;f32 radius=0,gain=0,cap=0;
+        u16 remaining=0,height=0,damage=0,warmup=0;f32 radius=0,gain=0,cap=0;bool shared_shape=false;
     };
+    struct ImpactShapeSlot {u32 object=0,recycle_tick=0;bool queued=false;};
     bool sample_field_socket(unsigned owner,const BattleMvpActor& actor,const BorgBattleSocket& socket,
                              const IBorgBattleOrigins* origins,BattleMvpVec* centre)const{
         return origins&&origins->socket(owner,actor,tick_,actor.package_move,actor.package_frame,socket,centre)&&
@@ -3368,7 +3374,8 @@ private:
                 owner,move,frame,first?first:slot.id,first?attack.count:0);
         }
     }
-    enum class PackageRetirement:u16 {None,Actor,Floor,UnknownFloor,Expired,Outside,Remote,Guard,Stage,UnknownStage,OwnerEnded,Proximity,UnlandedFuse};
+    enum class PackageRetirement:u16 {None,Actor,Floor,UnknownFloor,Expired,Outside,Remote,Guard,Stage,UnknownStage,
+                                      OwnerEnded,Proximity,UnlandedFuse,ShapeRefused};
     bool package_smoke_blocks_aim(unsigned owner,u8 smoke_target)const{
         const auto& start=actors_[owner].position;const auto& end=actors_[smoke_target].position;
         const BattleMvpVec delta{end[0]-start[0],end[1]-start[1],end[2]-start[2]};
@@ -3499,9 +3506,27 @@ private:
             impact(point,false,trail.spec.mark_size,trail.spec.mark_ticks);
         });
     }
+    bool reserve_package_impact_shape(u32 object){
+        auto slots=std::span(impact_shapes_).first(config_.impact_shape_slots);
+        const auto free=std::find_if(slots.begin(),slots.end(),[](const auto& slot){return !slot.object;});
+        if(free==slots.end())return false;
+        *free={object};
+        return true;
+    }
+    void defer_package_impact_shape(u32 object,bool terrain){
+        for(auto& slot:impact_shapes_)if(slot.object==object){
+            slot.recycle_tick=tick_+unsigned(terrain);
+            slot.queued=true;
+            return;
+        }
+    }
+    void recycle_package_impact_shapes(){
+        for(auto& slot:impact_shapes_)if(slot.queued&&slot.recycle_tick==tick_)slot={};
+    }
     void place_package_impact_hazard(ImpactHazard patch,u32 parent){
         const auto slot=std::find_if(impact_hazards_.begin(),impact_hazards_.end(),[](const auto& p){return !p.id;});
-        if(slot==impact_hazards_.end()||next_id_==std::numeric_limits<u32>::max()){
+        if(slot==impact_hazards_.end()||next_id_==std::numeric_limits<u32>::max()||
+           (patch.shared_shape&&!reserve_package_impact_shape(next_id_+1))){
             record_package(BorgBattleEventKind::ImpactHazardRefused,patch.owner,patch.move,0,parent,0);
             return;
         }
@@ -3538,7 +3563,10 @@ private:
                 patch={};
                 continue;
             }
-            if(!--patch.remaining)patch={};
+            if(!--patch.remaining){
+                if(patch.shared_shape)defer_package_impact_shape(patch.id,false);
+                patch={};
+            }
         }
         visit_package_impact_patterns(hazard_patterns_,[&](const auto& pattern,const auto& point){
             const auto& spec=pattern.spec;
@@ -3572,7 +3600,11 @@ private:
         if(const auto& area=definition.impact_area;area&&matches_impact_lane(reason,area->lane))
             place_package_impact_hazard({.centre=shot.position,.owner=shot.owner,.move=shot.package_move,
                 .remaining=area->queries,.damage=area->damage,.radius=area->initial_radius,
-                .gain=area->gain,.cap=area->cap},shot.id);
+                .gain=area->gain,.cap=area->cap,.shared_shape=area->shared_shape},shot.id);
+        // Allocation above never borrows the parent's pending slot. Terrain
+        // keeps occupancy for an extra visit, without keeping the shot damaging.
+        if(std::exchange(shot.package_impact_shape,false))
+            defer_package_impact_shape(shot.id,reason==PackageRetirement::Floor||reason==PackageRetirement::Stage);
         shot.active=false;
         shot.package_rewind_path={};
         record_package(BorgBattleEventKind::Retired,shot.owner,shot.package_move,0,shot.id,u16(reason));
@@ -3751,6 +3783,14 @@ private:
     }
     void step_package_shot(BattleMvpProjectile& shot,const IBattleMvpTerrain* terrain){
         const auto& definition=config_.packages[shot.owner]->projectiles[shot.package_projectile];
+        if(definition.impact_area&&definition.impact_area->shared_shape&&!shot.package_impact_shape){
+            if(!reserve_package_impact_shape(shot.id)){
+                record_package(BorgBattleEventKind::ProjectileShapeRefused,shot.owner,shot.package_move,0,shot.id,0);
+                retire_package_shot(shot,PackageRetirement::ShapeRefused);
+                return;
+            }
+            shot.package_impact_shape=true;
+        }
         if(shot.landed){
             if(!package_shot_supported(shot,terrain))
                 retire_package_shot(shot,PackageRetirement::UnknownFloor);
@@ -4094,6 +4134,7 @@ private:
     std::array<ImpactPattern<BorgImpactTrail>,8> impact_trails_{};
     std::array<ImpactPattern<BorgImpactHazard>,8> hazard_patterns_{};
     std::array<ImpactHazard,32> impact_hazards_{};
+    std::array<ImpactShapeSlot,BattleMvpConfig::max_impact_shape_slots> impact_shapes_{};
     std::array<BattleMvpWalkPulse,16> walk_pulses_{};
     std::array<f32,kBattleMvpMaxActors> walk_pulse_distance_{};
     BattleMvpResult result_=BattleMvpResult::Fighting;bool ready_=false,paused_=false;

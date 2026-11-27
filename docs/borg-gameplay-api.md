@@ -1543,11 +1543,26 @@ retry. The same carrier cannot also declare `blast` or `impact-hazard`,
 and spawned projectile children and emitter shots cannot declare an area.
 Existing fixed-radius hazards retain their placement and contact clocks.
 
-This is an authored Battle Test capability, not a retail move binding.
-The projectile and the area do not share a shape pool, and area visuals
-remain separate. This rule does not reproduce
-[retail collision-slot ordering](retail-code-atlas.md#ordinary-ninja-actor-hits-unlink-request-versus-slot-return),
-target-dependent launch, or frame scheduling.
+`impact-area-shapes=carrier|shared` opts the carrier and its area into
+one Battle Test shape budget. The host can set `impact_shape_slots`
+to 1–32 (default 32). The carrier reserves a slot before its first
+collision visit. If no slot is free, `projectile-shape-refused` retires
+it without retry or an ammo refund. An area then needs a **different**
+slot at impact, in addition to its normal hazard-pool entry. If none
+is free, the area refuses and never retries after cleanup.
+
+On actor contact the parent slot returns at the end of that tick.
+An accepted `floor` or `stage` impact holds the slot through the
+next projectile pass. This is occupancy only: the retired carrier
+does not remain damaging. The area holds its own slot until its
+queries end. The policy never spends stock or touches body shapes,
+legacy hazards, or projectiles that did not opt in.
+
+These are authored Battle Test capabilities, not retail move
+bindings. The optional budget models the order observed in the
+[bounded Ninja replay](retail-code-atlas.md#ordinary-ninja-actor-hits-unlink-request-versus-slot-return);
+its capacity, geometry, and scheduling do not model the full
+retail collision pool. Area visuals remain separate.
 Try `--impact-area` in the Flight Stick `arena-wall` demo.
 
 `blast-smoke=carrier|radius|ticks|visual` requests a bounded world

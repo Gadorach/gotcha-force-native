@@ -75,6 +75,7 @@ struct BorgImpactArea {
     BorgImpactLane lane=BorgImpactLane::Stage;
     f32 initial_radius=0,gain=0,cap=0;
     u16 queries=0,damage=0;
+    bool shared_shape=false;
 };
 struct BorgBattleRewindHit {u8 set=0,speed=0,fallback=255;};
 struct BorgProjectileSpeedRamp {f32 gain=0,cap=0;};
@@ -1267,6 +1268,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<ImpactTrailRef> impact_trails;
     std::vector<ImpactHazardRef> impact_hazards;
     std::vector<ImpactAreaRef> impact_areas;
+    std::vector<std::pair<unsigned,std::string>> impact_area_shapes;
     std::vector<ImpactTimingRef> impact_timings;
     std::vector<std::pair<unsigned,std::string>> impact_world_space;
     std::vector<SmokeRef> smoke;
@@ -1796,6 +1798,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                 return fail("invalid impact-area binding");
             spec.lane=a[1]=="actor"?BorgImpactLane::Actor:a[1]=="floor"?BorgImpactLane::Floor:BorgImpactLane::Stage;
             impact_areas.push_back({line,std::string(a[0]),spec});
+        }else if(key=="impact-area-shapes"){
+            std::array<std::string_view,2> a;
+            if(impact_area_shapes.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||a[1]!="shared")
+                return fail("invalid impact-area-shapes binding");
+            impact_area_shapes.emplace_back(line,std::string(a[0]));
         }else if(key=="impact-children"){
             std::array<std::string_view,4> a;BorgImpactChildren spec;
             if(impact_children.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!id(a[1])||
@@ -2434,6 +2441,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(pi==next.projectiles.size()||next.projectiles[pi].impact_area)
             return fail("unknown projectile or duplicate impact area");
         next.projectiles[pi].impact_area=r.spec;
+    }
+    for(const auto& [at,carrier]:impact_area_shapes){
+        line=at;const auto pi=index(next.projectiles,carrier);
+        if(pi==next.projectiles.size()||!next.projectiles[pi].impact_area||next.projectiles[pi].impact_area->shared_shape)
+            return fail("impact-area-shapes needs one binding to a declared impact area");
+        next.projectiles[pi].impact_area->shared_shape=true;
     }
     for(const auto& r:impact_timings){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);

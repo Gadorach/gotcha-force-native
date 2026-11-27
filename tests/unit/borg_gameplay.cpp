@@ -3103,6 +3103,126 @@ release=toss|1|ball|1|ball
         check(placed==1,"impact area can allocate again in the restarted round");
     }
 }
+void shared_impact_shape_cases(){
+    const std::string root=R"(GFBORG-GAMEPLAY 1
+variant=normal
+movement=grounded-v1|8|13|14
+health=250
+rig-prefix=visual/prefix
+pose-profile=visual/pose
+idle=0:0
+walk=0:1
+air=0:2
+dash=0:3
+stock=ball|2|3600
+move=toss|b|10|any|4|0:4
+release=toss|1|ball|1|ball
+)";
+    constexpr std::string_view shared="impact-area-shapes=ball|shared\n";
+    const auto profile=[&](unsigned lane){
+        return root+(lane==0?"projectile=ball|orb|1|55|0|0|0|9|12|12|ignore-floor\nimpact-area=ball|actor":
+                     lane==1?"projectile=ball|orb|1|20|-25|0|0|9|12|0|stop-on-floor\nimpact-area=ball|floor":
+                             "projectile=ball|orb|1|55|0|0|0|9|12|0|stop-on-stage\nimpact-area=ball|stage")+
+                     "|3.1|31|100|4|17\n";
+    };
+    const auto idle=parse(target);
+    const auto probe=parse(root+"projectile=ball|orb|1|5|0|0|0|9|3|0|stop-on-stage\n"
+        "impact-area=ball|stage|1|1|2|1|1\n"+std::string(shared));
+    const auto staged=profile(2);
+    BorgGameplayProfile rejected;
+    check(!parse(staged)->projectiles[0].impact_area->shared_shape&&
+           parse(staged+std::string(shared))->projectiles[0].impact_area->shared_shape,
+          "native shape occupancy is opt-in");
+    check(!borg_read_gameplay_profile(staged+std::string(shared)+std::string(shared),&rejected,nullptr)&&
+          !borg_read_gameplay_profile(staged+"impact-area-shapes=missing|shared\n",&rejected,nullptr)&&
+          !borg_read_gameplay_profile(staged+"impact-area-shapes=ball|borrow-parent\n",&rejected,nullptr)&&
+          !borg_read_gameplay_profile(std::string(player)+"impact-area-shapes=shot|shared\n",&rejected,nullptr),
+          "pool opt-in clauses require exactly one previously declared impact area");
+    {
+        NativeBattleMvp world;BattleMvpConfig config;WallGround wall;wall.plane=150;
+        config.impact_shape_slots=0;
+        check(!world.start(config),"zero native impact shape capacity is invalid");
+        config.impact_shape_slots=BattleMvpConfig::max_impact_shape_slots+1;
+        check(!world.start(config),"oversized native impact shape capacity is invalid");
+        config.impact_shape_slots=1;config.packages={parse(staged),idle};
+        config.actor_radius=22;config.actor_height=120;
+        config.spawn={BattlePoint{0,0},BattlePoint{0,206}};
+        check(world.start(config,&wall),"legacy independent area starts with a one-slot shared policy");
+        for(unsigned i=0;i<16;++i)
+            check(world.step({},false,&wall,nullptr,nullptr,nullptr,{BorgBattleInputs{u8(!i?BorgBattleInputs::b:0),0,0},{}}),
+                  "independent area still updates under the new budget");
+        check(world.hits()==1&&world.actors()[1].health==483,"existing unshared area ignores the new shape budget");
+    }
+    for(unsigned lane=0;lane<3;++lane)for(u8 slots:{1,2}){
+        NativeBattleMvp world;BattleMvpConfig config;WallGround wall;wall.plane=150;
+        config.actor_radius=22;config.actor_height=120;config.impact_shape_slots=slots;
+        config.declared_actors=3;config.teams_declared=true;config.teams={0,1,0};
+        config.packages={parse(profile(lane)+std::string(shared)),idle,probe};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,lane==1?135.f:206.f},BattlePoint{-300,0}};
+        check(world.start(config,&wall),"shared impact shapes start");
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+        u32 expected_impact=0;
+        for(unsigned i=0;i<12&&!expected_impact;++i){
+            inputs[0].pressed=!i?BorgBattleInputs::b:0;
+            check(world.step_roster(pads,inputs,false,&wall),"locate the unopposed parent impact");
+            if(has(world,BorgBattleEventKind::ImpactHazardRefused)||has(world,BorgBattleEventKind::ImpactHazardPlaced))
+                expected_impact=world.tick();
+        }
+        check(expected_impact&&world.start(config,&wall),"restart the same shape-budget fixture for the timed probe");
+        u32 impact_tick=0,area_id=0;
+        unsigned area_refusals=0,area_hits=0,direct_hits=0,probe_attempts=0,probe_refusals=0;
+        for(unsigned i=0;i<24;++i){
+            inputs[0].pressed=!i?BorgBattleInputs::b:0;
+            const auto next=world.tick()+1;
+            // Start the move one tick before its frame-one release.
+            inputs[2].pressed=(next==expected_impact||next==expected_impact+9)?BorgBattleInputs::b:0;
+            check(world.step_roster(pads,inputs,false,&wall),"shared attack shape visit");
+            for(const auto& event:world.package_events()){
+                if(event.actor==0){
+                    if(event.kind==BorgBattleEventKind::ImpactHazardRefused){impact_tick=event.tick;++area_refusals;}
+                    if(event.kind==BorgBattleEventKind::ImpactHazardPlaced){impact_tick=event.tick;area_id=event.object;}
+                    if(event.kind==BorgBattleEventKind::Hit){
+                        if(event.object==area_id){
+                            ++area_hits;
+                            check(event.value==17&&event.tick>impact_tick,"successful shared area is still a distinct later hit");
+                        }else{++direct_hits;check(event.value==12&&lane==0,"direct hit happens independently of area admission");}
+                    }
+                }else if(event.actor==2){
+                    if(event.kind==BorgBattleEventKind::Emitted){
+                        ++probe_attempts;
+                        check(event.tick==impact_tick+(probe_attempts==1?1u:10u),"probe visits the intended recycling boundary");
+                    }
+                    if(event.kind==BorgBattleEventKind::ProjectileShapeRefused){
+                        ++probe_refusals;
+                        check(lane&&event.tick==impact_tick+1,"terrain keeps its slot through the next projectile pass");
+                    }
+                }
+            }
+        }
+        check(impact_tick==expected_impact&&area_refusals==unsigned(slots==1)&&area_hits==unsigned(slots==2)&&direct_hits==unsigned(!lane)&&
+              probe_attempts==2&&probe_refusals==unsigned(lane!=0)&&world.actors()[1].health==500-12*direct_hits-17*area_hits&&
+              world.package_action(0).stocks[0].current==1&&!world.package_action(2).stocks[0].current,
+              "same-pass area needs a spare, actor and terrain recycle separately, and refusal never refunds or retries");
+    }
+    {
+        NativeBattleMvp world;BattleMvpConfig config;WallGround wall;wall.plane=150;
+        config.impact_shape_slots=2;config.packages={parse(staged+std::string(shared)),idle};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,1100}};
+        check(world.start(config,&wall),"shared area expiry fixture");
+        unsigned areas=0;
+        for(unsigned i=0;i<26;++i){
+            const u8 pressed=(!i||i==12)?BorgBattleInputs::b:0;
+            check(world.step({},false,&wall,nullptr,nullptr,nullptr,{BorgBattleInputs{pressed,0,0},{}}),
+                  "reuse shared slots after area expiry");
+            areas+=has(world,BorgBattleEventKind::ImpactHazardPlaced);
+            check(!has(world,BorgBattleEventKind::ImpactHazardRefused)&&
+                  !has(world,BorgBattleEventKind::ProjectileShapeRefused),"expired carrier and area leave room for another pair");
+        }
+        check(areas==2&&world.shots_spawned()==2&&!world.hits()&&!world.package_action(0).stocks[0].current,
+              "two-slot budget recycles both owners without a contact or stock return");
+    }
+}
 }
 int main(){
     const std::string scoped=std::string(player)+"body-record=0\n";
@@ -3303,6 +3423,7 @@ int main(){
     flight_children_cases();
     impact_children_cases();
     impact_area_cases();
+    shared_impact_shape_cases();
     power_field_cases();
     slow_field_cases();
     resident_beam_field_cases();

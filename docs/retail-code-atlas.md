@@ -804,8 +804,10 @@ separate class-4 pass returns that slot.
 Actor and floor impacts therefore both need a spare slot at area
 initialization. They differ in when the parent is removed: the
 actor hit unlinks in the impact visit's shape pass; the floor hit
-keeps the shape registered until the following visit. The native
-`impact-area` pool does not model this shared occupancy.
+keeps the shape registered until the following visit. The optional
+[native shape budget](borg-gameplay-api.md#static-stage-impacts)
+models the allocation order for authored areas, not the original
+pool, source body shapes, or continued contact by that parent.
 
 All four cases matched across O0, O1 and O2. No native packages
 or gameplay changed. The fixture uses a declared fixed receiver

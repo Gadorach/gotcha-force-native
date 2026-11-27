@@ -1170,9 +1170,11 @@ the parent's slot for that area initializer.
 The [floor-contact replay](retail-code-atlas.md#ordinary-ninja-floor-blasts-growth-timing-and-hp)
 also separates direct damage from growth-dependent area damage.
 The [authored `impact-area` rule](borg-gameplay-api.md#static-stage-impacts)
-expresses delayed growth and independent hit identity, but its native
-hazard pool does not reproduce the verified parent/child collision-slot
-ordering. No Ninja move uses the rule by default.
+expresses delayed growth and independent hit identity. Its optional
+`impact-area-shapes` rule preserves the verified no-borrow order
+for a bounded native budget. It does not reproduce retail capacity,
+body-slot admission, or the parent shape's post-impact contact on
+terrain. No Ninja move is bound to either rule.
 Next missing witness: the accepted ordinary program cue and current
 key-11 pose through launch, including the target-dependent aim path.
 Live scheduler and prop response remain separate checks.

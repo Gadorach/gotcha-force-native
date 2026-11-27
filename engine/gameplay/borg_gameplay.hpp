@@ -19,7 +19,7 @@ enum class BorgBattleEventKind:u8 {Started,Marker,StockSpent,StockRefused,StockR
     ImpactTrailStarted,ImpactTrailRefused,ImpactHazardStarted,ImpactHazardPlaced,ImpactHazardRefused,
     ExtraEmitted,ExtraEmitRefused,WalkPulseCreated,WalkPulseRefused,FieldShotPulled,FieldActorPulled,FieldActorPullRefused,
     FenceRecoilApplied,FenceRecoilRefused,EntryStockRefused,FieldReplaced,LaunchSound,ReleaseSound,ImpactSound,
-    ActionSound,ContactSound};
+    ActionSound,ContactSound,ProjectileShapeRefused};
 enum class BorgBattlePullRefusal:u16 {AlreadyQueued=1,OwnerBusy,NoTravel,SupportUnavailable,TerrainOrBody,RoundEnded};
 inline const char* borg_battle_pull_reason(u16 value){
     switch(BorgBattlePullRefusal(value)){
