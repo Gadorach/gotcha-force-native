@@ -1869,6 +1869,39 @@ python3 -m tools.analyze.retail_type41_parent_contact \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type41-parent-contact.json
 ```
 
+### Receiver damage tier: normal capacities and independent expiry
+
+The [tier replay](api-map/gg4e08-damage-tier-clock.json) observes the
+original reset gauge initialization for all **206** normal records:
+**198** initialize to 500, **7** to 700, and **one** to 30,000.
+
+The two exact area pairs use the **old tier** at the HP writer. On
+the surviving tail they subtract 100 gauge wear and add 50 tier
+charge. Crossing 100 advances one tier and discards overflow;
+tier 63 stays capped. Depleting the gauge refills it and clears the
+old tier and meter **before** adding the new charge. Receiver flag
+`0x80` skips wear, not charge. The scene HP hold leaves HP and the
+tested damage ledger unchanged but still runs those tier writes.
+
+The original wrapper checks actor bit `0x01000000`, which can hold
+both clocks. Otherwise the gauge and meter idle clocks subtract
+raw actor `+0x1DCC`, not the refreshed secondary rate at `+0x1DC8`.
+With a declared step of **0.5**, both begin at 60 and expire on
+visit **120**. They still spend 0.5 when the separate contact hold
+sets the secondary rate to 0.03. Independent near-expiry forks
+refill the gauge or clear the tier without expiring the other.
+
+All capacity rows and **16 contact cases** matched across O0/O1/O2.
+This is a bounded wrapper replay, not a wall-clock conversion,
+full reaction animation, KO schedule, or native gameplay change.
+
+```sh
+python3 -m tools.analyze.retail_damage_tier_clock \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stock-startup /tmp/opencode/type41 "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-damage-tier-clock.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches

@@ -286,7 +286,7 @@ void wire_returns(const Module& mod,std::vector<u8>& ram,u8* obj,const contact::
 }
 
 void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer,unsigned extent,bool lifecycle,
-             const contact::HitBlock* wire_hit){
+             const contact::HitBlock* wire_hit,bool capacity){
     const auto at=[&](u32 a){return ram.data()+a-GC_RAM_BASE;};
     auto* obj=at(actor);
     put32(at(resources),role0);
@@ -313,6 +313,11 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
         for(unsigned i=0;i<8;++i)
             if(obj[0x77C+i]!=u8(0xA0+i)||obj[0x794+i]!=u8(0xB0+i))
                 fail("normal level stock overwrote stock channel 1");
+        if(capacity){
+            std::printf("tier-capacity: %04X %u %u %u\n",model,(selected-role0)/record_bytes,
+                        half(obj+0x6BE),half(obj+0x6C2));
+            return;
+        }
         if(wire_hit){
             if(model==0x0404)wire_returns(mod,ram,obj,*wire_hit);
             else owner_returns(mod,ram,obj,model);
@@ -340,7 +345,9 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
 int main(int argc,char** argv){
     const bool lifecycle=argc==4&&!std::strcmp(argv[3],"--lifecycle");
     const bool returns=argc==4&&!std::strcmp(argv[3],"--returns");
-    if(argc!=3&&!lifecycle&&!returns)fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns] < qualified-plan");
+    const bool capacity=argc==4&&!std::strcmp(argv[3],"--tier-capacity");
+    if(argc!=3&&!lifecycle&&!returns&&!capacity)
+        fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns|--tier-capacity] < qualified-plan");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     contact::HitBlock wire_hit{};
@@ -358,7 +365,7 @@ int main(int argc,char** argv){
         auto ram=original;
         const unsigned bytes=count*record_bytes;
         if(std::fread(ram.data()+role0-GC_RAM_BASE,1,bytes,stdin)!=bytes)fail("stock-startup records extent");
-        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr);
+        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr,capacity);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stock-startup rows");
 }

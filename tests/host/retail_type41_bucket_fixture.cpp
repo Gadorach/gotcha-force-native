@@ -31,7 +31,12 @@ constexpr AreaCase area_cases[]{
     {22,false,false,false},{22,true,false,false},{70,true,false,false},{409,true,false,false},
     {409.5f,true,false,false},{410,true,false,false},{22,true,true,false},{22,true,false,true},
 };
-struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;};
+struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;bool tiers=false;};
+struct TierCase {u8 meter,tier,flags;u16 gauge;bool hp_held;};
+constexpr TierCase tier_cases[]{
+    {0,0,0,500,false},{49,1,0,500,false},{50,1,0,500,false},{99,2,0,150,false},
+    {60,2,0,100,false},{50,1,128,100,false},{99,63,0,500,false},{50,1,0,100,true},
+};
 struct ParentCase {float offset;bool incoming,ally,command;};
 constexpr ParentCase parent_cases[]{
     {30,false,false,false},{42,false,false,false},{43,false,false,false},{30,false,true,false},
@@ -105,6 +110,75 @@ class Check {
         if(half(actor+0x1C6)!=220||half(side+0x774)!=9||half(actor+0x784)!=(c.model==6?3:0)||
            word(actor+0x778)||word(actor+0x418))
             fail("type-41 tested path changed another actor, clock or HP");
+    }
+    void tier_contact(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
+        const auto rule=tier_cases[probe.index];
+        constexpr u32 body=contact::receiver,gauge=body+0x6C2,meter=body+0x6C8,tier=body+0x6CA,flags=body+0x6FD;
+        constexpr u32 gauge_timer=body+0x684,tier_timer=body+0x68C,ordinary_attack_count=0x8043B5A0-21328;
+        const auto bits=[](float f){return std::bit_cast<u32>(f);};
+        if(at(blast+0x18)[0]!=1||half(actor+0x774)!=capacity-1)
+            fail("tier probe requires the real area initializer and separate paid parent");
+        call(0x80089554,0);rebuild();
+        if(half(ordinary_attack_count))fail("tier probe counted the unopened area");
+        check_return(observe(0x80089A94,8,return_stock));
+        call(0x80089554,0);rebuild();
+        if(half(ordinary_attack_count)!=1||word(0x803C477C)!=shapes[1]||word(shapes[1]+0x20)!=blast||
+           half(blast+0x26C)!=2||half(actor+0x774)!=capacity||!at(parent)[0])
+            fail("tier probe did not isolate the exact child and receiver");
+        const auto maximum=u16(u16(probe.spec[0])<<8|probe.spec[1]);
+        if(maximum!=500)fail("tier probe source receiver capacity");
+        put16(at(body+0x6BE),maximum);put16(at(gauge),rule.gauge);put16(at(meter),rule.meter);
+        at(tier)[0]=rule.tier;at(flags)[0]=rule.flags;
+        at(contact::scene+31)[0]=u8(rule.hp_held);
+        auto writer_ram=ram;
+        CPUState pair{};CallObservation amount{contact::amount_entry};
+        mod.run_to(pair,writer_ram,contact::pair_pass,{contact::hp_write},&amount);
+        if(amount.count!=1||amount.arguments[0]!=0x802C4760+24*(c.model==6?26:27)||
+           amount.arguments[1]!=blast||amount.arguments[2]!=body||pair.gpr[3]!=body||
+           contact::half(writer_ram,meter)!=rule.meter||contact::half(writer_ram,gauge)!=rule.gauge||
+           contact::at(writer_ram,tier)[0]!=rule.tier||contact::half(writer_ram,body+0x1C6)!=180)
+            fail("tier probe touched meter or gauge before the HP writer");
+        const unsigned request=pair.gpr[4];
+        call(contact::pair_pass,0);
+        const unsigned hp=half(body+0x1C6),post_gauge=half(gauge),post_meter=half(meter),post_tier=at(tier)[0];
+        const unsigned post_flags=at(flags)[0];
+        if(word(gauge_timer)!=bits(60.f)||word(tier_timer)!=bits(60.f)||half(body+0x20C)!=2||
+           hp!=180-(rule.hp_held?0:request)||word(body+0x41C)!=(rule.hp_held?0:request))
+            fail("tier probe did not finish the original surviving HP tail");
+        const auto post=ram;
+        const auto tick=[&](){call(0x8005568C,body);};
+        put_float(at(body+0x1DCC),0.5f);put_float(at(body+0x1DD0),0.75f);
+        put32(at(body+0x5E0),word(body+0x5E0)|0x01000000u);
+        tick();
+        if(word(gauge_timer)!=bits(60.f)||word(tier_timer)!=bits(60.f))fail("tier clock ignored its actor phase gate");
+        put32(at(body+0x5E0),word(body+0x5E0)&~0x01000000u);
+        at(body+0x71C)[0]=4;
+        call(0x8005A378,body);
+        if(word(body+0x1DC8)!=bits(0.03f))fail("tier clock lost the declared contact hold");
+        tick();
+        if(word(gauge_timer)!=bits(59.5f)||word(tier_timer)!=bits(59.5f)||word(body+0x1DC8)!=bits(0.03f))
+            fail("tier clocks did not use the raw lane factor during the hold");
+        for(unsigned n=2;n<=119;++n)tick();
+        if(word(gauge_timer)!=bits(0.5f)||word(tier_timer)!=bits(0.5f)||half(gauge)!=post_gauge||
+           half(meter)!=post_meter||at(tier)[0]!=post_tier)
+            fail("tier clock expired before its half-step threshold");
+        tick();
+        if(word(gauge_timer)||word(tier_timer)||half(gauge)!=maximum||half(meter)||at(tier)[0]||
+           half(body+0x1C6)!=hp||half(actor+0x774)!=capacity||half(body+0x20C)!=2)
+            fail("tier expiry changed HP, stock, or accepted history");
+        for(unsigned fork=0;fork<2;++fork){
+            std::memcpy(ram.data(),post.data(),post.size());
+            put32(at(body+0x5E0),word(body+0x5E0)&~0x01000000u);
+            put_float(at(body+0x1DCC),0.5f);
+            put_float(at(gauge_timer),fork?2.f:0.5f);put_float(at(tier_timer),fork?0.5f:2.f);
+            tick();
+            if(word(gauge_timer)!=bits(fork?1.5f:0.f)||word(tier_timer)!=bits(fork?0.f:1.5f)||
+               half(gauge)!=(fork?post_gauge:maximum)||half(meter)!=(fork?0:post_meter)||
+               at(tier)[0]!=(fork?0:post_tier))
+                fail("tier probe merged the independent gauge and tier expiry");
+        }
+        std::printf("tier-contact: %u %u %u %u %u %u %u %u\n",
+                    c.model,probe.index,request,hp,post_gauge,post_meter,post_tier,post_flags);
     }
     void follow_area(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
         const auto rule=area_cases[probe.index];
@@ -388,15 +462,16 @@ public:
         put32(at(pool+12),c.descriptor_cells?desc:0);put16(at(pool+18),c.descriptor_cells);
         for(unsigned i=0;i<c.descriptor_cells;++i)put32(at(desc+i*0x80),i+1<c.descriptor_cells?desc+(i+1)*0x80:0);
         if(probe||parent_probe){
-            const auto body_x=probe?200.f+area_cases[probe->index].distance:
+            const auto area_index=probe&&probe->tiers?1u:probe?probe->index:0u;
+            const auto body_x=probe?200.f+area_cases[area_index].distance:
                 parent_cases[parent_probe->index].incoming?800.f:200.f+parent_cases[parent_probe->index].offset;
-            const auto is_ally=probe?area_cases[probe->index].ally:parent_cases[parent_probe->index].ally;
+            const auto is_ally=probe?area_cases[area_index].ally:parent_cases[parent_probe->index].ally;
             const auto& hurt=probe?probe->hurt:parent_probe->hurt;
             const auto& defender=probe?probe->spec:parent_probe->spec;
             contact::bind_sasuke(mod,ram,{body_x,100.f,300.f},hurt,spec,defender,220);
             put32(at(actor+0x4AC),actor_spec);
             at(contact::receiver+0x88)[0]=is_ally?0:1;
-            put16(at(contact::receiver+0x272),probe&&area_cases[probe->index].masked?2:0);
+            put16(at(contact::receiver+0x272),probe&&area_cases[area_index].masked?2:0);
         }
         // Rows 8/11 have an area cell; row 9 refuses that cell, row 10
         // offers it with only one spare descriptor.
@@ -488,7 +563,11 @@ public:
                (area_made&&(at(blast+0x10)[0]!=5||at(blast+0x11)[0]!=fx_key||
                             word(blast+0x8C)!=first||word(blast+0x90)!=actor||word(blast+0x20)!=word(first+0x20))))
                 fail("type-41 area allocation changed credit or parent");
-            if(probe){follow_area(c,*probe,capacity,first);return;}
+            if(probe){
+                if(probe->tiers)tier_contact(c,*probe,capacity,first);
+                else follow_area(c,*probe,capacity,first);
+                return;
+            }
             rebuild();
             check_return(observe(0x80089A94,8,return_stock));
             phase=at(first+0x18)[0];
@@ -528,7 +607,9 @@ public:
 int main(int argc,char** argv){
     const bool area_hp=argc==4&&!std::strcmp(argv[3],"--area-hp");
     const bool parent=argc==4&&!std::strcmp(argv[3],"--parent-contact");
-    if(argc!=3&&!area_hp&&!parent)fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact] < qualified-payload");
+    const bool tiers=argc==4&&!std::strcmp(argv[3],"--tiers");
+    if(argc!=3&&!area_hp&&!parent&&!tiers)
+        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -536,10 +617,10 @@ int main(int argc,char** argv){
     Common bank{};contact::HitBlock hit{};std::array<contact::ActorSpec,2> specs{};
     read(bank);read(hit);
     for(auto& spec:specs)read(spec);
-    if(area_hp||parent){
+    if(area_hp||parent||tiers){
         contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
         for(unsigned m=6;m<=7;++m)
-            for(unsigned i=0;i<(parent?(m==6?6u:8u):std::size(area_cases));++i){
+            for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):std::size(area_cases));++i){
                 if(parent){
                     const ParentProbe probe{i,hurt,defender};
                     const bool incoming=parent_cases[i].incoming;
@@ -547,8 +628,8 @@ int main(int argc,char** argv){
                     Check(mod,original,opts,specs[m-6],hit,bank,0,nullptr,&probe);
                     continue;
                 }
-                const AreaProbe probe{i,hurt,defender};
-                const Options opts{u8(m),u8(1+unsigned(area_cases[i].shape)),1,3,u8(m==6?2:3),false};
+                const AreaProbe probe{i,hurt,defender,tiers};
+                const Options opts{u8(m),u8(1+unsigned(tiers||area_cases[i].shape)),1,3,u8(m==6?2:3),false};
                 Check(mod,original,opts,specs[m-6],hit,bank,0,&probe);
             }
     }else{
