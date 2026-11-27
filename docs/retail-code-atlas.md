@@ -1013,6 +1013,46 @@ python3 -m tools.analyze.retail_type32_bind \
   /tmp/opencode/gf-type32-bind.json
 ```
 
+### Type-32 model-relative segments: copied aim and live gate
+
+The [shared replay](api-map/gg4e08-type32-shared.json) runs the
+original constructor and initializer for Beam Gunner `0104` key 1,
+Death Head `0505` key 16, Machine Head `0511` key 19, and G-Red
+`0615` key 15. None requires a shape at parent initialization.
+Key 1 skips the scratch request; keys 15, 16, and 19 still emit
+segments after their scratch request returns null in this replay.
+
+The carrier copies the owner's target pointer at construction.
+Changing the owner's pointer did not retarget any carrier. Moving
+the original target changed the emitted direction for keys 1 and
+15 when the dot gate passed. A target behind the launch axis did
+not. Keys 16 and 19 stayed on the declared axis in all four tests;
+their row threshold is 1 and the callback requires a larger dot.
+This qualifies a copied pointer with live position sampling,
+not an unconditional aim lock or a live-match aim cutoff.
+
+At owner clock step 1, the tested emission requests occurred on
+active visits **1 and 2**. At step 0.5 they occurred on **1 and 3**.
+The first request bound a type-11 shape with the credited actor's
+queue; the second could not allocate another carrier. It still
+refreshed the endpoint that the first child read on its next update.
+Closing the producer byte stopped requests and took the carrier
+to phase 2.
+
+All 16 cases matched across O0, O1, and O2. Matrices, target
+positions, and the producer gate are fixture inputs. No terrain,
+receiver, or damage pass ran. This does not establish wall
+occlusion, paid action admission, or native behavior.
+
+Use the same fixture executable as above:
+
+```sh
+python3 -m tools.analyze.retail_type32_shared \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type32-shared.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

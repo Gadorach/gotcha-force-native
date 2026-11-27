@@ -212,10 +212,13 @@ transformed segment endpoints. That does **not** prove the segment's
 downstream prop or target collision, damage, or guaranteed contact.
 The player's clarified claim is **non-occluding but dodgeable**: aim
 stops adjusting at launch commitment, and the target can move off the
-line before it becomes damaging. Static readback's optional target
-correction does not tell us how long its copied target pointer stays
-eligible or whether the actor stops adjusting the key-1 pose first.
-The exact cutoff and shorter-window comparison remain open.
+line before it becomes damaging. The
+[bounded shared replay](retail-code-atlas.md#type-32-model-relative-segments-copied-aim-and-live-gate)
+shows that the active callback can still sample the copied target's
+changed position when the dot gate passes. Swapping the owner's
+target did not retarget the carrier. This does not tell us how long
+the copied pointer stays eligible in a live match, or when the actor
+stops adjusting the key-1 pose.
 The portable `aim-lock` marker provides an authored version of the
 distinction: commitment snapshots direction, terrain policy controls
 obstruction, and a later move off the line still avoids contact.
