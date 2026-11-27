@@ -1,6 +1,7 @@
 // Original opcode-10 melee publication and body-local contact timer ownership.
 #include "retail_contact_pose_clock.hpp"
 #include "retail_contact_clock_consumers.hpp"
+#include "retail_contact_frame_prefix.hpp"
 
 namespace {
 using namespace retail_contact_pose_clock;
@@ -17,10 +18,11 @@ constexpr u32 commands=0x81034000,hit_block=0x81035000,cells=0x81039000,stride=0
 constexpr u32 attack_count=0x8043B5A0-21328,attack_registry=0x803C477C,body=contact::receiver;
 constexpr u32 amount=contact::amount_entry,script=0x8004C6B4,allocator=0x8008AC80;
 constexpr contact::Point center{200.f,150.f,325.f};
+enum class Mode {timers,consumers,frame_prefix};
 
 void observe(const Module& mod,std::vector<u8> ram,const Route& r,const contact::HitBlock& receiver_hit,
              const contact::ActorSpec& defender,const contact::HitBlock& attacker_hit,
-             const contact::ActorSpec& attacker,unsigned scenario,bool consumers=false){
+             const contact::ActorSpec& attacker,unsigned scenario,Mode mode=Mode::timers){
     const auto at=[&](u32 address){return contact::at(ram,address);};
     const auto word=[&](u32 address){return be32(at(address));};
     const auto half=[&](u32 address){return contact::half(ram,address);};
@@ -145,8 +147,9 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& r,const contact:
     }
     check_clocks(ram,actor,armed_a,unit,unit,neutral_secondary);
     check_clocks(ram,body,armed_b,unit,unit,neutral_secondary);
-    if(consumers){
-        retail_contact_clock_consumers::observe(mod,ram,body,r.model,scenario,armed_b,hp_stable);
+    if(mode!=Mode::timers){
+        if(mode==Mode::consumers)retail_contact_clock_consumers::observe(mod,ram,body,r.model,scenario,armed_b,hp_stable);
+        else retail_contact_frame_prefix::observe(mod,ram,body,r.model,scenario,armed_b,hp_stable);
         return;
     }
     unsigned slow_a=0,slow_b=0;
@@ -173,8 +176,9 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& r,const contact:
 
 int main(int argc,char** argv){
     const bool consumers=argc==4&&!std::strcmp(argv[3],"--consumers");
-    if(argc!=3&&!consumers)
-        fail("usage: melee-pose-clock-fixture qualified.dol unmodified-recomp.so [--consumers]");
+    const bool frame=argc==4&&!std::strcmp(argv[3],"--frame-prefix");
+    if(argc!=3&&!consumers&&!frame)
+        fail("usage: melee-pose-clock-fixture qualified.dol unmodified-recomp.so [--consumers|--frame-prefix]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     const auto read=[](auto& value){
@@ -185,8 +189,9 @@ int main(int argc,char** argv){
     for(const auto& route:routes){
         contact::HitBlock hit{};contact::ActorSpec attacker{};
         read(hit);read(attacker);
-        if(consumers){
-            for(unsigned scenario:{1u,2u})observe(mod,original,route,body_hit,defender,hit,attacker,scenario,true);
+        if(consumers||frame){
+            const auto mode=consumers?Mode::consumers:Mode::frame_prefix;
+            for(unsigned scenario:{1u,2u})observe(mod,original,route,body_hit,defender,hit,attacker,scenario,mode);
             continue;
         }
         for(unsigned scenario=0;scenario<(route.count==2?7u:5u);++scenario)

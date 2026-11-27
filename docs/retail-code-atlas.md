@@ -1308,6 +1308,40 @@ python3 -m tools.analyze.retail_contact_clock_consumers \
   /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-clock-consumers.json
 ```
 
+### Actor update prefix: incoming and refreshed contact rates
+
+The [frame-prefix replay](api-map/gg4e08-contact-frame-prefix.json)
+retains the Sasuke receiver from the Tau and G-Red hit and whiff
+cases. It runs Sasuke's original installer, then enters the original
+actor wrapper `80055568`. The selected lower slot **3** calls the
+original wait updater; the fixture stops at Sasuke's post callback,
+after the lane visit and before the remainder of the actor update.
+
+The early float counter `+0x694` spends the **incoming** secondary
+rate before `80059068` refreshes the body clock. The scheduled lane
+wait spends the **refreshed** rate. On the first visit after an
+accepted hit, the early counter spends **0.375** while the later
+wait spends **0.03**. On expiry those rates are reversed. The
+early integer counter `+0x6B8` sees the pre-refresh timer; it
+stays held on expiry and resumes on the following visit.
+
+The original scheduled wait completes in **3 visits** after a
+whiff, **6** after Tau's hit, and **10** after G-Red's hit, as
+in the isolated helper replay. The fixture declares a settled
+prepass mode and lane choice and suppresses the separate input
+accumulator. These results do not show how the live controller
+selects those modes or how a full scene schedules the actor.
+
+All 22 visits matched across O0, O1, and O2. World updates,
+original controller polling, and native gameplay remain outside
+this replay.
+
+```sh
+python3 -m tools.analyze.retail_contact_frame_prefix \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-frame-prefix.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches

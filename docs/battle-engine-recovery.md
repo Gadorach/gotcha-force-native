@@ -624,6 +624,9 @@ opcode-10 openings with declared poses.
 The [consumer replay](retail-code-atlas.md#contact-clock-consumers-movement-waits-and-clip-requests)
 also checks original movement, heading and wait updates at the reduced
 rates. Those original consumers are not part of the native pose-only hold.
+The [actor-prefix replay](retail-code-atlas.md#actor-update-prefix-incoming-and-refreshed-contact-rates)
+separately shows that early counters read the incoming rate and timer,
+while the selected lower-lane wait uses the refreshed rate on that visit.
 
 `--contact-pause-test` converts agreeing seeds to `seed - 1` held
 native render ticks for 83 melee moves and 34 projectile moves.
