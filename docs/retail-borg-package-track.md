@@ -5432,6 +5432,13 @@ difficulty/settings and scoped math remained supplied fixture
 inputs. Amount 8 is not a general retail or native damage
 constant. This is not a live battle or package admission.
 
+The [recompiled rifle fixture](retail-code-atlas.md#machine-red-from-registered-rifle-contact-to-hp)
+later reproduced the ordinary and masked outcomes with the
+original installed input, VM cue, allocations, registry passes,
+and HP writer. It uses teams 0/1 and different supplied poses with
+null target pointers, and also checks a miss and a duplicate
+token. Neither setup qualifies live hit timing or retirement.
+
 Exclusive `build/borg-ordered-audit/retail-0600-rifle-outcome-v1.json`
 SHA-256: `c336d89bc4d157c9cf3fa3394b404d17ed53e8a7e6766631e97699c92c3d9270`.
 One process, **0.337 s** wall, **5,635,004 KiB** available at launch,

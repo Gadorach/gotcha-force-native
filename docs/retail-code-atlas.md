@@ -329,6 +329,44 @@ python3 -m tools.analyze.retail_rifle_bucket \
   /tmp/opencode/gf-rifle-bucket.json
 ```
 
+### Machine Red: from registered rifle contact to HP
+
+The [rifle contact receipt](api-map/gg4e08-rifle-contact-hp.json)
+adds an original Sasuke body allocation to the same paid rifle
+fixture. Only Sasuke's body list is narrowed to descriptor 9;
+the rigid placement and ordinary actor/Scene state are supplied.
+The original class-4 sweep publishes both shapes and the original
+pair loop selects the receiver. No registry entry or hit is supplied.
+
+| Receiver control | Accepted contact | Requested damage | Sasuke HP |
+| --- | --- | ---: | ---: |
+| Centers 256 units apart | No | No writer call | `180 → 180` |
+| Coincident, token already in history | No | No writer call | `180 → 180` |
+| Coincident, clear history | Yes | 8 | `180 → 172` |
+| Coincident, clear history, reaction class 2 masked | Yes | 0 | `180 → 180` |
+
+Both accepted cases set contact flag `0x10`, record token 1, and
+link the carrier and credited Machine Red to the same receiver.
+The raw attack record at `8030A398` has power 10. The amount call
+receives the **rifle carrier**, not Machine Red's actor pointer;
+the HP transaction still credits Machine Red and records 8 in
+both damage ledgers in the ordinary case. Masking reaction class 2
+leaves the curve unset and the ledgers unchanged, but the HP
+writer still records previous HP 180. That is not a rejected hit.
+
+All four cases matched across O0, O1 and O2. The fixture executes
+the original HP writer and stops on return without resuming
+reaction scheduling. It does not qualify live projectile sweep,
+retirement, full hit reactions or native move timing. Native
+gameplay is unchanged. Use the transaction fixture binary:
+
+```sh
+python3 -m tools.analyze.retail_rifle_contact_hp \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-rifle-contact-hp.json
+```
+
 ### From shape publication to the amount call
 
 The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the

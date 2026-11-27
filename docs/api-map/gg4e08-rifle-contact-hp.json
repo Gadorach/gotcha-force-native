@@ -1,0 +1,147 @@
+{
+  "attack": {
+    "actor_spec_sha256": "c1dc203649224c2e69c5d80fa872b550462aa7742173fa675632786858007393",
+    "attack_record": "8030A398",
+    "hit_block_sha256": "89e4a919e5989aad5b2fb36985d55859b8cfdf9387bec0149265cbf716b9aec3",
+    "id": "gg4e08:0600",
+    "raw_attack_power": 10,
+    "stock_after": 1,
+    "stock_before_release": 2
+  },
+  "cases": [
+    {
+      "carrier_contact_flags": 0,
+      "case": "miss",
+      "contact_accepted": false,
+      "credited_damage": 0,
+      "duplicate_token_seeded": false,
+      "hp_writer_reached": false,
+      "previous_hp_field": 65535,
+      "receiver_first_token": 0,
+      "receiver_reaction_class": null,
+      "receiver_reaction_class_mask": 0,
+      "receiver_reaction_curve": null,
+      "receiver_token_cursor": 0,
+      "recorded_receive_damage": 0,
+      "remaining_hp": 180,
+      "requested_damage": 0,
+      "sphere_center_delta_x": 256
+    },
+    {
+      "carrier_contact_flags": 0,
+      "case": "duplicate-token",
+      "contact_accepted": false,
+      "credited_damage": 0,
+      "duplicate_token_seeded": true,
+      "hp_writer_reached": false,
+      "previous_hp_field": 65535,
+      "receiver_first_token": 1,
+      "receiver_reaction_class": null,
+      "receiver_reaction_class_mask": 0,
+      "receiver_reaction_curve": null,
+      "receiver_token_cursor": 0,
+      "recorded_receive_damage": 0,
+      "remaining_hp": 180,
+      "requested_damage": 0,
+      "sphere_center_delta_x": 0
+    },
+    {
+      "carrier_contact_flags": 16,
+      "case": "ordinary-contact",
+      "contact_accepted": true,
+      "credited_damage": 8,
+      "duplicate_token_seeded": false,
+      "hp_writer_reached": true,
+      "previous_hp_field": 180,
+      "receiver_first_token": 1,
+      "receiver_reaction_class": 2,
+      "receiver_reaction_class_mask": 0,
+      "receiver_reaction_curve": "802C3494",
+      "receiver_token_cursor": 1,
+      "recorded_receive_damage": 8,
+      "remaining_hp": 172,
+      "requested_damage": 8,
+      "sphere_center_delta_x": 0
+    },
+    {
+      "carrier_contact_flags": 16,
+      "case": "reaction-class-masked",
+      "contact_accepted": true,
+      "credited_damage": 0,
+      "duplicate_token_seeded": false,
+      "hp_writer_reached": true,
+      "previous_hp_field": 180,
+      "receiver_first_token": 1,
+      "receiver_reaction_class": 2,
+      "receiver_reaction_class_mask": 4,
+      "receiver_reaction_curve": null,
+      "receiver_token_cursor": 1,
+      "recorded_receive_damage": 0,
+      "remaining_hp": 180,
+      "requested_damage": 0,
+      "sphere_center_delta_x": 0
+    }
+  ],
+  "declared": {
+    "actor_ranks": [
+      0,
+      0
+    ],
+    "actor_slots": [
+      0,
+      1
+    ],
+    "actor_teams": [
+      0,
+      1
+    ],
+    "credit_and_receive_controller_banks": [
+      0,
+      0
+    ],
+    "initial_and_max_hp": [
+      500,
+      180
+    ],
+    "previous_hp_sentinel": 65535,
+    "team_current_and_reference_totals": 100,
+    "team_settings": [
+      0,
+      0
+    ]
+  },
+  "kind": "gf-retail-rifle-contact-hp",
+  "notes": [
+    "Continues the original paid carrier and narrow bucket replay, with a declared rigid body-9 receiver and no seeded registry pointers.",
+    "In positive cases the original loop writes the same receiver to the carrier and credited actor and links the receiver back to the carrier.",
+    "The verified amount call receives the carrier pointer; damage is credited to Machine Red. Masked reaction retains contact but requests zero damage.",
+    "The original HP writer returns without resuming its caller. No swept motion, full reaction scheduling, KO, retirement, or native move timing is qualified."
+  ],
+  "path": {
+    "amount": "8002F108 -> 8003CD5C",
+    "amount_carrier": "rifle object, not credited Borg",
+    "hp_writer": "8002F1D8 -> 8003D344",
+    "pair_loop": "8002DB58",
+    "receiver_bind": "8008AB30",
+    "stop_after_writer_at": "8002F1DC",
+    "sweep": "80089AEC"
+  },
+  "receiver": {
+    "actor_spec_sha256": "bd5c6a7611df76737868e6d34580ff4e8dc464e288d23340c753e3f45cfec6c5",
+    "body_step": 9,
+    "flags": 2,
+    "hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+    "id": "gg4e08:000a",
+    "kind": 0,
+    "local_center": [
+      0.0,
+      -14.0,
+      0.0
+    ],
+    "matrix_selector": 2,
+    "radius": 22.0
+  },
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
