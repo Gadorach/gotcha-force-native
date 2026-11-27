@@ -1,6 +1,7 @@
 // Original processed pad packet -> conditioned requests -> action arbiter.
 // The scene, actor flags, and missing services are fixture inlets, not a match.
 #include "retail_recomp_fixture.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 
@@ -17,6 +18,13 @@ constexpr u32 free_head=0x803C716C, free_tail=0x803C718C, free_count=0x803C71AC,
 constexpr u32 attack_registry=0x803C477C, receiver_registry=0x803C417C,
               attack_count=0x8043B5A0-21328, receiver_count=0x8043B5A0-21330;
 using HitBlock=std::array<u8,7840>;
+using ActorSpec=std::array<u8,432>;
+struct HpInlet {
+    const ActorSpec& actor_spec;
+    u16 receiver_hp=180;
+    bool protect_hp=false;
+    u8 settings_index=0,receiver_source=0;
+};
 struct Profile {u32 cfg,context,selector;};
 constexpr Profile synthetic{config,contexts,pairs};
 constexpr Profile red{0x8030A130,0x8030A380,0x8030A248}; // Machine Red, p076
@@ -78,6 +86,34 @@ class Check {
         cpu.gpr[3]=left;cpu.gpr[4]=right;cpu.gpr[5]=mask;
         mod.run(cpu,ram,entry);
         return cpu.gpr[3];
+    }
+    void damage_inlet(const HpInlet& inlet){
+        auto* receiver=at(peer);
+        constexpr u32 receiver_spec=0x81015400,difficulty=0x81019600;
+        std::memcpy(at(spec),inlet.actor_spec.data(),inlet.actor_spec.size());
+        std::memcpy(at(receiver_spec),inlet.actor_spec.data(),inlet.actor_spec.size());
+        put32(receiver+0x4AC,receiver_spec);
+        for(const u32 obj:{actor,peer}){
+            auto* fighter=at(obj);
+            fighter[0x18]=1; // Admit the active, ordinary damage branch.
+            put16(fighter+0x3E8,0x000A);
+            put32(fighter+0x90,obj);
+            put_float(fighter+0xB4,1.f);put_float(fighter+0xC4,1.f);
+            put16(fighter+0x1C4,180);
+        }
+        put16(a+0x1C6,180);put16(receiver+0x1C6,inlet.receiver_hp);
+        receiver[0x3E6]=inlet.receiver_source;
+        // Declared scene mirrors, team force caps, difficulty, and rank.
+        // This fixture does not run the scene or level scheduler.
+        put32(at(0x8043B5A0-31824),difficulty);
+        at(difficulty)[0]=inlet.settings_index;at(difficulty)[1]=inlet.settings_index;
+        put16(at(0x803B069C),180);put16(at(0x803B069C+2),inlet.receiver_hp);
+        for(unsigned team=0;team<2;++team){
+            put32(at(0x803B068C+4*team),180);
+            put32(at(settings+team*60+0x114),180);
+            put32(at(settings+team*60+0x118),180);
+        }
+        at(settings)[0x1F]=inlet.protect_hp;
     }
 public:
     u8* const a;
@@ -191,7 +227,8 @@ public:
         if(report)std::printf("sasuke: %u %u 1 %u %u %u %u\n",unsigned(free_cell),a[0x744],
                               cell[1],cell[0x83],cell[0x12],cell[0x11]);
     }
-    void sasuke_shape_sweep(const HitBlock& block,unsigned distance,bool suppress,bool immune,bool receiver_gate){
+    void sasuke_shape_sweep(const HitBlock& block,unsigned distance,bool suppress,bool immune,bool receiver_gate,
+                            const HpInlet* hp=nullptr){
         if(!first_bucket_cell(4,49,0x1A))fail("shape sweep requires the original attack allocation");
         a[0]=1;
         put_float(a+0xC0,1.f);
@@ -244,8 +281,10 @@ public:
         // sees the original registry entry but must still check eligibility.
         put16(target+0x272,immune?2:0);
         target[0x1DA]=receiver_gate?2:0;
+        if(hp)damage_inlet(*hp);
+        const auto initial_hp=hp?hp->receiver_hp:180;
         const bool permitted=pair_helper(0x8002FD7C,object_cell,hurt_cell,2)!=0;
-        if(overlap!=(distance<=82)||permitted==immune||half(peer+0x1C6)!=180)
+        if(overlap!=(distance<=82)||permitted==immune||half(peer+0x1C6)!=initial_hp)
             fail("original sphere/receiver filter comparison mismatch");
         const bool should_dispatch=listed&&overlap&&permitted&&!receiver_gate;
         const auto before_contact=ram;
@@ -266,7 +305,7 @@ public:
             accepted=pair_helper(entry,classifier.arguments[0],classifier.arguments[1]);
             if(accepted!=1)fail("candidate pair failed the original sphere narrow phase");
         }else if(entry||classifier.count)fail("a refused candidate reached the narrow phase");
-        if(half(peer+0x1C6)!=180)fail("scoped classifier changed HP");
+        if(half(peer+0x1C6)!=initial_hp)fail("scoped classifier changed HP");
         // A fresh replay from both original registries now lets the original
         // pair loop consume the classifier result. Stop before amount/HP.
         std::memcpy(ram.data(),before_contact.data(),ram.size());
@@ -275,8 +314,31 @@ public:
         if((should_dispatch?
                 boundary!=0x8003CD5C||reaction.lr!=0x8002F10C||reaction.gpr[3]!=0x802D4190||
                 reaction.gpr[4]!=actor||reaction.gpr[5]!=peer:
-                boundary!=0)||half(peer+0x1C6)!=180)
+                boundary!=0)||half(peer+0x1C6)!=initial_hp)
             fail("original pair loop sent the wrong amount request");
+        if(hp){
+            std::memcpy(ram.data(),before_contact.data(),ram.size());
+            CPUState writer{};
+            const auto hp_cut=mod.run_to_or_return(writer,ram,0x8002DB58,{0x8003D344});
+            if((should_dispatch?(hp_cut!=0x8003D344||writer.lr!=0x8002F1DC||writer.gpr[3]!=peer):hp_cut!=0)||
+               half(peer+0x1C6)!=initial_hp)fail("fixture applied HP before the original writer");
+            const u32 amount=hp_cut?writer.gpr[4]:0;
+            if(hp_cut)mod.finish_stopped_leaf(writer,hp_cut,164);
+            const unsigned expected=should_dispatch?(initial_hp==1?34:hp->receiver_source?40:35):0;
+            const bool writes=should_dispatch&&!hp->protect_hp;
+            const auto remaining=initial_hp-(writes?std::min<unsigned>(initial_hp,expected):0);
+            const unsigned credit=writes?expected:0;
+            if(amount!=expected||half(peer+0x1C6)!=remaining||half(peer+0x1C8)!=(writes?initial_hp:0)||
+               be32(a+0x418)!=credit||be32(target+0x41C)!=credit||a[0x88]!=0||target[0x88]!=1||
+               (hp_cut&&writer.gpr[3]!=unsigned(writes&&!remaining)))
+                fail("original HP writer, controller-source bank, or contact ledger mismatch");
+            std::printf("contact-hp: %u %u %u %u %u %d %u %u %u %u %u %u %u %u %u\n",distance,unsigned(suppress),
+                        unsigned(immune),unsigned(receiver_gate),unsigned(hp->protect_hp),initial_hp,
+                        hp->settings_index,hp->receiver_source,unsigned(hp_cut!=0),
+                        amount,half(peer+0x1C6),half(peer+0x1C8),be32(a+0x418),be32(target+0x41C),
+                        hp_cut?writer.gpr[3]:0);
+            return;
+        }
         std::printf("shape-sweep: %u %u %u %u %u %u %u %u %u %u\n",distance,unsigned(suppress),unsigned(immune),
                     unsigned(receiver_gate),unsigned(listed),unsigned(overlap),unsigned(permitted),
                     classifier.count,accepted,unsigned(boundary!=0));
@@ -402,9 +464,10 @@ public:
 }
 
 int main(int argc,char** argv){
-    const bool sweep=argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0;
+    const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
+    const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
     if(argc!=3&&!sweep&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--sasuke-hit-block|--sasuke-shape-sweep < block]");
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     {
@@ -536,7 +599,9 @@ int main(int argc,char** argv){
     }
     if(argc==4){
         HitBlock block{};
-        if(std::fread(block.data(),1,block.size(),stdin)!=block.size()||std::fgetc(stdin)!=EOF)
+        ActorSpec actor_spec{};
+        if(std::fread(block.data(),1,block.size(),stdin)!=block.size()||
+           (hp&&std::fread(actor_spec.data(),1,actor_spec.size(),stdin)!=actor_spec.size())||std::fgetc(stdin)!=EOF)
             fail("Sasuke hit-block inlet extent");
         for(const bool free_cell:{true,false}){
             constexpr Profile installed_sasuke{0x802D3EE0,0x802D4148,0x802D3FF8};
@@ -548,8 +613,14 @@ int main(int argc,char** argv){
             c.sasuke_pair(block,free_cell);
         }
         if(sweep){
-            struct Case {unsigned distance;bool suppress=false,immune=false,receiver_gate=false;};
-            for(const auto test:{Case{81},Case{82},Case{83},Case{81,true},Case{81,false,true},Case{81,false,false,true}}){
+            struct Case {
+                unsigned distance;bool suppress=false,immune=false,receiver_gate=false,protect=false;
+                u16 health=180;u8 settings_index=0,receiver_source=0;
+            };
+            for(const auto test:{Case{81},Case{82},Case{83},Case{81,true},Case{81,false,true},Case{81,false,false,true},
+                                 Case{81,false,false,false,true},Case{81,false,false,false,false,1},
+                                 Case{81,false,false,false,false,180,7,0},Case{81,false,false,false,false,180,7,1}}){
+                if(!hp&&(test.protect||test.health!=180||test.settings_index))continue;
                 constexpr Profile installed_sasuke{0x802D3EE0,0x802D4148,0x802D3FF8};
                 Check c(mod,original);
                 c.install(0x8006F4F8,0x000A,installed_sasuke,0x8006FACC);
@@ -557,7 +628,8 @@ int main(int argc,char** argv){
                 c.input(b,b,b,0,0x60,"Sasuke bounded shape sweep");
                 c.expect(1,1,"Sasuke sweep row");
                 c.sasuke_pair(block,true,false);
-                c.sasuke_shape_sweep(block,test.distance,test.suppress,test.immune,test.receiver_gate);
+                const HpInlet damage{actor_spec,test.health,test.protect,test.settings_index,test.receiver_source};
+                c.sasuke_shape_sweep(block,test.distance,test.suppress,test.immune,test.receiver_gate,hp?&damage:nullptr);
             }
         }
         std::puts("Sasuke: exact queue-2 pair and empty pool passed");

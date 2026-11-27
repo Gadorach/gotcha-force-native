@@ -323,6 +323,49 @@ python3 -m tools.analyze.retail_shape_sweep \
   /tmp/opencode/gf-shape-sweep.json
 ```
 
+### From registered contact to HP
+
+The [contact-to-HP receipt](api-map/gg4e08-contact-hp.json) extends the
+same Sasuke pair through the original amount routine and HP writer.
+Both fighters use the exact normal actor spec and level-one HP cap.
+Rank, relative scales, force mirrors, controller source and team
+settings are declared inputs, not outputs from a running match.
+The fixture stops at the HP writer, then executes that same call
+with its original arguments, stack and return address.
+
+| Scoped case | Requested amount | Receiver HP | Credit and receive ledgers |
+| --- | ---: | ---: | ---: |
+| Overlap or exact tangency, settings 0 | 35 | `180 → 145` | 35 |
+| Miss or any of the three publication/receiver gates | No call | `180 → 180` | 0 |
+| Overlap with scene HP protection | 35 | `180 → 180` | 0 |
+| Receiver starts at 1 HP | 34 | `1 → 0` | 34 |
+| Settings 7, receiver controller source 0 | 35 | `180 → 145` | 35 |
+| Settings 7, receiver controller source 1 | 40 | `180 → 140` | 40 |
+
+The raw attack row says **40**. That is not necessarily the computed
+amount or the HP actually removed. The low-HP clamp control
+records 34 in both ledgers with only 1 HP removed. Zero HP is the
+writer's return condition, not a test of subsequent KO scheduling.
+
+In the last two controls, only receiver `+0x3E6` changes. The receiver
+remains on team 1, both team settings stay 7, and the same contact is
+accepted. The original uses that controller-source byte to select
+the damage table bank (receiver class factor **0.92** versus **1.04**).
+The native opt-in still selects its roles by team. It cannot use one
+team-keyed bank to represent both original cases; no runtime role
+policy or Sasuke melee admission is changed in this checkpoint.
+
+All ten cases produced the same report on O0, O1 and O2. This does not
+exercise the rest of the reaction loop, live rank/force generation, or
+other attack and receiver families.
+
+```sh
+python3 -m tools.analyze.retail_contact_hp \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-contact-hp.json
+```
+
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the
 command below; it takes the same DOL and recomp-module arguments.

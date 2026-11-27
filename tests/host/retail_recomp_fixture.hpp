@@ -147,5 +147,18 @@ public:
         dispatch(cpu,ram,entry,true);
         cpu.host_call=nullptr;cpu.external_user_data=nullptr;
     }
+    void finish_stopped_leaf(CPUState& cpu,u32 entry,u32 size)const{
+        if(cpu.pc!=stop||!size||cpu.host_call)fail("invalid stopped leaf");
+        // Restore only the entry PC replaced by the observation cut. The
+        // original call's arguments, guest stack, and LR stay intact.
+        const auto return_pc=cpu.lr,sp=cpu.gpr[1];
+        cpu.pc=entry;
+        for(unsigned n=0;n<32&&cpu.pc!=return_pc;++n){
+            if(cpu.pc<entry||cpu.pc-entry>=size)fail("stopped leaf left its instruction span");
+            cpu.downcount=256;
+            if(!mod->dispatch(&cpu,cpu.pc)||cpu.exception)fail("stopped leaf dispatch or exception");
+        }
+        if(cpu.pc!=return_pc||cpu.gpr[1]!=sp)fail("stopped leaf did not return to its caller");
+    }
 };
 }

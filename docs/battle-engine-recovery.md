@@ -817,7 +817,14 @@ together with the 13 combined forms, whose `data2`/`data3` blocks carry one
 triple per component.
 The class row is `80433600[side][selector][settings[slot]]`; the HP row
 uses `+157`, and the receiving force row uses `+158` with a different
-index. The per-slot settings byte is
+index. Here the original row bank `side` is selected by the actor's
+controller-source byte (`+0x3E6 != 0`), separately from the `+0x88`
+index used to look up the team settings byte. The
+[HP fixture](retail-code-atlas.md#from-registered-contact-to-hp) keeps
+teams and settings fixed and measures 35 versus 40 when only the
+receiver's controller-source byte changes. The native opt-in split-row
+selection is still team-keyed; this result does not make it equivalent
+when controller source and team differ. The per-slot settings byte is
 written by `80006ABC`: state 1 sets slot 0 = `d` and slot 1 = `31 - d` (with
 `d` from `*80433934 + 0x46`), masking both cells to five bits and leaving
 slots 2 and 3 untouched. State 2 sets slots 0..3 to 7. The observed
