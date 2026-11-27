@@ -17,9 +17,10 @@ constexpr u32 bind=0x8008AC80,visit=0x80089A94;
 constexpr u32 attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
 constexpr u32 receiver_count=0x8043B5A0-21330,receiver_registry=0x803C417C;
 constexpr u32 receiver=0x8101C000,body=0x81035200,body_block=0x8103B000;
-constexpr u32 effect_cell=0x81034000;
+constexpr u32 effect_cell=0x81034000,common_collision=0x81068000;
 constexpr u32 factory=0x8007DB5C, powered=0x8016711C, ninja=0x800715F8, alpha=0x801A0458;
 constexpr u32 audio=0x800F036C, normal_x_helper=0x8016D584, movement_tail=0x800B22F4;
+constexpr u32 area_callback=0x80086048, area_amount=0x802C4778;
 
 struct Case {
     u16 model;
@@ -27,6 +28,7 @@ struct Case {
 };
 using HitBlock=std::array<u8,7840>;
 using ActorSpec=std::array<u8,432>;
+using CommonCollision=std::array<u8,21504>;
 enum class Contact {miss,duplicate,impact,child_cell_empty,child_descriptor_short};
 constexpr std::array cases{
     Case{0x0101,3,0,1,4,4}, Case{0x0101,3,0,0,4,4},
@@ -221,6 +223,32 @@ class Check {
             put32(at(scene+team*60+0x114),100);put32(at(scene+team*60+0x118),100);
         }
     }
+    unsigned contact_write(u32 obj,u32 record,u16 hp,bool should_hit){
+        const auto before=ram;
+        CPUState input{};
+        const auto cut=mod.run_to_or_return(input,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
+        if((should_hit?(cut!=0x8003CD5C||input.lr!=0x8002F10C||input.gpr[3]!=record||
+           input.gpr[4]!=obj||input.gpr[5]!=receiver):cut!=0)||half(receiver+0x1C6)!=hp){
+            std::fprintf(stderr,"bomb pair object=%08X expected=%08X hp=%u cut=%08X lr=%08X record=%08X "
+                         "damage-actor=%08X receiver=%08X\n",
+                         obj,should_hit?record:0,hp,cut,input.lr,input.gpr[3],input.gpr[4],input.gpr[5]);
+            fail("bomb pair amount record mismatch");
+        }
+        if(!should_hit)return 0;
+        std::memcpy(ram.data(),before.data(),ram.size());
+        CPUState writer{};
+        mod.run_to(writer,ram,0x8002DB58,{0x8003D344});
+        if(writer.lr!=0x8002F1DC||writer.gpr[3]!=receiver||half(receiver+0x1C6)!=hp)
+            fail("bomb pair reached the wrong HP writer");
+        const unsigned amount=writer.gpr[4];
+        mod.finish_stopped_leaf(writer,0x8003D344,164);
+        return amount;
+    }
+    void visit_areas(){
+        CPUState pass{};pass.gpr[3]=9;
+        mod.run(pass,ram,visit,1024);
+        class4_passes();
+    }
 public:
     Check(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
     void run_case(const Case& c,bool report=true){
@@ -326,7 +354,7 @@ public:
                     registered,registry_order,capacity?0:3);
     }
     void contact(bool gun,const HitBlock& block,const HitBlock& defender,const ActorSpec& credit_spec,
-                 const ActorSpec& defender_spec,Contact scenario){
+                 const ActorSpec& defender_spec,Contact scenario,bool leave_area=false){
         const bool miss=scenario==Contact::miss,duplicate=scenario==Contact::duplicate;
         const bool hit=!miss&&!duplicate,spawn=scenario==Contact::impact;
         const bool no_cell=scenario==Contact::child_cell_empty,short_desc=scenario==Contact::child_descriptor_short;
@@ -338,7 +366,8 @@ public:
             put32(at(free_head+8),effect_cell);put32(at(free_tail+8),effect_cell);
             put16(at(free_count+4),1);
         }
-        receiver_inlet(defender,miss?256:0,credit_spec,defender_spec,gun?200:180);
+        if(leave_area&&(gun||!spawn))fail("unsupported bomb area fixture seed");
+        receiver_inlet(defender,leave_area?30:miss?256:0,credit_spec,defender_spec,gun?200:180);
         const auto obj=cell(0);
         const auto* carrier=at(obj);const auto* target=at(receiver);
         const auto token=half(obj+0x26C);
@@ -346,22 +375,7 @@ public:
             fail("bomb contact token, shape radius or flags baseline mismatch");
         if(duplicate)put16(at(receiver+0x20C),token);
         const u32 amount_record=gun?0x8034EB10:0x802D4178;
-        const auto before=ram;
-        CPUState input{};
-        const auto cut=mod.run_to_or_return(input,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
-        if((hit?(cut!=0x8003CD5C||input.lr!=0x8002F10C||input.gpr[3]!=amount_record||
-           input.gpr[4]!=obj||input.gpr[5]!=receiver):cut!=0)||half(receiver+0x1C6)!=180)
-            fail("bomb pair did not request the exact opening amount record");
-        unsigned amount=0;
-        if(hit){
-            std::memcpy(ram.data(),before.data(),ram.size());
-            CPUState writer{};
-            mod.run_to(writer,ram,0x8002DB58,{0x8003D344});
-            if(writer.lr!=0x8002F1DC||writer.gpr[3]!=receiver||half(receiver+0x1C6)!=180)
-                fail("bomb pair reached the wrong HP writer");
-            amount=writer.gpr[4];
-            mod.finish_stopped_leaf(writer,0x8003D344,164);
-        }
+        const auto amount=contact_write(obj,amount_record,180,hit);
         const unsigned key=carrier[0x11],flags=carrier[0x1D9],receiver_token=half(receiver+0x20C),history=target[0x26E];
         const auto hp=half(receiver+0x1C6);
         if(flags!=(hit?16:0)||receiver_token!=unsigned(hit||duplicate)||history!=unsigned(hit)||
@@ -375,12 +389,11 @@ public:
         // if appended there. Gunman's child is in bucket 25, not visited.
         const auto entry=gun?0x8001BDA8u:0x80085E00u;
         const auto other=gun?0x80085E00u:0x8001BDA8u;
-        constexpr u32 child_callback=0x80086048;
         const auto pos=std::array{be32(at(obj+0x20)),be32(at(obj+0x24)),be32(at(obj+0x28))};
         CPUState update{};update.gpr[3]=9;
         CallObservation request{entry};
-        const auto update_cut=mod.run_to_or_return(update,ram,visit,{other,child_callback},&request);
-        if(update_cut!=(!gun&&spawn?child_callback:0)||(!gun&&spawn&&update.gpr[3]!=cell(1))||
+        const auto update_cut=mod.run_to_or_return(update,ram,visit,{other,area_callback},&request);
+        if(update_cut!=(!gun&&spawn?area_callback:0)||(!gun&&spawn&&update.gpr[3]!=cell(1))||
            request.count!=unsigned(hit)||(hit&&(request.caller!=(gun?0x8007E298:0x8007E284)||
               request.arguments[0]!=obj||request.arguments[1]!=obj+0x20||request.arguments[2]!=0)))
             fail("bomb first follow-up requested the wrong child");
@@ -416,10 +429,11 @@ public:
            half(free_count+6)!=carriers-1-unsigned(child&&!gun)||
            half(free_count+4)!=unsigned(gun&&!no_cell&&!child))
             fail("bomb impact child did not consume exactly its own pool entries");
+        if(leave_area)return;
         if(hit){
             for(const bool returning:{false,true}){
                 CPUState pass{};pass.gpr[3]=9;
-                const auto child_cut=mod.run_to_or_return(pass,ram,visit,{child_callback});
+                const auto child_cut=mod.run_to_or_return(pass,ram,visit,{area_callback});
                 if((child_cut&&(gun||!child||pass.gpr[3]!=child))||(!returning&&!gun&&child&&!child_cut)||
                    (returning?bool(carrier[0]):(!carrier[0]||carrier[0x18]!=3))||
                    be32(at(active_head+9*4))!=(returning?(gun?0:child):obj)||
@@ -433,6 +447,110 @@ public:
         std::printf("bomb-contact: %u %u %u %u %u %08X %u %u %u %u %u %u %u %u %u %u %u\n",
                     c.model,unsigned(scenario),key,flags,receiver_token,hit?amount_record:0,history,amount,hp,
                     phase,timer,attacks,hit?3:0,unsigned(request.count),child_kind,child_key,stock);
+    }
+    void sasuke_area(const HitBlock& block,const ActorSpec& actor_spec,const CommonCollision& common,bool free_shape){
+        contact(false,block,block,actor_spec,actor_spec,Contact::impact,true);
+        const auto child=cell(1);
+        std::memcpy(at(common_collision),common.data(),common.size());
+        put32(at(scene+152),common_collision); // Exact scene-bank inlet normally written by 80040FC0.
+        // The released parent shape is the only free cell. A reservation
+        // control withholds it for the area's bind then makes it free again.
+        if(half(free_count+8)!=1||be32(at(free_head+16))!=shapes||be32(at(free_tail+16))!=shapes)
+            fail("area expects a released opening shape");
+        if(!free_shape)shape_pool(0);
+        constexpr u32 resource_table=0x8103A080,empty_visual=0x8103A880;
+        put32(at(resource_table+4*22),empty_visual);
+        put32(at(resource_table+4*18),empty_visual);
+        put32(at(resource_table+4*23),empty_visual);
+        CPUState init{};init.gpr[3]=child;
+        CallObservation select{0x8008AE3C};
+        const auto frontier=mod.run_to_or_return(init,ram,area_callback,{audio},&select);
+        if(select.count!=1||select.caller!=0x800860E0||select.arguments[0]!=actor||
+           select.arguments[1]!=child||select.arguments[2]!=3||
+           frontier!=(free_shape?audio:0)||(frontier&&(init.lr!=0x80086240||init.gpr[3]!=child||init.gpr[4]!=12))||
+           at(child)[0x18]!=(free_shape?1:2)||at(child)[0x86]!=unsigned(free_shape)||
+           bool(be32(at(active_head+49*4)))!=free_shape||half(receiver+0x1C6)!=172||half(actor+0x784)!=1){
+            std::fprintf(stderr,"area shape=%u bind=%u caller=%08X args=%08X/%08X/%u "
+                         "frontier=%08X lr=%08X phase=%u active=%u head=%08X\n",
+                         unsigned(free_shape),select.count,select.caller,select.arguments[0],select.arguments[1],
+                         select.arguments[2],frontier,init.lr,at(child)[0x18],at(child)[0x86],
+                         be32(at(active_head+49*4)));
+            fail("area shape bind, cue frontier, or direct HP mismatch");
+        }
+        class4_passes();
+        const auto initial_radius=fp(shapes+0x7C);
+        unsigned token=0,after_growth=0,duplicate_passes=0,unlink_visit=0,retired=0;
+        float grown_radius=0,peak_radius=0;
+        if(free_shape){
+            const auto* shape=at(shapes);
+            token=half(child+0x26C);
+            CPUState scale_gate{};scale_gate.gpr[3]=shapes;
+            mod.run(scale_gate,ram,0x8008AA40);
+            if(be32(at(active_head+49*4))!=shapes||half(attack_count)||scale_gate.gpr[3]!=1||
+               shape[0x12]!=4||shape[0x11]!=1||shape[0x14]!=3||be32(shape+0x20)!=child||
+               be32(shape+0x24)!=actor||be32(shape+0x28)!=common_collision+0x400+4*80||
+               be32(shape+0x2C)!=0x802C4760||be32(shape+0x60)!=child+0x114||
+               token!=2||half(receiver+0x20C)!=1||at(receiver)[0x26E]!=1||
+               fp(body+0x68)!=fp(shapes+0x68)||fp(body+0x6C)!=fp(shapes+0x6C)||
+               std::abs(fp(body+0x64)-fp(shapes+0x64)-30.f)>0.001f||std::abs(initial_radius-3.1f)>0.001f){
+                std::fprintf(stderr,"area attack=%u head=%08X group/step/index=%u/%u/%u shape=%08X/%08X/%08X/%08X/%08X "
+                             "token=%u receiver=%u/%u delta=%.5f/%.5f/%.5f radius=%.5f\n",
+                             half(attack_count),be32(at(active_head+49*4)),shape[0x14],shape[0x12],shape[0x11],
+                             be32(shape+0x20),be32(shape+0x24),be32(shape+0x28),be32(shape+0x2C),be32(shape+0x60),
+                             token,half(receiver+0x20C),at(receiver)[0x26E],double(fp(body+0x64)-fp(shapes+0x64)),
+                             double(fp(body+0x68)-fp(shapes+0x68)),double(fp(body+0x6C)-fp(shapes+0x6C)),double(initial_radius));
+                fail("area did not register exact common group, origin or fresh token");
+            }
+            contact_write(child,area_amount,172,false);
+            visit_areas();
+            grown_radius=fp(shapes+0x7C);
+            scale_gate={};scale_gate.gpr[3]=shapes;
+            mod.run(scale_gate,ram,0x8008AA40);
+            if(scale_gate.gpr[3]||half(attack_count)!=1||be32(at(attack_registry))!=shapes)
+                fail("area failed to publish after growing past the scale gate");
+            after_growth=contact_write(child,area_amount,172,true);
+            const auto hp=half(receiver+0x1C6);
+            contact_write(child,area_amount,hp,false);
+            ++duplicate_passes;
+            if(half(receiver+0x20C)!=1||half(receiver+0x20E)!=2||at(receiver)[0x26E]!=2||
+               half(receiver+0x1C8)!=172||hp!=172-after_growth||be32(at(actor+0x418))!=8+after_growth||
+               be32(at(receiver+0x41C))!=8+after_growth||be32(at(child+0x290))!=receiver||
+               be32(at(receiver+0x290))!=child||std::abs(grown_radius-34.1f)>0.001f)
+                fail("area follow-up HP, history or growth mismatch");
+            peak_radius=grown_radius;
+        }else{
+            if(half(attack_count)||half(child+0x26C))fail("refused area published a shape or token");
+            shape_pool(1);
+        }
+        for(unsigned n=free_shape?2:1;n<=96;++n){
+            visit_areas();
+            const auto remaining=half(attack_count);
+            if(n==2&&free_shape){
+                // Still overlapping after the parent retires and the
+                // registry is rebuilt. The area's own token must survive.
+                if(at(cell(0))[0]||!remaining||half(child+0x26C)!=token)
+                    fail("area depended on its retired parent or replaced its token");
+                contact_write(child,area_amount,u16(172-after_growth),false);
+                ++duplicate_passes;
+            }
+            if(remaining>unsigned(free_shape)||(remaining&&be32(at(attack_registry))!=shapes)||
+               be32(at(active_head+49*4))!=(remaining?shapes:0)||
+               be32(at(active_tail+49*4))!=(remaining?shapes:0)||
+               be32(at(free_head+16))!=(remaining?0:shapes)||half(free_count+8)!=unsigned(!remaining)||
+               half(receiver_count)!=1||half(actor+0x784)!=1||half(receiver+0x1C6)!=172-after_growth||
+               (!free_shape&&half(child+0x26C)))
+                fail("area lifetime changed unrelated pools or HP");
+            if(remaining)peak_radius=std::max(peak_radius,fp(shapes+0x7C));
+            else if(!unlink_visit&&free_shape)unlink_visit=n;
+            if(!at(child)[0]){retired=n;break;}
+        }
+        if(!retired||be32(at(active_head+9*4))||half(free_count+6)!=2||
+           half(descriptor_row+18)!=3||half(free_count+8)!=1||be32(at(free_head+16))!=shapes)
+            fail("area did not return both descriptors and carrier");
+        std::printf("bomb-area: %u %u %u %.4f %.4f %.4f %u %u %u %u %u %u\n",
+                    unsigned(free_shape),unsigned(frontier!=0),token,double(free_shape?initial_radius:0.f),
+                    double(grown_radius),double(peak_radius),after_growth,duplicate_passes,half(receiver+0x1C6),
+                    unlink_visit,retired,half(actor+0x784));
     }
     void wrong_parent(){
         // A reviewed charged key, offered to a different normal actor.
@@ -449,10 +567,25 @@ public:
 
 int main(int argc,char** argv){
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
-    if(argc!=3&&(argc!=4||(!contact&&std::strcmp(argv[3],"--first-bind"))))
-        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so [--first-bind|--contact]");
+    const bool area=argc==4&&!std::strcmp(argv[3],"--sasuke-area");
+    if(argc!=3&&(argc!=4||(!contact&&!area&&std::strcmp(argv[3],"--first-bind"))))
+        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so [--first-bind|--contact|--sasuke-area]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
+    if(area){
+        HitBlock sasuke{};
+        ActorSpec sasuke_spec{};
+        CommonCollision common{};
+        if(std::fread(sasuke.data(),1,sasuke.size(),stdin)!=sasuke.size()||
+           std::fread(sasuke_spec.data(),1,sasuke_spec.size(),stdin)!=sasuke_spec.size()||
+           std::fread(common.data(),1,common.size(),stdin)!=common.size()||std::getc(stdin)!=EOF)
+            fail("bomb area inlet extent");
+        for(bool free_shape:{false,true}){
+            Check test(module,original);
+            test.sasuke_area(sasuke,sasuke_spec,common,free_shape);
+        }
+        return 0;
+    }
     if(argc==4){
         HitBlock gun{},sasuke{};
         if(std::fread(gun.data(),1,gun.size(),stdin)!=gun.size()||

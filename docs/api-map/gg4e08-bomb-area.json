@@ -1,0 +1,116 @@
+{
+  "area": {
+    "class": 3,
+    "descriptor_cells": 2,
+    "key": 0,
+    "type": 5
+  },
+  "cases": [
+    {
+      "bound_shape": false,
+      "carrier_and_both_descriptors_return_visit": 2,
+      "case": "empty-shape-pool-at-bind",
+      "child_amount": 0,
+      "child_audio_request": null,
+      "child_token": null,
+      "credited_and_received_damage": 8,
+      "duplicate_checks_without_another_write": 0,
+      "free_shape_cells_at_init": 0,
+      "growth_visit_one": null,
+      "initial_attack_registry_count": 0,
+      "initial_bound_radius": null,
+      "one_shape_becomes_free_after_refused_bind": true,
+      "peak_registered_radius": null,
+      "receiver_hit_tokens": [
+        1
+      ],
+      "receiver_hp_after_child": 172,
+      "receiver_hp_after_direct_hit": 172,
+      "shape_unlink_visit": null,
+      "stock_after": 1
+    },
+    {
+      "bound_shape": true,
+      "carrier_and_both_descriptors_return_visit": 50,
+      "case": "group-3-binds",
+      "child_amount": 17,
+      "child_audio_request": 12,
+      "child_token": 2,
+      "credited_and_received_damage": 25,
+      "duplicate_checks_without_another_write": 2,
+      "free_shape_cells_at_init": 1,
+      "growth_visit_one": {
+        "attack_registry_count": 1,
+        "radius": 34.1,
+        "received_record": "802C4778"
+      },
+      "initial_attack_registry_count": 0,
+      "initial_bound_radius": 3.1,
+      "one_shape_becomes_free_after_refused_bind": false,
+      "peak_registered_radius": 387.5,
+      "receiver_hit_tokens": [
+        1,
+        2
+      ],
+      "receiver_hp_after_child": 155,
+      "receiver_hp_after_direct_hit": 172,
+      "shape_unlink_visit": 17,
+      "stock_after": 1
+    }
+  ],
+  "kind": "gf-retail-bomb-area",
+  "notes": [
+    "Starts at the paid release leaf; the parent hits the single declared body before the area is allocated.",
+    "The area initializer stops at the sound request after a successful bind. No sound result or playback is supplied.",
+    "Initial shape bind and attack registry admission are separate. The original scale gate refuses the initial shape.",
+    "The same receiver admits the new area token after one growth visit, then refuses both rechecks of that token.",
+    "Visits are isolated bucket/shape passes counted from the first area initializer, not live battle frame counts.",
+    "Only this Sasuke child path is verified. Other owners, terrain triggering, visual playback, and native gameplay are unchanged."
+  ],
+  "opening": {
+    "key": 3,
+    "mode": "ordinary-X",
+    "type": 15
+  },
+  "owner": "gg4e08:000a",
+  "receiver": {
+    "body_step": 9,
+    "borg": "gg4e08:000a",
+    "declared_center_offset_x": 30,
+    "initial_hp": 180
+  },
+  "revision": 1,
+  "source": {
+    "common_collision": {
+      "block": 0,
+      "center": [
+        0,
+        0,
+        0
+      ],
+      "context_assignment": "80040FC0",
+      "descriptor": 4,
+      "group": 3,
+      "member": 696,
+      "raw_radius": 310,
+      "sha256": "e6a41d20e919e0fcf77898af7800f2beaffc459e2267bf4c227879d38a40c0a1"
+    },
+    "key_zero_operands": {
+      "cue": 12,
+      "growth_increment": 0.10000000149011612,
+      "initial_scale": 0.009999999776482582,
+      "row": "802DA0B8",
+      "scale_gate_scalar": 0.009999999776482582,
+      "scale_limit": 1.25,
+      "visual_record": 22
+    },
+    "reaction": {
+      "index": 1,
+      "raw_power": 20,
+      "record": "802C4778",
+      "table": "802C4760"
+    }
+  },
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

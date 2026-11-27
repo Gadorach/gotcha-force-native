@@ -730,10 +730,9 @@ follow-up request.
 Accepted overlap records `0x10` on the parent. The next bomb visit
 requests the child at the parent's position, retaining separate
 immediate-parent and credited-actor links. The shape pass unlinks
-the opening shape. If
-the child cell is unavailable or there are too few descriptors,
-the request publishes nothing. The direct damage, stock, and
-parent retirement are unchanged: the parent returns its carrier
+the opening shape. If the child cell is unavailable or there are
+too few descriptors, the request publishes nothing. Direct damage,
+stock, and retirement are unchanged: the parent returns its carrier
 and descriptor on the third visit after the hit.
 
 All ten cases matched across O0, O1, and O2. The replay stops before
@@ -747,6 +746,43 @@ python3 -m tools.analyze.retail_bomb_contact \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-bomb-contact.json
+```
+
+### Sasuke's type-5 area: growth and a second hit
+
+The [area replay](api-map/gg4e08-bomb-area.json) follows Sasuke's
+type-15 key-3 bomb into its type-5 key-0 child. The child binds
+**group 3, descriptor 4** from `cmn_data.pzz` block 0. This is the
+scene's common collision bank, not Sasuke's normal attack bank.
+The common reaction record is `802C4778`, raw power 20.
+
+In the unit-scale fixture, the initial **3.1-unit** sphere binds
+but fails the original scale gate, so it is absent from the
+attack registry. After one growth visit it registers at **34.1**
+units, then reaches **387.5** before unlinking. The same receiver
+goes from **180 → 172 → 155 HP**: 8 from the direct hit using token
+1, then 17 from the area using token 2. Two later checks of token
+2 do not write HP again, including one after the original bomb
+has retired.
+
+Counted after area initialization, the successful shape unlinks
+on visit 17, and the area returns its carrier and two descriptors
+on visit 50. If no shape cell is free at initialization, the
+area neither requests its cue nor retries when a cell becomes
+free. It returns its resources on visit 2, leaving the direct
+hit and ammo debit intact.
+
+Both cases matched across O0, O1, and O2. The successful replay
+cuts at the sound request, then runs separate bucket and shape
+passes. It does not establish live frame timing, terrain-triggered
+areas, other owners' area damage, or audio/visual playback. No
+native gameplay changes.
+
+```sh
+python3 -m tools.analyze.retail_bomb_area \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-area.json
 ```
 
 ### Worm paid release, refunds and contact follow-up

@@ -2292,6 +2292,9 @@ rounds. Each family below records how it was admitted and what stays authored:
   receiver shape lists, not the amount. A Roach adaptation would bind the
   group-3 radius-310 sphere and the area child's shape handoff and show
   which lists receive it.
+  [Sasuke's bounded type-5 replay](retail-code-atlas.md#sasukes-type-5-area-growth-and-a-second-hit)
+  verifies that bank, shape growth, and a second hit for Sasuke only.
+  It does not qualify Roach's release, target selection, or damage.
 
   `8003D358` is the HP writer: it checks the scene flag at `scene+0x1F`
   and the actor byte at `actor+0x83`, writes a type to `actor+0x1C8`,
