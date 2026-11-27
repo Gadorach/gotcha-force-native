@@ -660,9 +660,12 @@ verified that the two level-row records initialize runtime channels
 channel IDs. Channel 1 is not written by this initializer.
 
 The schema records the original initializer and shared debit/refill
-helpers. For the reviewed helpers, mode 0 arms a preset on empty and mode
-1 adds the preset to the running clock. Modes 2 and 3 are retained as raw
-values. The preset is not a measured reload duration or a native tick
+helpers. Mode 0 arms a preset on empty and mode 1 adds it to the running
+clock. Modes 2 and 3 clear the clock on a successful debit and are
+skipped by the shared refill helper. The
+[stock lifecycle replay](retail-code-atlas.md#normal-stock-lifecycle-checks-debits-and-refill)
+verifies those helper boundaries, not what triggers a separate stock
+return. A preset is not a measured reload duration or a native tick
 count, and a stock channel is not a B/X button assignment.
 
 The release index retains the original **14** hand-reviewed `stock_candidate`

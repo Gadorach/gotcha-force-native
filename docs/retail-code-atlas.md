@@ -1679,6 +1679,43 @@ python3 -m tools.analyze.retail_stock_startup \
   /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" /tmp/opencode/gf-stock-startup.json
 ```
 
+### Normal stock lifecycle: checks, debits and refill
+
+The [stock lifecycle receipt](api-map/gg4e08-stock-lifecycle.json)
+takes **4,120** exact initialized normal channel/level rows through
+one-unit check-only and committed requests, then forks the result
+into refill controls. **2,920** requests pass both checks; check-only
+writes nothing. The refill wrapper `8005568C` calls the original
+`8006DCC0` with a base rate produced by `8005A378`. The declared
+zero and nonzero `+0x6FC` cases consume steps **1** and **15**,
+respectively. Each inhibit bit holds its own channel without holding
+the other. The uninitialized channel 1 is masked in these controls.
+
+For Angel Nurse (`0900`), the emptying debit arms **180** and the
+isolated 180th step‑1 visit restores the stock and clears the clock.
+For Kung-Fu Master (`0800`), two debits separated by one step‑1 visit
+leave **599** on the clock. With step 15, the 20th visit restores one
+round; the 40th restores the limit and retains a **−1** clock.
+Modes 2 and 3 skip timed refill even with a declared positive clock;
+a successful debit clears it. A separately invoked `8006DE10` returns
+one stock in those controls, but no event that triggers it was replayed.
+
+The replay also exposes **60 zero-limit mode‑1 rows on six Borgs**.
+On the first refill visit the original writes **−1** to both count
+fields; the `0705` timeline shows that a one-unit check and debit
+still refuse, and expiry restores zero. This is source evidence, not
+permission to widen the native stock domain.
+
+All rows and five timelines matched on O0/O1/O2. The requests, clocks
+and wrapper visits are bounded; they establish neither live input
+or actor ordering nor elapsed wall-clock refill duration.
+
+```sh
+python3 -m tools.analyze.retail_stock_lifecycle \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" /tmp/opencode/gf-stock-lifecycle.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches

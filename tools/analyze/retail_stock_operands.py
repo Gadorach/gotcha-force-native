@@ -21,6 +21,8 @@ TEXT = (
 POLICIES = {
     0:{"on_debit":"arm-preset-when-empty","shared_refill":"restore-limit-on-crossing-zero"},
     1:{"on_debit":"add-preset-to-clock","shared_refill":"restore-intervening-counts"},
+    2:{"on_debit":"clear-clock","shared_refill":"skip-mode"},
+    3:{"on_debit":"clear-clock","shared_refill":"skip-mode"},
 }
 # (factory call site -> same actor handler, guarded debit call). These are
 # witnesses to the call operands, not a general one-debit-per-child rule.
