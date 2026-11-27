@@ -572,7 +572,8 @@ delay the second layer.
 The [contact-effect census](retail-code-atlas.md#contact-effect-selectors-scoped-records-and-whole-descriptor-allocations)
 separately inventories selector bytes from scoped retail queues and
 replays the original constructor's descriptor budget. It does not
-replay the contact gate or change the native visual bindings below.
+change the native visual bindings below. A [bounded pair replay](retail-code-atlas.md#contact-effect-gate-hp-survives-effect-refusal)
+also verifies that an effect allocation refusal does not undo HP loss.
 
 `--contact-art-test` uses the exact local common archive, through
 the same static impact presenter used for projectile retirement art.

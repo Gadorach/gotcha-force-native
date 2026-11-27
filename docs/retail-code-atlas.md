@@ -856,15 +856,51 @@ effect family and variant separate and consumes no shape slot.
 Selectors 2–4 are direct fixture controls, not assignments to
 the inventoried actor records.
 
-All 24 cases matched across O0, O1, and O2. Neither the live
-contact tail nor effect initialization ran. This does not change
-the authored native contact-visual support scope.
+All 24 cases matched across O0, O1, and O2. This replay starts
+at the helper; the accepted-pair replay below checks the gate
+separately. Neither changes native contact-visual support.
 
 ```sh
 python3 -m tools.analyze.retail_contact_effect_census \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
   /tmp/opencode/wall "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-census.json
+```
+
+### Contact-effect gate: HP survives effect refusal
+
+The [accepted-pair replay](api-map/gg4e08-contact-effect-tail.json)
+runs original published shapes against stationary Sasuke through
+the full pair call, with declared state and empty audio/render
+support. The amount, helper-entry, and allocator observations
+fork from one saved inlet rather than counting separate hits.
+
+| Tested attack | Selector at `8002F87C` | HP removed |
+| --- | ---: | ---: |
+| Red Attacker / Orange Fighter, type 76 | 1 | 35 each |
+| Flying Saucer, type 32/key 8 | 8 | 26 |
+| Standalone common type-9/key-4 effect | 0 | 17 |
+
+An open gate writes receiver `+0x2AF = 4` before requesting
+the visual. With no class-2 cell or one descriptor short, the
+gate still closes, HP and ledgers still reflect the hit, and no
+effect allocates. A seeded held gate suppresses the request but
+not damage. Reopening just the gate after a hit does not make
+the same token apply damage or request another effect.
+
+All 20 cases matched across O0, O1, and O2. The type-9 source was
+constructed directly, not emitted by a live floor hit. This
+does not qualify gate countdown, effect initialization, live
+reaction timing, drawing, or native gameplay.
+
+Use the same type-76, type-32, and type-9 fixture executables
+as their earlier replays:
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_tail \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type76-paid /tmp/opencode/type32-bind /tmp/opencode/type9-bind \
+  "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-tail.json
 ```
 
 ### Type-89 exits: cached area key 16

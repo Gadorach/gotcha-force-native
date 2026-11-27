@@ -1,5 +1,5 @@
 // Original type-9 shape admission, contact, lifetime and type-8 predecessor.
-#include "retail_stationary_contact.hpp"
+#include "retail_contact_effect_tail.hpp"
 #include <array>
 
 namespace {
@@ -15,7 +15,7 @@ constexpr u32 amount_record=amount_table+9*24;
 constexpr u32 bucket_visit=0x80089A94,unbind_shape=0x8008AFF0,actor_bucket=8,carrier_bucket=9;
 constexpr u32 type8_factory=0x800FC208,type8_carrier=declared_parent;
 using CommonBank=std::array<u8,21504>;
-struct ContactInlet {contact::HitBlock hit;contact::ActorSpec owner,defender;};
+struct ContactInlet {contact::HitBlock hit;contact::ActorSpec owner,defender;int impact_case=-1;};
 constexpr contact::Point origin{160,0,400};
 constexpr float offsets[]={0,171,172,173};
 enum class Mode {bind,contact,lifetime};
@@ -78,6 +78,10 @@ void pair(const Module& mod,std::vector<u8>& ram,const ContactInlet& inlet,unsig
        real(effect+0x58)!=real(effect+0x60)||word(shape+0x20)!=effect||word(shape+0x24)!=actor||
        token!=1||half(contact::receiver+0x20C)||at(effect)[0x1D9])
         fail("type-9 and Sasuke shapes did not publish at the declared test points");
+    if(inlet.impact_case>=0){
+        retail_contact_effect_tail::observe(mod,ram,9,0x0D03,unsigned(inlet.impact_case),effect,amount_record,0,1,0,17);
+        return;
+    }
     CPUState writer{};
     CallObservation amount{contact::amount_entry};
     const auto cut=mod.run_to_or_return(writer,ram,contact::pair_pass,{contact::hp_write},&amount);
@@ -324,18 +328,26 @@ int main(int argc,char** argv){
     const bool contact_mode=argc==4&&!std::strcmp(argv[3],"--contact");
     const bool lifetime_mode=argc==4&&!std::strcmp(argv[3],"--lifetime");
     const bool trail_mode=argc==4&&!std::strcmp(argv[3],"--trail");
-    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode)
-        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail]");
+    const bool impact_mode=argc==4&&!std::strcmp(argv[3],"--impact");
+    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode)
+        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     CommonBank bank{};
     if(std::fread(bank.data(),1,bank.size(),stdin)!=bank.size())fail("type-9 common bank payload extent");
-    if(contact_mode){
+    if(contact_mode||impact_mode){
         ContactInlet inlet{};
         if(std::fread(inlet.hit.data(),1,inlet.hit.size(),stdin)!=inlet.hit.size()||
            std::fread(inlet.owner.data(),1,inlet.owner.size(),stdin)!=inlet.owner.size()||
            std::fread(inlet.defender.data(),1,inlet.defender.size(),stdin)!=inlet.defender.size()||std::getc(stdin)!=EOF)
             fail("type-9 contact payload extent");
+        if(impact_mode){
+            for(unsigned i=0;i<retail_contact_effect_tail::case_count;++i){
+                inlet.impact_case=int(i);
+                observe(mod,original,bank,4,true,Mode::contact,i==retail_contact_effect_tail::miss_case?3u:0u,&inlet);
+            }
+            return 0;
+        }
         for(unsigned key=0;key<7;++key)
             for(unsigned i=0;i<std::size(offsets);++i)
                 observe(mod,original,bank,key,true,Mode::contact,i,&inlet);
