@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import math
+import struct
 from pathlib import Path
 
 from tools.analyze import damage_amount_model as amount, damage_content_row as rows
@@ -109,6 +110,32 @@ def profile_rows(report, selectors, model, actor, *, image=None):
             "receiver_selector": selector if bound else None,
             "matchup_group": matchup,
             "receiver_status": "exact normal selector" if bound else "no qualified single normal actor record"}
+
+
+def normal_profile_rows(report, evidence, model, installer, actor_records, *, image):
+    """Use the observed standalone record; never resolve a combined component."""
+    key = f"gg4e08:{model:04x}"
+    proof = evidence.get(key)
+    if not proof or proof.get("installer") != f"{installer:08X}":
+        raise ValueError(f"{key}: missing exact normal receiver installer")
+    record = proof.get("spec_record")
+    count, rest = divmod(len(actor_records), 432)
+    if (rest or not 1 <= count <= 8 or type(record) is not int or
+            not 0 <= record < count):
+        raise ValueError(f"{key}: normal receiver record outside actor block")
+    offset = 432*record
+    data = actor_records[offset:offset+432]
+    triple = list(data[156:159])
+    digest = hashlib.sha256(data).hexdigest()
+    gauge = struct.unpack_from(">h", data)[0]
+    if (digest != proof.get("record_sha256") or triple != proof.get("selectors") or
+            any(value >= CLASS_COUNT for value in triple) or
+            not 1 <= gauge <= 32767 or gauge != proof.get("reset_capacity")):
+        raise ValueError(f"{key}: normal receiver record does not match observed data")
+    result = profile_rows(report, {"models": {f"{model:04x}": triple}}, model, data, image=image)
+    result["receiver_status"] = "exact observed normal actor record"
+    result["receiver_record"] = {"spec_record": record, "record_sha256": digest, "reset_capacity": gauge}
+    return result
 
 
 def export(dol, output):

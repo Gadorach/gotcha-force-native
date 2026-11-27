@@ -1024,10 +1024,13 @@ Add `--contact-scale-test` to a separate, fresh shot or melee conversion for
 an authored settings-7/rank-0 damage comparison. Direct hits combine the
 attacking team's credit row, a qualified directional matchup, and the
 actual receiving Borg's class row.
-Unqualified receivers, including combined forms without a proved active
-component, receive no class row and keep the authored base. Without this
-flag the existing damage rows stay unchanged. The source snapshot and scope
-are documented in [the contact roles map](api-map/damage-contact-roles.json).
+The [normal receiver proof](retail-code-atlas.md#normal-receiver-factors-active-records-feed-portable-extraction)
+selects the original normal actor-data record, even when it is not
+record 0, and the extractor checks its installer and digest before
+writing the portable rows. Combined-form component ownership remains
+unqualified. Without this flag the existing damage rows stay unchanged.
+The fixed source snapshot is documented in
+[the contact roles map](api-map/damage-contact-roles.json).
 
 ```sh
 PYTHONPATH=. python3 -B tests/host/retail_contact_scale_smoke.py \

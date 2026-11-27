@@ -835,6 +835,8 @@ def cruise_entry_candidate(roles, timing, joint_count):
 
 
 DAMAGE_SELECTORS = Path(__file__).resolve().parents[2] / "docs/api-map/borg-damage-selectors.json"
+NORMAL_DAMAGE_RECORDS = DAMAGE_SELECTORS.with_name("gg4e08-normal-receiver-factors.json")
+NORMAL_DAMAGE_RECORDS_SHA256 = "0af7ac6153cddbf852f43762755b8772883ec24c6c569e5ceb22d76747eea1b1"
 CONTACT_SIDE_ROWS = Path(__file__).resolve().parents[2] / "docs/api-map/contact-side-rows.json"
 
 
@@ -1254,13 +1256,10 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             files[cue["path"]]=launch_pcm[cue["bank"],cue["tone"]]
         manifest += "gameplay=gameplay.txt\n"
     if contact_roles is not None and battle_receipt is not None:
-        report, selectors = contact_roles
-        roles = damage_contact_roles.profile_rows(report, selectors, row.model, actor, image=dol)
+        report, normal_records = contact_roles
+        roles = damage_contact_roles.normal_profile_rows(report, normal_records, row.model, installer, actor, image=dol)
         if contact_indices is not None:
             selector=roles["receiver_selector"]
-            binding=operands["class_installer_binding"]
-            if selector is not None and (binding["status"]!="one-static-slot-0-record" or binding["selected_record"]!=0):
-                raise ValueError("indexed damage receiver lacks proved single normal data record")
             indexed=damage_contact_indices.profile_lines(contact_indices,selector[0] if selector is not None else None)
             roles["lines"].extend(indexed)
             roles["indexed_tables"]=indexed
@@ -1274,8 +1273,11 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             roles["attacker_ladders"]=outgoing
         if contact_tiers is not None:
             receiver=roles["receiver_selector"] is not None
-            reset=(damage_contact_tiers.receiver_reset(actor,operands["class_installer_binding"],receiver=receiver)
-                   if contact_tier_reset_test else None)
+            reset=None
+            if contact_tier_reset_test:
+                normal=roles["receiver_record"]
+                reset={"capacity":normal["reset_capacity"],"status":"qualified observed normal receiving record",
+                       "spec_record":normal["spec_record"],"record_sha256":normal["record_sha256"]}
             tier_rows = damage_contact_tiers.profile_rows(contact_tiers,dol,battle_receipt.get("reaction",{}),
                                                           receiver=receiver,reset=reset)
             roles["lines"].extend(tier_rows["lines"])
@@ -1614,14 +1616,18 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
     ninja_bomb_source=ninja_bomb.qualify(dol) if ninja_bomb_test else None
     contact_roles = None
     if contact_scale_test:
-        with open_regular(DAMAGE_SELECTORS) as stream:
-            raw = stream.read((64 << 10) + 1)
-        if len(raw) > 64 << 10:
-            raise ValueError("contact selector artifact extent")
-        selectors = json.loads(raw)
-        if selectors.get("kind") != "gf-borg-damage-selectors":
-            raise ValueError("incorrect contact selector artifact")
-        contact_roles = damage_contact_roles.recover(dol), selectors
+        with open_regular(NORMAL_DAMAGE_RECORDS) as stream:
+            raw=stream.read((128 << 10)+1)
+        if len(raw) > 128 << 10 or sha256(raw).hexdigest() != NORMAL_DAMAGE_RECORDS_SHA256:
+            raise ValueError("normal damage receiver proof extent or identity")
+        normal=json.loads(raw)
+        if (normal.get("kind"),normal.get("revision"),normal.get("source_dol_sha256"))!=(
+                "gf-retail-normal-receiver-factors",1,DOL_DIGEST):
+            raise ValueError("incorrect normal damage receiver proof")
+        observed={r["borg"]:r for r in normal["records"]}
+        if len(normal["records"])!=206 or set(observed)!={row.id for row in rows}:
+            raise ValueError("normal damage receiver proof roster mismatch")
+        contact_roles=damage_contact_roles.recover(dol),observed
     with open_regular(afs_path) as stream:
         if continuation_source is not None or speed_ramp_source is not None or ninja_bomb_source is not None:
             from tools.analyze.retail_action_input import verify_archive

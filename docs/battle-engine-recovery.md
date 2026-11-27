@@ -1058,10 +1058,12 @@ the collision walk clears the byte at `8002BC74`. The separate 60-unit
 idle timer at `actor+1668` also refills the gauge without forcing a tier
 reset.
 
-`--contact-tier-reset-test` binds the capacity only where the installer
-proves it selected the single normal actor record. The qualified
-receiver set has 180 capacities of 500, seven of 700, and one of 30000.
-All 172 eligible direct moves agree on wear across their selected steps.
+`--contact-tier-reset-test` uses the capacity in the
+[observed active normal record](retail-code-atlas.md#normal-receiver-factors-active-records-feed-portable-extraction),
+not necessarily the first record in the archive. The source roster has
+198 capacities of 500, seven of 700, and one of 30000. The opt-in still
+requires a qualified Battle Test package and only emits wear for
+direct moves with uniform source operands.
 Native scopes the wear gate to one receiver reset per battle tick
 and uses a separate native idle countdown. It does not replay the retail
 collision walk, phase gates, stagger action or scheduler.

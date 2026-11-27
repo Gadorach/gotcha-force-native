@@ -134,6 +134,35 @@ void timeline(const Module& mod,std::vector<u8>& ram,u8* obj,unsigned model){
 constexpr u32 return_stock=0x8006DE10;
 bool return_model(unsigned model){return model==0x0200||model==0x020A||model==0x020F||model==0x0403||model==0x0404;}
 
+void receiver_factors(const Module& mod,std::vector<u8>& ram,unsigned model,unsigned record){
+    const auto at=[&](u32 a){return ram.data()+a-GC_RAM_BASE;};
+    constexpr u32 carrier=0x81030000,credit=0x81020000,mode=0x81021000,settings=0x81022000;
+    auto* obj=at(actor);
+    auto* spec=at(be32(obj+0x4AC));
+    // An inactive credit owner isolates receiving operands without
+    // substituting a model-specific matchup. Probe HP/force are declared.
+    put32(at(carrier+0x90),credit);put_float(at(carrier+0xC4),1.f);
+    obj[0]=obj[0x18]=obj[0x88]=obj[0x3E4]=1;
+    put32(obj+0x90,actor);put16(obj+0x1C4,200);
+    put32(at(0x8043B5A0-31856),mode);at(mode+50)[0]=2;
+    put32(at(0x8043B5A0-31824),settings);at(settings+1)[0]=7;
+    put32(at(scene+60+0x114),1000);
+    std::printf("receiver-factors: %04X %u %u %u %u %u",model,record,spec[156],spec[157],spec[158],half(obj+0x6BE));
+    for(unsigned bank=0;bank<2;++bank){
+        obj[0x3E6]=u8(bank);
+        for(unsigned low=0;low<2;++low){
+            put16(at(0x803B069E),low?120:1000);
+            put32(at(0x803B0690),low?217:1000);
+            CPUState cpu{};cpu.gpr[3]=0x802C49D0;cpu.gpr[4]=carrier;cpu.gpr[5]=actor;
+            mod.run(cpu,ram,0x8003CD5C);
+            if(cpu.gpr[3]>200||be32(obj+0x4AC)!=role0+record*record_bytes||half(obj+0x1C6))
+                fail("normal receiving amount changed the installed actor or exceeded its inlet");
+            std::printf(" %u",cpu.gpr[3]);
+        }
+    }
+    std::putchar('\n');
+}
+
 void owner_returns(const Module& mod,std::vector<u8>& ram,u8* obj,unsigned model){
     const bool pre=model==0x0403;
     const u32 entry=pre?0x800DFDA4:0x80073D0C,site=pre?0x800DFE04:0x80073D68;
@@ -286,7 +315,7 @@ void wire_returns(const Module& mod,std::vector<u8>& ram,u8* obj,const contact::
 }
 
 void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer,unsigned extent,bool lifecycle,
-             const contact::HitBlock* wire_hit,bool capacity){
+             const contact::HitBlock* wire_hit,bool capacity,bool factors){
     const auto at=[&](u32 a){return ram.data()+a-GC_RAM_BASE;};
     auto* obj=at(actor);
     put32(at(resources),role0);
@@ -318,6 +347,10 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
                         half(obj+0x6BE),half(obj+0x6C2));
             return;
         }
+        if(factors){
+            receiver_factors(mod,ram,model,(selected-role0)/record_bytes);
+            return;
+        }
         if(wire_hit){
             if(model==0x0404)wire_returns(mod,ram,obj,*wire_hit);
             else owner_returns(mod,ram,obj,model);
@@ -346,8 +379,9 @@ int main(int argc,char** argv){
     const bool lifecycle=argc==4&&!std::strcmp(argv[3],"--lifecycle");
     const bool returns=argc==4&&!std::strcmp(argv[3],"--returns");
     const bool capacity=argc==4&&!std::strcmp(argv[3],"--tier-capacity");
-    if(argc!=3&&!lifecycle&&!returns&&!capacity)
-        fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns|--tier-capacity] < qualified-plan");
+    const bool factors=argc==4&&!std::strcmp(argv[3],"--receiver-factors");
+    if(argc!=3&&!lifecycle&&!returns&&!capacity&&!factors)
+        fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns|--tier-capacity|--receiver-factors] < qualified-plan");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     contact::HitBlock wire_hit{};
@@ -365,7 +399,7 @@ int main(int argc,char** argv){
         auto ram=original;
         const unsigned bytes=count*record_bytes;
         if(std::fread(ram.data()+role0-GC_RAM_BASE,1,bytes,stdin)!=bytes)fail("stock-startup records extent");
-        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr,capacity);
+        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr,capacity,factors);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stock-startup rows");
 }

@@ -1902,6 +1902,39 @@ python3 -m tools.analyze.retail_damage_tier_clock \
   /tmp/opencode/gf-damage-tier-clock.json
 ```
 
+### Normal receiver factors: active records feed portable extraction
+
+The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
+executes the original installer and initialization prefix before
+four receiver-only amount probes per model. Across **206** normal
+Borgs, **200** select record 0, **five** select record 1, and **one**
+selects record 2. All **824** probes matched on O0/O1/O2.
+
+The probes exercise both receiving banks with exact archived selector
+triples, setting 7, rank 0, and declared high/low HP and force mirrors.
+The inactive credit owner deliberately skips outgoing factors and
+matchups. This is not a live damage-settings or matchup replay.
+
+The opt-in roster extractor validates the installed record's digest
+and selectors before using that record for the existing portable
+receiving rows and tier gauge. The new proof covers **18** normal
+models missing from the previous loose-file map. It neither changes
+the default export nor resolves combined-form components, admits
+newly playable actors, or enables unverified moves.
+
+The full opt-in export emitted the receiving, indexed and gauge rows
+for **206** normal Battle Test packages, including all six nonzero
+record ordinals. The existing headless tier-gauge smoke passed on
+generated content, with hits **40/32/32** versus **40/32/20** in
+the no-reset control. This smoke does not admit every exported actor.
+
+```sh
+python3 -m tools.analyze.retail_normal_receiver_factors \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-normal-receiver-factors.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
