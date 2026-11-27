@@ -1053,6 +1053,48 @@ python3 -m tools.analyze.retail_type32_shared \
   /tmp/opencode/gf-type32-shared.json
 ```
 
+### Type-11 segment contact beyond a stage wall
+
+The [contact replay](api-map/gg4e08-type32-contact.json) follows the
+four model-relative examples above into the original class-4 pass.
+With no target correction, a type-11 child publishes its near
+sphere first, then sweeps to the refreshed far endpoint. Its
+narrow radius comes from the shape scale at creation, not the
+enclosing broad-phase radius. The stationary Sasuke body hits
+one unit inside the sum of narrow and body radii, and misses
+one unit outside.
+
+A separate original terrain query hits the synthetic stage
+triangle at `z=1000`. With the triangle installed, the segment's
+endpoints and HP outcomes match the empty-stage cases: the
+on-line receiver beyond the triangle takes the hit and the
+off-line receiver still misses.
+
+| Source move | First segment key | HP removed in either hit case |
+| --- | ---: | ---: |
+| Beam Gunner `0104` X | 10 | 2 |
+| Death Head `0505` X | 1 | 3 |
+| Machine Head `0511` X | 1 | 1 |
+| G-Red `0615` charged B | 27 | 1 |
+
+Only the segment gets the contact latch; the fighter gets damage
+credit. The same token cannot hit again. The next segment update
+unlinks the shape; the following one returns the segment while
+the type-32 carrier stays live.
+
+All 16 cases matched across O0, O1, and O2. This tests one
+declared stage triangle and a stationary body, not prop handling,
+live aim timing, whole-move damage, or native gameplay.
+
+Use the same fixture executable as above:
+
+```sh
+python3 -m tools.analyze.retail_type32_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type32-contact.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

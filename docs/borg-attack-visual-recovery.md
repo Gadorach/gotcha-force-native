@@ -208,8 +208,11 @@ offset **`(0, 25, 350)`**, optional direction correction when there is
 a target pointer and the direction passes a dot-product gate, and a
 periodic segment handoff (`80139A6C`) to a type-11/key-10 child. The
 positive active path did not use a terrain raycast to trim the two
-transformed segment endpoints. That does **not** prove the segment's
-downstream prop or target collision, damage, or guaranteed contact.
+transformed segment endpoints. The
+[bounded segment replay](retail-code-atlas.md#type-11-segment-contact-beyond-a-stage-wall)
+also confirms that a stationary target beyond one synthetic stage
+triangle can take damage, while an offset target misses. It does not
+settle live prop handling, moving targets, or whole-move damage.
 The player's clarified claim is **non-occluding but dodgeable**: aim
 stops adjusting at launch commitment, and the target can move off the
 line before it becomes damaging. The

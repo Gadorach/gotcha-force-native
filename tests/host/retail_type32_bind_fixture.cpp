@@ -1,9 +1,11 @@
 // Original type-32 carrier paths and type-11 handoff.
-#include "retail_recomp_fixture.hpp"
+#include "retail_stationary_contact.hpp"
 #include <array>
+#include <cmath>
 
 namespace {
 using namespace retail_fixture;
+namespace contact_replay=retail_stationary_contact;
 constexpr u32 carrier=0x81030000,segment=0x81030800,shape=0x81032000;
 constexpr u32 descriptors=0x81033000,descriptor_row=0x81033800;
 constexpr u32 hit_block=0x81034000,scratch_header=0x81036000,scratch=0x81036100;
@@ -12,20 +14,30 @@ constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC,ac
 constexpr u32 factory=0x801DEB68,update=0x801DEC90,active=0x801DEF80,scratch_alloc=0x80006DC8;
 constexpr u32 pose=0x80048288,bind=0x8008AC80,segment_factory=0x80139A6C,segment_update=0x80139B80;
 constexpr u32 shared_factory=0x800E19A8,shared_update=0x800E1AB4;
+constexpr u32 segment_transform=0x80139CC0,attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
 using Block=std::array<u8,7840>;
+using contact_replay::ActorSpec;
+using contact_replay::receiver;
+using contact_replay::body;
+using contact_replay::receiver_count;
+using contact_replay::receiver_registry;
 using Point=std::array<float,3>;
 struct Pilot {u16 model;u8 key,index;u32 table,first,second;};
 constexpr Pilot pilots[]={{0x0D03,8,1,0x80362C28,actor+0x15C,actor+0x168},
                           {0x0E02,9,6,0x8038DAE0,actor+0x144,actor+0x150}};
 enum class Case {scratch_empty,shape_empty,shape_available,segment_empty};
-struct SharedPilot {u16 model;u8 key,socket,group,step,index;u32 table;Point offset;};
+struct SharedPilot {u16 model;u8 key,socket,group,step,index,radius;u32 table;Point offset;};
 constexpr SharedPilot shared_pilots[]={
-    {0x0104,1,1,10,9,9,0x803214E0,{0,25,350}},
-    {0x0505,16,3,1,1,1,0x803928D8,{0,0,200}},
-    {0x0511,19,3,1,1,1,0x80392908,{0,0,100}},
-    {0x0615,15,1,27,34,31,0x80365EC0,{0,40,10}},
+    {0x0104,1,1,10,9,9,30,0x803214E0,{0,25,350}},
+    {0x0505,16,3,1,1,1,50,0x803928D8,{0,0,200}},
+    {0x0511,19,3,1,1,1,50,0x80392908,{0,0,100}},
+    {0x0615,15,1,27,34,31,20,0x80365EC0,{0,40,10}},
 };
 enum class AimCase {none,moving_copy,outside_gate,half_rate};
+enum class ContactCase {clear_hit,clear_miss,wall_hit,wall_miss};
+struct Contact {
+    ContactCase which;unsigned owner_hp;const Block& hit;const ActorSpec& owner;const ActorSpec& target;
+};
 
 class Check {
     const Module& mod;
@@ -36,6 +48,7 @@ class Check {
     }
     u32 word(u32 va){return be32(at(va));}
     u16 half(u32 va){const auto* p=at(va);return u16(u16(p[0])<<8|p[1]);}
+    float scalar(u32 va){return std::bit_cast<float>(word(va));}
     Point get(u32 va){return {std::bit_cast<float>(word(va)),std::bit_cast<float>(word(va+4)),std::bit_cast<float>(word(va+8))};}
     void place(u32 va,const Point& point){
         for(unsigned i=0;i<point.size();++i)put_float(at(va+4*i),point[i]);
@@ -72,6 +85,87 @@ class Check {
            word(shape+0x28)!=hit_block+0xAA0+80*step||at(shape)[0x14]!=group||at(shape)[0x12]!=step||
            at(shape)[0x11]!=index)
             fail("type-32 shape used the wrong object, queue or credit");
+    }
+    void segment_publication(){
+        CPUState late{};late.gpr[3]=segment;
+        mod.run(late,ram,segment_transform);
+        for(u32 entry:{0x8008A28Cu,0x80089AECu}){
+            CPUState pass{};
+            mod.run(pass,ram,entry,1024);
+        }
+    }
+    void contact_stage(bool wall){
+        // A single rebased triangle in stage layer zero, or an empty list.
+        constexpr u32 grid=stage+0x100,empty_grid=stage+0x140,refs=stage+0x200,side=48;
+        constexpr u32 empty_refs=refs+side*side*4,list=empty_refs+side*side*4,tri=list+8,empty=tri+0x80;
+        put32(at(0x8043B5A0-21316),stage);
+        put32(at(stage+28),grid);put32(at(stage+32),empty_grid);put32(at(stage+36),empty_grid);
+        put_float(at(stage+52),9000.f);put_float(at(stage+56),20000.f);put_float(at(stage+60),-1000.f);
+        put_float(at(stage+64),20000.f);put_float(at(stage+68),-1000.f);
+        for(u32 g:{grid,empty_grid}){
+            put32(at(g),500);put32(at(g+4),500);put32(at(g+8),side);put32(at(g+12),side);
+            put32(at(g+16),u32(-1000));put32(at(g+20),u32(-1000));
+            put32(at(g+24),g==grid?refs:empty_refs);put32(at(g+28),tri);
+        }
+        put32(at(empty),0xFFFFFFFFu);put32(at(list),tri);put32(at(list+4),0xFFFFFFFFu);
+        for(unsigned i=0;i<side*side;++i){
+            put32(at(refs+4*i),wall?list:empty);
+            put32(at(empty_refs+4*i),empty);
+        }
+        place(tri+4,{-500,-500,1000});place(tri+16,{-500,3500,1000});place(tri+28,{3500,-500,1000});
+        put_float(at(tri+48),-1.f);put_float(at(tri+52),1000.f);
+    }
+    void verify_terrain(const Point& first,const Point& far,bool wall){
+        // Independent original terrain query on the same two points.
+        constexpr u32 pair=0x8105F000;
+        place(pair,first);place(pair+12,far);
+        CPUState reader{};reader.gpr[3]=pair;reader.gpr[4]=pair+12;reader.gpr[5]=pair+24;
+        mod.run(reader,ram,0x8003E978,4096);
+        if(reader.gpr[3]!=unsigned(wall)||(wall&&get(pair+24)!=Point{first[0],first[1],1000}))
+            fail("type-32 segment wall control did not span the declared stage triangle");
+    }
+    void segment_contact(SharedPilot pilot,const Contact& inlet,const Point& first,const Point& far,float radius){
+        const bool hit=inlet.which==ContactCase::clear_hit||inlet.which==ContactCase::wall_hit;
+        const bool wall=inlet.which==ContactCase::wall_hit||inlet.which==ContactCase::wall_miss;
+        const float offset=radius+22.f+(hit?-1.f:1.f);
+        const Point center{first[0]+offset,first[1],(first[2]+far[2])*0.5f};
+        if(first[0]!=far[0]||first[1]!=far[1]||first[2]>=1000.f||center[2]<=1000.f)
+            fail("type-32 segment did not span the fixture's receiver side");
+        verify_terrain(first,far,wall);
+        contact_replay::bind_sasuke(mod,ram,center,inlet.hit,inlet.owner,inlet.target,inlet.owner_hp);
+        segment_publication();
+        if(half(attack_count)!=1||word(attack_registry)!=shape||half(receiver_count)!=1||word(receiver_registry)!=body||
+           get(shape+0x3C)!=first||get(shape+0x30)!=far||std::abs(scalar(shape+0x88)-radius)>0.001f||
+           std::abs(scalar(body+0x64)-center[0])>0.001f||scalar(body+0x68)!=center[1]||
+           scalar(body+0x6C)!=center[2]||scalar(body+0x7C)!=22.f||at(segment)[0x1D9]||at(carrier)[0x1D9]||
+           !half(segment+0x26C)||half(receiver+0x20C))
+            fail("type-32 published segment did not preserve sweep, credit or receiver inlet");
+        const auto record=pilot.table+24*pilot.index;
+        const auto damage=contact_replay::pair_hp(mod,ram,segment,record,hit);
+        const auto hp=half(receiver+0x1C6),token=half(receiver+0x20C);
+        const unsigned flags=at(segment)[0x1D9];
+        if(hp!=180-damage||half(actor+0x1C6)!=inlet.owner_hp||half(actor+0x774)!=5||
+           half(receiver+0x1C8)!=(hit?180:0xFFFF)||word(actor+0x418)!=damage||word(receiver+0x41C)!=damage||
+           word(receiver+0x290)!=(hit?segment:0)||word(segment+0x290)!=(hit?receiver:0)||
+           word(actor+0x290)!=(hit?receiver:0)||word(carrier+0x290)||at(carrier)[0x1D9]||
+           token!=(hit?half(segment+0x26C):0)||at(receiver)[0x26E]!=unsigned(hit)||flags!=(hit?16:0))
+            fail("type-32 segment credit, HP, or contact ownership disagreed");
+        if(hit&&(contact_replay::pair_hp(mod,ram,segment,record,false)||half(receiver+0x1C6)!=hp||
+                 word(actor+0x418)!=damage||word(receiver+0x41C)!=damage||at(receiver)[0x26E]!=1))
+            fail("type-32 duplicate segment token wrote HP again");
+
+        CPUState unlink{};unlink.gpr[3]=segment;
+        mod.run(unlink,ram,segment_update);
+        segment_publication();
+        if(at(segment)[0x18]!=3||word(active_head+49*4)||half(free_count+8)!=1||half(attack_count))
+            fail("type-32 segment shape did not unlink after its sweep");
+        CPUState retire{};retire.gpr[3]=segment;
+        mod.run(retire,ram,segment_update);
+        if(at(segment)[0]||word(carrier+8)||!at(carrier)[0]||half(free_count+6)!=1||half(descriptor_row+18))
+            fail("type-32 segment did not retire separately from the beam carrier");
+        std::printf("type32-contact: %u %u %u %u %u %u %u %u %.5f %.5f %.5f %.5f %.5f\n",
+                    pilot.model,pilot.key,unsigned(inlet.which),damage,hp,token,flags,unsigned(wall),
+                    double(radius),double(offset),double(first[2]),double(far[2]),double(center[2]));
     }
 public:
     Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
@@ -175,7 +269,7 @@ public:
                     unsigned(scratch_free),opening.count,unsigned(parent_bound),requests,unsigned(child_created),
                     unsigned(child_bound),unsigned(endpoint_refresh),unsigned(admitted));
     }
-    void shared(SharedPilot pilot,const Block& block,AimCase which){
+    void shared(SharedPilot pilot,const Block& block,AimCase which,const Contact* contact=nullptr){
         constexpr u32 original_target=0x8101C000,replacement_target=0x8101E000;
         const bool has_target=which==AimCase::moving_copy||which==AimCase::outside_gate,half_rate=which==AimCase::half_rate;
         const float rate=half_rate?0.5f:1.f;
@@ -188,6 +282,11 @@ public:
         for(unsigned off:{0xB4,0xB8,0xC0,0xC4})put_float(owner+off,1.f);
         put_float(owner+0x1DC8,rate);
         std::memcpy(at(hit_block),block.data(),block.size());
+        if(contact){
+            contact_stage(contact->which==ContactCase::wall_hit||contact->which==ContactCase::wall_miss);
+            put32(at(0x803C4E84),actor);
+            for(unsigned i=1;i<6;++i)put32(at(0x803C4E84+4*i),0x8101A000);
+        }
         auto* matrix=owner+0x8D4+48*pilot.socket;
         for(unsigned i=0;i<3;++i)put_float(matrix+20*i,1.f);
         put_float(matrix+12,100.f);put_float(matrix+28,200.f);put_float(matrix+44,300.f);
@@ -226,6 +325,7 @@ public:
         const auto emission_visits=half_rate?3u:2u;
         unsigned requests=0;
         Point first_endpoint{},first_far{},next_near{},next_far{};
+        float first_radius=0;
         for(unsigned n=1;n<=emission_visits;++n){
             if(n==2){
                 put32(owner+0xC8,replacement_target);
@@ -253,6 +353,13 @@ public:
                 shape_identity(segment,pilot.table,pilot.group,pilot.step,pilot.index);
                 if(child[0x18]!=1||get(segment+0x20)!=first_endpoint)
                     fail("type-32 shared child did not sample first endpoint");
+                if(contact){
+                    segment_publication();
+                    first_radius=scalar(shape+0x7C);
+                    if(half(attack_count)!=1||word(attack_registry)!=shape||get(shape+0x64)!=first_endpoint||
+                       std::abs(first_radius-pilot.radius*scalar(segment+0xC0))>0.001f||first_radius<=0)
+                        fail("type-32 first segment publication did not produce its near sphere");
+                }
             }
         }
         next_near=get(carrier+0x38);next_far=get(carrier+0x9C);
@@ -260,6 +367,10 @@ public:
         mod.run(next,ram,segment_update);
         if(at(segment)[0x18]!=2||get(segment+0x20)!=next_far||next_far==first_far)
             fail("type-32 shared child did not sample refreshed second endpoint");
+        if(contact){
+            segment_contact(pilot,*contact,first_endpoint,next_far,first_radius);
+            return;
+        }
 
         owner[0x6F7]=0;
         CPUState close{};close.gpr[3]=carrier;
@@ -277,13 +388,32 @@ public:
 
 int main(int argc,char** argv){
     const bool shared=argc==4&&!std::strcmp(argv[3],"--shared");
-    if(argc!=3&&!shared)fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared]");
+    const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
+    if(argc!=3&&!shared&&!contact)fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(shared){
+    if(shared||contact){
         std::array<Block,std::size(shared_pilots)> hits{};
         for(auto& hit:hits)
             if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size())fail("type-32 shared hit block extent");
+        if(contact){
+            Block body_hit{};
+            std::array<ActorSpec,std::size(shared_pilots)> owners{};
+            ActorSpec target{};
+            if(std::fread(body_hit.data(),1,body_hit.size(),stdin)!=body_hit.size())fail("type-32 body block extent");
+            for(auto& spec:owners)
+                if(std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())fail("type-32 attacker spec extent");
+            if(std::fread(target.data(),1,target.size(),stdin)!=target.size()||std::getc(stdin)!=EOF)
+                fail("type-32 receiver spec extent");
+            constexpr unsigned hp[]={300,500,250,200};
+            for(unsigned i=0;i<hits.size();++i)
+                for(auto which:{ContactCase::clear_hit,ContactCase::clear_miss,ContactCase::wall_hit,ContactCase::wall_miss}){
+                    Check test(mod,original);
+                    const Contact inlet{which,hp[i],body_hit,owners[i],target};
+                    test.shared(shared_pilots[i],hits[i],AimCase::none,&inlet);
+                }
+            return 0;
+        }
         if(std::getc(stdin)!=EOF)fail("unexpected type-32 shared payload");
         for(unsigned i=0;i<hits.size();++i)
             for(auto which:{AimCase::none,AimCase::moving_copy,AimCase::outside_gate,AimCase::half_rate}){
