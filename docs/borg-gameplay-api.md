@@ -198,6 +198,9 @@ P1, P2, then CPU fighters in `--roster-borg` order. Stage markers replace
 the default team columns and cannot be combined with
 `--package-battle-distance`. Additional packages use their default variants.
 If using indexed damage, supply one rank per actor in the same slot order.
+An optional third group in `--package-damage-indices` supplies one damage
+table bank (`0` or `1`) per actor in that order:
+`--package-damage-indices 7,7:0,0,0:0,0,1`. It does not change teams.
 Explicit rosters do not combine with the mirrored `--demo-roster-battle`,
 battle picker, or borrowed source-motion actors.
 
@@ -648,13 +651,19 @@ release=arc-twin|6|arc-stock|1|arc
   not a mechanism for selecting live battle settings.
 - `damage-credit-setting`, `damage-receive-setting`,
   `damage-credit-rank`, and `damage-receive-rank` each have the format
-  `team|cell0|...`. Supply 32 setting cells and 8 rank cells, all finite
-  factors in `[0.01, 4]`, for each of both teams. Each indexed role must
+  `bank|cell0|...`. Supply 32 setting cells and 8 rank cells, all finite
+  factors in `[0.01, 4]`, for both banks (`0` and `1`). Each indexed role must
   be complete and also declare its corresponding fixed role above.
   The caller may supply two setting indices (`0..31`, by team) and one
   rank index (`0..7`) per active actor at round start. This replaces
   the fixed role components on direct split-role hits; it does not
-  stack with them or change the other stages. A declared fixed role
+  stack with them. By default the bank equals the actor's team. An optional
+  bank per active actor selects the indexed role and HP/force ladder rows
+  independently. Both setting indices and the force pools still follow the
+  teams, and rank still follows the actor slot. The caller chooses the bank;
+  it is not inferred from the controller or CPU seat. Legacy damage, effects
+  outside the direct split roles, and contact eligibility are unchanged.
+  A declared fixed role
   without matching indexed rows refuses that round setup, as does a
   round with no indexed roles at all. An actor
   with no receiving role does not acquire one through round settings.
@@ -668,9 +677,9 @@ release=arc-twin|6|arc-stock|1|arc
   only on a direct hit with both split roles present and both actors
   alive. It is multiplied after credit/rank and before receiver
   class/rank. Legacy attack rows and indirect hits never borrow it.
-- `damage-receive-hp=team|cell0|...|cell31` and
-  `damage-receive-force=team|cell0|...|cell31` optionally refine the split
-  receiving role. Each declared ladder requires both teams and exactly
+- `damage-receive-hp=bank|cell0|...|cell31` and
+  `damage-receive-force=bank|cell0|...|cell31` optionally refine the split
+  receiving role. Each declared ladder requires both banks and exactly
   32 finite factors per row (`[0.01, 4]`). HP selection subtracts the raw
   base, not the scaled or power-field-modified amount, from current HP.
   Probes above 200 are neutral; otherwise it uses
@@ -678,14 +687,14 @@ release=arc-twin|6|arc-stock|1|arc
   zero. The force ladder uses `min(31, 32 - floor(32 * remaining / cap))`
   from the receiving team's pre-hit ledger; no configured cap is neutral.
   These factors do not run without both split roles or on indirect hits.
-- `damage-credit-hp=team|cell0|...|cell31` and
-  `damage-credit-force=team|cell0|...|cell31` declare the outgoing
+- `damage-credit-hp=bank|cell0|...|cell31` and
+  `damage-credit-force=bank|cell0|...|cell31` declare the outgoing
   equivalents. The HP probe uses current attacker HP without subtracting
   the hit base; the force probe uses the attacking team's pre-hit ledger.
   A package can bind one set of outgoing curves and must opt individual
   direct moves in with `damage-credit-ladders=move`. Unmarked moves,
   defeated attackers and indirect hits do not borrow the rows. Each
-  declared curve needs both teams and a complete `damage-credit` role.
+  declared curve needs both banks and a complete `damage-credit` role.
   Outgoing curves are applied after credit difficulty and before
   attacker rank, matchup and receiving factors.
 - `damage-tier-receive=idle-ticks|cell0|...|cell63` declares a receiver

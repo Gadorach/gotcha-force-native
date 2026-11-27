@@ -199,11 +199,16 @@ struct BattleMvpDamageIndices {
     std::array<u8,2> settings{};
     std::array<u8,kBattleMvpMaxActors> ranks{};
     u8 rank_count=0;
+    std::array<u8,kBattleMvpMaxActors> banks{}; // optional role-table bank per actor
+    u8 bank_count=0; // omitted keeps the authored team-keyed policy
     bool valid(unsigned count)const{
         return rank_count==count&&count<=ranks.size()&&
             std::all_of(settings.begin(),settings.end(),[](u8 i){return i<kBorgDamageSettings;})&&
-            std::all_of(ranks.begin(),ranks.begin()+count,[](u8 i){return i<kBorgDamageRanks;});
+            std::all_of(ranks.begin(),ranks.begin()+count,[](u8 i){return i<kBorgDamageRanks;})&&
+            (!bank_count||(bank_count==count&&
+             std::all_of(banks.begin(),banks.begin()+count,[](u8 i){return i<2;})));
     }
+    u8 bank(unsigned slot,u8 team)const{return bank_count?banks[slot]:team;}
 };
 struct BattleMvpConfig {
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
@@ -2685,24 +2690,27 @@ private:
         std::array<f32,2> indexed_credit{},indexed_receive{};
         const std::array<f32,2>* selected_credit=nullptr;
         if(split){
+            const auto& attacker=actors_[owner];
+            u8 credit_bank=attacker.team,receive_bank=target.team;
             if(const auto& indices=config_.damage_indices;indices){
-                const auto team=actors_[owner].team;
-                indexed_credit=profile.damage_credit_indexed.select(team,indices->settings[team],indices->ranks[owner]);
+                credit_bank=indices->bank(owner,attacker.team);
+                receive_bank=indices->bank(recipient,target.team);
+                indexed_credit=profile.damage_credit_indexed.select(
+                    credit_bank,indices->settings[attacker.team],indices->ranks[owner]);
                 indexed_receive=recipient_profile->damage_receive_indexed.select(
-                    target.team,indices->settings[target.team],indices->ranks[recipient]);
+                    receive_bank,indices->settings[target.team],indices->ranks[recipient]);
                 selected_credit=&indexed_credit;receive=&indexed_receive;
             }
-            response.hp=borg_damage_ladder_factor(recipient_profile->damage_receive_hp,target.team,
+            response.hp=borg_damage_ladder_factor(recipient_profile->damage_receive_hp,receive_bank,
                 borg_damage_hp_cell(target.health,recipient_profile->health,raw_base));
-            response.force=borg_damage_ladder_factor(recipient_profile->damage_receive_force,target.team,
+            response.force=borg_damage_ladder_factor(recipient_profile->damage_receive_force,receive_bank,
                 borg_damage_force_cell(team_force_[target.team],config_.team_force[target.team]));
-            const auto& attacker=actors_[owner];
             // Require the recorded launch/contact move. A detached hit
             // must not inherit whichever attack is currently active.
             if(attacker.health&&move<profile.moves.size()&&profile.moves[move].damage_credit_ladders){
-                outgoing.hp=borg_damage_ladder_factor(profile.damage_credit_hp,attacker.team,
+                outgoing.hp=borg_damage_ladder_factor(profile.damage_credit_hp,credit_bank,
                     borg_damage_hp_cell(attacker.health,profile.health));
-                outgoing.force=borg_damage_ladder_factor(profile.damage_credit_force,attacker.team,
+                outgoing.force=borg_damage_ladder_factor(profile.damage_credit_force,credit_bank,
                     borg_damage_force_cell(team_force_[attacker.team],config_.team_force[attacker.team]));
             }
         }

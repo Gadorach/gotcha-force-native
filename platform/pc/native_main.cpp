@@ -429,7 +429,11 @@ bool parse(int argc, char** argv, Options* options) {
             if(++i>=argc||options->package_damage_indices)return false;
             const std::string_view encoded=argv[i];
             const auto divider=encoded.find(':');
-            if(divider==encoded.npos||encoded.size()>20)return false;
+            // Two settings, then up to six single-digit ranks and banks.
+            constexpr auto max_length=5+4*gf::kBattleMvpMaxActors;
+            if(divider==encoded.npos||encoded.size()>max_length)return false;
+            const auto bank_divider=encoded.find(':',divider+1);
+            const auto ranks=encoded.substr(divider+1,bank_divider==encoded.npos?encoded.npos:bank_divider-divider-1);
             const auto row=[](std::string_view value,std::span<gf::u8> out,unsigned limit)->unsigned{
                 unsigned n=0;
                 while(!value.empty()){
@@ -447,8 +451,12 @@ bool parse(int argc, char** argv, Options* options) {
             };
             gf::BattleMvpDamageIndices indices;
             if(row(encoded.substr(0,divider),indices.settings,gf::kBorgDamageSettings)!=indices.settings.size())return false;
-            indices.rank_count=gf::u8(row(encoded.substr(divider+1),indices.ranks,gf::kBorgDamageRanks));
+            indices.rank_count=gf::u8(row(ranks,indices.ranks,gf::kBorgDamageRanks));
             if(indices.rank_count<2)return false;
+            if(bank_divider!=encoded.npos){
+                indices.bank_count=gf::u8(row(encoded.substr(bank_divider+1),indices.banks,2));
+                if(indices.bank_count!=indices.rank_count)return false;
+            }
             options->package_damage_indices=indices;
         }
         else if (arg == "--list-borgs") options->list_borgs = true;
@@ -893,7 +901,7 @@ bool parse(int argc, char** argv, Options* options) {
                            "       gf_native --list-battle-rosters DIRECTORY\n"
                            "       gf_native --browse-battle-rosters DIRECTORY [--size W H] [--no-audio]\n"
                            "       gf_native --check-battle-roster FILE (validate and draw tick zero headless)\n"
-                           "       [--package-damage-indices TEAM0,TEAM1:R0,R1[,R2...]]\n"
+                            "       [--package-damage-indices TEAM0,TEAM1:R0,R1[,R2...][:B0,B1[,B2...]]]\n"
                            "       gf_native --list-stages\n"
                            "       gf_native --list-challenges\n"
                            "       gf_native --run-challenge NAMESPACE:ID ENCOUNTER SAVE_ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"

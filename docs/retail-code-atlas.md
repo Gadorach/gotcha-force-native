@@ -351,9 +351,11 @@ In the last two controls, only receiver `+0x3E6` changes. The receiver
 remains on team 1, both team settings stay 7, and the same contact is
 accepted. The original uses that controller-source byte to select
 the damage table bank (receiver class factor **0.92** versus **1.04**).
-The native opt-in still selects its roles by team. It cannot use one
-team-keyed bank to represent both original cases; no runtime role
-policy or Sasuke melee admission is changed in this checkpoint.
+A caller can now supply a third group to native `--package-damage-indices`
+to select per-actor banks independently of teams. The asset-free native
+fixture reproduces **35** and **40** with the same teams, recipient, and
+raw power. Omission preserves the older team-keyed selection. This does
+not infer live controller source or admit Sasuke's original melee move.
 
 All ten cases produced the same report on O0, O1 and O2. This does not
 exercise the rest of the reaction loop, live rank/force generation, or

@@ -709,12 +709,13 @@ void damage_attacker_ladder_cases(){
         check(!borg_read_gameplay_profile(attacker+suffix,&rejected,nullptr),
               "outgoing ladders refuse missing roles, incomplete tables, absent or mixed direct moves");
 }
+std::string damage_index_row(std::string_view key,unsigned cells,unsigned bank,unsigned choice,std::string_view factor){
+    std::string line=std::string(key)+"="+std::to_string(bank);
+    for(unsigned i=0;i<cells;++i)line+=i==choice?"|"+std::string(factor):"|1";
+    return line+'\n';
+}
 void damage_index_cases(){
-    const auto row=[](std::string_view key,unsigned cells,unsigned team,unsigned choice,std::string_view factor){
-        std::string line=std::string(key)+"="+std::to_string(team);
-        for(unsigned i=0;i<cells;++i)line+=i==choice?"|"+std::string(factor):"|1";
-        return line+'\n';
-    };
+    const auto row=damage_index_row;
     std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\n";
     std::string receive="damage-receive=0|1|1\ndamage-receive=1|1|1\n";
     const auto credit_settings=row("damage-credit-setting",32,0,5,"2")+row("damage-credit-setting",32,1,22,"4");
@@ -755,6 +756,12 @@ void damage_index_cases(){
     config.damage_indices->settings[1]=22;config.damage_indices->rank_count=2;
     check(!world.start(config),"indexes must cover every actor");
     config.damage_indices->rank_count=3;
+    config.damage_indices->bank_count=2;
+    check(!world.start(config),"partial explicit bank rows refuse");
+    config.damage_indices->bank_count=3;config.damage_indices->banks={0,1,2};
+    check(!world.start(config),"out-of-range bank refuses");
+    config.damage_indices->banks[2]=0;
+    check(world.start(config),"an explicit bank for every actor is accepted");
     config.packages[1]=parse(std::string(target)+receive);
     check(!world.start(config),"an existing split role without indexed rows cannot impersonate the selected row");
     BorgGameplayProfile bad;
@@ -766,6 +773,70 @@ void damage_index_cases(){
                           std::string(target)+receive+row("damage-receive-setting",31,0,7,"1.5")+
                               receive_ranks})
         check(!borg_read_gameplay_profile(text,&bad,nullptr),"incomplete or invalid indexed roles refuse");
+}
+void damage_bank_cases(){
+    const auto row=damage_index_row;
+    const std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    const std::string receive="damage-receive=0|1|1\ndamage-receive=1|1|1\n";
+    std::string attacker(player),recipient(target);
+    attacker.replace(attacker.find("health=250"),10,"health=180");
+    recipient.replace(recipient.find("health=500"),10,"health=180");
+    NativeBattleMvp world;
+    BattleMvpConfig config;
+    config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+    config.team_force={80,110};
+    const auto hit=[&](unsigned expected){
+        check(world.start(config),"damage bank fixture starts");
+        unsigned amount=0;
+        for(unsigned tick=0;tick<14&&!world.hits();++tick){
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                             {BorgBattleInputs{tick==0?BorgBattleInputs::b:u8(0),0,0},{}}),
+                  "damage bank fixture tick");
+            for(const auto& event:world.package_events())if(event.kind==BorgBattleEventKind::Hit){
+                check(event.actor==0&&event.recipient==1,"changing a table bank never changes actual contact");
+                amount=event.value;
+            }
+        }
+        check(world.hits()==1&&amount==expected&&world.actors()[1].health==180-expected&&
+              world.actors()[0].team==0&&world.actors()[1].team==1&&
+              world.team_force()[0]==80&&world.team_force()[1]==110-expected,
+              "table choice affects only the amount; force still follows the recipient team");
+    };
+
+    // The published original HP comparison: raw 40, settings 7,
+    // rank 0, same teams, two receiver banks. This is arithmetic only.
+    config.packages={
+        parse(attacker+"contact-power=b-shot|40\n"+credit+
+              row("damage-credit-setting",32,0,7,"1")+row("damage-credit-setting",32,1,7,"1")+
+              row("damage-credit-rank",8,0,0,"0.85")+row("damage-credit-rank",8,1,0,"0.85")),
+        parse(recipient+receive+
+              row("damage-receive-setting",32,0,7,"0.92")+row("damage-receive-setting",32,1,7,"1.04")+
+              row("damage-receive-rank",8,0,0,"1.15")+row("damage-receive-rank",8,1,0,"1.15"))};
+    config.damage_indices=BattleMvpDamageIndices{{7,7},{0,0},2};
+    hit(40); // No override uses the receiver team.
+    config.damage_indices->bank_count=2;
+    config.damage_indices->banks={0,0};
+    hit(35);
+    config.damage_indices->banks[1]=1;
+    hit(40);
+
+    // Distinct setting/rank indices and four non-neutral ladders make
+    // the axes independent even when both actors use the opposite bank.
+    config.packages={
+        parse(attacker+"contact-power=b-shot|20\ndamage-credit-ladders=b-shot\n"+credit+
+              row("damage-credit-setting",32,0,5,"1")+row("damage-credit-setting",32,1,5,"2")+
+              row("damage-credit-rank",8,0,2,"1")+row("damage-credit-rank",8,1,2,"1.5")+
+              row("damage-credit-hp",32,0,0,"1")+row("damage-credit-hp",32,1,0,"1.5")+
+              row("damage-credit-force",32,0,0,"1")+row("damage-credit-force",32,1,0,"2")),
+        parse(recipient+receive+
+              row("damage-receive-setting",32,0,9,"0.5")+row("damage-receive-setting",32,1,9,"1.5")+
+              row("damage-receive-rank",8,0,3,"0.5")+row("damage-receive-rank",8,1,3,"1")+
+              row("damage-receive-hp",32,0,4,"0.5")+row("damage-receive-hp",32,1,4,"1")+
+              row("damage-receive-force",32,0,0,"1.5")+row("damage-receive-force",32,1,0,"1"))};
+    config.damage_indices=BattleMvpDamageIndices{{5,9},{2,3},2};
+    hit(30);
+    config.damage_indices->banks={1,0};config.damage_indices->bank_count=2;
+    hit(33);
 }
 void damage_floor_cases(){
     const std::string rules=std::string(player)+"contact-power=b-shot|4\n"
@@ -2869,6 +2940,7 @@ int main(){
     damage_receiver_ladder_cases();
     damage_attacker_ladder_cases();
     damage_index_cases();
+    damage_bank_cases();
     damage_floor_cases();
     contact_tier_cases();
     contact_sound_cases();

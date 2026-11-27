@@ -1035,6 +1035,12 @@ Test. For example `--package-damage-indices 0,31:3,0` gives the first
 actor rank 3 and the second rank 0. Omit the selector to keep the
 fixed snapshot. This is not a retail difficulty or Story scheduler.
 
+An optional third group supplies one table bank per fighter. For
+example, `--package-damage-indices 7,7:0,0:0,0` uses bank 0 for both
+fighters without changing their teams. Settings still follow the
+team and ranks follow actor slots. Omit the bank group for the
+existing team-keyed selection.
+
 For the indexed smoke, include `--contact-power-test` but leave the
 HP/force ladder option off:
 
