@@ -79,12 +79,10 @@ def qualified_inlet(image, archive):
     return b"".join(blocks)+bank, sources
 
 
-def export(dol, afs, fixture, module, output):
-    output = Path(output)
-    if output.exists() or output.is_symlink():
-        raise FileExistsError("type-89 area output already exists")
+def replay(dol, afs, fixture, module, timed=False):
     dol = Path(dol).resolve(strict=True)
     image = DolImage(read_bounded(dol, 8 << 20), SOURCE_SHA256)
+    schedule = retail_type89.timed_schedule(image) if timed else None
     with open_regular(afs) as stream:
         stamp = archive_stamp(stream)
         verify_archive(stream)
@@ -92,10 +90,20 @@ def export(dol, afs, fixture, module, output):
         if stamp != archive_stamp(stream):
             raise ValueError("type-89 area AFS changed during extraction")
     argv = [str(Path(fixture).resolve(strict=True)), str(dol), str(Path(module).resolve(strict=True))]
+    if timed:
+        argv.append("--timed")
     result = run(argv, input=inlet, capture_output=True, timeout=45)
     if result.returncode or result.stderr:
         raise ValueError(f"type-89 area fixture failed: {result.stderr.decode('utf-8', 'replace').strip()}")
-    pilots = decode_report(result.stdout.decode("ascii"))
+    return result.stdout.decode("ascii"), sources, schedule
+
+
+def export(dol, afs, fixture, module, output):
+    output = Path(output)
+    if output.exists() or output.is_symlink():
+        raise FileExistsError("type-89 area output already exists")
+    report, sources, _ = replay(dol, afs, fixture, module)
+    pilots = decode_report(report)
     payload = {
         "kind": "gf-retail-type89-area", "revision": 1, "source_dol_sha256": SOURCE_SHA256, "source_afs_sha256": AFS_SHA256,
         "pilots": [{**p, "source": s} for p, s in zip(pilots, sources, strict=True)],

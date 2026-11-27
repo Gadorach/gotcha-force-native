@@ -1,0 +1,213 @@
+{
+  "kind": "gf-retail-type89-timed",
+  "notes": [
+    "The original constructor is called directly with a declared owner pose. Visit 0 is the full initializer.",
+    "Subsequent visits call the original carrier update. The fixture never seeds the area key, exit subphase, stage latch, or contact latch.",
+    "Stage geometry is fixture-authored: empty or one rebased triangle at z=1000, with an offset triangle as a miss control.",
+    "The exit leaf runs on the next update after the probe. Only the intersecting stage produces the alternate area request.",
+    "These are carrier-update counts, not game frames. The replay does not schedule actors, collision passes, or the area update.",
+    "Observed allocation does not qualify beam overlap, area activation, damage, disposal completion, or native admission."
+  ],
+  "pilots": [
+    {
+      "borg": "gg4e08:0f03",
+      "carrier_key": 11,
+      "cases": [
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 32,
+          "middle_phase_visit": 25,
+          "owner_clock_units_per_visit": 1.0,
+          "phase_two_visit": 41,
+          "root_z_integer_part_after_probe": 10383,
+          "stage": "empty-stage",
+          "stage_latch": false,
+          "stage_probe_visit": 31
+        },
+        {
+          "area_allocation": {
+            "key": 16,
+            "root": [
+              100,
+              200,
+              1000
+            ],
+            "site": "8016D32C",
+            "visit": 32
+          },
+          "exit_leaf_visit": 32,
+          "middle_phase_visit": 25,
+          "owner_clock_units_per_visit": 1.0,
+          "phase_two_visit": 41,
+          "root_z_integer_part_after_probe": 1000,
+          "stage": "intersecting-wall",
+          "stage_latch": true,
+          "stage_probe_visit": 31
+        },
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 32,
+          "middle_phase_visit": 25,
+          "owner_clock_units_per_visit": 1.0,
+          "phase_two_visit": 41,
+          "root_z_integer_part_after_probe": 10383,
+          "stage": "offset-wall",
+          "stage_latch": false,
+          "stage_probe_visit": 31
+        },
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 63,
+          "middle_phase_visit": 50,
+          "owner_clock_units_per_visit": 0.5,
+          "phase_two_visit": 82,
+          "root_z_integer_part_after_probe": 10383,
+          "stage": "empty-stage",
+          "stage_latch": false,
+          "stage_probe_visit": 62
+        },
+        {
+          "area_allocation": {
+            "key": 16,
+            "root": [
+              100,
+              200,
+              1000
+            ],
+            "site": "8016D32C",
+            "visit": 63
+          },
+          "exit_leaf_visit": 63,
+          "middle_phase_visit": 50,
+          "owner_clock_units_per_visit": 0.5,
+          "phase_two_visit": 82,
+          "root_z_integer_part_after_probe": 1000,
+          "stage": "intersecting-wall",
+          "stage_latch": true,
+          "stage_probe_visit": 62
+        },
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 63,
+          "middle_phase_visit": 50,
+          "owner_clock_units_per_visit": 0.5,
+          "phase_two_visit": 82,
+          "root_z_integer_part_after_probe": 10383,
+          "stage": "offset-wall",
+          "stage_latch": false,
+          "stage_probe_visit": 62
+        }
+      ]
+    },
+    {
+      "borg": "gg4e08:062a",
+      "carrier_key": 16,
+      "cases": [
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 32,
+          "middle_phase_visit": 25,
+          "owner_clock_units_per_visit": 1.0,
+          "phase_two_visit": 41,
+          "root_z_integer_part_after_probe": 10343,
+          "stage": "empty-stage",
+          "stage_latch": false,
+          "stage_probe_visit": 31
+        },
+        {
+          "area_allocation": {
+            "key": 16,
+            "root": [
+              100,
+              200,
+              1000
+            ],
+            "site": "8016D32C",
+            "visit": 32
+          },
+          "exit_leaf_visit": 32,
+          "middle_phase_visit": 25,
+          "owner_clock_units_per_visit": 1.0,
+          "phase_two_visit": 41,
+          "root_z_integer_part_after_probe": 1000,
+          "stage": "intersecting-wall",
+          "stage_latch": true,
+          "stage_probe_visit": 31
+        },
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 32,
+          "middle_phase_visit": 25,
+          "owner_clock_units_per_visit": 1.0,
+          "phase_two_visit": 41,
+          "root_z_integer_part_after_probe": 10343,
+          "stage": "offset-wall",
+          "stage_latch": false,
+          "stage_probe_visit": 31
+        },
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 63,
+          "middle_phase_visit": 50,
+          "owner_clock_units_per_visit": 0.5,
+          "phase_two_visit": 82,
+          "root_z_integer_part_after_probe": 10343,
+          "stage": "empty-stage",
+          "stage_latch": false,
+          "stage_probe_visit": 62
+        },
+        {
+          "area_allocation": {
+            "key": 16,
+            "root": [
+              100,
+              200,
+              1000
+            ],
+            "site": "8016D32C",
+            "visit": 63
+          },
+          "exit_leaf_visit": 63,
+          "middle_phase_visit": 50,
+          "owner_clock_units_per_visit": 0.5,
+          "phase_two_visit": 82,
+          "root_z_integer_part_after_probe": 1000,
+          "stage": "intersecting-wall",
+          "stage_latch": true,
+          "stage_probe_visit": 62
+        },
+        {
+          "area_allocation": null,
+          "exit_leaf_visit": 63,
+          "middle_phase_visit": 50,
+          "owner_clock_units_per_visit": 0.5,
+          "phase_two_visit": 82,
+          "root_z_integer_part_after_probe": 10343,
+          "stage": "offset-wall",
+          "stage_latch": false,
+          "stage_probe_visit": 62
+        }
+      ]
+    }
+  ],
+  "revision": 1,
+  "schedule": {
+    "carrier_keys": [
+      11,
+      16
+    ],
+    "clock_increment_owner_offset": "0x1DC8",
+    "duration_units": [
+      25,
+      6,
+      10
+    ],
+    "row_address": "80350598",
+    "stage_latch_offset": "0x17C",
+    "stage_latch_write_site": "8016D2B0",
+    "stage_segment_entry": "80084170",
+    "stage_segment_site": "8016D2AC"
+  },
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

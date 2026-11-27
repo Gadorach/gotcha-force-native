@@ -29,6 +29,12 @@ ANCESTOR_TEXT = (
     (0x80179D20, 56, "ebaabd2d612e41fd70e6edee0db1a305fee9178e975879e70ccbdcf09855315a"),
     (0x80179D58, 264, "4f68154533371943319e2342658cf27e287b4ce43c1bc79b8384ceb03aac2372"),
 )
+TIMED_TEXT = (
+    (0x8016D060, 624, "15c784f3e1cb87a8cf805be583d029e2f023f37b5668afa9a0d5945ab95b8f2c"),
+    (0x8016D344, 32, "c6bfef74fa06d7f882dcde91cca1085ac5e853fe789b17dec3000d9dfd253e00"),
+    (0x8016D4D4, 176, "62e531a9f7894f74164f390e7eb0aac7cfc1f78d31e013aa5dba1c43579ea67d"),
+    (0x80084170, 192, "9820c165d09f46a0c71df798be6438f031c2ca9a1876c801a879562257fe9e76"),
+)
 
 
 def word(image, at, kind="text"):
@@ -73,6 +79,27 @@ def rows(image):
             raise ValueError("type-89 group or area domain changed")
         result.append({"key": key, "row": address(TABLE+at), "group": group, "area_key": area})
     return result
+
+
+def timed_schedule(image):
+    """Read the shared phase timers for the two qualified carrier keys only."""
+    verify_text(image, TIMED_TEXT)
+    link(image, 0x8016D2AC, 0x80084170)
+    link(image, 0x800841DC, 0x8003E978)
+    if (word(image, 0x8016D00C) != 0xC0051DC8 or word(image, 0x8016D0A8) != 0x3BFB0144
+            or word(image, 0x8016D2B0) != 0x987F0038):
+        raise ValueError("type-89 visit clock or stage latch changed")
+    pointers = 0x803505E0
+    table = 0x80350598
+    for key in (11, 16):
+        if word(image, pointers+key*4, "data") != table:
+            raise ValueError("type-89 pilot schedule pointer changed")
+    spans = [duration for _, duration, _ in struct.iter_unpack(">hhI", image.read(table, 24, "data"))]
+    if spans != [25, 6, 10]:
+        raise ValueError("type-89 pilot phase durations changed")
+    return {"carrier_keys": [11, 16], "duration_units": spans, "row_address": address(table),
+            "clock_increment_owner_offset": "0x1DC8", "stage_segment_site": "8016D2AC",
+            "stage_segment_entry": "80084170", "stage_latch_write_site": "8016D2B0", "stage_latch_offset": "0x17C"}
 
 
 def ancestors(image, atlas, selections):

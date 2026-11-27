@@ -1,4 +1,4 @@
-// Original type-89 constructor, initial shape, and supplied exit controls.
+// Original type-89 constructor, initial shape, and exit controls or timed updates.
 #include "retail_recomp_fixture.hpp"
 #include <array>
 
@@ -10,13 +10,15 @@ constexpr u32 scene=0x81017000;
 constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC,active_head=0x803C706C;
 constexpr u32 make_carrier=0x8016CC24,carrier_update=0x8016CD1C,exit_leaf=0x8016D2D0;
 constexpr u32 make_area=0x80085E00,area_update=0x80086048,area_key=16;
-constexpr u32 list_enroll=0x80089100;
+constexpr u32 list_enroll=0x80089100,stage_segment=0x80084170;
+constexpr u32 stage=0x81050000;
 
 using HitBlock=std::array<u8,7840>;
 using CommonBank=std::array<u8,21504>;
 struct Pilot {u16 model;u8 key,group,joint;u32 hit_table;};
 constexpr Pilot pilots[]={{0x0F03,11,2,2,0x803810F8},{0x062A,16,28,12,0x80365EC0}};
 enum class Case {initial_refused, neither, contact, flag, both, no_object, short_descriptors};
+enum class Terrain {clear, wall, offset_wall};
 
 class Check {
     const Module& mod;
@@ -26,6 +28,9 @@ class Check {
         return ram.data()+va-GC_RAM_BASE;
     }
     u16 half(u32 va){const auto* p=at(va);return u16(u16(p[0])<<8|p[1]);}
+    using Point=std::array<float,3>;
+    float scalar(u32 va){return std::bit_cast<float>(be32(at(va)));}
+    Point point(u32 va){return {scalar(va),scalar(va+4),scalar(va+8)};}
     void pools(unsigned objects,unsigned descriptors,unsigned free_shapes){
         if(objects>2||descriptors>3||free_shapes>2)fail("type-89 pool extent");
         put32(at(0x80436380),descriptor_row);
@@ -47,15 +52,7 @@ class Check {
             put32(at(cell+4),i+1<free_shapes?cell+shape_stride:0);
         }
     }
-public:
-    Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
-    void observe(Pilot p,const HitBlock& hit,const CommonBank& bank,Case which){
-        const bool admitted=which!=Case::initial_refused,contact=which==Case::contact||which==Case::both||
-                           which==Case::no_object||which==Case::short_descriptors;
-        const bool flag=which==Case::flag||which==Case::both;
-        const auto objects=which==Case::no_object?1u:2u;
-        const auto descriptors=which==Case::short_descriptors?2u:3u;
-        pools(objects,descriptors,admitted?2:0);
+    void create(Pilot p,const HitBlock& hit,const CommonBank& bank){
         auto* owner=at(actor);
         owner[0]=1;owner[0x18]=1;
         put16(owner+0x3E8,p.model);put16(owner+0x94,p.model);
@@ -71,11 +68,48 @@ public:
         put32(at(0x8043B5A0-31852),scene);put32(at(scene+152),common);
         CPUState ctor{};ctor.gpr[3]=actor;ctor.gpr[4]=p.key;
         mod.run(ctor,ram,make_carrier);
-        auto* child=at(carrier);
+        const auto* child=at(carrier);
         if(ctor.gpr[3]!=carrier||be32(at(active_head+9*4))!=carrier||
            child[0x10]!=89||child[0x11]!=p.key||child[0x17D]||
            be32(child+12)!=carrier_update||be32(child+0x10C)!=0x8016D4AC||be32(child+0x90)!=actor)
             fail("type-89 constructor identity or owner mismatch");
+    }
+    void terrain(Terrain which){
+        // One rebased vertical STIH triangle in layer zero, or no references.
+        constexpr u32 grid=stage+0x100,empty_grid=stage+0x140,refs=stage+0x200,side=32;
+        constexpr u32 empty_refs=refs+4*side*side,list=empty_refs+4*side*side,tri=list+8,empty=tri+0x80;
+        put32(at(0x8043B5A0-21316),stage);
+        put32(at(stage+28),grid);put32(at(stage+32),empty_grid);put32(at(stage+36),empty_grid);
+        put_float(at(stage+52),9000.f);put_float(at(stage+56),15000.f);
+        put_float(at(stage+60),-1000.f);put_float(at(stage+64),15000.f);put_float(at(stage+68),-1000.f);
+        for(u32 g:{grid,empty_grid}){
+            put32(at(g),500);put32(at(g+4),500);put32(at(g+8),side);put32(at(g+12),side);
+            put32(at(g+16),u32(-1000));put32(at(g+20),u32(-1000));
+            put32(at(g+24),g==grid?refs:empty_refs);put32(at(g+28),tri);
+        }
+        put32(at(empty),0xFFFFFFFFu);
+        put32(at(list),tri);put32(at(list+4),0xFFFFFFFFu);
+        for(unsigned i=0;i<side*side;++i){
+            put32(at(refs+4*i),which==Terrain::clear?empty:list);
+            put32(at(empty_refs+4*i),empty);
+        }
+        const float x=which==Terrain::offset_wall?3000.f:-500.f;
+        const std::array vertices{x,-500.f,1000.f,x+3500.f,-500.f,1000.f,x,3500.f,1000.f};
+        for(unsigned i=0;i<vertices.size();++i)put_float(at(tri+4+4*i),vertices[i]);
+        put_float(at(tri+48),1.f);put_float(at(tri+52),-1000.f);
+    }
+public:
+    Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
+    void observe(Pilot p,const HitBlock& hit,const CommonBank& bank,Case which){
+        const bool admitted=which!=Case::initial_refused,contact=which==Case::contact||which==Case::both||
+                           which==Case::no_object||which==Case::short_descriptors;
+        const bool flag=which==Case::flag||which==Case::both;
+        const auto objects=which==Case::no_object?1u:2u;
+        const auto descriptors=which==Case::short_descriptors?2u:3u;
+        pools(objects,descriptors,admitted?2:0);
+        create(p,hit,bank);
+        auto* owner=at(actor);
+        auto* child=at(carrier);
         CPUState init{};init.gpr[3]=carrier;
         CallObservation bind{0x8008AC80};
         const auto cut=mod.run_to_or_return(init,ram,carrier_update,{list_enroll},&bind);
@@ -137,11 +171,70 @@ public:
         std::printf("type89-area: %u %u 1 %u %u %u %u %u %u\n",p.model,unsigned(which),child[0x17D],
                     request.count,requested?(contact?1u:2u):0u,unsigned(created),created?110u:0u,half(actor+0x774));
     }
+    void timed(Pilot p,const HitBlock& hit,const CommonBank& bank,Terrain which,unsigned visits_per_unit){
+        pools(2,3,2);
+        terrain(which);
+        // Empty render model slots and an unavailable audio backend.
+        constexpr u32 visual=0x8103F000,link=visual+0x40,table=visual+0x80,empty=visual+0x400;
+        constexpr u32 audio=0x8103E000;
+        put32(at(0x803BB374),visual);put32(at(visual+16),link);put32(at(link),table);
+        for(unsigned id:{7u,8u,9u})put32(at(table+4*id),empty);
+        put32(at(0x8043B5A0-31856),audio);
+        at(audio+12)[0]=1;
+        at(0x803D0000+15080+852)[0]=1;
+        create(p,hit,bank);
+        put_float(at(actor+0x1DC8),1.f/float(visits_per_unit));
+        const auto* child=at(carrier);
+        const bool wall=which==Terrain::wall;
+        const unsigned middle=25*visits_per_unit,probe=31*visits_per_unit,exit=probe+1,end=41*visits_per_unit;
+        unsigned entered_middle=0,entered_final=0,exited=0,stopped=0,area_requested=0;
+        float endpoint_z=0;
+        u32 requested_key=0;
+        for(unsigned n=0;n<=end;++n){
+            CPUState visit{};visit.gpr[3]=carrier;
+            CallObservation call{n==probe?stage_segment:make_area};
+            mod.run_observed(visit,ram,carrier_update,call,4096);
+            const auto root=point(carrier+0x20);
+            const bool latched=wall&&n>=probe,created=wall&&n>=exit;
+            const auto start=n>=probe?probe:n>=middle?middle:0;
+            if(child[0x18]!=(n==end?2:1)||child[0x13]!=(n>=probe?2:n>=middle?1:0)||
+               child[0x19]!=(n>=exit?2:n==probe?1:0)||scalar(carrier+0xD4)!=float(n-start)/float(visits_per_unit)||
+               child[0x17C]!=unsigned(latched)||child[0x1D9]||child[0x17D]!=area_key||
+               half(actor+0x774)!=5||be32(child+8)!=(created?area:0)||call.count!=unsigned(n==probe||(wall&&n==exit)))
+                fail("type-89 timed phase, stage latch or area request mismatch");
+            if(n==0&&(be32(at(active_head+49*4))!=shapes||half(free_count+8)!=1))
+                fail("type-89 timed opening shape did not bind");
+            if(child[0x13]==1&&!entered_middle)entered_middle=n;
+            if(child[0x19]==1){
+                entered_final=n;
+                endpoint_z=root[2];
+                const float clear_z=p.key==11?10383.f:10343.f;
+                if(call.caller!=0x8016D2AC||call.arguments[0]!=carrier||call.arguments[1]!=255||
+                   root[0]!=100.f||root[1]!=200.f||!(wall?endpoint_z==1000.f:clear_z<endpoint_z&&endpoint_z<clear_z+0.5f))
+                    fail("type-89 tested segment endpoint did not match its terrain");
+            }
+            if(child[0x19]==2&&!exited)exited=n;
+            if(child[0x18]==2)stopped=n;
+            if(n!=probe&&call.count){
+                area_requested=n;
+                requested_key=call.arguments[2];
+                const auto* placed=at(area);
+                if(call.caller!=0x8016D32C||call.arguments[0]!=carrier||call.arguments[1]!=carrier+0x20||
+                   requested_key!=area_key||child[0x1D8]!=1||
+                   placed[0x10]!=5||placed[0x11]!=area_key||placed[0x18]!=0||
+                   be32(placed+0x8C)!=carrier||be32(placed+0x90)!=actor||point(area+0x20)!=root)
+                    fail("type-89 terrain exit did not allocate key 16 at the corrected root");
+            }
+        }
+        std::printf("type89-timed: %u %u %u %u %u %u %u %u %u %u %u\n",p.model,unsigned(which),visits_per_unit,
+                    entered_middle,entered_final,exited,stopped,child[0x17C],unsigned(endpoint_z),area_requested,requested_key);
+    }
 };
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: type89-area-fixture qualified.dol unmodified-recomp.so");
+    const bool timed=argc==4&&!std::strcmp(argv[3],"--timed");
+    if(argc!=3&&!timed)fail("usage: type89-area-fixture qualified.dol unmodified-recomp.so [--timed]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     std::array<HitBlock,2> hit{};
@@ -150,9 +243,17 @@ int main(int argc,char** argv){
         if(std::fread(block.data(),1,block.size(),stdin)!=block.size())fail("type-89 hit block extent");
     if(std::fread(common_bank.data(),1,common_bank.size(),stdin)!=common_bank.size()||std::getc(stdin)!=EOF)
         fail("type-89 common bank extent");
-    for(unsigned i=0;i<hit.size();++i)
+    for(unsigned i=0;i<hit.size();++i){
+        if(timed){
+            for(unsigned visits_per_unit:{1u,2u})
+                for(auto inlet:{Terrain::clear,Terrain::wall,Terrain::offset_wall}){
+                    Check test(mod,original);test.timed(pilots[i],hit[i],common_bank,inlet,visits_per_unit);
+                }
+            continue;
+        }
         for(auto scenario:{Case::initial_refused,Case::neither,Case::contact,Case::flag,Case::both,
                            Case::no_object,Case::short_descriptors}){
             Check test(mod,original);test.observe(pilots[i],hit[i],common_bank,scenario);
         }
+    }
 }

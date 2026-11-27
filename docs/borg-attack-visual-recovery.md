@@ -225,9 +225,11 @@ The player reports comparable charged beams for G-Red, Neo G-Red and
 G-Black. Keep the recovery distinction: the checked charged-B path
 requests type **32**, key **15**, for G-Red and Neo G-Red. G-Black's
 checked charged-B entry requests type **89**, key **16**; its separate
-charged-X path at cursor 12 requests type **32**, key **17**. This is
-a route distinction, not evidence that the type-89 beam has different
-occlusion semantics. Preserve the reported close movement similarity
+charged-X path at cursor 12 requests type **32**, key **17**. A
+[bounded type-89 replay](retail-code-atlas.md#type-89-timed-stage-probe)
+shows terrain clipping the carrier endpoint and causing a separate area
+request. That does not settle whether the live damaging beam or its visual
+is occluded. Preserve the reported close movement similarity
 between Neo G-Red and G-Black without treating their exact controllers,
 variants or attack tables as interchangeable.
 

@@ -696,11 +696,10 @@ are set; neither gate means no request. A missing area carrier
 or too few descriptors leaves the request visible but creates
 no area. Successful requests bind a separate common-group shape.
 
-All 14 cases matched across O0, O1 and O2. This invokes the
-constructor directly and supplies the exit gates; it does not
-qualify paid-action timing, the flag producer, beam damage, or
-area overlap and HP. The area cue is observed before playback.
-No native gameplay changed.
+All 14 cases matched across O0, O1 and O2. This allocation replay
+invokes the constructor directly and supplies the exit gates. The
+area cue is observed before playback. It does not qualify paid-action
+timing, beam damage, or area overlap and HP. No native gameplay changed.
 
 Compile [`retail_type89_area_fixture.cpp`](../tests/host/retail_type89_area_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags, then run:
@@ -710,6 +709,42 @@ python3 -m tools.analyze.retail_type89_area \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type89-area "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type89-area.json
+```
+
+### Type-89 timed stage probe
+
+For normal Nu III key 11 and G-Black key 16, both timer pointers
+select `80350598`, with phase durations **25, 6, 10**. Each active
+update advances the clock by the owner's `+0x1DC8` value. Upon entering
+the last timed phase, `8016D2AC` runs the stage-segment test and
+`8016D2B0` stores its return at carrier `+0x17C`.
+
+The [timed replay](api-map/gg4e08-type89-timed.json) calls the original
+initializer at visit 0, then advances the carrier without seeding its
+subphase or either exit latch. A synthetic intersecting wall clips
+the root to `(100, 200, 1000)` and sets the stage latch. The next
+update requests and allocates key 16 at that corrected root. An
+empty stage and an offset-wall miss still execute the exit leaf,
+but allocate nothing.
+
+| Owner clock step | Middle phase | Stage probe | Exit leaf | Main phase 2 |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 25 | 31 | 32 | 41 |
+| 0.5 | 50 | 62 | 63 | 82 |
+
+All 12 cases matched across O0, O1 and O2. These are carrier-update
+counts, not game frames. This qualifies the alternate latch producer,
+not the actor-contact latch, downstream area scheduling, HP, or full
+disposal. The clip result applies to the tested carrier segment, not
+to beam visibility or occlusion in live gameplay.
+
+Use the same fixture executable and inputs as above:
+
+```sh
+python3 -m tools.analyze.retail_type89_timed \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type89-area "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type89-timed.json
 ```
 
 ### Ordinary X: installed program, VM cue, and paid bomb release
