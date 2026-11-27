@@ -1,0 +1,98 @@
+{
+  "cases": [
+    {
+      "carrier_z_after_flight": 445.0,
+      "carrier_z_at_amount_cut_or_return": 445.0,
+      "case": "second-body-miss",
+      "credit_ledger": 8,
+      "first_hp": 172,
+      "first_receive_ledger": 8,
+      "same_carrier_token": 1,
+      "second_amount": 0,
+      "second_body_extra_z": 256,
+      "second_body_seeded_with_token": false,
+      "second_hp": 180,
+      "second_hp_writer_reached": false,
+      "second_previous_hp_field": 65535,
+      "second_receive_ledger": 0,
+      "second_token_cursor": 0,
+      "stock": 1,
+      "timer": 299
+    },
+    {
+      "carrier_z_after_flight": 445.0,
+      "carrier_z_at_amount_cut_or_return": 445.0,
+      "case": "second-body-with-token",
+      "credit_ledger": 8,
+      "first_hp": 172,
+      "first_receive_ledger": 8,
+      "same_carrier_token": 1,
+      "second_amount": 0,
+      "second_body_extra_z": 0,
+      "second_body_seeded_with_token": true,
+      "second_hp": 180,
+      "second_hp_writer_reached": false,
+      "second_previous_hp_field": 65535,
+      "second_receive_ledger": 0,
+      "second_token_cursor": 0,
+      "stock": 1,
+      "timer": 299
+    },
+    {
+      "carrier_z_after_flight": 445.0,
+      "carrier_z_at_amount_cut_or_return": 423.0,
+      "case": "fresh-second-body",
+      "credit_ledger": 16,
+      "first_hp": 172,
+      "first_receive_ledger": 8,
+      "same_carrier_token": 1,
+      "second_amount": 8,
+      "second_body_extra_z": 0,
+      "second_body_seeded_with_token": false,
+      "second_hp": 172,
+      "second_hp_writer_reached": true,
+      "second_previous_hp_field": 180,
+      "second_receive_ledger": 8,
+      "second_token_cursor": 1,
+      "stock": 1,
+      "timer": 299
+    }
+  ],
+  "credit": {
+    "amount_record": "8030A398",
+    "borg": "gg4e08:0600",
+    "carrier_key": 21
+  },
+  "declared": {
+    "actor_slots": [
+      0,
+      1,
+      2
+    ],
+    "receiver_body_descriptor": 9,
+    "receiver_borg": "gg4e08:000a",
+    "starting_hp_per_receiver": 180,
+    "starting_rifle_stock": 2,
+    "teams": [
+      0,
+      1,
+      1
+    ]
+  },
+  "first_receiver_control": {
+    "control_writes_hp": false,
+    "only_history_word_cleared_reaches_amount": true,
+    "same_geometry_and_token_reaches_amount": false
+  },
+  "kind": "gf-retail-rifle-next-receiver",
+  "notes": [
+    "The first contact is the original paid rifle path and HP writer. Its token and credited damage are retained.",
+    "The history counterfactual is discarded. A second original body is then bound on a separate slot, using the same normal body descriptor.",
+    "An isolated flight/late/reset/shape visit publishes the same attack and both singleton receivers, before another original pair pass.",
+    "Original accepted contact changes the carrier position before the amount cut. The HP writer is run without resuming its caller.",
+    "No simultaneous pair iteration, moving-body sweep, later reaction scheduling, native proxy rule, or live timing is qualified."
+  ],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

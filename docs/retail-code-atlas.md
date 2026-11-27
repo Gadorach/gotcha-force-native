@@ -405,6 +405,48 @@ python3 -m tools.analyze.retail_rifle_lifetime \
   /tmp/opencode/gf-rifle-lifetime.json
 ```
 
+### Machine Red: one carrier, two receivers
+
+The [second-receiver receipt](api-map/gg4e08-rifle-next-receiver.json)
+continues the verified first rifle hit. In the same geometry, the
+first receiver's token 1 blocks a repeat. Clearing only that
+history word in a discarded replay reopens the original amount
+call; neither history control writes HP.
+
+The fixture then binds a second original Sasuke body-9 shape to
+slot 2 on the same opposing team. Its pose is declared before
+the next carrier visit. The original passes publish both
+receivers, keep the same attack shape and token 1, and move the
+carrier from `z=365` to `z=445`. The two receiver histories
+remain independent.
+
+| Second receiver | HP after pair pass | Machine Red's damage ledger |
+| --- | ---: | ---: |
+| 256 units beyond the next position | 180 | 8 |
+| At the next position, token 1 already in history | 180 | 8 |
+| At the next position, fresh history | 172 | 16 |
+
+The fresh second contact uses the same amount record and costs
+no extra stock. The first receiver stays at 172 HP in all three
+forks. Before the second amount call the original contact code
+places the carrier at `z=423`; the HP writer does not move it.
+The earlier `z=445` sample is a flight result, not its accepted
+contact position.
+
+All three cases matched across O0, O1 and O2. This is a second
+recipient on a subsequent isolated visit, not simultaneous pair
+dispatch, live timing, or a rule for other carrier keys. Native
+direct shots still retire on a body hit. A portable continuation
+would need per-recipient history rather than globally ignoring
+the next contact.
+
+```sh
+python3 -m tools.analyze.retail_rifle_next_receiver \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-rifle-next-receiver.json
+```
+
 ### Type-2 carriers across the roster
 
 The [type-2 census](api-map/gg4e08-type2-roster.json) checks all

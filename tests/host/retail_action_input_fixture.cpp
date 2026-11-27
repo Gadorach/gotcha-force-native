@@ -10,10 +10,10 @@ namespace {
 using namespace retail_fixture;
 constexpr u32 packet=0x803C727C, arbiter=0x800699D8;
 constexpr u32 config=0x81014000, spec=0x81015000, contexts=0x81016000, rows=0x81016100,
-              pairs=0x81016200, settings=0x81017000, mode_state=0x81019200, peer=0x8101A000;
+              pairs=0x81016200, settings=0x81017000, mode_state=0x81019200, peer=0x8101A000, peer2=peer+0x1E00;
 constexpr u32 b=0x200, x=0x400, y=0x800;
 constexpr u32 descriptor_row=0x81030000, descriptor_cell=0x81030100,
-              object_cell=0x81032000, hurt_cell=0x81032800, rifle_receiver_cell=0x81033000,
+              object_cell=0x81032000, hurt_cell=0x81032800, rifle_receiver_cell=0x81033000, rifle_receiver2_cell=0x81033800,
               hit_block=0x81036000, hurt_block=0x81038000;
 constexpr u32 free_head=0x803C716C, free_tail=0x803C718C, free_count=0x803C71AC,
               group_head=0x803C6F6C, group_tail=0x803C706C;
@@ -550,23 +550,25 @@ public:
                     double(fp(object_cell+0x38)),double(fp(object_cell+0x3C)),double(fp(object_cell+0x40)),
                     double(fp(hurt_cell+0x7C)));
     }
-    void singleton_sasuke_body(const HitBlock& block,float x,float y,float z){
+    void singleton_sasuke_body(const HitBlock& block,float x,float y,float z,unsigned slot=1){
+        if(slot!=1&&slot!=2)fail("singleton body fixture slot extent");
+        const u32 receiver=slot==1?peer:peer2,body_cell=slot==1?rifle_receiver_cell:rifle_receiver2_cell;
         std::memcpy(at(hurt_block),block.data(),block.size());
         at(hurt_block)[0]=9;at(hurt_block)[1]=255;
-        auto* target=at(peer);
-        target[0]=1;target[0x18]=1;target[0x88]=1;target[0x3E4]=1;
+        auto* target=at(receiver);
+        target[0]=1;target[0x18]=1;target[0x88]=1;target[0x3E4]=u8(slot);
         put16(target+0x3E8,0x000A);
         put32(target+0x3FC,hurt_block);put32(target+0x27C,0x802D4160);
         put32(target+0x76C,1u<<2);
         put_float(target+0xC0,1.f);
-        rigid(peer+0x8D4+2*0x30,x,y+14,z);
-        at(rifle_receiver_cell)[2]=4;
-        put32(at(free_head+16),rifle_receiver_cell);put32(at(free_tail+16),rifle_receiver_cell);
+        rigid(receiver+0x8D4+2*0x30,x,y+14,z);
+        at(body_cell)[2]=4;
+        put32(at(free_head+16),body_cell);put32(at(free_tail+16),body_cell);
         put16(at(free_count+8),1);
-        CPUState bind{};bind.gpr[3]=peer;
+        CPUState bind{};bind.gpr[3]=receiver;
         mod.run(bind,ram,0x8008AB30);
-        if(be32(at(group_head+50*4))!=rifle_receiver_cell||be32(at(group_tail+50*4))!=rifle_receiver_cell||
-           be32(at(rifle_receiver_cell+0x28))!=hurt_block+32+9*80)
+        if(be32(at(group_head+(49+slot)*4))!=body_cell||be32(at(group_tail+(49+slot)*4))!=body_cell||
+           be32(at(body_cell+0x28))!=hurt_block+32+9*80)
             fail("receiver did not bind the original Sasuke body descriptor");
     }
     void projectile_amount_inlet(const ActorSpec& credit,const ActorSpec& defender,u16 credit_hp){
@@ -687,6 +689,85 @@ public:
             }
         }
         fail("rifle carrier did not retire within fixture visit budget");
+    }
+    void rifle_next_receiver(const HitBlock& body,unsigned extra_distance,bool duplicate){
+        auto* cell=at(object_cell);
+        auto* first=at(peer);
+        auto* second=at(peer2);
+        const auto token=half(object_cell+0x26C);
+        if(cell[0x1D9]!=0x10||token!=1||half(peer+0x1C6)!=172||half(peer+0x20C)!=token)
+            fail("second receiver requires the original first hit");
+        // Check the exact same geometry twice, changing only the first
+        // receiver's history in the counterfactual. Do not write HP twice.
+        {
+            const auto first_contact=ram;
+            CPUState history{};
+            if(mod.run_to_or_return(history,ram,0x8002DB58,{0x8003CD5C,0x8003D344}))
+                fail("same token hit the first receiver twice");
+            std::memcpy(ram.data(),first_contact.data(),ram.size());
+            put16(first+0x20C,0);
+            CPUState cleared{};
+            mod.run_to(cleared,ram,0x8002DB58,{0x8003CD5C});
+            if(cleared.lr!=0x8002F10C||cleared.gpr[3]!=0x8030A398||cleared.gpr[4]!=object_cell||
+               cleared.gpr[5]!=peer||half(peer+0x1C6)!=172)
+                fail("cleared first history did not reopen the same pair");
+            std::memcpy(ram.data(),first_contact.data(),ram.size());
+        }
+        // Add a second original body to the same isolated Scene. The
+        // placement is declared relative to the known first travel step.
+        singleton_sasuke_body(body,fp(hurt_cell+0x64),fp(hurt_cell+0x68),
+                              fp(hurt_cell+0x6C)+80.f+float(extra_distance),2);
+        put32(second+0x4AC,be32(first+0x4AC));
+        put32(second+0x90,peer2);
+        put_float(second+0xB4,1.f);put_float(second+0xC4,1.f);
+        put16(second+0x1C4,180);put16(second+0x1C6,180);put16(second+0x1C8,0xFFFF);
+        put16(at(0x803B069C+4),180);
+        if(duplicate)put16(second+0x20C,token);
+        empty_stage(62500.f);
+        projectile_visit();
+        if(cell[0x18]!=1||cell[0x1D8]||cell[0x1D9]!=0x10||half(object_cell+0x1C)!=299||
+           half(object_cell+0x26C)!=token||half(attack_count)!=1||be32(at(attack_registry))!=hurt_cell||
+           half(receiver_count)!=2||be32(at(receiver_registry))!=rifle_receiver_cell||
+           be32(at(receiver_registry+4))!=rifle_receiver2_cell||fp(object_cell+0x28)!=445||
+           fp(rifle_receiver2_cell+0x6C)!=445.f+float(extra_distance)||
+           bool(pair_helper(0x80039F6C,hurt_cell+0x58,rifle_receiver2_cell+0x58))!=(extra_distance==0))
+            fail("same carrier and both receivers did not reach the next visit");
+        const auto visit_z=fp(object_cell+0x28);
+        const auto before=ram;
+        const bool accepted=!extra_distance&&!duplicate;
+        CPUState request{};
+        const auto reached=mod.run_to_or_return(request,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
+        if((accepted?(reached!=0x8003CD5C||request.lr!=0x8002F10C||request.gpr[3]!=0x8030A398||
+                     request.gpr[4]!=object_cell||request.gpr[5]!=peer2):reached!=0)||
+           half(peer+0x1C6)!=172||half(peer2+0x1C6)!=180){
+            std::fprintf(stderr,"rifle next: distance=%u dup=%u reached=%08X lr=%08X receiver=%08X z=%f/%f\n",
+                         extra_distance,unsigned(duplicate),reached,request.lr,request.gpr[5],
+                         double(fp(hurt_cell+0x6C)),double(fp(rifle_receiver2_cell+0x6C)));
+            fail("incorrect second rifle contact boundary");
+        }
+        const auto pair_z=fp(object_cell+0x28);
+        unsigned amount=0;
+        if(accepted){
+            std::memcpy(ram.data(),before.data(),ram.size());
+            CPUState writer{};
+            mod.run_to(writer,ram,0x8002DB58,{0x8003D344});
+            if(writer.lr!=0x8002F1DC||writer.gpr[3]!=peer2||half(peer2+0x1C6)!=180)
+                fail("wrong second rifle HP writer");
+            amount=writer.gpr[4];
+            mod.finish_stopped_leaf(writer,0x8003D344,164);
+        }
+        if(amount!=(accepted?8:0)||half(peer+0x1C6)!=172||half(peer2+0x1C6)!=180-amount||
+           half(peer+0x20C)!=token||first[0x26E]!=1||half(peer2+0x20C)!=unsigned(accepted||duplicate)||
+           second[0x26E]!=unsigned(accepted)||be32(a+0x418)!=8+amount||
+           be32(first+0x41C)!=8||be32(second+0x41C)!=amount||
+           be32(cell+0x290)!=(accepted?peer2:peer)||be32(a+0x290)!=(accepted?peer2:peer)||
+           half(actor+0x774)!=1||fp(object_cell+0x28)!=pair_z)
+            fail("second rifle HP, token or credit accounting mismatch");
+        std::printf("rifle-next: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %.5f %.5f\n",
+                    extra_distance,unsigned(duplicate),token,unsigned(reached!=0),amount,
+                    half(peer+0x1C6),half(peer2+0x1C6),half(peer2+0x1C8),second[0x26E],be32(a+0x418),
+                    be32(first+0x41C),be32(second+0x41C),half(actor+0x774),half(object_cell+0x1C),
+                    double(visit_z),double(pair_z));
     }
     void type0_launch(const Type0Pilot& pilot,const HitBlock& block,const HitBlock* body=nullptr,unsigned distance=0){
         // Reviewed literal supplied directly to the original factory.
@@ -967,6 +1048,7 @@ public:
 }
 
 int main(int argc,char** argv){
+    const bool rifle_next=argc==4&&std::strcmp(argv[3],"--rifle-next-receiver")==0;
     const bool worm=argc==4&&std::strcmp(argv[3],"--worm-contact")==0;
     const bool type0_contact=argc==4&&std::strcmp(argv[3],"--type0-contact")==0;
     const bool type0=argc==4&&std::strcmp(argv[3],"--type0-flight")==0;
@@ -975,9 +1057,9 @@ int main(int argc,char** argv){
     const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!worm&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&
+    if(argc!=3&&!worm&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!rifle_next&&
        !(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--rifle-next-receiver|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     if(worm){
@@ -1021,12 +1103,12 @@ int main(int argc,char** argv){
         }
         return 0;
     }
-    if(rifle_bucket||rifle_contact||rifle_life){
+    if(rifle_bucket||rifle_contact||rifle_life||rifle_next){
         HitBlock block{};
         HitBlock receiver{};
         ActorSpec credit_spec{},defender_spec{};
         const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
-        if(!read(block)||((rifle_contact||rifle_life)&&(!read(receiver)||!read(credit_spec)||!read(defender_spec)))||std::fgetc(stdin)!=EOF)
+        if(!read(block)||((rifle_contact||rifle_life||rifle_next)&&(!read(receiver)||!read(credit_spec)||!read(defender_spec)))||std::fgetc(stdin)!=EOF)
             fail("rifle hit-block inlet extent");
         const auto release=[](Check& c){
             c.install(0x800C91BC,0x0600,red,0x800C94D4);
@@ -1037,7 +1119,16 @@ int main(int argc,char** argv){
             put16(c.a+0x94,0x0600); // Declared ordinary owner model mirror, copied at allocation.
             c.machine_red_release(2,true,true,true);
         };
-        if(rifle_life){
+        if(rifle_next){
+            struct Case {unsigned distance;bool duplicate;};
+            for(const auto test:{Case{256,false},Case{0,true},Case{0,false}}){
+                Check c(mod,original);release(c);
+                const RifleContact contact{receiver,credit_spec,defender_spec,0};
+                c.machine_red_bucket(block,true,true,false,&contact);
+                c.rifle_outcome(contact);
+                c.rifle_next_receiver(receiver,test.distance,test.duplicate);
+            }
+        }else if(rifle_life){
             for(const auto scenario:{RifleLife::expiry,RifleLife::after_hit,RifleLife::stop_flag,
                                      RifleLife::no_shape,RifleLife::stage_exit}){
                 Check c(mod,original);release(c);

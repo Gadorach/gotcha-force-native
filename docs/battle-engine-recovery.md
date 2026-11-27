@@ -295,7 +295,11 @@ The [original Machine Red continuation](retail-code-atlas.md#machine-red-rifle-c
 also distinguishes contact from retirement. Its accepted `0x10` hit
 flag leaves the rifle registered on the next isolated visit; expiry
 removes the shape before returning the carrier and descriptor. This
-does not establish a second hit or change native shot consumption.
+does not by itself establish a second hit. The
+[two-receiver replay](retail-code-atlas.md#machine-red-one-carrier-two-receivers)
+now verifies a fresh second recipient on the next carrier visit
+while the first recipient's token blocks repeat damage. Native shot
+consumption is unchanged.
 The [ordinary type-0 contact comparison](retail-code-atlas.md#type-0-contact-hp-and-retirement)
 observed the opposite continuation for keys 12, 45 and 125: the
 original hit generated `0x10`, and the next update stopped flight
