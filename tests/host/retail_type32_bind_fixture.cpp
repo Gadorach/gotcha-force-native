@@ -38,6 +38,11 @@ enum class ContactCase {clear_hit,clear_miss,wall_hit,wall_miss};
 struct Contact {
     ContactCase which;unsigned owner_hp;const Block& hit;const ActorSpec& owner;const ActorSpec& target;
 };
+struct Stream {unsigned scenario,children,shapes;const Contact& receiver;};
+constexpr unsigned max_children=4;
+constexpr std::array<unsigned,2> stream_pools[]={{1,1},{3,3},{4,1},{4,2},{4,3}};
+constexpr u32 child_cell(unsigned i){return segment+0x400*i;}
+constexpr u32 shape_cell(unsigned i){return shape+0x200*i;}
 
 class Check {
     const Module& mod;
@@ -53,20 +58,31 @@ class Check {
     void place(u32 va,const Point& point){
         for(unsigned i=0;i<point.size();++i)put_float(at(va+4*i),point[i]);
     }
-    void pools(bool spare,bool shape_free,unsigned count=4){
-        if(count>6)fail("type-32 descriptor extent");
+    void shape_pool(unsigned count){
+        if(count>3)fail("type-32 shape extent");
+        put16(at(free_count+8),u16(count));
+        put32(at(free_head+16),count?shape:0);put32(at(free_tail+16),count?shape_cell(count-1):0);
+        for(unsigned i=0;i<count;++i){
+            const auto cell=shape_cell(i);
+            at(cell)[2]=4;put32(at(cell+4),i+1<count?shape_cell(i+1):0);
+        }
+    }
+    void pools(unsigned children,unsigned shapes,unsigned count=4){
+        if(count>6||children>max_children)fail("type-32 pool extent");
         put32(at(0x80436380),descriptor_row);
         put16(at(descriptor_row+18),u16(count));
         put32(at(descriptor_row+12),descriptors);
         for(unsigned i=0;i<count;++i)put32(at(descriptors+0x80*i),i+1<count?descriptors+0x80*(i+1):0);
         put32(at(free_head+12),carrier);
-        put32(at(free_tail+12),spare?segment:carrier);
-        put16(at(free_count+6),spare?2:1);
-        at(carrier)[2]=3;at(segment)[2]=3;
-        put32(at(carrier+4),spare?segment:0);
-        put16(at(free_count+8),unsigned(shape_free));
-        put32(at(free_head+16),shape_free?shape:0);put32(at(free_tail+16),shape_free?shape:0);
-        if(shape_free)at(shape)[2]=4;
+        put32(at(free_tail+12),children?child_cell(children-1):carrier);
+        put16(at(free_count+6),u16(1+children));
+        at(carrier)[2]=3;
+        put32(at(carrier+4),children?segment:0);
+        for(unsigned i=0;i<children;++i){
+            const auto cell=child_cell(i);
+            at(cell)[2]=3;put32(at(cell+4),i+1<children?child_cell(i+1):0);
+        }
+        shape_pool(shapes);
     }
     void terrain(){
         constexpr u32 grid=stage+0x100,refs=stage+0x200,side=16,empty=refs+4*side*side;
@@ -92,6 +108,102 @@ class Check {
         for(u32 entry:{0x8008A28Cu,0x80089AECu}){
             CPUState pass{};
             mod.run(pass,ram,entry,1024);
+        }
+    }
+    void seat_inlet(){
+        put32(at(0x803C4E84),actor);
+        for(unsigned i=1;i<6;++i)put32(at(0x803C4E84+4*i),0x8101A000);
+    }
+    void stream(SharedPilot pilot,const Stream& inlet){
+        const Point center{100,200.f+pilot.offset[1],1000.f};
+        seat_inlet();
+        const auto& body_inlet=inlet.receiver;
+        contact_replay::bind_sasuke(mod,ram,center,body_inlet.hit,body_inlet.owner,body_inlet.target,body_inlet.owner_hp);
+        shape_pool(inlet.shapes);
+        unsigned damage_total=0,landed=0,last_token=0;
+        for(unsigned n=1;n<=7;++n){
+            std::array<unsigned,max_children> previous{};
+            for(unsigned i=0;i<inlet.children;++i){
+                const auto* cell=at(child_cell(i));
+                if(cell[0])previous[i]=unsigned(cell[0x18])+1;
+            }
+            if(n==7)at(actor)[0x6F7]=0;
+            const auto free_before=half(free_count+6);
+            CPUState bucket{};bucket.gpr[3]=8;
+            CallObservation emit{segment_factory};
+            mod.run_observed(bucket,ram,0x80089A94,emit,4096);
+            if(emit.count!=unsigned(n<7)||(emit.count&&(emit.caller!=0x800E20C0||emit.arguments[0]!=carrier||
+               emit.arguments[1]!=carrier+0x38||emit.arguments[2]!=carrier+0x9C||emit.arguments[3]!=pilot.group))||
+               !at(carrier)[0]||at(carrier)[0x18]!=(n<=6?1:2)||half(descriptor_row+18)||half(actor+0x774)!=5)
+                fail("type-32 stream owner visit or request mismatch");
+            unsigned created=0,bound=0,live=0;
+            u32 sweep=0;
+            for(unsigned i=0;i<inlet.children;++i){
+                const auto cell=child_cell(i);
+                const auto* child=at(cell);
+                if(!child[0])continue;
+                ++live;
+                if(child[0x10]!=11||child[0x11]!=pilot.group||word(cell+0x8C)!=carrier||word(cell+0x90)!=actor||
+                   word(cell+0x144)!=carrier+0x38||word(cell+0x148)!=carrier+0x9C)
+                    fail("type-32 stream child lost ownership");
+                const auto phase=child[0x18];
+                if(!previous[i]){
+                    ++created;
+                    if(phase!=1&&phase!=2)fail("type-32 new stream child was not visited in the same bucket");
+                    bound+=unsigned(phase==1);
+                }else if(previous[i]==2){
+                    if(sweep||phase!=2||get(cell+0x20)!=get(carrier+0x9C))
+                        fail("type-32 stream did not refresh exactly one pending far endpoint");
+                    sweep=cell;
+                }
+                if(word(cell+0x100)==segment_transform){
+                    CPUState transform{};transform.gpr[3]=cell;
+                    mod.run(transform,ram,segment_transform);
+                }
+            }
+            if(created!=unsigned(n<7&&free_before)||live+half(free_count+6)!=inlet.children)
+                fail("type-32 stream allocated out of order or lost a carrier cell");
+            for(u32 entry:{0x8008A28Cu,0x80089AECu}){
+                CPUState pass{};mod.run(pass,ram,entry,1024);
+            }
+            const auto registered=half(attack_count);
+            if(registered!=bound+unsigned(bool(sweep))||half(receiver_count)!=1||word(receiver_registry)!=body||
+               half(free_count+8)+registered!=inlet.shapes)
+                fail("type-32 stream shape publication or body registry mismatch");
+            bool observed_sweep=false;
+            for(unsigned i=0;i<registered;++i){
+                const auto registered_shape=word(attack_registry+4*i);
+                const auto cell=word(registered_shape+0x20);
+                const bool far=cell==sweep;
+                if(word(registered_shape+0x24)!=actor||word(registered_shape+0x2C)!=pilot.table||
+                   (registered==2&&far!=(i==1))||
+                   (far&&(get(registered_shape+0x3C)[2]>=1000.f||get(registered_shape+0x30)[2]<=1000.f))||
+                   (!far&&get(registered_shape+0x64)[2]>=1000.f))
+                    fail("type-32 stream published wrong geometry or credit");
+                observed_sweep|=far;
+            }
+            if(observed_sweep!=bool(sweep))fail("type-32 stream registry lost the swept segment");
+            const auto record=pilot.table+24*pilot.index;
+            const unsigned amount=contact_replay::pair_hp(mod,ram,sweep,record,bool(sweep));
+            unsigned token=0;
+            if(sweep){
+                ++landed;
+                token=half(sweep+0x26C);
+                if(!amount||token<=last_token||word(receiver+0x290)!=sweep||word(sweep+0x290)!=receiver||
+                   half(receiver+0x20C+2*(landed-1))!=token||at(sweep)[0x1D9]!=16||at(carrier)[0x1D9])
+                    fail("type-32 stream did not credit a fresh segment token");
+                if(half(receiver+0x1C8)!=180-damage_total)
+                    fail("type-32 stream did not retain pre-hit HP");
+                last_token=token;
+                contact_replay::pair_hp(mod,ram,sweep,record,false);
+            }
+            damage_total+=amount;
+            if(half(receiver+0x1C6)!=180-damage_total||half(actor+0x1C6)!=body_inlet.owner_hp||word(actor+0x418)!=damage_total||
+               word(receiver+0x41C)!=damage_total||at(receiver)[0x26E]!=landed)
+                fail("type-32 stream changed the wrong HP, history or credit");
+            std::printf("type32-stream: %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                        pilot.model,inlet.scenario,n,emit.count,created,bound,registered,token,amount,
+                        half(receiver+0x1C6),half(free_count+6),half(free_count+8),at(carrier)[0x18]);
         }
     }
     void contact_stage(bool wall){
@@ -269,11 +381,11 @@ public:
                     unsigned(scratch_free),opening.count,unsigned(parent_bound),requests,unsigned(child_created),
                     unsigned(child_bound),unsigned(endpoint_refresh),unsigned(admitted));
     }
-    void shared(SharedPilot pilot,const Block& block,AimCase which,const Contact* contact=nullptr){
+    void shared(SharedPilot pilot,const Block& block,AimCase which,const Contact* contact=nullptr,const Stream* cadence=nullptr){
         constexpr u32 original_target=0x8101C000,replacement_target=0x8101E000;
         const bool has_target=which==AimCase::moving_copy||which==AimCase::outside_gate,half_rate=which==AimCase::half_rate;
         const float rate=half_rate?0.5f:1.f;
-        pools(true,true,6);
+        pools(cadence?cadence->children:1,cadence?0:1,6);
         auto* owner=at(actor);
         owner[0]=1;owner[0x18]=1;owner[0x6F7]=2;
         put16(owner+0x3E8,pilot.model);put16(owner+0x94,pilot.model);put16(owner+0x774,5);
@@ -284,8 +396,7 @@ public:
         std::memcpy(at(hit_block),block.data(),block.size());
         if(contact){
             contact_stage(contact->which==ContactCase::wall_hit||contact->which==ContactCase::wall_miss);
-            put32(at(0x803C4E84),actor);
-            for(unsigned i=1;i<6;++i)put32(at(0x803C4E84+4*i),0x8101A000);
+            seat_inlet();
         }
         auto* matrix=owner+0x8D4+48*pilot.socket;
         for(unsigned i=0;i<3;++i)put_float(matrix+20*i,1.f);
@@ -314,13 +425,17 @@ public:
         if(at(carrier)[0x18]!=1||at(carrier)[0x89]!=pilot.socket||half(carrier+0x14C)!=pilot.group||
            get(carrier+0x64)!=pilot.offset||scratch_request.count!=unsigned(needs_scratch)||
            (needs_scratch&&(scratch_request.caller!=0x800E1C40||scratch_request.arguments[0]!=400))||
-           word(carrier+0xDC)||word(active_head+49*4)||half(free_count+8)!=1){
+           word(carrier+0xDC)||word(active_head+49*4)||half(free_count+8)!=unsigned(!cadence)){
             const auto p=get(carrier+0x64);
             std::fprintf(stderr,"type-32 init model=%04X phase=%u socket=%u group=%u scratch=%u/%08X/%u ptr=%08X shape=%08X free=%u offset=%g/%g/%g\n",
                          pilot.model,at(carrier)[0x18],at(carrier)[0x89],half(carrier+0x14C),scratch_request.count,
                          scratch_request.caller,scratch_request.arguments[0],word(carrier+0xDC),word(active_head+49*4),
                          half(free_count+8),double(p[0]),double(p[1]),double(p[2]));
             fail("type-32 model-relative initializer or empty scratch handling mismatch");
+        }
+        if(cadence){
+            stream(pilot,*cadence);
+            return;
         }
         const auto emission_visits=half_rate?3u:2u;
         unsigned requests=0;
@@ -389,14 +504,16 @@ public:
 int main(int argc,char** argv){
     const bool shared=argc==4&&!std::strcmp(argv[3],"--shared");
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
-    if(argc!=3&&!shared&&!contact)fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact]");
+    const bool stream=argc==4&&!std::strcmp(argv[3],"--stream");
+    if(argc!=3&&!shared&&!contact&&!stream)
+        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(shared||contact){
+    if(shared||contact||stream){
         std::array<Block,std::size(shared_pilots)> hits{};
         for(auto& hit:hits)
             if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size())fail("type-32 shared hit block extent");
-        if(contact){
+        if(contact||stream){
             Block body_hit{};
             std::array<ActorSpec,std::size(shared_pilots)> owners{};
             ActorSpec target{};
@@ -406,6 +523,17 @@ int main(int argc,char** argv){
             if(std::fread(target.data(),1,target.size(),stdin)!=target.size()||std::getc(stdin)!=EOF)
                 fail("type-32 receiver spec extent");
             constexpr unsigned hp[]={300,500,250,200};
+            if(stream){
+                for(unsigned i=0;i<hits.size();++i)
+                    for(unsigned scenario=0;scenario<std::size(stream_pools);++scenario){
+                        Check test(mod,original);
+                        const Contact body{ContactCase::clear_hit,hp[i],body_hit,owners[i],target};
+                        const auto [children,shapes]=stream_pools[scenario];
+                        const Stream inlet{scenario,children,shapes,body};
+                        test.shared(shared_pilots[i],hits[i],AimCase::none,nullptr,&inlet);
+                    }
+                return 0;
+            }
             for(unsigned i=0;i<hits.size();++i)
                 for(auto which:{ContactCase::clear_hit,ContactCase::clear_miss,ContactCase::wall_hit,ContactCase::wall_miss}){
                     Check test(mod,original);

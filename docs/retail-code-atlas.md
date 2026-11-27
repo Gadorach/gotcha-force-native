@@ -1095,6 +1095,50 @@ python3 -m tools.analyze.retail_type32_contact \
   /tmp/opencode/gf-type32-contact.json
 ```
 
+### Type-11 segment stream under pool pressure
+
+The [stream replay](api-map/gg4e08-type32-stream.json) runs the
+original actor-relative bucket for the carrier and its attached
+type-11 children. The producer gate is open for six unit-clock
+visits and closes before visit **7**. The stationary body at
+`z=1000` is beyond each opening sphere but on the tested sweeps.
+The body occupies its own slot, separate from the attacker
+shape capacity in the table.
+
+| Spare segment cells | Attacker shape cells | Visits that hit |
+| ---: | ---: | --- |
+| 1 | 1 | 2, 6 |
+| 3 | 3 | 2, 3, 4, 6, 7 |
+| 4 | 1 | 2, 5 |
+| 4 | 2 | 2, 3, 5, 6 |
+| 4 | 3 | 2, 3, 4, 5, 6, 7 |
+
+New segments allocate and attempt their first bind before older
+segments return their slots that visit. With three segment cells,
+visit 4 refuses allocation even though a cell frees later that
+visit. With two shape cells, visit 3 allocates a segment but
+refuses its bind before the old shape returns. Neither failure
+becomes a retry.
+
+Where both a near sphere and a sweep register, the new near
+sphere appears first. Only the sweep reaches this receiver.
+Fresh tokens land on distinct visits; replaying each token does
+not write HP twice. Closing the parent gate stops new requests
+but does not cancel a segment already in flight: the ample-pool
+case lands token **6** on visit **7**.
+
+All 20 cases (140 traced visits) matched across O0, O1, and O2.
+For the four tested pilots, per-hit loss still matches the contact
+replay. This does not qualify re-hit cadence with live recipient
+updates, whole-move damage, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_type32_stream \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type32-stream.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
