@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from tools.analyze import retail_projectile_continuation as continuation
+from tools.analyze import retail_projectile_speed_ramp as ramp
 from tools.extract.retail_borg_roster import convert
 
 
@@ -25,14 +26,16 @@ def branch(site, target):
 class Source:
     sha256 = continuation.SOURCE_SHA256
 
-    def __init__(self, factory=0x800C3BE0):
+    def __init__(self, factory=0x800C3BE0, speed=(80, 0.5, 160)):
         self.factory = factory
+        self.speed = speed
 
     def read(self, at, size, kind):
         release, debit = continuation.RELEASE_SITE, continuation.DEBIT_SITE
         spans = {
             (release-4, 8, "text"): struct.pack(">2I", 0x38800015, branch(release, self.factory)),
             (debit, 4, "text"): struct.pack(">I", branch(debit, 0x8006DBE0)),
+            (ramp.ROW+44, 12, "data"): struct.pack(">3f", *self.speed),
         }
         return spans[at, size, kind]
 
@@ -93,3 +96,51 @@ class ProjectileContinuationBindingTest(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 convert(None, None, None, folder, projectile_continuation_test=True)
             self.assertEqual(fake.read_text(), "{}")
+
+    def test_speed_binding_is_independent_and_scales_the_authored_speed(self):
+        evidence = ramp.qualify(Source())
+        row = b"projectile-speed-ramp=shot|0.2|64\n"
+        for with_contact_rule in (False, True):
+            receipt = deepcopy(self.receipt)
+            gameplay = self.bind(receipt=receipt) if with_contact_rule else GAMEPLAY
+            result = ramp.bind(continuation.MODEL, continuation.MEMBER_SHA256, gameplay, receipt, evidence)
+            self.assertEqual(result, gameplay + row)
+            proof = receipt["projectile_speed_ramp_test"]
+            self.assertEqual(proof["native_speed"], {"initial": 32, "gain": 0.2, "cap": 64})
+            self.assertEqual(proof["authored_ratio_scale"], 0.4)
+            self.assertEqual(proof["source_evidence_sha256"], ramp.EVIDENCE_SHA256)
+            self.assertFalse(proof["live_clock_converted"])
+            self.assertFalse(proof["retail_behavior_verified"])
+            self.assertEqual("projectile_continuation_test" in receipt, with_contact_rule)
+        untouched = deepcopy(self.receipt)
+        self.assertEqual(ramp.bind(0x0615, continuation.MEMBER_SHA256, GAMEPLAY, self.receipt, evidence), GAMEPLAY)
+        self.assertEqual(self.receipt, untouched)
+        alternate_speed = GAMEPLAY.replace(b"|32|", b"|24|")
+        self.assertEqual(
+            ramp.bind(continuation.MODEL, continuation.MEMBER_SHA256, alternate_speed, deepcopy(self.receipt), evidence),
+            alternate_speed + b"projectile-speed-ramp=shot|0.15|48\n",
+        )
+
+    def test_speed_binding_refusals_do_not_emit_partial_rows(self):
+        evidence = ramp.qualify(Source())
+        for rows in (
+            GAMEPLAY + b"projectile-speed-ramp=shot|1|64\n",
+            GAMEPLAY.replace(b"|32|", b"|71|"),
+            GAMEPLAY.replace(b"|32|", b"|NaN|"),
+            GAMEPLAY.replace(b"|32|", b"|0|"),
+            GAMEPLAY.replace(b"|32|0|0|", b"|32|2|0|"),
+            GAMEPLAY.replace(b"ignore-floor", b"land"),
+        ):
+            receipt = deepcopy(self.receipt)
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                ramp.bind(continuation.MODEL, continuation.MEMBER_SHA256, rows, receipt, evidence)
+            self.assertEqual(receipt, self.receipt)
+        with self.assertRaises(ValueError):
+            ramp.qualify(Source(speed=(80, 1, 160)))
+        with self.assertRaises(ValueError):
+            ramp.bind(continuation.MODEL, "00"*32, GAMEPLAY, self.receipt, evidence)
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "new"
+            with self.assertRaises(ValueError, msg="speed opt-in must require a basic-shot test"):
+                convert(None, None, None, folder, projectile_speed_ramp_test=True)
+            self.assertFalse(folder.exists())

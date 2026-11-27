@@ -1182,6 +1182,31 @@ inputs. No default gameplay or retail admission changes. In the
 the same paid shot hits both stationary Workshop receivers once
 on separate updates; the default preparation hits only the first.
 
+#### Machine Red projectile speed ramp test
+
+Add `--projectile-speed-ramp-test` to a fresh `--basic-shot-test`
+extraction to give the same exact normal key-21 shot a speed
+ramp. The extractor pins the paid release, normal member,
+and the [162-visit source speed receipt](api-map/gg4e08-rifle-speed.json).
+No other carrier key inherits the result.
+
+The existing authored launch speed stays **32**. Applying the
+ratio `32 / 80` to the source gain and cap emits
+`projectile-speed-ramp=shot|0.2|64`. The gain is per native
+update; this is authored scaling, not a source-unit or frame
+conversion. The authored lifetime remains 70 updates, so the
+shot need not reach its cap before retirement.
+
+The ramp and `--projectile-continuation-test` are independent.
+Use the ramp alone to keep first-contact retirement, or opt
+into both to preserve one hit per recipient. The existing
+pose, debit, and damage inputs are unchanged. The generated
+profile smoke accepts `--ramp` and `--combined` extraction roots
+to check both against their constant-speed counterparts. In its
+declared Workshop placement, the first hit moves from tick 26
+to 25, and with continuation the second moves from 29 to 28.
+Those are fixture timings, not universal or original hit frames.
+
 ### Try the opt-in close-B melee Battle Test
 
 Add `--basic-melee-test --source-pace --role-clips --action-clips` to the

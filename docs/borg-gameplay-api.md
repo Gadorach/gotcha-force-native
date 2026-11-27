@@ -1046,8 +1046,11 @@ Gain must be `0.01..20`, and the cap must exceed launch speed
 without exceeding 140. Guided, sustained, landing, gravity, and
 explicit rise combinations are refused. The existing default is
 unchanged. The [original rifle replay](retail-code-atlas.md#type-2-carriers-across-the-roster)
-informs the order, not the authored numbers. No retail-derived
-profile selects this option yet.
+informs the order, not the authored units or clock. The separate
+[Machine Red Workshop ramp test](retail-roster-extraction.md#machine-red-projectile-speed-ramp-test)
+is the only retail-derived opt-in. It preserves the authored
+launch speed and scales the verified proportions rather than
+replacing the launch or lifetime.
 
 ### Blast triggers and recipients
 

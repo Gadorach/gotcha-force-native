@@ -487,7 +487,10 @@ before writing the cap 160, and visits 161–162 move 160. O0, O1
 and O2 agree. These are cardinal source visits, not a conversion
 to native units or a live battle clock. The native
 [speed ramp](borg-gameplay-api.md#travelling-projectile-speed-ramp)
-expresses the order without copying these numbers into a package.
+expresses the order without copying raw source speeds into a
+package. The separate
+[authored key-21 test](retail-roster-extraction.md#machine-red-projectile-speed-ramp-test)
+keeps native launch speed 32 and scales the proportions by 0.4.
 
 ```sh
 python3 -m tools.analyze.retail_type2_roster \
