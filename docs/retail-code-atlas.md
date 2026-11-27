@@ -935,6 +935,46 @@ python3 -m tools.analyze.retail_type89_followup \
   /tmp/opencode/gf-type89-followup.json
 ```
 
+### Type-32 roster census: carrier and segment ownership
+
+The [type-32 census](api-map/gg4e08-type32-roster.json) resolves the
+selector source for all **24 direct calls** to three factories:
+
+| Factory | Update | Bounded rows | Collision path in reviewed code |
+| --- | --- | ---: | --- |
+| `800E19A8` | `800E1AB4` | 20 × 32 bytes | Model-relative endpoints; timed type-11 child request |
+| `801DEB68` | `801DEC90` | 10 × 40 bytes | Borrowed endpoints; carrier bind or timed type-11 child request |
+| `80165184` | `8016528C` | 1 × 24 bytes | Separate class-2, three-part route; collision unqualified |
+
+Twenty-two call sites use literal keys and two use model guards.
+The keys are local to each factory. Five rows in the model-relative
+table have no resolved direct call source. Eight call sites join to
+13 static action candidates on 12 normal Borgs; 16 sites have no
+qualified installed action join.
+
+For the borrowed-endpoint family, a zero mode byte at row `+0x24`
+selects the **carrier's opening bind**. A positive byte instead
+allows the timed type-11 request. The signed byte at row `+0x0E`
+selects the group in the branch taken. Flying Saucer's normal
+X/key 8 is the **carrier-bind** arm, not the periodic segment
+arm. Death Head's X/key 16 uses the separate model-relative
+family and requests a type-11 child. Both use group selector 1,
+but neither the credited hit queue nor the collision owner is
+interchangeable.
+
+Type-11 factory `80139A6C` retains both endpoint addresses and
+the parent and credited owner separately. Its opening bind uses
+the signed child key as the group selector. The census records the
+normal source queues without inferring HP, terrain occlusion,
+action timing, or native admission.
+
+```sh
+python3 -m tools.analyze.retail_type32_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type32-roster.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

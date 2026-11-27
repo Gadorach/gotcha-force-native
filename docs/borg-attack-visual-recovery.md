@@ -598,18 +598,19 @@ ground-crossing laser with a shockwave where it hits and Death Head's X
 as a diagonally downward beam. It does not establish sweep tracking,
 explosion spacing, or damage eligibility for either.
 
-The bounded original X checks identify different keys on the shared
-type-32 route: **Flying Saucer `0D03/0` key 8**, **Death Head `0505/0`
+The bounded original X checks identify two factories for the same
+type: **Flying Saucer `0D03/0` key 8**, **Death Head `0505/0`
 key 16**. The first has distinct borrowed actor state and an observed
 scratch-refusal path. The second gates the paid request on a numeric
 accumulator exceeding **8192** after adding **682** in each tested
 callback. Static readback now also distinguishes the update routes:
 Flying Saucer's factory installs `801DEC90`, whereas Death Head uses
-the shared `800E1AB4` dispatch. In their checked active code paths both
-can request `80139A6C`, but Flying Saucer copies endpoints from its
-scratch path and Death Head's shared path transforms model-relative
-endpoints. That service request does not by itself identify terrain
-hits or explosions.
+`800E1AB4`. The [type-32 census](retail-code-atlas.md#type-32-roster-census-carrier-and-segment-ownership)
+shows that the borrowed-endpoint update contains a segment request but
+the normal Saucer row does not take it: key 8 binds group 1 on the
+carrier. Death Head's path transforms model-relative endpoints and
+can request `80139A6C`. That request does not identify terrain hits
+or explosions.
 
 **Eight source callback cases** verified what the shared request
 does with supplied endpoints: the allocator creates type **11**,

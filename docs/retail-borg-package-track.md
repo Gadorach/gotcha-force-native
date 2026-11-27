@@ -1008,7 +1008,7 @@ not admit a movement policy: do not reuse Blue Striker's flight for
 the Saucer, Wing/Quick's glide for Death Head, or Beam Satellite's
 steering for the Emperor.
 
-### Two beam segment producers, not one authored sweep
+### Two beam collision paths, not one authored sweep
 
 The [bounded X source checks](borg-attack-visual-recovery.md#swept-beams-flying-saucer-and-death-head)
 separate type-32/key **8** (Saucer) from key **16** (Death Head).
@@ -1017,14 +1017,12 @@ refusal path. Death Head's paid request is guarded by a source
 accumulator exceeding **8192**, adding **682 per checked callback**;
 this is not a portable action frame or a verified sustained hit rate.
 
-Static follow-through to `801DF2B0` shows Saucer's phase-1 branch
-passing scratch endpoint blocks `+0x30` and `+0x3c`, after positive
-eligibility and a nonnegative selector. The relay clock decrements
-and reloads an operand of 1 on its accepted branch.
-`800E20C0` instead passes Death Head's two transformed endpoint
-blocks after a rate-scaled callback clock, also using a reset operand
-of 1. Those raw operands do not prove once-per-native-tick damage.
-Both request `80139A6C`; neither request alone proves an accepted
+The [type-32 census](retail-code-atlas.md#type-32-roster-census-carrier-and-segment-ownership)
+separates the borrowed-endpoint family's positive-mode segment path at
+`801DF2B0` from Saucer key 8's zero-mode branch, which binds group 1
+on the carrier itself. Death Head's model-relative path at `800E20C0`
+requests a type-11 child with two transformed endpoint addresses
+after a rate-scaled clock. That request does not prove an accepted
 terrain crossing, a visual explosion, or a damaging blast.
 
 **API gap:** independently qualified endpoint generation and
