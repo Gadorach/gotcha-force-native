@@ -786,6 +786,41 @@ python3 -m tools.analyze.retail_type89_roster \
   /tmp/opencode/gf-type89-roster.json
 ```
 
+### Type-89 indexed B replay: cadence and pool refusal
+
+The [indexed cast replay](api-map/gg4e08-type89-cast.json) runs
+`800B8D6C` for all four model guards with a supplied phase-two
+actor, cursor zero, clock 2.5 and a clock step of 1. The first
+request is on visit **4**, not on visit 3 when the countdown crosses
+zero. Each timed step reloads **10**, so the next request is **11**
+updates later. The negative-pair visit issues no request and
+reaches the original actor-return helper at visit **81** for
+the paired bank and **70** for the single-only bank.
+
+With eight carriers and descriptors, the first paired step
+allocates **9 then 10**. With just one carrier **or** one
+descriptor, it still asks for both but allocates only **9**.
+With either pool empty, no carrier is created. Refusal does not
+delay the next cursor step. If one carrier and one descriptor are
+made available after the refused first step, the next step
+allocates key **3** for the paired bank and key **6** for the
+single-only bank; the failed requests are not retried.
+
+All 24 cases matched across O0, O1, and O2. These are carrier
+requests from an actor update, not input admission, a stock
+debit, or actually scheduled carrier updates. The allocated
+objects stay uninitialized; no shapes, contacts, or damage were
+tested. The replay stops at the actor-return call, not after it.
+
+Compile [`retail_type89_cast_fixture.cpp`](../tests/host/retail_type89_cast_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type89_cast \
+  "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/type89-cast "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type89-cast.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

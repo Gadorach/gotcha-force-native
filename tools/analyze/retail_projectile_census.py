@@ -132,10 +132,9 @@ def candidate_census(image, archive, atlas, selections, origins, family, factory
     return counts, [sites[s] for s in sorted(sites)], candidates
 
 
-def encode(payload):
+def encode(payload, *, expanded=("factory_rows", "call_sites", "candidates")):
     def compact(value):
         return json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
-    expanded = {"factory_rows", "call_sites", "candidates"}
     items = []
     for key, value in sorted(payload.items()):
         text = "[\n" + ",\n".join("    " + compact(row) for row in value) + "\n  ]" if key in expanded else compact(value)
