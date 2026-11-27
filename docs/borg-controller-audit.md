@@ -818,6 +818,13 @@ setup has already been entered. A refused shape can still spend stock;
 zero stock does not retract the already allocated shape during the
 tested follow-up. Neither case establishes entry from a live X press.
 
+The [type-60 replay](retail-code-atlas.md#type-60-casts-zero-damage-and-a-separate-recipient-effect)
+joins Patra's Big Spell release to an original carrier shape and its
+separate type-33 request, alongside three related normal routes.
+Patra's tested contacts remove no HP and request the effect for the
+struck actor on both teams. The effect's scale mutation and lifetime
+remain unverified.
+
 The detached support planners reuse the mode-0 stock proposal and keep
 Patra's release event, caster object and recipient effect separate. Nurse's
 setup, lane-gated shape and ordinary same-team HP write also remain distinct.

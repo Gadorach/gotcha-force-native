@@ -1502,6 +1502,47 @@ python3 -m tools.analyze.retail_nurse_setup \
   /tmp/opencode/alternate-vm "$GF_RECOMP_MODULE" /tmp/opencode/gf-nurse-setup.json
 ```
 
+### Type-60 casts: zero damage and a separate recipient effect
+
+The [type-60 receipt](api-map/gg4e08-type60-contact.json) joins all eight
+indexed direct calls to `8014452C` to two X release leaves in each of two
+normal controller families. The first leaf of each family was executed;
+the second was checked statically. Program `4:0` supplies the indexed
+`(1,1)` event, which the replay declares at the release inlet.
+
+| Normal model | Carrier key | Amount index | Type-33 arguments at contact |
+| --- | ---: | ---: | --- |
+| `0902` | 0 | 5 | `(1,1)` |
+| `0909` | 2 | 6 | `(1,1)` |
+| `0907` | 1 | 5 | `(2,1)` |
+| `090C` | 3 | 6 | `(2,1)` |
+
+The wrong event leaves stock alone. The exact event is consumed even if
+the debit fails. A successful debit is not refunded if the carrier
+cell, its four descriptors, or the later shape cell is unavailable.
+An admitted carrier binds group 6, step 7, at its caster-relative
+socket origin and publishes a radius-50 ordinary attack shape.
+
+The tested ally and opponent overlaps both call the amount calculator
+and reach the HP writer with **zero**. They leave HP and the tested
+damage ledgers unchanged. The type-33 request is separate and names
+the struck actor, not the caster or its stored target. It needs its
+own cell and three descriptors. Even when those resources are refused,
+the retained pair does not request another effect when resources arrive.
+
+All **40 cases** matched across O0/O1/O2. The supplied pose and release
+cue do not qualify live casts, continued flight, complete team eligibility,
+recipient scale mutation, effect lifetime, or native gameplay.
+
+Compile [`retail_type60_fixture.cpp`](../tests/host/retail_type60_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type60_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type60-contact.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
