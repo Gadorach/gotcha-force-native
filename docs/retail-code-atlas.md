@@ -861,6 +861,40 @@ python3 -m tools.analyze.retail_type89_opening \
   /tmp/opencode/gf-type89-opening.json
 ```
 
+### Type-89 swept contact and contact-point area
+
+The [contact replay](api-map/gg4e08-type89-contact.json) leaves one
+attack shape slot at cast time. It tests key 10 for `0503`/`050f`
+and key 3 for `0506`/`0512` against one stationary Sasuke body.
+On bucket visit **32**, the registered attack sweeps between the
+previous and current positions. The axes differ with the declared
+socket pose. The narrow radius is **30**, not the enclosing
+broad-phase radius (about 5,030 in this clear-stage setup).
+
+Using Sasuke's radius-22 body, transverse offsets **30 and 51**
+from the sweep midpoint hit; **52 and 53** missed. This qualifies
+the midpoint comparison, not a general moving-target sweep rule.
+The original HP writer removed **17** HP for `0503`/`0506` and
+**8** for `050f`/`0512`. Re-resolving the same registry refused the
+recorded token without another HP or ledger write.
+
+On visit **33**, actual accepted contact took `8016D30C` and
+allocated area key 16 at the saved point. The point was roughly
+5,000 units from the carrier root along the tested sweep, so this
+was not the alternate root-position branch. Misses made no area
+request. The replay ends before the area initializer; it does not
+establish area damage, simultaneous recipient order, or native
+gameplay. All 16 cases matched across O0, O1, and O2.
+
+Use the same fixture executable as above:
+
+```sh
+python3 -m tools.analyze.retail_type89_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type89-cast "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type89-contact.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
