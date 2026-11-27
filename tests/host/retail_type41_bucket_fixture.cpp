@@ -32,6 +32,13 @@ constexpr AreaCase area_cases[]{
     {409.5f,true,false,false},{410,true,false,false},{22,true,true,false},{22,true,false,true},
 };
 struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;};
+struct ParentCase {float offset;bool incoming,ally,command;};
+constexpr ParentCase parent_cases[]{
+    {30,false,false,false},{42,false,false,false},{43,false,false,false},{30,false,true,false},
+    {0,true,false,false},{171,true,false,false},{30,false,false,true},{0,true,false,true},
+};
+struct ParentProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;};
+constexpr u32 incoming_cell=0x81031800;
 
 class Check {
     const Module& mod;
@@ -188,9 +195,163 @@ class Check {
                     receiver_ledger,parent_retired,shape_retired,area_retired,
                     std::bit_cast<u32>(opening_radius),std::bit_cast<u32>(hit_radius),std::bit_cast<u32>(peak_radius));
     }
+    void parent_contact(Options c,const ParentProbe& probe,unsigned capacity,u32 parent){
+        const auto rule=parent_cases[probe.index];
+        constexpr u32 receiver=contact::receiver,attack_list=0x803C477C,attack_count=0x8043B5A0-21328;
+        const auto real=[&](u32 a){return std::bit_cast<float>(word(a));};
+        const auto contains=[&](u32 list,unsigned count,u32 shape){
+            for(unsigned i=0;i<count;++i)if(word(list+4*i)==shape)return true;
+            return false;
+        };
+        place(parent+0x20,200.f);
+        call(0x80047AA4,parent);
+        if(rule.incoming){
+            constexpr u32 point=0x8103D000,make=0x800FC6A0,init=0x800FC7C0;
+            constexpr u32 grid=stage+0x100,refs=stage+0x200,no_triangles=refs+64*4;
+            for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+            constexpr std::array<u32,6> grid_fields{500,500,8,8,u32(-1000),u32(-1000)};
+            for(unsigned i=0;i<grid_fields.size();++i)put32(at(grid+4*i),grid_fields[i]);
+            put32(at(grid+24),refs);put32(at(no_triangles),0xFFFFFFFF);
+            for(unsigned i=0;i<64;++i)put32(at(refs+4*i),no_triangles);
+            place(point,200.f+rule.offset);
+            put16(at(receiver+0x94),0x000A);
+            put32(at(visual_rows+4*68),empty);
+            CPUState create{};create.gpr[3]=receiver;create.gpr[4]=point;create.gpr[5]=4;
+            mod.run(create,ram,make,4096);
+            if(create.gpr[3]!=incoming_cell||at(incoming_cell+0x10)[0]!=9||at(incoming_cell+0x11)[0]!=4||
+               word(incoming_cell+0x90)!=receiver||word(incoming_cell+0x8C)!=receiver)
+                fail("type-41 incoming test did not construct its separate key-4 projectile");
+            call(init,incoming_cell);call(0x80047AA4,incoming_cell);
+        }
+        rebuild();
+        // Hold the declared root for a second publication: the original
+        // moving sphere caches the previous endpoint on the first visit.
+        rebuild();
+        if(half(attack_count)!=1+unsigned(rule.incoming)||half(contact::receiver_count)!=2||
+           !contains(attack_list,half(attack_count),shapes[0])||
+           !contains(contact::receiver_registry,2,shapes[0])||
+           !contains(contact::receiver_registry,2,contact::body)||
+           real(shapes[0]+0x64)!=200.f||real(shapes[0]+0x68)!=100.f||real(shapes[0]+0x6C)!=300.f||
+           real(shapes[0]+0x7C)!=20.f||half(parent+0x26C)!=1||half(parent+0x1C6)!=1||
+           word(parent+0x290)||at(parent+0x1D9)[0]||at(parent+0x1DA)[0]||at(receiver+0x6CA)[0]||
+           (rule.incoming&&(!contains(attack_list,2,shapes[1])||word(shapes[1]+0x20)!=incoming_cell||
+                            word(shapes[1]+0x24)!=receiver||real(shapes[1]+0x7C)!=150.f||
+                            real(shapes[1]+0x64)!=200.f+rule.offset||half(incoming_cell+0x26C)!=2))){
+            std::fprintf(stderr,"type41 parent roles: %u/%u atk=%u %08X/%08X recv=%u %08X/%08X pos=%g/%g/%g radius=%g token=%u hp=%u flags=%u/%u\n",
+                         c.model,probe.index,half(attack_count),word(attack_list),word(attack_list+4),
+                         half(contact::receiver_count),word(contact::receiver_registry),word(contact::receiver_registry+4),
+                         double(real(shapes[0]+0x64)),double(real(shapes[0]+0x68)),double(real(shapes[0]+0x6C)),
+                         double(real(shapes[0]+0x7C)),half(parent+0x26C),half(parent+0x1C6),at(parent+0x1D9)[0],at(parent+0x1DA)[0]);
+            fail("type-41 parent did not publish both original roles with its initial body HP");
+        }
+        const bool hit=rule.offset<=(rule.incoming?170.f:42.f);
+        const u32 attacker=rule.incoming?incoming_cell:parent,recipient=rule.incoming?parent:receiver;
+        const u32 record=rule.incoming?0x802C4838:0x80336340+24*(c.model==6?9:10);
+        const bool follow_child=hit&&!rule.incoming;
+        const auto original_pair=follow_child?ram:std::vector<u8>{};
+        CPUState pair{};CallObservation amount{contact::amount_entry};
+        const auto cut=mod.run_to_or_return(pair,ram,contact::pair_pass,{contact::hp_write},&amount,4096);
+        if(cut!=(hit?contact::hp_write:0)||amount.count!=unsigned(hit)||
+           (hit&&(amount.caller!=0x8002F108||amount.arguments[0]!=record||amount.arguments[1]!=attacker||
+                 amount.arguments[2]!=recipient||pair.lr!=0x8002F1DC||pair.gpr[3]!=recipient||
+                 half(recipient+0x1C6)!=(rule.incoming?1:180))))
+            fail("type-41 parent contact reached an unrelated amount or HP path");
+        const unsigned requested=hit?pair.gpr[4]:0;
+        if(hit)mod.finish_stopped_leaf(pair,contact::hp_write,164);
+        const auto actor_hp=half(receiver+0x1C6),carrier_hp=half(parent+0x1C6);
+        const auto incoming_latch=at(parent+0x1DA)[0],outgoing_latch=at(parent+0x1D9)[0];
+        const auto ledger=word(actor+0x418),allied=word(actor+0x42C),received=word(receiver+0x41C);
+        const auto token=half(recipient+0x20C);
+        if((hit&&(word(recipient+0x290)!=attacker||word(attacker+0x290)!=recipient||token!=half(attacker+0x26C)))||
+           (!hit&&token)||carrier_hp!=unsigned(!hit||!rule.incoming)||
+           actor_hp!=180-(rule.incoming?0:requested)||half(actor+0x1C6)!=220||half(actor+0x774)!=capacity-1||
+           word(receiver+0x418)||word(parent+0x41C)||
+           (rule.incoming?(ledger||allied||received||outgoing_latch):(incoming_latch||received!=requested)))
+            fail("type-41 parent contact changed the wrong HP, clock or history");
+        if(follow_child){
+            std::memcpy(ram.data(),original_pair.data(),original_pair.size());
+            // The retained branch completes its original post-HP tail.
+            // No fixed-bucket visual cell or playback is offered.
+            call(contact::pair_pass,0);
+            if(half(receiver+0x1C6)!=actor_hp||half(parent+0x1C6)!=carrier_hp||
+               half(receiver+0x20C)!=token||at(parent+0x1D9)[0]!=outgoing_latch||at(receiver+0x6CA)[0]!=1||
+               word(actor+0x418)!=ledger||word(actor+0x42C)!=allied||word(receiver+0x41C)!=received)
+                fail("type-41 completed parent pair did not preserve the observed HP cut");
+        }
+        if(hit){
+            CPUState again{};
+            if(mod.run_to_or_return(again,ram,contact::pair_pass,{contact::hp_write},nullptr,4096))
+                fail("type-41 parent accepted the same contact token twice");
+        }
+        u32 area_site=0;
+        unsigned child_token=0,stock_after_exit=capacity-1,final_stock=capacity-1,child_hp=0,final_hp=actor_hp;
+        unsigned tier=0,clear_tier_amount=0;
+        if(hit){
+            if(rule.command){
+                put32(at(actor+0x5BC),0x400);call(owner_hook);
+                if(at(actor+0x6F7)[0]!=1)fail("type-41 priority test did not arm the exact remote command");
+            }
+            // Visit only the parent's own bucket. The incoming source is
+            // in its credited actor's distinct bucket and is not advanced.
+            const auto child=observe(0x80089A94,9,area);
+            area_site=rule.command?0x800E0AAC:rule.incoming?0x800E0B18:0x800E0AD4;
+            stock_after_exit=half(actor+0x774);
+            if(child.count!=1||child.caller!=area_site||child.arguments[0]!=parent||child.arguments[1]!=parent+0x20||
+               child.arguments[2]!=(c.model==6?19:20)||stock_after_exit!=capacity-1||
+               at(actor+0x6F7)[0]||at(parent+0x18)[0]!=2||!at(blast)[0]||word(blast+0x90)!=actor)
+                fail("type-41 parent overlap went to the wrong terminal area or paid early");
+            call(0x80089554,0);rebuild();
+            child_token=half(blast+0x26C);
+            if(!child_token||child_token==1||(rule.incoming&&child_token==2))
+                fail("type-41 child did not stage an independent token after its parent");
+            check_return(observe(0x80089A94,9,return_stock));
+            final_stock=half(actor+0x774);
+            if(final_stock!=capacity||half(parent+0x1C6)!=carrier_hp||half(receiver+0x1C6)!=actor_hp)
+                fail("type-41 terminal stock return changed the settled contact HP");
+            if(follow_child){
+                call(0x8002CDA4,receiver); // original per-pass reset, not a history clear
+                if(half(receiver+0x20C)!=token||at(receiver+0x26E)[0]!=1||at(receiver+0x1DA)[0])
+                    fail("type-41 child contact did not retain the parent's token");
+                call(0x80089554,0);rebuild();
+                CPUState child_pair{};CallObservation child_amount{contact::amount_entry};
+                mod.run_to(child_pair,ram,contact::pair_pass,{contact::hp_write},&child_amount);
+                if(child_amount.count!=1||child_amount.caller!=0x8002F108||
+                   child_amount.arguments[0]!=0x802C4760+24*(c.model==6?26:27)||
+                   child_amount.arguments[1]!=blast||child_amount.arguments[2]!=receiver||
+                   child_pair.lr!=0x8002F1DC||child_pair.gpr[3]!=receiver||half(receiver+0x1C6)!=actor_hp)
+                    fail("type-41 second hit used the parent's amount or recipient");
+                child_hp=child_pair.gpr[4];
+                tier=at(receiver+0x6CA)[0];
+                auto control=ram;
+                const auto calc=[&](){
+                    CPUState a{};a.gpr[3]=0x802C4760+24*(c.model==6?26:27);a.gpr[4]=blast;a.gpr[5]=receiver;
+                    mod.run(a,control,contact::amount_entry,4096);
+                    return a.gpr[3];
+                };
+                if(tier!=1||calc()!=child_hp)fail("type-41 child damage tier or amount boundary changed");
+                contact::at(control,receiver+0x6CA)[0]=0;
+                clear_tier_amount=calc();
+                mod.finish_stopped_leaf(child_pair,contact::hp_write,164);
+                const auto owner_ledger=rule.ally?actor+0x42C:actor+0x418;
+                final_hp=half(receiver+0x1C6);
+                if(final_hp!=actor_hp-child_hp||half(receiver+0x20C)!=token||half(receiver+0x20E)!=child_token||
+                   at(receiver+0x26E)[0]!=2||half(actor+0x774)!=capacity||word(owner_ledger)!=requested+child_hp||
+                   word(receiver+0x41C)!=requested+child_hp)
+                    fail("type-41 parent and child lost separate history or cumulative ledgers");
+                CPUState duplicate{};
+                if(mod.run_to_or_return(duplicate,ram,contact::pair_pass,{contact::hp_write},nullptr,4096))
+                    fail("type-41 second token repeated its HP write");
+            }
+        }
+        std::printf("type41-parent: %u %u %u %u %u %u %u %u %u %u %u %u %08X %u %u %u %u %u %u %u\n",
+                    c.model,probe.index,requested,carrier_hp,actor_hp,outgoing_latch,incoming_latch,token,ledger,
+                    allied,received,unsigned(hit),area_site,stock_after_exit,final_stock,child_token,child_hp,final_hp,
+                    tier,clear_tier_amount);
+    }
 public:
     Check(const Module& module,std::vector<u8> data,Options c,const contact::ActorSpec& spec,
-          const contact::HitBlock& hit,const Common& bank_data,unsigned index,const AreaProbe* probe=nullptr):mod(module),ram(std::move(data)){
+          const contact::HitBlock& hit,const Common& bank_data,unsigned index,const AreaProbe* probe=nullptr,
+          const ParentProbe* parent_probe=nullptr):mod(module),ram(std::move(data)){
         std::memcpy(at(actor_spec),spec.data(),spec.size());
         put32(at(0x803C4D94),actor_spec);
         put32(at(0x8043B5A0-31852),contact::scene);
@@ -226,19 +387,24 @@ public:
         put32(at(0x80436380),pool);
         put32(at(pool+12),c.descriptor_cells?desc:0);put16(at(pool+18),c.descriptor_cells);
         for(unsigned i=0;i<c.descriptor_cells;++i)put32(at(desc+i*0x80),i+1<c.descriptor_cells?desc+(i+1)*0x80:0);
-        if(probe){
-            const auto rule=area_cases[probe->index];
-            contact::bind_sasuke(mod,ram,{200.f+rule.distance,100.f,300.f},probe->hurt,spec,probe->spec,220);
+        if(probe||parent_probe){
+            const auto body_x=probe?200.f+area_cases[probe->index].distance:
+                parent_cases[parent_probe->index].incoming?800.f:200.f+parent_cases[parent_probe->index].offset;
+            const auto is_ally=probe?area_cases[probe->index].ally:parent_cases[parent_probe->index].ally;
+            const auto& hurt=probe?probe->hurt:parent_probe->hurt;
+            const auto& defender=probe?probe->spec:parent_probe->spec;
+            contact::bind_sasuke(mod,ram,{body_x,100.f,300.f},hurt,spec,defender,220);
             put32(at(actor+0x4AC),actor_spec);
-            at(contact::receiver+0x88)[0]=rule.ally?0:1;
-            put16(at(contact::receiver+0x272),rule.masked?2:0);
+            at(contact::receiver+0x88)[0]=is_ally?0:1;
+            put16(at(contact::receiver+0x272),probe&&area_cases[probe->index].masked?2:0);
         }
         // Rows 8/11 have an area cell; row 9 refuses that cell, row 10
         // offers it with only one spare descriptor.
-        const bool area_cell=probe||index==6||index==7||index==8||index==10||index==11||index>=14;
-        const unsigned bomb_count=c.exit==3&&!probe?2u:1u;
-        set_pool(3,{cell_at(0,c.reverse),c.carrier_cells==1?blast:cell_at(1,c.reverse),blast},
-                 c.carrier_cells+unsigned(area_cell));
+        const bool area_cell=probe||parent_probe||index==6||index==7||index==8||index==10||index==11||index>=14;
+        const unsigned bomb_count=c.exit==3&&!probe&&!parent_probe?2u:1u;
+        if(parent_probe&&parent_cases[parent_probe->index].incoming)set_pool(3,{cell_at(0,false),incoming_cell,blast},3);
+        else set_pool(3,{cell_at(0,c.reverse),c.carrier_cells==1?blast:cell_at(1,c.reverse),blast},
+                      c.carrier_cells+unsigned(area_cell));
         set_pool(4,{shapes[0],shapes[1],extra_shape},c.shape_cells);
         call(0x800055E0,0);
         if(c.exit==5){
@@ -285,6 +451,7 @@ public:
             if(word(shapes[i]+0x20)!=cell_at(i,c.reverse)||word(shapes[i]+0x24)!=actor||
                word(shapes[i]+0x28)!=hit_block+0xAA0+80*step||at(shapes[i]+0x14)[0]!=group)
                 fail("type-41 original shape ownership or selector changed");
+        if(parent_probe){parent_contact(c,*parent_probe,capacity,first);return;}
         unsigned latch=0, area_made=0, area_bound=0, fx_key=0, phase=0, retire_count=0, after_exit=after_pay;
         if(c.exit==4){
             at(actor+0x18)[0]=2;
@@ -360,7 +527,8 @@ public:
 
 int main(int argc,char** argv){
     const bool area_hp=argc==4&&!std::strcmp(argv[3],"--area-hp");
-    if(argc!=3&&!area_hp)fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp] < qualified-payload");
+    const bool parent=argc==4&&!std::strcmp(argv[3],"--parent-contact");
+    if(argc!=3&&!area_hp&&!parent)fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -368,10 +536,17 @@ int main(int argc,char** argv){
     Common bank{};contact::HitBlock hit{};std::array<contact::ActorSpec,2> specs{};
     read(bank);read(hit);
     for(auto& spec:specs)read(spec);
-    if(area_hp){
+    if(area_hp||parent){
         contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
         for(unsigned m=6;m<=7;++m)
-            for(unsigned i=0;i<std::size(area_cases);++i){
+            for(unsigned i=0;i<(parent?(m==6?6u:8u):std::size(area_cases));++i){
+                if(parent){
+                    const ParentProbe probe{i,hurt,defender};
+                    const bool incoming=parent_cases[i].incoming;
+                    const Options opts{u8(m),u8(incoming?3:2),1,u8(incoming?4:3),u8(m==6?2:3),false};
+                    Check(mod,original,opts,specs[m-6],hit,bank,0,nullptr,&probe);
+                    continue;
+                }
                 const AreaProbe probe{i,hurt,defender};
                 const Options opts{u8(m),u8(1+unsigned(area_cases[i].shape)),1,3,u8(m==6?2:3),false};
                 Check(mod,original,opts,specs[m-6],hit,bank,0,&probe);

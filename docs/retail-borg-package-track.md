@@ -1660,6 +1660,11 @@ child shapes can be bound with a spare cell. The
 then checks stationary Sasuke contacts for both children: 17 HP on the
 opposing team and 4 HP on the allied team. No live controller timing
 or native damage binding is qualified.
+The [parent-contact replay](retail-code-atlas.md#type-41-parent-contact-bomb-hp-exit-priority-and-two-hit-tokens)
+checks the bomb's own outgoing hit and incoming destruction. A parent
+hit followed by its child preserves two tokens and the receiver's
+damage tier, so isolated parent and child amounts cannot simply be
+added.
 
 Regenerate with `time-bomber` and `remote-bomber`. Neither package
 admits gameplay or an alternate variant.

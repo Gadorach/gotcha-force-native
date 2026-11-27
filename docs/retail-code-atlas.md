@@ -1835,6 +1835,40 @@ python3 -m tools.analyze.retail_type41_area_hp \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type41-area-hp.json
 ```
 
+#### Type-41 parent contact: bomb HP, exit priority and two hit tokens
+
+The [parent-contact replay](api-map/gg4e08-type41-parent-contact.json)
+holds the initialized bomb at a declared root for two publications.
+Its radius-20 role-3 sphere enters both ordinary lists. The bomb's
+own contact removes **26 HP** from opposing Sasuke and **6 HP**
+from allied Sasuke, under the parent's token. At axis separation 42
+it hits; 43 misses.
+
+A separate type-9/key-4 projectile requests 17 HP from the bomb and
+removes its only **1 HP**. Neither fighter loses HP or gains a damage
+ledger entry. The bomb's outgoing latch stays clear; its zero-HP
+branch requests the area instead. For Remote, an armed command takes
+priority over either the outgoing latch or the zero-HP branch. Stock
+still returns only on the later phase‑2 visit.
+
+After a completed outgoing pair, the child hits the same Sasuke
+under a fresh token. The original per-pass reset preserves the first
+token, and both entries remain in history. The child deals **14 HP**
+to the opponent or **3 HP** to the ally, for totals of **40** and
+**9**. The parent leaves receiver byte `+0x6CA` at tier 1. Clearing
+only that byte in a disposable calculator fork restores the isolated
+child amounts of 17 and 4. The retained run uses the original tier.
+
+All **14 cases** matched across O0/O1/O2. The declared roots,
+isolated parent bucket, and stationary receiver do not qualify live
+input, moving-body collision, full scheduling, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_type41_parent_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type41-parent-contact.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
