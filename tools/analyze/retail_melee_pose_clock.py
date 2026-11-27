@@ -143,12 +143,7 @@ def verify_route(image, archive, reviewed, route):
     }
 
 
-def export(dol, afs, fixture, module, output):
-    output = Path(output)
-    if output.exists() or output.is_symlink():
-        raise FileExistsError("melee clock output already exists")
-    dol, module = (Path(p).resolve(strict=True) for p in (dol, module))
-    image = DolImage(read_bounded(dol, 8 << 20), SOURCE_SHA256)
+def qualified_inputs(image, afs):
     clock.verify_source(image)
     beam.verify_text(image, TEXT)
     beam.link(image, 0x8004C6F0, 0x8008AC80)
@@ -168,6 +163,16 @@ def export(dol, afs, fixture, module, output):
             sources.append(source)
         if stamp != archive_stamp(stream):
             raise ValueError("melee clock source AFS changed during extraction")
+    return payload, sources, scoped
+
+
+def export(dol, afs, fixture, module, output):
+    output = Path(output)
+    if output.exists() or output.is_symlink():
+        raise FileExistsError("melee clock output already exists")
+    dol, module = (Path(p).resolve(strict=True) for p in (dol, module))
+    image = DolImage(read_bounded(dol, 8 << 20), SOURCE_SHA256)
+    payload, sources, scoped = qualified_inputs(image, afs)
     cases = decode(clock.fixture_report(fixture, dol, module, payload=payload))
     data = {
         "kind": "gf-retail-melee-pose-clock", "revision": 1, "source_dol_sha256": SOURCE_SHA256,

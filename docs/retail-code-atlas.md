@@ -1269,6 +1269,45 @@ python3 -m tools.analyze.retail_melee_pose_clock \
   /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-melee-pose-clock.json
 ```
 
+### Contact clock consumers: movement, waits, and clip requests
+
+The [consumer replay](api-map/gg4e08-contact-clock-consumers.json)
+takes the Sasuke receiver from the exact Tau and G-Red hit and
+whiff cases. It runs the original receiver clock and then calls
+four original helpers with declared inputs. The tested hit-stop
+does not freeze these helpers:
+
+| Original helper | Rate read | First clear-timer visit | First slowed visit |
+| --- | --- | ---: | ---: |
+| Planar advance `800676D8` | Primary | 100 units | 3 units |
+| Heading step `80066E40` | Secondary | 15 angle units | 1 angle unit |
+| Finite wait `8004CD24` | Secondary | 0.625 remaining | About 0.97 remaining |
+| Relative-frame request `8004C298` | Secondary | 6.375 | About 6.03 |
+
+The original interpreter installs the indexed one-unit terminal
+wait at `802BD766`. The excluded lane does not spend it; with
+lane zero enabled it completes on visit **3** in the whiffs,
+**6** after Tau's hit, and **10** after G-Red's hit. Normal
+secondary rate is 0.375 here because the fixture declares
+local multipliers of 0.5 and 0.75. An explicit-frame request
+stays at **2.5** in both clock states. Both clip probes stop at
+the original loading call, before sampling a pose.
+
+The wait and clip operands are original indexed probe commands,
+not claims about what Sasuke's controller selects. The atlas
+lists 1,128 direct calls to the wait updater; that census does
+not qualify their scheduling. All 22 observations matched
+across O0, O1, and O2. No moving-body sweep, full actor frame,
+live pose sampling, or native gameplay is qualified.
+
+Use the same melee-pose-clock fixture:
+
+```sh
+python3 -m tools.analyze.retail_contact_clock_consumers \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-clock-consumers.json
+```
+
 ### Contact sound: strict size bands and shared counter bytes
 
 The [sound replay](api-map/gg4e08-contact-sound-replay.json)
