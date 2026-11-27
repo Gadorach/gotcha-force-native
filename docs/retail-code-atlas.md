@@ -975,6 +975,44 @@ python3 -m tools.analyze.retail_type32_roster \
   /tmp/opencode/gf-type32-roster.json
 ```
 
+### Type-32 borrowed endpoints: carrier bind versus segment bind
+
+The [branch replay](api-map/gg4e08-type32-bind.json) compares normal
+Flying Saucer `0d03`/key 8 and `0e02`/key 9 inside factory
+`801DEB68`. In both cases the constructor publishes a carrier
+before requesting 64 bytes of scratch. An empty scratch pool
+returns null from the factory but leaves the published carrier
+in phase 2; it is not a refusal to allocate the carrier.
+
+With a supplied scratch block, key 8 attempts group 1 on the
+carrier itself. If that bind succeeds, the scoped active
+callback clears its attack mask and requests no segment. If the
+shape pool is empty, the initializer takes phase 2.
+
+Key 9 skips the opening carrier bind. From a declared active
+subphase, it requests a type-11 child with both carrier endpoint
+addresses. The child attempts group 1 with the original actor's
+reaction table, independently of the parent. A missing carrier
+blocks creation; a missing shape allows creation but blocks
+binding. A bound child samples the first point during init and
+reads the changed second point on its next update, so that point
+was not snapshotted at allocation.
+
+All seven cases matched across O0, O1, and O2. Successful scratch
+allocation, continuous phase timing, registry insertion, overlap,
+damage, and the separate model-relative factory remain outside this
+replay. No native gameplay changed.
+
+Compile [`retail_type32_bind_fixture.cpp`](../tests/host/retail_type32_bind_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type32_bind \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type32-bind.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
