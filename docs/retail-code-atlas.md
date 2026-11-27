@@ -777,12 +777,45 @@ cuts at the sound request, then runs separate bucket and shape
 passes. It does not establish live frame timing, terrain-triggered
 areas, other owners' area damage, or audio/visual playback. No
 native gameplay changes.
+The replay initializes the area separately after removing the opening
+shape. It does not imply early shape reuse in the original bucket.
 
 ```sh
 python3 -m tools.analyze.retail_bomb_area \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-bomb-area.json
+```
+
+### Ordinary Ninja actor hits: unlink request versus slot return
+
+The [same-pass replay](api-map/gg4e08-bomb-actor-area.json) runs Normal
+Ninja's key 0 and Sasuke's key 3 through a direct hit, then leaves the
+area in the original bucket pass. Both bombs remove 8 HP. Before the
+area tries to bind, the parent has requested unlink, but its attack
+shape is still linked and its slot is still occupied. Only the
+separate class-4 pass returns that slot.
+
+| Spare shape slots when the area binds | Result | Receiver HP after two growth visits |
+| ---: | --- | ---: |
+| 0 | Bind refuses; no cue and no retry after cleanup | 172 |
+| 1 | Area binds; first growth visit removes 17 more HP | 155 |
+
+Actor and floor impacts therefore both need a spare slot at area
+initialization. They differ in when the parent is removed: the
+actor hit unlinks in the impact visit's shape pass; the floor hit
+keeps the shape registered until the following visit. The native
+`impact-area` pool does not model this shared occupancy.
+
+All four cases matched across O0, O1 and O2. No native packages
+or gameplay changed. The fixture uses a declared fixed receiver
+and stops at the sound request rather than playing it.
+
+```sh
+python3 -m tools.analyze.retail_bomb_actor_area \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-actor-area.json
 ```
 
 ### Ordinary Ninja bombs: floor response and same-pass area bind

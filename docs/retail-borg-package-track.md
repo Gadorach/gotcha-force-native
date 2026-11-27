@@ -1163,8 +1163,10 @@ scoped launch prerequisite, not the target solve or live admission.
 The [paid-release floor replay](retail-code-atlas.md#ordinary-ninja-bombs-floor-response-and-same-pass-area-bind)
 now checks real triangle response for keys 0 and 3. The floor branch
 keeps its opening shape registered through the impact visit and
-the same-pass area bind. The actor-contact replay unlinks in the
-impact visit's shape pass, but does not qualify earlier slot reuse.
+the same-pass area bind. The [matching actor-hit replay](retail-code-atlas.md#ordinary-ninja-actor-hits-unlink-request-versus-slot-return)
+marks unlink before the area bind, but the parent still occupies
+its slot until the separate shape pass. Neither branch can spend
+the parent's slot for that area initializer.
 The [floor-contact replay](retail-code-atlas.md#ordinary-ninja-floor-blasts-growth-timing-and-hp)
 also separates direct damage from growth-dependent area damage.
 The [authored `impact-area` rule](borg-gameplay-api.md#static-stage-impacts)

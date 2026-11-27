@@ -1545,8 +1545,9 @@ Existing fixed-radius hazards retain their placement and contact clocks.
 
 This is an authored Battle Test capability, not a retail move binding.
 The projectile and the area do not share a shape pool, and area visuals
-remain separate. This rule does not reproduce retail collision-slot
-ordering, target-dependent launch, or frame scheduling.
+remain separate. This rule does not reproduce
+[retail collision-slot ordering](retail-code-atlas.md#ordinary-ninja-actor-hits-unlink-request-versus-slot-return),
+target-dependent launch, or frame scheduling.
 Try `--impact-area` in the Flight Stick `arena-wall` demo.
 
 `blast-smoke=carrier|radius|ticks|visual` requests a bounded world

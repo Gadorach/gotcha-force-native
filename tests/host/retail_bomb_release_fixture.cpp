@@ -31,7 +31,7 @@ using HitBlock=std::array<u8,7840>;
 using ActorSpec=std::array<u8,432>;
 using CommonCollision=std::array<u8,21504>;
 using Point=std::array<float,3>;
-struct FloorReceiver {
+struct AreaReceiver {
     const HitBlock& block;
     const ActorSpec& attacker;
     const ActorSpec& defender;
@@ -224,12 +224,19 @@ class Check {
         put_float(joint+12,center[0]);
         put_float(joint+28,center[1]+14.f);
         put_float(joint+44,center[2]);
-        if(half(free_count+8))fail("receiver assumes an exhausted class-4 pool");
-        at(body)[2]=4;put32(at(free_head+16),body);put32(at(free_tail+16),body);
-        put16(at(free_count+8),1);
+        // Supply a distinct body cell without taking any declared spare
+        // area cell away. The original bind must pop only this cell.
+        const auto available=half(free_count+8);
+        const auto head=be32(at(free_head+16)),tail=be32(at(free_tail+16));
+        if(available>1||bool(head)!=bool(available)||head!=tail||head==body)
+            fail("unsupported receiver class-4 inlet");
+        at(body)[2]=4;put32(at(body+4),head);put32(at(free_head+16),body);
+        if(!available)put32(at(free_tail+16),body);
+        put16(at(free_count+8),u16(available+1));
         CPUState cpu{};cpu.gpr[3]=receiver;
         mod.run(cpu,ram,0x8008AB30);
-        if(be32(at(active_head+50*4))!=body||be32(at(body+0x28))!=body_block+32+9*80)
+        if(be32(at(active_head+50*4))!=body||be32(at(body+0x28))!=body_block+32+9*80||
+           half(free_count+8)!=available||be32(at(free_head+16))!=head||be32(at(free_tail+16))!=tail)
             fail("bomb fixture did not bind original singleton body");
         class4_passes();
         if(half(receiver_count)!=1||be32(at(receiver_registry))!=body||fp(body+0x7C)!=22.f||
@@ -295,6 +302,16 @@ class Check {
         put32(at(resource_table+4*18),empty_visual);
         put32(at(resource_table+4*23),empty_visual);
     }
+    bool run_same_pass_area_init(u32 child,bool spare){
+        CPUState pass{};pass.gpr[3]=9;
+        CallObservation bind_area{0x8008AE3C};
+        const auto cut=mod.run_to_or_return(pass,ram,visit,{audio},&bind_area);
+        if(bind_area.count!=1||bind_area.caller!=0x800860E0||bind_area.arguments[0]!=actor||
+           bind_area.arguments[1]!=child||bind_area.arguments[2]!=3||
+           cut!=(spare?audio:0)||(cut&&(pass.lr!=0x80086240||pass.gpr[3]!=child||pass.gpr[4]!=12)))
+            fail("same-pass area used the wrong bind or sound request");
+        return cut!=0;
+    }
     void floor_area_contact(u16 model,unsigned impact,bool spare,unsigned offset){
         const u32 obj=cell(0),child=cell(1),shape=shapes+shape_stride;
         // The first growth visit is already complete. Keep the same
@@ -335,18 +352,13 @@ class Check {
                     last_token,duplicates,half(actor+0x784));
     }
     void floor_area_visit(u16 model,unsigned n,bool spare,float crossing_z,const std::vector<u8>& before,
-                          const FloorReceiver* target){
+                          const AreaReceiver* target){
         // Repeat the original owner-list pass from before impact, this
         // time letting the appended child initialize at its real position.
         std::memcpy(ram.data(),before.data(),ram.size());
         const u32 obj=cell(0),child=cell(1),child_shape=shapes+shape_stride;
-        CPUState pass{};pass.gpr[3]=9;
-        CallObservation bind_area{0x8008AE3C};
-        const auto cut=mod.run_to_or_return(pass,ram,visit,{audio},&bind_area);
-        if(bind_area.count!=1||bind_area.caller!=0x800860E0||bind_area.arguments[0]!=actor||
-           bind_area.arguments[1]!=child||bind_area.arguments[2]!=3||
-           cut!=(spare?audio:0)||(cut&&(pass.lr!=0x80086240||pass.gpr[3]!=child||pass.gpr[4]!=12))||
-           at(obj)[0x18]!=2||at(child)[0x18]!=(spare?1:2)||fp(child+0x24)!=25.f||fp(child+0x28)!=crossing_z)
+        const auto cue=run_same_pass_area_init(child,spare);
+        if(at(obj)[0x18]!=2||at(child)[0x18]!=(spare?1:2)||fp(child+0x24)!=25.f||fp(child+0x28)!=crossing_z)
             fail("same-pass floor area initializer disagreed");
         class4_passes();
         if(half(attack_count)!=1||be32(at(attack_registry))!=shapes||be32(at(active_tail+49*4))!=shapes||
@@ -378,7 +390,7 @@ class Check {
             fail("next floor visit rebound a refusal or lost the grown area");
         if(target)floor_area_contact(model,n,spare,target->offset_x);
         else std::printf("bomb-floor-area: %u %u %u %u %u %u %u %u %u\n",
-                         model,unsigned(spare),n,unsigned(cut!=0),unsigned(spare),at(child)[0x18],
+                         model,unsigned(spare),n,unsigned(cue),unsigned(spare),at(child)[0x18],
                          half(attack_count),half(free_count+8),half(actor+0x784));
     }
 public:
@@ -680,8 +692,77 @@ public:
                     double(grown_radius),double(peak_radius),after_growth,duplicate_passes,half(receiver+0x1C6),
                     unlink_visit,retired,half(actor+0x784));
     }
+    void actor_area(u16 model,const HitBlock& block,const CommonCollision& common,const AreaReceiver& target,bool spare){
+        const Case c{model,2,0,2,2,3};
+        first_bind(c,block,spare?2:1,false);
+        receiver_inlet(target.block,target.offset_x,target.attacker,target.defender,target.attacker_hp);
+        area_inlets(common);
+        const auto obj=cell(0),child=cell(1),area_shape=shapes+shape_stride;
+        if(contact_write(obj,0x802D4178,180,true)!=8||at(obj)[0x1D9]!=16||at(obj)[0x1D8]||
+           half(receiver+0x1C6)!=172||half(receiver+0x20C)!=1||at(receiver)[0x26E]!=1)
+            fail("same-pass area did not begin with the original direct bomb hit");
+
+        const auto before=ram;
+        CPUState init{};init.gpr[3]=9;
+        CallObservation factory_call{0x80085E00};
+        mod.run_to(init,ram,visit,{0x8008AE3C},&factory_call);
+        const auto pending=at(obj)[0x1D8];
+        const auto free_at_bind=half(free_count+8);
+        if(factory_call.count!=1||factory_call.caller!=0x8007E284||factory_call.arguments[0]!=obj||
+           factory_call.arguments[1]!=obj+0x20||factory_call.arguments[2]||init.lr!=0x800860E4||
+           init.gpr[3]!=actor||init.gpr[4]!=child||init.gpr[5]!=3||at(obj)[0x18]!=2||pending!=1||
+           free_at_bind!=unsigned(spare)||be32(at(free_head+16))!=(spare?area_shape:0)||
+           be32(at(active_head+49*4))!=shapes||be32(at(shapes+0x20))!=obj||!at(shapes)[0]||
+           be32(at(child+0x8C))!=obj||be32(at(child+0x90))!=actor||at(child)[0x10]!=5||at(child)[0x11])
+            fail("original actor unlink request freed or replaced its shape before the area bind");
+
+        // Rerun the same bucket from its entry without synthesizing a
+        // function result or moving the shape pass ahead of the allocator.
+        std::memcpy(ram.data(),before.data(),ram.size());
+        const bool cue=run_same_pass_area_init(child,spare);
+        if(at(obj)[0x1D8]!=pending||half(free_count+8)||be32(at(active_tail+49*4))!=shapes||
+           be32(at(active_head+49*4))!=(spare?area_shape:shapes)||
+           at(child)[0x18]!=(spare?1:2)||at(child)[0x86]!=unsigned(spare)||
+           half(child+0x26C)||half(receiver+0x1C6)!=172)
+            fail("actor area same-pass shape result mismatch before the class-4 pass");
+        class4_passes();
+        const auto free_after_shape_pass=half(free_count+8);
+        if(half(attack_count)||half(receiver_count)!=1||free_after_shape_pass!=1||
+           be32(at(free_head+16))!=shapes||half(child+0x26C)!=(spare?2:0)||
+           be32(at(active_head+49*4))!=(spare?area_shape:0)||
+           (spare&&(be32(at(area_shape+0x20))!=child||be32(at(area_shape+0x24))!=actor||
+                    std::abs(fp(area_shape+0x7C)-3.1f)>0.001f)))
+            fail("actor shape was not returned by the first separate class-4 pass");
+        contact_write(child,area_amount,172,false);
+
+        const unsigned final_hp=spare?155:172;
+        unsigned retry_count=0;
+        for(unsigned i=0;i<2;++i){
+            CPUState later{};later.gpr[3]=9;
+            CallObservation retry{0x8008AE3C};
+            mod.run_observed(later,ram,visit,retry);
+            retry_count+=retry.count;
+            class4_passes();
+            if(retry.count||half(attack_count)!=unsigned(spare)||half(receiver_count)!=1||
+               half(free_count+8)!=1||half(actor+0x784)!=1||
+               (i?(at(obj)[0]||bool(at(child)[0])!=spare):(at(obj)[0x18]!=3||at(child)[0x18]!=(spare?1:3)))||
+               (spare&&(be32(at(attack_registry))!=area_shape||
+                        std::abs(fp(area_shape+0x7C)-(i?65.1f:34.1f))>0.001f)))
+                fail("actor area growth or class-4 refusal retried or disagreed");
+            const auto amount=contact_write(child,area_amount,u16(i?final_hp:172),spare&&!i);
+            if(amount!=(spare&&!i?17:0)||half(receiver+0x1C6)!=final_hp||half(receiver+0x20C)!=1||
+               half(receiver+0x20E)!=(spare?2:0)||at(receiver)[0x26E]!=1+unsigned(spare)||
+               be32(at(receiver+0x41C))!=180-final_hp||be32(at(actor+0x418))!=180-final_hp)
+                fail("actor area HP, token duplication or ledger mismatch");
+        }
+        if(half(descriptor_row+18)!=(spare?1:3)||half(free_count+6)!=(spare?1:2))
+            fail("actor area did not preserve its own descriptor/cell retirement");
+        std::printf("bomb-actor-area: %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                    model,unsigned(spare),pending,free_at_bind,unsigned(cue),unsigned(spare),free_after_shape_pass,retry_count,
+                    final_hp,half(receiver+0x20C),half(receiver+0x20E),half(actor+0x784));
+    }
     void floor_impact(u16 model,const HitBlock& block,const CommonCollision& common,Terrain terrain,
-                      const FloorReceiver* target=nullptr){
+                      const AreaReceiver* target=nullptr){
         const bool replay_area=terrain==Terrain::area_no_spare||terrain==Terrain::area_spare;
         const bool spawn=terrain==Terrain::floor||replay_area,bounds=terrain==Terrain::bounds_exit;
         const bool floor=spawn||terrain==Terrain::child_cell_empty;
@@ -815,12 +896,13 @@ int main(int argc,char** argv){
     const bool area=argc==4&&!std::strcmp(argv[3],"--sasuke-area");
     const bool floor=argc==4&&!std::strcmp(argv[3],"--floor");
     const bool floor_contact=argc==4&&!std::strcmp(argv[3],"--floor-contact");
-    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&std::strcmp(argv[3],"--first-bind"))))
+    const bool actor_area=argc==4&&!std::strcmp(argv[3],"--actor-area");
+    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&!actor_area&&std::strcmp(argv[3],"--first-bind"))))
         fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so "
-             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact]");
+             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact|--actor-area]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
-    if(floor||floor_contact){
+    if(floor||floor_contact||actor_area){
         constexpr std::array<u16,2> models{0,0x000A};
         std::array<HitBlock,models.size()> blocks{};
         for(auto& block:blocks)
@@ -828,14 +910,22 @@ int main(int argc,char** argv){
         CommonCollision common{};
         if(std::fread(common.data(),1,common.size(),stdin)!=common.size())
             fail("bomb floor common collision extent");
-        if(floor_contact){
+        if(floor_contact||actor_area){
             std::array<ActorSpec,models.size()> specs{};
             for(auto& spec:specs)
-                if(std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())fail("bomb floor-contact actor spec extent");
-            if(std::getc(stdin)!=EOF)fail("bomb floor-contact trailing input");
+                if(std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())fail("bomb area actor spec extent");
+            if(std::getc(stdin)!=EOF)fail("bomb area actor spec trailing input");
             for(unsigned i=0;i<models.size();++i){
+                if(actor_area){
+                    const AreaReceiver target{blocks[1],specs[i],specs[1],30,u16(i?180:150)};
+                    for(bool spare:{false,true}){
+                        Check test(module,original);
+                        test.actor_area(models[i],blocks[i],common,target,spare);
+                    }
+                    continue;
+                }
                 for(unsigned scenario:{0u,1u,2u}){
-                    const FloorReceiver target{blocks[1],specs[i],specs[1],scenario==2?57u:56u,
+                    const AreaReceiver target{blocks[1],specs[i],specs[1],scenario==2?57u:56u,
                                                u16(i?180:150)};
                     Check test(module,original);
                     test.floor_impact(models[i],blocks[i],common,scenario?Terrain::area_spare:Terrain::area_no_spare,
