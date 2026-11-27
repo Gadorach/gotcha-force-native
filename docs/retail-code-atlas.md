@@ -525,6 +525,45 @@ python3 -m tools.analyze.retail_type0_contact \
   /tmp/opencode/gf-type0-contact.json
 ```
 
+### Worm paid release, refunds and contact follow-up
+
+The [Worm contact receipt](api-map/gg4e08-worm-contact.json)
+enters the original paid dispatch `80119848` with two rounds.
+The model branch, debit, allocation, shape bind, and Sasuke
+body-9 contact all run in the original code. The fixture does not
+run the upstream B cue or the live Scene.
+
+| Borg | Carrier | Empty carrier or shape pool | Opening raw power → damage |
+| --- | --- | --- | --- |
+| Alien Worm | Type 49, key 0 | Refunds the debit | `0 → 0` |
+| Venom Worm | Type 94, key 0 | Keeps the debit | `30 → 26` |
+| Claw Worm | Type 49, key 1 | Refunds the debit | `0 → 0` |
+| Poison Worm | Type 94, key 2 | Keeps the debit | `15 → 13` |
+
+The two type-49 openings set `0x10`, record token 1, and reach the
+HP writer, but remove no HP. On the next isolated visit the
+carrier retains the struck actor and unlinks the first shape.
+On visit 2 the same carrier binds **group 7 / descriptor 10**
+and registers token 2. With the same coincident receiver and
+its token history intact, the second original contact deals
+**1 HP** for each Worm, using raw power 2 for Alien and 1 for
+Claw. Neither carrier spends another round. The HP writer
+returns without resuming its caller on either contact.
+
+All 16 cases and both follow-ups matched across O0, O1 and O2.
+The fixture supplies rigid poses, unit scales, ordinary damage
+inputs, an empty stage and no class-2 effect capacity. It does
+not qualify full tether movement, later callbacks, poison effects,
+or live timing. Native zero-power opening routes remain unbound:
+binding the follow-up power to the opening would change the move.
+
+```sh
+python3 -m tools.analyze.retail_worm_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-worm-contact.json
+```
+
 ### From shape publication to the amount call
 
 The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the

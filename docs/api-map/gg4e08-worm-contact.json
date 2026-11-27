@@ -1,0 +1,466 @@
+{
+  "declared_stock_before_release": 2,
+  "kind": "gf-retail-worm-contact",
+  "notes": [
+    "Original paid dispatch is entered directly, with no B cue or action scheduler.",
+    "Positive paths declare rigid poses, pool availability and a singleton receiver on an isolated stage.",
+    "Only the original HP writer completes on each accepted contact; its caller is not resumed.",
+    "Type-49 follow-up visits keep the same carrier and recipient and observe group 7 under a fresh token.",
+    "Class-2 effect pools are empty and no sound is played. Full tether movement, later callbacks and poison are not qualified.",
+    "No native move or zero-power damage binding is added."
+  ],
+  "paid_dispatch": "80119848",
+  "pilots": [
+    {
+      "borg": "gg4e08:0501",
+      "cases": [
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 0,
+          "case": "carrier-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 2,
+          "stock_after_release": 2
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 2,
+          "case": "shape-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 2,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 1,
+          "case": "miss",
+          "contact_flags": 0,
+          "credited_damage": 0,
+          "hp_writer_reached": false,
+          "previous_hp": 65535,
+          "received_damage": 0,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "receiver_token_cursor": 0,
+          "registered_attack_count": 1,
+          "requested_damage": 0,
+          "shape_radius": 15.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": "8032BA58",
+          "carrier_phase_after_bind": 1,
+          "case": "accepted-contact",
+          "contact_flags": 16,
+          "credited_damage": 0,
+          "hp_writer_reached": true,
+          "previous_hp": 180,
+          "received_damage": 0,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "registered_attack_count": 1,
+          "requested_damage": 0,
+          "shape_radius": 15.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        }
+      ],
+      "family": 49,
+      "followup": {
+        "credited_damage": 1,
+        "received_damage": 1,
+        "receiver_hp": 179,
+        "receiver_token_cursor": 2,
+        "receiver_tokens": [
+          1,
+          2
+        ],
+        "requested_damage": 1,
+        "stock": 1
+      },
+      "key": 0,
+      "rebind": [
+        {
+          "attack_count": 0,
+          "carrier_token": 1,
+          "phase": 1,
+          "retained_recipient": true,
+          "stock": 1,
+          "stopped": true,
+          "subphase": 1,
+          "timer": 10,
+          "visit": 1
+        },
+        {
+          "attack_count": 1,
+          "carrier_token": 2,
+          "phase": 1,
+          "retained_recipient": true,
+          "stock": 1,
+          "stopped": false,
+          "subphase": 2,
+          "timer": 10,
+          "visit": 2
+        }
+      ],
+      "source": {
+        "actor_spec_sha256": "05221cb8d1c9ef0a8b71e5a0cfad83afe0fef6a89cf0534cb80d82ed2df86864",
+        "followup": {
+          "descriptor": 10,
+          "group": 7,
+          "raw_power": 2,
+          "reaction_index": 7,
+          "record": "8032BA70"
+        },
+        "hit_block_sha256": "550eafbbc514419a6dcc4b186e3159128d3ffcc4bcb611c9d97ac2bac4e9da7f",
+        "opening": {
+          "descriptor": 9,
+          "group": 6,
+          "raw_power": 0,
+          "reaction_index": 6,
+          "record": "8032BA58"
+        },
+        "owner_hp": 300,
+        "release_site": "80119888",
+        "stock_channel_0": {
+          "initial": 5,
+          "level": 1,
+          "limit": 5,
+          "mode": 2,
+          "preset": 0
+        }
+      }
+    },
+    {
+      "borg": "gg4e08:050b",
+      "cases": [
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 0,
+          "case": "carrier-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 2,
+          "case": "shape-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 1,
+          "case": "miss",
+          "contact_flags": 0,
+          "credited_damage": 0,
+          "hp_writer_reached": false,
+          "previous_hp": 65535,
+          "received_damage": 0,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "receiver_token_cursor": 0,
+          "registered_attack_count": 1,
+          "requested_damage": 0,
+          "shape_radius": 100.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": "8038D058",
+          "carrier_phase_after_bind": 1,
+          "case": "accepted-contact",
+          "contact_flags": 16,
+          "credited_damage": 26,
+          "hp_writer_reached": true,
+          "previous_hp": 180,
+          "received_damage": 26,
+          "receiver_hp_after_opening": 154,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "registered_attack_count": 1,
+          "requested_damage": 26,
+          "shape_radius": 100.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        }
+      ],
+      "family": 94,
+      "key": 0,
+      "source": {
+        "actor_spec_sha256": "051b81b5d6f7ea1070392f481565152662c4489eb461b3563fb0c8b5395d5d27",
+        "hit_block_sha256": "550eafbbc514419a6dcc4b186e3159128d3ffcc4bcb611c9d97ac2bac4e9da7f",
+        "opening": {
+          "descriptor": 0,
+          "group": 0,
+          "raw_power": 30,
+          "reaction_index": 0,
+          "record": "8038D058"
+        },
+        "owner_hp": 300,
+        "release_site": "801198A0",
+        "stock_channel_0": {
+          "initial": 5,
+          "level": 1,
+          "limit": 5,
+          "mode": 0,
+          "preset": 180
+        }
+      }
+    },
+    {
+      "borg": "gg4e08:050d",
+      "cases": [
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 0,
+          "case": "carrier-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 2,
+          "stock_after_release": 2
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 2,
+          "case": "shape-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 2,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 1,
+          "case": "miss",
+          "contact_flags": 0,
+          "credited_damage": 0,
+          "hp_writer_reached": false,
+          "previous_hp": 65535,
+          "received_damage": 0,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "receiver_token_cursor": 0,
+          "registered_attack_count": 1,
+          "requested_damage": 0,
+          "shape_radius": 7.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": "8032BB18",
+          "carrier_phase_after_bind": 1,
+          "case": "accepted-contact",
+          "contact_flags": 16,
+          "credited_damage": 0,
+          "hp_writer_reached": true,
+          "previous_hp": 180,
+          "received_damage": 0,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "registered_attack_count": 1,
+          "requested_damage": 0,
+          "shape_radius": 7.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        }
+      ],
+      "family": 49,
+      "followup": {
+        "credited_damage": 1,
+        "received_damage": 1,
+        "receiver_hp": 179,
+        "receiver_token_cursor": 2,
+        "receiver_tokens": [
+          1,
+          2
+        ],
+        "requested_damage": 1,
+        "stock": 1
+      },
+      "key": 1,
+      "rebind": [
+        {
+          "attack_count": 0,
+          "carrier_token": 1,
+          "phase": 1,
+          "retained_recipient": true,
+          "stock": 1,
+          "stopped": true,
+          "subphase": 1,
+          "timer": 10,
+          "visit": 1
+        },
+        {
+          "attack_count": 1,
+          "carrier_token": 2,
+          "phase": 1,
+          "retained_recipient": true,
+          "stock": 1,
+          "stopped": false,
+          "subphase": 2,
+          "timer": 10,
+          "visit": 2
+        }
+      ],
+      "source": {
+        "actor_spec_sha256": "51876ea608253e92e82a0767413627d47ac4145815e4eda99b1de0b9dfa3c595",
+        "followup": {
+          "descriptor": 10,
+          "group": 7,
+          "raw_power": 1,
+          "reaction_index": 7,
+          "record": "8032BB30"
+        },
+        "hit_block_sha256": "2efb5d804dbfa168a7f224a6a94113b74f80cc20a73c673697b40d9dc9537e5c",
+        "opening": {
+          "descriptor": 9,
+          "group": 6,
+          "raw_power": 0,
+          "reaction_index": 6,
+          "record": "8032BB18"
+        },
+        "owner_hp": 150,
+        "release_site": "801198B8",
+        "stock_channel_0": {
+          "initial": 5,
+          "level": 1,
+          "limit": 5,
+          "mode": 2,
+          "preset": 0
+        }
+      }
+    },
+    {
+      "borg": "gg4e08:0517",
+      "cases": [
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 0,
+          "case": "carrier-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 2,
+          "case": "shape-pool-empty",
+          "contact_flags": 0,
+          "hp_writer_reached": false,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "registered_attack_count": 0,
+          "requested_damage": 0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": null,
+          "carrier_phase_after_bind": 1,
+          "case": "miss",
+          "contact_flags": 0,
+          "credited_damage": 0,
+          "hp_writer_reached": false,
+          "previous_hp": 65535,
+          "received_damage": 0,
+          "receiver_hp_after_opening": 180,
+          "receiver_token": 0,
+          "receiver_token_cursor": 0,
+          "registered_attack_count": 1,
+          "requested_damage": 0,
+          "shape_radius": 50.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        },
+        {
+          "amount_record": "8038D118",
+          "carrier_phase_after_bind": 1,
+          "case": "accepted-contact",
+          "contact_flags": 16,
+          "credited_damage": 13,
+          "hp_writer_reached": true,
+          "previous_hp": 180,
+          "received_damage": 13,
+          "receiver_hp_after_opening": 167,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "registered_attack_count": 1,
+          "requested_damage": 13,
+          "shape_radius": 50.0,
+          "stock_after_bind": 1,
+          "stock_after_release": 1
+        }
+      ],
+      "family": 94,
+      "key": 2,
+      "source": {
+        "actor_spec_sha256": "46232c0f552f90a0863b600e4a51ea53f2be4d677063a28b3cbe72118f05d31a",
+        "hit_block_sha256": "2efb5d804dbfa168a7f224a6a94113b74f80cc20a73c673697b40d9dc9537e5c",
+        "opening": {
+          "descriptor": 0,
+          "group": 0,
+          "raw_power": 15,
+          "reaction_index": 0,
+          "record": "8038D118"
+        },
+        "owner_hp": 150,
+        "release_site": "801198D0",
+        "stock_channel_0": {
+          "initial": 5,
+          "level": 1,
+          "limit": 5,
+          "mode": 0,
+          "preset": 180
+        }
+      }
+    }
+  ],
+  "receiver": {
+    "body_descriptor": 9,
+    "borg": "gg4e08:000a",
+    "starting_hp": 180
+  },
+  "refund": "8006DE10",
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

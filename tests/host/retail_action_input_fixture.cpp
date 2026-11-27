@@ -41,6 +41,13 @@ constexpr Type0Pilot type0_pilots[]={
     {0x0801,125,7,25,21,0x802F7C18,180},
     {0x0802,45,12,6,0,0x80339E18,200},
 };
+struct WormPilot {u16 model;u8 family,key,step,index;u32 table;u16 hp;};
+constexpr WormPilot worms[]={
+    {0x0501,49,0,9,6,0x8032B9C8,300},
+    {0x050B,94,0,0,0,0x8038D058,300},
+    {0x050D,49,1,9,6,0x8032BA88,150},
+    {0x0517,94,2,0,0,0x8038D118,150},
+};
 struct Profile {u32 cfg,context,selector;};
 constexpr Profile synthetic{config,contexts,pairs};
 constexpr Profile red{0x8030A130,0x8030A380,0x8030A248}; // Machine Red, p076
@@ -92,8 +99,8 @@ class Check {
             !be32(cell+4)&&!be32(cell+8);
     }
     void absent_visual_resource(unsigned source_index=0){
-        constexpr u32 visual=0x81030200,visual_link=visual+0x40,visual_table=visual+0x80,visual_row=visual+0x100;
-        if(source_index>=32)fail("missing visual resource fixture extent");
+        constexpr u32 visual=0x81030200,visual_link=visual+0x40,visual_table=visual+0x80,visual_row=visual+0x480;
+        if(source_index>=256)fail("missing visual resource fixture extent");
         put32(at(0x803BB374),visual);put32(at(visual+16),visual_link);
         put32(at(visual_link),visual_table);put32(at(visual_table+4*source_index),visual_row);
     }
@@ -807,6 +814,126 @@ public:
                     pilot.model,pilot.key,distance,unsigned(duplicate),flag,token,history,record,amount,
                     half(peer+0x1C6),phase,stopped,timer,attacks,free_shapes,retirement,double(dx),double(dz));
     }
+    void worm_release(const WormPilot& pilot,const HitBlock& shot,const ActorSpec& credit,
+                      const HitBlock& body,const ActorSpec& defender,unsigned scenario){
+        const bool string=pilot.family==49,carrier_pool=scenario!=0,shape_pool=scenario>=2;
+        a[0]=1;a[0x18]=1;put16(a+0x94,pilot.model);put16(a+0x3E8,pilot.model);
+        put32(a+0x90,actor);put32(a+0x27C,pilot.table);
+        for(const auto offset:{0xB4,0xB8,0xC0,0xC4})put_float(a+offset,1.f);
+        rigid(actor+0x8D4,0,0,0);
+        rigid(actor+0x8D4+12*0x30,100,200,300);
+        std::memcpy(at(hit_block),shot.data(),shot.size());put32(a+0x3FC,hit_block);
+        put16(a+0x774,2);put16(a+0x776,2);
+        put16(a+0x78E,5);put16(a+0x790,string?2:0);put16(a+0x792,string?0:180);
+        pool(3,carrier_pool,true);
+        absent_visual_resource(142);
+        if(shape_pool){
+            at(hurt_cell)[2]=4;
+            put32(at(free_head+16),hurt_cell);put32(at(free_tail+16),hurt_cell);put16(at(free_count+8),1);
+        }
+        call(0x80119848); // Original paid model dispatch; not the upstream B cue.
+        auto* cell=at(object_cell);
+        const auto after_release=half(actor+0x774);
+        if(after_release!=unsigned(!carrier_pool&&string?2:1)||
+           half(descriptor_row+18)!=unsigned(!carrier_pool)||
+           be32(at(descriptor_row+12))!=(carrier_pool?0:descriptor_cell)||
+           (carrier_pool?(!first_bucket_cell(3,9,0x10)||cell[0x10]!=pilot.family||cell[0x11]!=pilot.key):
+                         be32(at(group_head+4*9))!=0))
+            fail("Worm paid dispatch, allocation or initial stock mismatch");
+        CPUState launch{};launch.gpr[3]=8;
+        const auto boundary=mod.run_to_or_return(launch,ram,0x80089A94,{0x800F036C});
+        const auto after_bind=half(actor+0x774);
+        if(after_bind!=unsigned(!shape_pool&&string?2:1)||
+           (shape_pool?(boundary!=0x800F036C||launch.lr!=(string?0x8013A420:0x801D51E4)||
+                        launch.gpr[3]!=(string?actor:object_cell)||launch.gpr[4]!=(string?210:260)||
+                        be32(at(group_head+4*49))!=hurt_cell||
+                        be32(at(hurt_cell+0x28))!=hit_block+0xAA0+pilot.step*80):
+                       (boundary||be32(at(group_head+4*49))))){
+            std::fprintf(stderr,"Worm model=%04X fork=%u phase=%u lr=%08X sound=%u stock=%u/%u shape=%08X\n",
+                         pilot.model,scenario,cell[0x18],launch.lr,launch.gpr[4],after_release,after_bind,
+                         be32(at(group_head+4*49)));
+            fail("Worm bind or bind-failure stock mismatch");
+        }
+        u32 record=0;
+        unsigned flag=0,token=0,amount=0,remaining=180,cursor=0;
+        if(shape_pool){
+            call(0x80089554);call(0x8008A28C);call(0x80089AEC);
+            if(half(attack_count)!=1||be32(at(attack_registry))!=hurt_cell)fail("Worm attack registry missing");
+            singleton_sasuke_body(body,fp(hurt_cell+0x64)+(scenario==2?256.f:0.f),fp(hurt_cell+0x68),fp(hurt_cell+0x6C));
+            call(0x8008A28C);call(0x80089AEC);
+            if(half(attack_count)!=1||half(receiver_count)!=1||be32(at(receiver_registry))!=rifle_receiver_cell)
+                fail("Worm attack and receiver registry join failed");
+            projectile_amount_inlet(credit,defender,pilot.hp);
+            const auto before=ram;
+            CPUState hit{};
+            const auto reached=mod.run_to_or_return(hit,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
+            record=reached?hit.gpr[3]:0;
+            if((scenario==3?(reached!=0x8003CD5C||hit.lr!=0x8002F10C||hit.gpr[4]!=object_cell||hit.gpr[5]!=peer||
+                             record!=pilot.table+24u*pilot.index):reached!=0)||half(peer+0x1C6)!=180){
+                std::fprintf(stderr,"Worm model=%04X case=%u shape radius=%f reached=%08X lr=%08X record=%08X flags=%u\n",
+                             pilot.model,scenario,double(fp(hurt_cell+0x7C)),reached,hit.lr,record,cell[0x1D9]);
+                fail("Worm contact did not reach the reviewed amount boundary");
+            }
+            if(reached){
+                std::memcpy(ram.data(),before.data(),ram.size());
+                CPUState writer{};
+                mod.run_to(writer,ram,0x8002DB58,{0x8003D344});
+                if(writer.lr!=0x8002F1DC||writer.gpr[3]!=peer||half(peer+0x1C6)!=180)fail("wrong Worm HP writer");
+                amount=writer.gpr[4];
+                mod.finish_stopped_leaf(writer,0x8003D344,164);
+            }
+            flag=cell[0x1D9];token=half(peer+0x20C);remaining=half(peer+0x1C6);
+            cursor=at(peer)[0x26E];
+            if(half(peer+0x1C8)!=(scenario==3?180:65535)||
+               flag!=(scenario==3?0x10:0)||token!=unsigned(scenario==3)||cursor!=unsigned(scenario==3)||
+               be32(cell+0x290)!=(scenario==3?peer:0)||be32(a+0x290)!=(scenario==3?peer:0)||
+               amount>180||remaining!=180-amount||be32(a+0x418)!=amount||be32(at(peer)+0x41C)!=amount)
+                fail("Worm contact, credit or HP ledger mismatch");
+        }
+        std::printf("worm-release: %u %u %u %u %u %u %u %u %08X %u %u %u %u\n",
+                    pilot.model,pilot.family,pilot.key,scenario,after_release,after_bind,cell[0x18],
+                    half(attack_count),record,flag,token,amount,remaining);
+        if(shape_pool)std::printf("worm-contact: %u %u previous=%u ledger=%u/%u cursor=%u radius=%.5f\n",
+                    pilot.model,scenario,half(peer+0x1C8),be32(a+0x418),be32(at(peer)+0x41C),cursor,
+                    double(fp(hurt_cell+0x7C)));
+        if(string&&scenario==3){
+            // Declared already-bound looping sound slot: the original
+            // same-sample path does not start audio playback here.
+            put32(at(0x803D3B60),be32(at(0x8031B6B0)));
+            empty_stage(62500.f);
+            for(unsigned visit=1;visit<=2;++visit){
+                projectile_visit();
+                if(visit==1&&(be32(at(group_head+4*49))||be32(at(free_head+16))!=hurt_cell||half(free_count+8)!=1))
+                    fail("Worm first-contact shape was not returned before the rebind");
+                std::printf("worm-rebind: %u %u %u %u %u %u %u %u %u %u\n",
+                            pilot.model,visit,cell[0x18],cell[0x19],cell[0x1D8],half(object_cell+0x1C),
+                            unsigned(be32(cell+0x54)==peer),half(attack_count),half(object_cell+0x26C),half(actor+0x774));
+            }
+            if(cell[0x18]!=1||cell[0x19]!=2||cell[0x1D8]||half(attack_count)!=1||
+               be32(at(attack_registry))!=hurt_cell||be32(at(hurt_cell+0x20))!=object_cell||
+               be32(at(hurt_cell+0x28))!=hit_block+0xAA0+10*80||at(hurt_cell)[0x11]!=7)
+                fail("Worm string follow-up group did not bind");
+            const auto rebind=ram;
+            CPUState next{};
+            const auto next_call=mod.run_to_or_return(next,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
+            unsigned follow_amount=0;
+            if(next_call){
+                if(next_call!=0x8003CD5C||next.lr!=0x8002F10C||next.gpr[3]!=pilot.table+24u*7||
+                   next.gpr[4]!=object_cell||next.gpr[5]!=peer||half(peer+0x1C6)!=180)
+                    fail("wrong Worm follow-up amount request");
+                std::memcpy(ram.data(),rebind.data(),ram.size());
+                CPUState writer{};
+                mod.run_to(writer,ram,0x8002DB58,{0x8003D344});
+                if(writer.lr!=0x8002F1DC||writer.gpr[3]!=peer||half(peer+0x1C6)!=180)
+                    fail("wrong Worm follow-up HP writer");
+                follow_amount=writer.gpr[4];
+                mod.finish_stopped_leaf(writer,0x8003D344,164);
+            }
+            std::printf("worm-followup: %u %u %u %u %u %u %u %u %u %u\n",pilot.model,unsigned(next_call!=0),
+                        half(peer+0x20C),half(peer+0x20E),at(peer)[0x26E],follow_amount,half(peer+0x1C6),
+                        be32(a+0x418),be32(at(peer)+0x41C),half(actor+0x774));
+        }
+    }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
         put_float(at(spec)+0x184+4*channel,limit);
@@ -840,6 +967,7 @@ public:
 }
 
 int main(int argc,char** argv){
+    const bool worm=argc==4&&std::strcmp(argv[3],"--worm-contact")==0;
     const bool type0_contact=argc==4&&std::strcmp(argv[3],"--type0-contact")==0;
     const bool type0=argc==4&&std::strcmp(argv[3],"--type0-flight")==0;
     const bool rifle_life=argc==4&&std::strcmp(argv[3],"--rifle-lifetime")==0;
@@ -847,11 +975,28 @@ int main(int argc,char** argv){
     const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&
+    if(argc!=3&&!worm&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&
        !(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(worm){
+        const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
+        HitBlock body{};
+        ActorSpec defender{};
+        if(!read(body)||!read(defender))fail("Worm receiver inlet extent");
+        for(const auto pilot:worms){
+            HitBlock shot{};
+            ActorSpec credit{};
+            if(!read(shot)||!read(credit))fail("Worm owner inlet extent");
+            for(unsigned scenario=0;scenario<4;++scenario){
+                Check c(mod,original);
+                c.worm_release(pilot,shot,credit,body,defender,scenario);
+            }
+        }
+        if(std::fgetc(stdin)!=EOF)fail("extra Worm contact inlet");
+        return 0;
+    }
     if(type0_contact){
         const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
         HitBlock body{},shots[3]{};

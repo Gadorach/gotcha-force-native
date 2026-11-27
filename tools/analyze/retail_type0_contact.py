@@ -96,7 +96,7 @@ def read_normal(archive, model, block_digest, spec_digest):
     spec = all_specs[:ACTOR_BYTES]
     if (not all_specs or len(all_specs) % ACTOR_BYTES or len(all_specs) > 8 * ACTOR_BYTES
             or sha256(spec).hexdigest() != spec_digest or sha256(block).hexdigest() != block_digest):
-        raise ValueError(f"normal type-0 contact input identity: {model:04X}")
+        raise ValueError(f"normal projectile contact input identity: {model:04X}")
     return block, spec
 
 

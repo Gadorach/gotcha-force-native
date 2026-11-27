@@ -977,7 +977,10 @@ With `--contact-ladder-test`, the current audited cohort resolves both
 selectors to 0. The extractor binds that shared pair only to the
 **172 positive-power direct routes** (including the two melee moves
 whose raw bases differ but whose selectors agree). The two zero-power
-Worm routes stay unbound. Disagreeing selectors or different qualifying
+Worm routes stay unbound. The [original Worm comparison](retail-code-atlas.md#worm-paid-release-refunds-and-contact-follow-up)
+shows why: the type-49 opening removes no HP, and a freshly
+registered shape on the same carrier requests the later damage.
+Disagreeing selectors or different qualifying
 pairs within a package do not pick a winner. Native uses the originating
 move, the living attacker's HP and its pre-hit team force, not the
 attacker's current action or a detached child's state.
