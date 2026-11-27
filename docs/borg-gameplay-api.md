@@ -1052,6 +1052,47 @@ is the only retail-derived opt-in. It preserves the authored
 launch speed and scales the verified proportions rather than
 replacing the launch or lifetime.
 
+### Ballistic aim and gravity refit
+
+`ballistic-aim=projectile|upward pitch cap` opts a single move-released
+projectile into a lower ballistic arc. It samples a visible
+enemy's native body centre when the projectile is allocated, then
+rechecks the live aim gate before the first flight sweep. A changed
+lock can keep that gate open, but it does not replace the sampled
+point. If there was no point, the gate closes, or horizontal
+separation is negligible, the shot keeps the caster's release heading.
+
+Speed is the total launch magnitude. The upward cap is `0.01..1.4`
+radians. An unreachable height or range gets a capped tangent arc,
+not a guaranteed intercept. Opted-in shots use half a tick of gravity
+in their vertical displacement before the normal full velocity
+decrement. Existing shots keep their original native integrator.
+
+```text
+projectile=lob|orb|1|40|0|0.3|0|8|60|12|stop-on-floor
+ballistic-aim=lob|0.8
+ballistic-gravity-refit=lob|4|0|7.5|0.15
+```
+
+`ballistic-gravity-refit=projectile|interval|min|max|max change` is
+separate. Every `interval` flight visits it estimates the gravity
+needed to reach the original tracked enemy's current height. It
+adjusts gravity by at most `max change` before that visit's sweep;
+it never turns the shot and skips points behind it. The interval is
+`1..60`, not longer than the
+projectile's lifetime. The `0..8` bounds must enclose launch gravity,
+and `max change` is `0.01..8`. Losing the tracked slot or taking a
+shot-pull impulse cancels refits without reacquiring a target.
+
+The rule requires launch gravity `0.01..8` and zero authored rise and
+spread. It refuses competing socket height aim, angular guidance,
+speed ramps, beams, landing carriers, emitter shots, and spawned
+projectile children. It can be paired with an authored impact area,
+but none of these rules binds a retail move. The
+[bounded Ninja comparison](retail-code-atlas.md#ordinary-x-bombs-copied-aim-live-gate-and-gravity-refit)
+motivates the separation; the native body centre, gate, and tick
+timing are not claims about the original scheduler or hit geometry.
+
 ### Blast triggers and recipients
 
 `blast=projectile|trigger|radius|damage|recipients` adds one instantaneous

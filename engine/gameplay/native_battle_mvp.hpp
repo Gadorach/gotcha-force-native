@@ -18,6 +18,7 @@
 #include "engine/gameplay/native_borg_movement.hpp"
 #include "engine/gameplay/native_borg_contact.hpp"
 #include "engine/gameplay/native_battle_reaction.hpp"
+#include "engine/gameplay/projectile_ballistics.hpp"
 #include "engine/gameplay/character_air_resource.hpp"
 #include "engine/gameplay/borgs/normal_gred_movement.hpp"
 #include "engine/gameplay/borg_gameplay.hpp"
@@ -120,6 +121,12 @@ public:
 struct BattleMvpAnchor {BattleMvpVec position{};u32 id=0,born=0;u8 return_stock=255;};
 struct BattleMvpAnchorPath {std::array<BattleMvpAnchor,kBorgBattleAnchors> points{};u8 count=0;};
 struct BattleMvpFenceLink {BattleMvpVec start{},end{};};
+struct BattleMvpBallisticFlight {
+    std::optional<BattleMvpVec> launch_point;
+    u8 tracked_slot=255;
+    u16 until_refit=0;
+    bool launch_pending=false;
+};
 struct BattleMvpProjectile {
     bool active=false;u32 id=0;u8 owner=0;BattleMvpWeapon weapon=BattleMvpWeapon::Bullet;
     BattleMvpVec position{},previous{},velocity{};unsigned life=0;bool landed=false;
@@ -157,6 +164,7 @@ struct BattleMvpProjectile {
     u8 package_hit_recipients=0; // per-shot history; actors keep their round slots
     bool package_ramp_deflected=false; // a shot-pull field owns subsequent velocity
     bool package_impact_shape=false;
+    BattleMvpBallisticFlight ballistic{};
 };
 struct BorgProjectileVisualSample {f32 scale=1,angle=0;};
 inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpProjectile& shot,u32 tick){
@@ -2436,6 +2444,7 @@ private:
             record_package(BorgBattleEventKind::FieldShotPulled,shot.owner,shot.package_move,0,shot.id,0);
         shot.pulling_field=selected->id;
         shot.package_ramp_deflected=true;
+        shot.ballistic.tracked_slot=255;
         const f32 step=std::min(selected->spec.shot_pull->acceleration,nearest)/nearest;
         const auto speed=[](const auto& v){return std::hypot(v[0],v[1],v[2]);};
         const f32 cap=std::max(200.f,speed(shot.velocity));
@@ -3203,8 +3212,15 @@ private:
         }
         finish_package_rewind(owner);return false;
     }
+    BattleMvpVec package_aim_point(u8 target)const{
+        auto point=actors_[target].position;
+        point[1]+=config_.actor_height*.5f;
+        return point;
+    }
     u32 emit_package(unsigned owner,u8 move,const BorgBattleProjectileDefinition& definition,u8 return_stock,const IBorgBattleOrigins* origins){
-        const auto& actor=actors_[owner];auto aim=definition.launch_body_heading?actor.facing:actor.aim_facing;
+        const auto& actor=actors_[owner];
+        const bool body_heading=definition.launch_body_heading||definition.ballistic_aim.has_value();
+        auto aim=body_heading?actor.facing:actor.aim_facing;
         BattleMvpVec muzzle{actor.position[0]+aim.x*(config_.actor_radius+12),
             actor.position[1]+config_.actor_height*.6f,actor.position[2]+aim.z*(config_.actor_radius+12)};
         f32 additional_rise=0;
@@ -3218,9 +3234,9 @@ private:
             const u8 socket_target=package_aim_target(owner);
             const auto& target=actors_[socket_target==255?owner:socket_target];
             // A body-heading launch samples the socket only for position.
-            if(!definition.launch_body_heading&&actor.package_aim_heading){
+            if(!body_heading&&actor.package_aim_heading){
                 if(spec.aim_height)additional_rise=definition.speed*actor.package_aim_slope;
-            }else if(!definition.launch_body_heading&&actor.package_target_visible){
+            }else if(!body_heading&&actor.package_target_visible){
                 aim=native_borg_direction({muzzle[0],muzzle[2]},{target.position[0],target.position[2]},aim);
                 if(spec.aim_height){
                     const f32 distance=std::max(1.f,std::hypot(target.position[0]-muzzle[0],target.position[2]-muzzle[2]));
@@ -3320,6 +3336,16 @@ private:
             if(guide){
                 shot.package_guide_point={observed.position[0],observed.position[2]};
                 shot.package_guide_target=target;shot.package_guide_ticks=definition.guidance->ticks;
+            }
+            if(const auto& aim=definition.ballistic_aim;aim){
+                shot.ballistic.launch_pending=true;
+                if(direct_release&&aim_eligible(owner,target)&&!package_smoke_blocks_aim(owner,target)){
+                    shot.ballistic.launch_point=package_aim_point(target);
+                    if(aim->refit){
+                        shot.ballistic.tracked_slot=target;
+                        shot.ballistic.until_refit=aim->refit->interval;
+                    }
+                }
             }
             ++shots_;if(++n==definition.count)break;
         }
@@ -3819,11 +3845,16 @@ private:
             }
             return;
         }
+        if(definition.ballistic_aim)launch_package_ballistic(shot,definition);
         break_package_guidance_in_fields(shot,{},1,false);
         step_package_guidance(shot);
         pull_package_shot(shot);
+        if(definition.ballistic_aim)refit_package_ballistic(shot,*definition.ballistic_aim);
         const f32 travel=package_slow_fraction(shot);
-        const BattleMvpVec step{shot.velocity[0]*travel,shot.velocity[1]*travel,shot.velocity[2]*travel};
+        // Opt-in arcs use the midpoint velocity for the tick displacement;
+        // the shared segment queries still test the same endpoint once.
+        const f32 rise=definition.ballistic_aim?shot.velocity[1]-shot.package_gravity*.5f:shot.velocity[1];
+        const BattleMvpVec step{shot.velocity[0]*travel,rise*travel,shot.velocity[2]*travel};
         const auto& profile=*config_.packages[shot.owner];
         const bool continuing=definition.continue_after_actor_hit&&shot.package_direct_release;
         const bool roster=actor_count()>2&&shot.package_direct_release&&shot.package_damage&&
@@ -3959,6 +3990,34 @@ private:
         if(!shot.landed){retire_package_shot(shot,PackageRetirement::UnlandedFuse);return;}
         shot.bomb_fuse_tail_left=definition.fuse_tail;shot.bomb_travel_speed=0;
         record_package(BorgBattleEventKind::BombFuseCommitted,shot.owner,shot.package_move,0,shot.id,definition.fuse_tail);
+    }
+    void launch_package_ballistic(BattleMvpProjectile& shot,const BorgBattleProjectileDefinition& spec){
+        auto& flight=shot.ballistic;
+        if(!std::exchange(flight.launch_pending,false))return;
+        const auto point=std::exchange(flight.launch_point,std::nullopt);
+        if(!point||!actors_[shot.owner].health)return;
+        const auto live=package_aim_target(shot.owner);
+        // Recheck the current gate, not the old point. A new lock never
+        // substitutes its point or becomes this carrier's tracking slot.
+        if(!aim_eligible(shot.owner,live)||package_smoke_blocks_aim(shot.owner,live))
+            return;
+        if(const auto solved=projectile_lower_arc(shot.position,*point,spec.speed,shot.package_gravity,spec.ballistic_aim->pitch_cap))
+            shot.velocity=*solved;
+    }
+    void refit_package_ballistic(BattleMvpProjectile& shot,const BorgProjectileBallisticAim& aim){
+        auto& flight=shot.ballistic;
+        if(!aim.refit||flight.tracked_slot==255)return;
+        if(!aim_eligible(shot.owner,flight.tracked_slot)){
+            flight.tracked_slot=255;
+            return;
+        }
+        if(--flight.until_refit)return;
+        const auto& r=*aim.refit;
+        flight.until_refit=r.interval;
+        if(const auto gravity=projectile_gravity_for_height(shot.position,shot.velocity,
+               package_aim_point(flight.tracked_slot),r.minimum,r.maximum))
+            shot.package_gravity=std::clamp(shot.package_gravity+
+                std::clamp(*gravity-shot.package_gravity,-r.step,r.step),r.minimum,r.maximum);
     }
     void step_package_guidance(BattleMvpProjectile& shot){
         if(!shot.package_guide_ticks)return;

@@ -1155,11 +1155,10 @@ test before the same factory. These are requests and gate shapes,
 not a comparison of live events. Do not infer equal actor, floor and
 prop behavior solely because a factory is shared.
 
-**API gap:** the existing ballistic carrier + stage/actor impact service
-is a useful host for qualification, but it does not yet express this
-source launch correction or separately validated area-object lifecycle.
-The verified no-target handoff and portable body-heading option cover a
-scoped launch prerequisite, not the target solve or live admission.
+**API scope:** the authored carrier and area rules cover selected
+launch and impact mechanisms without asserting source pose timing
+or live admission. The verified no-target handoff and portable
+body-heading option cover one launch prerequisite.
 The [paid-release floor replay](retail-code-atlas.md#ordinary-ninja-bombs-floor-response-and-same-pass-area-bind)
 now checks real triangle response for keys 0 and 3. The floor branch
 keeps its opening shape registered through the impact visit and
@@ -1181,8 +1180,11 @@ and the constructor's later key-11 sample. The separate
 [targeted launch replay](retail-code-atlas.md#ordinary-x-bombs-copied-aim-live-gate-and-gravity-refit)
 distinguishes copied aim, the live launch gate, and later gravity
 correction. The replays supply the pose and target selection; they
-do not run live controls, qualify a full intercept, or bind a native
-launch rule. Live scheduling and prop response remain separate checks.
+do not run live controls or qualify a full intercept. The
+[authored ballistic aim and refit](borg-gameplay-api.md#ballistic-aim-and-gravity-refit)
+use native target selection, body centres, and ticks. They are not
+bound to these retail moves. Live scheduling and prop response remain
+separate checks.
 
 ### Command Girl: B and X do not request the same family of beam
 

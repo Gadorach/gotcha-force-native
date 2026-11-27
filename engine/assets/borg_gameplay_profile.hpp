@@ -79,6 +79,11 @@ struct BorgImpactArea {
 };
 struct BorgBattleRewindHit {u8 set=0,speed=0,fallback=255;};
 struct BorgProjectileSpeedRamp {f32 gain=0,cap=0;};
+struct BorgProjectileGravityRefit {u16 interval=0;f32 minimum=0,maximum=0,step=0;};
+struct BorgProjectileBallisticAim {
+    f32 pitch_cap=0;
+    std::optional<BorgProjectileGravityRefit> refit;
+};
 struct BorgBattleBlast {
     BorgBlastTrigger trigger=BorgBlastTrigger::Actor;
     u16 radius=0,damage=0;
@@ -129,6 +134,7 @@ struct BorgBattleProjectileDefinition {
     std::string launch_sound;
     bool continue_after_actor_hit=false; // one accepted contact per round actor slot
     std::optional<BorgProjectileSpeedRamp> speed_ramp;
+    std::optional<BorgProjectileBallisticAim> ballistic_aim;
 };
 inline bool borg_hit_continuation_valid(const BorgBattleProjectileDefinition& a){
     // A non-terminal actor hit must not silently skip a retirement effect.
@@ -748,6 +754,16 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            a.sustained||a.guidance||a.rise||a.gravity||a.floor==BorgProjectileFloor::Land||
            !finite(ramp->gain,.01f,20.f)||!finite(ramp->cap,1.f,140.f)||ramp->cap<=a.speed))
             return false;
+        if(const auto& aim=a.ballistic_aim;aim){
+            if(a.count!=1||a.sustained||a.guidance||a.speed_ramp||a.rise||a.spread||
+               a.floor==BorgProjectileFloor::Land||a.launch_body_heading||a.accuracy_sensitive||
+               (a.socket&&a.socket->aim_height)||!finite(a.gravity,.01f,8.f)||!finite(aim->pitch_cap,.01f,1.4f))
+                return false;
+            if(const auto& r=aim->refit;r&&(!r->interval||r->interval>60||r->interval>a.lifetime||
+               !finite(r->minimum,0,a.gravity)||!finite(r->maximum,a.gravity,8.f)||
+               r->maximum<=r->minimum||!finite(r->step,.01f,8.f)))
+                return false;
+        }
         if(const auto& s=a.impact_sound;s&&(a.sustained||!borg_impact_lane_reachable(a,s->lane)||
                                          !borg_package_asset_path_valid(s->path)))return false;
         if(const auto& r=a.impact_record;r&&(a.sustained||!borg_impact_lane_reachable(a,r->lane)||
@@ -820,7 +836,8 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
                           a.count!=1||!a.rewind_hit->speed||a.rewind_hit->speed>16||a.rewind_hit->set>=p.anchor_sets.size()||
                           p.anchor_sets[a.rewind_hit->set].fence||p.anchor_sets[a.rewind_hit->set].return_on_reach||
                          (a.rewind_hit->fallback!=255&&(a.rewind_hit->fallback>=p.projectiles.size()||
-                            p.projectiles[a.rewind_hit->fallback].sustained||p.projectiles[a.rewind_hit->fallback].rewind_hit||
+                             p.projectiles[a.rewind_hit->fallback].sustained||p.projectiles[a.rewind_hit->fallback].rewind_hit||
+                             p.projectiles[a.rewind_hit->fallback].ballistic_aim||
                             p.projectiles[a.rewind_hit->fallback].plant_on_stage!=255||
                             p.projectiles[a.rewind_hit->fallback].continue_after_actor_hit||
                             p.projectiles[a.rewind_hit->fallback].stock_return!=BorgProjectileReturn::None))))||
@@ -833,7 +850,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
             (a.walk_ticks?(a.walk_ticks>600||a.walk_percent<25||a.walk_percent>200):a.walk_percent!=0))return false;
         const auto valid_child=[](const auto& child){
               return !(child.blast_children!=255||child.flight_children||child.impact_children||child.impact_hazard||child.impact_area||child.blast||child.smoke||
-                child.sustained||child.socket||child.guidance||child.proximity||
+                 child.sustained||child.socket||child.guidance||child.proximity||child.ballistic_aim||
                child.rewind_hit||child.plant_on_stage!=255||child.stock_return!=BorgProjectileReturn::None||
                 child.ignore_actors||!child.damage||child.launch_body_heading||child.continue_after_actor_hit);
         };
@@ -852,7 +869,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            (p.moves[e.watches].releases.empty()&&!p.moves[e.watches].held_fire)||
            p.projectiles[e.projectile].stock_return!=BorgProjectileReturn::None||
            p.projectiles[e.projectile].rewind_hit||p.projectiles[e.projectile].plant_on_stage!=255||p.projectiles[e.projectile].socket||
-           p.projectiles[e.projectile].impact_area||
+           p.projectiles[e.projectile].impact_area||p.projectiles[e.projectile].ballistic_aim||
            p.projectiles[e.projectile].launch_body_heading||p.projectiles[e.projectile].continue_after_actor_hit||
            !finite(e.side,-120,120)||!finite(e.height,0,240)||!finite(e.behind,0,180)||!e.lifetime||e.lifetime>600)
             return false;
@@ -1204,6 +1221,8 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct PartBoneRef {unsigned line;std::string move,slot;u8 bone;};
     struct GuidanceRef {unsigned line;std::string projectile;BorgBattleGuidance spec;};
     struct SpeedRampRef {unsigned line;std::string projectile;BorgProjectileSpeedRamp spec;};
+    struct BallisticAimRef {unsigned line;std::string projectile;f32 pitch_cap;};
+    struct GravityRefitRef {unsigned line;std::string projectile;BorgProjectileGravityRefit spec;};
     std::vector<ReleaseRef> refs;
     std::vector<EntryStockRef> entry_stocks;
     std::vector<ReleaseGateRef> release_gates;
@@ -1218,6 +1237,8 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<BlastRef> blasts;
     std::vector<ActorContactRef> passes;
     std::vector<SpeedRampRef> speed_ramps;
+    std::vector<BallisticAimRef> ballistic_aims;
+    std::vector<GravityRefitRef> gravity_refits;
     std::vector<DetonationRef> detonations;
     std::vector<std::pair<unsigned,std::string>> first_detonations;
     std::vector<ReturnRef> returns;
@@ -1872,6 +1893,19 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !scalar(a[1],.01f,20.f,&ramp.gain)||!scalar(a[2],1.f,140.f,&ramp.cap))
                 return fail("invalid projectile-speed-ramp");
             speed_ramps.push_back({line,std::string(a[0]),ramp});
+        }else if(key=="ballistic-aim"){
+            std::array<std::string_view,2> a;f32 cap=0;
+            if(ballistic_aims.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !scalar(a[1],.01f,1.4f,&cap))
+                return fail("invalid ballistic-aim binding");
+            ballistic_aims.push_back({line,std::string(a[0]),cap});
+        }else if(key=="ballistic-gravity-refit"){
+            std::array<std::string_view,5> a;BorgProjectileGravityRefit spec;
+            if(gravity_refits.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,60,&spec.interval)||!scalar(a[2],0,8,&spec.minimum)||
+               !scalar(a[3],spec.minimum,8,&spec.maximum)||!scalar(a[4],.01f,8,&spec.step))
+                return fail("invalid ballistic-gravity-refit binding");
+            gravity_refits.push_back({line,std::string(a[0]),spec});
         }else if(key=="actor-contact"){
             std::array<std::string_view,2> a;
             if(passes.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
@@ -2356,6 +2390,18 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         if(pi==next.projectiles.size()||next.projectiles[pi].speed_ramp)
             return fail("unknown projectile or duplicate projectile-speed-ramp");
         next.projectiles[pi].speed_ramp=r.spec;
+    }
+    for(const auto& r:ballistic_aims){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].ballistic_aim)
+            return fail("unknown projectile or duplicate ballistic-aim");
+        next.projectiles[pi].ballistic_aim=BorgProjectileBallisticAim{r.pitch_cap,{}};
+    }
+    for(const auto& r:gravity_refits){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||!next.projectiles[pi].ballistic_aim||next.projectiles[pi].ballistic_aim->refit)
+            return fail("ballistic-gravity-refit needs one binding to a declared ballistic aim");
+        next.projectiles[pi].ballistic_aim->refit=r.spec;
     }
     for(const auto& link:rewind_hits){
         line=link.line;
