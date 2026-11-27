@@ -1,0 +1,346 @@
+{
+  "damage_inlets": {
+    "actor_banks": [
+      0,
+      0
+    ],
+    "team_force_caps": [
+      100,
+      100
+    ],
+    "team_settings_rows": [
+      0,
+      0
+    ],
+    "teams": [
+      0,
+      1
+    ]
+  },
+  "hp_writer": "8003D344",
+  "kind": "gf-retail-bomb-contact",
+  "notes": [
+    "The declared pools admit only key 8 from Powered Gunman's four requests. Sasuke uses ordinary key 3.",
+    "The exact normal receiver descriptor is registered from a singleton runtime list at a declared rigid pose.",
+    "Only the original HP writer completes in the replay; its stopped caller is never resumed.",
+    "The isolated bucket-9 follow-up visits stop before Sasuke's child callback; Gunman's separate bucket 25 is not visited.",
+    "Child allocation is separate from contact and supplies no proof of child binding, blast damage or live timing."
+  ],
+  "pair_loop": "8002DB58",
+  "pilots": [
+    {
+      "borg": "gg4e08:0101",
+      "cases": [
+        {
+          "body_center_offset_x": 256,
+          "case": "miss",
+          "contact_flags": 0,
+          "credited_and_received_damage": 0,
+          "followup": {
+            "child_published": null,
+            "child_request": false,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 1,
+            "phase": 1,
+            "remaining_registered_attack_count": 1,
+            "timer": 598
+          },
+          "hp_writer_reached": false,
+          "opening_record": null,
+          "parent_carrier_and_descriptor_return_followup_visit": null,
+          "receiver_hp": 180,
+          "receiver_token": 0,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "duplicate-token",
+          "contact_flags": 0,
+          "credited_and_received_damage": 0,
+          "followup": {
+            "child_published": null,
+            "child_request": false,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 1,
+            "phase": 1,
+            "remaining_registered_attack_count": 1,
+            "timer": 598
+          },
+          "hp_writer_reached": false,
+          "opening_record": null,
+          "parent_carrier_and_descriptor_return_followup_visit": null,
+          "receiver_hp": 180,
+          "receiver_token": 1,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": true,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "contact-child-published",
+          "contact_flags": 16,
+          "credited_and_received_damage": 17,
+          "followup": {
+            "child_published": {
+              "active_bucket": 25,
+              "bound_shapes": 0,
+              "class": 2,
+              "descriptor_cells": 1,
+              "key": 0,
+              "type": 4
+            },
+            "child_request": true,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 1,
+            "phase": 2,
+            "remaining_registered_attack_count": 0,
+            "timer": 598
+          },
+          "hp_writer_reached": true,
+          "opening_record": "8034EB10",
+          "parent_carrier_and_descriptor_return_followup_visit": 3,
+          "receiver_hp": 163,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "requested_damage": 17,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "contact-child-cell-empty",
+          "contact_flags": 16,
+          "credited_and_received_damage": 17,
+          "followup": {
+            "child_published": null,
+            "child_request": true,
+            "declared_free_child_cells": 0,
+            "declared_free_child_descriptors": 1,
+            "phase": 2,
+            "remaining_registered_attack_count": 0,
+            "timer": 598
+          },
+          "hp_writer_reached": true,
+          "opening_record": "8034EB10",
+          "parent_carrier_and_descriptor_return_followup_visit": 3,
+          "receiver_hp": 163,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "requested_damage": 17,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "contact-child-descriptors-short",
+          "contact_flags": 16,
+          "credited_and_received_damage": 17,
+          "followup": {
+            "child_published": null,
+            "child_request": true,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 0,
+            "phase": 2,
+            "remaining_registered_attack_count": 0,
+            "timer": 598
+          },
+          "hp_writer_reached": true,
+          "opening_record": "8034EB10",
+          "parent_carrier_and_descriptor_return_followup_visit": 3,
+          "receiver_hp": 163,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "requested_damage": 17,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        }
+      ],
+      "key": 8,
+      "source": {
+        "actor_level_one_hp": 200,
+        "actor_spec_sha256": "6d8e870169ef6c72939dbb49f1338ba36b7d86ff29e24e214ee46029b3852b5b",
+        "borg": "gg4e08:0101",
+        "contact_child_call": "8007E298",
+        "contact_child_entry": "8001BDA8",
+        "contact_child_selector_signed": -1,
+        "descriptor": 8,
+        "group": 15,
+        "normal_hit_block_sha256": "ce5210cd200a24705ab8f2084e291e526367664acdfde28e15d21bbc9c4f36de",
+        "opening_radius": 20,
+        "raw_power": 20,
+        "reaction_index": 1,
+        "reaction_record": "8034EB10"
+      }
+    },
+    {
+      "borg": "gg4e08:000a",
+      "cases": [
+        {
+          "body_center_offset_x": 256,
+          "case": "miss",
+          "contact_flags": 0,
+          "credited_and_received_damage": 0,
+          "followup": {
+            "child_published": null,
+            "child_request": false,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 2,
+            "phase": 1,
+            "remaining_registered_attack_count": 1,
+            "timer": 598
+          },
+          "hp_writer_reached": false,
+          "opening_record": null,
+          "parent_carrier_and_descriptor_return_followup_visit": null,
+          "receiver_hp": 180,
+          "receiver_token": 0,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "duplicate-token",
+          "contact_flags": 0,
+          "credited_and_received_damage": 0,
+          "followup": {
+            "child_published": null,
+            "child_request": false,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 2,
+            "phase": 1,
+            "remaining_registered_attack_count": 1,
+            "timer": 598
+          },
+          "hp_writer_reached": false,
+          "opening_record": null,
+          "parent_carrier_and_descriptor_return_followup_visit": null,
+          "receiver_hp": 180,
+          "receiver_token": 1,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": true,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "contact-child-published",
+          "contact_flags": 16,
+          "credited_and_received_damage": 8,
+          "followup": {
+            "child_published": {
+              "active_bucket": 9,
+              "bound_shapes": 0,
+              "class": 3,
+              "descriptor_cells": 2,
+              "key": 0,
+              "type": 5
+            },
+            "child_request": true,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 2,
+            "phase": 2,
+            "remaining_registered_attack_count": 0,
+            "timer": 598
+          },
+          "hp_writer_reached": true,
+          "opening_record": "802D4178",
+          "parent_carrier_and_descriptor_return_followup_visit": 3,
+          "receiver_hp": 172,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "requested_damage": 8,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "contact-child-cell-empty",
+          "contact_flags": 16,
+          "credited_and_received_damage": 8,
+          "followup": {
+            "child_published": null,
+            "child_request": true,
+            "declared_free_child_cells": 0,
+            "declared_free_child_descriptors": 2,
+            "phase": 2,
+            "remaining_registered_attack_count": 0,
+            "timer": 598
+          },
+          "hp_writer_reached": true,
+          "opening_record": "802D4178",
+          "parent_carrier_and_descriptor_return_followup_visit": 3,
+          "receiver_hp": 172,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "requested_damage": 8,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        },
+        {
+          "body_center_offset_x": 0,
+          "case": "contact-child-descriptors-short",
+          "contact_flags": 16,
+          "credited_and_received_damage": 8,
+          "followup": {
+            "child_published": null,
+            "child_request": true,
+            "declared_free_child_cells": 1,
+            "declared_free_child_descriptors": 1,
+            "phase": 2,
+            "remaining_registered_attack_count": 0,
+            "timer": 598
+          },
+          "hp_writer_reached": true,
+          "opening_record": "802D4178",
+          "parent_carrier_and_descriptor_return_followup_visit": 3,
+          "receiver_hp": 172,
+          "receiver_token": 1,
+          "receiver_token_cursor": 1,
+          "requested_damage": 8,
+          "seeded_duplicate_token": false,
+          "stock_after": 1
+        }
+      ],
+      "key": 3,
+      "source": {
+        "actor_level_one_hp": 180,
+        "actor_spec_sha256": "bd5c6a7611df76737868e6d34580ff4e8dc464e288d23340c753e3f45cfec6c5",
+        "borg": "gg4e08:000a",
+        "contact_child_call": "8007E284",
+        "contact_child_entry": "80085E00",
+        "contact_child_selector_signed": 0,
+        "descriptor": 1,
+        "group": 1,
+        "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+        "opening_radius": 10,
+        "raw_power": 10,
+        "reaction_index": 1,
+        "reaction_record": "802D4178"
+      }
+    }
+  ],
+  "receiver": {
+    "actor_spec_sha256": "bd5c6a7611df76737868e6d34580ff4e8dc464e288d23340c753e3f45cfec6c5",
+    "body_step": 9,
+    "borg": "gg4e08:000a",
+    "flags": 2,
+    "initial_hp": 180,
+    "kind": 0,
+    "local_center": [
+      0.0,
+      -14.0,
+      0.0
+    ],
+    "matrix_selector": 2,
+    "radius": 22.0
+  },
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

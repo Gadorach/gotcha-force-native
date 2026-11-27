@@ -713,6 +713,42 @@ python3 -m tools.analyze.retail_bomb_first_bind \
   /tmp/opencode/gf-bomb-first-bind.json
 ```
 
+### Type-15 direct contact and follow-up allocation
+
+The [bomb contact receipt](api-map/gg4e08-bomb-contact.json) joins
+two exact opening records to the original pair loop and HP writer.
+The receiver is a normal Sasuke with 180 HP and one original body
+descriptor at a declared pose. A miss or seeded duplicate token
+leaves the bomb flying and produces neither an HP write nor a
+follow-up request.
+
+| Bomb key and owner | Opening power → HP removed | Child requested on the next visit | Pool entries consumed when the child publishes |
+| --- | ---: | --- | --- |
+| Powered Gunman key 8 (only one carrier available at charged release) | 20 → 17 | Class 2, type 4, key 0, bucket 25 | One object and one descriptor |
+| Sasuke key 3 (ordinary paid X) | 10 → 8 | Class 3, type 5, key 0, bucket 9 | One object and two descriptors |
+
+Accepted overlap records `0x10` on the parent. The next bomb visit
+requests the child at the parent's position, retaining separate
+immediate-parent and credited-actor links. The shape pass unlinks
+the opening shape. If
+the child cell is unavailable or there are too few descriptors,
+the request publishes nothing. The direct damage, stock, and
+parent retirement are unchanged: the parent returns its carrier
+and descriptor on the third visit after the hit.
+
+All ten cases matched across O0, O1, and O2. The replay stops before
+Sasuke's same-bucket child callback; it never visits Gunman's child
+bucket. This verifies allocation, not child shape binding, blast
+damage, terrain impact, or live battle timing. Native gameplay is
+unchanged.
+
+```sh
+python3 -m tools.analyze.retail_bomb_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-contact.json
+```
+
 ### Worm paid release, refunds and contact follow-up
 
 The [Worm contact receipt](api-map/gg4e08-worm-contact.json)
