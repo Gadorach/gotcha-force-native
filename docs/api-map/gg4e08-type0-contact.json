@@ -1,0 +1,308 @@
+{
+  "factory": "80082824",
+  "kind": "gf-retail-type0-contact",
+  "notes": [
+    "The source keys enter the ordinary factory directly, without a controller, cue or stock debit.",
+    "Both lists and registries are computed by original code. The rigid poses, unit scales, receiver body list, damage input axes and empty stage are declared.",
+    "The pair loop sets contact flags and token. Only the original HP writer completes; its caller is not resumed.",
+    "Later bucket and shape visits are isolated calls, not battle frames or proof of every key or receiver type."
+  ],
+  "pair_loop": "8002DB58",
+  "pilots": [
+    {
+      "borg": "gg4e08:0800",
+      "cases": [
+        {
+          "carrier_and_descriptor_return_visit": null,
+          "case": "miss",
+          "center_delta_x": 256,
+          "contact_flags_after_pair": 0,
+          "credited_and_received_damage": 0,
+          "first_followup": {
+            "attack_count": 1,
+            "motion_xz": [
+              -40.0,
+              0.0
+            ],
+            "phase": 1,
+            "shape_free_count": 0,
+            "stopped": false,
+            "timer": 299
+          },
+          "first_receiver_token": 0,
+          "hp_writer_reached": false,
+          "original_amount_record": null,
+          "receiver_hp": 180,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": false
+        },
+        {
+          "carrier_and_descriptor_return_visit": null,
+          "case": "duplicate-token",
+          "center_delta_x": 0,
+          "contact_flags_after_pair": 0,
+          "credited_and_received_damage": 0,
+          "first_followup": {
+            "attack_count": 1,
+            "motion_xz": [
+              -40.0,
+              0.0
+            ],
+            "phase": 1,
+            "shape_free_count": 0,
+            "stopped": false,
+            "timer": 299
+          },
+          "first_receiver_token": 1,
+          "hp_writer_reached": false,
+          "original_amount_record": null,
+          "receiver_hp": 180,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": true
+        },
+        {
+          "carrier_and_descriptor_return_visit": 3,
+          "case": "accepted-contact",
+          "center_delta_x": 0,
+          "contact_flags_after_pair": 16,
+          "credited_and_received_damage": 17,
+          "first_followup": {
+            "attack_count": 0,
+            "motion_xz": [
+              0.0,
+              0.0
+            ],
+            "phase": 2,
+            "shape_free_count": 1,
+            "stopped": true,
+            "timer": 299
+          },
+          "first_receiver_token": 1,
+          "hp_writer_reached": true,
+          "original_amount_record": "802D6270",
+          "receiver_hp": 163,
+          "receiver_token_cursor": 1,
+          "requested_damage": 17,
+          "seeded_duplicate_token": false
+        }
+      ],
+      "key": 12,
+      "source": {
+        "actor_spec_sha256": "9d1492115df0d6df22495cd90e2d92147580088db02e49fe35950cfc6000a90e",
+        "descriptor": 2,
+        "group": 1,
+        "hit_block_sha256": "1738ac3267f93a5d33b0dad227425f7a0b11d5444bf19bcd7f909423debf3e08",
+        "level_one_max_hp": 180,
+        "raw_power": 20,
+        "reaction_index": 1,
+        "reaction_mode": 4,
+        "static_release_site": "80076C10"
+      }
+    },
+    {
+      "borg": "gg4e08:0801",
+      "cases": [
+        {
+          "carrier_and_descriptor_return_visit": null,
+          "case": "miss",
+          "center_delta_x": 256,
+          "contact_flags_after_pair": 0,
+          "credited_and_received_damage": 0,
+          "first_followup": {
+            "attack_count": 1,
+            "motion_xz": [
+              -40.0,
+              0.0
+            ],
+            "phase": 1,
+            "shape_free_count": 0,
+            "stopped": false,
+            "timer": 299
+          },
+          "first_receiver_token": 0,
+          "hp_writer_reached": false,
+          "original_amount_record": null,
+          "receiver_hp": 180,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": false
+        },
+        {
+          "carrier_and_descriptor_return_visit": null,
+          "case": "duplicate-token",
+          "center_delta_x": 0,
+          "contact_flags_after_pair": 0,
+          "credited_and_received_damage": 0,
+          "first_followup": {
+            "attack_count": 1,
+            "motion_xz": [
+              -40.0,
+              0.0
+            ],
+            "phase": 1,
+            "shape_free_count": 0,
+            "stopped": false,
+            "timer": 299
+          },
+          "first_receiver_token": 1,
+          "hp_writer_reached": false,
+          "original_amount_record": null,
+          "receiver_hp": 180,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": true
+        },
+        {
+          "carrier_and_descriptor_return_visit": 3,
+          "case": "accepted-contact",
+          "center_delta_x": 0,
+          "contact_flags_after_pair": 16,
+          "credited_and_received_damage": 17,
+          "first_followup": {
+            "attack_count": 0,
+            "motion_xz": [
+              0.0,
+              0.0
+            ],
+            "phase": 2,
+            "shape_free_count": 1,
+            "stopped": true,
+            "timer": 299
+          },
+          "first_receiver_token": 1,
+          "hp_writer_reached": true,
+          "original_amount_record": "802F7C30",
+          "receiver_hp": 163,
+          "receiver_token_cursor": 1,
+          "requested_damage": 17,
+          "seeded_duplicate_token": false
+        }
+      ],
+      "key": 125,
+      "source": {
+        "actor_spec_sha256": "0fddcbc7ed6a3f9d3970497e16925a6a51a35bae982221612232674a9b947bdc",
+        "descriptor": 21,
+        "group": 1,
+        "hit_block_sha256": "14dff1ec36e66c0d2fa531f402c884844e26c13440944c8f5d5012251d2ed790",
+        "level_one_max_hp": 180,
+        "raw_power": 20,
+        "reaction_index": 1,
+        "reaction_mode": 4,
+        "static_release_site": "800A403C"
+      }
+    },
+    {
+      "borg": "gg4e08:0802",
+      "cases": [
+        {
+          "carrier_and_descriptor_return_visit": null,
+          "case": "miss",
+          "center_delta_x": 256,
+          "contact_flags_after_pair": 0,
+          "credited_and_received_damage": 0,
+          "first_followup": {
+            "attack_count": 1,
+            "motion_xz": [
+              0.0,
+              20.0
+            ],
+            "phase": 1,
+            "shape_free_count": 0,
+            "stopped": false,
+            "timer": 299
+          },
+          "first_receiver_token": 0,
+          "hp_writer_reached": false,
+          "original_amount_record": null,
+          "receiver_hp": 180,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": false
+        },
+        {
+          "carrier_and_descriptor_return_visit": null,
+          "case": "duplicate-token",
+          "center_delta_x": 0,
+          "contact_flags_after_pair": 0,
+          "credited_and_received_damage": 0,
+          "first_followup": {
+            "attack_count": 1,
+            "motion_xz": [
+              0.0,
+              20.0
+            ],
+            "phase": 1,
+            "shape_free_count": 0,
+            "stopped": false,
+            "timer": 299
+          },
+          "first_receiver_token": 1,
+          "hp_writer_reached": false,
+          "original_amount_record": null,
+          "receiver_hp": 180,
+          "receiver_token_cursor": 0,
+          "requested_damage": 0,
+          "seeded_duplicate_token": true
+        },
+        {
+          "carrier_and_descriptor_return_visit": 3,
+          "case": "accepted-contact",
+          "center_delta_x": 0,
+          "contact_flags_after_pair": 16,
+          "credited_and_received_damage": 17,
+          "first_followup": {
+            "attack_count": 0,
+            "motion_xz": [
+              0.0,
+              0.0
+            ],
+            "phase": 2,
+            "shape_free_count": 1,
+            "stopped": true,
+            "timer": 299
+          },
+          "first_receiver_token": 1,
+          "hp_writer_reached": true,
+          "original_amount_record": "80339E18",
+          "receiver_hp": 163,
+          "receiver_token_cursor": 1,
+          "requested_damage": 17,
+          "seeded_duplicate_token": false
+        }
+      ],
+      "key": 45,
+      "source": {
+        "actor_spec_sha256": "7995a8c0fab3e8a3282a82844e2cbae5b296b369d010932cad4feec382616f64",
+        "descriptor": 0,
+        "group": 0,
+        "hit_block_sha256": "c72cfa05a63ea7142e55265bd47bcefb9280073d1ae90a9a04c4bf653fa630a1",
+        "level_one_max_hp": 200,
+        "raw_power": 20,
+        "reaction_index": 0,
+        "reaction_mode": 4,
+        "static_release_site": "8013D77C"
+      }
+    }
+  ],
+  "receiver": {
+    "body_step": 9,
+    "borg": "gg4e08:000a",
+    "flags": 2,
+    "hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+    "initial_hp": 180,
+    "kind": 0,
+    "local_center": [
+      0.0,
+      -14.0,
+      0.0
+    ],
+    "matrix_selector": 2,
+    "radius": 22.0
+  },
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "writer": "8003D344"
+}

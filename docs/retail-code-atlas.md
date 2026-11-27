@@ -472,10 +472,10 @@ Both forks decrement the timer from 300 to 299 first.
 
 This differs from the [type-2 Machine Red comparison](#machine-red-rifle-continuation-and-pool-return),
 where the same bit value from the pair loop did not stop the next
-update. The type-0 control matched across O0, O1 and O2. It does
-not show that Gold Hero actually produces `0x10`, how a live
-collision behaves, or how the alternate `8008296C` constructor
-chooses its basis. No native move or runtime rule changed.
+update. The supplied-byte control matched across O0, O1 and O2.
+The [joined type-0 contact test below](#type-0-contact-hp-and-retirement)
+then checks what three source keys actually produce. The
+alternate `8008296C` constructor is still outside scope.
 
 ```sh
 python3 -m tools.analyze.retail_type0_roster \
@@ -487,6 +487,42 @@ python3 -m tools.analyze.retail_type0_flight \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type0-flight.json
+```
+
+### Type-0 contact, HP and retirement
+
+The [type-0 contact receipt](api-map/gg4e08-type0-contact.json)
+uses the ordinary factory and exact hit blocks for Kung-Fu
+Master (key 12), Tao Master (125), and Gold Hero (45). The
+original allocation and sweep register their attack spheres and
+the same Sasuke body-9 singleton. The fixture supplies rigid
+poses, unit scales, settings/ranks/banks at zero, and an empty
+stage. It supplies the factory key directly, not the original
+input, cue or stock debit.
+
+| Control across all three keys | Original contact and HP | Following carrier update |
+| --- | --- | --- |
+| Centers 256 units apart | No contact; 180 HP | Continued and stayed registered |
+| Coincident with token already in history | No new contact; 180 HP | Continued and stayed registered |
+| Coincident with clear history | Set `0x10` and recorded token 1; raw power 20 became 17 damage, `180 → 163` HP | Entered phase 2 and returned the attack shape without moving |
+
+The original amount call receives the carrier and the distinct
+record for each key. The HP writer credits the real owner; neither
+amount nor carrier flag is supplied. Its caller is not resumed.
+In the independent continuation, all three accepted shots enter
+phase 3 on visit 2 and return the carrier and descriptor on visit
+3. This differs from the tested type-2 Machine Red shot, which
+stays registered after an accepted `0x10` contact.
+
+All nine cases matched across O0, O1 and O2. This does not
+qualify moving-body collision, full attack timing, other keys,
+KO, or the live Scene. No native runtime rule changed.
+
+```sh
+python3 -m tools.analyze.retail_type0_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type0-contact.json
 ```
 
 ### From shape publication to the amount call

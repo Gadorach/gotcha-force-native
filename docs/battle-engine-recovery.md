@@ -296,6 +296,11 @@ also distinguishes contact from retirement. Its accepted `0x10` hit
 flag leaves the rifle registered on the next isolated visit; expiry
 removes the shape before returning the carrier and descriptor. This
 does not establish a second hit or change native shot consumption.
+The [ordinary type-0 contact comparison](retail-code-atlas.md#type-0-contact-hp-and-retirement)
+observed the opposite continuation for keys 12, 45 and 125: the
+original hit generated `0x10`, and the next update stopped flight
+and removed the attack shape. The miss and duplicate-token controls
+kept flying. This is not a rule for every carrier family.
 
 ### Native roster contact selection
 
