@@ -12,8 +12,9 @@ status and architecture only; matching source stays local.
 - The recompiled module under `recomp/generated` is generated from the same DOL
   and chunk-verified by the runtime.
 - [`api-map/retail-battle-engine-map.json`](api-map/retail-battle-engine-map.json)
-  follows 14 curated roots into **213 functions and 412 direct calls**, with the
-  dispatch tables it meets.
+  is the older heuristic map from 14 battle anchors. The
+  [original-code atlas](retail-code-atlas.md) maps those anchors to actual
+  symbol bounds and joins the executable to all 206 Borg installers.
 
 ## The shared engine is a class table, not per-Borg code
 
@@ -37,11 +38,11 @@ the class. The first entries are matched handlers:
 | 4 | `80071A84` | class 4 |
 | 5+ | `8006FB44`, `8006FDB8`, `80070024`, … | remaining classes |
 
-This is how the original handles "all those Borg functions": a shared class
-handler table, with per-Borg data selecting the class. It is not a branch on the
-Borg ID.
+The original typically shares class handlers and selects them through
+installer data. Some wrappers also test the model or an actor flag, and some
+installers select a different main handler altogether; see the atlas.
 
-Each family handler dispatches a **second** time on `actor+0x581`:
+Several common family handlers dispatch a **second** time on `actor+0x581`:
 
 | Family | Sub-table | Notes |
 | --- | --- | --- |
