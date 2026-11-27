@@ -3,6 +3,7 @@
 #include "retail_recomp_fixture.hpp"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 
 namespace {
@@ -429,7 +430,75 @@ public:
         std::printf("rifle: %u %u %u %u %u %.0f %u %u %u %u %u %u %u\n",initial,unsigned(has_cue),
                     unsigned(free_cell),unsigned(free_descriptor),observed_count,double(observed_clock),
                     allocation.count,unsigned(created),created?cell[1]:0,created?cell[0x83]:0,
-                    created?cell[0x10]:0,created?cell[0x11]:0,restored);
+                     created?cell[0x10]:0,created?cell[0x11]:0,restored);
+    }
+    void machine_red_bucket(const HitBlock& block,bool admit,bool shape_pool,bool suppress){
+        if(!first_bucket_cell(3,9,0x10))fail("rifle bucket fixture requires a source-allocated carrier");
+        auto* cell=at(object_cell);
+        auto* shape=at(hurt_cell); // Separate class-4 free cell, never a body in this run.
+        std::memcpy(at(hit_block),block.data(),block.size());
+        put32(a+0x3FC,hit_block);
+        a[0]=1;a[0x18]=1;
+        at(settings)[209]=admit?0:1;
+        rigid(actor+0x8D4,0,0,0);
+        rigid(actor+0x8D4+7*0x30,100,200,300);
+        put_float(a+0xB4,1.f);
+        // No free class-2 effect cell and no visual resource payload. The
+        // existing carrier descriptor remains owned by the original code.
+        constexpr u32 visual=0x81030200,visual_link=visual+0x40,visual_table=visual+0x80,visual_row=visual+0xC0;
+        put32(at(0x803BB374),visual);put32(at(visual+16),visual_link);
+        put32(at(visual_link),visual_table);put32(at(visual_table),visual_row);
+        if(shape_pool){
+            shape[2]=4;
+            put32(at(free_head+16),hurt_cell);put32(at(free_tail+16),hurt_cell);
+            put16(at(free_count+8),1);
+        }
+        const auto before_phase=cell[0x18];
+        CPUState pass{};pass.gpr[3]=8;
+        const auto reached=mod.run_to_or_return(pass,ram,0x80089A94,{0x800F036C});
+        const bool launch=admit&&shape_pool;
+        if(before_phase||reached!=(launch?0x800F036Cu:0)||cell[0x18]!=(launch?1:admit?2:0)||
+           half(object_cell+0x1C)!=(admit?300:0)||half(actor+0x774)!=1||
+           be32(at(group_head+4*49))!=(launch?hurt_cell:0)||
+           be32(at(group_tail+4*49))!=(launch?hurt_cell:0)||
+           half(free_count+8)!=unsigned(!admit&&shape_pool)||half(attack_count)){
+            std::fprintf(stderr,"admit=%u pool=%u stop=%08X lr=%08X phase=%u->%u timer=%u stock=%u head=%08X tail=%08X free=%u attack=%u\n",
+                         unsigned(admit),unsigned(shape_pool),reached,pass.lr,before_phase,cell[0x18],half(object_cell+0x1C),
+                         half(actor+0x774),be32(at(group_head+4*49)),be32(at(group_tail+4*49)),half(free_count+8),half(attack_count));
+            fail("scheduled rifle initializer, pool or stock mismatch");
+        }
+        if(launch){
+            if(pass.lr!=0x800C4068||pass.gpr[3]!=object_cell||pass.gpr[4]!=185||cell[0x82]!=1||
+               be32(at(0x8043B5A0-21272+4))!=object_cell||be32(at(0x8043B5A0-21264+4))!=object_cell||
+               be32(at(group_head+4*25))||be32(at(descriptor_cell+12))||
+               shape[1]!=49||shape[0x83]!=0x1A||be32(shape+0xC)!=0x8008A65C||
+               be32(shape+0x20)!=object_cell||be32(shape+0x24)!=actor||
+               be32(shape+0x28)!=hit_block+0xAA0+15*80||be32(shape+0x60)!=object_cell+0x114)
+                fail("rifle did not bind the source-linked projectile shape and register before audio");
+        }
+        // Do not resume the stopped carrier pass or supply an audio result.
+        // Visit the independently callable class-4 sweep on the same lists.
+        if(suppress)put16(cell+0x272,1);
+        call(0x8008A28C);
+        call(0x80089AEC);
+        const bool listed=launch&&!suppress;
+        if(shape[0x10]!=unsigned(launch)||half(attack_count)!=unsigned(listed)||
+           be32(at(attack_registry))!=(listed?hurt_cell:0)||half(receiver_count)||half(actor+0x774)!=1)
+            fail("rifle shape activation or publication mismatch");
+        if(launch){
+            constexpr std::array<float,3> center{-149.39999f,191.f,365.f};
+            for(unsigned i=0;i<center.size();++i){
+                const auto near=[&](u32 field){return std::abs(fp(hurt_cell+field+4*i)-center[i])<0.0001f;};
+                if(!near(0x64)||!near(0x8C)||!near(0x98))fail("rifle shape center or initial endpoint mismatch");
+            }
+            if(!(std::abs(fp(hurt_cell+0x7C)-32.46753f)<0.0001f))fail("rifle shape radius mismatch");
+        }
+        std::printf("rifle-bucket: %u %u %u %u %u %u %u %u %u %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
+                    unsigned(admit),unsigned(shape_pool),unsigned(suppress),cell[0x18],half(object_cell+0x1C),
+                    unsigned(reached!=0),shape[1],shape[0x10],half(attack_count),
+                    double(fp(hurt_cell+0x64)),double(fp(hurt_cell+0x68)),double(fp(hurt_cell+0x6C)),
+                    double(fp(object_cell+0x38)),double(fp(object_cell+0x3C)),double(fp(object_cell+0x40)),
+                    double(fp(hurt_cell+0x7C)));
     }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
@@ -464,12 +533,32 @@ public:
 }
 
 int main(int argc,char** argv){
+    const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!sweep&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+    if(argc!=3&&!sweep&&!rifle_bucket&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--rifle-bucket|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(rifle_bucket){
+        HitBlock block{};
+        if(std::fread(block.data(),1,block.size(),stdin)!=block.size()||std::fgetc(stdin)!=EOF)
+            fail("rifle hit-block inlet extent");
+        struct BucketCase {bool admit,shape_pool,suppress;};
+        for(const auto test:{BucketCase{false,true,false},BucketCase{true,false,false},
+                            BucketCase{true,true,true},BucketCase{true,true,false}}){
+            Check c(mod,original);
+            c.install(0x800C91BC,0x0600,red,0x800C94D4);
+            c.pre_callback();
+            c.input(b,b,b,0,0x60,"Machine Red bounded bucket update");
+            c.expect(0,0,"Machine Red bucket update ranged B");
+            c.machine_red_cue(true);
+            put16(c.a+0x94,0x0600); // Declared ordinary owner model mirror, copied at allocation.
+            c.machine_red_release(2,true,true,true);
+            c.machine_red_bucket(block,test.admit,test.shape_pool,test.suppress);
+        }
+        return 0;
+    }
     {
         Check c(mod,original,red);
         c.input(0,0,0,0,0,"neutral");

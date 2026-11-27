@@ -5639,6 +5639,13 @@ seams remain fixture context. Original code performed the pool
 insertions, dispatch, activation and publication. This is a
 singleton source result, not a live retail actor or hit receipt.
 
+The [later recompiled bucket fixture](retail-code-atlas.md#machine-red-from-paid-carrier-to-attack-registry)
+joins the installed B row and VM cue to those original allocation
+and publication boundaries. It uses different supplied rigid poses
+and a null target, and independently checks slot inhibition, shape
+pool refusal and attack suppression. It does not replace the earlier
+receiver or HP comparisons or admit the move for retail gameplay.
+
 Exclusive `build/borg-ordered-audit/retail-0600-rifle-registry-v4.json`
 SHA-256: `8725a07aa3c0ac6a60764d94ac5a8d674c5d44bf18e1fe30ce058341fc972cdd`.
 One process, **0.227 s** wall, **5,642,184 KiB** available at launch,

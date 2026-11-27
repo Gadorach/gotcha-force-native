@@ -287,6 +287,48 @@ python3 -m tools.analyze.retail_attack_transactions \
   /tmp/opencode/gf-attack-transactions.json
 ```
 
+### Machine Red: from paid carrier to attack registry
+
+The [rifle bucket receipt](api-map/gg4e08-rifle-bucket.json)
+continues the actual Machine Red ranged-B allocation above. The
+fixture supplies an ordinary slot-zero owner, rigid matrices, and
+the qualified collision block. `80089A94(8)` walks the original
+carrier list; it selects the carrier in bucket 9 and calls its
+phase-zero initializer. The original binder uses group 0 to allocate
+and link descriptor 15 in bucket 49. Neither live list is seeded.
+
+| Fork after debit `2 → 1` | Carrier | Shape and attack registry |
+| --- | --- | --- |
+| Scene inhibits slot zero | Phase 0; no initialization | No bind; registry stays empty |
+| Slot admitted, no free shape cell | Phase 2; timer initialized to 300 | No bind; registry stays empty |
+| Shape pool available, carrier attack bit suppressed | Phase 1; late list inserted | Sphere initializes; registry stays empty |
+| Shape pool available, no publication inhibit | Phase 1; late list inserted | Same sphere; original code publishes one attack |
+
+With the supplied identity bases, key-7 translation
+`(100, 200, 300)`, and null launch target, the initial sphere
+center and both endpoints are approximately `(-149.4, 191, 365)`.
+Its source descriptor radius is 20; the original transformed
+radius is **32.46753**. The carrier velocity is approximately
+`(0, 0, 80)`. The carrier and shape runs use the original
+math code, not a host-supplied geometry result.
+
+No effect cell or visual payload is available. The original code
+registers the carrier in its late list and reaches the audio call,
+where the fixture stops. It then invokes the independent class-4
+pass `80089AEC` over the same lists without resuming the stopped
+stack. No contact consumer, HP write, retirement, or live pose
+schedule is qualified. Native behavior is unchanged.
+
+All four cases matched across O0, O1 and O2. Use the same binary
+and inputs as the [transaction fixture](#paid-release-and-pair-allocation):
+
+```sh
+python3 -m tools.analyze.retail_rifle_bucket \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-rifle-bucket.json
+```
+
 ### From shape publication to the amount call
 
 The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the

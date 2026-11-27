@@ -1,0 +1,150 @@
+{
+  "borg": "gg4e08:0600",
+  "cases": [
+    {
+      "attack_registry_count": 0,
+      "carrier_attack_suppressed": false,
+      "carrier_phase": 0,
+      "carrier_timer": 0,
+      "case": "scene-slot-inhibited",
+      "free_shape_cell": true,
+      "late_list_inserted": false,
+      "launch_velocity": null,
+      "scene_slot_inhibited": true,
+      "shape": null,
+      "stock_after": 1
+    },
+    {
+      "attack_registry_count": 0,
+      "carrier_attack_suppressed": false,
+      "carrier_phase": 2,
+      "carrier_timer": 300,
+      "case": "empty-shape-pool",
+      "free_shape_cell": false,
+      "late_list_inserted": false,
+      "launch_velocity": null,
+      "scene_slot_inhibited": false,
+      "shape": null,
+      "stock_after": 1
+    },
+    {
+      "attack_registry_count": 0,
+      "carrier_attack_suppressed": true,
+      "carrier_phase": 1,
+      "carrier_timer": 300,
+      "case": "attack-publication-suppressed",
+      "free_shape_cell": true,
+      "late_list_inserted": true,
+      "launch_velocity": [
+        0.0,
+        0.0,
+        79.99999
+      ],
+      "scene_slot_inhibited": false,
+      "shape": {
+        "bucket": 49,
+        "center": [
+          -149.39999,
+          191.0,
+          365.0
+        ],
+        "initial_endpoints_match_center": true,
+        "local_phase": 1,
+        "radius": 32.46753
+      },
+      "stock_after": 1
+    },
+    {
+      "attack_registry_count": 1,
+      "carrier_attack_suppressed": false,
+      "carrier_phase": 1,
+      "carrier_timer": 300,
+      "case": "attack-published",
+      "free_shape_cell": true,
+      "late_list_inserted": true,
+      "launch_velocity": [
+        0.0,
+        0.0,
+        79.99999
+      ],
+      "scene_slot_inhibited": false,
+      "shape": {
+        "bucket": 49,
+        "center": [
+          -149.39999,
+          191.0,
+          365.0
+        ],
+        "initial_endpoints_match_center": true,
+        "local_phase": 1,
+        "radius": 32.46753
+      },
+      "stock_after": 1
+    }
+  ],
+  "declared": {
+    "class2_effect_pool_cells": 0,
+    "credit_forward": [
+      0,
+      0,
+      1
+    ],
+    "key_7_translation": [
+      100,
+      200,
+      300
+    ],
+    "launch_target": null,
+    "stock_before_release": 2,
+    "visual_payload": null
+  },
+  "dispatch": {
+    "actor_slot": 0,
+    "attack_registry": "803C477C",
+    "bucket_pass": "80089A94",
+    "bucket_pass_argument": 8,
+    "carrier_bucket": 9,
+    "carrier_callback": "800C3CDC",
+    "class4_pass": "80089AEC",
+    "late_list_insert": "80089100",
+    "launch": "800C3D2C",
+    "shape_callback": "8008A65C",
+    "stop_before_audio": "800F036C"
+  },
+  "kind": "gf-retail-rifle-bucket",
+  "notes": [
+    "This joins the installed action, VM cue and paid original allocation to original bucket traversal on supplied scratch state.",
+    "The successful bucket pass stops before sound after the original late insert. The class-4 pass then runs independently without resuming that stack.",
+    "Pool capacity, owner model mirror and pose, null launch target, and missing visual payload are declared fixture inputs.",
+    "No carrier, shape or attack-registry pointer is seeded. No contact consumer, HP path, retirement or running match is qualified."
+  ],
+  "revision": 1,
+  "rifle": {
+    "key": 21,
+    "local_offset": [
+      -249.39999389648438,
+      -9.0,
+      64.0
+    ],
+    "matrix_key": 7,
+    "muzzle_row": "803036CC",
+    "source_shape": {
+      "base_radius": 20.0,
+      "descriptor": 15,
+      "flags": 1,
+      "group": 0,
+      "hit_block_sha256": "89e4a919e5989aad5b2fb36985d55859b8cfdf9387bec0149265cbf716b9aec3",
+      "local_center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "shape_kind": "sphere",
+      "tuning_index": 0
+    },
+    "speed_operand": 80.0,
+    "type": 2
+  },
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
