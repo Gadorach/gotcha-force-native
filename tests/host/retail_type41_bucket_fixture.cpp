@@ -31,11 +31,19 @@ constexpr AreaCase area_cases[]{
     {22,false,false,false},{22,true,false,false},{70,true,false,false},{409,true,false,false},
     {409.5f,true,false,false},{410,true,false,false},{22,true,true,false},{22,true,false,true},
 };
-struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;bool tiers=false;};
+enum class AreaMode {hp,tiers,knockout};
+struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;AreaMode mode;};
 struct TierCase {u8 meter,tier,flags;u16 gauge;bool hp_held;};
 constexpr TierCase tier_cases[]{
     {0,0,0,500,false},{49,1,0,500,false},{50,1,0,500,false},{99,2,0,150,false},
     {60,2,0,100,false},{50,1,128,100,false},{99,63,0,500,false},{50,1,0,100,true},
+};
+struct KnockoutCase {u16 hp,force;bool debit,reserve,eligible,held,ally;int reserves;};
+constexpr KnockoutCase knockout_cases[]{
+    {18,200,true,false,false,false,false,0}, {17,200,true,false,false,false,false,0},
+    {7,140,true,false,false,false,false,0}, {7,200,false,true,true,false,false,2},
+    {7,200,false,true,false,false,false,2}, {7,140,true,true,true,true,false,2},
+    {3,200,true,false,false,false,true,0}, {7,150,true,true,true,false,false,0},
 };
 struct ParentCase {float offset;bool incoming,ally,command;};
 constexpr ParentCase parent_cases[]{
@@ -111,20 +119,24 @@ class Check {
            word(actor+0x778)||word(actor+0x418))
             fail("type-41 tested path changed another actor, clock or HP");
     }
-    void tier_contact(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
-        const auto rule=tier_cases[probe.index];
-        constexpr u32 body=contact::receiver,gauge=body+0x6C2,meter=body+0x6C8,tier=body+0x6CA,flags=body+0x6FD;
-        constexpr u32 gauge_timer=body+0x684,tier_timer=body+0x68C,ordinary_attack_count=0x8043B5A0-21328;
-        const auto bits=[](float f){return std::bit_cast<u32>(f);};
+    void isolate_area(unsigned capacity,u32 parent){
+        constexpr u32 ordinary_attack_count=0x8043B5A0-21328;
         if(at(blast+0x18)[0]!=1||half(actor+0x774)!=capacity-1)
-            fail("tier probe requires the real area initializer and separate paid parent");
+            fail("area probe requires the real initializer and separate paid parent");
         call(0x80089554,0);rebuild();
-        if(half(ordinary_attack_count))fail("tier probe counted the unopened area");
+        if(half(ordinary_attack_count))fail("area probe counted the unopened area");
         check_return(observe(0x80089A94,8,return_stock));
         call(0x80089554,0);rebuild();
         if(half(ordinary_attack_count)!=1||word(0x803C477C)!=shapes[1]||word(shapes[1]+0x20)!=blast||
            half(blast+0x26C)!=2||half(actor+0x774)!=capacity||!at(parent)[0])
-            fail("tier probe did not isolate the exact child and receiver");
+            fail("area probe did not isolate the exact child and receiver");
+    }
+    void tier_contact(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
+        const auto rule=tier_cases[probe.index];
+        constexpr u32 body=contact::receiver,gauge=body+0x6C2,meter=body+0x6C8,tier=body+0x6CA,flags=body+0x6FD;
+        constexpr u32 gauge_timer=body+0x684,tier_timer=body+0x68C;
+        const auto bits=[](float f){return std::bit_cast<u32>(f);};
+        isolate_area(capacity,parent);
         const auto maximum=u16(u16(probe.spec[0])<<8|probe.spec[1]);
         if(maximum!=500)fail("tier probe source receiver capacity");
         put16(at(body+0x6BE),maximum);put16(at(gauge),rule.gauge);put16(at(meter),rule.meter);
@@ -179,6 +191,103 @@ class Check {
         }
         std::printf("tier-contact: %u %u %u %u %u %u %u %u\n",
                     c.model,probe.index,request,hp,post_gauge,post_meter,post_tier,post_flags);
+    }
+    void knockout_contact(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
+        isolate_area(capacity,parent);
+        const auto rule=knockout_cases[probe.index];
+        constexpr u32 victim=contact::receiver,s=contact::scene,observer=actor+0x1E00;
+        constexpr u32 requests=0x81050000,request_count=requests+0x2D18,request_slot=requests+0x1518;
+        constexpr u32 mode=0x8043B5A0-31856;
+        constexpr u32 credit_bonus=0x8043B5A0-21580,opponent_ledger=actor+0x418,ally_ledger=actor+0x42C;
+        constexpr unsigned cost=150;
+        const u32 slot=s+(rule.ally?0:60),force=slot+0x118,reserves=slot+0x10A;
+        const u32 other_force=s+(rule.ally?60:0)+0x118;
+        if(at(victim+0x88)[0]!=unsigned(!rule.ally)||at(victim+0x18)[0]!=1||
+           at(actor+0x18)[0]!=1||at(victim+0x83)[0]||at(actor+0x83)[0]||word(victim+0x5A4)||
+           at(victim+0x3E6)[0]||at(word(mode)+50)[0])
+            fail("knockout needs two distinct normal bodies");
+        call(0x80055F90,victim);
+        if(half(victim+0x4AA)!=cost||half(victim+0x1C4)!=180||half(victim+0x1C6)!=180)
+            fail("knockout normal HP or cached force cost changed");
+        put16(at(victim+0x3EA),contact::sasuke.model);
+        put32(at(0x8043B5A0-21068),requests); // Empty mode-0 model request buffer.
+        put16(at(victim+0x1C6),rule.hp); // Leave max HP and the amount mirrors unchanged.
+        put16(at(victim+0x6BE),500);put16(at(victim+0x6C2),500);
+        put32(at(force),rule.force);
+        const auto untouched_force=word(other_force);
+        at(slot+0x108)[0]=u8(rule.debit);at(slot+0x109)[0]=u8(rule.reserve);at(reserves)[0]=u8(rule.reserves);
+        at(victim+0x1EA)[0]=u8(rule.eligible);at(s+31)[0]=u8(rule.held);
+        at(observer)[0]=1;at(observer+0x88)[0]=u8(!rule.ally);at(observer+0x484)[0]=7;
+        const auto snapshot=ram;
+        const auto expected_request=rule.ally?4u:17u;
+        const auto lethal=!rule.held&&rule.hp<=expected_request;
+        const auto credited=lethal&&!rule.ally;
+        const auto removed=rule.held?0u:std::min(unsigned(rule.hp),expected_request);
+        const auto damage=rule.held?0u:expected_request;
+        const auto after_force=lethal&&rule.debit?unsigned(std::max(0,int(rule.force)-int(cost))):rule.force;
+        const auto used_reserve=lethal&&rule.reserve&&rule.eligible&&rule.reserves>0;
+        const auto scene_pair=lethal&&(used_reserve||after_force==0);
+        const auto amount_row=c.model==6?0x802C49D0u:0x802C49E8u;
+        {
+            auto fork=snapshot;
+            CPUState writer{};CallObservation amount{contact::amount_entry};
+            mod.run_to(writer,fork,contact::pair_pass,{contact::hp_write},&amount);
+            if(amount.count!=1||amount.caller!=0x8002F108||amount.arguments[0]!=amount_row||
+               amount.arguments[1]!=blast||amount.arguments[2]!=victim||writer.lr!=0x8002F1DC||
+               writer.gpr[3]!=victim||writer.gpr[4]!=expected_request||contact::half(fork,victim+0x1C6)!=rule.hp||
+               be32(contact::at(fork,force))!=rule.force||be32(contact::at(fork,victim+0x41C))!=damage)
+                fail("knockout HP inlet did not separate the original request, ledger and force");
+            mod.finish_stopped_leaf(writer,contact::hp_write,164);
+            if(writer.gpr[3]!=unsigned(lethal)||contact::half(fork,victim+0x1C6)!=rule.hp-removed||
+               contact::half(fork,victim+0x1C8)!=(rule.held?180:rule.hp)||
+               be32(contact::at(fork,force))!=rule.force||be32(contact::at(fork,s+0xB8)))
+                fail("knockout HP writer did more than the bounded health write");
+        }
+        call(contact::pair_pass,0);
+        const auto check=[&](){
+            const auto encoded=~word(request_slot);
+            return half(victim+0x1C6)==rule.hp-removed&&word(victim+0x41C)==damage&&
+                half(victim+0x1C8)==(rule.held?180:rule.hp)&&half(victim+0x4AA)==cost&&
+                word(opponent_ledger)==(rule.ally?0:damage)&&word(ally_ledger)==(rule.ally?damage:0)&&
+                word(force)==after_force&&word(other_force)==untouched_force&&
+                at(reserves)[0]==unsigned(rule.reserves-used_reserve)&&
+                word(s+0xB4)==(scene_pair?actor:0)&&word(s+0xB8)==(scene_pair?victim:0)&&
+                at(victim+0x435)[0]==unsigned(lethal)&&word(victim+0x424)==(lethal?cost:0)&&
+                at(actor+0x434)[0]==unsigned(credited)&&word(actor+0x420)==(credited?cost:0)&&
+                half(credit_bonus)==(credited?150:50)&&word(victim+0x5A4)==(credited?actor:0)&&
+                at(observer+0x484)[0]==(lethal?0:7)&&half(observer+0x464+7*4)==(lethal?4:0)&&
+                half(observer+0x466+7*4)==unsigned(lethal)&&word(observer+0x430)==(lethal?cost:0)&&
+                at(observer+0x437)[0]==unsigned(lethal)&&
+                at(actor+0x484)[0]==1+unsigned(lethal)&&half(actor+0x464)==(rule.ally?2:1)&&
+                half(actor+0x466)==1&&half(actor+0x468)==(lethal?(rule.ally?4:3):0)&&
+                half(actor+0x46A)==unsigned(lethal)&&
+                word(actor+0x430)==(lethal&&rule.ally?cost:0)&&at(actor+0x437)[0]==unsigned(lethal&&rule.ally)&&
+                word(request_count)==unsigned(credited)&&
+                (credited?(encoded>>16)==contact::sasuke.model&&(encoded&0xFFFF)>=1&&(encoded&0xFFFF)<=16:
+                    word(request_slot)==0)&&
+                at(victim+0x18)[0]==1&&at(victim)[0]&&half(victim+0x20C)==2&&half(actor+0x774)==capacity&&
+                half(victim+0x6C8)==(lethal?0:50)&&half(victim+0x6C2)==(lethal?500:400);
+        };
+        if(!check()){
+            std::fprintf(stderr,"ko: model=%u case=%u req=%u hp=%u/%u ledger=%u,%u,%u "
+                "force=%u reserve=%u scene=%08X/%08X count=%u/%u costs=%u/%u bonus=%u last=%08X phase=%u "
+                "observer=%u/%u/%u/%u actor_history=%u/%u token=%u tier=%u/%u queue=%u/%08X\n",c.model,probe.index,
+                expected_request,half(victim+0x1C6),rule.hp-removed,word(opponent_ledger),word(ally_ledger),
+                word(victim+0x41C),word(force),
+                at(reserves)[0],word(s+0xB4),word(s+0xB8),at(actor+0x434)[0],at(victim+0x435)[0],word(actor+0x420),
+                word(victim+0x424),half(credit_bonus),word(victim+0x5A4),at(victim+0x18)[0],at(observer+0x484)[0],
+                half(observer+0x464+7*4),half(observer+0x466+7*4),word(observer+0x430),at(actor+0x484)[0],
+                half(actor+0x464),half(victim+0x20C),half(victim+0x6C8),half(victim+0x6C2),word(request_count),
+                word(request_slot));
+            fail("knockout pair did not follow its original force, attribution or survival branch");
+        }
+        if(observe(contact::pair_pass,0,contact::hp_write).count||!check())
+            fail("knockout retained token wrote again");
+        std::printf("body-knockout: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                    c.model,probe.index,expected_request,half(victim+0x1C6),word(victim+0x41C),word(force),at(reserves)[0],
+                    unsigned(word(s+0xB8)!=0),at(victim+0x435)[0],word(victim+0x424),at(actor+0x434)[0],word(actor+0x420),
+                    half(credit_bonus),unsigned(word(victim+0x5A4)!=0),at(victim+0x18)[0],half(victim+0x6C8),
+                    half(observer+0x464+7*4),word(request_count),half(actor+0x468));
     }
     void follow_area(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
         const auto rule=area_cases[probe.index];
@@ -462,7 +571,8 @@ public:
         put32(at(pool+12),c.descriptor_cells?desc:0);put16(at(pool+18),c.descriptor_cells);
         for(unsigned i=0;i<c.descriptor_cells;++i)put32(at(desc+i*0x80),i+1<c.descriptor_cells?desc+(i+1)*0x80:0);
         if(probe||parent_probe){
-            const auto area_index=probe&&probe->tiers?1u:probe?probe->index:0u;
+            const auto area_index=probe&&probe->mode!=AreaMode::hp?
+                (probe->mode==AreaMode::knockout&&knockout_cases[probe->index].ally?6u:1u):probe?probe->index:0u;
             const auto body_x=probe?200.f+area_cases[area_index].distance:
                 parent_cases[parent_probe->index].incoming?800.f:200.f+parent_cases[parent_probe->index].offset;
             const auto is_ally=probe?area_cases[area_index].ally:parent_cases[parent_probe->index].ally;
@@ -564,7 +674,8 @@ public:
                             word(blast+0x8C)!=first||word(blast+0x90)!=actor||word(blast+0x20)!=word(first+0x20))))
                 fail("type-41 area allocation changed credit or parent");
             if(probe){
-                if(probe->tiers)tier_contact(c,*probe,capacity,first);
+                if(probe->mode==AreaMode::tiers)tier_contact(c,*probe,capacity,first);
+                else if(probe->mode==AreaMode::knockout)knockout_contact(c,*probe,capacity,first);
                 else follow_area(c,*probe,capacity,first);
                 return;
             }
@@ -608,8 +719,9 @@ int main(int argc,char** argv){
     const bool area_hp=argc==4&&!std::strcmp(argv[3],"--area-hp");
     const bool parent=argc==4&&!std::strcmp(argv[3],"--parent-contact");
     const bool tiers=argc==4&&!std::strcmp(argv[3],"--tiers");
-    if(argc!=3&&!area_hp&&!parent&&!tiers)
-        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers] < qualified-payload");
+    const bool knockout=argc==4&&!std::strcmp(argv[3],"--knockout");
+    if(argc!=3&&!area_hp&&!parent&&!tiers&&!knockout)
+        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -617,10 +729,11 @@ int main(int argc,char** argv){
     Common bank{};contact::HitBlock hit{};std::array<contact::ActorSpec,2> specs{};
     read(bank);read(hit);
     for(auto& spec:specs)read(spec);
-    if(area_hp||parent||tiers){
+    if(area_hp||parent||tiers||knockout){
         contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
         for(unsigned m=6;m<=7;++m)
-            for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):std::size(area_cases));++i){
+            for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):
+                                 knockout?std::size(knockout_cases):std::size(area_cases));++i){
                 if(parent){
                     const ParentProbe probe{i,hurt,defender};
                     const bool incoming=parent_cases[i].incoming;
@@ -628,8 +741,8 @@ int main(int argc,char** argv){
                     Check(mod,original,opts,specs[m-6],hit,bank,0,nullptr,&probe);
                     continue;
                 }
-                const AreaProbe probe{i,hurt,defender,tiers};
-                const Options opts{u8(m),u8(1+unsigned(tiers||area_cases[i].shape)),1,3,u8(m==6?2:3),false};
+                const AreaProbe probe{i,hurt,defender,tiers?AreaMode::tiers:knockout?AreaMode::knockout:AreaMode::hp};
+                const Options opts{u8(m),u8(1+unsigned(tiers||knockout||area_cases[i].shape)),1,3,u8(m==6?2:3),false};
                 Check(mod,original,opts,specs[m-6],hit,bank,0,&probe);
             }
     }else{

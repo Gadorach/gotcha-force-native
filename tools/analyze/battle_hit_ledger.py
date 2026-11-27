@@ -1,4 +1,4 @@
-"""Publish numerical field and ring provenance of the shared hit ledger."""
+"""Publish numerical field and ring provenance of the shared knockout ledger."""
 import argparse
 from hashlib import sha256
 import json
@@ -24,11 +24,11 @@ def recover(image):
         return struct.unpack_from(">I", text, site - FUNCTION)[0] & 0xFFFF
 
     return {
-        "kind": "gf-battle-hit-ledger", "revision": 1, "source_dol_sha256": SOURCE_SHA256,
+        "kind": "gf-battle-hit-ledger", "revision": 2, "source_dol_sha256": SOURCE_SHA256,
         "function": f"{FUNCTION:08X}",
         "admission": {"receiver_kind_offset": operand(0x8002F8DC), "required_kind": 0},
         "amount": {"recipient_cache_offset": operand(0x8002F8F0), "read": "8002F8F0", "type": "s16",
-                   "note": "uses the recipient's cached hit amount, not the incoming r5"},
+                   "note": "uses the recipient's initialized Force cost, not the HP request in incoming r5"},
         "recipient_totals": {"count_offset": operand(0x8002FAAC), "amount_offset": operand(0x8002FAB8)},
         "credit": {"count_offset": operand(0x8002FAEC), "amount_offset": operand(0x8002FAF8),
                    "condition": "attacker kind 0 and attacker player slot differs from recipient player slot",
@@ -47,8 +47,8 @@ def recover(image):
             "same_player": {"relation": operand(0x8002FB68), "write": "8002FB6C",
                             "count_offset": operand(0x8002FBB4), "amount_offset": operand(0x8002FBC0)},
         },
-        "native_analogue": "accepted package hit ledger; each admitted nonrecipient actor observes until restart; "
-                           "native team replaces source player slot for observer relation only",
+        "native_analogue": "authored accepted-hit history, not the source knockout ledger; "
+                           "native teams replace source player slots for observer relation",
     }
 
 

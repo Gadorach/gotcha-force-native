@@ -27,7 +27,7 @@
         ],
         "role": "force/ledger update"
       },
-      "note": "reads the cached receiving amount, updates team force and credit, and visits six observer slots with an eight-entry ring per actor",
+      "note": "reads the recipient's cached Force cost on knockout, updates Force and credit, and visits six observer slots with an eight-entry ring per actor",
       "role": "force-ledger-update",
       "site": "8002F200",
       "target": "8002F8DC"
@@ -61,7 +61,7 @@
         ],
         "role": "force/ledger update"
       },
-      "note": "reads the cached receiving amount, updates team force and credit, and visits six observer slots with an eight-entry ring per actor",
+      "note": "reads the recipient's cached Force cost on knockout, updates Force and credit, and visits six observer slots with an eight-entry ring per actor",
       "role": "force-ledger-update",
       "site": "8002F21C",
       "target": "8002F8DC"

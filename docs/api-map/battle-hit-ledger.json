@@ -4,7 +4,7 @@
     "required_kind": 0
   },
   "amount": {
-    "note": "uses the recipient's cached hit amount, not the incoming r5",
+    "note": "uses the recipient's initialized Force cost, not the HP request in incoming r5",
     "read": "8002F8F0",
     "recipient_cache_offset": 1194,
     "type": "s16"
@@ -17,7 +17,7 @@
   },
   "function": "8002F8DC",
   "kind": "gf-battle-hit-ledger",
-  "native_analogue": "accepted package hit ledger; each admitted nonrecipient actor observes until restart; native team replaces source player slot for observer relation only",
+  "native_analogue": "authored accepted-hit history, not the source knockout ledger; native teams replace source player slots for observer relation",
   "observers": {
     "active_byte_offset": 0,
     "active_test": "nonzero; not a health check",
@@ -53,6 +53,6 @@
     "amount_offset": 1060,
     "count_offset": 1077
   },
-  "revision": 1,
+  "revision": 2,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

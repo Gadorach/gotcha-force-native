@@ -1902,6 +1902,45 @@ python3 -m tools.analyze.retail_damage_tier_clock \
   /tmp/opencode/gf-damage-tier-clock.json
 ```
 
+### Normal body knockout: Force cost, reserves and credit
+
+The [knockout replay](api-map/gg4e08-body-knockout.json) completes the
+original pair for the two paid Time/Remote Bomber area children
+(keys 19 and 20), against stationary Sasuke in declared mode 0.
+The original level-1 HP/cost initializer supplies **180 max HP**
+and a cached Force cost of **150**. The fixture changes current
+HP only; it keeps the amount mirrors and max HP unchanged.
+
+- The opponent pair requests **17 HP**. From 7 HP it removes **7**,
+  but each damage ledger adds **17**. Those ledgers are already
+  written at the HP-writer entry. The writer clips HP without
+  debiting Force; the separate knockout tail consumes the cost.
+- With debit enabled, **200 → 50** is nonterminal for Force;
+  **140 → 0** clamps and **150 → 0** is exact. Zero Force writes
+  the scene's owner/receiver pair. Spending one of two reserves
+  can write the same pair without changing Force. A reserve is
+  not spent when the receiver's eligibility byte is clear.
+- The same-player slot-0, receiver-bank-0 control loses **3 HP**
+  from a request of **4** and still debits **150 Force**. It
+  records the receiver loss but awards no opponent knockout credit
+  or model request. That is not a general friendly-fire rule.
+- A credited knockout adds a second ring record and **100** tally
+  units beyond the ordinary area's **50**. A scene HP hold
+  suppresses HP loss and knockout bookkeeping, not the accepted
+  contact record or the surviving tier charge.
+
+The recipient is still active and in phase 1 at the pair's
+return. Resolving the retained token did not write again.
+All **16 cases** (12 knockouts) matched across O0/O1/O2.
+This result stops before actor retirement, scene transition,
+respawn, or an enclosing scheduler. Native gameplay is unchanged.
+
+```sh
+python3 -m tools.analyze.retail_body_knockout \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-knockout.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

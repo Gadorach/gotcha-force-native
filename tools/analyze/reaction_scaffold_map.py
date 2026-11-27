@@ -25,7 +25,7 @@ AMOUNT = 0x8002F108
 HP_WRITE = 0x8002F1D8
 
 ROLE_NOTES = {
-    0x8002F8DC: "reads the cached receiving amount, updates team force and credit, "
+    0x8002F8DC: "reads the recipient's cached Force cost on knockout, updates Force and credit, "
                 "and visits six observer slots with an eight-entry ring per actor",
     0x8002FCBC: "guards receiver+0x2AE and requests fixed impact sound ID 38",
     0x8002FC18: "guards receiver+0x2AE and selects an impact sound pair through receiver size thresholds",

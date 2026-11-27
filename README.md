@@ -176,7 +176,7 @@ texture or audio bytes; each regenerates from a local roster.
 - [Contact pose pause](docs/api-map/contact-pose-pause.json) — local
   slowdown operands and the opt-in native skeletal hold.
 - [Battle hit ledger](docs/api-map/battle-hit-ledger.json) — source
-  observer slots, per-actor ring layout, and relation codes.
+  knockout Force cost, observer slots, and ring relation codes.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.

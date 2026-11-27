@@ -24,9 +24,10 @@ class BattleHitLedgerTest(unittest.TestCase):
                          (0, 136, 996))
         self.assertTrue(history["exclude_recipient"])
 
-    def test_cached_amount_and_relationships(self):
+    def test_cached_force_cost_and_relationships(self):
         report = json.loads(ARTIFACT.read_bytes())
         self.assertEqual(report["amount"]["recipient_cache_offset"], 0x4AA)
+        self.assertIn("Force cost", report["amount"]["note"])
         self.assertEqual(report["recipient_totals"], {"count_offset": 0x435, "amount_offset": 0x424})
         history = report["observers"]
         self.assertEqual(history["different_player"]["relation"], 3)

@@ -507,9 +507,10 @@ The scaffold itself is ordered in
 [`api-map/reaction-scaffold-map.json`](api-map/reaction-scaffold-map.json):
 16 pre-amount calls, the amount call and HP write, then 29 reaction and
 presentation calls. The first reaction-band call (`8002F8DC`) is the force
-ledger. It reads the recipient's cached amount, updates force and actor
-totals, and appends a record to each applicable observer's ring. The rest of
-the band includes impact sounds and visual effects.
+ledger on the zero-HP continuation. It reads the recipient's cached Force
+cost, not the HP request. It can update Force and reserve totals, and appends
+a knockout record to each applicable observer's ring. The rest of the band
+includes impact sounds and visual effects.
 
 ### Hit-history observers
 
@@ -786,18 +787,18 @@ recovered 4-tick window to gate the direct hit ring, so the fixture's two
 bullets at tick 2 and beam at tick 4 share one ring. The contact sheet also
 holds the pitch capture.
 
-The ledger fields are:
+The [mode-0 knockout replay](retail-code-atlas.md#normal-body-knockout-force-cost-reserves-and-credit)
+distinguishes these fields from the earlier ordinary damage ledgers:
 
 | Field | Meaning |
 | --- | --- |
-| `actor+0x4AA` | applied amount (s16) |
-| `actor+0x424` | damage taken total (int) |
-| `actor+0x434` | hits taken (byte) |
-| `attacker+0x420` | credited damage total (int) |
-| `attacker+0x434` | hits dealt (byte) |
-| `team_base+team*0x3C+0x118` | team force pool, decremented by the amount |
-| `team_base+team*0x3C+0x108/0x109/0x10A` | force flags/count |
-| `lbl_80436154[team]` | team tally, `+= 100` on a cross-team hit |
+| `receiver+0x4AA` | initialized Force cost (s16) |
+| `receiver+0x41C`, `owner+0x418/+0x42C` | received, opponent-credit and ally-credit HP request totals |
+| `receiver+0x424`, `receiver+0x435` | knockout cost sum and loss count |
+| `owner+0x420`, `owner+0x434` | credited knockout cost sum and count (different player slot) |
+| `scene+player*0x3C+0x118` | receiving slot's Force pool, debited by the cached cost when allowed |
+| `scene+player*0x3C+0x108/0x109/0x10A` | Force debit gate, reserve gate and signed reserve count |
+| `lbl_80436154[player]` | tally; the tested area adds 50 on accepted contact and another 100 on a credited knockout |
 | `lbl_803C4E84 + slot*0x1E00` | six-slot actor array |
 | `slot+0x464`, `slot+0x484` | eight-entry hit ring and its index |
 | `slot+0x430`, `slot+0x437` | ring total and count |
