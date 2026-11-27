@@ -1,0 +1,21 @@
+{
+  "cases": [
+    {"active_worker_queried_terrain":true,"actor_contact_area_requested":false,"borg":"gg4e08:0d03","borrowed_second_endpoint_after":[220,-200,500],"carrier_key":8,"case":"saucer-clear","copied_second_endpoint_after":[220,-200,500],"effect":null,"independent_stage_query_point":null,"segment":null,"shape_object":"carrier","spare_carrier_cells":1,"spare_descriptor_cells":1},
+    {"active_worker_queried_terrain":true,"actor_contact_area_requested":false,"borg":"gg4e08:0d03","borrowed_second_endpoint_after":[160,0,400],"carrier_key":8,"case":"saucer-floor","copied_second_endpoint_after":[160,0,400],"effect":{"allocated":true,"key":4,"source_point":[160,0,400],"type":9},"independent_stage_query_point":[160,0,400],"segment":null,"shape_object":"carrier","spare_carrier_cells":1,"spare_descriptor_cells":1},
+    {"active_worker_queried_terrain":true,"actor_contact_area_requested":false,"borg":"gg4e08:0d03","borrowed_second_endpoint_after":[160,0,400],"carrier_key":8,"case":"saucer-no-effect-carrier","copied_second_endpoint_after":[160,0,400],"effect":{"allocated":false,"key":4,"source_point":[160,0,400],"type":9},"independent_stage_query_point":[160,0,400],"segment":null,"shape_object":"carrier","spare_carrier_cells":0,"spare_descriptor_cells":1},
+    {"active_worker_queried_terrain":true,"actor_contact_area_requested":false,"borg":"gg4e08:0d03","borrowed_second_endpoint_after":[160,0,400],"carrier_key":8,"case":"saucer-no-effect-descriptor","copied_second_endpoint_after":[160,0,400],"effect":{"allocated":false,"key":4,"source_point":[160,0,400],"type":9},"independent_stage_query_point":[160,0,400],"segment":null,"shape_object":"carrier","spare_carrier_cells":1,"spare_descriptor_cells":0},
+    {"active_worker_queried_terrain":false,"actor_contact_area_requested":false,"borg":"gg4e08:0e02","borrowed_second_endpoint_after":[220,-200,500],"carrier_key":9,"case":"segment-clear","copied_second_endpoint_after":[220,-200,500],"effect":null,"independent_stage_query_point":null,"segment":{"bound_group":1,"far_endpoint":[220,-200,500],"key":1},"shape_object":"type-11-segment","spare_carrier_cells":1,"spare_descriptor_cells":0},
+    {"active_worker_queried_terrain":false,"actor_contact_area_requested":false,"borg":"gg4e08:0e02","borrowed_second_endpoint_after":[220,-200,500],"carrier_key":9,"case":"segment-floor","copied_second_endpoint_after":[220,-200,500],"effect":null,"independent_stage_query_point":[160,0,400],"segment":{"bound_group":1,"far_endpoint":[220,-200,500],"key":1},"shape_object":"type-11-segment","spare_carrier_cells":1,"spare_descriptor_cells":0}
+  ],
+  "entries": {"actor_contact_area":"801DF8E8","query":"8003E6E4","saucer_query":"801DF8B4","segment_request":"801DF2B0","terrain_effect_factory":"800FC6A0","terrain_effect_request":"801DF8CC"},
+  "inputs": {"actor_contact_latch":0,"first_endpoint":[100,200,300],"second_endpoint":[220,-200,500],"synthetic_floor_y":0},
+  "kind": "gf-retail-type32-terrain",
+  "notes": ["The original constructor publishes a carrier; scratch is supplied at the observation boundary and the inner phase is declared.","The independent query tests the exact input points against stage geometry. Its output is not fed into the carrier.","Key 8's own query writes to the borrowed second endpoint before trying the type-9 allocation.","Key 9 does not call that query and its type-11 segment keeps the unclipped far endpoint in this fixture.","The effect stops at allocation. No type-9 update, overlap, HP, live scheduling or native gameplay is qualified."],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "sources": [
+    {"borg":"gg4e08:0d03","carrier_key":8,"collision_mode_byte":0,"descriptor":1,"hit_block_sha256":"2eedbece07b7a5ddeecd7b6c8ad3731cc176b8e19666ae42033a2c0054b80cf3","raw_power":30,"reaction_index":1,"reaction_table":"80362C28","row":"803915F8"},
+    {"borg":"gg4e08:0e02","carrier_key":9,"collision_mode_byte":1,"descriptor":1,"hit_block_sha256":"11467f3a1c1491e490093fa99fd3ff69b244b495203fe9dd5de05bd4b00e8e6a","raw_power":10,"reaction_index":6,"reaction_table":"8038DAE0","row":"80391620"}
+  ]
+}

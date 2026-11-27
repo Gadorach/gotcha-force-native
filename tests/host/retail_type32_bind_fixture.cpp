@@ -16,6 +16,7 @@ constexpr u32 pose=0x80048288,bind=0x8008AC80,segment_factory=0x80139A6C,segment
 constexpr u32 shared_factory=0x800E19A8,shared_update=0x800E1AB4;
 constexpr u32 segment_transform=0x80139CC0,attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
 constexpr u32 cannon_factory=0x800EC1F4,cannon_update=0x800EC2EC,cannon_table=0x802FC350;
+constexpr u32 terrain_query=0x8003E6E4,terrain_effect=0x800FC6A0;
 using Block=std::array<u8,7840>;
 using contact_replay::ActorSpec;
 using contact_replay::receiver;
@@ -27,6 +28,10 @@ struct Pilot {u16 model;u8 key,index;u32 table,first,second;};
 constexpr Pilot pilots[]={{0x0D03,8,1,0x80362C28,actor+0x15C,actor+0x168},
                           {0x0E02,9,6,0x8038DAE0,actor+0x144,actor+0x150}};
 enum class Case {scratch_empty,shape_empty,shape_available,segment_empty};
+struct TerrainCase {bool direct,floor;unsigned children,extra_descriptors;};
+constexpr TerrainCase terrain_cases[]={
+    {true,false,1,1},{true,true,1,1},{true,true,0,1},{true,true,1,0},{false,false,1,0},{false,true,1,0},
+};
 struct SharedPilot {u16 model;u8 key,socket,group,step,index,radius;u32 table;Point offset;};
 constexpr SharedPilot shared_pilots[]={
     {0x0104,1,1,10,9,9,30,0x803214E0,{0,25,350}},
@@ -86,16 +91,25 @@ class Check {
         }
         shape_pool(shapes);
     }
-    void terrain(){
-        constexpr u32 grid=stage+0x100,refs=stage+0x200,side=16,empty=refs+4*side*side;
+    void terrain(bool floor=false){
+        constexpr u32 grid=stage+0x100,empty_grid=stage+0x140,refs=stage+0x200,side=16;
+        constexpr u32 empty_refs=refs+4*side*side,list=empty_refs+4*side*side,tri=list+8,empty=tri+0x80;
         put32(at(0x8043B5A0-21316),stage);
-        for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+        put32(at(stage+28),grid);put32(at(stage+32),empty_grid);put32(at(stage+36),empty_grid);
         put_float(at(stage+52),4000.f);put_float(at(stage+56),3000.f);put_float(at(stage+60),-1000.f);
         put_float(at(stage+64),3000.f);put_float(at(stage+68),-1000.f);
-        put32(at(grid),500);put32(at(grid+4),500);put32(at(grid+8),side);put32(at(grid+12),side);
-        put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));put32(at(grid+24),refs);
-        put32(at(empty),0xFFFFFFFFu);
-        for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),empty);
+        for(u32 g:{grid,empty_grid}){
+            put32(at(g),500);put32(at(g+4),500);put32(at(g+8),side);put32(at(g+12),side);
+            put32(at(g+16),u32(-1000));put32(at(g+20),u32(-1000));
+            put32(at(g+24),g==grid?refs:empty_refs);put32(at(g+28),tri);
+        }
+        put32(at(empty),0xFFFFFFFFu);put32(at(list),tri);put32(at(list+4),0xFFFFFFFFu);
+        for(unsigned i=0;i<side*side;++i){
+            put32(at(refs+4*i),floor&&i==2*side+2?list:empty);
+            put32(at(empty_refs+4*i),empty);
+        }
+        place(tri+4,{-500,0,-500});place(tri+16,{-500,0,2000});place(tri+28,{900,0,-500});
+        put_float(at(tri+44),1.f);
     }
     void shape_identity(u32 object,u32 table,unsigned group,unsigned step,unsigned index){
         if(word(active_head+49*4)!=shape||half(free_count+8)||
@@ -281,20 +295,17 @@ class Check {
                     pilot.model,pilot.key,unsigned(inlet.which),damage,hp,token,flags,unsigned(wall),
                     double(radius),double(offset),double(first[2]),double(far[2]),double(center[2]));
     }
-public:
-    Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
-    void observe(Pilot pilot,const Block& block,Case which){
-        const bool direct=pilot.key==8,scratch_free=which!=Case::scratch_empty;
-        const bool shape_free=which==Case::shape_available||which==Case::segment_empty;
-        const bool spare=which!=Case::segment_empty;
-        pools(spare,shape_free);
+    bool prepare_borrowed(Pilot pilot,const Block& block,bool scratch_free,bool shape_free,
+                          unsigned children,unsigned descriptor_cells,const Point& first,const Point& second){
+        if(descriptor_cells<4)fail("type-32 borrowed parent needs four descriptor cells");
+        const bool direct=pilot.key==8;
+        pools(children,unsigned(shape_free),descriptor_cells);
         auto* owner=at(actor);
         owner[0]=1;owner[0x18]=1;owner[0x6F7]=2;
         put16(owner+0x3E8,pilot.model);put16(owner+0x94,pilot.model);put16(owner+0x774,5);
         put32(owner+0x90,actor);put32(owner+0x27C,pilot.table);put32(owner+0x3FC,hit_block);
         for(unsigned at:{0xB4,0xB8,0xC0,0xC4,0x1DC8})put_float(owner+at,1.f);
         std::memcpy(at(hit_block),block.data(),block.size());
-        constexpr Point first{100,200,300},second{220,240,380},moved{250,270,410};
         place(pilot.first,first);place(pilot.second,second);
 
         CPUState ctor{};ctor.gpr[3]=actor;ctor.gpr[4]=pilot.key;
@@ -315,12 +326,10 @@ public:
         if(word(active_head+9*4)!=carrier||at(carrier)[0x10]!=32||at(carrier)[0x11]!=pilot.key||
            word(carrier+0xC)!=update||word(carrier+0x8C)!=actor||word(carrier+0x90)!=actor||
            word(carrier+0x18C)!=pilot.first||word(carrier+0x190)!=pilot.second||
-           word(carrier+0x19C)!=actor+0x6F7||half(descriptor_row+18)||word(active_head+49*4)||half(actor+0x774)!=5)
+           word(carrier+0x19C)!=actor+0x6F7||half(descriptor_row+18)!=descriptor_cells-4||
+           word(active_head+49*4)||half(actor+0x774)!=5)
             fail("type-32 carrier identity or borrowed-address inlet mismatch");
-        if(!scratch_free){
-            std::printf("type32-branch: %u %u %u 0 0 0 0 0 0 0 0\n",pilot.model,pilot.key,unsigned(which));
-            return;
-        }
+        if(!scratch_free)return false;
 
         CPUState init{};init.gpr[3]=carrier;
         CallObservation opening{bind};
@@ -332,6 +341,22 @@ public:
            at(carrier)[0x18]!=(admitted?1:2)||bool(word(active_head+49*4))!=parent_bound)
             fail("type-32 opening mode did not separate carrier bind and bypass");
         if(parent_bound)shape_identity(carrier,pilot.table,1,1,pilot.index);
+        return admitted;
+    }
+public:
+    Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
+    void observe(Pilot pilot,const Block& block,Case which){
+        const bool direct=pilot.key==8,scratch_free=which!=Case::scratch_empty;
+        const bool shape_free=which==Case::shape_available||which==Case::segment_empty;
+        const bool spare=which!=Case::segment_empty;
+        constexpr Point first{100,200,300},second{220,240,380},moved{250,270,410};
+        const bool admitted=prepare_borrowed(pilot,block,scratch_free,shape_free,spare,4,first,second);
+        const bool parent_bound=direct&&shape_free;
+        const unsigned opening_count=unsigned(direct&&scratch_free);
+        if(!scratch_free){
+            std::printf("type32-branch: %u %u %u 0 0 0 0 0 0 0 0\n",pilot.model,pilot.key,unsigned(which));
+            return;
+        }
         bool child_created=false,child_bound=false,endpoint_refresh=false;
         unsigned requests=0;
         if(admitted){
@@ -380,8 +405,73 @@ public:
         if(half(actor+0x774)!=5||half(descriptor_row+18))
             fail("type-32 bounded callbacks changed stock or descriptor ownership");
         std::printf("type32-branch: %u %u %u %u %u %u %u %u %u %u %u\n",pilot.model,pilot.key,unsigned(which),
-                    unsigned(scratch_free),opening.count,unsigned(parent_bound),requests,unsigned(child_created),
+                    unsigned(scratch_free),opening_count,unsigned(parent_bound),requests,unsigned(child_created),
                     unsigned(child_bound),unsigned(endpoint_refresh),unsigned(admitted));
+    }
+    void borrowed_terrain(const Block& block,unsigned scenario){
+        const auto rule=terrain_cases[scenario];
+        const auto pilot=pilots[rule.direct?0:1];
+        constexpr Point first{100,200,300},second{220,-200,500},crossing{160,0,400};
+        if(!prepare_borrowed(pilot,block,true,true,rule.children,4+rule.extra_descriptors,first,second))
+            fail("type-32 terrain case did not reach its active parent inlet");
+        at(carrier)[0x19]=1;
+        put16(at(carrier+0x1A4),2);
+        terrain(rule.floor);
+
+        // Independent source query: no result is fed back into the carrier.
+        constexpr u32 points=0x8105F000;
+        place(points,first);place(points+12,second);
+        CPUState query{};query.gpr[3]=points;query.gpr[4]=points+12;query.gpr[5]=points+24;
+        mod.run(query,ram,terrain_query,1024);
+        if(query.gpr[3]!=unsigned(rule.floor)||(rule.floor&&get(points+24)!=crossing))
+            fail("type-32 supplied endpoints did not cross the fixture floor as expected");
+        const auto before=ram;
+        CPUState probe{};probe.gpr[3]=carrier;
+        CallObservation query_call{terrain_query};
+        const auto cut=mod.run_to_or_return(probe,ram,active,{terrain_query},&query_call);
+        if(cut!=(rule.direct?terrain_query:0)||query_call.count!=unsigned(rule.direct)||
+           (rule.direct&&(query_call.caller!=0x801DF8B4||query_call.arguments[0]!=pilot.first||
+                          query_call.arguments[1]!=pilot.second||query_call.arguments[2]!=pilot.second)))
+            fail("type-32 worker's terrain query or borrowed write destination changed");
+        std::memcpy(ram.data(),before.data(),ram.size());
+
+        CPUState no_contact{};no_contact.gpr[3]=carrier;
+        CallObservation area_call{0x80085E00};
+        mod.run_observed(no_contact,ram,active,area_call,4096);
+        if(area_call.count||at(carrier)[0x1D9])fail("type-32 bare terrain crossing requested an actor-contact area");
+        std::memcpy(ram.data(),before.data(),ram.size());
+
+        CPUState tick{};tick.gpr[3]=carrier;
+        CallObservation spawn{rule.direct?terrain_effect:segment_factory};
+        mod.run_observed(tick,ram,active,spawn,4096);
+        const bool effect_requested=rule.direct&&rule.floor;
+        const bool effect_made=effect_requested&&rule.children&&rule.extra_descriptors;
+        const bool segment_made=!rule.direct;
+        const auto endpoint=effect_requested?crossing:second;
+        if(get(pilot.first)!=first||get(pilot.second)!=endpoint||get(carrier+0x174)!=first||get(carrier+0x180)!=endpoint||
+           spawn.count!=unsigned(effect_requested||segment_made)||half(actor+0x774)!=5||
+           half(free_count+6)!=rule.children-unsigned(effect_made||segment_made)||
+           half(descriptor_row+18)!=rule.extra_descriptors-unsigned(effect_made))
+            fail("type-32 terrain correction or child resource order changed");
+        if(effect_requested&&(spawn.caller!=0x801DF8CC||spawn.arguments[0]!=actor||
+                              spawn.arguments[1]!=pilot.second||spawn.arguments[2]!=4))
+            fail("Saucer terrain effect did not request key 4 from the corrected endpoint");
+        if(effect_made&&(at(segment)[0x10]!=9||at(segment)[0x11]!=4||at(segment)[0x18]||
+                         word(segment+0x8C)!=actor||word(segment+0x90)!=actor||get(segment+0x20)!=crossing))
+            fail("Saucer terrain effect did not retain the source point and own credit");
+        if(rule.direct)shape_identity(carrier,pilot.table,1,1,pilot.index);
+        if(segment_made){
+            if(spawn.caller!=0x801DF2B0||spawn.arguments[0]!=carrier||spawn.arguments[1]!=carrier+0x174||
+               spawn.arguments[2]!=carrier+0x180||spawn.arguments[3]!=1||at(segment)[0x10]!=11||
+               word(segment+0x8C)!=carrier||word(segment+0x90)!=actor)
+                fail("type-32 segment control did not retain its unmodified endpoint");
+            CPUState bind_child{};bind_child.gpr[3]=segment;
+            mod.run(bind_child,ram,segment_update);
+            shape_identity(segment,pilot.table,1,1,pilot.index);
+        }
+        std::printf("type32-terrain: %u %u %u %u %u %u %u %.2f %.2f %.2f\n",pilot.model,scenario,
+                    unsigned(rule.floor),query_call.count,unsigned(effect_requested),unsigned(effect_made),
+                    unsigned(segment_made),double(endpoint[0]),double(endpoint[1]),double(endpoint[2]));
     }
     void shared(SharedPilot pilot,const Block& block,AimCase which,const Contact* contact=nullptr,const Stream* cadence=nullptr){
         constexpr u32 original_target=0x8101C000,replacement_target=0x8101E000;
@@ -619,8 +709,9 @@ int main(int argc,char** argv){
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
     const bool stream=argc==4&&!std::strcmp(argv[3],"--stream");
     const bool cannon=argc==4&&!std::strcmp(argv[3],"--cannon");
-    if(argc!=3&&!shared&&!contact&&!stream&&!cannon)
-        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon]");
+    const bool terrain=argc==4&&!std::strcmp(argv[3],"--borrowed-terrain");
+    if(argc!=3&&!shared&&!contact&&!stream&&!cannon&&!terrain)
+        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon|--borrowed-terrain]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     if(cannon){
@@ -684,6 +775,13 @@ int main(int argc,char** argv){
     for(auto& hit:blocks)
         if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size())fail("type-32 hit block extent");
     if(std::getc(stdin)!=EOF)fail("unexpected type-32 hit payload");
+    if(terrain){
+        for(unsigned n=0;n<std::size(terrain_cases);++n){
+            Check test(mod,original);
+            test.borrowed_terrain(blocks[terrain_cases[n].direct?0:1],n);
+        }
+        return 0;
+    }
     for(unsigned i=0;i<blocks.size();++i)
         for(auto scenario:{Case::scratch_empty,Case::shape_empty,Case::shape_available,Case::segment_empty}){
             if(i==0&&scenario==Case::segment_empty)continue;

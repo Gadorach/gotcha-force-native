@@ -1013,6 +1013,39 @@ python3 -m tools.analyze.retail_type32_bind \
   /tmp/opencode/gf-type32-bind.json
 ```
 
+### Type-32 borrowed endpoints: terrain writes and effect refusal
+
+The [terrain replay](api-map/gg4e08-type32-terrain.json) uses the
+same borrowed-endpoint modes with a real synthetic floor query.
+At the declared active subphase, Saucer key 8 passes its borrowed
+second point as both query input and output. The floor crossing
+changes `(220, -200, 500)` to `(160, 0, 400)` in the actor's
+borrowed storage, then the carrier copies the corrected point.
+
+The worker requests a type-9/key-4 effect at the corrected
+point, with the credited actor as its parent. If the effect lacks
+a carrier or descriptor cell, its
+allocation fails **after** the endpoint write; the correction
+still stands. Terrain alone does not request the actor-contact
+area. The effect's update and any effect damage are untested.
+
+The exact `0e02` key-9 control does not take the key-8 worker,
+even when an independent original query hits the same floor.
+It binds its type-11 child with the original far endpoint. This
+is a distinction between the two reviewed routes, not a
+universal terrain policy for type 32.
+
+All six cases matched across O0, O1, and O2. This replay supplies
+scratch and the active subphase, as above. It does not qualify
+live action timing, actor contact, HP, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_type32_terrain \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type32-terrain.json
+```
+
 ### Type-32 model-relative segments: copied aim and live gate
 
 The [shared replay](api-map/gg4e08-type32-shared.json) runs the

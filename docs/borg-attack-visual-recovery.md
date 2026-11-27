@@ -636,6 +636,12 @@ cancel the area request. Neither request establishes damage or
 draw output. This check does not assign the Saucer callback to
 Death Head.
 
+A [bounded synthetic-floor replay](retail-code-atlas.md#type-32-borrowed-endpoints-terrain-writes-and-effect-refusal)
+also exercised the actual terrain query at a declared active subphase.
+Saucer wrote the crossing into its borrowed endpoint even when the
+type-9 effect could not allocate. The floor alone did not request the
+actor-contact area. The separate key-9 route kept its far endpoint.
+
 The package API's [`beam-sweep`](borg-gameplay-api.md#swept-beams) is
 an authored pilot for a translating downward beam with visual contact
 explosions. It does not infer exact retail sweep geometry, terrain-blast
