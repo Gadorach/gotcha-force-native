@@ -1057,9 +1057,11 @@ interrupts its melee windup before the window arms. It uses ordinary
 walking, releases the interrupted input, and avoids returning through
 that same active field. On a stage that admits CPU aim hints, it can
 pursue another grounded rival along a clear path outside the field.
-It waits outside if there is no such path. Damage, interruption,
-field lifetime, and movement acceptance still belong to the native
-simulation.
+It waits outside if there is no such path and another damage pulse
+is pending. It can re-enter during the harmless tail of the field;
+the native world removes a field before damage on its expiry tick.
+Damage, interruption, field lifetime, and movement acceptance still
+belong to the native simulation.
 A melee-only CPU can also notice a stationary hostile field or a
 plain owner-following field carried by the rival it is approaching.
 It uses the current footprint only, if the direct approach would

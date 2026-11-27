@@ -1925,6 +1925,11 @@ still passed, with unchanged activity at both Workshop cutoffs.
 The five interrupted melee subjects still deployed no payload by
 tick 240 in the mixed sweep.
 
+After the last damaging pulse, the CPU can now resume its approach
+while the field is still visible. In a controlled Star Hero fixture,
+the next hit moved from tick 162 to tick 131; the field expired at
+133. All 206 passed both Workshop cutoffs with unchanged activity.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

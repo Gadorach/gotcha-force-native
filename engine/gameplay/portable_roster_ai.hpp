@@ -491,7 +491,11 @@ private:
         if(!f.active()||!f.spec.core_damage||!f.spec.core_damage->damage||
            f.owner>=world.actor_count()||actors[f.owner].team==actors[slot].team)return false;
         const auto scope=f.spec.core_damage->scope;
-        return scope==BorgFieldScope::Enemies||scope==BorgFieldScope::All;
+        if((scope!=BorgFieldScope::Enemies&&scope!=BorgFieldScope::All)||f.born>world.tick())return false;
+        const auto age=world.tick()-f.born,interval=u32(f.spec.core_damage->interval);
+        // The native world removes the field at age == ticks, before
+        // movement or core damage. Its last visible ticks can be harmless.
+        return interval&&age<f.spec.ticks&&interval-age%interval<f.spec.ticks-age;
     }
     static const BattleMvpField* hostile_damage_field(const NativeBattleMvp& world,unsigned slot,u32 object){
         if(!object)return nullptr;
@@ -521,10 +525,7 @@ private:
             // approached. Use its current footprint, never a forecast
             // of a different carrier, animated socket, or drifting core.
             if(field.spec.drift||(field.spec.follow&&(field.owner!=rival||field.spec.socket))||
-               !hostile_damage_field(world,owner,field)||field.born>world.tick())continue;
-            const auto interval=field.spec.core_damage->interval;
-            const auto age=world.tick()-field.born;
-            if(!interval||(age/interval+1)*interval>=field.spec.ticks)continue;
+               !hostile_damage_field(world,owner,field))continue;
             const auto buffer=field_buffer(field,self,cfg);
             f32 fraction=0;
             if(buffer>0&&battle_swept_hit(from,step,{field.centre[0],field.centre[2]},buffer,&fraction)&&fraction<=nearest){

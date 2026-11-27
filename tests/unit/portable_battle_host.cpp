@@ -1160,6 +1160,46 @@ void roster_cpu_field_escape_cases(){
     check(!blocked.alternate_hit||blocked.alternate_hit>=62,"do not cut through a partition to a safe-side rival");
 }
 
+void roster_cpu_field_tail_cases(){
+    const auto idle=definition("stationary-v1","health=500\n");
+    const std::string clips="health=500\nwalk=0:1\nair=0:2\ndash=0:3\n";
+    const auto caster=definition("grounded-v1|0.4|13|0.4",clips+
+        "move=pulse|b|10|grounded|16|0:4\nfield=pulse|1|sphere|190|190|190|108|0|50|90|150|250|150\n"
+        "field-core-damage=pulse|enemies|190|8|36\n");
+    const auto melee=definition("grounded-v1|8|13|15",clips+
+        "move=slash|b|10|grounded|24|0:4\nrange=slash|175\nmelee=slash|9|14|115|25|52|44|19\n");
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;config.local_aim_cycle=true;
+    config.teams={0,0,1};config.packages={caster,idle,melee};
+    config.spawn={BattlePoint{0,150},BattlePoint{600,400},BattlePoint{0,0}};
+    NativeBattleMvp world;PortableRosterAi cpu;
+    check(world.start(config),"start the quiet field tail fixture");
+    u32 placed=0;bool interrupted=false,waited=false,reentered=false,hit_before_expiry=false;
+    for(unsigned n=0;n<115;++n){
+        const auto ai=cpu.input(world,2);
+        if(placed&&interrupted&&world.tick()==placed+71){
+            check(!ai.movement.stick_x&&!ai.movement.stick_y,"wait outside while the last pulse is still pending");
+            waited=true;
+        }
+        if(placed&&interrupted&&world.tick()==placed+72){
+            check(world.fields()[0].active()&&ai.movement.stick_y>0,
+                  "resume walking after the last pulse, while the field is still active");
+            reentered=true;
+        }
+        const BorgBattleInputs initial=n?BorgBattleInputs{}:BorgBattleInputs{BorgBattleInputs::b,BorgBattleInputs::b,0};
+        check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+                               std::array<BorgBattleInputs,3>{{initial,{},ai.attack}},false),"advance the real field lifetime");
+        for(const auto& e:world.package_events()){
+            if(e.kind==BorgBattleEventKind::FieldPlaced&&e.actor==0)placed=e.tick;
+            if(e.kind==BorgBattleEventKind::Interrupted&&e.actor==2&&e.frame<9)interrupted=true;
+            if(e.kind==BorgBattleEventKind::Hit&&e.actor==2&&e.recipient==0&&reentered&&e.tick<placed+108)
+                hit_before_expiry=true;
+            if(e.kind==BorgBattleEventKind::Hit&&e.actor==0&&e.recipient==2)
+                check(e.tick<placed+108,"field removal precedes the damage pulse at the lifetime boundary");
+        }
+    }
+    check(waited&&reentered&&hit_before_expiry,"a quiet field tail allows an earlier real melee strike");
+}
+
 void roster_cpu_field_approach_cases(){
     struct Terrain final:IBattleMvpTerrain {
         std::array<StageBodyPartition,1> boxes{{{"remote",900,-50,1000,100,true}}};
@@ -1671,6 +1711,7 @@ int main(int argc,char** argv){
     roster_cpu_detour_ally_cases();
     roster_cpu_follow_charge_cases();
     roster_cpu_field_escape_cases();
+    roster_cpu_field_tail_cases();
     roster_cpu_field_approach_cases();
     roster_cpu_field_height_cases();
     roster_cpu_cruise_cases();

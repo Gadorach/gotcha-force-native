@@ -69,9 +69,21 @@ def smoke(binary, opengl):
         assert placed and interrupted and alternate, log[-4500:]
         assert int(interrupted[1]) < int(alternate[1]) < int(placed[1]) + 110, (placed[1], interrupted[1], alternate[1])
 
+        # The last pulse is long before removal. Re-enter in that
+        # quiet tail rather than treating the still-visible field as live.
+        caster_rules = field_rules.read_text()
+        field_rules.write_text(caster_rules.replace("|190|190|190|110|", "|190|190|190|106|")
+                               .replace("|190|8|6\n", "|190|8|36\n"))
+        preset.write_text(preset.read_text().replace("|normal|clear\n", "|normal|idle\n"))
+        log = play()
+        placed = re.search(tick + r"(\d+) actor=2 move=pulse event=field-placed ", log)
+        interrupted = re.search(tick + r"(\d+) actor=1 move=slash event=interrupt ", log)
+        hits = re.findall(tick + r"(\d+) actor=1 move=slash event=hit .*recipient=2 ", log)
+        assert placed and interrupted, log[-4500:]
+        assert any(int(placed[1]) + 72 < int(n) < int(placed[1]) + 106 for n in hits), log[-4500:]
+
         # A player deploys a field while the CPU is still on the approach.
         # The CPU takes the safe flank without having to absorb a hit first.
-        caster_rules = field_rules.read_text()
         field_rules.write_text(base + "health=1000\nmovement=stationary-v1\n")
         with (stage / "stage.manifest").open("a") as out:
             out.write("spawn=watch-caster|0|0|-545\nspawn=watch-rival|325|0|-825\nspawn=watch-cpu|0|0|-820\n")
