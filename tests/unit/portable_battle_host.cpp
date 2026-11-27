@@ -1160,6 +1160,64 @@ void roster_cpu_field_escape_cases(){
     check(!blocked.alternate_hit||blocked.alternate_hit>=62,"do not cut through a partition to a safe-side rival");
 }
 
+void roster_cpu_field_approach_cases(){
+    struct Terrain final:IBattleMvpTerrain {
+        std::array<StageBodyPartition,1> boxes{{{"remote",900,-50,1000,100,true}}};
+        std::span<const StageBodyPartition> body_partitions()const override{return boxes;}
+        bool height(f32,f32,f32,f32* out)const override{if(!out)return false;*out=0;return true;}
+    } terrain;
+    const auto idle=definition("stationary-v1","health=500\n");
+    const std::string clips="health=500\nwalk=0:1\nair=0:2\ndash=0:3\n";
+    const auto caster=[&](unsigned life){
+        return definition("grounded-v1|0.4|13|0.4",clips+
+            "move=pulse|b|10|grounded|16|0:4\nfield=pulse|1|sphere|190|190|190|"+std::to_string(life)+
+            "|0|50|90|150|250|150\nfield-core-damage=pulse|enemies|190|8|6\n");
+    };
+    const std::string slash="move=slash|b|10|grounded|14|0:4\nrange=slash|145\nmelee=slash|4|7|95|24|60|35|19\n";
+    const auto melee=definition("grounded-v1|8|13|15",clips+slash);
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;
+    config.teams={0,0,1};config.packages={caster(60),idle,melee};
+    config.spawn={BattlePoint{0,275},BattlePoint{325,-5},BattlePoint{0,0}};
+    NativeBattleMvp world;PortableRosterAi cpu;
+    const auto prepare=[&](unsigned ticks){
+        cpu.reset();check(world.start(config,&terrain),"start active-field approach fixture");
+        for(unsigned n=0;n<ticks;++n){
+            const BorgBattleInputs initial=n?BorgBattleInputs{}:BorgBattleInputs{BorgBattleInputs::b,BorgBattleInputs::b,0};
+            check(world.step_roster(std::array<GamePadState,3>{},std::array<BorgBattleInputs,3>{initial,{},{}},
+                                   false,&terrain),"place the field before the melee CPU starts");
+        }
+        check(world.target_of(2)==0&&world.actors()[2].health==500&&world.fields()[0].active(),
+              "the nearest rival has an active field, but hasn't hit the CPU");
+    };
+    const auto visit=[&](bool explicit_roster){
+        config.local_aim_cycle=explicit_roster;prepare(3);
+        unsigned pulses=0;
+        bool hit_alternate=false;
+        for(unsigned n=0;n<52;++n){
+            const auto ai=cpu.input(world,2,&terrain);
+            if(!n)check(ai.aim_target==(explicit_roster?1:255)&&!ai.attack.pressed,"avoid the active field before taking a pulse");
+            const std::array<u8,1> hints{ai.aim_target};
+            check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+                std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false,&terrain,{},nullptr,nullptr,nullptr,{},
+                {nullptr,0,ai.aim_target==255?std::span<const u8>{}:std::span<const u8>(hints)}),"advance a real safe-side approach");
+            for(const auto& e:world.package_events()){
+                if(e.kind!=BorgBattleEventKind::Hit)continue;
+                if(e.actor==0&&e.recipient==2)++pulses;
+                if(e.actor==2&&e.recipient==1)hit_alternate=true;
+            }
+        }
+        check(explicit_roster?(!pulses&&hit_alternate):(pulses&&!hit_alternate),"avoid a real field and take the clear rival");
+    };
+    visit(false);visit(true);
+    config.packages[2]=definition("grounded-v1|8|13|15",clips+slash+
+        "move=pole|x|11|grounded|14|0:4\nrange=pole|300\nmelee=pole|4|7|220|24|60|35|19\n");
+    prepare(3);
+    const auto ready=cpu.input(world,2,&terrain);
+    check(ready.aim_target==255&&ready.attack.pressed==BorgBattleInputs::x,"keep an already-ready strike from outside the field");
+    config.packages[2]=melee;config.packages[0]=caster(8);prepare(8);
+    check(cpu.input(world,2,&terrain).aim_target==255,"a field with no remaining pulse does not veto the approach");
+}
+
 void roster_cpu_field_height_cases(){
     struct Terrain final:IBattleMvpTerrain {
         std::array<StageBodyPartition,1> boxes{{{"remote-wall",1000,-6,1200,6,true}}};
@@ -1600,6 +1658,7 @@ int main(int argc,char** argv){
     roster_cpu_detour_ally_cases();
     roster_cpu_follow_charge_cases();
     roster_cpu_field_escape_cases();
+    roster_cpu_field_approach_cases();
     roster_cpu_field_height_cases();
     roster_cpu_cruise_cases();
     roster_cpu_ground_extension_cases();

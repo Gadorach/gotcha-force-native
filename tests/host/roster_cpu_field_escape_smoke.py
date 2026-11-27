@@ -69,6 +69,27 @@ def smoke(binary, opengl):
         assert placed and interrupted and alternate, log[-4500:]
         assert int(interrupted[1]) < int(alternate[1]) < int(placed[1]) + 110, (placed[1], interrupted[1], alternate[1])
 
+        # A player deploys a field while the CPU is still on the approach.
+        # The CPU takes the safe flank without having to absorb a hit first.
+        (root / "borgs/flight-stick/gameplay.txt").write_text(field_rules.read_text())
+        field_rules.write_text(base + "health=1000\nmovement=stationary-v1\n")
+        with (stage / "stage.manifest").open("a") as out:
+            out.write("spawn=watch-caster|0|0|-545\nspawn=watch-rival|325|0|-825\nspawn=watch-cpu|0|0|-820\n")
+        preset.write_text(
+            "GFROSTER 1\nstage=example:workshop\n"
+            "fighter=0|example:flight-stick|normal|watch-caster\n"
+            "fighter=0|example:field-stick|normal|watch-rival\n"
+            "fighter=1|example:jump-stick|normal|watch-cpu\n"
+        )
+        flags = ["--demo-package-battle"] if opengl else ["--headless", "--demo-package-battle"]
+        battle = run([binary, *flags, "--no-audio", "--frames", "78", "--trace-package-battle",
+                      "--battle-roster", preset], cwd=root, capture_output=True, text=True, timeout=45)
+        log = battle.stderr
+        assert battle.returncode == 0 and "frames=78 actors=3 restarts=0" in log, log[-4500:]
+        assert "actor=0 move=pulse event=field-placed " in log, log[-4500:]
+        assert not re.search(r"actor=0 move=pulse event=hit .*recipient=2 ", log), log[-4500:]
+        assert re.search(r"actor=2 move=slash event=hit .*recipient=1 ", log), log[-4500:]
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)

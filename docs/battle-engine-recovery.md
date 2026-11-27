@@ -1060,6 +1060,11 @@ pursue another grounded rival along a clear path outside the field.
 It waits outside if there is no such path. Damage, interruption,
 field lifetime, and movement acceptance still belong to the native
 simulation.
+A melee-only CPU can also notice a stationary hostile field before
+taking a hit, if its direct approach would enter the area before
+reaching strike range and the field still has a pulse left. An
+already-ready strike takes precedence. Moving fields still use the
+response to a confirmed hit, not a prediction of the caster's path.
 Simple slow ground drops with an opponent-only expiry blast use the
 declared blast radius for a finite flat-floor approach. The planner
 discounts body-centre height and does not count launch offset or

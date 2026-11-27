@@ -1907,6 +1907,15 @@ recipients, or damage. All 206 still passed and the Workshop sweep was
 unchanged at both cutoffs: 162 starts and 148 damaging hitters at
 tick 120, and 191 starts and 183 damaging hitters at tick 240.
 
+In a controlled approach with an already-active stationary field,
+Star Hero previously took eight pulses without landing a hit. With
+the approach check it took no pulses and hit the safe-side rival at
+tick 35. The check applies before a direct melee approach enters the
+field; it does not refuse a ready strike or predict a moving field.
+All 206 passed, with 162 starts and 148 damaging hitters at tick
+120 and 191 starts and 183 damaging hitters at tick 240, unchanged
+from the previous sweep.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

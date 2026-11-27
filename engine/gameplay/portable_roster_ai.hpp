@@ -53,7 +53,20 @@ public:
         }
         state.burst_leg=BurstLeg::None;
         u8 field_rival=255;
-        if(world.config().local_aim_cycle&&self.grounded&&profile->movement==BorgBattleMovement::Grounded){
+        const bool field_planning=world.config().local_aim_cycle&&self.grounded&&profile->movement==BorgBattleMovement::Grounded;
+        const auto escape_field=[&](){
+            const auto* field=hostile_damage_field(world,slot,state.evade_field);
+            if(!field){state.evade_field=0;return false;}
+            const auto escape=field_escape(world,slot,nearest,*field,terrain,field_rival);
+            if(!escape)return false;
+            pad.stick_x=s8(std::lround(127*escape->x));pad.stick_y=s8(std::lround(127*escape->z));
+            if(state.button){
+                attack.released=std::exchange(state.button,u8(0));
+                state.next_start=std::min(state.next_start,u64(tick)+12);
+            }
+            return true;
+        };
+        if(field_planning){
             const auto* active=action.move<profile->moves.size()?&profile->moves[action.move]:nullptr;
             if(self.hit_flash&&active&&borg_battle_direct_melee(*active)&&action.frame<active->melee->first){
                 for(const auto& e:world.package_events()){
@@ -61,16 +74,7 @@ public:
                     if(hostile_damage_field(world,slot,e.object)){state.evade_field=e.object;break;}
                 }
             }
-            if(const auto* field=hostile_damage_field(world,slot,state.evade_field)){
-                if(const auto escape=field_escape(world,slot,nearest,*field,terrain,field_rival)){
-                    pad.stick_x=s8(std::lround(127*escape->x));pad.stick_y=s8(std::lround(127*escape->z));
-                    if(state.button){
-                        attack.released=std::exchange(state.button,u8(0));
-                        state.next_start=std::min(state.next_start,u64(tick)+12);
-                    }
-                    return state.output;
-                }
-            }else state.evade_field=0;
+            if(escape_field())return state.output;
         }else state.evade_field=0;
         const auto preferred=std::any_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
             return move.button==BorgBattleButton::B&&supported(move);
@@ -92,6 +96,10 @@ public:
             if(fits_context(move))current_reach=std::max(current_reach,reach);
         }
         const auto reach=current_reach>0?current_reach:any_reach;
+        const bool short_range=reach>0&&std::isfinite(reach);
+        const bool melee_only=short_range&&std::none_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
+            return supported(move)&&!borg_battle_direct_melee(move);
+        });
         const auto point=[&](unsigned actor){const auto& p=world.actors()[actor].position;return BattlePoint{p[0],p[2]};};
         const auto start=point(slot);
         const auto has_entry_stock=[&](const BorgBattleMove& move){
@@ -130,12 +138,15 @@ public:
             }
             return nullptr;
         };
+        if(field_planning&&terrain&&melee_only&&!state.evade_field&&!state.button&&!self.dash_ticks&&!self.hit_flash&&
+           action.move==BorgBattleActionState::none){
+            if(const auto* field=field_on_approach(world,slot,nearest,reach,*terrain);field&&!ready_attack(nearest,false)){
+                state.evade_field=field->id;
+                if(escape_field())return state.output;
+            }
+        }
         auto target=field_rival==255?nearest:field_rival;
         if(target!=nearest)aim=target;
-        const bool short_range=reach>0&&std::isfinite(reach);
-        const bool melee_only=short_range&&std::none_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
-            return supported(move)&&!borg_battle_direct_melee(move);
-        });
         const bool can_dash=profile->movement==BorgBattleMovement::Grounded&&self.grounded&&
             !profile->dash_disabled&&profile->dash>profile->walk&&!self.dash_ticks&&!self.dash_cooldown&&
             !self.hit_flash&&!state.button&&action.move==BorgBattleActionState::none;
@@ -475,15 +486,48 @@ private:
         return (p.x-from.x)*step.x+(p.z-from.z)*step.z>0&&battle_swept_hit(from,step,p,2*radius,fraction);
     }
 
+    static bool hostile_damage_field(const NativeBattleMvp& world,unsigned slot,const BattleMvpField& f){
+        const auto& actors=world.actors();
+        if(!f.active()||!f.spec.core_damage||!f.spec.core_damage->damage||
+           f.owner>=world.actor_count()||actors[f.owner].team==actors[slot].team)return false;
+        const auto scope=f.spec.core_damage->scope;
+        return scope==BorgFieldScope::Enemies||scope==BorgFieldScope::All;
+    }
     static const BattleMvpField* hostile_damage_field(const NativeBattleMvp& world,unsigned slot,u32 object){
         if(!object)return nullptr;
-        const auto& actors=world.actors();
-        for(const auto& f:world.fields())if(f.id==object&&f.active()&&f.spec.core_damage&&
-            f.owner<world.actor_count()&&actors[f.owner].team!=actors[slot].team){
-            const auto scope=f.spec.core_damage->scope;
-            if(scope==BorgFieldScope::Enemies||scope==BorgFieldScope::All)return &f;
-        }
+        for(const auto& f:world.fields())if(f.id==object&&hostile_damage_field(world,slot,f))return &f;
         return nullptr;
+    }
+    static f32 field_buffer(const BattleMvpField& field,const BattleMvpActor& actor,const BattleMvpConfig& cfg){
+        const f32 dy=field.centre[1]-actor.position[1]-cfg.actor_height*.5f,r=field.spec.core_damage->radius;
+        const f32 planar=r*r-dy*dy;
+        return planar>0?std::sqrt(planar)+cfg.actor_radius*.5f:0.f;
+    }
+    static const BattleMvpField* field_on_approach(const NativeBattleMvp& world,unsigned owner,unsigned rival,
+                                                   f32 strike_range,const IBattleMvpTerrain& terrain){
+        const auto& cfg=world.config();
+        const auto& self=world.actors()[owner];
+        const auto& enemy=world.actors()[rival];
+        const BattlePoint from{self.position[0],self.position[2]},to{enemy.position[0],enemy.position[2]};
+        const auto distance=std::hypot(to.x-from.x,to.z-from.z);
+        if(distance<=strike_range||!battle_partition_route_clear(terrain,from,to,cfg.actor_radius))return nullptr;
+        const auto span=std::min(distance-strike_range,
+            std::max(2*cfg.actor_radius,cfg.packages[owner]->dash*cfg.dash_duration));
+        const BattlePoint step{(to.x-from.x)*span/distance,(to.z-from.z)*span/distance};
+        const BattleMvpField* first=nullptr;
+        f32 nearest=1.f;
+        for(const auto& field:world.fields()){
+            if(field.spec.follow||field.spec.drift||!hostile_damage_field(world,owner,field)||field.born>world.tick())continue;
+            const auto interval=field.spec.core_damage->interval;
+            const auto age=world.tick()-field.born;
+            if(!interval||(age/interval+1)*interval>=field.spec.ticks)continue;
+            const auto buffer=field_buffer(field,self,cfg);
+            f32 fraction=0;
+            if(buffer>0&&battle_swept_hit(from,step,{field.centre[0],field.centre[2]},buffer,&fraction)&&fraction<=nearest){
+                first=&field;nearest=fraction;
+            }
+        }
+        return first;
     }
 
     // Input-only response to a field that actually interrupted a windup.
@@ -496,10 +540,8 @@ private:
         const auto& self=actors[owner];
         const auto& goal=actors[rival].position;
         const BattlePoint centre{field.centre[0],field.centre[2]},start{self.position[0],self.position[2]};
-        const f32 dy=field.centre[1]-self.position[1]-cfg.actor_height*.5f,r=field.spec.core_damage->radius;
-        const f32 planar=r*r-dy*dy;
-        if(planar<=0)return {};
-        const auto buffer=std::sqrt(planar)+cfg.actor_radius*.5f;
+        const auto buffer=field_buffer(field,self,cfg);
+        if(buffer<=0)return {};
         if(std::hypot(start.x-centre.x,start.z-centre.z)>=buffer){
             const auto crosses=[&](BattlePoint to){
                 const BattlePoint step{to.x-start.x,to.z-start.z};
