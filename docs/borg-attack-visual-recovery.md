@@ -642,6 +642,12 @@ Saucer wrote the crossing into its borrowed endpoint even when the
 type-9 effect could not allocate. The floor alone did not request the
 actor-contact area. The separate key-9 route kept its far endpoint.
 
+A [carrier contact replay](retail-code-atlas.md#flying-saucer-key-8-carrier-contact-and-independent-descendants)
+got the latch from an original hit rather than supplying it. The carrier
+removed 26 HP from stationary Sasuke. On the follow-up callback, the area
+used the saved actor-contact point, not the floor crossing. The two
+descendants were only observed through allocation.
+
 The package API's [`beam-sweep`](borg-gameplay-api.md#swept-beams) is
 an authored pilot for a translating downward beam with visual contact
 explosions. It does not infer exact retail sweep geometry, terrain-blast

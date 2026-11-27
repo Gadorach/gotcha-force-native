@@ -32,6 +32,10 @@ struct TerrainCase {bool direct,floor;unsigned children,extra_descriptors;};
 constexpr TerrainCase terrain_cases[]={
     {true,false,1,1},{true,true,1,1},{true,true,0,1},{true,true,1,0},{false,false,1,0},{false,true,1,0},
 };
+struct SaucerCase {bool hit,floor;unsigned children,descriptors;};
+constexpr SaucerCase saucer_cases[]={
+    {false,false,2,3},{true,false,2,3},{false,true,2,3},{true,true,2,3},{true,true,1,3},{true,true,2,2},
+};
 struct SharedPilot {u16 model;u8 key,socket,group,step,index,radius;u32 table;Point offset;};
 constexpr SharedPilot shared_pilots[]={
     {0x0104,1,1,10,9,9,30,0x803214E0,{0,25,350}},
@@ -473,6 +477,99 @@ public:
                     unsigned(rule.floor),query_call.count,unsigned(effect_requested),unsigned(effect_made),
                     unsigned(segment_made),double(endpoint[0]),double(endpoint[1]),double(endpoint[2]));
     }
+    void saucer_contact(const Block& block,const Contact& inlet,unsigned scenario){
+        const auto rule=saucer_cases[scenario];
+        constexpr auto p=pilots[0];
+        constexpr Point first{100,200,300},clear_second{220,200,1500},floor_second{220,-200,500},floor_point{160,0,400};
+        constexpr u32 make_area=0x80085E00;
+        if(!prepare_borrowed(p,block,true,true,0,4,first,clear_second))
+            fail("Saucer did not reach its admitted carrier shape");
+        at(carrier)[0x19]=1;
+        put16(at(carrier+0x1A4),2);
+        terrain();
+        seat_inlet();
+        CPUState tick{};tick.gpr[3]=carrier;
+        mod.run(tick,ram,active,4096);
+        if(half(carrier+0x272)||at(carrier)[0x1D9]||word(carrier+8)||get(carrier+0x180)!=clear_second)
+            fail("Saucer contact did not start from the clear active worker");
+        const auto publish=[&]{
+            CPUState late{};late.gpr[3]=carrier;
+            mod.run(late,ram,0x801DF5EC);
+            for(u32 entry:{0x8008A28Cu,0x80089AECu}){
+                CPUState pass{};mod.run(pass,ram,entry,1024);
+            }
+            if(half(attack_count)!=1||word(attack_registry)!=shape||word(shape+0x20)!=carrier)
+                fail("Saucer carrier did not publish its admitted class-4 shape");
+        };
+        const auto before_body=ram;
+        publish();
+        const auto position=get(shape+0x64);
+        auto target=position;
+        if(!rule.hit)target[0]+=2000.f;
+        std::memcpy(ram.data(),before_body.data(),ram.size());
+        contact_replay::bind_sasuke(mod,ram,target,inlet.hit,inlet.owner,inlet.target,250);
+        publish();
+        if(get(shape+0x64)!=position||get(body+0x64)!=target||half(receiver_count)!=1||word(receiver_registry)!=body||
+           scalar(body+0x7C)!=22.f||at(carrier)[0x1D9]||half(receiver+0x20C)||!half(carrier+0x26C))
+            fail("Saucer contact point or token changed when the body was admitted");
+        const auto amount=contact_replay::pair_hp(mod,ram,carrier,p.table+24,rule.hit);
+        const auto hp=half(receiver+0x1C6),token=half(receiver+0x20C);
+        if(hp!=180-amount||half(actor+0x1C6)!=250||word(actor+0x418)!=amount||word(receiver+0x41C)!=amount||
+           half(receiver+0x1C8)!=(rule.hit?180:0xFFFF)||at(carrier)[0x1D9]!=(rule.hit?16:0)||
+           at(receiver)[0x26E]!=unsigned(rule.hit)||token!=(rule.hit?half(carrier+0x26C):0)||
+           word(receiver+0x290)!=(rule.hit?carrier:0)||word(carrier+0x290)!=(rule.hit?receiver:0))
+            fail("Saucer actor contact did not reach its own credit and HP latch");
+        contact_replay::pair_hp(mod,ram,carrier,p.table+24,false);
+        const auto event=rule.hit?get(carrier+0x2A0):Point{};
+        if(half(receiver+0x1C6)!=hp||word(receiver+0x41C)!=amount||word(actor+0x418)!=amount||
+           half(receiver+0x20C)!=token||at(receiver)[0x26E]!=unsigned(rule.hit)||
+           (rule.hit&&(event==floor_point||event==Point{})))
+            fail("Saucer contact was replayed or failed to record a separate point");
+
+        // Supply the next borrowed endpoint from the owner, not a terrain or actor result.
+        place(p.second,rule.floor?floor_second:clear_second);
+        terrain(rule.floor);
+        if(half(free_count+6)||half(descriptor_row+18)||word(free_head+12)||word(carrier+8))
+            fail("Saucer follow-up pool was not empty before the inlet");
+        put32(at(free_head+12),segment);
+        put32(at(free_tail+12),child_cell(rule.children-1));put16(at(free_count+6),u16(rule.children));
+        for(unsigned i=0;i<rule.children;++i){
+            at(child_cell(i))[2]=3;put32(at(child_cell(i)+4),i+1<rule.children?child_cell(i+1):0);
+        }
+        put32(at(descriptor_row+12),descriptors+0x200);put16(at(descriptor_row+18),u16(rule.descriptors));
+        for(unsigned i=0;i<rule.descriptors;++i)
+            put32(at(descriptors+0x200+0x80*i),i+1<rule.descriptors?descriptors+0x200+0x80*(i+1):0);
+        const auto before_exit=ram;
+        CPUState terrain_tick{};terrain_tick.gpr[3]=carrier;
+        CallObservation effect_call{terrain_effect};
+        mod.run_observed(terrain_tick,ram,active,effect_call,4096);
+        if(effect_call.count!=unsigned(rule.floor)||(rule.floor&&(effect_call.caller!=0x801DF8CC||
+           effect_call.arguments[0]!=actor||effect_call.arguments[1]!=p.second||effect_call.arguments[2]!=4)))
+            fail("Saucer next floor probe did not request its independent type-9 effect");
+        std::memcpy(ram.data(),before_exit.data(),ram.size());
+
+        CPUState contact_tick{};contact_tick.gpr[3]=carrier;
+        CallObservation area_call{make_area};
+        mod.run_observed(contact_tick,ram,active,area_call,4096);
+        const bool made_area=rule.hit&&rule.children>unsigned(rule.floor)&&rule.descriptors>=2+unsigned(rule.floor);
+        const auto area=child_cell(unsigned(rule.floor));
+        if(area_call.count!=unsigned(rule.hit)||(rule.hit&&(area_call.caller!=0x801DF8E8||
+           area_call.arguments[0]!=carrier||area_call.arguments[1]!=carrier+0x2A0||area_call.arguments[2]!=0))||
+           half(free_count+6)!=rule.children-unsigned(rule.floor)-unsigned(made_area)||
+           half(descriptor_row+18)!=rule.descriptors-unsigned(rule.floor)-2*unsigned(made_area)||
+           get(p.second)!=(rule.floor?floor_point:clear_second)||get(carrier+0x180)!=get(p.second)||
+           half(receiver+0x1C6)!=hp||half(actor+0x774)!=5||
+           (rule.floor&&(at(segment)[0x10]!=9||at(segment)[0x11]!=4||get(segment+0x20)!=floor_point||
+                         word(segment+0x8C)!=actor||word(segment+0x90)!=actor))||
+           (made_area&&(at(area)[0x10]!=5||at(area)[0x11]||get(area+0x20)!=event||
+                       word(area+0x8C)!=carrier||word(area+0x90)!=actor)))
+            fail("Saucer follow-up conflated the floor effect, actor-contact area or their pool cost");
+        std::printf("saucer-contact: %u %u %u %u %u %u %u %u",scenario,amount,hp,token,unsigned(rule.floor),
+                    effect_call.count,area_call.count,unsigned(made_area));
+        for(const auto& xyz:{position,event})
+            std::printf(" %.5f %.5f %.5f",double(xyz[0]),double(xyz[1]),double(xyz[2]));
+        std::printf("\n");
+    }
     void shared(SharedPilot pilot,const Block& block,AimCase which,const Contact* contact=nullptr,const Stream* cadence=nullptr){
         constexpr u32 original_target=0x8101C000,replacement_target=0x8101E000;
         const bool has_target=which==AimCase::moving_copy||which==AimCase::outside_gate,half_rate=which==AimCase::half_rate;
@@ -710,18 +807,27 @@ int main(int argc,char** argv){
     const bool stream=argc==4&&!std::strcmp(argv[3],"--stream");
     const bool cannon=argc==4&&!std::strcmp(argv[3],"--cannon");
     const bool terrain=argc==4&&!std::strcmp(argv[3],"--borrowed-terrain");
-    if(argc!=3&&!shared&&!contact&&!stream&&!cannon&&!terrain)
-        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon|--borrowed-terrain]");
+    const bool saucer=argc==4&&!std::strcmp(argv[3],"--saucer-contact");
+    if(argc!=3&&!shared&&!contact&&!stream&&!cannon&&!terrain&&!saucer)
+        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon|--borrowed-terrain|--saucer-contact]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(cannon){
+    if(cannon||saucer){
         Block attack{},body_hit{};
         ActorSpec owner{},target{};
         for(auto* block:{&attack,&body_hit})
-            if(std::fread(block->data(),1,block->size(),stdin)!=block->size())fail("Cannon hit block extent");
+            if(std::fread(block->data(),1,block->size(),stdin)!=block->size())fail("single-model hit block extent");
         for(auto* spec:{&owner,&target})
-            if(std::fread(spec->data(),1,spec->size(),stdin)!=spec->size())fail("Cannon actor record extent");
-        if(std::getc(stdin)!=EOF)fail("unexpected Cannon payload");
+            if(std::fread(spec->data(),1,spec->size(),stdin)!=spec->size())fail("single-model actor record extent");
+        if(std::getc(stdin)!=EOF)fail("unexpected single-model payload");
+        if(saucer){
+            const Contact inlet{ContactCase::clear_hit,250,body_hit,owner,target};
+            for(unsigned n=0;n<std::size(saucer_cases);++n){
+                Check test(mod,original);
+                test.saucer_contact(attack,inlet,n);
+            }
+            return 0;
+        }
         const Contact body{ContactCase::clear_hit,500,body_hit,owner,target};
         for(auto scenario:{CannonCase::hit,CannonCase::miss,CannonCase::closing_hit,CannonCase::segment_empty,
                            CannonCase::shape_empty}){

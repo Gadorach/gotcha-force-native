@@ -1046,6 +1046,42 @@ python3 -m tools.analyze.retail_type32_terrain \
   /tmp/opencode/gf-type32-terrain.json
 ```
 
+### Flying Saucer key 8: carrier contact and independent descendants
+
+The [contact replay](api-map/gg4e08-saucer-contact.json) publishes
+normal Flying Saucer's carrier-bound group 1 and resolves it
+against a stationary normal Sasuke on a clear stage. The original
+amount record `80362C40` has raw power 30; the accepted hit removes
+**26 HP** (180 → 154) and adds 26 to both damage ledgers. Resolving
+the retained registry again does not apply the same token twice.
+
+The original contact saves `(160, 200, 900)` on the carrier. On the
+next callback, a supplied downward endpoint crosses the synthetic
+floor at `(160, 0, 400)`. The type-9/key-4 effect uses the floor point
+and the credited actor as its parent. The type-5/key-0 area uses
+the saved contact point and the type-32 carrier as its parent.
+
+| Follow-up inlet | Terrain effect | Contact area |
+| --- | --- | --- |
+| Contact, no floor | No request | Allocates |
+| Floor, no contact | Allocates | No request |
+| Floor and contact, two carrier and three descriptor cells | Allocates first | Allocates second |
+| Floor and contact, one carrier or two descriptor cells | Allocates | Requests but cannot allocate |
+
+All six cases matched across O0, O1, and O2. Scratch and the
+active subphase are fixture inputs; the contact latch and saved
+point come from the original resolver. The requests are observed
+from the same saved follow-up inlet. Neither descendant is
+initialized, so this does not qualify descendant damage, live
+action or reaction timing, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_saucer_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-saucer-contact.json
+```
+
 ### Type-32 model-relative segments: copied aim and live gate
 
 The [shared replay](api-map/gg4e08-type32-shared.json) runs the
