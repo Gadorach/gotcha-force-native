@@ -747,6 +747,45 @@ python3 -m tools.analyze.retail_type89_timed \
   /tmp/opencode/gf-type89-timed.json
 ```
 
+### Type-89 roster census: guarded requests and ordered casts
+
+The [type-89 roster census](api-map/gg4e08-type89-roster.json) accounts
+for all **17 carrier keys** and **11 direct factory call sites**:
+nine literal keys and two reads from a paired selector. It records
+**36 static action candidates on 12 Borgs**, including model-guarded
+X routes for `0304` and `0306` and the shared key-2 X route for
+`0602`, `060a`, `060c`, and `060e`. The two neighboring sibling X
+routes `0302` and `0308` do not get those type-89 joins.
+
+The shared phase-two handler `800B8D6C` reads a timed cursor at
+actor `+0x6EB`. For `0503` and `050f`, charged B starts with keys
+**9 then 10 at the same cursor**, then requests **3, 6, 4, 7, 5, 8**
+on separate cursor steps. For `0506` and `0512`, ordinary B uses the
+same later sequence without the initial pair. A negative first
+byte ends the sequence; a negative second byte suppresses only
+the second request. This establishes request order, not simultaneous
+allocation or hit order. Opening group 3 has raw power 20 on
+`0503`/`0506` and 10 on `050f`/`0512`; those operands are not HP.
+
+Four literal calls remain **unjoined**. The paid model-guarded leaf
+`800CBA38` needs index 7 at actor `+0x581`, but the installed X
+rows of `0600`, `0608`, `0616`, and `061c` select indices 0–4
+and reach a different leaf. The census does not promote those
+four model checks to a release claim.
+
+Keys 1 and 15 read phase durations **25, 4, 10**; the others read
+**25, 6, 10** across two timer programs. Equal durations do not make
+the timer programs interchangeable. This is static evidence; the
+timed replay above still covers only keys 11 and 16. No gameplay,
+damage, or alternate forms are bound by the census.
+
+```sh
+python3 -m tools.analyze.retail_type89_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type89-roster.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
