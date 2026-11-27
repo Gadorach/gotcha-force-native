@@ -654,7 +654,7 @@ The growth and cap also vary by key: the six Dragon areas share
 group 60 and raw power 40, but not one common scale curve. These
 are neither measured live radii nor HP amounts.
 
-The census ties scoped predecessors to 16 Borgs without calling
+The census ties scoped predecessors to 19 Borgs without calling
 the downstream area a direct cast. For instance:
 
 - The normal Ninja type-15 selectors use area key 0; the conditional
@@ -1255,6 +1255,48 @@ python3 -m tools.analyze.retail_type55_segment \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type55-segment "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type55-segment.json
+```
+
+### Direction-row sweeps: floor area before the sibling segment
+
+The [sweep replay](api-map/gg4e08-sweep-area-routes.json) runs
+the original `801F2BF8` parent at row 0 for `0e00`/`0e05` and
+`801F3784` at row 2 for `0e03`. With the declared socket poses,
+the floor probe runs on visit **35** for the first family and
+**34** for the second, counting the initializer as visit 1.
+
+The source clips the terrain probe at `z=6000`. A real crossing
+of the synthetic floor requests type-5 key **26** at the
+intersection. The sibling type-11 request still uses its
+untrimmed endpoints, and clearing the floor or changing pool
+pressure does not change them. Those siblings bind the normal
+credited group **1** for `0e00`/`0e05` or **2** for `0e03`.
+
+| Inlet on crossing visit | Area | Segment |
+| --- | --- | --- |
+| Clear stage | No request | Allocated and bound |
+| Floor, two cells and two descriptors | Allocated first | Allocated second and bound |
+| Floor, one cell and two descriptors | Gets the only cell | Still requests, cannot allocate |
+| Floor, two cells and no descriptors | Requests, cannot allocate | Allocated and bound |
+
+The type-5 census now records six scoped action routes on these
+three Borgs. These are later floor requests, not direct casts;
+Roach's separate placed-carrier route still uses its own
+predecessor proof for the same key.
+
+All 12 cases matched across O0, O1, and O2. Parent constructors
+and socket poses are declared inputs. The replay stops before
+area initialization or segment contact, so neither damage path
+or native gameplay is qualified.
+
+Compile [`retail_sweep_area_routes_fixture.cpp`](../tests/host/retail_sweep_area_routes_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_sweep_area_routes \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/sweep-area "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-sweep-area-routes.json
 ```
 
 ### Ordinary X: installed program, VM cue, and paid bomb release

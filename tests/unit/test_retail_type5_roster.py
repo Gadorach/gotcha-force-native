@@ -23,7 +23,7 @@ class RetailType5RosterTest(unittest.TestCase):
         self.assertEqual(data["counts"], {
             "factory_rows": 27, "common_groups": 21, "direct_call_sites": 45,
             "literal_site_keys": 30, "indexed_parent_sites": 13, "cached_parent_sites": 2,
-            "resolved_area_keys": 27, "candidate_rows": 17, "known_ancestor_models": 16,
+            "resolved_area_keys": 27, "candidate_rows": 23, "known_ancestor_models": 19,
         })
         self.assertEqual(data["area_keys_not_resolved_to_any_site"], [])
         calls = {r["site"]: r for r in data["call_sites"]}
@@ -70,6 +70,20 @@ class RetailType5RosterTest(unittest.TestCase):
         nu, black = (next(r for r in parents if r["borg"] == borg) for borg in ("gg4e08:0f03", "gg4e08:062a"))
         self.assertEqual((nu["parent"]["key"], black["parent"]["key"]), (11, 16))
         self.assertEqual([r["descendant"]["key"] for r in (nu, black)], [16, 16])
+
+    def test_floor_sweeps_do_not_turn_periodic_segments_into_areas(self):
+        rows = [r for r in self.data["candidates"] if r["borg"] in {"gg4e08:0e00", "gg4e08:0e03", "gg4e08:0e05"}]
+        self.assertEqual(len(rows), 6)
+        for row in rows:
+            if row["borg"] == "gg4e08:0e03":
+                self.assertIn(row["action"], ("B-shot", "B-close"))
+                self.assertEqual(row["descendant"]["sites"], ["801F3D50"])
+            else:
+                self.assertIn(row["action"], ("X", "X-charge"))
+                self.assertEqual(row["descendant"]["sites"], ["801F3274"])
+            self.assertEqual(row["descendant"]["key"], 26)
+            self.assertIn("terrain-crossing", row["descendant"]["scope"])
+        self.assertEqual(self.data["sweep_census_sha256"], area.SWEEP_CENSUS_SHA256)
 
     def test_existing_output_remains_unmodified(self):
         with TemporaryDirectory() as tmp:

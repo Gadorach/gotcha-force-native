@@ -26,6 +26,12 @@ COMMON_MEMBER = 696
 REACTIONS = 0x802C4760
 PARENT_CENSUS = "gg4e08-small-projectile-roster.json"
 PARENT_CENSUS_SHA256 = "6165047678ba28677e36710661cbdae7f53fc1dfeae89e345cb33118c16d0e4f"
+SWEEP_CENSUS = "gg4e08-type11-roster.json"
+SWEEP_CENSUS_SHA256 = "d2ba554dfb5e0bd1b4c7cbffa6177d847dc4e306a2f1aab79086f0089abb664e"
+SWEEP_PEERS = {
+    "801F33A4": ("801F2BF8", 0x801F3274, {"gg4e08:0e00", "gg4e08:0e05"}),
+    "801F3E80": ("801F3784", 0x801F3D50, {"gg4e08:0e03"}),
+}
 TEXT = (
     *area.TEXT,
     (0x80085F28, 288, "3b9881adfd9d42d60065444456ae65ee0e0db044d21b816facf9b0ec53db79d2"),
@@ -36,6 +42,8 @@ TEXT = (
     (0x801E7F28, 60, "8805dca0c59a482c23a6106dd6d126fe80341f03293ba6e90014b40640d164e9"),
     (0x801E7F74, 108, "a11932aded525593c34e0112ede0ed815fde0ac14f9fc7f08eeafbe47cc50885"),
     (0x801FAD10, 276, "aeaacbdb24ef68f20daca96a08dedc1025b7497201f1504d48f6c5e24e110505"),
+    (0x801F308C, 828, "ac8652ecb1a5c4cdaa54f27f8b8107cfa7587fdf456e6567b03e9483993c127f"),
+    (0x801F3B68, 828, "c91f3f544720539e95839906350b078ee73b08179b80807ddcc92ca70ca102e5"),
     (0x801FAE24, 80, "85ef06556c20e2e7049bbb00eeb496cbaf92b9d30faa1fb9c700cd57f052286a"),
     (0x801FB060, 612, "0c428e8bfda14e0f93a7e97b66d47418eca1a01349440794a4fb9a524b764dd3"),
     (0x801304B8, 704, "75d567d05a4ea6ef6537d8d513e3f1f1822187128f2586e81b2cdf4cca442406"),
@@ -181,7 +189,35 @@ def static_call_sites(image, atlas, selectors, type89_rows):
     return sites
 
 
-def normal_predecessors(image, atlas, selections, parent_census, tables):
+def sweep_predecessors(image, census, models):
+    for _, site, _ in SWEEP_PEERS.values():
+        link(image, site, 0x80085E00)
+        if word(image, site-4) != 0x38A0001A:
+            raise ValueError("sweep area literal key changed")
+    linked = []
+    for row in census["candidates"]:
+        peer = SWEEP_PEERS.get(row["segment_site"])
+        if peer is None:
+            continue
+        constructor, site, cohort = peer
+        model, profile = row["borg"], row["profile"]
+        if (row["parent_factory"] != constructor or row["parent_row_indices"] != list(range(8))
+                or model not in cohort or models[model]["profile"] != profile or models[model]["spec_record"] != 0):
+            raise ValueError("sweep area ancestor does not match the scoped segment receipt")
+        link(image, int(row["parent_call"], 16), int(constructor, 16))
+        linked.append({
+            "borg": model, "profile": profile, "action": row["action"],
+            "ancestor_scope": row["parent_row_source"]["scope"],
+            "parent": {"constructor": constructor, "site": row["parent_call"], "row_indices": row["parent_row_indices"]},
+            "descendant": {"key": 26, "sites": [address(site)],
+                           "scope": "terrain-crossing branch; sibling type-11 request is separate"},
+        })
+    if len(linked) != 6:
+        raise ValueError("sweep area ancestor coverage changed")
+    return linked
+
+
+def normal_predecessors(image, atlas, selections, parent_census, tables, sweep):
     models = {r["id"]: r for r in selections["borgs"]}
     if len(models) != 206 or set(models) != {r["id"] for r in atlas["borgs"]}:
         raise ValueError("type-5 selected normal profile coverage")
@@ -242,6 +278,7 @@ def normal_predecessors(image, atlas, selections, parent_census, tables):
                            "scope": "later type-41 branches; placement, command, and area keys are separate"},
         })
     linked += type89.ancestors(image, atlas, selections)
+    linked += sweep_predecessors(image, sweep, models)
     return sorted(linked, key=lambda r: (r["borg"], r["parent"]["site"]))
 
 
@@ -258,15 +295,18 @@ def recover(image, archive, atlas, selections):
     rows, groups = area_rows(image, bank)
     tables, selectors = selector_tables(image)
     sites = static_call_sites(image, atlas, selectors, type89.rows(image))
-    parent = read_metadata(Path(__file__).resolve().parents[2] / "docs/api-map" / PARENT_CENSUS, PARENT_CENSUS_SHA256)
-    predecessors = normal_predecessors(image, atlas, selections, parent, tables)
+    maps = Path(__file__).resolve().parents[2] / "docs/api-map"
+    parent = read_metadata(maps / PARENT_CENSUS, PARENT_CENSUS_SHA256)
+    sweep = read_metadata(maps / SWEEP_CENSUS, SWEEP_CENSUS_SHA256)
+    predecessors = normal_predecessors(image, atlas, selections, parent, tables, sweep)
     resolved = {key for s in sites for key in s["key_source"].get("possible_area_keys", (
         [s["key_source"]["key"]] if "key" in s["key_source"] else []))}
     counts = Counter(s["key_source"]["kind"] for s in sites)
     return {
-        "kind": "gf-retail-type5-roster", "revision": 2, "source_dol_sha256": SOURCE_SHA256,
+        "kind": "gf-retail-type5-roster", "revision": 3, "source_dol_sha256": SOURCE_SHA256,
         "source_afs_sha256": AFS_SHA256, "code_atlas_sha256": ATLAS_SHA256,
         "standalone_installers_sha256": INSTALLERS_SHA256, "parent_census_sha256": PARENT_CENSUS_SHA256,
+        "sweep_census_sha256": SWEEP_CENSUS_SHA256,
         "common_bank": {"member": COMMON_MEMBER, "pzz_slot": 0, "sha256": area.COMMON_COLLISION_SHA,
                         "reaction_table": address(REACTIONS), "groups": groups},
         "counts": {"factory_rows": len(rows), "common_groups": len(groups), "direct_call_sites": len(sites),
