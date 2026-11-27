@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from tools.analyze import reaction_attack_table, reaction_emit, retail_type2_roster as type2
+from tools.analyze import retail_projectile_census as census
 
 
 ARTIFACT = Path(__file__).resolve().parents[2] / "docs/api-map/gg4e08-type2-roster.json"
@@ -30,7 +31,7 @@ class Type2RosterTest(unittest.TestCase):
         self.assertEqual(len({r["key"] for r in result["candidates"]}), 56)
         self.assertEqual(counts["action_context_sets"], sum(len(r["action_candidates"]) for r in result["candidates"]))
         self.assertEqual(result["phase_entries"], list(map(type2.address, type2.PHASES)))
-        self.assertEqual(type2.encode(result), ARTIFACT.read_bytes())
+        self.assertEqual(census.encode(result), ARTIFACT.read_bytes())
 
     def test_same_dispatch_does_not_copy_machine_red_operands(self):
         guns = self.result["factory_rows"]
@@ -68,10 +69,10 @@ class Type2RosterTest(unittest.TestCase):
 
         for powers, status in (((0, 0), "zero-power"), ((0, 20), "mixed-power"), ((20, 20), "uniform-positive-power")):
             with self.subTest(powers=powers):
-                self.assertEqual(type2.queue_metadata(DamageTable(powers), block, 0, 0)["status"], status)
+                self.assertEqual(census.queue_metadata(DamageTable(powers), block, 0, 0)["status"], status)
         block[reaction_emit.QUEUE] = 255
-        self.assertEqual(type2.queue_metadata(None, block, 0, 0), {"status": "empty-source-queue"})
-        self.assertEqual(type2.queue_metadata(None, block, 0, -1), {"status": "negative-selector-skips-bind"})
+        self.assertEqual(census.queue_metadata(None, block, 0, 0), {"status": "empty-source-queue"})
+        self.assertEqual(census.queue_metadata(None, block, 0, -1), {"status": "negative-selector-skips-bind"})
 
     def test_refuses_output_overwrite_and_metadata_mismatch(self):
         with TemporaryDirectory() as tmp:
@@ -80,5 +81,5 @@ class Type2RosterTest(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 type2.export(None, None, None, None, output)
             with self.assertRaises(ValueError):
-                type2.read_metadata(output, type2.ATLAS_SHA256)
+                census.read_metadata(output, type2.ATLAS_SHA256)
             self.assertEqual(output.read_text(), "{}")

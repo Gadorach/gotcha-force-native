@@ -79,7 +79,7 @@ WINDOWS = {
     0x80391CD8: (
         0x801E45D0,(0x801E460C,0x801E463C,0x801E46C8),0x801E47F8,(0x801E4620,0x801E46B0),
         "cf8a99b4ea463f7a14379a63917390df5d184a1f4804ac57a7bd577d143cbfd2",
-        {0x801E4754:0x0F06,0x801E4764:0x0F06}),
+        {0x801E4754:0x0F06,0x801E4764:-0x0F06}),
 }
 
 # A single press test can use this first paid pair, not the later repeats.

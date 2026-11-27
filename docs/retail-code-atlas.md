@@ -443,6 +443,52 @@ python3 -m tools.analyze.retail_type2_roster \
   /tmp/opencode/gf-type2-roster.json
 ```
 
+### Ordinary type-0 carriers across the roster
+
+The [type-0 census](api-map/gg4e08-type0-roster.json) covers
+**129** rows and **139** direct calls to ordinary factory `80082824`.
+Of those, **58** call sites and **35** keys join to static candidates
+on **27** of the 206 standalone profiles. The remaining **81**
+calls stay unjoined. Violet Attacker's one-bit selector accounts
+for two key candidates (16 and 17) at a single call site; the
+index does not choose a repeat-shot key. Four alternate-spec
+candidates keep their queue joins withheld.
+
+The review also corrected Death Eye's model gate in the action
+linker. Model `0F06` reaches key 122 at `801E4754`. Key 123 at
+`801E4764` is the **not-equal** arm, not a second Death Eye
+shot. That call remains in the inventory without an inferred owner.
+The negative basis selector on key 114 remains unresolved.
+
+Ordinary type-0 flight decrements its timer before the bounds
+and contact checks. A nonzero contact byte selects phase 2.
+The [bounded Gold Hero control](api-map/gg4e08-type0-flight.json)
+calls the original factory directly with key 45 and a rigid pose.
+With its shape registered and the byte clear, the next update
+moves from `z=350` to `z=370` and keeps the attack registered.
+With a supplied `0x10` byte, it stays at `z=350`, returns the shape
+on visit 1, and returns the carrier and descriptor on visit 3.
+Both forks decrement the timer from 300 to 299 first.
+
+This differs from the [type-2 Machine Red comparison](#machine-red-rifle-continuation-and-pool-return),
+where the same bit value from the pair loop did not stop the next
+update. The type-0 control matched across O0, O1 and O2. It does
+not show that Gold Hero actually produces `0x10`, how a live
+collision behaves, or how the alternate `8008296C` constructor
+chooses its basis. No native move or runtime rule changed.
+
+```sh
+python3 -m tools.analyze.retail_type0_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json \
+  docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type0-roster.json
+python3 -m tools.analyze.retail_type0_flight \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type0-flight.json
+```
+
 ### From shape publication to the amount call
 
 The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the

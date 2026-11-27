@@ -126,11 +126,14 @@ DIRECT_RELEASE_GATES = {
     0x8015DF6C: (0x110,"51ad939c73ae7115db6579e09aff9e7ecffa79272be1de95a2036bf8fd29c72a",
                  {0x8015E050:0x0902,0x8015E060:0x0909}),
     0x801B4564: (0x110,"87e13d931e35792aa3a89cb93d76690ac25e0ec3569950592f5e6fd021494405",
-                 {0x801B4648:0x0907,0x801B4658:0x090C}),
+                  {0x801B4648:0x0907,0x801B4658:0x090C}),
+    0x801E46C8: (0x130,"b270f1a326cd3f9dc45a30eb425107bfdc9f725e4a93497807a77ded9f8ba69d",
+                 {0x801E4754:0x0F06}),
 }
 DIRECT_RELEASE_SITES = {site:(entry,size,digest,model)
                         for entry,(size,digest,gates) in DIRECT_RELEASE_GATES.items()
                         for site,model in gates.items()}
+DIRECT_RELEASE_EXCLUSIONS = {0x801E4764:(0x801E46C8, *DIRECT_RELEASE_GATES[0x801E46C8][:2], 0x0F06)}
 
 
 def entry_phase_increment(words, incoming, start):
@@ -920,6 +923,11 @@ class ActionLinker:
                                 start,size,digest,gate=DIRECT_RELEASE_SITES[pc]
                                 if not self.matches_text(start,size,digest):
                                     continue
+                            if pc in DIRECT_RELEASE_EXCLUSIONS:
+                                start,size,digest,excluded_model=DIRECT_RELEASE_EXCLUSIONS[pc]
+                                if not self.matches_text(start,size,digest) or model==excluded_model:
+                                    continue
+                                item["excluded_models_at_call"] = [f"{excluded_model:04X}"]
                             if gate is not None:
                                 item["required_model_at_call"] = f"{gate:04X}"
                                 if model != gate:

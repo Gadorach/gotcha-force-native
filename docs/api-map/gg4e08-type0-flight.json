@@ -1,0 +1,91 @@
+{
+  "borg": "gg4e08:0802",
+  "carrier_row": {
+    "basis": "credited-actor-joint",
+    "collision_group_selector": 0,
+    "fallback_zero_component_mask": 2,
+    "key": 45,
+    "launch_speed": 20.0,
+    "launch_target_test_operand": 45.0,
+    "local_point": [
+      0.0,
+      -10.0,
+      50.0
+    ],
+    "matrix_axis": 2,
+    "reverse_matrix_axis": false,
+    "row": "802D84E8",
+    "source_joint_selector": 12,
+    "steering_delay_operand": 16,
+    "steering_operand": 1.0
+  },
+  "declared_factory_key": 45,
+  "descriptor": 0,
+  "group": 0,
+  "hit_block_sha256": "c72cfa05a63ea7142e55265bd47bcefb9280073d1ae90a9a04c4bf653fa630a1",
+  "initial_attack_registry_count": 1,
+  "initial_carrier_z": 350,
+  "initial_timer": 300,
+  "kind": "gf-retail-type0-flight-control",
+  "notes": [
+    "The test calls the original ordinary factory directly with the source key; it does not run Gold Hero's action, cue or debit.",
+    "The fixture supplies a rigid joint basis, an empty stage, no effect capacity and no visual payload.",
+    "The original lists and registry are used. The first type-0 visit consumes a declared contact byte; no receiver or pair loop supplies it.",
+    "This does not assign the same outcome to every type-0 key, alternate factory, live collision, or native move."
+  ],
+  "revision": 1,
+  "samples": [
+    {
+      "attack_registry_count": 1,
+      "carrier_free_count": 0,
+      "carrier_phase": 1,
+      "carrier_stopped": false,
+      "carrier_timer": 299,
+      "carrier_z": 370.0,
+      "declared_contact_byte": 0,
+      "descriptor_free_count": 0,
+      "shape_free_count": 0,
+      "visit": 1
+    },
+    {
+      "attack_registry_count": 0,
+      "carrier_free_count": 0,
+      "carrier_phase": 2,
+      "carrier_stopped": true,
+      "carrier_timer": 299,
+      "carrier_z": 350.0,
+      "declared_contact_byte": 16,
+      "descriptor_free_count": 0,
+      "shape_free_count": 1,
+      "visit": 1
+    },
+    {
+      "attack_registry_count": 0,
+      "carrier_free_count": 0,
+      "carrier_phase": 3,
+      "carrier_stopped": true,
+      "carrier_timer": 299,
+      "carrier_z": 350.0,
+      "declared_contact_byte": 16,
+      "descriptor_free_count": 0,
+      "shape_free_count": 1,
+      "visit": 2
+    },
+    {
+      "attack_registry_count": 0,
+      "carrier_free_count": 1,
+      "carrier_phase": 3,
+      "carrier_stopped": true,
+      "carrier_timer": 299,
+      "carrier_z": 350.0,
+      "declared_contact_byte": 16,
+      "descriptor_free_count": 1,
+      "shape_free_count": 1,
+      "visit": 3
+    }
+  ],
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "static_factory_call": "8013D77C",
+  "stop_before_audio": "800F036C"
+}

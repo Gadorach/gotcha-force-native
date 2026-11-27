@@ -85,6 +85,32 @@ class Check {
             cell[1]==bucket&&cell[2]==kind&&cell[3]==kind&&cell[0x83]==tag&&
             !be32(cell+4)&&!be32(cell+8);
     }
+    void absent_visual_resource(unsigned source_index=0){
+        constexpr u32 visual=0x81030200,visual_link=visual+0x40,visual_table=visual+0x80,visual_row=visual+0xC0;
+        if(source_index>=16)fail("missing visual resource fixture extent");
+        put32(at(0x803BB374),visual);put32(at(visual+16),visual_link);
+        put32(at(visual_link),visual_table);put32(at(visual_table+4*source_index),visual_row);
+    }
+    void empty_stage(float max_z){
+        // The three original query layers all see valid cells with
+        // empty (-1 terminated) triangle lists.
+        constexpr u32 stage=0x81040000,grid=stage+0x100,refs=stage+0x200,side=128,empty=refs+side*side*4;
+        put32(at(0x8043B5A0-21316),stage);
+        for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+        put_float(at(stage+52),9000.f);
+        put_float(at(stage+56),31000.f);put_float(at(stage+60),-1000.f);
+        put_float(at(stage+64),max_z);put_float(at(stage+68),-1000.f);
+        put32(at(grid+12),side);put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));
+        put32(at(grid+24),refs);put32(at(empty),0xFFFFFFFFu);
+        for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),empty);
+    }
+    void projectile_visit(){
+        CPUState tick{};tick.gpr[3]=8;
+        mod.run(tick,ram,0x80089A94);
+        call(0x80089554);
+        call(0x8008A28C);
+        call(0x80089AEC);
+    }
     void rigid(u32 address,float x,float y,float z){
         auto* p=at(address);
         std::memset(p,0,48);
@@ -455,9 +481,7 @@ public:
         put_float(a+0xB4,1.f);
         // No free class-2 effect cell and no visual resource payload. The
         // existing carrier descriptor remains owned by the original code.
-        constexpr u32 visual=0x81030200,visual_link=visual+0x40,visual_table=visual+0x80,visual_row=visual+0xC0;
-        put32(at(0x803BB374),visual);put32(at(visual+16),visual_link);
-        put32(at(visual_link),visual_table);put32(at(visual_table),visual_row);
+        absent_visual_resource();
         if(shape_pool){
             shape[2]=4;
             put32(at(free_head+16),hurt_cell);put32(at(free_tail+16),hurt_cell);
@@ -599,19 +623,7 @@ public:
                     carrier[0x1D9],half(peer+0x20C),cursor,target[0x71A],curve);
     }
     void rifle_lifetime(RifleLife scenario){
-        // A bounded, empty terrain grid. All three original query layers
-        // can look up cells; the result comes from their -1 lists.
-        constexpr u32 stage=0x81040000,grid=stage+0x100,refs=stage+0x200,side=128,empty=refs+side*side*4;
-        put32(at(0x8043B5A0-21316),stage);
-        for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
-        put_float(at(stage+52),9000.f);
-        put_float(at(stage+56),31000.f);put_float(at(stage+60),-1000.f);
-        put_float(at(stage+64),scenario==RifleLife::stage_exit?31000.f:62500.f);
-        put_float(at(stage+68),-1000.f);
-        put32(at(grid+12),side);put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));
-        put32(at(grid+24),refs);put32(at(empty),0xFFFFFFFFu);
-        for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),empty);
-
+        empty_stage(scenario==RifleLife::stage_exit?31000.f:62500.f);
         auto* cell=at(object_cell);
         if(scenario==RifleLife::stop_flag)cell[0x1D9]=2; // Declared flag, not a contact result.
         const auto sample=[&](unsigned n){
@@ -624,11 +636,7 @@ public:
         for(unsigned n=1;n<=350;++n){
             const auto old_phase=cell[0x18];
             const auto old_timer=half(object_cell+0x1C);
-            CPUState tick{};tick.gpr[3]=8;
-            mod.run(tick,ram,0x80089A94);
-            call(0x80089554);
-            call(0x8008A28C);
-            call(0x80089AEC);
+            projectile_visit();
             if(old_phase==1){
                 const bool decremented=cell[0x18]==1||scenario==RifleLife::expiry;
                 if(!old_timer||half(object_cell+0x1C)!=old_timer-unsigned(decremented))
@@ -663,6 +671,50 @@ public:
         }
         fail("rifle carrier did not retire within fixture visit budget");
     }
+    void type0_flight(const HitBlock& block,u8 flag){
+        // Gold Hero's key 45 is a reviewed literal, supplied here directly
+        // to the original factory. No action callback or debit runs.
+        a[0]=1;a[0x18]=1;put16(a+0x94,0x0802);put16(a+0x3E8,0x0802);
+        put32(a+0x90,actor);put32(a+0x27C,0x80339E18);
+        put_float(a+0xB4,1.f);
+        rigid(actor+0x8D4+12*0x30,100,200,300);
+        std::memcpy(at(hit_block),block.data(),block.size());put32(a+0x3FC,hit_block);
+        pool(3,true,true);
+        absent_visual_resource(6);
+        empty_stage(62500.f);
+        at(hurt_cell)[2]=4;
+        put32(at(free_head+16),hurt_cell);put32(at(free_tail+16),hurt_cell);put16(at(free_count+8),1);
+        const auto allocated=pair_helper(0x80082824,actor,45);
+        auto* cell=at(object_cell);
+        if(allocated!=object_cell||!first_bucket_cell(3,9,0x10)||cell[0x10]||be32(cell+0x14)!=45)
+            fail("ordinary type-0 factory did not allocate the expected carrier");
+        CPUState launch{};launch.gpr[3]=8;
+        mod.run_to(launch,ram,0x80089A94,{0x800F036C});
+        if(launch.lr!=0x80082FA0||launch.gpr[3]!=actor||launch.gpr[4]!=6||
+           half(object_cell+0x1C)!=300||cell[0x18]!=1||
+           be32(at(group_head+4*49))!=hurt_cell||be32(at(hurt_cell+0x28))!=hit_block+0xAA0||
+           fp(object_cell+0x28)!=350||!(std::abs(fp(object_cell+0x40)-20.f)<0.0001f))
+            fail("ordinary type-0 launch, timer or queue changed");
+        call(0x80089554);
+        call(0x8008A28C);
+        call(0x80089AEC);
+        if(half(attack_count)!=1||be32(at(attack_registry))!=hurt_cell)
+            fail("ordinary type-0 launch did not register the original shape");
+        cell[0x1D9]=flag; // Declared control, not a collision result.
+        for(unsigned visit=1;visit<=(flag?3u:1u);++visit){
+            projectile_visit();
+            const bool freed=flag&&visit==3;
+            if(bool(cell[0])==freed||be32(at(group_head+4*49))!=(flag?0:hurt_cell)||
+               be32(at(group_head+4*9))!=(freed?0:object_cell)||
+               be32(at(free_head+16))!=(flag?hurt_cell:0)||
+               be32(at(free_head+12))!=(freed?object_cell:0)||
+               be32(at(descriptor_row+12))!=(freed?descriptor_cell:0))
+                fail("type-0 shape or carrier retirement did not agree with its original list links");
+            std::printf("type0-flight: %u %u %u %u %u %u %u %u %u %.5f\n",flag,visit,cell[0x18],cell[0x1D8],
+                        half(object_cell+0x1C),half(attack_count),half(free_count+8),half(free_count+6),
+                        half(descriptor_row+18),double(fp(object_cell+0x28)));
+        }
+    }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
         put_float(at(spec)+0x184+4*channel,limit);
@@ -696,15 +748,25 @@ public:
 }
 
 int main(int argc,char** argv){
+    const bool type0=argc==4&&std::strcmp(argv[3],"--type0-flight")==0;
     const bool rifle_life=argc==4&&std::strcmp(argv[3],"--rifle-lifetime")==0;
     const bool rifle_contact=argc==4&&std::strcmp(argv[3],"--rifle-contact-hp")==0;
     const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+    if(argc!=3&&!type0&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--type0-flight|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(type0){
+        HitBlock block{};
+        if(std::fread(block.data(),1,block.size(),stdin)!=block.size()||std::fgetc(stdin)!=EOF)
+            fail("type-0 hit-block inlet extent");
+        for(const u8 flag:{u8(0),u8(0x10)}){
+            Check c(mod,original);c.type0_flight(block,flag);
+        }
+        return 0;
+    }
     if(rifle_bucket||rifle_contact||rifle_life){
         HitBlock block{};
         HitBlock receiver{};
