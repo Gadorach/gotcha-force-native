@@ -15,6 +15,7 @@ constexpr u32 factory=0x801DEB68,update=0x801DEC90,active=0x801DEF80,scratch_all
 constexpr u32 pose=0x80048288,bind=0x8008AC80,segment_factory=0x80139A6C,segment_update=0x80139B80;
 constexpr u32 shared_factory=0x800E19A8,shared_update=0x800E1AB4;
 constexpr u32 segment_transform=0x80139CC0,attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
+constexpr u32 cannon_factory=0x800EC1F4,cannon_update=0x800EC2EC,cannon_table=0x802FC350;
 using Block=std::array<u8,7840>;
 using contact_replay::ActorSpec;
 using contact_replay::receiver;
@@ -35,6 +36,7 @@ constexpr SharedPilot shared_pilots[]={
 };
 enum class AimCase {none,moving_copy,outside_gate,half_rate};
 enum class ContactCase {clear_hit,clear_miss,wall_hit,wall_miss};
+enum class CannonCase {hit,miss,closing_hit,segment_empty,shape_empty};
 struct Contact {
     ContactCase which;unsigned owner_hp;const Block& hit;const ActorSpec& owner;const ActorSpec& target;
 };
@@ -498,6 +500,117 @@ public:
             std::printf(" %.5f %.5f %.5f",double(point[0]),double(point[1]),double(point[2]));
         std::printf("\n");
     }
+    void cannon(const Block& block,const Contact& target,CannonCase which){
+        const bool spare=which!=CannonCase::segment_empty,shape_free=which!=CannonCase::shape_empty;
+        const bool closing=which==CannonCase::closing_hit;
+        pools(spare,shape_free,2);
+        seat_inlet();
+        auto* owner=at(actor);
+        owner[0]=1;owner[0x18]=1;
+        put16(owner+0x3E8,0x0C04);put16(owner+0x94,0x0C04);put16(owner+0x784,5);
+        put32(owner+0x90,actor);put32(owner+0x27C,cannon_table);put32(owner+0x3FC,hit_block);
+        for(unsigned off:{0xB4,0xB8,0xC0,0xC4,0x1DC8})put_float(owner+off,1.f);
+        std::memcpy(at(hit_block),block.data(),block.size());
+        auto* matrix=owner+0x8D4+48*2;
+        for(unsigned axis=0;axis<3;++axis)put_float(matrix+20*axis,1.f);
+        put_float(matrix+12,100.f);put_float(matrix+28,200.f);put_float(matrix+44,300.f);
+        // The Cannon uses an owner model record. The two model slots are empty.
+        constexpr u32 visual=0x8103F000,link=visual+0x40,table=visual+0x80,empty=visual+0x400;
+        put32(at(0x803BB4C0+0x600),visual);put32(at(visual+16),link);put32(at(link),table);
+        for(unsigned id:{2u,3u})put32(at(table+4*id),empty);
+
+        CPUState ctor{};ctor.gpr[3]=actor;ctor.gpr[4]=0;
+        mod.run(ctor,ram,cannon_factory);
+        if(ctor.gpr[3]!=carrier||at(carrier)[0x10]!=71||at(carrier)[0x11]||at(carrier)[0x18]||
+           word(carrier+0xC)!=cannon_update||word(carrier+0x8C)!=actor||word(carrier+0x90)!=actor||
+           word(active_head+9*4)!=carrier||half(descriptor_row+18))
+            fail("Cannon type-71 publication changed");
+        CPUState init{};init.gpr[3]=carrier;
+        CallObservation scratch_request{scratch_alloc};
+        mod.run_observed(init,ram,cannon_update,scratch_request,1024);
+        if(at(carrier)[0x18]!=1||at(carrier)[0x89]!=2||get(carrier+0x64)!=Point{0,0,585.5f}||
+           scratch_request.count!=1||scratch_request.caller!=0x800ECBF4||scratch_request.arguments[0]!=4400||
+           word(carrier+0xDC)||word(active_head+49*4)||word(carrier+8))
+            fail("Cannon initializer did not retain its model-relative source row");
+
+        auto advance=[&](unsigned byte,bool request){
+            owner[0x6EA]=u8(byte);
+            CPUState pass{};pass.gpr[3]=carrier;
+            CallObservation release{segment_factory};
+            mod.run_observed(pass,ram,cannon_update,release,4096);
+            if(release.count!=unsigned(request)||(request&&(release.caller!=0x800EC75C||
+               release.arguments[0]!=carrier||release.arguments[1]!=carrier+0x38||
+               release.arguments[2]!=carrier+0x9C||release.arguments[3]!=2))||half(actor+0x784)!=5)
+                fail("Cannon owner gate, segment selector or stock changed");
+        };
+        advance(0,false);
+        if(at(carrier)[0x18]!=1||at(carrier)[0x19]!=0)fail("Cannon warmup advanced without the source gate");
+        advance(1,false);
+        if(at(carrier)[0x18]!=1||at(carrier)[0x19]!=1)fail("Cannon did not enter inner phase one");
+        advance(1,true);
+        if(word(carrier+8)!=(spare?segment:0)||half(free_count+6)||word(active_head+49*4))
+            fail("Cannon first segment carrier admission mismatch");
+        if(!spare){
+            std::printf("type71-contact: %u 0 0 0 0 0 0 0 0 0 0.00000 0.00000 0.00000\n",unsigned(which));
+            return;
+        }
+        if(at(segment)[0x10]!=11||at(segment)[0x11]!=2||word(segment+0xC)!=segment_update||at(segment)[0x18]||
+           word(segment+0x8C)!=carrier||word(segment+0x90)!=actor||word(segment+0x144)!=carrier+0x38||
+           word(segment+0x148)!=carrier+0x9C)
+            fail("Cannon segment did not retain its endpoint addresses and credit");
+        CPUState first{};first.gpr[3]=segment;
+        CallObservation opening{bind};
+        mod.run_observed(first,ram,segment_update,opening);
+        if(opening.count!=1||opening.caller!=0x80139BE0||opening.arguments[0]!=segment||opening.arguments[1]!=2||
+           at(segment)[0x18]!=(shape_free?1:2))
+            fail("Cannon segment did not reach the requested group bind");
+        if(!shape_free){
+            if(word(active_head+49*4))fail("Cannon empty shape pool published a shape");
+            std::printf("type71-contact: %u 1 0 0 0 0 0 0 0 0 0.00000 0.00000 0.00000\n",unsigned(which));
+            return;
+        }
+        shape_identity(segment,cannon_table,2,3,2);
+        const auto near_point=get(segment+0x20);
+        segment_publication();
+        const auto radius=scalar(shape+0x7C);
+        if(half(attack_count)!=1||word(attack_registry)!=shape||get(shape+0x64)!=near_point||
+           radius<=0||std::abs(radius-2000.f*scalar(segment+0xC0))>0.001f)
+            fail("Cannon near shape did not use its own segment scale");
+        advance(closing?2:1,true);
+        if(at(carrier)[0x18]!=(closing?2:1)||word(carrier+8)!=segment)
+            fail("Cannon closing callback did not preserve its request boundary");
+        const auto far_point=get(carrier+0x9C);
+        CPUState sweep{};sweep.gpr[3]=segment;
+        mod.run(sweep,ram,segment_update);
+        if(get(segment+0x20)!=far_point||at(segment)[0x18]!=2||far_point[2]<=near_point[2]||
+           near_point[0]!=far_point[0]||near_point[1]!=far_point[1])
+            fail("Cannon segment did not sweep the refreshed far point");
+
+        const bool hit=which!=CannonCase::miss;
+        const Point center{near_point[0]+(hit?0.f:radius+23.f),near_point[1],(near_point[2]+far_point[2])*0.5f};
+        contact_replay::bind_sasuke(mod,ram,center,target.hit,target.owner,target.target,target.owner_hp);
+        segment_publication();
+        if(half(attack_count)!=1||word(attack_registry)!=shape||half(receiver_count)!=1||
+           word(receiver_registry)!=body||get(shape+0x3C)!=near_point||get(shape+0x30)!=far_point||
+           std::abs(scalar(shape+0x88)-radius)>0.001f||get(body+0x64)!=center||
+           half(receiver+0x1C6)!=180||at(segment)[0x1D9]||at(carrier)[0x1D9])
+            fail("Cannon sweep or body inlet did not reach the original registry");
+        const unsigned amount=contact_replay::pair_hp(mod,ram,segment,cannon_table+2*24,hit);
+        const auto hp=half(receiver+0x1C6),token=half(receiver+0x20C);
+        const auto dealt=word(actor+0x418),received=word(receiver+0x41C);
+        const unsigned latch=at(segment)[0x1D9];
+        if(half(actor+0x1C6)!=500||half(actor+0x784)!=5||at(carrier)[0x1D9]||
+           at(receiver)[0x18]!=1||word(carrier+0x290)||word(actor+0x290)!=(hit?receiver:0)||
+           half(receiver+0x1C8)!=(hit?180:0xFFFF)||latch!=(hit?16:0)||token!=unsigned(hit)||
+           word(receiver+0x290)!=(hit?segment:0)||word(segment+0x290)!=(hit?receiver:0))
+            fail("Cannon damage was not credited to the expected source object");
+        if(contact_replay::pair_hp(mod,ram,segment,cannon_table+2*24,false)||half(receiver+0x1C6)!=hp||
+           word(actor+0x418)!=dealt||word(receiver+0x41C)!=received||at(receiver)[0x26E]!=unsigned(hit))
+            fail("Cannon retry changed HP, token history or damage ledgers");
+        std::printf("type71-contact: %u 1 1 %u %u %u %u %u %u %u %.5f %.5f %.5f\n",
+                    unsigned(which),at(carrier)[0x18],amount,hp,dealt,received,token,latch,
+                    double(radius),double(near_point[2]),double(far_point[2]));
+    }
 };
 }
 
@@ -505,10 +618,27 @@ int main(int argc,char** argv){
     const bool shared=argc==4&&!std::strcmp(argv[3],"--shared");
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
     const bool stream=argc==4&&!std::strcmp(argv[3],"--stream");
-    if(argc!=3&&!shared&&!contact&&!stream)
-        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream]");
+    const bool cannon=argc==4&&!std::strcmp(argv[3],"--cannon");
+    if(argc!=3&&!shared&&!contact&&!stream&&!cannon)
+        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(cannon){
+        Block attack{},body_hit{};
+        ActorSpec owner{},target{};
+        for(auto* block:{&attack,&body_hit})
+            if(std::fread(block->data(),1,block->size(),stdin)!=block->size())fail("Cannon hit block extent");
+        for(auto* spec:{&owner,&target})
+            if(std::fread(spec->data(),1,spec->size(),stdin)!=spec->size())fail("Cannon actor record extent");
+        if(std::getc(stdin)!=EOF)fail("unexpected Cannon payload");
+        const Contact body{ContactCase::clear_hit,500,body_hit,owner,target};
+        for(auto scenario:{CannonCase::hit,CannonCase::miss,CannonCase::closing_hit,CannonCase::segment_empty,
+                           CannonCase::shape_empty}){
+            Check test(mod,original);
+            test.cannon(attack,body,scenario);
+        }
+        return 0;
+    }
     if(shared||contact||stream){
         std::array<Block,std::size(shared_pilots)> hits{};
         for(auto& hit:hits)

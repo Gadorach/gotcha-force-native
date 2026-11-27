@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {"case":"open-hit","first_segment_requested":true,"parent_phase_at_second_request":1,"receiver":{"credited_damage_ledger_delta":4307,"duplicate_token_refused":true,"hp_after":0,"hp_before":180,"hp_loss":180,"hp_writer_amount":4307,"received_damage_ledger_delta":4307,"segment_token":1},"second_segment_requested":true,"segment_created":true,"segment_geometry":{"far_z":3362.01221,"narrow_radius":133.33334,"near_z":1033.63867},"shape_bound":true},
+    {"case":"open-miss","first_segment_requested":true,"parent_phase_at_second_request":1,"receiver":{"credited_damage_ledger_delta":0,"duplicate_token_refused":false,"hp_after":180,"hp_before":180,"hp_loss":0,"hp_writer_amount":null,"received_damage_ledger_delta":0,"segment_token":null},"second_segment_requested":true,"segment_created":true,"segment_geometry":{"far_z":3362.01221,"narrow_radius":133.33334,"near_z":1033.63867},"shape_bound":true},
+    {"case":"closing-hit","first_segment_requested":true,"parent_phase_at_second_request":2,"receiver":{"credited_damage_ledger_delta":4307,"duplicate_token_refused":true,"hp_after":0,"hp_before":180,"hp_loss":180,"hp_writer_amount":4307,"received_damage_ledger_delta":4307,"segment_token":1},"second_segment_requested":true,"segment_created":true,"segment_geometry":{"far_z":3362.01221,"narrow_radius":133.33334,"near_z":1033.63867},"shape_bound":true},
+    {"case":"no-segment-cell","first_segment_requested":true,"parent_phase_at_second_request":null,"receiver":null,"second_segment_requested":null,"segment_created":false,"segment_geometry":null,"shape_bound":false},
+    {"case":"no-shape-cell","first_segment_requested":true,"parent_phase_at_second_request":null,"receiver":null,"second_segment_requested":null,"segment_created":true,"segment_geometry":null,"shape_bound":false}
+  ],
+  "kind": "gf-retail-type71-contact",
+  "notes": ["The type-71 factory runs directly; the actor launch and debit schedule are not replayed.","The original initializer handles empty effect scratch and empty render records; socket pose and owner gate are declared.","Owner byte zero remains in warmup. Byte one enters emission. Byte two in the emitting leaf sets phase two but still requests once.","This replay observes the amount and finishes only the original HP writer. KO presentation and scheduling are outside scope.","No native gameplay, live-match timing, other ranks, or whole-beam damage is qualified."],
+  "receiver": {"body_step":9,"borg":"gg4e08:000a","flags":2,"kind":0,"level_one_hp":180,"local_center":[0.0,-14.0,0.0],"matrix_selector":2,"radius":22.0},
+  "revision": 1,
+  "source": {"actor_spec_sha256":"ff711ea5a9cfcff90cf4b08a16ddb0c11063b1027f2bc31fb06b7c424d0906d8","amount_record":"802FC380","borg":"gg4e08:0c04","descriptor":3,"factory":"800EC1F4","hit_block_sha256":"65ffc7333822b099e3416fdcfa839971ef725cb3caa956362389efd0a5b2ad53","key":0,"level_one_hp":500,"parent_active_call":"800EC75C","raw_power":5000,"raw_radius":2000,"reaction_index":2,"segment_key":2},
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

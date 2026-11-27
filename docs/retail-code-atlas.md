@@ -1180,6 +1180,45 @@ python3 -m tools.analyze.retail_type11_roster \
   /tmp/opencode/gf-type11-roster.json
 ```
 
+### Ultimate Cannon type-71 segment: amount versus HP
+
+The [contact replay](api-map/gg4e08-type71-contact.json) starts the
+original type-71/key-0 carrier directly. It passes through the
+real initializer with no effect scratch, then drives the owner
+byte at `+0x6EA`: zero stays in warmup, one enters emission, and
+two in the emitting callback sets phase 2 **but still issues that
+visit's segment request**. The test supplies one segment cell;
+the existing child can read the refreshed far point even without
+a slot for a second child.
+
+The type-11 child binds normal group 2. On the first tested
+sweep, its raw radius 2000 is scaled to about **133.33**. The
+in-line Sasuke body hits; a body outside the combined radii
+misses. Missing either the segment cell or the shape cell stops
+the path before any HP test.
+
+| Boundary | Accepted overlap |
+| --- | ---: |
+| Raw power in `802FC380` | 5000 |
+| Amount passed to original HP writer | 4307 |
+| Receiver HP | 180 → 0 |
+| Actual HP removed | 180 |
+| Credited / received damage ledgers | +4307 each |
+
+The same token does not write again. The write clips HP to zero
+but does not clip the measured ledgers to the receiver's remaining
+HP. The replay finishes the HP writer, not KO scheduling. All five
+cases matched across O0, O1, and O2. Actor launch timing, debit
+policy, live-match damage cadence, and native gameplay remain
+outside this result.
+
+```sh
+python3 -m tools.analyze.retail_type71_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type32-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type71-contact.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

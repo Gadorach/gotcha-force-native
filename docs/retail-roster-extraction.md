@@ -1537,8 +1537,10 @@ X-charge context is exact: state `3`, selector `44`, class callback
 `800B0F18`, pose `4:0`, and program requests `800B1024` / `800B10B8`.
 The [segment census](retail-code-atlas.md#type-11-roster-census-six-parent-callbacks)
 joins both charged-X entry leaves to a type-71/key-0 carrier and
-its group-2 type-11 request. It does not qualify ray origin, active
-timing, HP, or a paid release schedule. The native beam — length
+its group-2 type-11 request. The
+[bounded contact replay](retail-code-atlas.md#ultimate-cannon-type-71-segment-amount-versus-hp)
+measures the original HP write from a declared pose and owner gate,
+not the paid action schedule or whole-move damage. The native beam — length
 `1800`, contact radius `60`, `look=180`, damage `10` every `6` ticks,
 lifetime `40`, stock cost `2`, hold window `20-90` — is authored. It is
 horizontal with no pitch. In the scripted showcase the first-round X hold
