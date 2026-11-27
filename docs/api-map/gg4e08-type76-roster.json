@@ -1,0 +1,35 @@
+{
+  "active_descendant_select": {"after_stop_calls":[{"inlet":"nonzero-contact-latch","site":"800FD100"},{"inlet":"stage-probe-returned-nonzero","site":"800FD26C"}],"different_helper_for_zero_hp_or_expiry":"8001BDA8","entry":"800FD2D0"},
+  "call_sites": [
+    {"function":"800F7EA4","model_selector":"0D04","ordinal_source":{"actor_offset":"0x151","kind":"increment-and-mask-cursor","values":[0,1]},"ownership_status":"scoped-normal-action","parent_key":2,"site":"800F7F20"},
+    {"function":"8015C6E8","model_selector":"0612","ordinal_source":{"kind":"literal-r5","values":[0]},"ownership_status":"no-standalone-selection-for-guarded-model","parent_key":1,"site":"8015C754"},
+    {"function":"8015C6E8","model_selector":"0620","ordinal_source":{"kind":"literal-r5","values":[0]},"ownership_status":"alternate-spec-ownership-unqualified","parent_key":3,"site":"8015C770"},
+    {"function":"8015C6E8","model_selector":"0624","ordinal_source":{"kind":"literal-r5","values":[0]},"ownership_status":"no-standalone-selection-for-guarded-model","parent_key":4,"site":"8015C78C"},
+    {"function":"8015C6E8","model_selector":"0626","ordinal_source":{"kind":"literal-r5","values":[0]},"ownership_status":"no-standalone-selection-for-guarded-model","parent_key":5,"site":"8015C7A8"},
+    {"function":"80188F18","model_selector":null,"ordinal_source":{"actor_offset":"0x148","kind":"increment-and-mask-cursor","values":[0,1]},"ownership_status":"scoped-normal-action","parent_key":0,"site":"80188F7C"}
+  ],
+  "candidates": [
+    {"action":"B-shot","borg":"gg4e08:0d01","carrier_group":2,"conditional_ordinal_reset_site":"80188A98","debit":{"channel":0,"cost":1,"site":"80188F4C"},"exit_descendant":{"key":0,"site":"800FD314","type":8},"family":"80188EC4","normal_carrier_queue":{"status":"mixed-power","steps":[{"descriptor":3,"raw_power":40,"reaction_index":2},{"descriptor":4,"raw_power":10,"reaction_index":0}]},"parent_key":0,"phase_one_leaf":"80188F18","profile":"p153","site":"80188F7C","source_ordinals":[0,1],"spec_record":0,"state":2},
+    {"action":"B-close","borg":"gg4e08:0d01","carrier_group":2,"conditional_ordinal_reset_site":"80188A98","debit":{"channel":0,"cost":1,"site":"80188F4C"},"exit_descendant":{"key":0,"site":"800FD314","type":8},"family":"80188EC4","normal_carrier_queue":{"status":"mixed-power","steps":[{"descriptor":3,"raw_power":40,"reaction_index":2},{"descriptor":4,"raw_power":10,"reaction_index":0}]},"parent_key":0,"phase_one_leaf":"80188F18","profile":"p153","site":"80188F7C","source_ordinals":[0,1],"spec_record":0,"state":2},
+    {"action":"X","borg":"gg4e08:0d04","carrier_group":1,"conditional_ordinal_reset_site":"800F7828","debit":{"channel":2,"cost":1,"site":"800F7EF0"},"exit_descendant":{"key":0,"site":"800FD314","type":8},"family":"800F7DC0","normal_carrier_queue":{"status":"mixed-power","steps":[{"descriptor":1,"raw_power":40,"reaction_index":1},{"descriptor":2,"raw_power":10,"reaction_index":0}]},"parent_key":2,"phase_one_leaf":"800F7EA4","profile":"p156","site":"800F7F20","source_ordinals":[0,1],"spec_record":0,"state":2}
+  ],
+  "code_atlas_sha256": "1bfb0ac7d8885156336b7de2e40e0019daca170b25b4afd762bf172662f36eae",
+  "counts": {"direct_sites":6,"normal_action_routes":3,"normal_models":2,"normal_sites":2,"rows":6,"unqualified_sites":4},
+  "dispatch": {"entry":"800FCE50","phases":["800FCEE8","800FD09C","800FD338","800FD344"],"table":"8031EED8"},
+  "factory": "800FCD38",
+  "factory_rows": [
+    {"carrier_group":2,"exit_descendant":{"key":0,"site":"800FD314","type":8},"key":0,"row":"8031EE18","socket_variants":[{"ordinal":0,"row":"8031ED40","socket":2,"socket_offset":[0.0,-42.400001525878906,0.0],"visual_record":1},{"ordinal":1,"row":"8031ED58","socket":3,"socket_offset":[0.0,-42.400001525878906,0.0],"visual_record":1}]},
+    {"carrier_group":0,"exit_descendant":{"key":1,"site":"800FD324","type":9},"key":1,"row":"8031EE38","socket_variants":[{"ordinal":0,"row":"8031ED70","socket":12,"socket_offset":[0.0,100.0,0.0],"visual_record":9}]},
+    {"carrier_group":1,"exit_descendant":{"key":0,"site":"800FD314","type":8},"key":2,"row":"8031EE58","socket_variants":[{"ordinal":0,"row":"8031EDD0","socket":8,"socket_offset":[0.0,-30.5,0.0],"visual_record":1},{"ordinal":1,"row":"8031EDE8","socket":10,"socket_offset":[0.0,-30.5,0.0],"visual_record":1}]},
+    {"carrier_group":0,"exit_descendant":{"key":1,"site":"800FD324","type":9},"key":3,"row":"8031EE78","socket_variants":[{"ordinal":0,"row":"8031ED88","socket":12,"socket_offset":[0.0,100.0,0.0],"visual_record":9}]},
+    {"carrier_group":0,"exit_descendant":{"key":1,"site":"800FD324","type":9},"key":4,"row":"8031EE98","socket_variants":[{"ordinal":0,"row":"8031EDA0","socket":12,"socket_offset":[0.0,100.0,0.0],"visual_record":9}]},
+    {"carrier_group":0,"exit_descendant":{"key":1,"site":"800FD324","type":9},"key":5,"row":"8031EEB8","socket_variants":[{"ordinal":0,"row":"8031EDB8","socket":12,"socket_offset":[0.0,100.0,0.0],"visual_record":9}]}
+  ],
+  "kind": "gf-retail-type76-roster",
+  "notes": ["Rows and socket ordinals are distinct inputs; the ordinal does not change the carrier group or exit key.","The credited actor's normal carrier queue is static. Both normal routes contain mixed power; no step has been assigned a hit or HP loss.","The exit selector follows the type-76 stop request. It is not the parent shape bind, and not every way to stop goes through this selector.","The 0620 phase leaf tests several model constants. Only the chosen alternate spec has a scoped static installed predecessor here; no form owns a queue in this receipt.","No original action admission, shape publication, contact, live timing or native gameplay is qualified by this census."],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "standalone_installers_sha256": "afc01c017966b0646bba7654f052d8d2fe5fef6989bb217524e71c831608906b",
+  "unqualified_installed_route": {"action":"X","borg":"gg4e08:0620","phase_two_leaf":"8015C6E8","profile":"p098","site":"8015C770","spec_record":2,"state":3}
+}

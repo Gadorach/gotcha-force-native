@@ -1207,6 +1207,55 @@ python3 -m tools.analyze.retail_type8_trail \
   /tmp/opencode/gf-type8-trail.json
 ```
 
+### Type-76 roster: paid socket ordinals and separate exit children
+
+The [type-76 census](api-map/gg4e08-type76-roster.json) accounts for
+all six direct constructor sites. Two sites join normal action
+routes; the other four test specific model constants in a separate
+phase-two leaf. The selected Victory Jet `0620` record is spec 2.
+That route and the other three guarded constants remain unbound
+for active-form ownership and hit queues.
+
+| Normal route | Parent row | Sockets at ordinals 0 and 1 | Opening carrier group |
+| --- | ---: | --- | ---: |
+| Red Attacker `0d01`, B-shot / B-close | 0 | 2, 3 | 2 |
+| Orange Fighter `0d04`, X | 2 | 8, 10 | 1 |
+
+Both normal queues contain raw powers **40 and 10**. The ordinal
+selects a socket, not a different queue. No landed-step attribution
+is made. The exit selector is also separate: after the contact-latch
+or stage-probe stop branch, rows 0 and 2 request type 8/key 0;
+rows 1, 3, 4, and 5 request type 9/key 1. The zero-HP and expiry
+branches call a different helper, not this selector.
+
+The [paid replay](api-map/gg4e08-type76-paid.json) ran the original
+pre-callback and supplied phase one at each visit. Red Attacker
+debited channel 0; Orange Fighter debited channel 2. In both, stock
+was spent and the ordinal advanced even when the constructor ran
+out of carriers or descriptors. Restoring a carrier after the
+first refused request admitted ordinal 1, not ordinal 0. Empty
+stock caused no allocation request and did not advance the cursor.
+
+All eight cases (24 declared visits) matched across O0, O1, and O2.
+The replay stops at carrier allocation; initialization, exit
+execution, HP, controller timing, and native gameplay remain
+unqualified for these routes.
+
+```sh
+python3 -m tools.analyze.retail_type76_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type76-roster.json
+
+python3 -m tools.analyze.retail_type76_paid \
+  "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/gf-type76-roster.json \
+  /tmp/opencode/type76-paid "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type76-paid.json
+```
+
+Compile [`retail_type76_paid_fixture.cpp`](../tests/host/retail_type76_paid_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags.
+
 ### Type-32 model-relative segments: copied aim and live gate
 
 The [shared replay](api-map/gg4e08-type32-shared.json) runs the
