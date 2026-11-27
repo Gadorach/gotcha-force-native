@@ -821,6 +821,46 @@ python3 -m tools.analyze.retail_type89_cast \
   /tmp/opencode/gf-type89-cast.json
 ```
 
+### Type-89 opening shapes and timed registration
+
+The [opening replay](api-map/gg4e08-type89-opening.json) takes the
+first cast into the original bucket visitor, using each model's
+normal group-3 descriptor. Allocation and visitation order are
+different:
+
+| Paired cast resource limit | Carrier allocation | Shape bind attempts | Shapes admitted | Later registry |
+| --- | --- | --- | --- | --- |
+| One carrier or one descriptor | 9 | 9 | 9 | 9 |
+| Two carriers, no shapes | 9, 10 | 10, 9 | none | none |
+| Two carriers, one shape | 9, 10 | 10, 9 | 10 | 10 |
+| Two carriers, two shapes | 9, 10 | 10, 9 | 10, 9 | 9, 10 |
+
+The single-cast controls request only key 3. The paired shapes'
+centers reflect different socket offsets, not two hits from one
+shape: the fixture sees centers `(800, 600, 300)` and
+`(1200, 600, 300)` for keys 9 and 10 respectively.
+
+The initializer writes the exclusion mask `0xFFFF` to carrier
+`+0x272`. In the clear-stage, unit-clock replay it clears the mask
+on bucket visit **32**, counting initialization as visit 1. The
+original shape pass then registers the admitted shapes for that
+visit. Visit **33** unlinks them, returns their shape slots, and
+requests no area. Shape admission is not attack eligibility.
+
+All 20 cases matched across O0, O1, and O2. The replay does not
+schedule input, paid admission, recipients, damage, or full carrier
+disposal. Its socket and stage inlets are declared, and the late
+transform gets an inert render node rather than retail model data.
+
+Use the same fixture executable as above:
+
+```sh
+python3 -m tools.analyze.retail_type89_opening \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type89-cast "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type89-opening.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
