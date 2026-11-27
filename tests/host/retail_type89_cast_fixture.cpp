@@ -2,6 +2,7 @@
 #include "retail_recomp_fixture.hpp"
 #include <algorithm>
 #include <array>
+#include <cmath>
 
 namespace {
 using namespace retail_fixture;
@@ -16,6 +17,7 @@ constexpr u32 receiver=0x8101C000,body=0x81044000,body_block=0x81045000,scene=0x
 constexpr u32 receiver_count=0x8043B5A0-21330,receiver_registry=0x803C417C;
 constexpr u32 pair_pass=0x8002DB58,amount_entry=0x8003CD5C,hp_write=0x8003D344;
 constexpr u32 make_area=0x80085E00,area_update=0x80086048;
+constexpr u32 common_bank=0x81048000,area_shape=shapes+shape_stride,area_record=0x802C4988;
 constexpr unsigned max_cells=8;
 struct Capacity {unsigned objects,descriptors;};
 constexpr Capacity capacities[]={{8,8},{1,8},{8,1},{0,8},{8,0},{0,0}};
@@ -24,7 +26,13 @@ constexpr u16 pilots[]={0x0503,0x0506,0x050F,0x0512};
 constexpr unsigned singles[]={3,6,4,7,5,8};
 using HitBlock=std::array<u8,7840>;
 using ActorSpec=std::array<u8,432>;
-struct Contact {unsigned distance,owner_hp;const HitBlock& body;const ActorSpec& owner;const ActorSpec& target;};
+using CommonBank=std::array<u8,21504>;
+enum class AreaCase {no_spare,original_pose,offset_pose};
+struct Followup {AreaCase scenario;const CommonBank& bank;};
+struct Contact {
+    unsigned distance,owner_hp;const HitBlock& body;const ActorSpec& owner;const ActorSpec& target;
+    const Followup* follow=nullptr;
+};
 struct Opening {Capacity cap;unsigned shapes;};
 constexpr Opening openings[]={{{2,2},0},{{2,2},1},{{2,2},2},{{1,2},1},{{2,1},1}};
 bool paired(u16 model){return model==0x0503||model==0x050F;}
@@ -104,6 +112,12 @@ class Check {
             CPUState pass{};mod.run(pass,ram,entry,1024);
         }
     }
+    void place_receiver(const std::array<float,3>& center){
+        auto* target=at(receiver);
+        auto* joint=target+0x8D4+2*0x30;
+        put_float(joint+12,center[0]);put_float(joint+28,center[1]+14.f);put_float(joint+44,center[2]);
+        for(unsigned axis=0;axis<3;++axis)put_float(target+0x20+4*axis,center[axis]);
+    }
     void contact_inlet(const Contact& inlet,u32 attack){
         const unsigned axis=at(attack)[0x11]==3?2:0;
         std::array<float,3> center{};
@@ -119,8 +133,7 @@ class Check {
         put_float(target+0xC0,1.f);
         auto* joint=target+0x8D4+2*0x30;
         for(unsigned axis=0;axis<3;++axis)put_float(joint+20*axis,1.f);
-        put_float(joint+12,center[0]);put_float(joint+28,center[1]+14.f);put_float(joint+44,center[2]);
-        for(unsigned axis=0;axis<3;++axis)put_float(target+0x20+4*axis,center[axis]);
+        place_receiver(center);
         if(half(free_count+8)||word(free_head+16))fail("type-89 contact needs a distinct body slot");
         at(body)[2]=4;
         put32(at(free_head+16),body);put32(at(free_tail+16),body);put16(at(free_count+8),1);
@@ -147,6 +160,28 @@ class Check {
             put32(at(scene+team*60+0x114),100);put32(at(scene+team*60+0x118),100);
         }
     }
+    unsigned pair_hp(u32 attack,u32 record,bool expected){
+        const auto hp=half(receiver+0x1C6);
+        const auto before=expected?ram:std::vector<u8>{};
+        CPUState amount{};
+        const auto cut=mod.run_to_or_return(amount,ram,pair_pass,{amount_entry,hp_write});
+        if(half(receiver+0x1C6)!=hp||(!expected&&cut)||
+           (expected&&(cut!=amount_entry||amount.lr!=0x8002F10C||amount.gpr[3]!=record||
+                      amount.gpr[4]!=attack||amount.gpr[5]!=receiver))){
+            std::fprintf(stderr,"type-89 pair attack=%08X expected=%u cut=%08X record=%08X expected_record=%08X\n",
+                         attack,unsigned(expected),cut,amount.gpr[3],record);
+            fail("type-89 pair reached the wrong damage path");
+        }
+        if(!expected)return 0;
+        std::memcpy(ram.data(),before.data(),ram.size());
+        CPUState writer{};
+        mod.run_to(writer,ram,pair_pass,{hp_write});
+        if(writer.lr!=0x8002F1DC||writer.gpr[3]!=receiver||half(receiver+0x1C6)!=hp)
+            fail("type-89 pair reached the wrong HP writer");
+        const unsigned damage=writer.gpr[4];
+        mod.finish_stopped_leaf(writer,hp_write,164);
+        return damage;
+    }
     unsigned contact_write(u16 model,const Contact& inlet,u32 attack,u32 record){
         const bool expected=inlet.distance<52;
         const bool pair=paired(model);
@@ -167,29 +202,14 @@ class Check {
                          scalar(body+0x6C)-scalar(shapes+0x6C),at(attack)[0x1D9],at(attack)[0x17C],half(receiver+0x1C6));
             fail("type-89 contact geometry, registration or HP inlet mismatch");
         }
-        const auto before=ram;
-        CPUState amount{};
-        const auto cut=mod.run_to_or_return(amount,ram,pair_pass,{amount_entry,hp_write});
+        const unsigned damage=pair_hp(attack,record,expected);
         if(!expected){
-            if(cut||at(attack)[0x1D9]||half(receiver+0x1C6)!=180||half(receiver+0x1C8)!=0xFFFF||
+            if(at(attack)[0x1D9]||half(receiver+0x1C6)!=180||half(receiver+0x1C8)!=0xFFFF||
                half(receiver+0x20C)||at(receiver)[0x26E]||word(attack+0x290)||word(actor+0x290)||word(receiver+0x290)||
                word(actor+0x418)||word(receiver+0x41C))
                 fail("type-89 miss called amount, latched contact or wrote a ledger");
             return 0;
         }
-        if(cut!=amount_entry||amount.lr!=0x8002F10C||amount.gpr[3]!=record||
-           amount.gpr[4]!=attack||amount.gpr[5]!=receiver||half(receiver+0x1C6)!=180){
-            std::fprintf(stderr,"type-89 contact model=%04X offset=%u cut=%08X record=%08X expected=%08X\n",
-                         model,inlet.distance,cut,amount.gpr[3],record);
-            fail("type-89 contact reached the wrong original damage record");
-        }
-        std::memcpy(ram.data(),before.data(),ram.size());
-        CPUState writer{};
-        mod.run_to(writer,ram,pair_pass,{hp_write});
-        if(writer.lr!=0x8002F1DC||writer.gpr[3]!=receiver||half(receiver+0x1C6)!=180)
-            fail("type-89 contact reached the wrong HP writer");
-        const unsigned damage=writer.gpr[4];
-        mod.finish_stopped_leaf(writer,hp_write,164);
         const unsigned hp=half(receiver+0x1C6);
         const auto token=half(attack+0x26C);
         if(damage!=(model<0x050F?17u:8u)||hp!=180-damage||half(receiver+0x1C8)!=180||
@@ -202,6 +222,104 @@ class Check {
            at(receiver)[0x26E]!=1||word(actor+0x418)!=damage||word(receiver+0x41C)!=damage)
             fail("type-89 repeated resolution did not refuse the same token");
         return damage;
+    }
+    void follow_area(u16 model,const Followup& options,u32 parent,u32 descendant,u32 parent_visual,unsigned direct){
+        const bool spare=options.scenario!=AreaCase::no_spare,moved=options.scenario==AreaCase::offset_pose;
+        const unsigned initial_hp=180-direct;
+        const std::array center{scalar(parent+0x2A0),scalar(parent+0x2A4),scalar(parent+0x2A8)};
+        if(!descendant||!direct||word(active_head+49*4)!=shapes||half(free_count+8)||
+           half(receiver+0x20C)!=1||half(receiver+0x20E)||at(receiver)[0x26E]!=1)
+            fail("type-89 follow-up did not start from genuine parent contact");
+        std::memcpy(at(common_bank),options.bank.data(),options.bank.size());
+        put32(at(scene+152),common_bank);
+        constexpr u32 table=0x8103F000+0x80,empty=0x8103F000+0x400;
+        for(unsigned id:{18u,22u,23u})put32(at(table+4*id),empty);
+        if(spare){
+            at(area_shape)[2]=4;
+            put32(at(free_head+16),area_shape);put32(at(free_tail+16),area_shape);put16(at(free_count+8),1);
+        }
+        if(moved)place_receiver({center[0],center[1],center[2]+100.f});
+        const std::array<u32,2> visual{parent_visual,0};
+        unsigned first=0,unlink=0,retired=0,parent_retired=0,hp_loss=0;
+        float initial_radius=0,hit_radius=0,peak_radius=0;
+        unsigned area_token=0;
+        for(unsigned n=33;n<=90;++n){
+            CPUState visit{};visit.gpr[3]=8;
+            CallObservation bind_area{0x8008AE3C};
+            mod.run_observed(visit,ram,visit_bucket,bind_area,4096);
+            if(bind_area.count!=unsigned(n==33)||
+               (n==33&&(bind_area.caller!=0x800860E0||bind_area.arguments[0]!=actor||
+                       bind_area.arguments[1]!=descendant||bind_area.arguments[2]!=110||
+                       at(descendant)[0x18]!=(spare?1:2)||at(descendant)[0x86]!=unsigned(spare)||
+                       be32(at(descendant+0x8C))!=parent||be32(at(descendant+0x90))!=actor)))
+                fail("type-89 follow-up group bind or refusal mismatch");
+            if(n==33&&(!at(shapes)[0]||!at(parent)[0x1D8]||half(free_count+8)||
+                      word(active_head+49*4)!=(spare?area_shape:shapes)||
+                      (spare&&word(area_shape+8)!=shapes)))
+                fail("type-89 area bind did not precede the parent shape's return");
+            publish(visual,at(parent)[0]&&word(parent+0x100)==0x8016D398?1u:0u);
+            const bool bound=word(active_head+49*4)==area_shape;
+            if((word(active_head+49*4)!=0&&!bound)||(!spare&&bound)||
+               (bound&&(word(area_shape+0x20)!=descendant||word(area_shape+0x24)!=actor||
+                       word(area_shape+0x28)!=common_bank+0x400+150*80||word(area_shape+0x2C)!=0x802C4760||
+                       at(area_shape)[0x14]!=110||at(area_shape)[0x12]!=150)))
+                fail("type-89 follow-up took wrong shape, credit or bank");
+            const unsigned expected=spare&&n>33&&n<50;
+            if(half(attack_count)!=expected||(expected&&word(attack_registry)!=area_shape)||
+               half(receiver_count)!=1||word(receiver_registry)!=body||half(actor+0x774)!=5||
+               half(free_count+8)!=unsigned(!bound)+unsigned(spare))
+                fail("type-89 follow-up registry or shape availability mismatch");
+            if(bound){
+                if(half(descendant+0x26C)!=2)fail("type-89 area did not keep a fresh token");
+                area_token=half(descendant+0x26C);
+                const float radius=scalar(area_shape+0x7C);
+                if(n==33)initial_radius=radius;
+                peak_radius=std::max(peak_radius,radius);
+                for(unsigned axis=0;axis<3;++axis)
+                    if(scalar(area_shape+0x64+axis*4)!=center[axis])
+                        fail("type-89 area shape did not stay at the saved point");
+                if(moved&&(scalar(body+0x64)!=center[0]||std::abs(scalar(body+0x68)-center[1])>0.001f||
+                           scalar(body+0x6C)!=center[2]+100.f))
+                    fail("type-89 displaced area receiver geometry changed");
+                if(!moved&&(std::abs(scalar(body+0x64)-center[0]-(paired(model)?22.f:0.f))>0.002f||
+                            std::abs(scalar(body+0x68)-center[1])>0.002f||
+                            std::abs(scalar(body+0x6C)-center[2]-(paired(model)?0.f:22.f))>0.002f))
+                    fail("type-89 original area receiver geometry changed");
+            }
+            if(n==34&&spare&&!bound)fail("type-89 area missing on first growth visit");
+            if(spare&&!bound&&!unlink)unlink=n;
+            const bool hit=spare&&n==(moved?36:34);
+            const auto applied=pair_hp(descendant,area_record,hit);
+            if(hit){
+                first=n;hp_loss=applied;hit_radius=scalar(area_shape+0x7C);
+                if(applied!=17||half(receiver+0x1C8)!=initial_hp||
+                   word(descendant+0x290)!=receiver||word(receiver+0x290)!=descendant||word(actor+0x290)!=receiver)
+                    fail("type-89 area got the wrong HP, recipient or credit");
+                pair_hp(descendant,area_record,false);
+            }
+            if(half(receiver+0x1C6)!=initial_hp-hp_loss||word(actor+0x418)!=direct+hp_loss||
+               word(receiver+0x41C)!=direct+hp_loss||half(receiver+0x20C)!=1||
+               half(receiver+0x20E)!=(hp_loss?2:0)||at(receiver)[0x26E]!=1+unsigned(bool(hp_loss)))
+                fail("type-89 follow-up changed the wrong HP or token ledger");
+            if(!retired&&!at(descendant)[0])retired=n;
+            if(!parent_retired&&!at(parent)[0]){
+                parent_retired=n;
+                if(spare&&(!bound||retired||word(active_head+9*4)!=descendant||
+                           half(free_count+6)!=2||half(descriptor_row+18)!=2))
+                    fail("type-89 follow-up did not retain its resources independently of the parent");
+            }
+            if(retired&&parent_retired)break;
+        }
+        if(!retired||!parent_retired||word(active_head+9*4)||half(free_count+6)!=3||half(descriptor_row+18)!=4||
+           (spare&&(std::abs(initial_radius-3.1f)>0.001f||std::abs(peak_radius-387.5f)>0.001f||unlink!=50))){
+            std::fprintf(stderr,"type-89 follow-up first=%u unlink=%u retirement=%u/%u pool=%u/%u radii=%.4f/%.4f/%.4f\n",
+                         first,unlink,parent_retired,retired,half(free_count+6),half(descriptor_row+18),
+                         double(initial_radius),double(hit_radius),double(peak_radius));
+            fail("type-89 follow-up curve or pool retirement mismatch");
+        }
+        std::printf("type89-followup: %u %u %u %u %u %u %u %u %u %u %.4f %.4f %.4f\n",
+                    model,unsigned(options.scenario),direct,hp_loss,half(receiver+0x1C6),area_token,first,unlink,retired,parent_retired,
+                    double(initial_radius),double(hit_radius),double(peak_radius));
     }
 public:
     Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
@@ -372,6 +490,7 @@ public:
             CPUState tick{};tick.gpr[3]=8;
             CallObservation area_request{make_area};
             if(target&&n==33){
+                const auto before=target->follow?ram:std::vector<u8>{};
                 const auto cut=mod.run_to_or_return(tick,ram,visit_bucket,{area_update},&area_request);
                 const u32 descendant=word(contact_carrier+8);
                 if(area_request.count!=unsigned(bool(damage))||bool(cut)!=bool(damage)||bool(descendant)!=bool(damage)||
@@ -385,6 +504,11 @@ public:
                     for(unsigned axis=0;axis<3;++axis)
                         if(word(descendant+0x20+4*axis)!=word(contact_carrier+0x2A0+4*axis))
                             fail("type-89 area did not inherit the saved contact point");
+                if(target->follow){
+                    std::memcpy(ram.data(),before.data(),ram.size());
+                    follow_area(model,*target->follow,contact_carrier,descendant,admitted[0],damage);
+                    return;
+                }
                 std::printf("type89-contact: %u %u %u %u %u %u %u %u %.4f %.4f %.4f\n",
                             model,target->distance,at(contact_carrier)[0x11],damage,half(receiver+0x1C6),
                             half(receiver+0x20C),at(receiver)[0x26E],area_request.count,
@@ -429,23 +553,39 @@ public:
 int main(int argc,char** argv){
     const bool opening=argc==4&&!std::strcmp(argv[3],"--opening");
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
-    if(argc!=3&&!opening&&!contact)fail("usage: type89-cast-fixture qualified.dol unmodified-recomp.so [--opening|--contact]");
+    const bool followup=argc==4&&!std::strcmp(argv[3],"--followup");
+    if(argc!=3&&!opening&&!contact&&!followup)
+        fail("usage: type89-cast-fixture qualified.dol unmodified-recomp.so [--opening|--contact|--followup]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(opening||contact){
+    if(opening||contact||followup){
         std::array<HitBlock,std::size(pilots)> hits{};
         for(auto& hit:hits)
             if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size())fail("type-89 opening hit block extent");
-        if(contact){
+        if(contact||followup){
             HitBlock body_hit{};
             std::array<ActorSpec,std::size(pilots)> attacker{};
             ActorSpec defender{};
             if(std::fread(body_hit.data(),1,body_hit.size(),stdin)!=body_hit.size())fail("type-89 body block extent");
             for(auto& record:attacker)
                 if(std::fread(record.data(),1,record.size(),stdin)!=record.size())fail("type-89 attacker spec extent");
-            if(std::fread(defender.data(),1,defender.size(),stdin)!=defender.size()||std::getc(stdin)!=EOF)
+            if(std::fread(defender.data(),1,defender.size(),stdin)!=defender.size())
                 fail("type-89 receiver spec extent");
             constexpr unsigned hp[]={2500,2000,1250,1000};
+            if(followup){
+                CommonBank bank{};
+                if(std::fread(bank.data(),1,bank.size(),stdin)!=bank.size()||std::getc(stdin)!=EOF)
+                    fail("type-89 follow-up common bank extent");
+                for(unsigned i=0;i<std::size(pilots);++i)
+                    for(auto scenario:{AreaCase::no_spare,AreaCase::original_pose,AreaCase::offset_pose}){
+                        Check test(mod,original);
+                        const Followup options{scenario,bank};
+                        const Contact target{51,hp[i],body_hit,attacker[i],defender,&options};
+                        test.opening(pilots[i],0,hits[i],{{3,4},1},&target);
+                    }
+                return 0;
+            }
+            if(std::getc(stdin)!=EOF)fail("unexpected type-89 contact payload");
             for(unsigned i=0;i<std::size(pilots);++i)
                 for(unsigned distance:{30u,51u,52u,53u}){
                     Check test(mod,original);

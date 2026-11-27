@@ -895,6 +895,46 @@ python3 -m tools.analyze.retail_type89_contact \
   /tmp/opencode/gf-type89-contact.json
 ```
 
+### Type-5 key-16 follow-up: shape budget, growth, and separate HP
+
+The [follow-up replay](api-map/gg4e08-type89-followup.json) starts
+from the accepted type-89 hit on visit **32**. The area attempts
+its **group-110** bind on visit **33**, before the original class-4
+pass returns the parent's shape. With no spare it refuses that
+bind and returns its carrier and two descriptors on visit **35**.
+The newly freed parent shape does not trigger a retry.
+
+With a spare shape, the area starts at radius **3.1** with a fresh
+token, but is not in the attack registry yet. It uses common
+record `802C4988` and removes **17 more HP**, independently of
+whether the direct sweep removed 17 or 8:
+
+| Receiver pose after the direct hit | First area hit | Radius at hit |
+| --- | ---: | ---: |
+| Unchanged, center 22 units from the saved point | 34 | 34.1 |
+| Repositioned once, center 100 units from the saved point | 36 | 96.1 |
+
+Re-resolving the area after the hit refuses its recorded token.
+The area survives the parent object's return on visit **44**,
+peaks at radius **387.5**, unlinks its shape on **50**, and
+returns its carrier and descriptors on **83**. Key 16 shares
+the reviewed key-0 scale curve but uses a different group and
+reaction record.
+
+All 12 cases matched across O0, O1, and O2. This is the bounded
+contact-point descendant path, not the wall-root branch or a
+claim about other area keys, live match scheduling, or native
+gameplay.
+
+Use the same fixture executable as above:
+
+```sh
+python3 -m tools.analyze.retail_type89_followup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type89-cast "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type89-followup.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

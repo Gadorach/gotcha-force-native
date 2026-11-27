@@ -55,8 +55,7 @@ def decode_report(report):
     return pilots
 
 
-def qualified_inlet(image, archive):
-    rows = retail_type89.rows(image)
+def qualified_key16_bank(image, archive):
     retail_type89.verify_text(image, retail_dragon_area.TEXT)
     bank = common_bank(archive)
     if bank[4*110:4*(110+1)] != bytes([150, 255, 255, 255]):
@@ -66,6 +65,12 @@ def qualified_inlet(image, archive):
             or struct.unpack_from(">4f", bank, row+12) != (0, 0, 0, 310)
             or image.read(0x802DA0B8+36*16+2, 2, "data") != struct.pack(">H", 110)):
         raise ValueError("type-89 area key-16 descriptor mismatch")
+    return bank
+
+
+def qualified_inlet(image, archive):
+    rows = retail_type89.rows(image)
+    bank = qualified_key16_bank(image, archive)
     blocks, sources = [], []
     for model, key, group, step, table, digest in PILOTS:
         block = reaction_emit.qualified_hit_block(archive, model)
