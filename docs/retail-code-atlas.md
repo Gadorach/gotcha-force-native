@@ -287,6 +287,42 @@ python3 -m tools.analyze.retail_attack_transactions \
   /tmp/opencode/gf-attack-transactions.json
 ```
 
+### From shape publication to the amount call
+
+The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the
+allocated Sasuke close-B pair into the original class-4 pass `80089AEC`.
+It also lets the original body allocator create one receiver sphere
+from Sasuke's body descriptor 9. The receiver's scratch body list is
+narrowed to that descriptor, and both rigid poses and the attack cursor
+are supplied. The fixture does not seed either registry.
+
+At cursor **18** the pass registers only the receiver. At **19** it
+transforms and registers the attack, unless the owner's bit for
+matrix slot 7 is clear. The source attack and receiver radii are
+**60** and **22**. The original pair loop accepted distances **81**
+and **82** (exact tangency) and rejected **83**. At 81, clearing the
+attack's matrix mask, setting the receiver's relation inhibit, or
+setting receiver `+0x1DA` bit `0x02` each kept the pair from the
+narrow phase. The latter two controls were applied after
+publication; `+0x1DA` rejects the pair before the relation helper.
+
+For both accepted fixtures, the unmodified pair loop reached
+`8002F108 → 8003CD5C` with the attack record `802D4190` and the
+expected attack and body actors. The fixture stops before computing
+an amount or writing HP. All six cases produced the same report on
+O0, O1 and O2. The cursor values are not battle frames, and the
+singleton comparison does not qualify full body geometry, Machine
+Red's projectile update, guard, or other receiver types.
+
+Use the same binary and qualified inputs as the transaction fixture:
+
+```sh
+python3 -m tools.analyze.retail_shape_sweep \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-shape-sweep.json
+```
+
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the
 command below; it takes the same DOL and recomp-module arguments.

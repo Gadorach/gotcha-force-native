@@ -273,7 +273,7 @@ owner `+0x100` callback.
 - otherwise it keeps the nearest valid target (distance `8020BC88`, initial
   sentinel `400000000.0`) and calls `8002E2A8` once with that target;
 - validity filters: carrier node flags `0x0800/0x1000/0x2000`,
-  `receiver+474` bit `0x02`, then `8002FD7C` (different actor,
+  `receiver+0x1DA` bit `0x02` must be clear, then `8002FD7C` (different actor,
   owner-invulnerability, same-team flag `0x80`, attack-class flags
   `0x3C0/0xC00`, six-eight-entry immunity keys at `+0x20C`, target mask at
   `+0x272`), `80039F6C` (both radii > `0.1` and centre distance <= radius sum)
@@ -285,6 +285,11 @@ owner `+0x100` callback.
 
 So the reaction path is mostly a scaffold of matched helpers around the open
 amount and a handful of open per-class effect functions.
+
+The [original shape-pass fixture](retail-code-atlas.md#from-shape-publication-to-the-amount-call)
+now checks that order from real allocated records. It shows that broad
+overlap is neither registry admission nor relation permission, and joins
+the positive sphere decision to the original amount call without writing HP.
 
 ### Native roster contact selection
 

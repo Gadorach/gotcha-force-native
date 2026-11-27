@@ -73,20 +73,27 @@ class Module {
         }
         return false;
     }
-    void dispatch(CPUState& cpu,std::vector<u8>& ram,u32 entry,bool full_return)const{
+    void dispatch(CPUState& cpu,std::vector<u8>& ram,u32 entry,bool full_return,Boundary* mark=nullptr)const{
         cpu.pc=entry;cpu.lr=stop;cpu.ram=ram.data();cpu.ram_size=GC_MAIN_RAM_SIZE;
         cpu.gpr[1]=stack;cpu.gpr[2]=0x8043EA20;cpu.gpr[13]=0x8043B5A0;
         cpu.msr=PPC_MSR_FP;cpu.hid2=PPC_HID2_PSE|PPC_HID2_LSQE;
         cpu.external_read=read_external;cpu.external_write=write_external;cpu.instruction_fallback=fallback;
         if(mod->on_state_loaded)mod->on_state_loaded(&cpu);
         for(unsigned n=0;n<256&&cpu.pc!=stop;++n){
+            // Some translated indirect branches yield to the outer
+            // dispatch loop instead of using the inline host hook.
+            if(mark){
+                for(const u32 target:mark->addresses)
+                    if(cpu.pc==target){cut(&cpu,target);break;}
+                if(cpu.pc==stop)break;
+            }
             cpu.downcount=256;
             if(!mod->dispatch(&cpu,cpu.pc)||cpu.exception){
                 std::fprintf(stderr,"entry=%08X pc=%08X exception=%08X\n",entry,cpu.pc,cpu.exception);
                 fail("fixture dispatch or exception");
             }
         }
-        if(cpu.pc!=stop||(full_return&&cpu.gpr[1]!=stack)){
+        if(cpu.pc!=stop||((full_return||(mark&&!mark->reached))&&cpu.gpr[1]!=stack)){
             std::fprintf(stderr,"entry=%08X stopped pc=%08X sp=%08X lr=%08X\n",entry,cpu.pc,cpu.gpr[1],cpu.lr);
             fail("fixture did not reach its boundary");
         }
@@ -120,14 +127,19 @@ public:
     void run(CPUState& cpu,std::vector<u8>& ram,u32 entry)const{
         dispatch(cpu,ram,entry,true);
     }
-    u32 run_to(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets,
-               CallObservation* observation=nullptr)const{
+    u32 run_to_or_return(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets,
+                         CallObservation* observation=nullptr)const{
         Boundary mark{targets,observation};
         cpu.host_call=cut;cpu.external_user_data=&mark;
-        dispatch(cpu,ram,entry,false);
+        dispatch(cpu,ram,entry,false,&mark);
         cpu.host_call=nullptr;cpu.external_user_data=nullptr;
-        if(!mark.reached)fail("fixture did not reach the requested call");
         return mark.reached;
+    }
+    u32 run_to(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets,
+               CallObservation* observation=nullptr)const{
+        const auto reached=run_to_or_return(cpu,ram,entry,targets,observation);
+        if(!reached)fail("fixture did not reach the requested call");
+        return reached;
     }
     void run_observed(CPUState& cpu,std::vector<u8>& ram,u32 entry,CallObservation& observation)const{
         Boundary mark{{},&observation};

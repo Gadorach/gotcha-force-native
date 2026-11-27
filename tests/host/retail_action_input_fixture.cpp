@@ -11,9 +11,11 @@ constexpr u32 config=0x81014000, spec=0x81015000, contexts=0x81016000, rows=0x81
               pairs=0x81016200, settings=0x81017000, mode_state=0x81019200, peer=0x8101A000;
 constexpr u32 b=0x200, x=0x400, y=0x800;
 constexpr u32 descriptor_row=0x81030000, descriptor_cell=0x81030100,
-              object_cell=0x81032000, hit_block=0x81036000;
+              object_cell=0x81032000, hurt_cell=0x81032800, hit_block=0x81036000, hurt_block=0x81038000;
 constexpr u32 free_head=0x803C716C, free_tail=0x803C718C, free_count=0x803C71AC,
               group_head=0x803C6F6C, group_tail=0x803C706C;
+constexpr u32 attack_registry=0x803C477C, receiver_registry=0x803C417C,
+              attack_count=0x8043B5A0-21328, receiver_count=0x8043B5A0-21330;
 using HitBlock=std::array<u8,7840>;
 struct Profile {u32 cfg,context,selector;};
 constexpr Profile synthetic{config,contexts,pairs};
@@ -32,6 +34,7 @@ class Check {
         return ram.data()+va-GC_RAM_BASE;
     }
     u16 half(u32 va){const auto* p=at(va);return u16(u16(p[0])<<8|p[1]);}
+    float fp(u32 va){return std::bit_cast<float>(be32(at(va)));}
     u32 call(u32 entry){
         CPUState cpu{};
         cpu.gpr[3]=actor;
@@ -63,6 +66,18 @@ class Check {
             !be32(at(free_head+4*kind))&&!be32(at(free_tail+4*kind))&&!half(free_count+2*kind)&&
             cell[1]==bucket&&cell[2]==kind&&cell[3]==kind&&cell[0x83]==tag&&
             !be32(cell+4)&&!be32(cell+8);
+    }
+    void rigid(u32 address,float x,float y,float z){
+        auto* p=at(address);
+        std::memset(p,0,48);
+        for(unsigned i=0;i<3;++i)put_float(p+4*(5*i),1.f);
+        put_float(p+12,x);put_float(p+28,y);put_float(p+44,z);
+    }
+    u32 pair_helper(u32 entry,u32 left,u32 right,u32 mask=0){
+        CPUState cpu{};
+        cpu.gpr[3]=left;cpu.gpr[4]=right;cpu.gpr[5]=mask;
+        mod.run(cpu,ram,entry);
+        return cpu.gpr[3];
     }
 public:
     u8* const a;
@@ -144,7 +159,7 @@ public:
         if(be32(at(cursor))!=0x802BE3BA||a[0x744]!=9)
             fail("Sasuke opcode-10 without lane zero did not just advance the cursor");
     }
-    void sasuke_pair(const HitBlock& block,bool free_cell){
+    void sasuke_pair(const HitBlock& block,bool free_cell,bool report=true){
         if(a[0x5DA]!=61||a[0x579]!=3)fail("wrong installed Sasuke pair state");
         std::memcpy(at(hit_block),block.data(),block.size());
         put32(a+0x3FC,hit_block);put32(a+0x90,actor);
@@ -158,7 +173,7 @@ public:
             fail("Sasuke queue request or post-attempt write mismatch");
         if(!free_cell){
             if(be32(at(group_head+49*4))||a[0x86])fail("empty pair pool produced a shape");
-            std::printf("sasuke: %u %u 0 0 0 0 0\n",unsigned(free_cell),a[0x744]);
+            if(report)std::printf("sasuke: %u %u 0 0 0 0 0\n",unsigned(free_cell),a[0x744]);
             return;
         }
         const auto* cell=at(object_cell);
@@ -173,8 +188,98 @@ public:
                          cell[0x11],cell[0x12],cell[0x14],a[0x86]);
             fail("original Sasuke class-4 pair publication mismatch");
         }
-        std::printf("sasuke: %u %u 1 %u %u %u %u\n",unsigned(free_cell),a[0x744],
-                    cell[1],cell[0x83],cell[0x12],cell[0x11]);
+        if(report)std::printf("sasuke: %u %u 1 %u %u %u %u\n",unsigned(free_cell),a[0x744],
+                              cell[1],cell[0x83],cell[0x12],cell[0x11]);
+    }
+    void sasuke_shape_sweep(const HitBlock& block,unsigned distance,bool suppress,bool immune,bool receiver_gate){
+        if(!first_bucket_cell(4,49,0x1A))fail("shape sweep requires the original attack allocation");
+        a[0]=1;
+        put_float(a+0xC0,1.f);
+        rigid(actor+0x8D4+7*0x30,100,200,300);
+        put32(a+0x76C,suppress?0:1u<<7);
+
+        // Restrict the receiver to one real body descriptor (step 9).
+        // Only the scratch body's list is narrowed; the saved descriptor
+        // is untouched and the original body bind creates its record.
+        std::memcpy(at(hurt_block),block.data(),block.size());
+        at(hurt_block)[0]=9;at(hurt_block)[1]=255;
+        auto* target=at(peer);
+        target[0]=1;target[0x88]=1;target[0x3E4]=1;
+        put32(target+0x3FC,hurt_block);put32(target+0x27C,0x802D4160);
+        put32(target+0x76C,1u<<2);
+        put16(target+0x1C4,180);put16(target+0x1C6,180);
+        put_float(target+0xC0,1.f);
+        rigid(peer+0x8D4+2*0x30,130+float(distance),194,290);
+        at(hurt_cell)[2]=4;
+        put32(at(free_head+16),hurt_cell);put32(at(free_tail+16),hurt_cell);
+        put16(at(free_count+8),1);
+        CPUState bind{};bind.gpr[3]=peer;
+        mod.run(bind,ram,0x8008AB30);
+        if(be32(at(group_head+50*4))!=hurt_cell||be32(at(group_tail+50*4))!=hurt_cell||
+           be32(at(hurt_cell+0xC))!=0x8008A65C||be32(at(hurt_cell+0x28))!=hurt_block+32+9*80)
+            fail("receiver's original body allocation did not publish the singleton");
+
+        const auto sweep=[&](float cursor){
+            // This is an explicit scratch-frame inlet, not the result
+            // of a render/pose update. Start each pass with empty registries.
+            put_float(a+0x1CDC,cursor);
+            put16(at(attack_count),0);put16(at(receiver_count),0);
+            call(0x80089AEC);
+        };
+        sweep(18.f);
+        if(at(object_cell)[0x10]||half(attack_count)||half(receiver_count)!=1||
+           be32(at(receiver_registry))!=hurt_cell)
+            fail("before the attack cursor the original pass should only publish the receiver");
+        sweep(19.f);
+        const bool listed=!suppress;
+        if(at(object_cell)[0x10]!=1||half(attack_count)!=unsigned(listed)||
+           (listed&&be32(at(attack_registry))!=object_cell)||half(receiver_count)!=1||
+           be32(at(receiver_registry))!=hurt_cell||fp(object_cell+0x64)!=130||fp(object_cell+0x68)!=180||
+           fp(object_cell+0x6C)!=290||fp(object_cell+0x7C)!=60||
+           fp(hurt_cell+0x64)!=130+float(distance)||fp(hurt_cell+0x68)!=180||fp(hurt_cell+0x6C)!=290||
+           fp(hurt_cell+0x7C)!=22)
+            fail("ready-shape geometry or registry publication mismatch");
+        const bool overlap=pair_helper(0x80039F6C,object_cell+0x58,hurt_cell+0x58)!=0;
+        // Apply the relation control after publication so the pair loop
+        // sees the original registry entry but must still check eligibility.
+        put16(target+0x272,immune?2:0);
+        target[0x1DA]=receiver_gate?2:0;
+        const bool permitted=pair_helper(0x8002FD7C,object_cell,hurt_cell,2)!=0;
+        if(overlap!=(distance<=82)||permitted==immune||half(peer+0x1C6)!=180)
+            fail("original sphere/receiver filter comparison mismatch");
+        const bool should_dispatch=listed&&overlap&&permitted&&!receiver_gate;
+        const auto before_contact=ram;
+        CallObservation classifier{0x80030500};
+        CPUState collision{};
+        const auto entry=mod.run_to_or_return(collision,ram,0x8002DB58,{0x80030500},&classifier);
+        u32 accepted=0;
+        if(should_dispatch){
+            if(entry!=0x80030500||classifier.count!=1||
+               classifier.arguments[0]!=0x803B04D0||classifier.arguments[1]!=0x803B0368){
+                std::fprintf(stderr,"sphere boundary=%08X calls=%u caller=%08X args=%08X/%08X geom=%u/%u\n",
+                             entry,classifier.count,classifier.caller,classifier.arguments[0],classifier.arguments[1],
+                             be32(at(object_cell+0x58)),be32(at(hurt_cell+0x58)));
+                fail("pair loop did not reach the sphere classifier with its original scratch shapes");
+            }
+            // Execute only the sphere test on the exact scratch operands.
+            // Do not return its value into the stopped loop or run reaction.
+            accepted=pair_helper(entry,classifier.arguments[0],classifier.arguments[1]);
+            if(accepted!=1)fail("candidate pair failed the original sphere narrow phase");
+        }else if(entry||classifier.count)fail("a refused candidate reached the narrow phase");
+        if(half(peer+0x1C6)!=180)fail("scoped classifier changed HP");
+        // A fresh replay from both original registries now lets the original
+        // pair loop consume the classifier result. Stop before amount/HP.
+        std::memcpy(ram.data(),before_contact.data(),ram.size());
+        CPUState reaction{};
+        const auto boundary=mod.run_to_or_return(reaction,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
+        if((should_dispatch?
+                boundary!=0x8003CD5C||reaction.lr!=0x8002F10C||reaction.gpr[3]!=0x802D4190||
+                reaction.gpr[4]!=actor||reaction.gpr[5]!=peer:
+                boundary!=0)||half(peer+0x1C6)!=180)
+            fail("original pair loop sent the wrong amount request");
+        std::printf("shape-sweep: %u %u %u %u %u %u %u %u %u %u\n",distance,unsigned(suppress),unsigned(immune),
+                    unsigned(receiver_gate),unsigned(listed),unsigned(overlap),unsigned(permitted),
+                    classifier.count,accepted,unsigned(boundary!=0));
     }
     void machine_red_cue(bool visit_upper){
         if(a[0x5DA]!=61||a[0x5DB]!=0||a[0x579]!=7)fail("wrong Machine Red opening slots");
@@ -297,8 +402,9 @@ public:
 }
 
 int main(int argc,char** argv){
-    if(argc!=3&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--sasuke-hit-block < block]");
+    const bool sweep=argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0;
+    if(argc!=3&&!sweep&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--sasuke-hit-block|--sasuke-shape-sweep < block]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     {
@@ -440,6 +546,19 @@ int main(int argc,char** argv){
             c.input(b,b,b,0,0x60,"Sasuke bounded shape allocation");
             c.expect(1,1,"Sasuke pair row");
             c.sasuke_pair(block,free_cell);
+        }
+        if(sweep){
+            struct Case {unsigned distance;bool suppress=false,immune=false,receiver_gate=false;};
+            for(const auto test:{Case{81},Case{82},Case{83},Case{81,true},Case{81,false,true},Case{81,false,false,true}}){
+                constexpr Profile installed_sasuke{0x802D3EE0,0x802D4148,0x802D3FF8};
+                Check c(mod,original);
+                c.install(0x8006F4F8,0x000A,installed_sasuke,0x8006FACC);
+                c.a[0x7D2]=8;
+                c.input(b,b,b,0,0x60,"Sasuke bounded shape sweep");
+                c.expect(1,1,"Sasuke sweep row");
+                c.sasuke_pair(block,true,false);
+                c.sasuke_shape_sweep(block,test.distance,test.suppress,test.immune,test.receiver_gate);
+            }
         }
         std::puts("Sasuke: exact queue-2 pair and empty pool passed");
     }

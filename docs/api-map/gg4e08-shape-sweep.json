@@ -1,0 +1,161 @@
+{
+  "amount_frontier": {
+    "attack_record": "802D4190",
+    "caller": "8002F108",
+    "carrier": "attack actor",
+    "receiver": "body actor",
+    "receiver_hp_before_and_at_cut": 180
+  },
+  "cases": [
+    {
+      "attack_matrix_mask_cleared": false,
+      "attack_published": true,
+      "broad_overlap": true,
+      "classifier_accepted": true,
+      "classifier_reached": true,
+      "damage_amount_entry_reached": true,
+      "direct_relation_helper_allows": true,
+      "distance": 81,
+      "receiver_pair_gate_set_after_publication": false,
+      "receiver_relation_inhibited_after_publication": false
+    },
+    {
+      "attack_matrix_mask_cleared": false,
+      "attack_published": true,
+      "broad_overlap": true,
+      "classifier_accepted": true,
+      "classifier_reached": true,
+      "damage_amount_entry_reached": true,
+      "direct_relation_helper_allows": true,
+      "distance": 82,
+      "receiver_pair_gate_set_after_publication": false,
+      "receiver_relation_inhibited_after_publication": false
+    },
+    {
+      "attack_matrix_mask_cleared": false,
+      "attack_published": true,
+      "broad_overlap": false,
+      "classifier_accepted": false,
+      "classifier_reached": false,
+      "damage_amount_entry_reached": false,
+      "direct_relation_helper_allows": true,
+      "distance": 83,
+      "receiver_pair_gate_set_after_publication": false,
+      "receiver_relation_inhibited_after_publication": false
+    },
+    {
+      "attack_matrix_mask_cleared": true,
+      "attack_published": false,
+      "broad_overlap": true,
+      "classifier_accepted": false,
+      "classifier_reached": false,
+      "damage_amount_entry_reached": false,
+      "direct_relation_helper_allows": true,
+      "distance": 81,
+      "receiver_pair_gate_set_after_publication": false,
+      "receiver_relation_inhibited_after_publication": false
+    },
+    {
+      "attack_matrix_mask_cleared": false,
+      "attack_published": true,
+      "broad_overlap": true,
+      "classifier_accepted": false,
+      "classifier_reached": false,
+      "damage_amount_entry_reached": false,
+      "direct_relation_helper_allows": false,
+      "distance": 81,
+      "receiver_pair_gate_set_after_publication": false,
+      "receiver_relation_inhibited_after_publication": true
+    },
+    {
+      "attack_matrix_mask_cleared": false,
+      "attack_published": true,
+      "broad_overlap": true,
+      "classifier_accepted": false,
+      "classifier_reached": false,
+      "damage_amount_entry_reached": false,
+      "direct_relation_helper_allows": true,
+      "distance": 81,
+      "receiver_pair_gate_set_after_publication": true,
+      "receiver_relation_inhibited_after_publication": false
+    }
+  ],
+  "entries": {
+    "amount_cut": "8003CD5C",
+    "broad_phase": "80039F6C",
+    "class4_sweep": "80089AEC",
+    "pair_loop": "8002DB58",
+    "publish": "8008A2BC",
+    "receiver_bind": "8008AB30",
+    "relation": "8002FD7C",
+    "shape_callback": "8008A65C",
+    "sphere_classifier": "80030500"
+  },
+  "id": "gg4e08:000a",
+  "kind": "gf-retail-shape-sweep",
+  "notes": [
+    "The actual attack and receiver allocators publish their bucket entries. No active list or registry entry is supplied.",
+    "Pose matrices, slot validity, clock values and the receiver's singleton body list are fixture inlets.",
+    "The classifier is verified separately on the original loop's scratch inputs, then the unmodified pair loop is replayed to the amount cut.",
+    "The amount calculation, HP write, real pose timing, projectile sweep and whole match remain outside scope."
+  ],
+  "revision": 1,
+  "scope": "Sasuke close-B original attack allocation and a singleton same-model body descriptor",
+  "shape_sweep": {
+    "actor_radius_scale": 1,
+    "at_cursor_18": "only receiver published",
+    "at_cursor_19": "attack and receiver published unless attack is masked",
+    "attack_center": [
+      130,
+      180,
+      290
+    ],
+    "attack_mask": "actor+0x76C bit 7",
+    "declared_cursor_values": [
+      18,
+      19
+    ],
+    "late_receiver_pair_gate": "actor+0x1DA bit 0x02 (set refuses before the relation helper)",
+    "late_receiver_relation_inhibit": "actor+0x272 bit 0x02",
+    "receiver_center": [
+      "130 + distance",
+      180,
+      290
+    ]
+  },
+  "source": {
+    "attack": {
+      "attack_table_index": 2,
+      "cursor_bounds": [
+        19,
+        21
+      ],
+      "flags": 1,
+      "hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "local_center": [
+        30.0,
+        -20.0,
+        -10.0
+      ],
+      "matrix_selector": 7,
+      "queue": 2,
+      "radius": 60.0,
+      "shape_kind": 0,
+      "step": 2
+    },
+    "receiver": {
+      "body_step": 9,
+      "flags": 2,
+      "kind": 0,
+      "local_center": [
+        0.0,
+        -14.0,
+        0.0
+      ],
+      "matrix_selector": 2,
+      "radius": 22.0
+    }
+  },
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
