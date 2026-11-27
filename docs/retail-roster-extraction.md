@@ -1850,6 +1850,16 @@ following the runner and never attacked in 160 frames. This fallback
 did not change either Workshop sweep cutoff or resolve the original
 six-fighter Normal Samurai case, which was still quiet at tick 480.
 
+With the early-dash check for a clear runner, the original six-fighter
+Normal Samurai fixture started at tick 150 and hit at tick 159. In a
+separate fixture with Proto Panther as its only enemy, Normal Samurai
+first hit at tick 112; the previous planner never attacked in that
+240-frame test. These are native pursuit results, not changes to the
+move's entry range or contact rule. All 206 profiles still passed.
+The 120-tick totals stayed at 163 starts and 147 damaging hitters;
+at 240 ticks the totals rose to **192 starts and 183 damaging
+hitters**, with 11 quiet subjects still fighting.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

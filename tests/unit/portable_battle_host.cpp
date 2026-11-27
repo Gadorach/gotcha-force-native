@@ -812,6 +812,53 @@ void roster_cpu_running_rival_cases(){
     check(ready.aim_target==255&&ready.attack.pressed==BorgBattleInputs::b,"a ready melee strike takes priority over a pursuit switch");
 }
 
+void roster_cpu_running_dash_cases(){
+    struct Terrain final:IBattleMvpTerrain {
+        std::array<StageBodyPartition,1> boxes{{{"remote",900,-30,1000,30,true}}};
+        std::span<const StageBodyPartition> body_partitions()const override{return boxes;}
+        bool height(f32,f32,f32,f32* out)const override{if(!out)return false;*out=0;return true;}
+    } terrain;
+    const auto idle=definition("stationary-v1","health=400\n");
+    const std::string slash="health=400\nwalk=0:1\nair=0:2\ndash=0:3\n"
+        "move=slash|b|10|grounded|14|0:4\nrange=slash|145\nmelee=slash|4|7|95|24|60|35|19\n";
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;config.teams={0,1,1};
+    config.packages={definition("grounded-v1|8|13|15",slash),idle,definition("grounded-v1|3|13|15",slash)};
+    config.spawn={BattlePoint{0,0},BattlePoint{560,-300},BattlePoint{0,-180}};
+    NativeBattleMvp world;PortableRosterAi cpu;
+    const auto prepare=[&](){
+        cpu.reset();
+        check(world.start(config,&terrain),"start the straight chase fixture");
+        std::array<GamePadState,3> pads{};pads[0].stick_y=pads[2].stick_y=127;
+        for(unsigned tick=0;tick<10;++tick)
+            check(world.step_roster(pads,std::array<BorgBattleInputs,3>{},false,&terrain),"establish accepted running speeds");
+        check(world.target_of(2)==0&&world.actors()[0].velocity.z>7.9f,"runner has a live forward velocity");
+    };
+    const auto visit=[&](bool explicit_roster){
+        config.local_aim_cycle=explicit_roster;prepare();
+        bool hit=false;
+        for(unsigned n=0;n<40&&!hit;++n){
+            const auto ai=cpu.input(world,2,&terrain);
+            if(!n)check(ai.movement.l==explicit_roster&&!ai.attack.pressed&&ai.aim_target==255,
+                        "a clear runner permits an earlier dash, not an earlier strike or aim override");
+            std::array<GamePadState,3> pads{};pads[0].stick_y=127;pads[2]=ai.movement;
+            check(world.step_roster(pads,std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false,&terrain),
+                  "chase using the ordinary native dash and attack scheduler");
+            const auto& self=world.actors()[2].position;
+            const auto& enemy=world.actors()[0].position;
+            check(std::hypot(self[0]-enemy[0],self[2]-enemy[2])>=2*config.actor_radius-.01f,"the running rival stays solid");
+            for(const auto& e:world.package_events())if(e.kind==BorgBattleEventKind::Hit&&e.actor==2){
+                check(e.recipient==0,"real contact still lands on the runner");hit=true;
+            }
+        }
+        return hit;
+    };
+    check(visit(true)&&!visit(false),"earlier dash gets into melee range while an ordinary approach still trails");
+    config.local_aim_cycle=true;terrain.boxes[0]={"runner-stop",-900,150,900,156,true};prepare();
+    check(!cpu.input(world,2,&terrain).movement.l,"a wall on the rival's projected runway stops the early dash");
+    terrain.boxes[0]={"remote",900,-30,1000,30,true};config.spawn[0]={0,-28};prepare();
+    check(!cpu.input(world,2,&terrain).movement.l,"do not use the forecast when the closing gap leaves too little stopping room");
+}
+
 void roster_cpu_direct_dash_cases(){
     const auto idle=definition("stationary-v1","health=400\n");
     const auto melee=[](bool dash,bool fallback=false){
@@ -1453,6 +1500,7 @@ int main(int argc,char** argv){
     roster_cpu_corner_melee_cases();
     roster_cpu_body_turn_cases();
     roster_cpu_running_rival_cases();
+    roster_cpu_running_dash_cases();
     roster_cpu_direct_dash_cases();
     roster_cpu_ally_pass_cases();
     roster_cpu_detour_ally_cases();

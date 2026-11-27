@@ -17,7 +17,8 @@ def smoke(binary, opengl):
         prepare(root)
         stage = prepare_stage(root)
         with (stage / "stage.manifest").open("a") as manifest:
-            manifest.write("spawn=parked|225|0|-900\nspawn=runner|0|0|-770\nspawn=swordsman|0|0|-950\n")
+            manifest.write("spawn=parked|225|0|-900\nspawn=runner|0|0|-770\nspawn=swordsman|0|0|-950\n"
+                           "spawn=far-ally|870|0|-980\n")
         parked = root / "borgs/parked-stick"
         copytree(root / "borgs/flight-stick", parked)
         manifest = parked / "borg.manifest"
@@ -53,6 +54,22 @@ def smoke(binary, opengl):
             else:
                 assert hits == {"0"}, log[-4500:]
 
+        # No alternative rival: close the gap during the runner's open
+        # runway using an ordinary dash. The timed preset keeps the
+        # frame-budget smoke independent of the local attack script.
+        preset.write_text(
+            "GFROSTER 1\nlocals=1\nstage=example:workshop\nround-seconds=5\n"
+            "fighter=0|example:parked-stick|normal|far-ally\n"
+            "fighter=1|example:flight-stick|normal|runner\n"
+            "fighter=0|example:jump-stick|normal|swordsman\n"
+        )
+        battle = run([binary, mode, "--no-audio", "--frames", "240", "--trace-package-battle",
+                      "--battle-roster", preset], cwd=root, capture_output=True, text=True, timeout=45)
+        log = battle.stderr
+        assert battle.returncode == 0 and "frames=240 actors=3 " in log, log[-4500:]
+        hits = set(re.findall(r"borg-api: round=\d+ tick=\d+ actor=2 move=slash event=hit .*recipient=(\d+) ", log))
+        assert hits == {"1"}, log[-4500:]
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)
@@ -60,5 +77,5 @@ if __name__ == "__main__":
     parser.add_argument("--opengl", action="store_true")
     args = parser.parse_args()
     smoke(args.binary, args.opengl)
-    print(f"Roster pursuit: melee reaches the clear rival instead of trailing a faster runner "
+    print(f"Roster pursuit: melee can choose a clear rival or dash to reach a runner "
           f"({'OpenGL' if args.opengl else 'headless'})")

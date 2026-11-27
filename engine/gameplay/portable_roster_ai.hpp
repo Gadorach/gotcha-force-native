@@ -111,6 +111,9 @@ public:
         };
         auto target=nearest;
         const bool short_range=reach>0&&std::isfinite(reach);
+        const bool melee_only=short_range&&std::none_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
+            return supported(move)&&!borg_battle_direct_melee(move);
+        });
         const bool can_dash=profile->movement==BorgBattleMovement::Grounded&&self.grounded&&
             !profile->dash_disabled&&profile->dash>profile->walk&&!self.dash_ticks&&!self.dash_cooldown&&
             !self.hit_flash&&!state.button&&action.move==BorgBattleActionState::none;
@@ -212,11 +215,8 @@ public:
         }
         // A short-range fighter can get stuck tailing the nearest runner.
         // Only native stage rosters can supply the one-tick rival hint.
-        if(!detour&&target==nearest&&short_range&&self.grounded&&profile->movement==BorgBattleMovement::Grounded&&
-           world.config().local_aim_cycle&&terrain&&!terrain->body_partitions().empty()&&
-           std::none_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
-               return supported(move)&&!borg_battle_direct_melee(move);
-           })){
+        if(!detour&&target==nearest&&melee_only&&self.grounded&&profile->movement==BorgBattleMovement::Grounded&&
+           world.config().local_aim_cycle&&terrain&&!terrain->body_partitions().empty()){
             const auto alternate=[&](unsigned i){
                 const auto& other=world.actors()[i];
                 return i!=nearest&&other.health&&other.team!=self.team&&other.grounded&&
@@ -276,6 +276,36 @@ public:
         const auto dash_fits=[&](BattlePoint displacement,f32 span,f32 reserve){
             const auto burst=profile->dash*world.config().dash_duration;
             return can_dash&&span>burst+reserve&&clear_burst({displacement.x/span,displacement.z/span},burst);
+        };
+        const auto chase_dash_fits=[&](f32 reserve){
+            if(!can_dash||previous_dash||!melee_only||!world.config().local_aim_cycle||!terrain||
+               distance<=reach||facing<.8f||!enemy.grounded||enemy.dash_ticks||enemy.hit_flash)return false;
+            const f32 away=toward.x*enemy.velocity.x+toward.z*enemy.velocity.z;
+            if(away<=profile->walk+.5f||away>=profile->dash)return false;
+            const auto visits=world.config().dash_duration;
+            const f32 travel=profile->dash*visits;
+            const f32 gap=distance+(away-profile->dash)*visits;
+            const f32 across=(toward.x*enemy.velocity.z-toward.z*enemy.velocity.x)*visits;
+            // A running rival opens a longer runway than its current
+            // gap. Only use that estimate if the burst could end in
+            // striking range while still leaving the normal stop reserve.
+            if(gap<reserve||std::hypot(gap,across)>reach||!clear_burst(toward,travel))return false;
+            const BattlePoint step{toward.x*travel,toward.z*travel};
+            const BattlePoint end{start.x+step.x,start.z+step.z};
+            const BattlePoint projected{goal.x+enemy.velocity.x*visits,goal.z+enemy.velocity.z*visits};
+            const auto bound=world.config().arena_half-radius;
+            if(std::abs(end.x)>bound||std::abs(end.z)>bound||std::abs(projected.x)>bound||std::abs(projected.z)>bound||
+               !battle_partition_route_clear(*terrain,goal,projected,radius))return false;
+            f32 own_floor=0,enemy_floor=0;
+            if(!terrain->height(end.x,end.z,self.position[1],&own_floor)||own_floor!=self.position[1]||
+               !terrain->height(projected.x,projected.z,enemy.position[1],&enemy_floor)||enemy_floor!=enemy.position[1])return false;
+            for(unsigned i=0;i<world.actor_count();++i){
+                const auto& peer=world.actors()[i];
+                f32 portion=0;
+                if(i!=slot&&i!=target&&peer.health&&std::abs(peer.position[1]-self.position[1])<body_height&&
+                   body_blocks_leg(start,step,peer,radius,&portion))return false;
+            }
+            return true;
         };
         const auto steer_around_ally=[&](BattlePoint direction,f32 room){
             if(profile->movement!=BorgBattleMovement::Grounded||!self.grounded||
@@ -366,7 +396,7 @@ public:
             pad.stick_y=s8(std::lround(127*toward.z*pace));
             // Finish a direct burst short of the rival with room to walk
             // into range. A ready move (including X) takes precedence.
-            pad.l=!candidate&&dash_fits(delta,distance,stop);
+            pad.l=!candidate&&(dash_fits(delta,distance,stop)||chase_dash_fits(stop));
             pad.b=!candidate&&boost_toward(goal,std::max(stop,reach-profile->dash));
             if(!candidate&&distance>reach)steer_around_ally(toward,distance-stop);
         }

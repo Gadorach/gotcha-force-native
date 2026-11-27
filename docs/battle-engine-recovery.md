@@ -1160,6 +1160,10 @@ if another rival has a substantially easier clear approach. The
 planner uses a short estimate from accepted movement, checks the
 runner's projected runway, and keeps a ready strike ahead of the
 switch. This is native pursuit behavior, not a retail AI claim.
+A direct melee CPU can also dash earlier toward a grounded runner
+when the short forecast leaves normal stopping room and puts the
+rival in range. Both projected lanes must be clear. The forecast
+does not steer the rival, change the dash duration, or accept a hit.
 The two locals can cycle their attack aim among living enemies. This is
 a native Battle Test control, not retail lock-on recovery. It feeds
 move range, aim and direct launches, but not body heading, recipient
