@@ -569,6 +569,11 @@ sublayers: records 144, 145, and 146. These are not one record per
 selector. Selector 8 references records 53 and 54; the source can
 delay the second layer.
 
+The [contact-effect census](retail-code-atlas.md#contact-effect-selectors-scoped-records-and-whole-descriptor-allocations)
+separately inventories selector bytes from scoped retail queues and
+replays the original constructor's descriptor budget. It does not
+replay the contact gate or change the native visual bindings below.
+
 `--contact-art-test` uses the exact local common archive, through
 the same static impact presenter used for projectile retirement art.
 The reviewed roster binds 164 moves (73 projectile, 91 melee) and

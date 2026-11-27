@@ -10,6 +10,8 @@ constexpr u32 visual=0x8103F000,link=visual+0x40,table=visual+0x80,empty=visual+
 constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC,active_head=0x803C706C;
 constexpr u32 helper=0x80019550,allocator=0x8008893C,bucket_visit=0x80089A94,bucket=31;
 constexpr u32 attack_count=0x8043B5A0-21328;
+struct Selector {unsigned key,family,variant,cost;};
+constexpr Selector selectors[]={{0,0,0,1},{1,1,0,1},{2,2,0,3},{3,2,1,3},{4,2,2,3},{8,3,0,8}};
 
 void observe(const Module& mod,std::vector<u8> ram,unsigned scenario){
     const auto at=[&](u32 address){return contact::at(ram,address);};
@@ -82,11 +84,62 @@ void observe(const Module& mod,std::vector<u8> ram,unsigned scenario){
     std::printf("wall-effect: %u 1 %u %u %u %.5f %.5f %.5f\n",scenario,phase2,phase3,retirement,
                 double(initial),double(step_four),double(terminal));
 }
+
+void selector_admission(const Module& mod,std::vector<u8> ram,Selector row,unsigned scenario){
+    const auto at=[&](u32 address){return contact::at(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    const auto half=[&](u32 address){return contact::half(ram,address);};
+    const bool object_supplied=scenario!=2;
+    const unsigned descriptor_cells=scenario==1?row.cost-1:scenario==3?row.cost+2:row.cost;
+    constexpr u32 stride=0x80;
+    at(actor)[0]=1;at(parent)[0]=1;
+    put32(at(parent+0x90),actor);put_float(at(parent+0xB4),1.f);
+    constexpr contact::Point point{260.f,120.f,880.f};
+    for(unsigned i=0;i<point.size();++i)put_float(at(origin+4*i),point[i]);
+    put32(at(0x80436380),descriptor_row);
+    put32(at(descriptor_row+12),descriptor_cells?descriptor:0);put16(at(descriptor_row+18),u16(descriptor_cells));
+    for(unsigned i=0;i<descriptor_cells;++i)
+        put32(at(descriptor+i*stride),i+1<descriptor_cells?descriptor+(i+1)*stride:0);
+    put32(at(free_head+8),object_supplied?effect:0);put32(at(free_tail+8),object_supplied?effect:0);
+    put16(at(free_count+4),u16(object_supplied));at(effect)[2]=2;
+    put32(at(free_head+16),shape);put32(at(free_tail+16),shape);put16(at(free_count+8),1);at(shape)[2]=4;
+
+    CPUState request{};request.gpr[3]=parent;request.gpr[4]=origin;request.gpr[5]=row.key;
+    CallObservation alloc{allocator};
+    mod.run_observed(request,ram,helper,alloc,1024);
+    const bool made=object_supplied&&descriptor_cells>=row.cost;
+    const unsigned spent=made?row.cost:0, left=descriptor_cells-spent;
+    if(alloc.count!=1||alloc.caller!=0x800195D4||alloc.arguments[0]!=2||alloc.arguments[1]!=bucket||
+       alloc.arguments[2]||alloc.arguments[3]!=row.cost||request.gpr[3]!=(made?effect:0)||
+       word(active_head+4*bucket)!=(made?effect:0)||bool(at(effect)[0])!=made||
+       half(free_count+4)!=unsigned(object_supplied&&!made)||half(descriptor_row+18)!=left||
+       word(descriptor_row+12)!=(left?descriptor+spent*stride:0)||half(free_count+8)!=1||
+       word(free_head+16)!=shape||word(active_head+49*4))
+        fail("impact selector partial allocation, wrong helper or unexpected shape use");
+    if(made){
+        if(at(effect)[0x10]||at(effect)[0x11]!=row.family||at(effect)[0x12]!=row.variant||
+           at(effect)[0x13]!=row.cost||at(effect)[0x18]||word(effect+0x0C)!=0x800196D0||
+           word(effect+0x8C)!=parent||word(effect+0x90)!=actor||std::memcmp(at(effect+0x20),at(origin),12))
+            fail("impact selector payload, credit or origin changed");
+        for(unsigned i=0;i<8;++i)
+            if(word(effect+0xE0+4*i)!=(i<row.cost?descriptor+i*stride:0))
+                fail("impact selector did not attach exactly its ordered descriptor cells");
+    }
+    std::printf("impact-alloc: %u %u %u %u %u %u %u\n",row.key,scenario,row.family,row.variant,
+                alloc.arguments[3],unsigned(made),half(descriptor_row+18));
+}
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: wall-effect-fixture qualified.dol unmodified-recomp.so");
+    const bool selector_mode=argc==4&&!std::strcmp(argv[3],"--selectors");
+    if(argc!=3&&!selector_mode)fail("usage: wall-effect-fixture qualified.dol unmodified-recomp.so [--selectors]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(selector_mode){
+        for(const auto& row:selectors)
+            for(unsigned i=0;i<4;++i)
+                selector_admission(mod,original,row,i);
+        return 0;
+    }
     for(unsigned i=0;i<6;++i)observe(mod,original,i);
 }

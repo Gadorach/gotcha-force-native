@@ -795,8 +795,9 @@ effect-helper calls**. The wrapper's callers pass `0`, `1`, `8`,
 or `255` in `r4`, but it overwrites that argument before the
 probe. On a hit it supplies effect selector **0** in `r5`.
 Ten helper calls resolve to selector 0. The contact resolver's
-other call reads a descriptor byte at `+9`; its values remain
-unqualified.
+other call reads an amount-record byte at `+9`. The census
+below inventories scoped source values without qualifying the
+live contact gate.
 
 Ten constructor-to-callback chains trace **72 scoped static
 routes across 35 Borgs**. Type 14 calls the effect helper from
@@ -827,6 +828,43 @@ python3 -m tools.analyze.retail_wall_effect_census \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
   /tmp/opencode/wall "$GF_RECOMP_MODULE" /tmp/opencode/gf-wall-effect-census.json
+```
+
+### Contact-effect selectors: scoped records and whole descriptor allocations
+
+The [contact-effect census](api-map/gg4e08-contact-effect-census.json)
+reads amount-record byte `+9` for the attack steps in seven pinned
+queue receipts. After deduplication, **69 of 73** actor records
+carry selector **1** and **four** carry selector **8**, across 86
+normal Borg models. All 22 reviewed common type-5 and type-9
+records carry selector **0**. The two type-76 receiver-only steps
+are excluded from outgoing evidence.
+
+Those bytes are not observations of the hit gate at `8002F87C`.
+The isolated allocator replay supplies selectors directly:
+
+| Selector | Descriptor cells requested |
+| --- | ---: |
+| 0, 1 | 1 |
+| 2, 3, 4 | 3 |
+| 8 | 8 |
+
+All tested requests need one class-2 cell in fixed bucket 31.
+One descriptor short means no allocation and no partial debit;
+surplus descriptors stay free. The constructor keeps the
+effect family and variant separate and consumes no shape slot.
+Selectors 2–4 are direct fixture controls, not assignments to
+the inventoried actor records.
+
+All 24 cases matched across O0, O1, and O2. Neither the live
+contact tail nor effect initialization ran. This does not change
+the authored native contact-visual support scope.
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_census \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/wall "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-census.json
 ```
 
 ### Type-89 exits: cached area key 16
