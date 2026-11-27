@@ -45,6 +45,57 @@ other dispatch patterns. The original shares executable code between
 Borgs; referencing a function does not make it exclusive to that Borg or
 establish what action or payload it produces.
 
+## Shared action selector
+
+The [action selector map](api-map/gg4e08-action-selector.json) separates
+normal lookup (`80069DD0`) from explicit group/choice/sector selection
+(`8006A3D0`) and the shared row commit (`8006A104`). These operate on
+actor state after an input or script has requested a group; the map
+does not yet assign those flags to controller gestures.
+
+- **Mode 1** uses `16 × choice + 4 × sector`, with six possible choices.
+  Sector uses a signed angle tested against four per-spec thresholds;
+  with no target the sector is zero. **Mode 0** uses `4 × choice`.
+  It contains six rows, but the normal selector only chooses 0–4.
+  An explicit request can still supply a flat choice of 5.
+- When `+0x595` is zero and `+0x694` is positive, normal mode 1
+  refuses. Mode 0 still permits choice 3. Mode refusal, row refusal
+  (`selector == -1`), and a disabled individual handler are distinct.
+- Row commit writes state/substate to `+0x580/+0x581`, always attempts
+  the first handler slot, and attempts the second only if the row's
+  lane byte is exactly `3`. A lane mask alone does not tell you which
+  handlers will execute later.
+- Tick dispatch (`80055568`) runs the installed pre-callback, snapshots
+  both slots, runs the second then the saved first, and finally calls
+  the installed post-callback. Both 64-entry handler tables are now
+  mapped. First slot `61` relays to the installed Borg main callback
+  at `+0x4B4`; second slot `0` is a no-op.
+
+Across all 206 Borgs and 317 profile references, the tables contain
+**14,880 raw cells**. The normal flat lookup cannot select **364**
+of them, including 360 previously indexed selector candidates. The
+published exception list identifies the exact model, profile, group,
+choice and sector. This rules out a normal lookup path, not access
+from a continuation or other explicit request.
+
+The zero-filled rows are data, not synonyms for explicit refusal.
+In the original recomp module, normal lookup on `0205`'s B-shot
+`3:0` and an explicit request on `0207`'s flat B-close `5:0` both
+committed state `0:0` and scheduled first handler `1`, leaving the
+second handler untouched. In the dispatch table, first slot `1` is
+the common handler that requests or resets a program, not the
+slot-61 Borg callback. Neither case proves a strike or a live controller
+trigger. The portable moves and existing preview refusals remain unchanged.
+
+To reproduce the map, use the same DOL, catalog and symbol inputs as
+the atlas, with `python3 -m tools.analyze.retail_action_selector`.
+The CPU-only test uses [`retail_action_selector_fixture.cpp`](../tests/host/retail_action_selector_fixture.cpp)
+in the same compile command as the [phase fixture](#shared-action-gate).
+It covers normal and explicit lookup, guards, signed sector bands,
+commit vs. refusal, the two rows from the unmodified DOL, and the
+slot-61 relay: 36 checks passed on each of the unmodified O0, O1,
+and O2 recomp modules. It does not run the whole live tick dispatcher.
+
 ## Shared action gate
 
 The [phase-gate map](api-map/gg4e08-action-phase-gate.json) isolates

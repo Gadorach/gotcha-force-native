@@ -698,6 +698,10 @@ retains the selector, state, substate, program and descriptor for each
 contributing installer profile. The preview samples the raw clip through
 the shared body renderer; it does not compose original lanes or execute the
 program. A separately selected origin marker is not tied to a firing frame.
+The [original action selector audit](retail-code-atlas.md#shared-action-selector)
+also shows that a flat table's sixth row is never selected by normal lookup,
+even though the separate explicit-request path can address it. A preview or
+static row alone cannot prove that the player or CPU can request that move.
 
 ```sh
 /path/to/gf_native --preview-borg gg4e08:0007 --borg-variant normal \
