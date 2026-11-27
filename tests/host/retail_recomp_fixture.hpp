@@ -136,10 +136,10 @@ public:
         dispatch(cpu,ram,entry,true,nullptr,budget);
     }
     u32 run_to_or_return(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets,
-                         CallObservation* observation=nullptr)const{
+                          CallObservation* observation=nullptr,unsigned budget=256)const{
         Boundary mark{targets,observation};
         cpu.host_call=cut;cpu.external_user_data=&mark;
-        dispatch(cpu,ram,entry,false,&mark);
+        dispatch(cpu,ram,entry,false,&mark,budget);
         cpu.host_call=nullptr;cpu.external_user_data=nullptr;
         return mark.reached;
     }

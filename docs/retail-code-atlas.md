@@ -934,6 +934,7 @@ shape, even when a shape cell is available.
 All eight cases, including six heap-entry forks, matched across
 O0, O1, and O2. This does not qualify successful emitter
 initialization, drawing, live scheduling, or native gameplay.
+The separate storage replay below continues past the heap entry.
 
 Compile [`retail_contact_effect_init_fixture.cpp`](../tests/host/retail_contact_effect_init_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -942,6 +943,51 @@ with the [phase fixture](#shared-action-gate) flags:
 python3 -m tools.analyze.retail_contact_effect_init \
   "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/impact-init "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-contact-effect-init.json
+```
+
+### Dynamic contact visuals: successful storage and update lifetimes
+
+The [storage replay](api-map/gg4e08-contact-effect-storage.json)
+runs the original OS heap initialization and default SDK dispatch
+registration on a declared guest arena. The original allocator
+splits a free block, returns the aligned payload, and attaches it
+to the type-3 visual object. No heap callback or result is supplied
+by the fixture. The type-3 row has one declared cell and uses the
+source destructor from row `8036F60C`.
+
+| Replay inlet | Heap block including header | Scene budget returned | Heap block and object cells returned |
+| --- | ---: | ---: | ---: |
+| Selector 1, 16 entries | 928 bytes | Visit 18 | Visit 20 |
+| Selector 1, only one entry left | 96 bytes | Visit 17 | Visit 19 |
+| Selector 8, empty or full scene budgets | 288 bytes | No debit | Visit 13 |
+
+Selector 1 charges the scene before requesting visual record 2 and
+creates one child joint per admitted entry. In the 16-entry case,
+eight entries are active on visit 1 and the next eight join on visit
+6. The scene counters return when the last entries expire, **two
+visits before** the type-3 payload, visual object, and class-2 battle
+resources return. Separate HSD object-pool reservations are not
+counted as part of that returned payload.
+
+Selector 8 uses the same activity-mask sequence at both tested
+scene occupancies: two pieces on visit 1, a peak of six on visits
+5–6, and none on visit 11. This replay supplies empty records 53/54
+for selector 8 and a single-joint template without animation or
+geometry for selector 1. Only the fixed-bucket updater runs; no
+collider publishes and no drawing runs.
+
+Four cases and 65 visits matched across O0, O1, and O2. These
+observations qualify allocation and update visits under declared
+inputs, not retail boot, loaded-match timing, drawing, or native
+gameplay.
+
+Compile [`retail_contact_effect_storage_fixture.cpp`](../tests/host/retail_contact_effect_storage_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_storage \
+  "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-contact-effect-storage.json
 ```
 
 ### Contact-effect countdown: four collision-reset visits
