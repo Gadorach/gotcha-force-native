@@ -405,6 +405,44 @@ python3 -m tools.analyze.retail_rifle_lifetime \
   /tmp/opencode/gf-rifle-lifetime.json
 ```
 
+### Type-2 carriers across the roster
+
+The [type-2 census](api-map/gg4e08-type2-roster.json) checks all
+**123** factory rows at `80303138` and scans all **206** profiles
+selected by the bounded standalone installers. Of **103** direct
+calls to `800C3BE0`, the static action linker associates **58**
+calls and **56** keys with **30** Borgs. The remaining **45** calls
+stay unjoined. A preceding literal is not treated as proof of
+the argument along every incoming branch.
+
+The same carrier dispatch reads **15 distinct speed triplets**.
+There are 13 parent-root selectors, distinct from joint zero.
+The bearing helper is used even without a target for 64 rows,
+only with an available target for 30, and not at all for 29.
+These describe the branch after target validation, not a
+qualification of the actual target or rendered muzzle.
+
+| Checked static call | Key | Initial / added / cap | Source group | Raw power |
+| --- | ---: | --- | ---: | ---: |
+| Machine Red ranged B | 21 | `80 / 0.5 / 160` | 0 | 10 |
+| G-Red ranged B | 43 | `80 / 0.5 / 160` | 0 | 20 |
+| Proto King ranged B | 85 | `160 / 1 / 160` | 9 | 50 |
+
+The census identifies 36 checked normal-record call candidates
+with positive raw power, and withholds the queue join for 18
+combined-form calls and four alternate-spec calls. It does not
+admit a move, infer a single hit amount, or assign Machine Red's
+lifetime to another key. The carrier lifetime receipt above is a
+separate bounded original execution.
+
+```sh
+python3 -m tools.analyze.retail_type2_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json \
+  docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type2-roster.json
+```
+
 ### From shape publication to the amount call
 
 The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the
