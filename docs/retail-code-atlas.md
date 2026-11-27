@@ -654,7 +654,7 @@ The growth and cap also vary by key: the six Dragon areas share
 group 60 and raw power 40, but not one common scale curve. These
 are neither measured live radii nor HP amounts.
 
-The census ties scoped predecessors to 19 Borgs without calling
+The census ties scoped predecessors to 24 Borgs without calling
 the downstream area a direct cast. For instance:
 
 - The normal Ninja type-15 selectors use area key 0; the conditional
@@ -677,6 +677,46 @@ python3 -m tools.analyze.retail_type5_roster \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
   /tmp/opencode/gf-type5-roster.json
+```
+
+### Type-5 sibling exits: contact wins, and type 77 uses the root
+
+Revision 4 joins seven more static routes across six Borgs. These
+are the separate area branches of the type-33, 52, 74, and 77
+parents, not their zero-HP or expiry type-4 effects. Time Bomber's
+type-33 route and earlier type-41 placement both select key 19,
+but have different predecessors and callbacks.
+
+| Parent | Scoped area key | Position used on actor contact |
+| --- | ---: | --- |
+| Type 33, Time Bomber | 19 | Saved hit point (`+0x2A0`) |
+| Type 52, Machine Blue / Proto Blue | 11 | Saved hit point (`+0x2A0`) |
+| Type 74, Blue Striker | 6 | Saved hit point (`+0x2A0`) |
+| Type 77, Red / Violet Attacker | 7 | Carrier root (`+0x20`) |
+
+The [exit replay](api-map/gg4e08-type5-sibling-exits.json) supplies
+phase one, a contact latch, HP, and timer values after the original
+constructor. A set latch picks the area even with zero HP and
+an expired timer. With only one descriptor, the area refuses and
+the parent still closes; no type-4 fallback allocates, although
+its pools are available. Without the latch, zero HP or expiry
+requests type 4/key 0 at the root. An out-of-bounds terminal
+control closes with neither request.
+
+The separate stage-probe branches use `+0x20` on all four parents
+in the static census. The bounds control is not a replay of those
+terrain branches. All 36 cases matched across O0, O1, and O2.
+No overlap, area initialization, HP, live action, or native
+gameplay ran.
+
+Compile [`retail_type5_sibling_exit_fixture.cpp`](../tests/host/retail_type5_sibling_exit_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type5_sibling_exit \
+  "$GF_RETAIL_ROOT/sys/main.dol" docs/api-map/gg4e08-type5-roster.json \
+  /tmp/opencode/area-exit "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type5-sibling-exits.json
 ```
 
 ### Type-89 exits: cached area key 16

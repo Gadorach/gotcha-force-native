@@ -23,7 +23,7 @@ class RetailType5RosterTest(unittest.TestCase):
         self.assertEqual(data["counts"], {
             "factory_rows": 27, "common_groups": 21, "direct_call_sites": 45,
             "literal_site_keys": 30, "indexed_parent_sites": 13, "cached_parent_sites": 2,
-            "resolved_area_keys": 27, "candidate_rows": 23, "known_ancestor_models": 19,
+            "resolved_area_keys": 27, "candidate_rows": 30, "known_ancestor_models": 24,
         })
         self.assertEqual(data["area_keys_not_resolved_to_any_site"], [])
         calls = {r["site"]: r for r in data["call_sites"]}
@@ -63,7 +63,8 @@ class RetailType5RosterTest(unittest.TestCase):
         conditional = next(r for r in parents if r["borg"] == "gg4e08:0003" and r["parent"]["key"] == 2)
         self.assertIn("not qualified", conditional["ancestor_scope"])
         self.assertEqual(conditional["descendant"]["key"], 0)
-        time, remote = (next(r for r in parents if r["borg"] == f"gg4e08:{m:04x}") for m in (0x106, 0x107))
+        time, remote = (next(r for r in parents if r["borg"] == f"gg4e08:{m:04x}" and r["parent"].get("family") == "type-41")
+                        for m in (0x106, 0x107))
         self.assertEqual((time["descendant"]["key"], remote["descendant"]["key"]), (19, 20))
         self.assertNotIn("800E0AAC", time["descendant"]["sites"])
         self.assertIn("800E0AAC", remote["descendant"]["sites"])
@@ -84,6 +85,20 @@ class RetailType5RosterTest(unittest.TestCase):
             self.assertEqual(row["descendant"]["key"], 26)
             self.assertIn("terrain-crossing", row["descendant"]["scope"])
         self.assertEqual(self.data["sweep_census_sha256"], area.SWEEP_CENSUS_SHA256)
+
+    def test_sibling_area_ancestry_preserves_type77_root_exception(self):
+        rows = [r for r in self.data["candidates"] if "branches" in r["descendant"]]
+        self.assertEqual(len(rows), 7)
+        expected = {"gg4e08:0106": (33, 19), "gg4e08:0601": (52, 11), "gg4e08:0617": (52, 11),
+                    "gg4e08:0d00": (74, 6), "gg4e08:0d01": (77, 7), "gg4e08:0d05": (77, 7)}
+        self.assertEqual({r["borg"] for r in rows}, expected.keys())
+        for row in rows:
+            kind, key = expected[row["borg"]]
+            self.assertEqual((row["parent"]["type"], row["descendant"]["key"]), (kind, key))
+            hit, stage = row["descendant"]["branches"]
+            self.assertEqual((hit["position_offset"], stage["position_offset"]), ("0x20" if kind == 77 else "0x2A0", "0x20"))
+            self.assertEqual([hit["site"], stage["site"]], row["descendant"]["sites"])
+        self.assertEqual(self.data["type4_census_sha256"], area.TYPE4_CENSUS_SHA256)
 
     def test_existing_output_remains_unmodified(self):
         with TemporaryDirectory() as tmp:

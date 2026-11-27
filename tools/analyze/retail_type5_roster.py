@@ -28,6 +28,15 @@ PARENT_CENSUS = "gg4e08-small-projectile-roster.json"
 PARENT_CENSUS_SHA256 = "6165047678ba28677e36710661cbdae7f53fc1dfeae89e345cb33118c16d0e4f"
 SWEEP_CENSUS = "gg4e08-type11-roster.json"
 SWEEP_CENSUS_SHA256 = "d2ba554dfb5e0bd1b4c7cbffa6177d847dc4e306a2f1aab79086f0089abb664e"
+TYPE4_CENSUS = "gg4e08-type4-roster.json"
+TYPE4_CENSUS_SHA256 = "62b8542c35f1717b093db0284352182574266763788648f15bcaf0b4f431aa9e"
+EXIT_PEERS = {
+    # Parent type -> (callback, contact site, stage site, position base, instruction distances, contact offset).
+    33: (0x800FEAE8, 0x800FEB34, 0x800FEC8C, 30, 8, 8, 0x2A0),
+    52: (0x801292C8, 0x80129354, 0x801294B0, 31, 4, 4, 0x2A0),
+    74: (0x800F97AC, 0x800F97F4, 0x800F9948, 30, 8, 8, 0x2A0),
+    77: (0x800FB56C, 0x800FB5DC, 0x800FB750, 31, 8, 8, 0x20),
+}
 SWEEP_PEERS = {
     "801F33A4": ("801F2BF8", 0x801F3274, {"gg4e08:0e00", "gg4e08:0e05"}),
     "801F3E80": ("801F3784", 0x801F3D50, {"gg4e08:0e03"}),
@@ -217,7 +226,53 @@ def sweep_predecessors(image, census, models):
     return linked
 
 
-def normal_predecessors(image, atlas, selections, parent_census, tables, sweep):
+def exit_predecessors(image, models, sites, type4):
+    by_site = {int(r["site"], 16): r for r in sites}
+    parents = {r["type"]: r for r in type4["parent_dispatch_links"]}
+    linked = []
+    for r in type4["candidates"]:
+        parent = r["parent"]
+        kind = parent["type"]
+        if kind not in EXIT_PEERS:
+            continue
+        model = models[r["borg"]]
+        chain = parents[kind]
+        callback, contact, terrain, base, contact_delta, terrain_delta, contact_offset = EXIT_PEERS[kind]
+        if (model["profile"] != r["profile"] or model["spec_record"] != 0
+                or chain["callback"] != address(callback) or chain["constructor"] != parent["constructor"]
+                or r["descendant_sites"] != chain["type4_sites"]
+                or word(image, int(chain["phase_table"], 16)+4*chain["phase"], "data") != callback):
+            raise ValueError("type-5 sibling parent chain changed")
+        link(image, int(parent["site"], 16), int(parent["constructor"], 16))
+        keys, branches = set(), []
+        for pc, delta, offset, scope in ((contact, contact_delta, contact_offset, "actor-contact latch"),
+                                         (terrain, terrain_delta, 0x20, "stage probe returned nonzero")):
+            site = by_site[pc]
+            source = site["key_source"]
+            if (site["function"] != address(callback) or site["factory"] != "80085E00"
+                    or word(image, pc-delta) != (0x38800000 | (base << 16) | offset)):
+                raise ValueError("type-5 sibling branch position source changed")
+            if source["kind"] == "literal-r5":
+                keys.add(source["key"])
+            else:
+                if (source["kind"] != "indexed-parent-row"
+                        or any(k not in source["eligible_parent_keys"] for k in parent["keys"])):
+                    raise ValueError("type-5 sibling row scope changed")
+                keys.update(source["area_key_by_parent_key"][k] for k in parent["keys"])
+            branches.append({"site": address(pc), "scope": scope, "position_offset": f"0x{offset:X}"})
+        if len(keys) != 1:
+            raise ValueError("type-5 sibling area key is not unique for the scoped parent")
+        linked.append({"borg": r["borg"], "profile": r["profile"], "action": r["action"],
+                       "ancestor_scope": "static phase-one paid predecessor; not a replayed action",
+                       "parent": {**parent, "debit": r["debit"]["site"]},
+                       "descendant": {"key": keys.pop(), "sites": [b["site"] for b in branches], "branches": branches,
+                                      "scope": "contact or stage exit; zero-HP and expiry type-4 requests are separate"}})
+    if len(linked) != 7 or len({r["borg"] for r in linked}) != 6:
+        raise ValueError("type-5 sibling normal ancestor coverage changed")
+    return linked
+
+
+def normal_predecessors(image, atlas, selections, parent_census, tables, sweep, sites, type4):
     models = {r["id"]: r for r in selections["borgs"]}
     if len(models) != 206 or set(models) != {r["id"] for r in atlas["borgs"]}:
         raise ValueError("type-5 selected normal profile coverage")
@@ -279,6 +334,7 @@ def normal_predecessors(image, atlas, selections, parent_census, tables, sweep):
         })
     linked += type89.ancestors(image, atlas, selections)
     linked += sweep_predecessors(image, sweep, models)
+    linked += exit_predecessors(image, models, sites, type4)
     return sorted(linked, key=lambda r: (r["borg"], r["parent"]["site"]))
 
 
@@ -298,15 +354,16 @@ def recover(image, archive, atlas, selections):
     maps = Path(__file__).resolve().parents[2] / "docs/api-map"
     parent = read_metadata(maps / PARENT_CENSUS, PARENT_CENSUS_SHA256)
     sweep = read_metadata(maps / SWEEP_CENSUS, SWEEP_CENSUS_SHA256)
-    predecessors = normal_predecessors(image, atlas, selections, parent, tables, sweep)
+    type4 = read_metadata(maps / TYPE4_CENSUS, TYPE4_CENSUS_SHA256)
+    predecessors = normal_predecessors(image, atlas, selections, parent, tables, sweep, sites, type4)
     resolved = {key for s in sites for key in s["key_source"].get("possible_area_keys", (
         [s["key_source"]["key"]] if "key" in s["key_source"] else []))}
     counts = Counter(s["key_source"]["kind"] for s in sites)
     return {
-        "kind": "gf-retail-type5-roster", "revision": 3, "source_dol_sha256": SOURCE_SHA256,
+        "kind": "gf-retail-type5-roster", "revision": 4, "source_dol_sha256": SOURCE_SHA256,
         "source_afs_sha256": AFS_SHA256, "code_atlas_sha256": ATLAS_SHA256,
         "standalone_installers_sha256": INSTALLERS_SHA256, "parent_census_sha256": PARENT_CENSUS_SHA256,
-        "sweep_census_sha256": SWEEP_CENSUS_SHA256,
+        "sweep_census_sha256": SWEEP_CENSUS_SHA256, "type4_census_sha256": TYPE4_CENSUS_SHA256,
         "common_bank": {"member": COMMON_MEMBER, "pzz_slot": 0, "sha256": area.COMMON_COLLISION_SHA,
                         "reaction_table": address(REACTIONS), "groups": groups},
         "counts": {"factory_rows": len(rows), "common_groups": len(groups), "direct_call_sites": len(sites),
