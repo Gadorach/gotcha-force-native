@@ -1,4 +1,4 @@
-// Original type-9 common shape admission, stationary contact and lifetime.
+// Original type-9 shape admission, contact, lifetime and type-8 predecessor.
 #include "retail_stationary_contact.hpp"
 #include <array>
 
@@ -13,6 +13,7 @@ constexpr u32 presentation_frontier=0x800055FC,attack_count=0x8043B5A0-21328,att
 constexpr u32 amount_table=0x802C4760;
 constexpr u32 amount_record=amount_table+9*24;
 constexpr u32 bucket_visit=0x80089A94,unbind_shape=0x8008AFF0,actor_bucket=8,carrier_bucket=9;
+constexpr u32 type8_factory=0x800FC208,type8_carrier=declared_parent;
 using CommonBank=std::array<u8,21504>;
 struct ContactInlet {contact::HitBlock hit;contact::ActorSpec owner,defender;};
 constexpr contact::Point origin{160,0,400};
@@ -152,6 +153,115 @@ void lifetime(const Module& mod,std::vector<u8>& ram,unsigned key,unsigned scena
                 unbind_visit,shape_return,carrier_return,descriptor_return,unbind_site);
 }
 
+void trail(const Module& mod,std::vector<u8> ram,const CommonBank& bank,unsigned key,unsigned scenario){
+    const auto at=[&](u32 address){return contact::at(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    const auto half=[&](u32 address){return contact::half(ram,address);};
+    const auto real=[&](u32 address){return std::bit_cast<float>(word(address));};
+    const auto center=[&](u32 address){return contact::Point{real(address),real(address+4),real(address+8)};};
+    constexpr u32 child_stride=0x800,shape_stride=0x200,descriptor_stride=0x80;
+    const unsigned children=scenario==1?0:3,descriptors=scenario==2?0:3,shapes=scenario?1:3;
+    at(actor)[0]=1;at(actor)[0x18]=1;
+    put16(at(actor+0x3E8),0x0D03);put16(at(actor+0x94),0x0D03);put32(at(actor+0x90),actor);
+    for(unsigned offset:{0xB4,0xB8,0xC0,0xC4,0x1DC8})put_float(at(actor+offset),1.f);
+    for(unsigned i=0;i<origin.size();++i)put_float(at(point+4*i),origin[i]);
+    stage_render_inlet(ram);
+    put32(at(scene+152),common);
+    put32(at(0x8043B5A0-31852),scene);
+    std::memcpy(at(common),bank.data(),bank.size());
+    put32(at(0x80436380),descriptor_row);
+    put32(at(descriptor_row+12),descriptors?descriptor:0);put16(at(descriptor_row+18),u16(descriptors));
+    for(unsigned i=0;i<descriptors;++i)
+        put32(at(descriptor+i*descriptor_stride),i+1<descriptors?descriptor+(i+1)*descriptor_stride:0);
+    put32(at(free_head+12),type8_carrier);put32(at(free_tail+12),children?effect+(children-1)*child_stride:type8_carrier);
+    put16(at(free_count+6),u16(1+children));
+    at(type8_carrier)[2]=3;put32(at(type8_carrier+4),children?effect:0);
+    for(unsigned i=0;i<children;++i){
+        const auto cell=effect+i*child_stride;
+        at(cell)[2]=3;put32(at(cell+4),i+1<children?cell+child_stride:0);
+    }
+    put32(at(free_head+16),shape);put32(at(free_tail+16),shape+(shapes-1)*shape_stride);put16(at(free_count+8),u16(shapes));
+    for(unsigned i=0;i<shapes;++i){
+        const auto cell=shape+i*shape_stride;
+        at(cell)[2]=4;put32(at(cell+4),i+1<shapes?cell+shape_stride:0);
+    }
+    CPUState create{};create.gpr[3]=actor;create.gpr[4]=point;create.gpr[5]=key;
+    CallObservation take{alloc};
+    mod.run_observed(create,ram,type8_factory,take);
+    if(create.gpr[3]!=type8_carrier||at(type8_carrier)[0x10]!=8||at(type8_carrier)[0x11]!=key||
+       word(type8_carrier+0x8C)!=actor||word(type8_carrier+0x90)!=actor||center(type8_carrier+0x20)!=origin||
+       take.count!=1||take.caller!=0x800FC240||take.arguments[0]!=actor||take.arguments[1]!=3||
+       take.arguments[2]!=8||take.arguments[3]||take.arguments[4]||half(free_count+6)!=children||
+       half(descriptor_row+18)!=descriptors||word(active_head+4*carrier_bucket)!=type8_carrier)
+        fail("type-8 parent used the wrong carrier, resource class or owner");
+    const unsigned interval=key==0?7:4,speed=key==0?40:50;
+    const unsigned end=3+2*interval;
+    unsigned last_request=0,published=0,refused_retired=0,refusal_visit=0;
+    u32 refused_child=0;
+    for(unsigned visit=1;visit<=end;++visit){
+        const bool requested=(visit-1)%interval==0&&visit<=end-2;
+        const bool created=requested&&(scenario==0||scenario==3||(scenario==1&&visit==end-2));
+        const bool bound=created&&(scenario!=3||visit==1);
+        const bool returned=refused_child&&visit==refusal_visit+2;
+        const auto cell=word(free_head+12);
+        const auto cells_before=half(free_count+6),desc_before=half(descriptor_row+18),shapes_before=half(free_count+8);
+        CPUState tick{};tick.gpr[3]=actor_bucket;
+        CallObservation request{alloc};
+        mod.run_observed(tick,ram,bucket_visit,request,4096);
+        publish(mod,ram);
+        auto xyz=origin,anchor=origin;
+        xyz[2]+=float((visit-1)*speed);
+        if(requested)last_request=visit;
+        anchor[2]+=float((last_request-1)*speed);
+        published+=unsigned(bound);
+        if(center(type8_carrier+0x20)!=xyz||center(type8_carrier+0x160)!=anchor||at(type8_carrier)[0x18]!=1||
+           half(type8_carrier+0x1C)!=601-visit||word(active_head+4*carrier_bucket)!=type8_carrier||
+           request.count!=unsigned(requested)+unsigned(created)||
+           (requested&&(request.caller!=0x800FC6D8||request.arguments[0]!=actor||request.arguments[1]!=3||
+                        request.arguments[2]!=8||request.arguments[3]!=1||request.arguments[4]!=1))||
+           (created&&(request.first_arguments[1]!=actor||request.second_arguments[1]!=4))||
+           half(free_count+6)!=cells_before-unsigned(created)+unsigned(returned)||
+           half(descriptor_row+18)!=desc_before-unsigned(created)+unsigned(returned)||
+           half(free_count+8)!=shapes_before-unsigned(bound)||half(attack_count)!=published||
+           half(contact::receiver_count))
+            fail("type-8 trail request cadence, position or pool pressure changed");
+        if(created&&(cell<effect||cell>effect+2*child_stride||at(cell)[0x10]!=9||at(cell)[0x11]!=key||
+                    at(cell)[0x18]!=(bound?1:2)||word(cell+0x8C)!=type8_carrier||word(cell+0x90)!=actor||
+                    center(cell+0x20)!=xyz||word(cell+0xE0)==0))
+            fail("type-8 child lost its inherited key, spawn point or separate credit");
+        if(created&&!bound){
+            if(refused_child)fail("type-8 refused children overlapped in the fixture window");
+            refused_child=cell;refusal_visit=visit;
+        }
+        if(returned){
+            if(at(refused_child)[0])fail("type-8 refused child did not retire");
+            refused_child=0;
+            ++refused_retired;
+        }else if(refused_child&&visit==refusal_visit+1&&at(refused_child)[0x18]!=3){
+            fail("type-8 refused child did not advance to retirement phase");
+        }
+        for(unsigned i=0;i<published;++i){
+            const auto live_shape=word(attack_registry+4*i);
+            if(live_shape<shape||live_shape>shape+2*shape_stride)
+                fail("type-8 trail published a foreign shape");
+            const auto child=word(live_shape+0x20);
+            if(child<effect||child>effect+2*child_stride||at(child)[0x10]!=9||at(child)[0x11]!=key||
+               word(live_shape+0x24)!=actor||real(live_shape+0x7C)!=150.f||!half(child+0x26C)||
+               center(live_shape+0x64)!=center(child+0x20))
+                fail("type-8 parent or wrong child published in the trail registry");
+        }
+        if(requested)
+            std::printf("type8-trail: %u %u %u %u %u %u %u %u %u\n",key,scenario,visit,unsigned(xyz[2]),
+                        unsigned(created),unsigned(bound),published,half(free_count+6),half(descriptor_row+18));
+        if(scenario==1&&visit==1+interval){
+            at(effect)[2]=3;put32(at(effect+4),0);
+            put32(at(free_head+12),effect);put32(at(free_tail+12),effect);put16(at(free_count+6),1);
+        }
+    }
+    if(refused_child||refused_retired!=(scenario==3?2u:0u))fail("type-8 trail stopped before the refused child returned");
+    std::printf("type8-end: %u %u %u %u %u\n",key,scenario,end,refused_retired,published);
+}
+
 void observe(const Module& mod,std::vector<u8> ram,const CommonBank& bank,unsigned key,bool slot,
              Mode mode=Mode::bind,unsigned scenario=0,const ContactInlet* inlet=nullptr){
     const auto at=[&](u32 address){return ram.data()+address-GC_RAM_BASE;};
@@ -213,8 +323,9 @@ void observe(const Module& mod,std::vector<u8> ram,const CommonBank& bank,unsign
 int main(int argc,char** argv){
     const bool contact_mode=argc==4&&!std::strcmp(argv[3],"--contact");
     const bool lifetime_mode=argc==4&&!std::strcmp(argv[3],"--lifetime");
-    if(argc!=3&&!contact_mode&&!lifetime_mode)
-        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime]");
+    const bool trail_mode=argc==4&&!std::strcmp(argv[3],"--trail");
+    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode)
+        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     CommonBank bank{};
@@ -235,6 +346,12 @@ int main(int argc,char** argv){
         for(unsigned key=0;key<7;++key)
             for(unsigned i=0;i<4;++i)
                 observe(mod,original,bank,key,i!=2,Mode::lifetime,i);
+        return 0;
+    }
+    if(trail_mode){
+        for(unsigned key:{0u,5u,6u})
+            for(unsigned i=0;i<4;++i)
+                trail(mod,original,bank,key,i);
         return 0;
     }
     for(unsigned key=0;key<7;++key)

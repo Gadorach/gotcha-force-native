@@ -1168,6 +1168,45 @@ python3 -m tools.analyze.retail_type9_lifetime \
   /tmp/opencode/gf-type9-lifetime.json
 ```
 
+### Type-8 trails: distance markers survive child refusal
+
+The [type-8 replay](api-map/gg4e08-type8-trail.json) runs keys
+0, 5, and 6 through the original actor-relative bucket on an
+empty synthetic stage, without a copied target. The parent
+uses no descriptor or attack shape. It requests a type-9 child
+with its own key at initialization, then requests another when
+its distance from the last request reaches the row threshold.
+
+| Parent key | Travel per active visit | Distance threshold | Request visits (including initialization) | Spawn Z |
+| ---: | ---: | ---: | --- | --- |
+| 0 | 40 | 250 | 1, 8, 15 | 400, 680, 960 |
+| 5, 6 | 50 | 200 | 1, 5, 9 | 400, 600, 800 |
+
+Carrier and descriptor shortages did not change the request
+points. When a carrier became available just after the first
+spaced request failed, the parent did not retry immediately:
+it waited for the next distance threshold. The saved spacing
+point had already advanced.
+
+Each allocated child initialized in the same bucket visit.
+With one shape slot, the opening child kept it; the two later
+children allocated carriers and descriptors but did not publish.
+Each refused child returned those resources two visits after its
+request. The published shapes belonged to the type-9 children,
+not the type-8 parent.
+
+All 12 cases (156 visits) matched across O0, O1, and O2. These
+are direct constructor inlets, not installed Borg actions.
+Homing, obstacle termination, parent expiry, damage from
+overlapping children, and native gameplay were not tested.
+
+```sh
+python3 -m tools.analyze.retail_type8_trail \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type8-trail.json
+```
+
 ### Type-32 model-relative segments: copied aim and live gate
 
 The [shared replay](api-map/gg4e08-type32-shared.json) runs the
