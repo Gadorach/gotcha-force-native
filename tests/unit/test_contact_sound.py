@@ -1,12 +1,16 @@
 """Check the source sound selectors without substituting an unproved hit route."""
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
 import struct
 import tempfile
+from types import SimpleNamespace
 import unittest
 
 from tools.analyze import contact_sound
+from tools.analyze import retail_normal_receiver_sound as normal
+from tools.extract.retail_borg_roster import NORMAL_SOUND_RECORDS, NORMAL_SOUND_RECORDS_SHA256, _normal_receiver_proofs
 
 DOL = Path(os.environ.get("GF_RETAIL_ROOT", "original/extracted")) / "sys/main.dol"
 ARTIFACT = Path(__file__).resolve().parents[2] / "docs/api-map/contact-sound.json"
@@ -24,20 +28,60 @@ class ContactSoundTest(unittest.TestCase):
         self.assertEqual(pairs(0), [(0, 48)] * 4)
         self.assertEqual(pairs(0xC0), [])
 
-    def test_banded_size_requires_closed_unanimous_configurations(self):
+    def test_banded_size_requires_exact_record_and_closed_unanimous_configurations(self):
         class Image:
             def read(self, address, length, kind):
-                self.args = (address, length, kind)
                 return struct.pack(">2f", 100, {76: 420, 176: 421, 276: 110}[address])
 
-        binding = {"status": "one-static-slot-0-record", "selected_record": 0}
+        data = b"\0"*432 + b"\1"*432
+        proof = {"installer": "8006F4F8", "spec_record": 1, "record_sha256": sha256(data[432:]).hexdigest(),
+                 "config": "00000000", "band": 2,
+                 "size_bits": struct.pack(">f", 420/self.report["source"]["divisor"]).hex().upper()}
+
         def configs(*pointers):
-            return {"profiles": [{"config": f"{p:x}"} for p in pointers]}
-        get = lambda report, size=432: contact_sound.receiver_band(self.report, Image(), report, binding, size)
-        self.assertEqual(get(configs(0, 100))["band"], 2)
-        self.assertIsNone(get(configs(0, 200))["band"])
-        self.assertIsNone(get({**configs(0), "open_path_boundaries": 1})["band"])
-        self.assertIsNone(get(configs(0), 864)["band"])
+            return {"profiles": [{"config": f"{p:08X}"} for p in pointers]}
+
+        def get(actions, row=proof, records=data):
+            return contact_sound.normal_receiver_band(self.report, Image(), actions, row, 0x8006F4F8, records)
+
+        result = get(configs(0, 100))
+        self.assertEqual((result["band"], result["spec_record"]), (2, 1))
+        for actions in (configs(0, 200), configs(100), {**configs(0), "open_path_boundaries": 1}):
+            self.assertIsNone(get(actions)["band"])
+        self.assertIsNone(get(configs(0), {**proof, "size_bits": "00000000"})["band"])
+        for wrong in (None, {**proof, "spec_record": 0}, {**proof, "installer": "8006F4FC"}):
+            with self.assertRaises(ValueError):
+                get(configs(0), wrong)
+        with self.assertRaises(ValueError):
+            get(configs(0), records=data[:-1])
+
+    def test_roster_proof_covers_only_the_exact_normal_records(self):
+        raw = NORMAL_SOUND_RECORDS.read_bytes()
+        self.assertEqual(sha256(raw).hexdigest(), NORMAL_SOUND_RECORDS_SHA256)
+        proof = json.loads(raw)
+        self.assertEqual(proof["contact_sound_replay_sha256"], normal.REPLAY_SHA256)
+        self.assertEqual(proof["band_counts"], {"0": 136, "1": 26, "2": 19, "3": 25})
+        amounts = json.loads(ARTIFACT.with_name("gg4e08-normal-receiver-factors.json").read_bytes())["records"]
+        self.assertEqual(len(proof["records"]), 206)
+        catalog = [SimpleNamespace(id=row["borg"]) for row in proof["records"]]
+        with self.assertRaisesRegex(ValueError, "roster mismatch"):
+            _normal_receiver_proofs(NORMAL_SOUND_RECORDS, NORMAL_SOUND_RECORDS_SHA256, proof["kind"], catalog[:-1])
+        for row, other in zip(proof["records"], amounts, strict=True):
+            for key in ("borg", "installer", "spec_record", "record_sha256"):
+                self.assertEqual(row[key], other[key])
+            self.assertEqual(row["lanes_and_even_tones"],
+                             [list(contact_sound.normal_pairs(self.report, code)[row["band"]])
+                              for code in proof["codes"]])
+
+    def test_refuses_bad_report_and_preserves_existing_proof(self):
+        with self.assertRaises(ValueError):
+            normal.decode("receiver-sound:", None, None, [None])
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "proof.json"
+            path.write_text("keep")
+            with self.assertRaises(FileExistsError):
+                normal.export(None, None, None, None, path)
+            self.assertEqual(path.read_text(), "keep")
 
     def test_routes_require_agreement_and_refuse_special_status(self):
         class Image:

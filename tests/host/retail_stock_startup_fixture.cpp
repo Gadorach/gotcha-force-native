@@ -163,6 +163,47 @@ void receiver_factors(const Module& mod,std::vector<u8>& ram,unsigned model,unsi
     std::putchar('\n');
 }
 
+void receiver_sound(const Module& mod,std::vector<u8>& ram,u8* obj,unsigned model,unsigned record,u32 config){
+    constexpr u32 sound_size=0x80068004,choose_sound=0x8002FC18;
+    constexpr u32 counters=0x803D3AE8,audio=0x8103E000,point=0x8103D000,source=0x81030000;
+    constexpr unsigned size_offset=0x7FC,gate=0x2AE;
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    if(config<0x802B0160||config>=0x8043B5A0||(config&3)||be32(obj+0x4B0)!=config)
+        fail("receiver sound configuration changed across the startup prefix");
+    put32(obj+size_offset,0x7FC00000);
+    ActorImage before{};
+    std::memcpy(before.data(),obj,before.size());
+    actor_call(mod,ram,sound_size);
+    const auto size=be32(obj+size_offset);
+    put32(before.data()+size_offset,size);
+    if(size==0x7FC00000||std::memcmp(obj,before.data(),before.size()))
+        fail("receiver sound size producer wrote outside its field");
+    put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;
+    at(counters+852)[0]=1; // disabled mixer; only selection and parity run
+    obj[0x96]=0;
+    std::memcpy(before.data(),obj,before.size());
+    const auto played=be32(at(counters+848));
+    std::printf("receiver-sound: %04X %u %08X %08X",model,record,config,size);
+    for(const unsigned code:{0u,0x80u,0x84u,0x88u}){
+        std::memcpy(obj,before.data(),before.size());obj[gate]=0;
+        std::memset(at(counters),0,26);
+        CPUState cpu{};cpu.gpr[3]=source;cpu.gpr[4]=actor;cpu.gpr[5]=point;cpu.gpr[6]=code;
+        mod.run(cpu,ram,choose_sound,1024);
+        unsigned slot=26,total=0;
+        for(unsigned i=0;i<26;++i){
+            total+=at(counters+i)[0];
+            if(at(counters+i)[0])slot=i;
+        }
+        const auto saved=before[gate];before[gate]=4;
+        if(total!=1||slot>=12||cpu.gpr[3]<48||cpu.gpr[3]>71||be32(at(counters+848))!=played||
+           std::memcmp(obj,before.data(),before.size()))
+            fail("receiver sound selection changed the wrong slot, gate or actor state");
+        before[gate]=saved;
+        std::printf(" %u %u",slot,cpu.gpr[3]);
+    }
+    std::putchar('\n');
+}
+
 void owner_returns(const Module& mod,std::vector<u8>& ram,u8* obj,unsigned model){
     const bool pre=model==0x0403;
     const u32 entry=pre?0x800DFDA4:0x80073D0C,site=pre?0x800DFE04:0x80073D68;
@@ -315,7 +356,7 @@ void wire_returns(const Module& mod,std::vector<u8>& ram,u8* obj,const contact::
 }
 
 void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer,unsigned extent,bool lifecycle,
-             const contact::HitBlock* wire_hit,bool capacity,bool factors){
+             const contact::HitBlock* wire_hit,bool capacity,bool factors,bool sound){
     const auto at=[&](u32 a){return ram.data()+a-GC_RAM_BASE;};
     auto* obj=at(actor);
     put32(at(resources),role0);
@@ -324,6 +365,7 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
     CPUState install{};install.gpr[3]=actor;
     mod.run(install,ram,installer);
     const auto selected=be32(obj+0x4AC);
+    const auto config=be32(obj+0x4B0);
     if(selected<role0||selected>=role0+extent||((selected-role0)%record_bytes))
         fail("normal stock startup installer selected an unprovided actor-data row");
     ActorImage pristine{};
@@ -349,6 +391,10 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
         }
         if(factors){
             receiver_factors(mod,ram,model,(selected-role0)/record_bytes);
+            return;
+        }
+        if(sound){
+            receiver_sound(mod,ram,obj,model,(selected-role0)/record_bytes,config);
             return;
         }
         if(wire_hit){
@@ -380,8 +426,9 @@ int main(int argc,char** argv){
     const bool returns=argc==4&&!std::strcmp(argv[3],"--returns");
     const bool capacity=argc==4&&!std::strcmp(argv[3],"--tier-capacity");
     const bool factors=argc==4&&!std::strcmp(argv[3],"--receiver-factors");
-    if(argc!=3&&!lifecycle&&!returns&&!capacity&&!factors)
-        fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns|--tier-capacity|--receiver-factors] < qualified-plan");
+    const bool sound=argc==4&&!std::strcmp(argv[3],"--receiver-sound");
+    if(argc!=3&&!lifecycle&&!returns&&!capacity&&!factors&&!sound)
+        fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns|--tier-capacity|--receiver-factors|--receiver-sound] < qualified-plan");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     contact::HitBlock wire_hit{};
@@ -399,7 +446,7 @@ int main(int argc,char** argv){
         auto ram=original;
         const unsigned bytes=count*record_bytes;
         if(std::fread(ram.data()+role0-GC_RAM_BASE,1,bytes,stdin)!=bytes)fail("stock-startup records extent");
-        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr,capacity,factors);
+        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr,capacity,factors,sound);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stock-startup rows");
 }

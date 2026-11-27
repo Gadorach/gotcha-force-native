@@ -8,6 +8,7 @@ import struct
 
 from tools.analyze import damage_contact_power, retail_projectile_sfx
 from tools.analyze.reaction_attack_table import SIZE
+from tools.analyze.retail_movement_operands import ACTOR_BYTES
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
@@ -66,25 +67,50 @@ def normal_pairs(report, code):
             for band in range(4)]
 
 
-def receiver_band(report, image, actions, binding, actor_size):
-    profiles = actions.get("profiles", [])
-    if actor_size != 432 or not binding or binding.get("status") != "one-static-slot-0-record" or (
-            binding.get("selected_record") != 0):
-        return {"band": None, "status": "not a proved single normal record"}
-    if not 1 <= len(profiles) <= 32 or any(actions.get(k) for k in (
-            "refused_bindings", "open_path_boundaries", "unresolved_stores")):
-        return {"band": None, "status": "unqualified installer configurations"}
+def configuration_samples(report, image, configs):
     samples = []
-    for config in sorted({row["config"] for row in profiles}):
+    for config in sorted(set(configs)):
         dimensions = struct.unpack(">2f", image.read(int(config, 16) + 76, 8, "data"))
         if any(not math.isfinite(value) or not 0 <= value <= 10000 for value in dimensions):
-            return {"band": None, "status": "invalid receiver size dimension"}
+            return None
         size, = struct.unpack(">f", struct.pack(">f", max(dimensions) / report["source"]["divisor"]))
         samples.append({"config": config, "dimensions": list(dimensions), "size": size,
                         "band": sum(size > floor for floor in report["source"]["thresholds"])})
+    return samples
+
+
+def _configuration_band(report, image, actions):
+    profiles = actions.get("profiles", [])
+    if not 1 <= len(profiles) <= 32 or any(actions.get(k) for k in (
+            "refused_bindings", "open_path_boundaries", "unresolved_stores")):
+        return {"band": None, "status": "unqualified installer configurations"}
+    samples = configuration_samples(report, image, [row["config"] for row in profiles])
+    if samples is None:
+        return {"band": None, "status": "invalid receiver size dimension"}
     choices = {row["band"] for row in samples}
     return {"band": next(iter(choices)) if len(choices) == 1 else None, "samples": samples,
             "status": "one static size band" if len(choices) == 1 else "installer bands disagree"}
+
+
+def normal_receiver_band(report, image, actions, proof, installer, actor_records):
+    """Join the exact normal startup to the existing closed, unanimous band policy."""
+    if not proof or proof.get("installer") != f"{installer:08X}":
+        raise ValueError("missing exact normal receiver sound installer")
+    record = proof["spec_record"]
+    count, remainder = divmod(len(actor_records), ACTOR_BYTES)
+    if remainder or type(record) is not int or not 0 <= record < count <= 8:
+        raise ValueError("normal receiver sound record extent")
+    active = actor_records[record*ACTOR_BYTES:(record+1)*ACTOR_BYTES]
+    if sha256(active).hexdigest() != proof["record_sha256"]:
+        raise ValueError("normal receiver sound record identity")
+    result = _configuration_band(report, image, actions)
+    if result["band"] is None:
+        return result
+    matching = [sample for sample in result["samples"] if int(sample["config"], 16) == int(proof["config"], 16)]
+    if (len(matching) != 1 or result["band"] != proof["band"] or
+            struct.pack(">f", matching[0]["size"]).hex().upper() != proof["size_bits"]):
+        return {**result, "band": None, "status": "installer size does not match observed normal configuration"}
+    return {**result, "status": "verified normal size band", "spec_record": record, "observed_config": proof["config"]}
 
 
 def contact_records(image, binding):

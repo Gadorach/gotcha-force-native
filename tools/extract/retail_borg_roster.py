@@ -837,12 +837,28 @@ def cruise_entry_candidate(roles, timing, joint_count):
 DAMAGE_SELECTORS = Path(__file__).resolve().parents[2] / "docs/api-map/borg-damage-selectors.json"
 NORMAL_DAMAGE_RECORDS = DAMAGE_SELECTORS.with_name("gg4e08-normal-receiver-factors.json")
 NORMAL_DAMAGE_RECORDS_SHA256 = "0af7ac6153cddbf852f43762755b8772883ec24c6c569e5ceb22d76747eea1b1"
+NORMAL_SOUND_RECORDS = DAMAGE_SELECTORS.with_name("gg4e08-normal-receiver-sound.json")
+NORMAL_SOUND_RECORDS_SHA256 = "2b65cf6710817596a6d52424dfbef1a1c9d4f4d37e24f4d6676bef3096fd9043"
 CONTACT_SIDE_ROWS = Path(__file__).resolve().parents[2] / "docs/api-map/contact-side-rows.json"
 
 
 def _damage_number(value):
     text = f"{value:.6f}".rstrip("0").rstrip(".")
     return text if "." in text else text + ".0"
+
+
+def _normal_receiver_proofs(path, digest, kind, rows):
+    with open_regular(path) as stream:
+        raw = stream.read((128 << 10) + 1)
+    if len(raw) > 128 << 10 or sha256(raw).hexdigest() != digest:
+        raise ValueError(f"{kind}: normal receiver proof extent or identity")
+    normal = json.loads(raw)
+    if (normal.get("kind"), normal.get("revision"), normal.get("source_dol_sha256")) != (kind, 1, DOL_DIGEST):
+        raise ValueError(f"{kind}: incorrect normal receiver proof")
+    observed = {r["borg"]: r for r in normal["records"]}
+    if len(normal["records"]) != len(observed) or len(observed) != 206 or set(observed) != {row.id for row in rows}:
+        raise ValueError(f"{kind}: normal receiver proof roster mismatch")
+    return observed
 
 
 def contact_side_lines():
@@ -1297,8 +1313,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             files["gameplay.txt"]+=("\n".join(held["lines"])+"\n").encode("ascii")
         battle_receipt["contact_pose_pause"]=held
     if contact_audio is not None and battle_receipt is not None:
-        report, tones, samples=contact_audio
-        receiver=contact_sound.receiver_band(report,dol,actions,operands["class_installer_binding"],len(actor))
+        report, tones, samples, observed=contact_audio
+        receiver=contact_sound.normal_receiver_band(report,dol,actions,observed.get(row.id),installer,actor)
         cue_rows, paths=contact_sound.profile_rows(report,dol,battle_receipt.get("reaction",{}),receiver,tones)
         if cue_rows["lines"]:
             files["gameplay.txt"]+=("\n".join(cue_rows["lines"])+"\n").encode("ascii")
@@ -1616,18 +1632,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
     ninja_bomb_source=ninja_bomb.qualify(dol) if ninja_bomb_test else None
     contact_roles = None
     if contact_scale_test:
-        with open_regular(NORMAL_DAMAGE_RECORDS) as stream:
-            raw=stream.read((128 << 10)+1)
-        if len(raw) > 128 << 10 or sha256(raw).hexdigest() != NORMAL_DAMAGE_RECORDS_SHA256:
-            raise ValueError("normal damage receiver proof extent or identity")
-        normal=json.loads(raw)
-        if (normal.get("kind"),normal.get("revision"),normal.get("source_dol_sha256"))!=(
-                "gf-retail-normal-receiver-factors",1,DOL_DIGEST):
-            raise ValueError("incorrect normal damage receiver proof")
-        observed={r["borg"]:r for r in normal["records"]}
-        if len(normal["records"])!=206 or set(observed)!={row.id for row in rows}:
-            raise ValueError("normal damage receiver proof roster mismatch")
-        contact_roles=damage_contact_roles.recover(dol),observed
+        contact_roles = damage_contact_roles.recover(dol), _normal_receiver_proofs(
+            NORMAL_DAMAGE_RECORDS, NORMAL_DAMAGE_RECORDS_SHA256, "gf-retail-normal-receiver-factors", rows)
     with open_regular(afs_path) as stream:
         if continuation_source is not None or speed_ramp_source is not None or ninja_bomb_source is not None:
             from tools.analyze.retail_action_input import verify_archive
@@ -1673,14 +1679,17 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         contact_audio=None
         if contact_audio_decoder is not None:
             report=contact_sound.recover(dol)
+            observed=_normal_receiver_proofs(
+                NORMAL_SOUND_RECORDS, NORMAL_SOUND_RECORDS_SHA256, "gf-retail-normal-receiver-sound", rows)
             tones=contact_sound.tone_files(report,tone_banks)
             pairs=sorted({(tone["bank"],tone["tone"]) for tone in tones.values()})
             samples={}
             for at in range(0,len(pairs),16):
                 samples.update(decode_shot_audio(contact_audio_decoder,pairs[at:at+16],shared_files,
                                                  shared_index["audio_bank_members"]))
-            contact_audio=report,tones,samples
-            shared_index["contact_audio"]={"policy":report["policy"],"tones":tones}
+            contact_audio=report,tones,samples,observed
+            shared_index["contact_audio"]={"policy":report["policy"],"tones":tones,
+                                            "normal_receiver_proof_sha256":NORMAL_SOUND_RECORDS_SHA256}
         worm_shots=worm_source_index(dol,lambda cue:tone_candidate(cue,tone_banks))
         launch_pcm = None
         if shot_audio_decoder is not None:

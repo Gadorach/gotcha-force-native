@@ -548,8 +548,10 @@ confirms the size thresholds, shared counter bytes, and separate
 sound and visual gates with playback disabled. It does not change
 the native receiver-local policy below.
 
-In `--contact-audio`, the converter requires normal receiver records
-and agreement across installer size bands (184 qualify). It binds
+In `--contact-audio`, the converter requires an
+[observed normal receiver record and configuration](retail-code-atlas.md#contact-sound-installed-normal-receiver-configurations)
+and agreement across installer size bands (202 qualify; four remain
+unbound). It binds
 168 verified direct moves; two zero-power, two special-status and two
 unsupported-code moves stay unbound. The native cue uses the shared
 PCM mixer and a four-tick per-receiver cooldown. Alternation is

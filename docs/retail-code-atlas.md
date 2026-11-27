@@ -2011,6 +2011,37 @@ python3 -m tools.analyze.retail_contact_sound_replay \
   /tmp/opencode/gf-contact-sound-replay.json
 ```
 
+### Contact sound: installed normal receiver configurations
+
+The [normal receiver sound replay](api-map/gg4e08-normal-receiver-sound.json)
+checks all **206** normal installations. The config at actor `+0x4B0`
+survives the level-1 startup prefix. Calling `80068004` directly
+then writes `+0x7FC` from the larger of the two config dimensions
+divided by the source constant. The replay checks the exact binary32
+result before passing the same actor to the original sound helper.
+
+The installed configurations produce **136 / 26 / 19 / 25** receivers
+in bands 0–3. For codes `0`, `0x80`, `0x84`, and `0x88`, all **824**
+counter-lane and even-tone checks matched across O0/O1/O2. Each helper
+call starts with a clear gate, partition zero and zero counter parity.
+The previous sound and stock-startup receipts reproduced byte-for-byte.
+
+The `--contact-audio` extractor now requires this exact normal record
+and a matching configuration. In the full opt-in export, all 184
+previous bands stay unchanged and **18** more qualify, including
+six with a nonzero record ordinal. The four mixed-band receivers
+remain unbound. The headless native smoke exercised a band-1 cue
+on the newly bound `061B` receiver (record 1), alongside existing
+bands 0 and 3. This does not run a full original constructor,
+choose live transformed sizes, or qualify audible original playback.
+
+```sh
+python3 -m tools.analyze.retail_normal_receiver_sound \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-normal-receiver-sound.json
+```
+
 ### Type-89 exits: cached area key 16
 
 `8016CC24` creates a type-89 carrier with update `8016CD1C`.

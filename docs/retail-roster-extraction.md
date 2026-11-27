@@ -1122,6 +1122,10 @@ that two 25-wear hits exhaust it in one burst.
 Add `--contact-audio /path/to/retail_borg_sound` to a shot or melee
 Battle Test extraction to bind the reviewed normal hit cues. It is
 independent of the damage-test flags and `--basic-shot-audio`.
+The receiver band requires an
+[exact installed normal configuration](retail-code-atlas.md#contact-sound-installed-normal-receiver-configurations)
+and agreement across the indexed installer configurations. It is not
+derived from the native hurt radius or from a combined form.
 The decoder uses your local retail banks; do not publish the PCM.
 
 ```sh
@@ -1129,6 +1133,10 @@ PYTHONPATH=. python3 -B tests/host/retail_contact_sound_smoke.py \
   /path/to/gf_native /path/to/contact-audio-roster-output \
   local/content/native-battle-mvp-v1
 ```
+
+For a full shot and melee conversion, add `--normal-roster` to the
+smoke command to check all 206 receiver declarations and the four
+mixed-band refusals.
 
 `--contact-art-test` is a separate opt-in for exact common hit records
 at reviewed ordinary projectile and close-B contacts. It uses the
