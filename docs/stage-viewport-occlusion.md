@@ -88,6 +88,13 @@ tick does not advance it. Desktop Battle Test still presents one
 viewport; this does not add split-screen. The native retail stage path
 still refuses the authored descriptor.
 
+In a shared roster viewport, `occlusion` checks the eye-to-body-centre
+segment for each living local in frame. It falls back to the ordinary
+camera-target segment when no local is in view. `near` checks either
+living local's position. Other fighters do not control the shared fade,
+and the combined result still advances each obstacle only once per tick.
+This is authored presentation, not per-pixel or retail visibility.
+
 `stage_viewport_render` generates the wall and rigs, then submits blocked,
 clear, and blocked-again views of the **same simulation tick** to a
 recording renderer. One camera fades the wall, the other fades a

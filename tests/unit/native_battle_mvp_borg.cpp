@@ -4,7 +4,80 @@
 #include <iterator>
 #include "engine/gameplay/native_battle_mvp_borg.hpp"
 namespace {unsigned checks=0;void check(bool ok,const char* why){++checks;if(!ok){std::fprintf(stderr,"MVP Borg animation: %s\n",why);std::abort();}}
-std::vector<gf::u8> read(const std::string& path){std::ifstream f(path,std::ios::binary);return {std::istreambuf_iterator<char>(f),{}};}}
+std::vector<gf::u8> read(const std::string& path){std::ifstream f(path,std::ios::binary);return {std::istreambuf_iterator<char>(f),{}};}
+void pose_followup(gf::ByteView model,gf::ByteView prefix,gf::ByteView pose,gf::ByteView motions){
+    using namespace gf;
+    const std::string common="GFBORG-GAMEPLAY 1\nvariant=normal\nmovement=grounded-v1|8|13|15\n"
+        "health=180\nrig-prefix=body.prefix\npose-profile=body.pose\n"
+        "idle=0:0\nwalk=0:1\nair=0:7\ndash=0:2\nmelee=slash|6|8|88|38|52|44|12\n"
+        "contact-pose-hold-receive=normal\n";
+    auto profile=[&](const std::string& rows){
+        auto p=std::make_shared<BorgGameplayProfile>();std::string error;
+        if(!borg_read_gameplay_profile(common+rows,p.get(),&error))check(false,error.c_str());
+        return p;
+    };
+    const std::string lead_rules="move=slash|b|10|grounded|12|0:0\n";
+    auto switched=profile(lead_rules+"pose-followup=slash|4|0:1|2\n");
+    auto lead=profile(lead_rules);
+    auto strike=profile("move=slash|b|10|grounded|12|0:1\npose-start=slash|2\n");
+    NativeBattleMvpBorg body,before,after;
+    auto load=[&](NativeBattleMvpBorg& into,const auto& rules){
+        std::string error;
+        if(!into.load_package(rules,model,prefix,pose,motions,&error))check(false,error.c_str());
+    };
+    load(body,switched);load(before,lead);load(after,strike);
+    auto sample=[](NativeBattleMvpBorg& into,u16 frame,u32 tick){
+        BattleMvpActor actor;actor.package_move=0;actor.package_frame=frame;
+        check(into.update(actor,tick,nullptr),"follow-up fixture samples a live package pose");
+        std::array<BattleMvpVec,20> points{};
+        for(unsigned bone=0;bone<points.size();++bone)
+            check(into.bone_point(bone,{2,3,4},&points[bone]),"follow-up fixture samples each transformed bone");
+        return points;
+    };
+    check(sample(body,3,3)==sample(before,3,3),"the switch does not affect the lead-in");
+    sample(after,0,3); // Match the locomotion clock; only the action clock is reset.
+    const auto switched_pose=sample(body,4,4);
+    check(switched_pose==sample(after,0,4),"switch tick samples the declared starting frame of the exact second clip");
+    check(switched_pose!=sample(before,4,4),"switch tick does not keep the lead-in pose");
+    check(sample(body,7,7)==sample(after,3,7),"the second clip clock is relative to the switch tick");
+    check(sample(body,0,0)==sample(before,0,0),"restart does not keep the second clip's clock");
+    NativeBattleMvpBorg live;
+    load(live,switched);
+    body.reset_control_test_pose();
+    sample(body,3,3);sample(live,3,3);
+    BattleMvpVec low{},high{},held_low{},held_high{},live_low{},live_high{};
+    check(body.bounds(&low,&high),"bound moving skeleton before pause");
+    BattleMvpActor held;held.package_move=0;held.package_frame=4;held.contact_pose_hold_ticks=2;
+    check(body.update(held,4,nullptr)&&body.package_pose_held()&&body.bounds(&held_low,&held_high)&&
+          held_low==low&&held_high==high,"held visual bounds use the earlier local sample across a clip switch");
+    sample(live,4,4);
+    check(live.bounds(&live_low,&live_high)&&(live_low!=low||live_high!=high),"the live clip would change the visible geometry");
+    for(unsigned bone=0;bone<20;++bone){
+        BattleMvpVec held_bone{},live_bone{};
+        check(body.bone_point(bone,{2,3,4},&held_bone)&&live.bone_point(bone,{2,3,4},&live_bone)&&held_bone==live_bone,
+              "held visual does not leak into the authoritative bone sample");
+    }
+    held.package_frame=5;held.contact_pose_hold_ticks=1;held.position={15,0,0};
+    check(body.update(held,5,nullptr)&&body.package_pose_held()&&body.bounds(&held_low,&held_high)&&
+          std::abs(held_low[0]-low[0]-15)<.001f&&std::abs(held_high[0]-high[0]-15)<.001f,
+          "held animation sample follows the new body root");
+    held.contact_pose_hold_ticks=0;
+    check(body.update(held,6,nullptr)&&!body.package_pose_held(),"live pose resumes without resetting the move clock");
+    body.reset_control_test_pose();held.contact_pose_hold_ticks=2;
+    check(body.update(held,0,nullptr)&&!body.package_pose_held(),"no snapshot crosses a round reset");
+    for(bool missing:{true,false}){
+        load(body,switched);
+        sample(body,4,4);
+        auto bad=std::make_shared<BorgGameplayProfile>(*switched);
+        auto& follow=*bad->moves.front().pose_followup;
+        if(missing)follow.clip={15,127};else follow.start=600;
+        std::string error;BattleMvpVec point{};
+        check(!body.load_package(bad,model,prefix,pose,motions,&error)&&
+              error.find("follow-up")!=error.npos&&!body.bone_point(0,{},&point),
+              "missing or too short follow-up refuses without publishing the old actor pose");
+    }
+}
+}
 int main(){
     using namespace gf;NativeBattleMvpBorg borg;BattleMvpVec point{},low{},high{};std::string error;BattleMvpActor actor;actor.model=0x615;
     check(!borg.update(actor,0,&error)&&!borg.bone_point(0,{},&point)&&!borg.bounds(&low,&high),"no prepared/missing model can supply a live pose");
@@ -16,6 +89,7 @@ int main(){
         auto model=read(base+".hsd");if(model.empty())continue;
         auto prefix=read(base+".prefix"),pose=read(base+".pose"),motions=read(base+".motions");
         auto view=[](const auto& bytes){return ByteView{bytes.data(),bytes.size()};};
+        if(pair.second==10)pose_followup(view(model),view(prefix),view(pose),view(motions));
         check(borg.load(pair.second,view(model),view(prefix),view(pose),view(motions),&error),"real normal model and nonnull locomotion clips load");
         NativeBattleMvpBorg reference;
         if(pair.second==0x615)check(reference.load(pair.second,view(model),view(prefix),view(pose),view(motions),&error),"reference normal G-Red pose loads");

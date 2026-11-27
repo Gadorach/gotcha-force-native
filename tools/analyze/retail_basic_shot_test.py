@@ -157,7 +157,8 @@ def dragon_battle_test(model,joints,roles,mapping,actions,pace,level,releases,ca
         sounds.append({"projectile":"orb","bank":bank,"tone":tone,"path":path})
     return ("\n".join(lines)+"\n").encode("ascii"),whole_body_pose(joints),{
         "kind":"opt-in authored grounded Dragon orb; not retail combat","preview_clip":"b-shot-release-pose",
-        "source_level":1,"retail_behavior_verified":False,"source_normal_factory_family":"type-47","source_normal_factory_key":key,
+         "source_level":1,"retail_behavior_verified":False,"source_normal_factory_family":"type-47","source_normal_factory_key":key,
+         "reaction_releases":{"basic-shot":[("type-47",key)]},
         "source_release_site":hit["site"],"source_debit_site":debit["debit_site"],"body_binding":"strict record zero",
         "native_timing":{"release_tick":12,"move_ticks":28,"refill_ticks":180},
         "native_ground_pace":walk,"native_rise_bias":rise,"projectile_record":8,
@@ -205,7 +206,8 @@ def worm_battle_test(model,joints,role_clips,pace,level,source,*,launch_audio=Fa
     return ("\n".join(lines)+"\n").encode("ascii"),whole_body_pose(joints),{
         "kind":"opt-in authored Worm orb; not retail combat","preview_clip":"b-shot-release-pose",
         "source_level":1,"source_stock_mode":mode,"retail_behavior_verified":False,
-        "source_normal_factory_family":source["family"],"source_normal_factory_key":key,"source_release_site":source["call"],
+         "source_normal_factory_family":source["family"],"source_normal_factory_key":key,"source_release_site":source["call"],
+         "reaction_releases":{"basic-shot":[(source["family"],key)]},
         "source_debit_site":stock["site"],"body_binding":"strict record zero","native_ground_pace":walk,
         "native_timing":{"release_tick":12,"move_ticks":28,"refill_ticks":180},
         "native_projectile":"authored orb; no retail string, poison or trap","authored_launch_sounds":sounds,
@@ -328,6 +330,7 @@ def basic_shot_test(model, joints, role_clips, action_clips, pace, level, releas
     hit=hits[0]
     summary = {"kind":"opt-in authored Battle Test rules; not retail combat","source_level":1,
                "source_normal_factory_family":family,"source_normal_factory_key":key,
+               "reaction_releases":{"basic-shot":[(h["family"],h["key"]) for h in hits]},
                "source_release_site":hit["site"],"source_debit_site":debit["debit_site"],"source_stock_mode":mode,
                "preview_clip":chosen[0]["id"],"pose_policy":"single authored lane",
                "body_binding":"strict record zero" if model in RECORD_ZERO else "archive-wide validation",
@@ -530,7 +533,8 @@ def pose_free_shot_test(model,joints,actions,level,releases,cruise,ordered_sites
         "source_debit_site":debit["debit_site"],
         **({"source_phase_table":phase,"source_release_entry":entry,"source_stock_mode":mode}
            if phase_bound else {}),
-        "ordered_factory_calls":[{"key":h["key"],"site":h["site"]} for h in hits],
+         "ordered_factory_calls":[{"key":h["key"],"site":h["site"]} for h in hits],
+         "reaction_releases":{"basic-shot":[(h["family"],h["key"]) for h in hits]},
         "authored_launch_sounds":sounds}
 
 
@@ -587,5 +591,6 @@ def cruise_charge_shot_test(model,joints,actions,level,releases,cruise,*,launch_
         "kind":"opt-in authored static-cruise B-charge; not retail combat",
         "source_level":1,"preview_clip":"none","body_binding":"strict static record zero",
         "native_cruise":cruise,"native_charge":{"minimum_hold":minimum,"maximum_hold":maximum,"launch_tick":marker},
-        "source_charge_factory":{"key":key,"site":site},"source_debit_in_reviewed_leaf":False,
+         "source_charge_factory":{"key":key,"site":site},"source_debit_in_reviewed_leaf":False,
+         "reaction_releases":{"charge-shot":[(hit["family"],key)]},
         "retail_behavior_verified":False,"authored_launch_sounds":sounds}

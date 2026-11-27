@@ -119,34 +119,69 @@ texture or audio bytes; each regenerates from a local roster.
   link. Tool: `tools/analyze/collision_walk_map.py`.
 - [Reaction installer tables](docs/api-map/reaction-installer-tables.json) —
   the 42-model basic-shot cohort's installer and per-Borg 24-byte table
-  addresses, decoded from the `lis`+`addi` feeding `stw ..., 0x27C`.
+  addresses, decoded from bounded `actor+0x27C` installer paths.
   Tool: `tools/analyze/reaction_installer_tables.py`.
 - [Reaction attack table](docs/api-map/reaction-attack-table.json) — the
   per-Borg 24-byte action tables (G-Red `80365EC0`, Sasuke `802D4160`,
-  Proto King `80344C88`; generic default `80354160`), with mode `+0x0E`,
+  Proto King `80344C88`), with mode `+0x0E`,
   flags `+0x10`, yaw/pitch `+0x14`/`+0x15`, repeat `+0x16` and the
   installer/pair pointer chain. Tool: `tools/analyze/reaction_attack_table.py`.
 - [Reaction action map](docs/api-map/reaction-action-map.json) — the
   `pl####hit.bin` queue groups, 0x50-byte steps and their attack-table
   entries for G-Red, Sasuke and Proto King. Tool:
   `tools/analyze/reaction_action_map.py`.
-- [Reaction context map](docs/api-map/reaction-context-map.json) — the
-  source move group and context rows (B-shot, B-close, X) joined to the
-  queue group, step and per-Borg attack-table entry. Tool:
-  `tools/analyze/reaction_context_map.py`.
-- Reaction emission — authored `basic-shot` gameplay appends
-  `reaction-offset` and the supported source mode from the selected context;
-  unsupported modes declare an explicit mode-1 fallback with a comment.
-  Tool: `tools/analyze/reaction_emit.py`.
+- [Projectile reaction map](docs/api-map/reaction-projectile-map.json) —
+  seven factory selector routes and verified ordinary-B examples. Authored
+  projectile moves emit `reaction-mode` and `reaction-offset` when their
+  resolved steps agree. Seven mode-4 shots also bind the verified fighter link
+  to the native projectile owner's body root at contact. Other unsupported
+  routes retain an explicit fallback. Input contexts are not hit-queue indices.
+- [Close-B reaction map](docs/api-map/reaction-melee-map.json) — the neutral
+  program request, lane, opcode-10 queue and reaction rows, including audited
+  continuations after pose-only windups. The extractor binds 91 close-B
+  test moves to the native planar body-root direction and their recovered
+  offsets. Fourteen also switch from the windup to the recovered local
+  swing clip without changing hitboxes, timing, or damage.
 - Damage row emission — authored `basic-shot` packages append the recovered
   `damage-vs` row for the training target (attacker settings 0, defender 16,
-  labelled as authored test state) with neutral `damage-factors` and both
-  side-paired `damage-side` rows; the target fixture declares
+  labelled as authored test state) and both side-paired `damage-side` rows;
+  the target fixture declares
   `damage-model=10`. Smokes: `tests/host/damage_row_content_smoke.py` and
   `tests/host/damage_side_content_smoke.py`.
+- [Paired contact-scale test](docs/api-map/damage-contact-roles.json) —
+  an optional, authored setting/rank snapshot that combines credit and
+  defence from the actual two packages, including sparse directional
+  matchups. Ordinary Battle Test packages keep their existing damage rules.
+- [Direct-contact power](docs/api-map/damage-contact-power.json) — the
+  optional HP base for 170 reviewed direct moves. Zero or disagreeing
+  source rows keep the authored base; hit geometry and timing stay authored.
+- [Receiver response ladders](docs/api-map/damage-receiver-ladders.json) —
+  two separate optional multipliers, indexed by projected HP and by the
+  pre-hit receiving team's force ledger.
+- [Attacker bonus ladders](docs/api-map/damage-attacker-ladders.json) —
+  pre-hit HP and team-force curves, opted into by 172 verified direct
+  moves without applying them to unrelated or zero-power routes.
+- [Contact damage tiers](docs/api-map/damage-contact-tiers.json) —
+  the 64-cell receiver table, per-hit charge, expiry, and the separate
+  reset gauge. The optional Battle Tests use native idle tick windows.
+- [Ordinary contact sound](docs/api-map/contact-sound.json) — source
+  tone pairs selected by receiver size, with opt-in native PCM playback.
+- [Ordinary contact art](docs/api-map/contact-impact-visuals.json) —
+  exact common effect records presented as bounded static hit layers
+  in the optional Battle Test.
+- [Indexed contact damage](docs/api-map/damage-contact-indices.json) —
+  complete setting and rank tables with explicit native round selection.
+- [Contact amount finalizer](docs/api-map/damage-amount-model.json) —
+  the one-HP floor and the earlier zero returns, with an opt-in native test.
+- [Contact pose pause](docs/api-map/contact-pose-pause.json) — local
+  slowdown operands and the opt-in native skeletal hold.
+- [Battle hit ledger](docs/api-map/battle-hit-ledger.json) — source
+  observer slots, per-actor ring layout, and relation codes.
 - [Reaction effect map](docs/api-map/reaction-effect-map.json) — the 29
   reaction-band calls with decoded argument registers (immediates, field
   offsets, paired addresses) and the known impact/color/spawn parameters.
+  It also identifies the distinct object and collision-pair inputs behind
+  direct-hit motion and origin/centre reactions.
   Tool: `tools/analyze/reaction_effect_map.py`.
 - [Collision branch map](docs/api-map/collision-branch-map.json) — the 98
   conditional branches of `8002BB14` with their decoded compare/mask
@@ -259,6 +294,13 @@ package has no X move and **B NOT IMPLEMENTED** when it has no B move, so
 a package like Beam Tank or Delta II, whose only authored attack is X, says
 so instead of advertising a dead key. Jump Stick and Flight Stick are quick ways to test
 the binding. Q restarts and Esc exits.
+For a standalone battle with up to six fighters,
+[choose a package roster](docs/borg-gameplay-api.md#choose-a-roster)
+or launch a [competitive, co-op, or one-local roster preset](docs/portable-content-v1.md#reusable-battle-test-rosters).
+`--list-battle-rosters DIRECTORY` lists preset metadata, and
+`--check-battle-roster FILE` checks headless startup without playing.
+`--browse-battle-rosters DIRECTORY` opens the desktop preset picker.
+
 For a scripted attack showcase, run
 `local/interactive-battle/show-attacks.sh gg4e08:0500` (Flame Dragon).
 Add `--exercise-battle-mobility` to watch an elemental Dragon jump, land,
@@ -313,6 +355,9 @@ research repository and its private data remain separate.
 
 Recovery checks for the contact model:
 
+For optional retail-input checks, set `GF_RETAIL_ROOT` to your local
+extracted content directory (default `original/extracted`).
+
 ```sh
 python3 -B -m unittest discover -s tests/unit -p 'test_*.py'
 # native API and battle-damage fixture
@@ -331,6 +376,17 @@ PYTHONPATH=. python3 -B tests/host/damage_side_content_smoke.py
 PYTHONPATH=. python3 -B tests/host/borg_api_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/borg_presentation_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/portable_stage_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_partition_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/coop_roster_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/one_local_roster_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_tools_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_browser_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_series_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_clock_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_stock_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_ammo_hud_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_mobility_hud_smoke.py build/direct/gf_native
+PYTHONPATH=. python3 -B tests/host/roster_cpu_height_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/borg_collection_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/borg_arrange_smoke.py build/direct/gf_native
 PYTHONPATH=. python3 -B tests/host/portable_story_smoke.py build/direct/gf_native

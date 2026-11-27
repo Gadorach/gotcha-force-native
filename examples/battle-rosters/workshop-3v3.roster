@@ -1,0 +1,9 @@
+GFROSTER 1
+# P1 and P2 first, then CPU slots in order.
+stage=example:workshop
+fighter=0|example:flight-stick|normal|west
+fighter=1|example:jump-stick|normal|east
+fighter=0|example:flight-stick|normal|west-rear
+fighter=0|example:flight-stick|normal|west-outer
+fighter=1|example:jump-stick|normal|east-outer
+fighter=1|example:jump-stick|normal|east-rear

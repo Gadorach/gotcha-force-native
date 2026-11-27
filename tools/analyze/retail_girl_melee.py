@@ -94,6 +94,7 @@ def close_b_pose(linker,model,actions,slots,parts,*,publish_preview):
         bindings.append((rows[0],script))
     evidence={"model":f"{model:04X}","raw_context":[0,0],"default_part_candidates":hands,"live_contact_verified":False,
               "class_callback_chain":[f"{callback:08X}",f"{relay:08X}","8010B2F4","8010B344","8010B400"],
+              "neutral_contact_relay":f"{relay:08X}",
               "neutral_program_seed":{"actor_byte":"6EA","value":0,"request_site":"8010B478"},
               "program_addresses":sorted({f"{script:08X}" for _,script in bindings})}
     if offset is None:

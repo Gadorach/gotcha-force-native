@@ -56,6 +56,16 @@ class DamageContentRowTest(unittest.TestCase):
         self.assertNotEqual(low["stages"]["defender_class"],
                             changed["stages"]["defender_class"])
 
+    def test_rank_cannot_step_into_the_next_physical_sheet(self):
+        for attacker, defender in ((dict(ATTACKER, rank=8), DEFENDER),
+                                   (ATTACKER, dict(DEFENDER, rank=8))):
+            with self.assertRaisesRegex(ValueError, "outside verified tables"):
+                row_tool.load(DOL, SELECTORS, attacker, defender, 20, 1.0)
+
+    def test_combined_form_does_not_inherit_component_zero(self):
+        with self.assertRaisesRegex(ValueError, "active component proof"):
+            row_tool.load(DOL, SELECTORS, ATTACKER, dict(DEFENDER, model=0x061e), 20, 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()

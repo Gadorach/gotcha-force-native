@@ -28,6 +28,37 @@ enum class BattleMvpDashDirection:u8 {Forward,Backward,Left,Right};
 enum class BattleMvpWeapon:u8 {EnergyBeam,Bullet,Shuriken,Bomb,Orb};
 enum class BattleMvpResult:u8 {Fighting,GRedWins,SasukeWins,Draw};
 struct BattleMvpHitRecord {u16 type=0;u16 slot=0;bool operator==(const BattleMvpHitRecord&)const=default;};
+struct BattleMvpDamageTier {
+    // A zero gauge is a lazy full value: the next qualified hit uses its
+    // receiver's authored capacity.
+    u16 remaining=0,reset_gauge=0,reset_remaining=0;
+    u8 meter=0,level=0;
+    bool reset_this_tick=false;
+    void advance(){
+        reset_this_tick=false;
+        if(remaining&&!--remaining)meter=level=0;
+        if(reset_remaining&&!--reset_remaining)reset_gauge=0;
+    }
+    void accept(u8 charge,u16 idle_ticks,u16 capacity=0,std::optional<u8> wear={}){
+        remaining=idle_ticks;
+        if(capacity&&wear){
+            reset_remaining=idle_ticks;
+            if(!reset_this_tick){
+                if(!reset_gauge)reset_gauge=capacity;
+                if(*wear>=reset_gauge){
+                    reset_gauge=capacity;
+                    meter=level=0;
+                    reset_this_tick=true;
+                }else reset_gauge-=*wear;
+            }
+        }
+        const unsigned total=unsigned(meter)+charge;
+        if(total>=100){
+            meter=0; // The reviewed route discards overflow, promoting once.
+            level=u8(std::min(unsigned(level)+1,kBorgDamageTierCells-1));
+        }else meter=u8(total);
+    }
+};
 struct BattleMvpActor {
     static constexpr unsigned takeoff_duration=6,landing_duration=6; //native MVP phase windows
     static constexpr unsigned lab_air_windup=5,lab_air_burst=8,lab_air_recovery=6;
@@ -61,6 +92,10 @@ struct BattleMvpActor {
     u32 package_last_hit_tick=0;
     u8 package_hit_chain=0;       // successive-hit index used by damage-chain
     u8 package_hit_chain_owner=255;
+    BattleMvpDamageTier damage_tier{}; // receiver-owned, independent of the legacy per-owner chain
+    u16 contact_sound_parity=0;
+    u8 contact_sound_cooldown=0;
+    u8 contact_pose_hold_ticks=0; // presentation only; never gates movement, stock, or hit resolution
     u8 damage_kind=0;             // declared 8002FD7C relation fields
     u16 damage_attack_key=0,damage_target_mask=0;
     std::vector<u16> damage_immunity;
@@ -116,6 +151,8 @@ struct BattleMvpProjectile {
     u32 pulling_field=0;
     std::array<BattleMvpVec,kBorgProjectileTrailSamples> record_trail_positions{};
     u8 record_trail_count=0,record_trail_cursor=0;
+    bool package_direct_release=false; // ordinary move emission; not a detached emitter or spawned child
+    u16 package_base_damage=0; // snapshotted at allocation, before field damage changes
 };
 struct BorgProjectileVisualSample {f32 scale=1,angle=0;};
 inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpProjectile& shot,u32 tick){
@@ -131,7 +168,7 @@ inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpP
     return sample;
 }
 struct BattleMvpImpact {BattleMvpVec position{};unsigned ticks=0;bool explosion=false;f32 radius=0;unsigned total_ticks=18;};
-struct BattleMvpImpactRecord {BattleMvpVec position{};u16 ticks=0;u8 owner=0,projectile=0;};
+struct BattleMvpImpactRecord {BattleMvpVec position{};u16 ticks=0;u8 owner=0,binding=0;};
 struct BorgImpactRecordAppearance {f32 scale=1,alpha=1;};
 inline BorgImpactRecordAppearance borg_impact_record_appearance(u16 start,u16 end,u16 duration,u16 remaining){
     if(!end||duration<2)return {f32(start)*.01f,1};
@@ -158,6 +195,16 @@ struct BattleMvpEmitter {
 constexpr unsigned kBattleMvpMaxActors=6;
 struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
 struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
+struct BattleMvpDamageIndices {
+    std::array<u8,2> settings{};
+    std::array<u8,kBattleMvpMaxActors> ranks{};
+    u8 rank_count=0;
+    bool valid(unsigned count)const{
+        return rank_count==count&&count<=ranks.size()&&
+            std::all_of(settings.begin(),settings.end(),[](u8 i){return i<kBorgDamageSettings;})&&
+            std::all_of(ranks.begin(),ranks.begin()+count,[](u8 i){return i<kBorgDamageRanks;});
+    }
+};
 struct BattleMvpConfig {
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
     unsigned health=100;
@@ -165,6 +212,7 @@ struct BattleMvpConfig {
     f32 ground_acceleration=.9f,ground_braking=1.4f,air_acceleration=.25f,turn_per_tick=.18f;
     f32 dash_speed=12;unsigned dash_duration=12,dash_cooldown=30,air_dashes=1;
     f32 damage_scalar=1; // battle/team scalar from the recovered settings ladder
+    std::optional<BattleMvpDamageIndices> damage_indices{}; // caller-selected at round start; no scheduler
     std::array<unsigned,2> team_force{}; // recovered ledger pool; zero = untracked
     // Opt-in recovery of the 8002F8DC force gate. Disabled keeps the simple
     // always-decrement pool used by the duel.
@@ -191,8 +239,27 @@ struct BattleMvpConfig {
     std::optional<BorgCruiseBoost> provisional_cruise;
     std::optional<u16> provisional_ground_pace;
     bool package_strafe=false; // opt-in host control; no automatic aim or camera-driven body turn
+    bool local_aim_cycle=false; // standalone authored rosters
+    u8 roster_local_players=2; // the first one or two actor slots
     bool solo()const{return solo_model!=0||provisional_walk;}
 };
+struct BattleMvpLocalRosterInput {
+    const NativeBorgMovementFrame* peer_frame=nullptr;
+    u8 cycle_aim=0; // one press edge per local slot, bits 0 and 1
+    std::span<const u8> cpu_aim{}; // one entry per CPU slot, in order; 255 keeps nearest-enemy aim
+};
+inline bool battle_mvp_damage_indices_valid(const BattleMvpConfig& config,unsigned count){
+    if(!config.damage_indices)return true;
+    if(count<2||!config.damage_indices->valid(count))return false;
+    bool has_role=false;
+    for(unsigned i=0;i<count;++i){
+        const auto& p=config.packages[i];
+        if(!p||(p->damage_credit.declared&&!p->damage_credit_indexed.complete())||
+           (p->damage_receive.declared&&!p->damage_receive_indexed.complete()))return false;
+        has_role|=p->damage_credit.declared||p->damage_receive.declared;
+    }
+    return has_role;
+}
 class NativeBattleMvp;
 class NativeBorgMotionScope {
     friend class NativeBattleMvp;
@@ -443,8 +510,13 @@ public:
         if(config.declared_actors<2||config.declared_actors>kBattleMvpMaxActors)return false;
         const bool package=bool(config.packages[0]);
         const unsigned count=config.solo()?1u:config.declared_actors;
+        if(!battle_mvp_damage_indices_valid(config,count))return false;
         for(unsigned i=0;i<count;++i)if(bool(config.packages[i])!=package)return false;
         for(unsigned i=count;i<kBattleMvpMaxActors;++i)if(config.packages[i])return false;
+        if((config.roster_local_players!=1&&config.roster_local_players!=2)||
+           (config.roster_local_players==1&&!config.local_aim_cycle))return false;
+        if(config.local_aim_cycle&&(!package||count<=2||config.allow_multi_source||
+           config.packages[0]->movement==BorgBattleMovement::NormalGRed))return false;
         for(unsigned i=0;i<count;++i)if(config.teams_declared&&config.teams[i]>1)return false;
         if((package&&config.solo())||(config.provisional_walk&&config.solo_model)||
            ((config.provisional_jump||config.provisional_ground_dash)&&!config.provisional_walk)||
@@ -476,6 +548,8 @@ public:
         }
         for(unsigned i=0;i<count;++i){
             const auto p=config.spawn[i];if(!std::isfinite(p.x)||!std::isfinite(p.z)||std::abs(p.x)>config.arena_half-config.actor_radius||std::abs(p.z)>config.arena_half-config.actor_radius)return false;
+            f32 clearance=0;
+            if(!native_borg_partition_portion(terrain,p,{},config.actor_radius,&clearance)||clearance<1)return false;
             if(!std::isfinite(config.spawn_query_y[i])||std::abs(config.spawn_query_y[i])>20000)return false;
             auto& actor=next.actors_[i];actor.model=package?
                 (config.packages[i]->movement==BorgBattleMovement::NormalGRed?0x0615:0):
@@ -525,13 +599,16 @@ public:
                            terrain,muzzle_span,player_frame,source_offer,origins);
     }
     // Roster tick. `pads` and `package_input` must supply actor_count() entries.
+    // Authored local rosters can supply a camera basis for pad 1 as well as
+    // pad 0. CPU pads and borrowed source-motion offers keep their own inputs.
     bool step_roster(std::span<const GamePadState> pads,std::span<const BorgBattleInputs> package_input,
-                     bool opponent_ai=true,const IBattleMvpTerrain* terrain=nullptr,
-                     std::span<const std::optional<BattleMvpVec>> muzzles={},
-                     const NativeBorgMovementFrame* player_frame=nullptr,
-                     const NativeBorgMotionOffer* source_offer=nullptr,
-                     const IBorgBattleOrigins* origins=nullptr,
-                     std::span<const NativeBorgMotionOffer* const> source_offers={}){
+                      bool opponent_ai=true,const IBattleMvpTerrain* terrain=nullptr,
+                      std::span<const std::optional<BattleMvpVec>> muzzles={},
+                      const NativeBorgMovementFrame* player_frame=nullptr,
+                      const NativeBorgMotionOffer* source_offer=nullptr,
+                      const IBorgBattleOrigins* origins=nullptr,
+                      std::span<const NativeBorgMotionOffer* const> source_offers={},
+                      BattleMvpLocalRosterInput local_input={}){
         if(!ready_||tick_==std::numeric_limits<u32>::max())return false;
         const bool solo=config_.solo();
         const bool package=bool(config_.packages[0]);
@@ -557,6 +634,21 @@ public:
             if(!config_.provisional_jump&&!config_.provisional_cruise)pad_store[0].b=false;
         }
         if(player_frame&&!native_borg_movement_frame_valid(*player_frame))return false;
+        const unsigned local_count=config_.roster_local_players;
+        const unsigned local_mask=(1u<<local_count)-1u;
+        if((local_input.cycle_aim&~local_mask)||(local_input.cycle_aim&&!config_.local_aim_cycle))return false;
+        if(!local_input.cpu_aim.empty()){
+            if(!config_.local_aim_cycle||!terrain||terrain->body_partitions().empty()||
+               source_offer||!source_offers.empty()||local_input.cpu_aim.size()!=actor_count()-local_count)return false;
+            for(unsigned i=0;i<local_input.cpu_aim.size();++i){
+                const u8 target=local_input.cpu_aim[i];
+                if(target!=255&&(!actors_[i+local_count].health||!aim_eligible(i+local_count,target)))return false;
+            }
+        }
+        const auto* peer_frame=local_input.peer_frame;
+        if(peer_frame&&(local_count!=2||!package||actor_count()<=2||config_.allow_multi_source||
+           config_.packages[0]->movement==BorgBattleMovement::NormalGRed||source_offer||!source_offers.empty()||
+           !native_borg_movement_frame_valid(*peer_frame)))return false;
         for(unsigned i=0;i<muzzles.size();++i)if(muzzles[i])for(f32 v:*(muzzles[i]))if(!std::isfinite(v)||std::abs(v)>1e5f)return false;
         const auto human=pads[0];
         if(human.y&&!previous_[0].y){const auto config=config_;if(!start(config,terrain))return false;previous_[0]=human;return true;}
@@ -1666,6 +1758,12 @@ public:
         //Preflight terrain before mutating a tick. A missing grid is not floor0.
         std::array<f32,kBattleMvpMaxActors> ground{};
         for(unsigned i=0;i<actor_count();++i)if(!floor(terrain,actors_[i].position[0],actors_[i].position[2],actors_[i].position[1],&ground[i]))return false;
+        if(config_.local_aim_cycle)for(unsigned i=0;i<local_count;++i){
+            if(!actors_[i].health||!aim_eligible(i,local_aim_[i]))local_aim_[i]=255;
+            if(actors_[i].health&&(local_input.cycle_aim&(1u<<i)))cycle_package_aim(i);
+        }
+        cpu_aim_.fill(255);
+        std::copy(local_input.cpu_aim.begin(),local_input.cpu_aim.end(),cpu_aim_.begin());
         ++tick_;
         package_event_count_=0;
         for(auto& field:fields_)if(field.id&&tick_-field.born>=field.spec.ticks)field={};
@@ -1705,10 +1803,13 @@ public:
                 else{actor.reaction_yaw*=.75f;actor.reaction_pitch*=.75f;}
             }
             if(actor.impact_state)--actor.impact_state;
+            if(actor.contact_sound_cooldown)--actor.contact_sound_cooldown;
+            if(actor.contact_pose_hold_ticks)--actor.contact_pose_hold_ticks;
             if(!actor.health){actor.action=BattleMvpAction::Defeated;continue;}
             for(auto& cooldown:actor.cooldown)if(cooldown)--cooldown;
             if(actor.attack_ticks)--actor.attack_ticks;
             if(actor.hit_flash)--actor.hit_flash;
+            actor.damage_tier.advance();
             if(pulled[i])continue; // one accepted movement for this actor visit
             if(source_ready[i]){
                 const auto& contact=source_contacts[i];const auto* offer=offered(i);
@@ -1726,12 +1827,13 @@ public:
             actor.source_ground_motion=false;
             const auto* definition=config_.packages[i].get();
             if(definition&&definition->movement==BorgBattleMovement::Stationary)continue;
+            const auto* input_frame=i==0?player_frame:i==1?peer_frame:nullptr;
             const auto& cruise=definition?definition->cruise:config_.provisional_cruise;
             if(cruise){
                 const auto multiplier=definition?package_actor_slow(i):1.f;
                 const auto base=definition?definition->walk:config_.move_speed;
                 const auto boost=definition?definition->dash:config_.dash_speed;
-                if(!step_cruise(i,*cruise,base,boost,multiplier,pads[i],i==0?player_frame:nullptr,terrain,package_interrupted[i])){
+                if(!step_cruise(i,*cruise,base,boost,multiplier,pads[i],input_frame,terrain,package_interrupted[i])){
                     ready_=false;return false;
                 }
                 continue;
@@ -1783,7 +1885,7 @@ public:
             }
             f32 x=axis(pads[i].stick_x),z=axis(pads[i].stick_y);
             x+=f32(pads[i].dpad_right)-f32(pads[i].dpad_left);z+=f32(pads[i].dpad_down)-f32(pads[i].dpad_up);unit(x,z,false);
-            const auto direction=native_borg_move_direction(x,z,i==0&&player_frame?*player_frame:NativeBorgMovementFrame{});
+            const auto direction=native_borg_move_direction(x,z,input_frame?*input_frame:NativeBorgMovementFrame{});
             const bool has_input=direction.x!=0||direction.z!=0;
             const bool dash_held=pads[i].l||pads[i].trigger_l_pressed,previous_dash=previous_[i].l||previous_[i].trigger_l_pressed;
             const bool dash_allowed=config_.provisional_walk?
@@ -1830,9 +1932,9 @@ public:
             }
             const bool was_dashing=actor.dash_ticks!=0;
             const u8 contact_slot=actor_target(i);
-            const auto& other=actors_[contact_slot==255?(i==0?1:0):contact_slot];
             NativeBorgContactResult contact;
-            if(!native_borg_resolve_contact({actor.position,other.position,actor.velocity,config_.arena_half,config_.actor_radius,config_.actor_height,config_.step_height,actor.grounded,other.health!=0},terrain,&contact)){ready_=false;return false;}
+            if(!resolve_native_body_motion(i,contact_slot==255?(i==0?1:0):contact_slot,
+                                          actor.velocity,actor.grounded,terrain,&contact)){ready_=false;return false;}
             if(config_.provisional_walk&&!config_.provisional_jump&&!contact.grounded){
                 contact.position=actor.position;contact.actual_delta={};contact.grounded=true;
             }
@@ -1890,10 +1992,10 @@ public:
                 record_package(BorgBattleEventKind::ModifierExpired,modifier.owner,modifier.move,0,modifier.object,0,u8(i));
                 modifier={};
             }
-            const u8 package_target=actor_target(i);
+            const u8 package_target=package_aim_target(i);
             const bool has_target=package_target!=255;
             const auto& other=actors_[has_target?package_target:(i==0?1:0)];
-            actor.package_target_visible=has_target&&other.health&&!package_smoke_blocks_aim(i);
+            actor.package_target_visible=has_target&&other.health&&!package_smoke_blocks_aim(i,package_target);
             const auto tracking=actor.package_target_visible?native_borg_direction({actor.position[0],actor.position[2]},
                 {other.position[0],other.position[2]},actor.facing):actor.facing;
             actor.aim_facing=actor.package_aim_heading.value_or(tracking);
@@ -1926,11 +2028,11 @@ public:
                         actor.package_charge_total=0;
                     if(kind==BorgBattleEventKind::Started||kind==BorgBattleEventKind::Repeated||
                        kind==BorgBattleEventKind::Completed||kind==BorgBattleEventKind::Interrupted){
-                        actor.package_aim_heading.reset();actor.package_aim_slope=0;actor.aim_facing=tracking;
+                         actor.package_aim_heading.reset();actor.package_aim_slope=0;actor.aim_facing=tracking;
                     }
                     if(kind==BorgBattleEventKind::AimCommitted){
-                        actor.aim_facing=tracking;
-                        actor.package_aim_heading=actor.aim_facing;
+                         actor.aim_facing=tracking;
+                         actor.package_aim_heading=actor.aim_facing;
                         // A frozen direction, not a pointer or a launch-time
                         // re-aim. Pitch is a centre-height proxy for this API.
                         actor.package_aim_slope=actor.package_target_visible&&range?
@@ -1960,7 +2062,7 @@ public:
         }
         if(package)for(unsigned i=0;i<actor_count();++i)visit_package_anchor_markers(i);
         if(package)for(unsigned i=0;i<actor_count();++i)step_package_guard(i);
-        if(package)for(unsigned i=0;i<actor_count();++i)step_package_melee(i);
+        if(package)for(unsigned i=0;i<actor_count();++i)step_package_melee(i,terrain);
         if(package)step_package_fences(before);
         if(package){step_package_walk_pulses(walk_distance);step_package_field_cores();}
         if(package)for(unsigned i=0;i<actor_count();++i)step_package_detonation(i,terrain);
@@ -2056,6 +2158,9 @@ public:
     }
     const auto& actors()const{return actors_;}const auto& projectiles()const{return projectiles_;}const auto& impacts()const{return impacts_;}
     u8 target_of(unsigned actor)const{return actor<actor_count()?actor_target(actor):u8(255);}
+    u8 aim_target_of(unsigned actor)const{
+        return actor<actor_count()&&actors_[actor].health?package_aim_target(actor):u8(255);
+    }
     const auto& team_force()const{return team_force_;}const auto& team_tally()const{return team_tally_;}
     const auto& force_counter10a()const{return force_counter10a_;}
     u8 last_attacker()const{return last_attacker_;}u8 last_receiver()const{return last_receiver_;}
@@ -2071,6 +2176,10 @@ public:
     std::span<const BattleMvpFenceLink> fence_links()const{return {fence_links_.data(),fence_link_count_};}
     const BattleMvpConfig& config()const{return config_;}BattleMvpResult result()const{return result_;}
     GamePadState duel_ai_pad()const{return actor_count()==2&&result_==BattleMvpResult::Fighting?ai_input():GamePadState{};}
+    GamePadState roster_ai_pad(unsigned slot)const{
+        return slot>=config_.roster_local_players&&slot<actor_count()&&!paused_&&result_==BattleMvpResult::Fighting?
+            ai_input(slot):GamePadState{};
+    }
     u32 shots_spawned()const{return shots_;}u32 hits()const{return hits_;}
     std::span<const BorgBattleEvent> package_events()const{return {package_events_.data(),package_event_count_};}
     const BorgBattleActionState& package_action(unsigned slot)const{return package_actions_.at(slot);}
@@ -2128,6 +2237,21 @@ public:
             receipt.grounded_==actors_[actor].grounded&&receipt.vertical_speed_==actors_[actor].vertical_speed;
     }
 private:
+    bool resolve_native_body_motion(unsigned owner,unsigned legacy_peer,BattlePoint delta,bool grounded,
+                                    const IBattleMvpTerrain* terrain,NativeBorgContactResult* out)const{
+        const auto& actor=actors_[owner];const auto& other=actors_[legacy_peer];
+        const NativeBorgContactRequest request{actor.position,other.position,delta,config_.arena_half,config_.actor_radius,
+            config_.actor_height,config_.step_height,grounded,other.health!=0};
+        if(actor_count()<=2||!config_.packages[owner])return native_borg_resolve_contact(request,terrain,out);
+
+        // Physical peers are not attack targets. Allies and immune actors
+        // are solid too; use positions already accepted in this actor visit.
+        static_assert(kBattleMvpMaxActors-1<=kNativeBorgContactPeerLimit);
+        std::array<BattleMvpVec,kBattleMvpMaxActors-1> bodies;
+        unsigned count=0;
+        for(unsigned i=0;i<actor_count();++i)if(i!=owner&&actors_[i].health)bodies[count++]=actors_[i].position;
+        return native_borg_resolve_contact(request,{bodies.data(),count},terrain,out);
+    }
     bool step_cruise(unsigned owner,const BorgCruiseBoost& spec,f32 base,f32 boost,f32 multiplier,
                      const GamePadState& pad,const NativeBorgMovementFrame* frame,
                      const IBattleMvpTerrain* terrain,bool interrupted){
@@ -2156,8 +2280,7 @@ private:
         const f32 speed=(thrust?boost:base)*multiplier;
         const BattlePoint delta{actor.facing.x*speed,actor.facing.z*speed};
         NativeBorgContactResult contact;
-        if(!native_borg_resolve_contact({actor.position,other.position,delta,config_.arena_half,config_.actor_radius,
-             config_.actor_height,config_.step_height,false,other.health!=0},terrain,&contact))return false;
+        if(!resolve_native_body_motion(owner,other_slot==255?owner:other_slot,delta,false,terrain,&contact))return false;
         f32 support=0;
         if(!floor(terrain,contact.position[0],contact.position[2],contact.position[1],&support))return false;
         actor.position=contact.position;actor.position[1]=support+spec.height;
@@ -2326,15 +2449,26 @@ private:
     void step_package_walk_pulses(std::span<const f32> distance){
         for(auto& wave:walk_pulses_)if(wave.id){
             const auto age=tick_-wave.born;
-            const u8 target=actor_target(wave.owner);
-            if(target==255){wave={};continue;}
-            const auto& actor=actors_[target];
-            if(!wave.resolved&&actor.health&&std::abs(actor.position[1]-wave.origin[1])<=wave.spec.height){
-                const f32 x=wave.origin[0]-actor.position[0],z=wave.origin[2]-actor.position[2];
-                const f32 r=std::hypot(x,z);
-                if(r+config_.actor_radius>=wave.radius(tick_-1)&&r-config_.actor_radius<=wave.radius(tick_)){
+            if(actor_target(wave.owner)==255){wave={};continue;}
+            if(!wave.resolved){
+                const f32 inner=wave.radius(tick_-1),outer=wave.radius(tick_);
+                const auto contact=package_body_contact(wave.owner,actor_count()>2,[&](u8 candidate,f32* entry){
+                    const auto& actor=actors_[candidate];
+                    if(std::abs(actor.position[1]-wave.origin[1])>wave.spec.height)return false;
+                    const f32 r=std::hypot(wave.origin[0]-actor.position[0],wave.origin[2]-actor.position[2]);
+                    const f32 near=r-config_.actor_radius;
+                    if(r+config_.actor_radius<inner||near>outer)return false;
+                    // First radial touch within this slice of expansion,
+                    // using the same current body samples as the duel.
+                    *entry=std::clamp((near-inner)/(outer-inner),0.f,1.f);
+                    return true;
+                });
+                if(contact){
+                    const auto target=contact.recipient;
+                    const auto& actor=actors_[target];
+                    const BattlePoint inbound{wave.origin[0]-actor.position[0],wave.origin[2]-actor.position[2]};
                     wave.resolved=true;
-                    if(!try_package_guard(target,wave.owner,BorgBattleAttackKind::Blast,{x,z},wave.id))
+                    if(!try_package_guard(target,wave.owner,BorgBattleAttackKind::Blast,inbound,wave.id))
                         accept_package_hit(wave.owner,target,BorgBattleActionState::none,0,wave.id,wave.spec.damage,wave.origin);
                 }
             }
@@ -2452,6 +2586,30 @@ private:
         bool ok=false;std::string error;
         return battle_pair_relation_ok(a,b,2,&ok,&error)&&ok;
     }
+    struct PackageBodyContact {
+        u8 recipient=255;
+        f32 entry=0;
+        explicit operator bool()const{return recipient!=255;}
+    };
+    template<class Probe> PackageBodyContact package_body_contact(unsigned owner,bool roster,Probe probe)const{
+        if(!roster){
+            // Duels and effects with indirect ownership still use their
+            // existing aim-selected body and late relation filter.
+            const u8 target=actor_target(owner);f32 entry=0;
+            if(target!=255&&probe(target,&entry))return {target,entry};
+            return {};
+        }
+        PackageBodyContact best;
+        for(u8 i=0;i<actor_count();++i){
+            if(i==owner||!actors_[i].health||actors_[i].team==actors_[owner].team||!package_hit_relation(owner,i))
+                continue;
+            f32 entry=0;
+            // Native sweeps use first touch, not distance to the aiming
+            // target. Keep the later physical slot on an exact tie.
+            if(probe(i,&entry)&&(!best||entry<=best.entry))best={i,entry};
+        }
+        return best;
+    }
     // 8002F8DC force pool. The opt-in policy reproduces the mode-dependent
     // decrement and the last-attacker/last-receiver writes.
     void ledger_force(unsigned owner,u8 recipient,unsigned amount){
@@ -2486,11 +2644,26 @@ private:
             }
         }
     }
-    u16 package_damage(unsigned owner,u8 recipient,u16 base){
+    enum class DamageRoleScope {Unbound,DirectMove};
+    struct TierHit {const BorgGameplayProfile* receiver=nullptr;const BorgBattleMove* move=nullptr;};
+    TierHit package_tier_hit(unsigned owner,u8 recipient,u8 move,DamageRoleScope scope)const{
+        if(scope!=DamageRoleScope::DirectMove)return {};
+        const auto& attacker=config_.packages[owner];
+        const auto& receiver=config_.packages[recipient];
+        if(!attacker||!receiver||move>=attacker->moves.size()||!attacker->moves[move].contact_tier||
+           !receiver->damage_tier_receive||!attacker->damage_credit.find(actors_[owner].team)||
+           !receiver->damage_receive.find(actors_[recipient].team))return {};
+        return {receiver.get(),&attacker->moves[move]};
+    }
+    u16 package_damage(unsigned owner,u8 recipient,u16 base,DamageRoleScope scope,u16 raw_base,u8 move,f32 tier){
         if(owner>=config_.packages.size()||!config_.packages[owner])return base;
         const auto& profile=*config_.packages[owner];
+        const auto& recipient_profile=config_.packages[recipient];
+        const auto* receive=scope==DamageRoleScope::DirectMove&&recipient_profile?
+            recipient_profile->damage_receive.find(actors_[recipient].team):nullptr;
+        const bool split=profile.damage_credit.find(actors_[owner].team)&&receive;
         if(!profile.damage_factors_declared&&!profile.damage_chain_count&&
-           profile.damage_rows.empty()&&profile.damage_side_rows.empty())return base;
+           profile.damage_rows.empty()&&profile.damage_side_rows.empty()&&!split)return base;
         auto& target=actors_[recipient];
         if(target.package_hit_chain_owner!=u8(owner)||tick_-target.package_last_hit_tick>30){
             target.package_hit_chain=0;
@@ -2498,18 +2671,79 @@ private:
         }
         // `damage-side` rows are paired with the attacker's team, not its
         // actor index, so rosters with more than two actors keep the side.
+        const f32 matchup=split&&actors_[owner].health&&target.health?
+            borg_damage_matchup(profile,*recipient_profile):1.f;
+        BorgDamageLadderRates response,outgoing;
+        std::array<f32,2> indexed_credit{},indexed_receive{};
+        const std::array<f32,2>* selected_credit=nullptr;
+        if(split){
+            if(const auto& indices=config_.damage_indices;indices){
+                const auto team=actors_[owner].team;
+                indexed_credit=profile.damage_credit_indexed.select(team,indices->settings[team],indices->ranks[owner]);
+                indexed_receive=recipient_profile->damage_receive_indexed.select(
+                    target.team,indices->settings[target.team],indices->ranks[recipient]);
+                selected_credit=&indexed_credit;receive=&indexed_receive;
+            }
+            response.hp=borg_damage_ladder_factor(recipient_profile->damage_receive_hp,target.team,
+                borg_damage_hp_cell(target.health,recipient_profile->health,raw_base));
+            response.force=borg_damage_ladder_factor(recipient_profile->damage_receive_force,target.team,
+                borg_damage_force_cell(team_force_[target.team],config_.team_force[target.team]));
+            const auto& attacker=actors_[owner];
+            // Require the recorded launch/contact move. A detached hit
+            // must not inherit whichever attack is currently active.
+            if(attacker.health&&move<profile.moves.size()&&profile.moves[move].damage_credit_ladders){
+                outgoing.hp=borg_damage_ladder_factor(profile.damage_credit_hp,attacker.team,
+                    borg_damage_hp_cell(attacker.health,profile.health));
+                outgoing.force=borg_damage_ladder_factor(profile.damage_credit_force,attacker.team,
+                    borg_damage_force_cell(team_force_[attacker.team],config_.team_force[attacker.team]));
+            }
+        }
+        const bool minimum_hp=scope==DamageRoleScope::DirectMove&&raw_base&&move<profile.moves.size()&&
+            profile.moves[move].contact_minimum_hp;
         const u16 value=borg_damage_amount(profile,base,target.package_hit_chain,
-                                          actors_[recipient].damage_model,
-                                          actors_[owner].team,
-                                          config_.damage_scalar);
+                                            actors_[recipient].damage_model,
+                                            actors_[owner].team,
+                                             config_.damage_scalar,receive,matchup,response,outgoing,tier,selected_credit,minimum_hp);
         if(profile.damage_chain_count&&target.package_hit_chain<255)++target.package_hit_chain;
         return value;
     }
-    void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,const BattleMvpVec& position){
+    void accept_package_hit(unsigned owner,u8 recipient,u8 move,u16 frame,u32 object,u16 damage_value,
+                            const BattleMvpVec& position,const NativeBattleReactionContact& contact={},
+                            DamageRoleScope scope=DamageRoleScope::Unbound,u16 raw_base=0){
         if(!package_hit_relation(owner,recipient))return;
-        const auto amount=u16(std::min(actors_[recipient].health,unsigned(package_damage(owner,recipient,damage_value))));
-        damage(recipient,amount,owner,move);hit_impact(recipient,position);
+        const auto tier=package_tier_hit(owner,recipient,move,scope);
         auto& target=actors_[recipient];
+        const f32 tier_factor=tier.move&&tier.move->contact_tier->scale?
+            tier.receiver->damage_tier_receive->factors[target.damage_tier.level]:1.f;
+        const auto amount=u16(std::min(actors_[recipient].health,
+            unsigned(package_damage(owner,recipient,damage_value,scope,raw_base?raw_base:damage_value,move,tier_factor))));
+        damage(recipient,amount,owner,move,contact);
+        hit_impact(recipient,position,scope==DamageRoleScope::DirectMove?owner:actor_count(),move);
+        if(scope==DamageRoleScope::DirectMove){
+            const auto& profile=config_.packages[owner];
+            if(profile&&move<profile->moves.size())if(const auto& hold=profile->moves[move].contact_pose_hold;hold){
+                extend_contact_pose_hold(recipient,hold->ticks);
+                if(hold->both_bodies)extend_contact_pose_hold(owner,hold->ticks);
+            }
+        }
+        if(tier.move&&target.health)
+            target.damage_tier.accept(tier.move->contact_tier->charge,tier.receiver->damage_tier_receive->idle_ticks,
+                tier.receiver->damage_tier_reset_capacity,tier.move->contact_tier_reset_wear);
+        if(scope==DamageRoleScope::DirectMove&&!target.contact_sound_cooldown&&target.damage_kind==0){
+            const auto& attacker=config_.packages[owner];
+            const auto& receiver=config_.packages[recipient];
+            if(attacker&&receiver&&move<attacker->moves.size()&&receiver->contact_sound_band){
+                const unsigned band=*receiver->contact_sound_band;
+                if(const auto& cue=attacker->moves[move].contact_sounds[band];cue){
+                    const unsigned bit=1u<<cue->lane;
+                    const unsigned alternate=bool(target.contact_sound_parity&bit);
+                    target.contact_sound_parity^=u16(bit);
+                    target.contact_sound_cooldown=4;
+                    record_package(BorgBattleEventKind::ContactSound,owner,move,frame,object,
+                                   u16(2*band+alternate),recipient);
+                }
+            }
+        }
         if(target.damage_kind==0){ // 8002F8DC returns before any ledger write
             ++target.hits_taken;target.damage_taken+=amount;
             if(owner!=recipient){
@@ -2517,15 +2751,22 @@ private:
                 if(attacker.damage_kind==0)team_tally_[attacker.team]+=100u;
             }
             ledger_force(owner,recipient,amount);
-            for(unsigned p=0;p<2;++p){
+            // Each admitted body owns a ring until restart, even if defeated.
+            // It never observes its own hit.
+            for(unsigned p=0;p<actor_count();++p){
                 if(p==recipient)continue;
-                auto& slot=actors_[p];const u16 type=slot.team==target.team?4:3; // actor index doubles as the duel team
+                auto& slot=actors_[p];const u16 type=slot.team==target.team?4:3;
                 slot.hit_history[slot.hit_history_index]={type,u16(recipient)};
-                slot.hit_history_index=u8((slot.hit_history_index+1)%8);
+                slot.hit_history_index=u8((slot.hit_history_index+1)%slot.hit_history.size());
                 if(type==4){++slot.hit_history_count;slot.hit_history_total+=amount;}
             }
         }
         record_package(BorgBattleEventKind::Hit,owner,move,frame,object,amount,recipient);
+    }
+    void extend_contact_pose_hold(unsigned slot,u8 ticks){
+        auto& actor=actors_[slot];const auto& profile=config_.packages[slot];
+        if(actor.health&&actor.damage_kind==0&&!actor.source_ground_motion&&profile&&profile->contact_pose_hold_receive)
+            actor.contact_pose_hold_ticks=std::max(actor.contact_pose_hold_ticks,ticks);
     }
     void retire_package_guard(unsigned defender){
         const auto window=std::exchange(guard_windows_[defender],{});
@@ -2563,7 +2804,7 @@ private:
         const auto window=std::exchange(melee_windows_[owner],{});
         if(window.object)record_package(BorgBattleEventKind::MeleeRetired,owner,window.move,window.frame,window.object,0);
     }
-    void step_package_melee(unsigned owner){
+    void step_package_melee(unsigned owner,const IBattleMvpTerrain* terrain){
         const auto& action=package_actions_[owner];
         const auto& actor=actors_[owner];
         auto& window=melee_windows_[owner];
@@ -2571,9 +2812,7 @@ private:
         if(!actor.health||!move||!move->melee||action.frame<move->melee->first||action.frame>move->melee->last){
             retire_package_melee(owner);return;
         }
-        const u8 recipient=actor_target(owner);
-        if(recipient==255){retire_package_melee(owner);return;}
-        const auto& other=actors_[recipient];
+        if(actor_target(owner)==255){retire_package_melee(owner);return;}
         const auto& shape=*move->melee;
         if(action.frame==shape.first){
             if(next_id_==std::numeric_limits<u32>::max()){
@@ -2584,21 +2823,43 @@ private:
         }
         if(!window.object||window.move!=action.move)return;
         window.frame=action.frame;
-        if(window.hit||!other.health)return;
+        if(window.hit)return;
         // Actor-bound planar capsule in the current body basis, checked
         // against the same destination body/height proxy as a projectile.
         // No aim ray, animation mesh, target lock or inventory write.
         const f32 height=actor.position[1]+shape.height;
-        if(height+shape.half_height<other.position[1]||height-shape.half_height>other.position[1]+config_.actor_height)return;
+        const bool direct=borg_battle_direct_melee(*move);
+        const bool roster=actor_count()>2&&direct;
+        const auto contact=package_body_contact(owner,roster,[&](u8 candidate,f32* entry){
+            const auto& other=actors_[candidate];
+            if(!other.health||!native_borg_melee_height_overlap(height,shape.half_height,other.position[1],
+                                                               config_.actor_height))return false;
+            const f32 x=other.position[0]-actor.position[0],z=other.position[2]-actor.position[2];
+            if(x*actor.facing.x+z*actor.facing.z<0)return false;
+            const BattlePoint from{actor.position[0],actor.position[2]},to{other.position[0],other.position[2]};
+            return battle_swept_hit(from,{actor.facing.x*shape.reach,actor.facing.z*shape.reach},to,
+                                    config_.actor_radius+shape.radius,entry)&&
+                   (!direct||native_borg_melee_path_clear(terrain,from,to));
+        });
+        if(!contact)return;
+        const auto recipient=contact.recipient;
+        const auto& other=actors_[recipient];
         const f32 x=other.position[0]-actor.position[0],z=other.position[2]-actor.position[2];
-        if(x*actor.facing.x+z*actor.facing.z<0)return;
-        f32 t=0;
-        if(!battle_swept_hit({actor.position[0],actor.position[2]},{actor.facing.x*shape.reach,actor.facing.z*shape.reach},
-                            {other.position[0],other.position[2]},config_.actor_radius+shape.radius,&t))return;
+        const f32 t=contact.entry;
         window.hit=true;
         if(try_package_guard(recipient,u8(owner),BorgBattleAttackKind::Melee,{-x,-z},window.object))return;
-        accept_package_hit(owner,recipient,action.move,action.frame,window.object,shape.damage,
-            {actor.position[0]+actor.facing.x*shape.reach*t,height,actor.position[2]+actor.facing.z*shape.reach*t});
+        NativeBattleReactionContact reaction;
+        reaction.body_forward=actor.facing;
+        // Mode 3 samples the centres of the actual native proxies, not
+        // the endpoint of the capsule or the point of first overlap.
+        const f32 centre=shape.reach*.5f;
+        reaction.centres=NativeBattleReactionCentres{
+            {actor.position[0]+actor.facing.x*centre,height,actor.position[2]+actor.facing.z*centre},
+            {other.position[0],other.position[1]+config_.actor_height*.5f,other.position[2]}};
+        accept_package_hit(owner,recipient,action.move,action.frame,window.object,
+            move->contact_power?move->contact_power:shape.damage,
+            {actor.position[0]+actor.facing.x*shape.reach*t,height,actor.position[2]+actor.facing.z*shape.reach*t},
+            reaction,DamageRoleScope::DirectMove);
     }
     void queue_package_pull(const BattleMvpProjectile& shot,u8 recipient,const BattleMvpVec& observed_position){
         auto& next=pull_requests_[shot.owner];
@@ -2704,9 +2965,8 @@ private:
         }
         const u8 pull_target=actor_target(owner);
         if(pull_target==255)return BorgBattlePullRefusal::TerrainOrBody;
-        const auto& other=actors_[pull_target];NativeBorgContactResult result;
-        if(!native_borg_resolve_contact({actor.position,other.position,delta,config_.arena_half,config_.actor_radius,
-            config_.actor_height,config_.step_height,true,other.health!=0},terrain,&result))
+        NativeBorgContactResult result;
+        if(!resolve_native_body_motion(owner,pull_target,delta,true,terrain,&result))
             return BorgBattlePullRefusal::SupportUnavailable;
         if(!result.grounded||result.terrain_blocked||result.body_hit||result.bounds_hit||result.slid)
             return BorgBattlePullRefusal::TerrainOrBody;
@@ -2774,11 +3034,12 @@ private:
         record_package(BorgBattleEventKind::AnchorPlanted,shot.owner,shot.package_move,0,shot.id,path.count);
     }
     void expire_package_fence_anchors(){
-        for(unsigned owner=0;owner<2;++owner){
+        for(unsigned owner=0;owner<actor_count();++owner){
             const auto& sets=config_.packages[owner]->anchor_sets;
             for(unsigned i=0;i<sets.size();++i)if(const auto& spec=sets[i].fence){
                 auto& path=anchor_paths_[owner][i];
-                if(!actors_[owner].health){path={};continue;}
+                auto& latches=fence_inside_[owner][i];
+                if(!actors_[owner].health){path={};latches={};continue;}
                 const auto first=std::find_if(path.points.begin(),path.points.begin()+path.count,
                     [&](const auto& p){return tick_-p.born<spec->ticks;});
                 const auto last=path.points.begin()+path.count;
@@ -2786,6 +3047,7 @@ private:
                     std::move(first,last,path.points.begin());
                     path.count=u8(last-first);
                 }
+                if(path.count<2)latches={};
             }
         }
     }
@@ -2818,37 +3080,49 @@ private:
     }
     void step_package_fences(const std::array<BattleMvpVec,kBattleMvpMaxActors>& before){
         fence_link_count_=0;
+        const f32 body=std::min(config_.actor_height*.5f,config_.actor_radius);
         for(unsigned owner=0;owner<actor_count();++owner){
             const auto& sets=config_.packages[owner]->anchor_sets;
-            const u8 target=actor_target(owner);
-            if(target==255)continue;
-            auto& actor=actors_[target];
-            const f32 body=std::min(config_.actor_height*.5f,config_.actor_radius);
-            auto previous=before[target],now=actor.position;
-            previous[1]+=config_.actor_height*.5f;now[1]+=config_.actor_height*.5f;
             for(unsigned set=0;set<sets.size();++set)if(const auto& spec=sets[set].fence){
-                auto& latched=fence_inside_[owner][set];
+                auto& latches=fence_inside_[owner][set];
                 const auto& path=anchor_paths_[owner][set];
-                if(!actors_[owner].health||path.count<2){latched=false;continue;}
-                bool inside=false;u32 hit=0;BattleMvpVec contact{};
+                if(!actors_[owner].health||path.count<2){latches={};continue;}
+                const auto each_link=[&](auto visit){
+                    for(unsigned i=1;i<path.count;++i){
+                        const auto& a=path.points[i-1];const auto& b=path.points[i];
+                        if(a.position!=b.position)visit(a,b);
+                    }
+                };
+                bool linked=false;
+                each_link([&](const auto& a,const auto& b){
+                    linked=true;
+                    if(fence_link_count_<fence_links_.size())fence_links_[fence_link_count_++]={a.position,b.position};
+                });
+                if(!linked){latches={};continue;}
+
                 const f64 limit=f64(spec->radius+body)*(spec->radius+body);
-                for(unsigned i=1;i<path.count;++i){
-                    const auto& a=path.points[i-1];const auto& b=path.points[i];
-                    if(a.position==b.position)continue;
-                    fence_links_[fence_link_count_++]={a.position,b.position};
-                    if(!actor.health)continue;
-                    inside|=fence_distance_sq(a.position,b.position,now,now,nullptr)<=limit;
-                    if(!hit&&!latched&&fence_distance_sq(a.position,b.position,previous,now,&contact)<=limit)hit=b.id;
-                }
-                latched=inside;
-                if(!hit)continue;
-                const BattlePoint inbound{contact[0]-previous[0],contact[2]-previous[2]};
-                if(try_package_guard(target,u8(owner),BorgBattleAttackKind::Blast,inbound,hit))continue;
-                accept_package_hit(owner,target,BorgBattleActionState::none,0,hit,spec->damage,contact);
-                if(spec->recoil&&actor.health&&!fence_recoil_[target].object){
-                    const auto heading=native_borg_direction({0,0},{-inbound.x,-inbound.z},
-                        native_borg_direction({now[0],now[2]},{previous[0],previous[2]},{-actor.facing.x,-actor.facing.z}));
-                    fence_recoil_[target]={{heading.x*spec->recoil,heading.z*spec->recoil},hit,u8(owner)};
+                for(u8 target=0;target<actor_count();++target){
+                    auto& actor=actors_[target];auto& latched=latches[target];
+                    if(!actor.health||actor.team==actors_[owner].team||!package_hit_relation(owner,target)){
+                        latched=false;continue;
+                    }
+                    auto previous=before[target],now=actor.position;
+                    previous[1]+=config_.actor_height*.5f;now[1]+=config_.actor_height*.5f;
+                    bool inside=false;u32 hit=0;BattleMvpVec contact{};
+                    each_link([&](const auto& a,const auto& b){
+                        inside|=fence_distance_sq(a.position,b.position,now,now,nullptr)<=limit;
+                        if(!hit&&!latched&&fence_distance_sq(a.position,b.position,previous,now,&contact)<=limit)hit=b.id;
+                    });
+                    latched=inside;
+                    if(!hit)continue;
+                    const BattlePoint inbound{contact[0]-previous[0],contact[2]-previous[2]};
+                    if(try_package_guard(target,u8(owner),BorgBattleAttackKind::Blast,inbound,hit))continue;
+                    accept_package_hit(owner,target,BorgBattleActionState::none,0,hit,spec->damage,contact);
+                    if(spec->recoil&&actor.health&&!fence_recoil_[target].object){
+                        const auto heading=native_borg_direction({0,0},{-inbound.x,-inbound.z},
+                            native_borg_direction({now[0],now[2]},{previous[0],previous[2]},{-actor.facing.x,-actor.facing.z}));
+                        fence_recoil_[target]={{heading.x*spec->recoil,heading.z*spec->recoil},hit,u8(owner)};
+                    }
                 }
             }
         }
@@ -2925,7 +3199,7 @@ private:
                !std::all_of(muzzle.begin(),muzzle.end(),[](f32 x){return std::isfinite(x)&&std::abs(x)<=1e5f;})){
                 record_package(BorgBattleEventKind::SocketRefused,owner,move,frame,0,spec.bone);return 0;
             }
-            const u8 socket_target=actor_target(owner);
+            const u8 socket_target=package_aim_target(owner);
             const auto& target=actors_[socket_target==255?owner:socket_target];
             // A body-heading launch samples the socket only for position.
             if(!definition.launch_body_heading&&actor.package_aim_heading){
@@ -2952,7 +3226,8 @@ private:
             const f32 c=std::cos(yaw),s=std::sin(yaw);
             aim={aim.x*c-aim.z*s,aim.z*c+aim.x*s};
         }
-        const u32 first=allocate_package_volley(owner,move,definition,muzzle,aim,return_stock,0,path,additional_rise);
+        const u32 first=allocate_package_volley(owner,move,definition,muzzle,aim,return_stock,0,path,additional_rise,
+                                                /*radial=*/false,/*direct_release=*/true);
         if(first&&!definition.launch_sound.empty()){
             const auto& definitions=config_.packages[owner]->projectiles;
             record_package(BorgBattleEventKind::LaunchSound,owner,move,frame,first,u16(&definition-definitions.data()));
@@ -2985,11 +3260,17 @@ private:
     }
     u32 allocate_package_volley(unsigned owner,u8 move,const BorgBattleProjectileDefinition& definition,
                                 const BattleMvpVec& muzzle,BattlePoint aim,u8 return_stock,u32 emitter=0,
-                                const BattleMvpAnchorPath* rewind_path=nullptr,f32 additional_rise=0,bool radial=false){
+                                 const BattleMvpAnchorPath* rewind_path=nullptr,f32 additional_rise=0,
+                                 bool radial=false,bool direct_release=false){
         unsigned free=0;for(const auto& shot:projectiles_)free+=!shot.active;
         if(!definition.count||free<definition.count||next_id_>std::numeric_limits<u32>::max()-definition.count)return 0;
-        const u8 target=actor_target(owner);const auto& observed=actors_[target==255?owner:target];
+        const u8 target=direct_release?package_aim_target(owner):actor_target(owner);
+        const auto& observed=actors_[target==255?owner:target];
+        const bool guide=definition.guidance&&observed.health&&(emitter||actors_[owner].package_target_visible);
         const u32 first=next_id_+1;unsigned n=0;
+        u16 damage=definition.damage;
+        const auto& moves=config_.packages[owner]->moves;
+        if(direct_release&&move<moves.size()&&moves[move].contact_power)damage=moves[move].contact_power;
         for(auto& shot:projectiles_)if(!shot.active){
             const f32 angle=radial?f32(n)*6.28318530718f/definition.count:
                 (f32(n)-f32(definition.count-1)*.5f)*definition.spread;
@@ -2998,10 +3279,12 @@ private:
                   definition.visual==BorgAttackVisual::Shuriken?BattleMvpWeapon::Shuriken:
                   definition.visual==BorgAttackVisual::Orb?BattleMvpWeapon::Orb:BattleMvpWeapon::Bullet,
                   muzzle,muzzle,{definition.speed*(aim.x*c-aim.z*s),definition.rise+additional_rise,definition.speed*(aim.z*c+aim.x*s)},definition.lifetime,false,
-                   definition.damage,definition.gravity,definition.radius,move,definition.floor,
+                    damage,definition.gravity,definition.radius,move,definition.floor,
                    definition.walk_percent,definition.walk_ticks,definition.pull_units,true,definition.ignore_actors,definition.blast,
                    u8(&definition-config_.packages[owner]->projectiles.data()),return_stock};
             shot.package_emitter=emitter;
+            shot.package_direct_release=direct_release;
+            shot.package_base_damage=damage;
             shot.package_look=definition.look.value_or(BorgProjectileLook{});shot.born_tick=tick_;
             shot.package_animation=definition.animation.value_or(BorgProjectileAnimation{
                 definition.visual==BorgAttackVisual::Shuriken?.36f:0.f,0,0});
@@ -3018,7 +3301,7 @@ private:
                 }
             }
             if(rewind_path)shot.package_rewind_path=*rewind_path;
-            if(definition.guidance&&observed.health&&(emitter||actors_[owner].package_target_visible)){
+            if(guide){
                 shot.package_guide_point={observed.position[0],observed.position[2]};
                 shot.package_guide_target=target;shot.package_guide_ticks=definition.guidance->ticks;
             }
@@ -3076,8 +3359,7 @@ private:
         }
     }
     enum class PackageRetirement:u16 {None,Actor,Floor,UnknownFloor,Expired,Outside,Remote,Guard,Stage,UnknownStage,OwnerEnded,Proximity,UnlandedFuse};
-    bool package_smoke_blocks_aim(unsigned owner)const{
-        const u8 smoke_target=actor_target(owner);if(smoke_target==255)return false;
+    bool package_smoke_blocks_aim(unsigned owner,u8 smoke_target)const{
         const auto& start=actors_[owner].position;const auto& end=actors_[smoke_target].position;
         const BattleMvpVec delta{end[0]-start[0],end[1]-start[1],end[2]-start[2]};
         const f32 length=delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2];
@@ -3115,9 +3397,10 @@ private:
             }
         }
         const f32 radius_squared=f32(blast.radius)*f32(blast.radius);
+        const auto owner_team=actors_[shot.owner].team;
         for(u8 i=0;blast.damage&&i<actor_count();++i){
             const auto& actor=actors_[i];
-            if(!actor.health||(i==shot.owner&&!blast.include_owner))continue;
+            if(!actor.health||(!blast.include_owner&&actor.team==owner_team))continue;
             const f32 x=actor.position[0]-shot.position[0],y=actor.position[1]+config_.actor_height*.5f-shot.position[1],
                       z=actor.position[2]-shot.position[2];
             if(x*x+y*y+z*z>radius_squared)continue;
@@ -3284,6 +3567,24 @@ private:
         f32 support=0;
         return floor(terrain,shot.position[0],shot.position[2],shot.position[1],&support)&&std::abs(support-shot.position[1])<=.01f;
     }
+    struct PackageChargeTarget {
+        u8 slot=255;
+        f32 distance_squared=std::numeric_limits<f32>::max();
+        BattlePoint toward{};
+    };
+    PackageChargeTarget package_charge_target(const BattleMvpProjectile& shot)const{
+        PackageChargeTarget result;
+        const auto owner_team=actors_[shot.owner].team;
+        for(u8 i=0;i<actor_count();++i){
+            const auto& actor=actors_[i];
+            if(!actor.health||actor.team==owner_team)continue;
+            const f32 x=actor.position[0]-shot.position[0],y=actor.position[1]+config_.actor_height*.5f-shot.position[1],
+                      z=actor.position[2]-shot.position[2];
+            const f32 distance=x*x+y*y+z*z;
+            if(distance<=result.distance_squared)result={i,distance,{x,z}};
+        }
+        return result;
+    }
     void step_bomb_attraction(BattleMvpProjectile& shot,const BorgBombAttraction& spec,
                               f32 dx,f32 dz,const IBattleMvpTerrain* terrain){
         const f32 span=std::hypot(dx,dz);
@@ -3335,19 +3636,21 @@ private:
         // without cancelling the other charges already selected by the same marker.
         for(auto& shot:projectiles_)if(matches(shot))retire_package_shot(shot,PackageRetirement::Remote);
     }
-    bool package_segment_contact(const BattleMvpProjectile& shot,u8 recipient,f32* entry)const{
+    // Shared native segment versus finite padded body cylinder. Intersect
+    // the vertical interval before probing the horizontal sweep.
+    bool package_segment_contact(const BattleMvpProjectile& shot,const BattleMvpVec& step,u8 recipient,f32* entry)const{
         const auto& actor=actors_[recipient];
         if(!actor.health||shot.package_ignore_actors)return false;
         f32 t=0,leave=1;
         const f32 low=actor.position[1]-shot.package_radius,high=actor.position[1]+config_.actor_height+shot.package_radius;
-        if(shot.velocity[1]!=0){
-            const auto a=(low-shot.position[1])/shot.velocity[1],b=(high-shot.position[1])/shot.velocity[1];
+        if(step[1]!=0){
+            const auto a=(low-shot.position[1])/step[1],b=(high-shot.position[1])/step[1];
             t=std::max(0.f,std::min(a,b));leave=std::min(1.f,std::max(a,b));
             if(t>leave)return false;
         }else if(shot.position[1]<low||shot.position[1]>high)return false;
         f32 fraction=0;
-        const BattlePoint start{shot.position[0]+shot.velocity[0]*t,shot.position[2]+shot.velocity[2]*t};
-        const BattlePoint delta{shot.velocity[0]*(leave-t),shot.velocity[2]*(leave-t)};
+        const BattlePoint start{shot.position[0]+step[0]*t,shot.position[2]+step[2]*t};
+        const BattlePoint delta{step[0]*(leave-t),step[2]*(leave-t)};
         if(!battle_swept_hit(start,delta,{actor.position[0],actor.position[2]},config_.actor_radius+shot.package_radius,&fraction))
             return false;
         *entry=std::lerp(t,leave,fraction);return true;
@@ -3393,21 +3696,27 @@ private:
             record_package(BorgBattleEventKind::ShotPowered,shot.owner,shot.package_move,owner.package_frame,
                            shot.id,powered_damage(shot,*field));
         shot.power_field=field?field->id:0;
-        const u8 recipient=actor_target(shot.owner);
-        if(recipient==255)return;
-        const auto& target=actors_[recipient];
-        const auto recovery=config_.packages[recipient]->beam_recovery;
-        if(age%spec.interval)return;
+        if(age%spec.interval||actor_target(shot.owner)==255)return;
         if(definition.beam_sweep&&obstruction.hit){
             BattleMvpVec point=shot.position;
             for(unsigned k=0;k<3;++k)point[k]+=shot.velocity[k]*shot.beam_fraction;
             impact(point,true,definition.beam_sweep->impact_radius);
             record_package(BorgBattleEventKind::StageImpact,shot.owner,shot.package_move,owner.package_frame,shot.id,obstruction.layer);
         }
+        const bool roster=actor_count()>2&&shot.package_direct_release;
+        const auto contact=package_body_contact(shot.owner,roster,[&](u8 candidate,f32* entry){
+            return package_segment_contact(shot,shot.velocity,candidate,entry)&&*entry<=shot.beam_fraction&&
+                !(obstruction.hit&&*entry==shot.beam_fraction);
+        });
+        if(!contact)return;
+        const auto recipient=contact.recipient;
+        const auto& target=actors_[recipient];
+        const auto recovery=config_.packages[recipient]->beam_recovery;
+        // Protection belongs to the contacted body. A recovering or
+        // blocking body consumes this pulse rather than exposing the next.
         if(recovery&&target.package_damage_serial&&tick_-target.package_last_hit_tick<=recovery)return;
-        f32 entry=0;
-        if(!package_segment_contact(shot,recipient,&entry)||entry>shot.beam_fraction||(obstruction.hit&&entry==shot.beam_fraction)||
-           try_package_guard(recipient,shot.owner,BorgBattleAttackKind::Shot,{-shot.velocity[0],-shot.velocity[2]},shot.id))return;
+        if(try_package_guard(recipient,shot.owner,BorgBattleAttackKind::Shot,{-shot.velocity[0],-shot.velocity[2]},shot.id))return;
+        const f32 entry=contact.entry;
         BattleMvpVec point=shot.position;
         for(unsigned k=0;k<3;++k)point[k]+=entry*shot.velocity[k];
         const auto damage=field&&power_entry<entry?powered_damage(shot,*field):shot.package_damage;
@@ -3422,21 +3731,23 @@ private:
                 if(!--shot.bomb_fuse_tail_left)retire_package_shot(shot,PackageRetirement::Expired);
             }
             else{
-                const u8 proximity_slot=actor_target(shot.owner);
-                const auto& opponent=actors_[proximity_slot==255?shot.owner:proximity_slot];
-                if(definition.proximity&&proximity_slot!=255&&opponent.health&&tick_-shot.born_tick>=definition.proximity->arming){
-                    const f32 dx=opponent.position[0]-shot.position[0],dz=opponent.position[2]-shot.position[2];
-                    const f32 dy=opponent.position[1]+config_.actor_height*.5f-shot.position[1];
-                    if(dx*dx+dy*dy+dz*dz<=f32(definition.proximity->radius)*definition.proximity->radius){
+                bool attraction_step=false;
+                if(definition.proximity&&tick_-shot.born_tick>=definition.proximity->arming){
+                    // The armed device senses current bodies from its own
+                    // origin. This is independent of aim and damage masks.
+                    const auto target=package_charge_target(shot);
+                    if(target.slot!=255&&target.distance_squared<=f32(definition.proximity->radius)*definition.proximity->radius){
                         record_package(BorgBattleEventKind::BombProximity,shot.owner,shot.package_move,0,shot.id,
-                                       definition.proximity->radius,proximity_slot);
+                                       definition.proximity->radius,target.slot);
                         retire_package_shot(shot,PackageRetirement::Proximity);return;
                     }
-                    if(definition.attraction&&shot.life>1&&
-                       dx*dx+dy*dy+dz*dz<=f32(definition.attraction->radius)*definition.attraction->radius)
-                        step_bomb_attraction(shot,*definition.attraction,dx,dz,terrain);
-                    else shot.bomb_travel_speed=0;
+                    if(target.slot!=255&&definition.attraction&&shot.life>1&&
+                       target.distance_squared<=f32(definition.attraction->radius)*definition.attraction->radius){
+                        step_bomb_attraction(shot,*definition.attraction,target.toward.x,target.toward.z,terrain);
+                        attraction_step=true;
+                    }
                 }
+                if(!attraction_step)shot.bomb_travel_speed=0;
                 if(!--shot.life)expire_package_fuse(shot,definition);
             }
             return;
@@ -3446,25 +3757,15 @@ private:
         pull_package_shot(shot);
         const f32 travel=package_slow_fraction(shot);
         const BattleMvpVec step{shot.velocity[0]*travel,shot.velocity[1]*travel,shot.velocity[2]*travel};
-        // Exact segment versus finite cylinder in this native test policy.
-        // Intersect horizontal interval with the vertical interval, not just
-        // the height at the first horizontal crossing.
-        const u8 recipient=actor_target(shot.owner);
-        const auto& actor=actors_[recipient==255?shot.owner:recipient];
-        f32 t=0,leave=1;
-        bool hit=recipient!=255&&actor.health!=0&&!shot.package_ignore_actors;
-        const f32 low=actor.position[1]-shot.package_radius,high=actor.position[1]+config_.actor_height+shot.package_radius;
-        if(step[1]!=0){
-            const auto a=(low-shot.position[1])/step[1],b=(high-shot.position[1])/step[1];
-            t=std::max(0.f,std::min(a,b));leave=std::min(1.f,std::max(a,b));hit&=t<=leave;
-        }else hit&=shot.position[1]>=low&&shot.position[1]<=high;
-        if(hit){
-            f32 fraction=0;
-            const BattlePoint start{shot.position[0]+step[0]*t,shot.position[2]+step[2]*t};
-            const BattlePoint delta{step[0]*(leave-t),step[2]*(leave-t)};
-            hit=battle_swept_hit(start,delta,{actor.position[0],actor.position[2]},config_.actor_radius+shot.package_radius,&fraction);
-            t=std::lerp(t,leave,fraction);
-        }
+        const auto& profile=*config_.packages[shot.owner];
+        const bool roster=actor_count()>2&&shot.package_direct_release&&shot.package_damage&&
+            shot.package_move<profile.moves.size()&&borg_battle_direct_releases(profile,profile.moves[shot.package_move]);
+        const auto contact=package_body_contact(shot.owner,roster,[&](u8 candidate,f32* entry){
+            return package_segment_contact(shot,step,candidate,entry);
+        });
+        const u8 recipient=contact.recipient;
+        f32 t=contact.entry;
+        bool hit=bool(contact);
         f32 endpoint_y=shot.position[1]+step[1],surface=0;
         auto retire=PackageRetirement::None;
         u8 stage_layer=0;
@@ -3502,7 +3803,32 @@ private:
         }
         shot.velocity[1]-=shot.package_gravity;
         if(hit){
-            if(shot.package_damage)accept_package_hit(shot.owner,recipient,shot.package_move,0,shot.id,shot.package_damage,shot.position);
+            const auto& actor=actors_[recipient];
+            if(shot.package_damage){
+                // The shot keeps its original round slot and move. A
+                // qualified link samples that living owner's body now, not
+                // the launch pose, velocity, current move, or target.
+                NativeBattleReactionContact reaction;
+                if(shot.package_direct_release){
+                    const auto& owner=actors_[shot.owner];
+                    const auto& moves=profile.moves;
+                    if(owner.health&&shot.package_move<moves.size()&&moves[shot.package_move].reaction_linked_owner)
+                        reaction.body_forward=owner.facing;
+                    // The object stops at the native contact fraction. The
+                    // pair's two submitted centres span the full tested step.
+                    auto& motion=reaction.motion.emplace();
+                    for(unsigned k=0;k<3;++k)motion.object_delta[k]=shot.position[k]-shot.previous[k];
+                    motion.pair_delta=step;
+                    motion.object_vector=shot.velocity;
+                    reaction.object_origin=shot.position;
+                    reaction.centres=NativeBattleReactionCentres{shot.position,
+                        {actor.position[0],actor.position[1]+config_.actor_height*.5f,actor.position[2]}};
+                }
+                accept_package_hit(shot.owner,recipient,shot.package_move,0,shot.id,
+                    shot.package_damage,shot.position,reaction,
+                    shot.package_direct_release?DamageRoleScope::DirectMove:DamageRoleScope::Unbound,
+                    shot.package_base_damage);
+            }
             else record_package(BorgBattleEventKind::ProjectileContact,shot.owner,shot.package_move,0,shot.id,0,recipient);
             if(shot.package_walk_ticks){
                 const bool apply=actor.health&&config_.packages[recipient]->movement==BorgBattleMovement::Grounded;
@@ -3600,6 +3926,24 @@ private:
         }
         return best;
     }
+    bool aim_eligible(unsigned owner,u8 candidate)const{
+        return candidate<actor_count()&&actors_[candidate].health&&actors_[candidate].team!=actors_[owner].team;
+    }
+    u8 package_aim_target(unsigned owner)const{
+        const unsigned locals=config_.roster_local_players;
+        if(config_.local_aim_cycle&&owner<locals&&aim_eligible(owner,local_aim_[owner]))return local_aim_[owner];
+        if(owner>=locals&&owner-locals<cpu_aim_.size()&&aim_eligible(owner,cpu_aim_[owner-locals]))
+            return cpu_aim_[owner-locals];
+        return actor_target(owner);
+    }
+    void cycle_package_aim(unsigned owner){
+        const u8 current=package_aim_target(owner);
+        if(current==255)return;
+        for(unsigned n=1;n<=actor_count();++n){
+            const u8 candidate=u8((current+n)%actor_count());
+            if(aim_eligible(owner,candidate)){local_aim_[owner]=candidate;return;}
+        }
+    }
     void face(unsigned i){
         const u8 target=actor_target(i);if(target==255){actors_[i].facing={0,1};return;}
         f32 x=actors_[target].position[0]-actors_[i].position[0],z=actors_[target].position[2]-actors_[i].position[2];
@@ -3629,68 +3973,77 @@ private:
             for(auto& shot:projectiles_)if(!shot.active){shot={true,++next_id_,u8(owner),weapon,muzzle,muzzle,{speed*(aim.x*c-aim.z*s),pitch,speed*(aim.z*c+aim.x*s)},weapon==BattleMvpWeapon::Bomb?70u:120u,false};++shots_;break;}}
         actor.cooldown[secondary?1:0]=weapon==BattleMvpWeapon::Bomb?120:weapon==BattleMvpWeapon::EnergyBeam?18:24;actor.attack_ticks=10;
     }
-    // The source reads the attacker's current attack-table index (+0x11), so a
-    // field or wave hit without an explicit move uses the active move.
-    u8 reaction_move(unsigned attacker,u8 move)const{
-        if(move==BorgBattleActionState::none&&attacker<actors_.size()){
-            const u8 current=actors_[attacker].package_move;
-            if(current!=BorgBattleActionState::none)return current;
-        }
-        return move;
+    const BorgBattleMove* reaction_definition(unsigned attacker,u8 move,bool body_contact)const{
+        const auto& package=config_.packages[attacker];
+        if(!package)return nullptr;
+        // Unlabelled native field/wave hits may inherit an active move, but
+        // never a scoped body-root mode or its offsets without its basis.
+        if(move==BorgBattleActionState::none)move=actors_[attacker].package_move;
+        if(move>=package->moves.size())return nullptr;
+        const auto& spec=package->moves[move];
+        return spec.reaction_mode==kBorgReactionBodyRoot&&!body_contact?nullptr:&spec;
     }
-    u8 reaction_mode(unsigned attacker,u8 move)const{
-        move=reaction_move(attacker,move);
-        if(attacker<config_.packages.size()&&config_.packages[attacker]&&
-           move<config_.packages[attacker]->moves.size())
-            return config_.packages[attacker]->moves[move].reaction_mode;
-        return u8(NativeBattleReactionMode::AttackerToReceiver);
-    }
-    std::pair<s8,s8> reaction_offsets(unsigned attacker,u8 move)const{
-        move=reaction_move(attacker,move);
-        if(attacker<config_.packages.size()&&config_.packages[attacker]&&
-           move<config_.packages[attacker]->moves.size()){
-            const auto& row=config_.packages[attacker]->moves[move];
-            return {row.reaction_yaw_offset,row.reaction_pitch_offset};
-        }
-        return {0,0};
-    }
-    void damage(unsigned target,unsigned amount,unsigned attacker=255,u8 move=255){
+    void damage(unsigned target,unsigned amount,unsigned attacker,u8 move=BorgBattleActionState::none,
+                const NativeBattleReactionContact& contact={}){
         auto& actor=actors_[target];
         actor.health-=std::min(actor.health,amount);actor.hit_flash=8;
+        if(!actor.health){actor.damage_tier={};actor.contact_pose_hold_ticks=0;}
         actor.package_damage_serial=++hits_;actor.package_last_hit_tick=tick_;
-        const u8 mode=attacker<actor_count()&&attacker!=target?reaction_mode(attacker,move):0;
-        if(native_battle_reaction_mode_valid(mode)){
-            const auto& source=actors_[attacker];
-            // Modes 0/2 read a source position delta; the native analogue is
-            // the attacker's per-tick velocity. Modes 1/3 map to the receiver
-            // minus attacker positions. The receiver-relative angles carry the
-            // recovered atan2 stage and the (0,0,-1) degenerate fallback.
-            f32 direction[3];
-            native_battle_reaction_direction(mode,source.position.data(),
-                source.velocity,actor.position.data(),direction);
-            auto reaction=native_battle_reaction_angles(direction,actor.facing);
-            const auto offsets=reaction_offsets(attacker,move);
+        // Mode 0 is a real mode, not a sentinel for missing or self credit.
+        if(attacker>=actor_count()||attacker==target)return;
+        const auto& source=actors_[attacker];
+        const auto* spec=reaction_definition(attacker,move,contact.body_forward.has_value());
+        const u8 mode=spec?spec->reaction_mode:u8(NativeBattleReactionMode::AttackerToReceiver);
+        // The undeclared authored default stays caster-to-receiver. An
+        // explicit mode 1 may opt into the colliding carrier's actual origin.
+        const auto* origin=mode==u8(NativeBattleReactionMode::AttackerToReceiver)&&
+            spec&&spec->reaction_mode_declared&&contact.object_origin?
+            contact.object_origin->data():source.position.data();
+        f32 direction[3];
+        if(!native_battle_reaction_direction(mode,origin,
+            source.velocity,actor.position.data(),direction,contact))return;
+        auto reaction=native_battle_reaction_angles(direction,actor.facing);
+        if(spec){
             reaction.yaw=native_battle_reaction_wrap(
-                reaction.yaw-f32(offsets.first)*kNativeBattleReactionUnit);
+                reaction.yaw-f32(spec->reaction_yaw_offset)*kNativeBattleReactionUnit);
             reaction.pitch=native_battle_reaction_wrap(
-                reaction.pitch-f32(offsets.second)*kNativeBattleReactionUnit);
-            actor.reaction_yaw=reaction.yaw;actor.reaction_pitch=reaction.pitch;
-            actor.reaction_ticks=BattleMvpActor::reaction_duration;
+                reaction.pitch-f32(spec->reaction_pitch_offset)*kNativeBattleReactionUnit);
         }
+        actor.reaction_yaw=reaction.yaw;actor.reaction_pitch=reaction.pitch;
+        actor.reaction_ticks=BattleMvpActor::reaction_duration;
     }
-    // Recovered +0x2AE gate: an impact record plays only when the receiver's
-    // 4-tick state is zero, then sets it to 4. Explosions and terrain marks do
-    // not use this gate.
-    void hit_impact(unsigned target,const BattleMvpVec& position){
+    // The native hit ring and contact records share a four-tick visual gate
+    // analogous to receiver+0x2AF, separate from contact audio. Explosions
+    // and terrain marks do not use it.
+    void hit_impact(unsigned target,const BattleMvpVec& position,
+                    unsigned owner=kBattleMvpMaxActors,u8 move=BorgBattleActionState::none){
         auto& actor=actors_[target];
         if(actor.impact_state)return;
         actor.impact_state=4;
+        if(owner<actor_count()&&actor.damage_kind==0&&config_.packages[target]&&
+           config_.packages[target]->contact_impact_receive){
+            const auto& profile=config_.packages[owner];
+            if(profile&&move<profile->moves.size()){
+                const auto team=actors_[owner].team;
+                const auto& layers=profile->moves[move].contact_impacts[team];
+                const auto free=std::count_if(impact_records_.begin(),impact_records_.end(),[](const auto& r){return !r.ticks;});
+                if(!layers.empty()&&layers.size()<=std::size_t(free)){
+                    unsigned layer=0;
+                    for(auto& slot:impact_records_)if(!slot.ticks){
+                        slot={position,layers[layer].ticks,u8(owner),borg_contact_impact_slot(move,team,layer)};
+                        if(++layer==layers.size())return;
+                    }
+                }
+            }
+        }
         impact(position,false);
     }
     void impact(const BattleMvpVec& position,bool explosion,f32 radius=0,unsigned ticks=18){
         impacts_[impact_cursor_]={position,ticks,explosion,radius,ticks};impact_cursor_=(impact_cursor_+1)%impacts_.size();
     }
     BattleMvpConfig config_;std::array<BattleMvpActor,kBattleMvpMaxActors> actors_{};std::array<BattleMvpProjectile,max_projectiles> projectiles_{};
+    std::array<u8,2> local_aim_{255,255};
+    std::array<u8,kBattleMvpMaxActors-1> cpu_aim_{255,255,255,255,255};
     std::array<unsigned,2> team_force_{};std::array<u32,2> team_tally_{};
     std::array<u8,2> force_counter10a_{};bool force_global1f_=false;u8 last_attacker_=255,last_receiver_=255;
     std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,kBattleMvpMaxActors> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
@@ -3723,8 +4076,8 @@ private:
     std::array<std::array<PairReturn,kBorgBattleStocks>,kBattleMvpMaxActors> pair_returns_{};
     struct RemoteRequest {bool active=false;BorgBattleDetonation marker;u8 move=255;};
     std::array<RemoteRequest,kBattleMvpMaxActors> remote_requests_{};
-    std::array<std::array<bool,kBorgBattleAnchorSets>,kBattleMvpMaxActors> fence_inside_{};
-    std::array<BattleMvpFenceLink,2*kBorgBattleAnchorSets*(kBorgBattleAnchors-1)> fence_links_{};
+    std::array<std::array<std::array<bool,kBattleMvpMaxActors>,kBorgBattleAnchorSets>,kBattleMvpMaxActors> fence_inside_{};
+    std::array<BattleMvpFenceLink,kBattleMvpMaxActors*kBorgBattleAnchorSets*(kBorgBattleAnchors-1)> fence_links_{};
     unsigned fence_link_count_=0;
     struct FenceRecoil {BattlePoint step;u32 object=0;u8 owner=0;};
     std::array<FenceRecoil,kBattleMvpMaxActors> fence_recoil_{};

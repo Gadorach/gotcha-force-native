@@ -60,6 +60,7 @@ def close_b_pose(linker,model,actions,slots,parts,*,publish_preview):
         for row in bindings:
             row["entry_clip_candidate"]=pose
     return {"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,
+            "program_addresses":[f"{PROGRAM:08X}"],
             "neutral_program_seed":{"address":"8030CE94","value":0,"actor_byte":"6EA"},
             "class_callback_chain":["800CF884","800CF8C0","80177DD8","80177E28"],
             "live_contact_verified":False,"excluded_moves":["ranged B","X","fusion or form changes"]}

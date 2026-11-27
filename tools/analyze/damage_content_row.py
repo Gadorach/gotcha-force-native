@@ -27,6 +27,8 @@ CREDIT_ROOT = 0x804335E0
 ATTACKER_RANK_ROOT = 0x804335F8
 CLASS_ROOT = 0x80433600
 RECEIVER_RANK_ROOT = 0x80433618
+RANK_COUNT = 8
+CLASS_COUNT = 8
 
 
 def _u32(image, at):
@@ -44,9 +46,12 @@ def _row(image, root, side):
 def _selector(selectors, model):
     key = f"{model:04x}"
     if key in selectors["models"]:
-        return list(selectors["models"][key]), None
+        triple = list(selectors["models"][key])
+        if len(triple) != 3 or type(triple[0]) is not int or not 0 <= triple[0] < CLASS_COUNT:
+            raise ValueError(f"damage class selector outside verified table for model {key}")
+        return triple, None
     if key in selectors["combined_models"]:
-        return list(selectors["combined_models"][key][0]), 0
+        raise ValueError(f"combined model {key} needs an active component proof")
     raise ValueError(f"no damage selectors for model {key}")
 
 
@@ -58,6 +63,10 @@ def _number(value):
 
 
 def build(image, selectors, attacker, defender, base, relative):
+    for actor in (attacker, defender):
+        if (actor["side"] not in (0, 1) or not 0 <= actor["settings"] < 32
+                or not 0 <= actor["rank"] < RANK_COUNT):
+            raise ValueError("damage row side, settings or rank outside verified tables")
     selector, component = _selector(selectors, defender["model"])
     credit_row = _row(image, CREDIT_ROOT, attacker["side"])
     credit = _f32(image, credit_row + 4 * attacker["settings"])
@@ -99,8 +108,7 @@ def build(image, selectors, attacker, defender, base, relative):
             "stages; class and rank are the defender stages.",
             "HP/force/matchup/tier stages are neutral here and stay content "
             "or battle state.",
-            "Combined forms use the first component until the active component "
-            "is verified.",
+            "Combined forms are refused without active component proof.",
         ],
     }
 
@@ -164,9 +172,9 @@ def main():
                         default=0)
     parser.add_argument("--defender-settings", type=int, choices=range(32),
                         default=0)
-    parser.add_argument("--attacker-rank", type=int, choices=range(32),
+    parser.add_argument("--attacker-rank", type=int, choices=range(RANK_COUNT),
                         default=0)
-    parser.add_argument("--defender-rank", type=int, choices=range(32),
+    parser.add_argument("--defender-rank", type=int, choices=range(RANK_COUNT),
                         default=0)
     parser.add_argument("--base", type=int, default=20)
     parser.add_argument("--relative", type=float, default=1.0)

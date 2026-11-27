@@ -127,6 +127,7 @@ def close_b_pose(linker,model,actions,slots,parts,body,*,publish_preview):
     pose={"clip":[1,1],"archive_offset":offset,"program":[3,seed],"descriptor":[3,0],"request_mask":15,
           "entry":f"{entry:08X}","request_site":f"{request:08X}","source_start_frame":0}
     info={"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,
+          "program_addresses":[f"{script:08X}"],
           "neutral_program_seed":{"value":seed,"actor_byte":"6EA"},"live_contact_verified":False,
           "close_configurations":sorted({c[0] for c in configs if c[4]})}
     if model in TOOLS:

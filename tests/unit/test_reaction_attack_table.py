@@ -10,14 +10,12 @@ ARTIFACT = ROOT / "docs/api-map/reaction-attack-table.json"
 class ReactionAttackTableTest(unittest.TestCase):
     def test_per_borg_tables(self):
         data = json.loads(ARTIFACT.read_text())
-        self.assertEqual(data["revision"], 3)
+        self.assertEqual(data["revision"], 4)
         self.assertEqual(data["entry_size"], 24)
         self.assertEqual(data["count"], 64)
         self.assertEqual(len(data["models"]), 42)
         self.assertEqual(len(data["tables"]), 22)
-        default = data["default_table"]
-        self.assertEqual(default["table"], "80354160")
-        self.assertEqual(len(default["entries"]), 64)
+        self.assertNotIn("default_table", data)
         models = {model["model"]: model for model in data["models"]}
         self.assertEqual(models["0615"]["table"], "80365EC0")
         self.assertEqual(models["0615"]["installer"], "8018CCFC")
@@ -36,7 +34,7 @@ class ReactionAttackTableTest(unittest.TestCase):
         self.assertEqual(chain["pair_record"]["table"], "+0x2C")
         self.assertEqual(chain["pair_record"]["move"], "+0x11")
         self.assertEqual(chain["installer_table"], "802D3224")
-        self.assertEqual(chain["default_setter"], "8006F5EC")
+        self.assertEqual(chain["example_store"], {"site": "8006F5EC", "table": "802D4160"})
         self.assertEqual(chain["pair_allocator"], "8008AC80")
         self.assertEqual(chain["pair_update"], "8008A65C")
 

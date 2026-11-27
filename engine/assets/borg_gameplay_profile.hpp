@@ -18,8 +18,12 @@ inline constexpr unsigned kBorgBattleMovementFx=8;
 inline constexpr unsigned kBorgBattlePartAnimations=8;
 inline constexpr unsigned kBorgBattlePartSlots=4;
 inline constexpr unsigned kBorgBattlePartRecords=12;
+inline constexpr unsigned kBorgDamageMatchupRows=20;
+inline constexpr unsigned kBorgDamageLadderCells=32;
+inline constexpr unsigned kBorgDamageTierCells=64;
 inline constexpr unsigned kBorgBattleHoldTicks=600,kBorgBattleRepeatCycles=16;
 inline constexpr std::size_t kBorgGameplayBytes=16u<<10;
+inline constexpr u8 kBorgReactionBodyRoot=4;
 enum class BorgBattleMovement:u8 {Grounded,NormalGRed,Stationary};
 enum class BorgBattleButton:u8 {B,X};
 enum class BorgBattleContext:u8 {Any,Grounded,Airborne};
@@ -70,9 +74,10 @@ struct BorgBattleRewindHit {u8 set=0,speed=0,fallback=255;};
 struct BorgBattleBlast {
     BorgBlastTrigger trigger=BorgBlastTrigger::Actor;
     u16 radius=0,damage=0;
-    bool include_owner=false;
+    bool include_owner=false; // all living bodies in range; false restricts the pulse to opponents
 };
 struct BorgBattleClip {u8 group=0,choice=0;};
+struct BorgBattlePoseFollowup {u16 frame=0;BorgBattleClip clip;u16 start=0;};
 struct BorgBattleStockDefinition {
     std::string id;u16 capacity=0,refill_ticks=0; // zero is explicit return-only stock
     bool add_on_debit=false;
@@ -246,6 +251,36 @@ struct BorgBattlePartSwap {
 enum class BorgPartMaterialPlayback:u8 {Once,Loop,Sample};
 struct BorgBattlePartMaterial {u16 record=0,clip=0,first=0,last=0;BorgPartMaterialPlayback playback=BorgPartMaterialPlayback::Once;};
 struct BorgMoveCharge {u16 ticks=0;};
+template<unsigned Cells> struct BorgDamageTeamRows {
+    std::array<std::array<f32,Cells>,2> sides{};
+    u8 declared=0;
+    const std::array<f32,Cells>* find(unsigned team)const{
+        return declared==3&&team<sides.size()?&sides[team]:nullptr;
+    }
+};
+using BorgDamageRoleRows=BorgDamageTeamRows<2>;
+using BorgDamageLadderRows=BorgDamageTeamRows<kBorgDamageLadderCells>;
+inline constexpr unsigned kBorgDamageSettings=32,kBorgDamageRanks=8;
+struct BorgDamageIndexedRole {
+    BorgDamageTeamRows<kBorgDamageSettings> setting;
+    BorgDamageTeamRows<kBorgDamageRanks> rank;
+    bool complete()const{return setting.declared==3&&rank.declared==3;}
+    std::array<f32,2> select(u8 team,u8 setting_index,u8 rank_index)const{
+        return {setting.sides[team][setting_index],rank.sides[team][rank_index]};
+    }
+};
+struct BorgDamageLadderRates {f32 hp=1.f,force=1.f;};
+struct BorgContactTier {u8 charge=0;bool scale=true;};
+struct BorgDamageTierTable {u16 idle_ticks=0;std::array<f32,kBorgDamageTierCells> factors{};};
+inline constexpr unsigned kBorgContactSoundBands=4,kBorgContactSoundLanes=13;
+struct BorgContactSound {u8 lane=0;std::array<std::string,2> paths;};
+inline constexpr unsigned kBorgContactImpactLayers=3;
+struct BorgContactImpactLayer {u16 record=0,scale_percent=100,ticks=0;};
+inline constexpr unsigned kBorgContactPoseHoldMax=7;
+struct BorgContactPoseHold {u8 ticks=0;bool both_bodies=false;};
+inline constexpr u8 borg_contact_impact_slot(unsigned move,unsigned team,unsigned layer){
+    return u8(kBorgBattleAttacks+(move*2+team)*kBorgContactImpactLayers+layer);
+}
 struct BorgBattleMove {
     std::string id;std::string action_sound; // authored per-move sound; empty plays nothing
     BorgBattleButton button=BorgBattleButton::B;BorgBattleContext context=BorgBattleContext::Any;
@@ -254,6 +289,7 @@ struct BorgBattleMove {
     bool free_release=false;
     u16 pose_start=0;
     bool pose_authored_loop_window=false;
+    std::optional<BorgBattlePoseFollowup> pose_followup{};
     std::optional<u16> aim_lock;
     std::vector<BorgBattleRelease> releases;
     std::optional<BorgBattleEntryStock> entry_stock{};
@@ -263,6 +299,14 @@ struct BorgBattleMove {
     u8 hold_cycles=0; // maximum total cycles including entry, zero means no repeat
     f32 entry_range=0; // zero is no proximity predicate; not a contact observation
     std::optional<BorgBattleMelee> melee;
+    u16 contact_power=0; // optional base for this move's direct contacts only
+    bool contact_minimum_hp=false; // keep positive final direct damage from truncating to zero
+    bool damage_credit_ladders=false; // this direct move uses the package's outgoing HP/force rows
+    std::optional<BorgContactTier> contact_tier{};
+    std::optional<u8> contact_tier_reset_wear{};
+    std::array<std::optional<BorgContactSound>,kBorgContactSoundBands> contact_sounds{};
+    std::array<std::vector<BorgContactImpactLayer>,2> contact_impacts;
+    std::optional<BorgContactPoseHold> contact_pose_hold{};
     std::optional<BorgBattleHeldFire> held_fire;
     std::optional<BorgBattleDetonation> detonation;
     std::optional<BorgBattleGuard> guard;
@@ -276,8 +320,9 @@ struct BorgBattleMove {
     std::vector<BorgBattlePartMotion> part_motions;
     std::vector<BorgBattlePartScroll> part_scrolls;
     std::vector<BorgBattlePartSwap> part_swaps;
-    u8 reaction_mode=1; // recovered attacker move-table +0x0E; modes 1/3
+    u8 reaction_mode=1; // attacker move-table +0x0E; mode 4 needs a scoped body root
     bool reaction_mode_declared=false;
+    bool reaction_linked_owner=false; // late sample of a direct projectile's round-owned caster
     s8 reaction_yaw_offset=0,reaction_pitch_offset=0; // table +0x14/+0x15
     bool reaction_offset_declared=false;
     unsigned last_marker()const{
@@ -333,6 +378,19 @@ struct BorgGameplayProfile {
     struct DamageSideRow { u8 team=0; std::array<f32,4> factors{1,1,1,1}; };
     std::vector<DamageRow> damage_rows; // per receiver model
     std::vector<DamageSideRow> damage_side_rows; // per attacker side
+    BorgDamageRoleRows damage_credit;  // difficulty, rank on the attacking team
+    BorgDamageRoleRows damage_receive; // class, rank on the receiving team
+    BorgDamageIndexedRole damage_credit_indexed,damage_receive_indexed;
+    BorgDamageLadderRows damage_credit_hp,damage_credit_force;
+    BorgDamageLadderRows damage_receive_hp,damage_receive_force;
+    std::optional<BorgDamageTierTable> damage_tier_receive{};
+    u16 damage_tier_reset_capacity=0;
+    std::optional<u8> contact_sound_band{};
+    bool contact_impact_receive=false;
+    bool contact_pose_hold_receive=false;
+    std::string damage_matchup_group;
+    struct DamageMatchupRow {std::string attacking_group;f32 factor=1;};
+    std::vector<DamageMatchupRow> damage_matchup_from;
     f32 flight_lift=0;u16 flight_ticks=0;
     std::optional<BorgCruiseBoost> cruise{};
     std::optional<BorgBattleClip> cruise_entry;
@@ -357,21 +415,188 @@ struct BorgGameplayProfile {
     std::array<std::string,4> movement_sound{};
     bool static_body()const{return static_cruise_body||static_grounded_body;}
 };
+inline bool borg_battle_has_indirect_contact(const BorgBattleMove& move){
+    return move.held_fire||move.detonation||!move.emitters.empty()||move.field||
+           move.power_field||move.slow_field||!move.anchors.empty();
+}
+inline bool borg_battle_direct_melee(const BorgBattleMove& move){
+    return move.melee&&move.releases.empty()&&!borg_battle_has_indirect_contact(move);
+}
+inline bool borg_battle_pose_followup_valid(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    if(!move.pose_followup)return true;
+    const auto& follow=*move.pose_followup;
+    return profile.movement==BorgBattleMovement::Grounded&&move.context==BorgBattleContext::Grounded&&
+           !move.static_pose&&borg_battle_direct_melee(move)&&
+           follow.frame&&follow.frame<=move.melee->first&&follow.frame<move.duration&&
+           follow.start<=600&&follow.clip.group<16&&follow.clip.choice<128;
+}
+inline bool borg_battle_direct_releases(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    if(move.melee||move.releases.empty()||move.releases.size()>kBorgBattleReleases||
+       borg_battle_has_indirect_contact(move))return false;
+    const auto direct=[&](unsigned index){
+        if(index>=profile.projectiles.size())return false;
+        const auto& p=profile.projectiles[index];
+        return p.damage&&!p.ignore_actors&&!p.blast&&!p.sustained&&!p.beam_sweep&&
+               p.blast_children==255&&!p.flight_children&&!p.impact_children&&
+               !p.impact_hazard&&!p.rewind_hit&&p.plant_on_stage==255;
+    };
+    for(const auto& release:move.releases){
+        if(!direct(release.projectile)||release.count>release.followups.size())return false;
+        for(unsigned i=0;i<release.count;++i)if(!direct(release.followups[i]))return false;
+    }
+    return true;
+}
+inline bool borg_battle_reaction_scope_valid(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    if(move.reaction_mode<kBorgReactionBodyRoot)return !move.reaction_linked_owner;
+    if(move.reaction_mode!=kBorgReactionBodyRoot)return false;
+    return move.reaction_linked_owner?borg_battle_direct_releases(profile,move):borg_battle_direct_melee(move);
+}
+inline bool borg_battle_contact_damage_valid(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    return move.contact_power<=10000&&
+        (!(move.contact_power||move.contact_minimum_hp)||
+         borg_battle_direct_melee(move)||borg_battle_direct_releases(profile,move));
+}
+inline bool borg_battle_contact_sound_valid(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    bool bound=false;
+    for(const auto& sound:move.contact_sounds)if(sound){
+        bound=true;
+        if(sound->lane>=kBorgContactSoundLanes||
+           !std::all_of(sound->paths.begin(),sound->paths.end(),borg_package_asset_path_valid))return false;
+    }
+    if(!bound||borg_battle_direct_melee(move))return true;
+    if(!borg_battle_direct_releases(profile,move))return false;
+    const auto conflict=[&](unsigned i){
+        const auto& sound=profile.projectiles[i].impact_sound;
+        return sound&&sound->lane==BorgImpactLane::Actor;
+    };
+    for(const auto& release:move.releases){
+        if(conflict(release.projectile))return false;
+        for(unsigned i=0;i<release.count;++i)if(conflict(release.followups[i]))return false;
+    }
+    return true;
+}
+inline bool borg_battle_contact_impact_valid(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    const auto& rows=move.contact_impacts;
+    if(rows[0].empty()&&rows[1].empty())return true;
+    for(const auto& layers:rows){
+        if(layers.empty()||layers.size()>kBorgContactImpactLayers)return false;
+        for(std::size_t i=0;i<layers.size();++i){
+            const auto& part=layers[i];
+            if(!part.record||part.record>=256||!part.scale_percent||part.scale_percent>400||!part.ticks||part.ticks>120)
+                return false;
+            for(std::size_t j=0;j<i;++j)if(part.record==layers[j].record)return false;
+        }
+    }
+    if(borg_battle_direct_melee(move))return true;
+    if(!borg_battle_direct_releases(profile,move))return false;
+    const auto conflict=[&](unsigned i){
+        const auto& impact=profile.projectiles[i].impact_record;
+        return impact&&impact->lane==BorgImpactLane::Actor;
+    };
+    for(const auto& release:move.releases){
+        if(conflict(release.projectile))return false;
+        for(unsigned i=0;i<release.count;++i)if(conflict(release.followups[i]))return false;
+    }
+    return true;
+}
+inline bool borg_battle_contact_pose_hold_valid(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+    if(!move.contact_pose_hold)return true;
+    const auto& hold=*move.contact_pose_hold;
+    return hold.ticks&&hold.ticks<=kBorgContactPoseHoldMax&&profile.movement!=BorgBattleMovement::NormalGRed&&
+        (borg_battle_direct_melee(move)||(!hold.both_bodies&&borg_battle_direct_releases(profile,move)));
+}
 inline const std::array<f32,4>* borg_damage_factors(const BorgGameplayProfile& profile,u16 model,u8 team){
     for(const auto& row:profile.damage_rows)if(row.model==model)return &row.factors;
     for(const auto& row:profile.damage_side_rows)if(row.team==team)return &row.factors;
     return profile.damage_factors_declared?&profile.damage_factors:nullptr;
 }
 
+inline bool borg_damage_roles_valid(const BorgGameplayProfile& p){
+    if(p.moves.size()>kBorgBattleMoves)return false;
+    const auto valid=[](const auto& role){
+        if(!role.declared)return true;
+        if(role.declared!=3)return false;
+        for(const auto& row:role.sides)for(f32 value:row)
+            if(!std::isfinite(value)||value<.01f||value>4.f)return false;
+        return true;
+    };
+    const bool outgoing=p.damage_credit_hp.declared||p.damage_credit_force.declared;
+    const auto indexed_valid=[&](const BorgDamageIndexedRole& indexed,const BorgDamageRoleRows& role){
+        if(!indexed.setting.declared&&!indexed.rank.declared)return true;
+        return role.declared==3&&indexed.complete()&&valid(indexed.setting)&&valid(indexed.rank);
+    };
+    if(!indexed_valid(p.damage_credit_indexed,p.damage_credit)||
+       !indexed_valid(p.damage_receive_indexed,p.damage_receive))return false;
+    if(!valid(p.damage_credit)||!valid(p.damage_receive)||!valid(p.damage_credit_hp)||
+       !valid(p.damage_credit_force)||!valid(p.damage_receive_hp)||
+       !valid(p.damage_receive_force)||((p.damage_receive_hp.declared||p.damage_receive_force.declared)&&
+                                      !p.damage_receive.declared)||(outgoing&&!p.damage_credit.declared)||
+       outgoing!=std::any_of(p.moves.begin(),p.moves.end(),[](const auto& move){return move.damage_credit_ladders;}))
+        return false;
+    for(const auto& move:p.moves)if(move.damage_credit_ladders&&
+        !borg_battle_direct_melee(move)&&!borg_battle_direct_releases(p,move))return false;
+    if(const auto& tier=p.damage_tier_receive;tier){
+        if(!p.damage_receive.declared||!tier->idle_ticks||tier->idle_ticks>600)return false;
+        for(f32 factor:tier->factors)
+            if(!std::isfinite(factor)||factor<.01f||factor>4.f)return false;
+    }
+    if(p.damage_tier_reset_capacity&&(!p.damage_tier_receive||p.damage_tier_reset_capacity>32767))return false;
+    for(const auto& move:p.moves){
+        if(move.contact_tier&&(!p.damage_credit.declared||p.damage_chain_count||
+           (!borg_battle_direct_melee(move)&&!borg_battle_direct_releases(p,move))))return false;
+        if(move.contact_tier_reset_wear&&!move.contact_tier)return false;
+    }
+    return !p.damage_credit.declared||
+           (!p.damage_factors_declared&&p.damage_rows.empty()&&p.damage_side_rows.empty());
+}
+
+inline std::optional<unsigned> borg_damage_hp_cell(unsigned health,unsigned maximum,u16 raw_base=0){
+    if(!maximum||health>maximum)return {};
+    const unsigned probe=health>raw_base?health-raw_base:0;
+    if(probe>200)return {};
+    return std::min(31u,32u-probe*32u/std::min(maximum,200u));
+}
+inline std::optional<unsigned> borg_damage_force_cell(unsigned force,unsigned cap){
+    if(!cap||force>cap)return {};
+    return std::min(31u,32u-unsigned(u64(force)*32u/cap));
+}
+inline f32 borg_damage_ladder_factor(const BorgDamageLadderRows& ladder,u8 team,std::optional<unsigned> cell){
+    const auto* row=ladder.find(team);
+    return row&&cell&&*cell<row->size()?(*row)[*cell]:1.f;
+}
+
+inline f32 borg_damage_matchup(const BorgGameplayProfile& attacker,const BorgGameplayProfile& receiver){
+    if(attacker.damage_matchup_group.empty())return 1.f;
+    for(const auto& row:receiver.damage_matchup_from)
+        if(row.attacking_group==attacker.damage_matchup_group)return row.factor;
+    return 1.f;
+}
+
 inline u16 borg_damage_amount(const BorgGameplayProfile& profile,u16 base,unsigned chain,
-                              u16 model=0,u8 team=0,f32 scalar=1.f){
+                              u16 model=0,u8 team=0,f32 scalar=1.f,
+                              const std::array<f32,2>* receive=nullptr,f32 matchup=1.f,
+                              BorgDamageLadderRates response={},BorgDamageLadderRates outgoing={},f32 tier=1.f,
+                              const std::array<f32,2>* indexed_credit=nullptr,bool minimum_hp=false){
     f32 value=f32(base);
-    if(const auto* factors=borg_damage_factors(profile,model,team))
+    if(const auto* credit=profile.damage_credit.find(team);credit&&receive){
+        if(indexed_credit)credit=indexed_credit;
+        value*=(*credit)[0];
+        value*=outgoing.hp;
+        value*=outgoing.force;
+        value*=(*credit)[1];
+        value*=matchup;
+        value*=(*receive)[0];
+        value*=response.hp;
+        value*=response.force;
+        value*=(*receive)[1];
+        value*=tier;
+    }else if(const auto* factors=borg_damage_factors(profile,model,team))
         for(f32 factor:*factors)value*=factor;
     value*=scalar;
     if(profile.damage_chain_count)
         value*=profile.damage_chain[std::min<unsigned>(chain,profile.damage_chain_count-1)];
     if(!(value>0))return 0;
+    if(minimum_hp&&value<1.f)return 1;
     return u16(value>65535.f?65535.f:value);
 }
 
@@ -439,7 +664,18 @@ template<class Rows> unsigned index(const Rows& rows,std::string_view id){
 inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     const auto clip=[](BorgBattleClip c){return c.group<16&&c.choice<128;};
     const auto finite=[](f32 n,f32 lo,f32 hi){return std::isfinite(n)&&n>=lo&&n<=hi;};
+    if(!p.damage_matchup_group.empty()&&
+       (!borg_gameplay_detail::id(p.damage_matchup_group)||(!p.damage_credit.declared&&!p.damage_receive.declared)))return false;
+    if(p.damage_matchup_from.size()>kBorgDamageMatchupRows||
+       (!p.damage_matchup_from.empty()&&(p.damage_matchup_group.empty()||!p.damage_receive.declared)))return false;
+    for(unsigned i=0;i<p.damage_matchup_from.size();++i){
+        const auto& row=p.damage_matchup_from[i];
+        if(!borg_gameplay_detail::id(row.attacking_group)||!finite(row.factor,.01f,4.f))return false;
+        for(unsigned j=0;j<i;++j)if(p.damage_matchup_from[j].attacking_group==row.attacking_group)return false;
+    }
     if(!borg_gameplay_detail::id(p.variant)||!p.health||p.health>10000||p.beam_recovery>120||unsigned(p.movement)>2||
+       !borg_damage_roles_valid(p)||(p.contact_sound_band&&*p.contact_sound_band>=kBorgContactSoundBands)||
+       (p.contact_pose_hold_receive&&p.movement==BorgBattleMovement::NormalGRed)||
        p.moves.size()>kBorgBattleMoves||p.stocks.size()>kBorgBattleStocks||p.projectiles.size()>kBorgBattleAttacks||
        p.emitters.size()>kBorgBattleEmitters||
        p.anchor_sets.size()>kBorgBattleAnchorSets||(!p.anchor_sets.empty()&&p.movement!=BorgBattleMovement::Grounded)||
@@ -481,8 +717,9 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
        q->start<4||q->end<=q->start||q->end>300||!q->height||q->height>150||!q->ticks||q->ticks>60||
        !q->damage||q->damage>10000))return false;
     if(p.movement==BorgBattleMovement::Stationary&&(!p.stocks.empty()||!p.projectiles.empty()))return false;
-    if((!p.impact_record_bank.empty()&&!borg_package_asset_path_valid(p.impact_record_bank))||
-       p.impact_record_bank.empty()!=std::none_of(p.projectiles.begin(),p.projectiles.end(),[](const auto& a){return a.impact_record.has_value();}))
+    const bool needs_impact_bank=std::any_of(p.projectiles.begin(),p.projectiles.end(),[](const auto& a){return a.impact_record.has_value();})||
+        std::any_of(p.moves.begin(),p.moves.end(),[](const auto& m){return !m.contact_impacts[0].empty()||!m.contact_impacts[1].empty();});
+    if(needs_impact_bank?!borg_package_asset_path_valid(p.impact_record_bank):!p.impact_record_bank.empty())
         return false;
     for(const auto& c:p.locomotion)if(!clip(c))return false;
     for(const auto& s:p.stocks)if(!s.capacity||s.capacity>kBorgStockCapacity||s.refill_ticks>3600||(s.add_on_debit&&!s.refill_ticks))return false;
@@ -637,7 +874,9 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     }
     unsigned release_sound_count=0;
     for(const auto& m:p.moves){
-        if(m.reaction_mode>3)return false;
+        if(!borg_battle_reaction_scope_valid(p,m)||!borg_battle_pose_followup_valid(p,m)||
+           !borg_battle_contact_damage_valid(p,m)||!borg_battle_contact_sound_valid(p,m)||
+           !borg_battle_contact_impact_valid(p,m)||!borg_battle_contact_pose_hold_valid(p,m))return false;
         if(m.pose_authored_loop_window&&(m.static_pose||!p.record_zero_body||p.movement!=BorgBattleMovement::Grounded))return false;
         if((p.static_body()&&!m.static_pose)||(m.static_pose&&(m.pose_start||!m.part_motions.empty()||
            !m.part_spins.empty()||!m.part_scrolls.empty()||!m.part_swaps.empty())))return false;
@@ -874,6 +1113,13 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct ImpactRecordGrowthRef {unsigned line;std::string projectile;u16 end;};
     struct ImpactSoundRef {unsigned line;std::string projectile;BorgImpactSound spec;};
     struct PoseStartRef {unsigned line;std::string move;u16 frame;};
+    struct ContactPowerRef {unsigned line;std::string move;u16 base;};
+    struct ContactTierRef {unsigned line;std::string move;BorgContactTier tier;};
+    struct ContactTierWearRef {unsigned line;std::string move;u8 wear;};
+    struct ContactSoundRef {unsigned line;std::string move;u8 band;BorgContactSound sound;};
+    struct ContactImpactRef {unsigned line;std::string move;u8 team;BorgContactImpactLayer spec;};
+    struct ContactPoseHoldRef {unsigned line;std::string move;BorgContactPoseHold spec;};
+    struct PoseFollowupRef {unsigned line;std::string move;BorgBattlePoseFollowup spec;};
     struct SustainedRef {unsigned line;std::string projectile;BorgSustainedBeam spec;};
     struct BeamSweepRef {unsigned line;std::string projectile;BorgBeamSweep spec;};
     struct ProximityRef {unsigned line;std::string projectile;BorgBombProximity spec;};
@@ -957,6 +1203,15 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<ImpactRecordGrowthRef> impact_record_growth;
     std::vector<ImpactSoundRef> impact_sounds;
     std::vector<PoseStartRef> starts;
+    std::vector<ContactPowerRef> contact_powers;
+    std::vector<std::pair<unsigned,std::string>> contact_minimum_hp;
+    std::vector<ContactTierRef> contact_tiers;
+    std::vector<ContactTierWearRef> contact_tier_reset_wear;
+    std::vector<ContactSoundRef> contact_sounds;
+    std::vector<ContactImpactRef> contact_impacts;
+    std::vector<ContactPoseHoldRef> contact_pose_holds;
+    std::vector<std::pair<unsigned,std::string>> damage_credit_ladder_moves;
+    std::vector<PoseFollowupRef> pose_followups;
     std::vector<std::pair<unsigned,std::string>> pose_loop_windows;
     std::vector<PoseStartRef> aim_locks;
     std::vector<SustainedRef> sustained;
@@ -989,6 +1244,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<FieldDebitRef> field_debit;
     std::vector<MoveChargeRef> move_charge;
     std::vector<ReactionModeRef> reaction_mode;
+    std::vector<std::pair<unsigned,std::string>> reaction_roots;
     std::vector<ReactionOffsetRef> reaction_offsets;
     std::vector<FreeReleaseRef> free_release;
     std::vector<FieldTextureRef> field_textures;
@@ -1154,6 +1410,60 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             for(unsigned i=0;i<4;++i)
                 if(!scalar(a[1+i],.01f,4.f,&row.factors[i]))return fail("invalid damage-vs factor");
             next.damage_rows.push_back(row);
+        }else if(key=="damage-credit"||key=="damage-receive"){
+            std::array<std::string_view,3> a;u16 team=0;
+            auto& rows=key=="damage-credit"?next.damage_credit:next.damage_receive;
+            if(!split_fields(value,&a)||!number(a[0],0,1,&team)||(rows.declared&(1u<<team)))
+                return fail("invalid or duplicate damage role team");
+            for(unsigned i=0;i<2;++i)
+                if(!scalar(a[i+1],.01f,4.f,&rows.sides[team][i]))return fail("invalid damage role factor");
+            rows.declared|=u8(1u<<team);
+        }else if(key=="damage-receive-hp"||key=="damage-receive-force"||
+                 key=="damage-credit-hp"||key=="damage-credit-force"){
+            std::array<std::string_view,kBorgDamageLadderCells+1> a;u16 team=0;
+            auto& ladder=key=="damage-receive-hp"?next.damage_receive_hp:
+                key=="damage-receive-force"?next.damage_receive_force:
+                key=="damage-credit-hp"?next.damage_credit_hp:next.damage_credit_force;
+            if(!split_fields(value,&a)||!number(a[0],0,1,&team)||(ladder.declared&(1u<<team)))
+                return fail("invalid or duplicate damage ladder team");
+            for(unsigned i=0;i<kBorgDamageLadderCells;++i)
+                if(!scalar(a[i+1],.01f,4.f,&ladder.sides[team][i]))return fail("invalid damage ladder factor");
+            ladder.declared|=u8(1u<<team);
+        }else if(key=="damage-credit-ladders"){
+            if(damage_credit_ladder_moves.size()>=kBorgBattleMoves||!id(value))
+                return fail("invalid damage-credit-ladders move");
+            damage_credit_ladder_moves.emplace_back(line,std::string(value));
+        }else if(key=="damage-credit-setting"||key=="damage-receive-setting"||
+                 key=="damage-credit-rank"||key=="damage-receive-rank"){
+            auto& rows=key.starts_with("damage-credit-")?next.damage_credit_indexed:next.damage_receive_indexed;
+            const auto parse_indexed=[&]<unsigned N>(BorgDamageTeamRows<N>& grid){
+                std::array<std::string_view,N+1> a;u16 team=0;
+                if(!split_fields(value,&a)||!number(a[0],0,1,&team)||(grid.declared&(1u<<team)))return false;
+                for(unsigned i=0;i<N;++i)if(!scalar(a[i+1],.01f,4.f,&grid.sides[team][i]))return false;
+                grid.declared|=u8(1u<<team);return true;
+            };
+            if(!(key.ends_with("-setting")?parse_indexed(rows.setting):parse_indexed(rows.rank)))
+                return fail("invalid or duplicate indexed damage row");
+        }else if(key=="damage-tier-receive"){
+            std::array<std::string_view,kBorgDamageTierCells+1> a;BorgDamageTierTable tier;
+            if(next.damage_tier_receive||!split_fields(value,&a)||!number(a[0],1,600,&tier.idle_ticks))
+                return fail("invalid or duplicate damage tier table");
+            for(unsigned i=0;i<tier.factors.size();++i)
+                if(!scalar(a[i+1],.01f,4.f,&tier.factors[i]))return fail("invalid damage tier factor");
+            next.damage_tier_receive=tier;
+        }else if(key=="damage-tier-reset"){
+            if(next.damage_tier_reset_capacity||!number(value,1,32767,&next.damage_tier_reset_capacity))
+                return fail("invalid or duplicate damage tier reset capacity");
+        }else if(key=="damage-matchup-group"){
+            if(!id(value)||!next.damage_matchup_group.empty())return fail("invalid or duplicate damage matchup group");
+            next.damage_matchup_group=value;
+        }else if(key=="damage-matchup-from"){
+            std::array<std::string_view,2> a;f32 factor=0;
+            if(next.damage_matchup_from.size()>=kBorgDamageMatchupRows||!split_fields(value,&a)||
+               !id(a[0])||!scalar(a[1],.01f,4.f,&factor))return fail("invalid damage matchup row");
+            for(const auto& row:next.damage_matchup_from)if(row.attacking_group==a[0])
+                return fail("duplicate incoming damage matchup group");
+            next.damage_matchup_from.push_back({std::string(a[0]),factor});
         }else if(key=="damage-side"){
             std::array<std::string_view,5> a;
             u16 team=0;
@@ -1324,9 +1634,14 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         }else if(key=="reaction-mode"){
             std::array<std::string_view,2> a;u16 mode=0;
             if(reaction_mode.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
-               !number(a[1],0,3,&mode))
+               !number(a[1],0,kBorgReactionBodyRoot,&mode))
                 return fail("unsupported or invalid reaction mode");
             reaction_mode.push_back({line,std::string(a[0]),u8(mode)});
+        }else if(key=="reaction-root"){
+            std::array<std::string_view,2> a;
+            if(reaction_roots.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="linked-owner")
+                return fail("invalid reaction-root binding");
+            reaction_roots.emplace_back(line,std::string(a[0]));
         }else if(key=="reaction-offset"){
             std::array<std::string_view,3> a;int yaw=0,pitch=0;
             const auto integer=[](std::string_view s,int* out){
@@ -1501,6 +1816,20 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(!split_fields(value,&a)||!id(a[0])||!borg_package_asset_path_valid(a[1]))
                 return fail("invalid action-sound move or path");
             action_sounds.push_back({line,{std::string(a[0]),std::string(a[1])}});
+        }else if(key=="contact-sound-band"){
+            u16 band=0;
+            if(next.contact_sound_band||!number(value,0,kBorgContactSoundBands-1,&band))
+                return fail("invalid or duplicate contact sound band");
+            next.contact_sound_band=u8(band);
+        }else if(key=="contact-sound"){
+            std::array<std::string_view,5> a;u16 band=0,lane=0;
+            if(contact_sounds.size()>=kBorgBattleMoves*kBorgContactSoundBands||!split_fields(value,&a)||
+               !id(a[0])||!number(a[1],0,kBorgContactSoundBands-1,&band)||
+               !number(a[2],0,kBorgContactSoundLanes-1,&lane)||
+               !borg_package_asset_path_valid(a[3])||!borg_package_asset_path_valid(a[4]))
+                return fail("invalid contact sound move, band, lane or path");
+            contact_sounds.push_back({line,std::string(a[0]),u8(band),
+                                      {u8(lane),{std::string(a[3]),std::string(a[4])}}});
         }else if(key=="movement-sound"){
             std::array<std::string_view,2> a;
             if(!split_fields(value,&a)||!borg_package_asset_path_valid(a[1]))return fail("invalid movement-sound path");
@@ -1640,6 +1969,25 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         }else if(key=="impact-record-bank"){
             if(!next.impact_record_bank.empty()||!borg_package_asset_path_valid(value))return fail("invalid or duplicate impact record archive");
             next.impact_record_bank=value;
+        }else if(key=="contact-impact-receive"){
+            if(next.contact_impact_receive||value!="normal")return fail("invalid or duplicate contact impact receiver");
+            next.contact_impact_receive=true;
+        }else if(key=="contact-impact"){
+            std::array<std::string_view,5> a;u16 team=0;BorgContactImpactLayer spec;
+            if(contact_impacts.size()>=kBorgBattleMoves*2*kBorgContactImpactLayers||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],0,1,&team)||!number(a[2],1,255,&spec.record)||
+               !number(a[3],1,400,&spec.scale_percent)||!number(a[4],1,120,&spec.ticks))
+                return fail("invalid contact impact layer");
+            contact_impacts.push_back({line,std::string(a[0]),u8(team),spec});
+        }else if(key=="contact-pose-hold-receive"){
+            if(next.contact_pose_hold_receive||value!="normal")return fail("invalid or duplicate contact pose hold receiver");
+            next.contact_pose_hold_receive=true;
+        }else if(key=="contact-pose-hold"){
+            std::array<std::string_view,3> a;u16 ticks=0;
+            if(contact_pose_holds.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,kBorgContactPoseHoldMax,&ticks)||(a[2]!="receiver"&&a[2]!="bodies"))
+                return fail("invalid contact pose hold");
+            contact_pose_holds.push_back({line,std::string(a[0]),{u8(ticks),a[2]=="bodies"}});
         }else if(key=="impact-record-growth"){
             std::array<std::string_view,2> a;u16 end=0;
             if(impact_record_growth.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,400,&end))
@@ -1716,6 +2064,27 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                !scalar(a[5],-200,200,&shape.height)||!scalar(a[6],1,100,&shape.half_height)||
                !number(a[7],1,10000,&shape.damage))return fail("invalid melee window or geometry");
             melee.push_back({line,std::string(a[0]),shape});
+        }else if(key=="contact-power"){
+            std::array<std::string_view,2> a;u16 base=0;
+            if(contact_powers.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,10000,&base))return fail("invalid contact power");
+            contact_powers.push_back({line,std::string(a[0]),base});
+        }else if(key=="contact-minimum"){
+            std::array<std::string_view,2> a;
+            if(contact_minimum_hp.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="1")
+                return fail("contact-minimum needs a move and one HP");
+            contact_minimum_hp.emplace_back(line,std::string(a[0]));
+        }else if(key=="contact-tier"){
+            std::array<std::string_view,3> a;u16 charge=0;
+            if(contact_tiers.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],0,255,&charge)||(a[2]!="scale"&&a[2]!="bypass"))
+                return fail("invalid contact tier");
+            contact_tiers.push_back({line,std::string(a[0]),{u8(charge),a[2]=="scale"}});
+        }else if(key=="contact-tier-reset"){
+            std::array<std::string_view,2> a;u16 wear=0;
+            if(contact_tier_reset_wear.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],0,255,&wear))return fail("invalid contact tier reset wear");
+            contact_tier_reset_wear.push_back({line,std::string(a[0]),u8(wear)});
         }else if(key=="aim-lock"){
             std::array<std::string_view,2> a;u16 frame=0;
             if(aim_locks.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!number(a[1],0,599,&frame))
@@ -1726,6 +2095,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(starts.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||!number(a[1],1,600,&frame))
                 return fail("invalid pose start");
             starts.push_back({line,std::string(a[0]),frame});
+        }else if(key=="pose-followup"){
+            std::array<std::string_view,4> a;BorgBattlePoseFollowup spec;
+            if(pose_followups.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||
+               !number(a[1],1,599,&spec.frame)||!clip(a[2],&spec.clip)||!number(a[3],0,600,&spec.start))
+                return fail("invalid pose follow-up");
+            pose_followups.push_back({line,std::string(a[0]),spec});
         }else if(key=="pose-loop-window"){
             std::array<std::string_view,2> a;
             if(pose_loop_windows.size()>=kBorgBattleMoves||!split_fields(value,&a)||!id(a[0])||a[1]!="authored-bit")
@@ -2097,13 +2472,6 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             return fail("move-charge needs one declared move");
         next.moves[mi].charge=r.spec;
     }
-    for(const auto& r:reaction_mode){
-        line=r.line;const auto mi=index(next.moves,r.move);
-        if(mi==next.moves.size()||next.moves[mi].reaction_mode_declared)
-            return fail("reaction-mode needs one declared move");
-        next.moves[mi].reaction_mode=r.mode;
-        next.moves[mi].reaction_mode_declared=true;
-    }
     for(const auto& r:reaction_offsets){
         line=r.line;const auto mi=index(next.moves,r.move);
         if(mi==next.moves.size()||next.moves[mi].reaction_offset_declared)
@@ -2472,6 +2840,96 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     for(const auto& m:next.moves)if(m.releases.empty()&&!m.melee&&!m.held_fire&&!m.detonation&&!m.guard&&!m.power_field&&
         !m.slow_field&&!m.field&&m.emitters.empty()&&m.anchors.empty())
         return fail("move needs an executable marker or behavior: "+m.id);
+    for(const auto& r:pose_followups){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].pose_followup)
+            return fail("pose-followup needs one declared move");
+        next.moves[mi].pose_followup=r.spec;
+        if(!borg_battle_pose_followup_valid(next,next.moves[mi]))
+            return fail("pose-followup needs a grounded melee-only move and a switch no later than first contact");
+    }
+    for(const auto& r:contact_powers){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].contact_power)
+            return fail("contact-power needs one declared move");
+        next.moves[mi].contact_power=r.base;
+        if(!borg_battle_contact_damage_valid(next,next.moves[mi]))
+            return fail("contact-power needs a direct melee or projectile-only move");
+    }
+    for(const auto& [at,move]:contact_minimum_hp){
+        line=at;const auto mi=index(next.moves,move);
+        if(mi==next.moves.size()||next.moves[mi].contact_minimum_hp)
+            return fail("contact-minimum needs one declared move");
+        next.moves[mi].contact_minimum_hp=true;
+        if(!borg_battle_contact_damage_valid(next,next.moves[mi]))
+            return fail("contact-minimum needs a direct melee or projectile-only move");
+    }
+    for(const auto& r:reaction_mode){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].reaction_mode_declared)
+            return fail("reaction-mode needs one declared move");
+        auto& m=next.moves[mi];
+        m.reaction_mode=r.mode;
+        m.reaction_mode_declared=true;
+    }
+    for(const auto& [at,id]:reaction_roots){
+        line=at;const auto mi=index(next.moves,id);
+        if(mi==next.moves.size()||next.moves[mi].reaction_linked_owner)
+            return fail("reaction-root needs one declared move");
+        next.moves[mi].reaction_linked_owner=true;
+        if(!borg_battle_reaction_scope_valid(next,next.moves[mi]))
+            return fail("linked-owner reaction root requires mode 4 on a direct projectile-only move");
+    }
+    for(const auto& r:reaction_mode){
+        line=r.line;
+        if(!borg_battle_reaction_scope_valid(next,next.moves[index(next.moves,r.move)]))
+            return fail("reaction mode 4 requires a melee-only contact or an explicit direct projectile reaction-root");
+    }
+    for(const auto& [at,move]:damage_credit_ladder_moves){
+        line=at;const auto mi=index(next.moves,move);
+        if(mi==next.moves.size()||next.moves[mi].damage_credit_ladders)
+            return fail("damage-credit-ladders needs one declared move");
+        next.moves[mi].damage_credit_ladders=true;
+    }
+    for(const auto& r:contact_tiers){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].contact_tier)
+            return fail("contact-tier needs one declared move");
+        next.moves[mi].contact_tier=r.tier;
+    }
+    for(const auto& r:contact_tier_reset_wear){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].contact_tier_reset_wear)
+            return fail("contact-tier-reset needs one declared move");
+        next.moves[mi].contact_tier_reset_wear=r.wear;
+    }
+    for(auto& r:contact_sounds){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].contact_sounds[r.band])
+            return fail("contact-sound needs one declared move and unique band");
+        next.moves[mi].contact_sounds[r.band]=std::move(r.sound);
+        if(!borg_battle_contact_sound_valid(next,next.moves[mi]))
+            return fail("contact-sound needs a direct move without actor-impact retirement audio");
+    }
+    for(const auto& r:contact_impacts){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size())return fail("contact-impact needs a declared move");
+        auto& layers=next.moves[mi].contact_impacts[r.team];
+        if(layers.size()>=kBorgContactImpactLayers)return fail("contact-impact team layer limit");
+        layers.push_back(r.spec);
+    }
+    for(const auto& move:next.moves)if(!borg_battle_contact_impact_valid(next,move))
+        return fail("contact-impact needs complete team rows on a direct move without actor-impact retirement art");
+    for(const auto& r:contact_pose_holds){
+        line=r.line;const auto mi=index(next.moves,r.move);
+        if(mi==next.moves.size()||next.moves[mi].contact_pose_hold)
+            return fail("contact-pose-hold needs one declared move");
+        next.moves[mi].contact_pose_hold=r.spec;
+        if(!borg_battle_contact_pose_hold_valid(next,next.moves[mi]))
+            return fail("contact-pose-hold needs a native direct move; bodies requires melee");
+    }
+    if(!borg_damage_roles_valid(next))
+        return fail("invalid damage roles or direct move scope; legacy attacker rows cannot mix with split roles or contact tier");
     if(!borg_gameplay_profile_valid(next))return fail("invalid executable definition");
     *out=std::move(next);if(error)error->clear();return true;
 }

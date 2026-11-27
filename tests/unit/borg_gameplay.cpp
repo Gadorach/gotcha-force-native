@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <bit>
 #include "engine/gameplay/native_battle_mvp.hpp"
+#include "engine/gameplay/borg_movement_audio.hpp"
 
 namespace {
 using namespace gf;
@@ -68,6 +69,233 @@ struct WallGround final:IBattleMvpTerrain {
         return true;
     }
 };
+void roster_direct_contact_cases(){
+    struct SplitFloor final:IBattleMvpTerrain {
+        bool wall=false;
+        bool height(f32 x,f32 z,f32,f32* out)const override{
+            *out=std::abs(x)<12.f&&z>=96.f&&z<=104.f?300.f:0.f;
+            return true;
+        }
+        bool supports_projectile_stage()const override{return true;}
+        bool projectile_stage(const BattleMvpVec& start,const BattleMvpVec& end,NativeBorgStageProjectileHit* hit)const override{
+            *hit={};
+            if(wall&&start[2]<170.f&&end[2]>=170.f)
+                *hit={true,(170.f-start[2])/(end[2]-start[2]),2};
+            return true;
+        }
+    } terrain;
+    const std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    const std::string receive="damage-receive=0|1|1\ndamage-receive=1|2|1\n";
+    const auto shooter=parse(std::string(player)+credit);
+    std::string stop_shot(player);
+    stop_shot.replace(stop_shot.find("ignore-floor"),12,"stop-on-stage");
+    const auto wall_shooter=parse(stop_shot+credit);
+    const auto blaster=parse(std::string(player)+"blast=shot|actor|24|19|opponent\n");
+    const auto dummy=parse(target);
+    const auto vulnerable=parse(std::string(target)+receive);
+    const std::string guard=std::string(player)+receive+
+        "move=block|x|50|grounded|18|0:1\nguard=block|1|12|0.5|1|shots\n";
+    const auto guard_user=parse(guard);
+    const auto immune_guard=parse(guard+"damage-mask=2\n");
+    BattleMvpConfig config;
+    config.declared_actors=4;config.teams_declared=true;
+    NativeBattleMvp world;
+    for(unsigned scene=0;scene<7;++scene){
+        config.packages={scene==3?wall_shooter:scene==5?blaster:shooter,dummy,dummy,
+            scene==1?immune_guard:scene==2||scene==3?guard_user:vulnerable};
+        config.teams={0,1,u8(scene==4?0:1),1};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,100},BattlePoint{45,220},BattlePoint{-45,220}};
+        if(scene==3){config.spawn[2]={240,220};config.spawn[3]={0,220};}
+        if(scene==4){config.spawn[2]={0,200};config.spawn[3]={0,300};}
+        if(scene==6){config.spawn[2].z=210;config.spawn[3].z=228;}
+        terrain.wall=scene==3;
+        check(world.start(config,&terrain)&&world.target_of(0)==1&&world.actors()[1].position[1]==300,
+              "roster fixture aims at a nearer elevated decoy");
+        unsigned contact=255,guarded=0,obstructed=0;
+        for(unsigned tick=0;tick<36;++tick){
+            std::array<GamePadState,kBattleMvpMaxActors> pads{};
+            std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+            if(!tick){
+                inputs[0].pressed=BorgBattleInputs::b;
+                if(scene>=1&&scene<=3)inputs[3].pressed=BorgBattleInputs::x;
+            }
+            check(world.step_roster(pads,inputs,false,&terrain),"roster direct shot step");
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::Hit){check(contact==255,"one shot contacts at most one body");contact=e.recipient;}
+                if(e.kind==BorgBattleEventKind::GuardBlocked&&e.actor==3)++guarded;
+                if(e.kind==BorgBattleEventKind::StageImpact&&e.value==2)++obstructed;
+            }
+        }
+        check(world.target_of(0)==1&&world.actors()[1].health==500,"physical contact does not retarget aim");
+        if(scene==0)check(contact==3&&world.actors()[3].health==462&&world.actors()[2].health==500,
+                         "equal swept contacts choose the later slot and that body's receiving factors");
+        if(scene==1)check(contact==2&&!guarded&&world.actors()[2].health==481&&world.actors()[3].health==250,
+                         "immune candidate spends no guard and cannot hide the eligible body");
+        if(scene==2)check(contact==255&&guarded==1&&world.hits()==0,"the selected body's guard stops the shot");
+        if(scene==3)check(contact==255&&guarded==0&&obstructed==1,"a tied stage contact wins without spending guard");
+        if(scene==4)check(contact==3&&world.actors()[2].health==500,"an allied body cannot take an enemy-only direct hit");
+        if(scene==5)check(contact==255&&world.hits()==0,"actor-triggered blast retains the previous target policy");
+        if(scene==6)check(contact==2&&world.actors()[3].health==500,"an earlier sweep entry wins over a later actor slot");
+    }
+    const auto swordsman=parse(std::string(player)+credit+
+        "move=swing|x|50|grounded|14|0:0\nmelee=swing|3|9|165|35|60|22|12\n");
+    config.declared_actors=3;config.teams={0,1,1};
+    config.packages={swordsman,dummy,vulnerable};config.spawn[2]={0,196};terrain.wall=false;
+    check(world.start(config,&terrain),"roster direct melee fixture");
+    unsigned victim=255;
+    for(unsigned tick=0;tick<18;++tick){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+        if(!tick)inputs[0].pressed=BorgBattleInputs::x;
+        check(world.step_roster(pads,inputs,false,&terrain),"roster direct melee step");
+        for(const auto& e:world.package_events())if(e.kind==BorgBattleEventKind::Hit)victim=e.recipient;
+    }
+    check(world.hits()==1&&victim==2&&world.actors()[2].health==476&&world.actors()[1].health==500&&world.target_of(0)==1,
+          "the direct capsule hits an overlapping body instead of the elevated aim target");
+}
+void roster_body_motion_cases(){
+    struct TwoLevels final:IBattleMvpTerrain {
+        bool height(f32,f32,f32 current,f32* out)const override{
+            *out=current>=200.f?300.f:0.f;return true;
+        }
+    } terrain;
+    const auto fighter=parse(player),dummy=parse(target);
+    const auto ally=parse(std::string(target)+"damage-mask=2\n");
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.declared_actors=6;config.teams_declared=true;
+    config.teams={0,1,1,0,1,0};
+    config.packages={fighter,dummy,dummy,dummy,dummy,ally};
+    config.spawn={BattlePoint{0,0},BattlePoint{0,100},BattlePoint{250,200},
+                  BattlePoint{-250,200},BattlePoint{250,-100},BattlePoint{0,200}};
+    config.spawn_query_y[1]=300;
+    std::array<GamePadState,kBattleMvpMaxActors> pads{};
+    std::array<BorgBattleInputs,kBattleMvpMaxActors> buttons{};
+    pads[0].dpad_down=true;
+    check(world.start(config,&terrain)&&world.actors()[1].position[1]==300,"six-body motion fixture");
+    for(unsigned tick=0;tick<36;++tick)check(world.step_roster(pads,buttons,false,&terrain),"roster walk tick");
+    check(world.target_of(0)==1&&world.actors()[0].position[2]>115.9f&&world.actors()[0].position[2]<=116.f,
+          "walking passes under the elevated aim target and stops at the allied body's boundary");
+
+    config.declared_actors=3;config.spawn_query_y={};config.teams={0,1,0};
+    config.packages={fighter,dummy,ally};config.spawn[1]={0,220};config.spawn[2]={0,90};
+    pads[0].l=true;
+    check(world.start(config)&&world.step_roster(pads,buttons,false),"roster dash tick");
+    check(world.actors()[0].position[2]>5.99f&&world.actors()[0].position[2]<=6.f&&
+          !world.actors()[0].dash_ticks&&world.actors()[0].dash_cooldown,
+          "an allied body clips a dash and consumes its existing exit condition");
+    pads={};
+
+    const auto fragile=parse("GFBORG-GAMEPLAY 1\nvariant=normal\nmovement=stationary-v1\n"
+        "health=1\nrig-prefix=visual/prefix\npose-profile=visual/pose\nidle=0:0\n");
+    config.packages={fighter,fighter,fragile};
+    check(world.start(config),"defeated body fixture");
+    for(unsigned tick=0;tick<10&&world.actors()[2].health;++tick){
+        buttons[1].pressed=u8(tick==0?BorgBattleInputs::b:0);
+        check(world.step_roster(pads,buttons,false),"defeat fixture tick");
+    }
+    check(!world.actors()[2].health&&world.actors()[0].position[2]==0.f,"only the intervening body was defeated");
+    buttons={};pads[0].dpad_down=true;pads[0].l=true;
+    check(world.step_roster(pads,buttons,false)&&world.actors()[0].position[2]==14.f&&world.actors()[0].dash_ticks,
+          "a defeated body no longer clips locomotion");
+    pads={};config.packages={fighter,dummy,ally};
+
+    for(int height:{40,140}){
+        config.packages[0]=parse(std::string(player)+"cruise-boost="+std::to_string(height)+"|10|6|4|2|3\n");
+        check(world.start(config)&&world.step_roster(pads,buttons,false),"roster cruise tick");
+        const auto& actor=world.actors()[0];
+        check(!actor.grounded&&actor.position[1]==f32(height)&&
+              (height==40?(actor.position[2]>5.99f&&actor.position[2]<=6.f):actor.position[2]==8.f),
+              "cruise checks every body only when the vertical slabs overlap");
+    }
+
+    config.packages[0]=parse(std::string(player)+"on-hit=shot|pull-self|36\n");
+    config.spawn[2]={0,100};
+    check(world.start(config),"roster pull fixture");
+    bool queued=false,refused=false;
+    for(unsigned tick=0;tick<16&&!refused;++tick){
+        buttons[0].pressed=u8(tick==0?BorgBattleInputs::b:0);
+        check(world.step_roster(pads,buttons,false),"roster pull tick");
+        for(const auto& e:world.package_events()){
+            if(e.kind==BorgBattleEventKind::PullQueued&&e.recipient==1)queued=true;
+            if(e.kind==BorgBattleEventKind::PullRefused&&e.recipient==1&&
+               e.value==u16(BorgBattlePullRefusal::TerrainOrBody))refused=true;
+        }
+    }
+    check(queued&&refused&&world.actors()[0].position==BattleMvpVec{}&&world.actors()[2].health==500,
+          "a shot can pass its ally; the deferred physical step cannot, and refuses without a partial move");
+}
+void roster_body_sweep_cases(){
+    struct DiagonalStep final:IBattleMvpTerrain {
+        bool height(f32 x,f32 z,f32,f32* out)const override{
+            *out=x>10&&z>10?100.f:0.f;return true;
+        }
+    } terrain;
+    const NativeBorgContactRequest request{{0,0,0},{22,0,0},{100,100},1800,10,20,45,true,true};
+    std::array bodies{BattleMvpVec{83,0,0},BattleMvpVec{0,0,60},BattleMvpVec{70,0,0},BattleMvpVec{30,40,0}};
+    NativeBorgContactResult motion,reordered;
+    check(native_borg_resolve_contact(request,bodies,&terrain,&motion)&&motion.slid&&motion.terrain_blocked&&
+          motion.body_hit&&motion.position[0]>49.98f&&motion.position[0]<50.f&&motion.position[2]==0.f,
+          "axis slide takes the longest legal step after clipping every overlapping body");
+    std::reverse(bodies.begin(),bodies.end());
+    check(native_borg_resolve_contact(request,bodies,&terrain,&reordered)&&reordered.position==motion.position&&reordered.slid,
+          "multi-body clipping is independent of the peer order");
+    check(native_borg_resolve_contact(request,&terrain,&reordered)&&reordered.position!=motion.position,
+          "the single-peer overload retains its own body and does not use the roster");
+    std::array<BattleMvpVec,kNativeBorgContactPeerLimit+1> excess{};
+    check(!native_borg_resolve_contact(request,excess,&terrain,&reordered),"peer list above the supported actor cap refuses");
+    bodies[0][1]=std::numeric_limits<f32>::quiet_NaN();
+    check(!native_borg_resolve_contact(request,bodies,&terrain,&reordered),"an invalid peer sample refuses");
+}
+void roster_hit_history_cases(){
+    std::string fighter(player);
+    fighter.replace(fighter.find("primary|2|12"),12,"primary|12|90");
+    fighter+="contact-power=b-shot|20\ndamage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    const std::string receive="damage-receive=0|1|1\ndamage-receive=1|2|1\n";
+    const auto observer=parse(target),victim=parse(std::string(target)+receive);
+    std::string fragile(target);
+    fragile.replace(fragile.find("health=500"),10,"health=40");
+    BattleMvpConfig config;
+    config.declared_actors=6;config.teams_declared=true;config.teams={1,0,1,0,1,0};
+    config.packages={observer,observer,victim,parse(fighter),parse(fragile+receive),observer};
+    config.spawn={BattlePoint{-400,-400},BattlePoint{-400,400},BattlePoint{0,360},
+                  BattlePoint{0,0},BattlePoint{0,180},BattlePoint{400,400}};
+    config.team_force={1000,1000};
+    NativeBattleMvp world;
+    check(world.start(config),"six-slot hit history fixture");
+    unsigned hits=0;
+    for(unsigned tick=0;tick<100;++tick){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+        if(tick<81&&tick%9==0)inputs[3].pressed=BorgBattleInputs::b;
+        check(world.step_roster(pads,inputs,false),"later-slot shot step");
+        for(const auto& e:world.package_events())if(e.kind==BorgBattleEventKind::Hit){
+            check(e.actor==3&&e.recipient==(hits?2:4)&&e.value==40,"record actual hit slot and final HP amount");
+            ++hits;
+        }
+    }
+    const auto& actors=world.actors();
+    check(hits==9&&!actors[4].health&&actors[2].health==180&&world.team_force()[1]==640&&
+          world.team_tally()[0]==900&&actors[3].damage_credited==360,
+          "history does not alter hits, force drain or attacker credit");
+    for(unsigned slot:{0u,1u,3u,5u}){
+        const auto& observer_state=actors[slot];
+        const bool allied=observer_state.team==1;
+        check(observer_state.hit_history_index==1&&observer_state.hit_history_count==(allied?9:0)&&
+              observer_state.hit_history_total==(allied?360u:0u)&&
+              std::all_of(observer_state.hit_history.begin(),observer_state.hit_history.end(),[&](const auto& r){
+                  return r==BattleMvpHitRecord{u16(allied?4:3),2};
+              }),"each observer's ninth record overwrites its first and preserves its own relation");
+    }
+    check(actors[2].hit_history_index==1&&actors[2].hit_history_count==1&&actors[2].hit_history_total==40&&
+          actors[2].hit_history[0]==BattleMvpHitRecord{4,4},
+          "a recipient skips its own hit records but observes hits on its ally");
+    check(!actors[4].hit_history_index&&actors[4].hit_history_count==8&&actors[4].hit_history_total==320&&
+          actors[4].hit_history[7]==BattleMvpHitRecord{4,2},"a defeated slot still owns its admitted observer history");
+    check(world.start(config),"restart the same roster");
+    for(const auto& actor:world.actors())check(!actor.hit_history_index&&!actor.hit_history_count&&!actor.hit_history_total&&
+        std::all_of(actor.hit_history.begin(),actor.hit_history.end(),[](const auto& r){return r==BattleMvpHitRecord{};}),
+        "restart clears each observer's records and counts");
+}
 struct CommitMuzzle final:IBorgBattleOrigins {
     mutable unsigned visits=0;
     bool socket(unsigned owner,const BattleMvpActor& actor,u32 tick,u8 move,u16 frame,const BorgBattleSocket& spec,
@@ -79,6 +307,587 @@ struct CommitMuzzle final:IBorgBattleOrigins {
         return true;
     }
 };
+void contact_sound_cases(){
+    const std::string ordinary=std::string(player)+
+        "projectile=second|beam|1|60|0|0|0|8|30|19|ignore-floor\n"
+        "release-followup=b-shot|2|second\n";
+    const std::string cue="contact-sound=b-shot|2|6|audio/hit-a.pcm|audio/hit-b.pcm\n";
+    const auto attacker=parse(ordinary+cue);
+    const auto recipient=parse(std::string(target)+"contact-sound-band=2\n");
+    const auto unbound=parse(target);
+    const auto refused=parse(std::string(target)+"contact-sound-band=2\ndamage-mask=2\n");
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+    BorgMovementAudio audio;BorgContactSoundBank samples;std::vector<s16> output;
+    samples[4]={2000,2000};samples[5]={4000,4000};
+    const std::array sounds{BorgAudioSlot{.contact=&samples},BorgAudioSlot{}};
+    for(const auto& receiver:{recipient,unbound,refused,recipient}){
+        config.packages={attacker,receiver};
+        check(world.start(config),"contact cue fixture");
+        std::vector<u16> codes;std::vector<s16> pcm;
+        for(unsigned tick=0;tick<30;++tick){
+            const bool fire=tick==0||tick==16;
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                 {BorgBattleInputs{u8(fire?BorgBattleInputs::b:0),0,0},{}}),"contact audio tick");
+            check(audio.visit(world,sounds,&output),"contact audio mix");
+            for(const auto& event:world.package_events())if(event.kind==BorgBattleEventKind::ContactSound){
+                check(event.actor==0&&event.recipient==1&&event.move==0&&event.object,
+                      "sound event preserves contact attribution");
+                codes.push_back(event.value);
+            }
+            if(audio.contact_started()){
+                check(audio.contact_started()==1&&audio.contact_nonzero()&&!output.empty()&&
+                      !audio.visit(world,sounds,&output),"one accepted cue visit per tick");
+                pcm.push_back(output[0]);
+            }
+        }
+        if(receiver==recipient)
+            check(world.hits()==4&&codes==std::vector<u16>{4,5}&&pcm==std::vector<s16>{700,1400},
+                  "same-tick hits share the cooldown; next hit flips parity and new rounds reset it");
+        else check(codes.empty()&&pcm.empty()&&world.hits()==(receiver==unbound?4u:0u),
+                   "unqualified recipients and rejected hits get no contact sound");
+    }
+    BorgGameplayProfile reject;
+    for(const auto& text:{ordinary+cue+cue,ordinary+cue+"impact-sound=second|actor|audio/old.pcm\n",
+                          ordinary+cue+"blast=shot|actor|160|19|opponent\n",
+                          ordinary+"contact-sound=b-shot|4|6|audio/x.pcm|audio/y.pcm\n",
+                          ordinary+"contact-sound=b-shot|0|13|audio/x.pcm|audio/y.pcm\n",
+                          ordinary+"contact-sound=b-shot|0|1|../x.pcm|audio/y.pcm\n",
+                          std::string(target)+"contact-sound-band=0\ncontact-sound-band=0\n"})
+        check(!borg_read_gameplay_profile(text,&reject,nullptr),"ambiguous or out-of-scope contact audio refuses");
+}
+void roster_audio_cases(){
+    const auto fighter=parse(std::string(player)+
+        "action-sound=b-shot|audio/action.pcm\nrelease-sound=b-shot|2|audio/paid.pcm\n"
+        "launch-sound=shot|audio/launch.pcm\n");
+    BattleMvpConfig config;
+    config.declared_actors=kBattleMvpMaxActors;config.packages.fill(fighter);
+    config.spawn={BattlePoint{-450,-450},BattlePoint{450,-450},BattlePoint{-450,0},
+                  BattlePoint{450,0},BattlePoint{-450,450},BattlePoint{450,450}};
+    NativeBattleMvp world;BorgMovementAudio audio;
+    std::vector<s16> pcm;
+    std::array<BorgActionSoundBank,kBattleMvpMaxActors> actions;
+    std::array<BorgReleaseSoundBank,kBattleMvpMaxActors> releases;
+    std::array<BorgLaunchSoundBank,kBattleMvpMaxActors> launches;
+    BorgMovementSoundBank movement;
+    for(auto& clip:movement)clip={2000,2000};
+    std::array<BorgAudioSlot,kBattleMvpMaxActors> bindings{};
+    for(unsigned i=0;i<bindings.size();++i){
+        const auto sample=s16((i+1)*1000);
+        actions[i][0].assign(kBorgMovementAudioFrames*2*4,sample);
+        releases[i][0]={0,2,{2000,2000}};
+        launches[i][0]={1000,1000};
+        bindings[i]={.launch=&launches[i],.release=&releases[i],.action=&actions[i]};
+    }
+    auto step=[&](unsigned press,unsigned jump=0){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> buttons{};
+        for(unsigned i=0;i<buttons.size();++i){
+            if(press&(1u<<i))buttons[i].pressed=BorgBattleInputs::b;
+            pads[i].b=(jump&(1u<<i))!=0;
+        }
+        check(world.step_roster(pads,buttons,false),"roster audio tick");
+    };
+    const unsigned all=(1u<<kBattleMvpMaxActors)-1,tail=1u<<(kBattleMvpMaxActors-1);
+    for(bool reserved:{false,true}){
+        for(auto& binding:bindings)binding.movement=reserved?&movement:nullptr;
+        check(world.start(config),"start roster audio round");step(all);
+        check(!audio.visit(world,std::span<const BorgAudioSlot>(bindings).first(2),&pcm),
+              "a duel-sized binding cannot omit the later live slots");
+        check(audio.visit(world,bindings,&pcm)&&audio.mixed_actors()==all&&audio.dropped()==0&&
+              !pcm.empty()&&pcm[0]==7350,"all six actor-specific action samples reach the common bus");
+        step(0);
+        auto foreign=bindings;foreign.back().action=&actions[0];
+        check(!audio.visit(world,foreign,&pcm)&&audio.visit(world,bindings,&pcm),
+              "mid-round bank replacement refuses without consuming the legitimate tick");
+        step(0);
+        check(audio.visit(world,bindings,&pcm)&&audio.mixed_actors()==all&&world.shots_spawned()==kBattleMvpMaxActors,
+              "the paid releases and shared mixing cannot alter combat or lose active voices");
+        check(audio.launch_started()==(reserved?1:6)&&audio.release_started()==(reserved?1:6)&&
+              audio.dropped()==(reserved?10:0)&&pcm[0]==(reserved?8400:13650)&&pcm[8]==7350,
+              "reserve movement lanes, admit valid new cues in event order, and do not steal any active tails");
+    }
+    check(world.start(config),"restart saturated roster");step(0);
+    check(audio.visit(world,bindings,&pcm)&&pcm.empty()&&!audio.mixed_actors(),"no old voices cross the new round");
+    step(tail);
+    check(audio.visit(world,bindings,&pcm)&&audio.mixed_actors()==tail&&pcm[0]==2100,
+          "the last slot owns its sample and can start after saturation has cleared");
+    check(world.start(config),"restart for last-slot movement cue");step(0,tail);
+    check(audio.visit(world,bindings,&pcm)&&audio.mixed_actors()==tail&&pcm[0]==2000,
+          "the last actor's two movement lanes mix without old action audio");
+}
+void contact_impact_cases(){
+    const std::string ordinary=std::string(player)+
+        "projectile=second|beam|1|60|0|0|0|8|30|19|ignore-floor\n"
+        "release-followup=b-shot|2|second\n";
+    const std::string bank="impact-record-bank=visual/contact.hsd\n";
+    const std::string team0="contact-impact=b-shot|0|2|100|16\n";
+    const std::string team1="contact-impact=b-shot|1|144|100|3\ncontact-impact=b-shot|1|145|100|5\n";
+    const auto attacker=parse(ordinary+bank+team0+team1);
+    const auto receiver=parse(std::string(target)+"contact-impact-receive=normal\n");
+    const auto unbound=parse(target);
+    BattleMvpConfig config;NativeBattleMvp world;
+    config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+    for(unsigned scenario=0;scenario<3;++scenario){
+        const unsigned team=scenario!=0;
+        config.teams_declared=true;config.teams={u8(team),u8(1-team)};
+        config.packages={attacker,scenario==2?unbound:receiver};
+        check(world.start(config)&&std::none_of(world.impact_records().begin(),world.impact_records().end(),
+              [](const auto& record){return record.ticks!=0;}),"new round has no contact artwork");
+        for(unsigned tick=0;tick<12&&!world.hits();++tick)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                 {BorgBattleInputs{u8(tick==0?BorgBattleInputs::b:0),0,0},{}}),"contact art fixture tick");
+        check(world.hits()==2&&world.actors()[1].health==462,"art has no HP or carrier effect");
+        const auto& records=world.impact_records();
+        const unsigned active=unsigned(std::count_if(records.begin(),records.end(),[](const auto& r){return r.ticks!=0;}));
+        const auto& rings=world.impacts();
+        bool ring=std::any_of(rings.begin(),rings.end(),[](const auto& r){return r.ticks!=0;});
+        if(scenario==2)check(!active&&ring,"unqualified receiver retains the ordinary ring");
+        else{
+            check(active==1+team&&!ring&&records[0].owner==0&&records[0].binding==borg_contact_impact_slot(0,team,0)&&
+                  records[0].ticks==(team?3:16),"one qualified impact replaces the ring with the attacking team's layers");
+            if(team){
+                check(records[1].binding==borg_contact_impact_slot(0,team,1)&&records[1].ticks==5,
+                      "the second layer keeps its own lifetime");
+                for(unsigned i=0;i<3;++i)check(world.step({},false),"step contact record expiry");
+                check(!records[0].ticks&&records[1].ticks==2,"layers retire independently");
+            }
+        }
+    }
+    BorgGameplayProfile reject;
+    for(const auto& rules:{ordinary+bank+team0,ordinary+team0+team1,
+                           ordinary+bank+team0+team1+team0,ordinary+bank+team0+team1+
+                               "impact-record=second|actor|22|100|18\n",
+                           ordinary+bank+team0+team1+"blast=shot|actor|160|19|opponent\n",
+                           std::string(target)+"contact-impact-receive=normal\ncontact-impact-receive=normal\n"})
+        check(!borg_read_gameplay_profile(rules,&reject,nullptr),"incomplete, mixed or duplicate contact impacts refuse");
+}
+void contact_pose_hold_cases(){
+    const std::string marker="contact-pose-hold-receive=normal\n";
+    const std::string shot="contact-pose-hold=b-shot|3|receiver\n";
+    const std::string swing="move=swing|x|40|grounded|12|0:0\nmelee=swing|3|6|100|40|52|44|12\n"
+                            "contact-pose-hold=swing|5|bodies\n";
+    const auto attacker=parse(std::string(player)+marker+shot+swing+
+        "projectile=second|beam|1|60|0|0|0|8|30|19|ignore-floor\n"
+        "release-followup=b-shot|2|second\n");
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.spawn={BattlePoint{0,0},BattlePoint{0,120}};
+    for(unsigned scenario=0;scenario<4;++scenario){
+        config.packages={attacker,parse(std::string(player)+(scenario==2?"":marker)+(scenario==3?"damage-mask=2\n":""))};
+        check(world.start(config)&&!world.actors()[0].contact_pose_hold_ticks&&!world.actors()[1].contact_pose_hold_ticks,
+              "restart clears the local presentation hold");
+        for(unsigned tick=0;tick<15&&!world.hits();++tick)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                 {BorgBattleInputs{u8(tick==0?(scenario==1?BorgBattleInputs::x:BorgBattleInputs::b):0),0,0},{}}),
+                 "contact pose hold fixture tick");
+        const unsigned expected=scenario==0?3:scenario==1?5:0;
+        check(world.actors()[1].contact_pose_hold_ticks==expected&&world.actors()[0].contact_pose_hold_ticks==(scenario==1?5:0)&&
+              world.hits()==(scenario==3?0:scenario==1?1:2),
+              "projectiles hold only an opted-in receiver, melee holds both bodies, and repeated same-tick hits do not stack");
+        const auto old=world.actors()[1].position;
+        GamePadState move;move.dpad_right=true;
+        check(world.step({GamePadState{},move},false)&&world.actors()[1].position!=old&&
+              world.actors()[1].contact_pose_hold_ticks==(expected?expected-1:0),
+              "presentation hold clocks down without blocking movement");
+    }
+    BorgGameplayProfile rejected;
+    for(const auto& suffix:{shot+shot,marker+marker,shot+"blast=shot|actor|160|19|opponent\n",
+                            std::string("contact-pose-hold=b-shot|3|bodies\n"),
+                            std::string("contact-pose-hold=b-shot|8|receiver\n"),
+                            std::string("contact-pose-hold=unknown|3|receiver\n")})
+        check(!borg_read_gameplay_profile(std::string(player)+suffix,&rejected,nullptr),"invalid or indirect pose hold refuses");
+}
+void pose_followup_api_cases(){
+    const std::string rules=std::string(player)+
+        "move=slash|b|30|grounded|24|0:0\nmelee=slash|9|14|88|38|52|44|12\n";
+    const std::string follow="pose-followup=slash|6|1:1|0\n";
+    const auto authored=parse(rules+follow);
+    const auto& move=authored->moves.back();
+    check(move.pose_followup&&move.pose_followup->frame==6&&move.pose_followup->clip.choice==1&&
+          move.pose_followup->start==0&&move.melee->first==9&&move.last_marker()==14&&
+          move.duration==24&&move.melee->damage==12,"pose-followup does not replace any melee clock or mechanic");
+    BorgGameplayProfile rejected;
+    for(const auto invalid:{"pose-followup=slash|0|1:1|0\n","pose-followup=slash|10|1:1|0\n",
+                            "pose-followup=slash|6|none|0\n","pose-followup=slash|6|1:1|601\n",
+                            "pose-followup=missing|6|1:1|0\n","pose-followup=b-shot|2|1:1|0\n"})
+        check(!borg_read_gameplay_profile(rules+invalid,&rejected,nullptr),"invalid or out-of-scope pose follow-up refuses");
+    check(!borg_read_gameplay_profile(rules+follow+follow,&rejected,nullptr)&&
+          !borg_read_gameplay_profile(rules+follow+"release=slash|9|primary|1|shot\n",&rejected,nullptr),
+          "duplicate or mixed projectile-melee pose follow-up refuses");
+    auto mutated=*authored;mutated.moves.back().pose_followup->frame=23;
+    check(!borg_gameplay_profile_valid(mutated),"direct profile construction obeys the same pose follow-up bound");
+}
+void damage_role_cases(){
+    const std::string credit="damage-credit=0|2|0.5\ndamage-credit=1|1.5|1\n";
+    const std::string receive="damage-receive=0|0.5|1\ndamage-receive=1|2|1\n";
+    const auto receiver=parse(std::string(target)+receive);
+    const auto melee=parse(std::string(player)+credit+
+        "move=slash|b|30|grounded|18|0:0\nmelee=slash|4|8|90|40|60|22|20\n");
+    auto hit=[&](const auto& attacker,const auto& defender,bool swap,u8 button=BorgBattleInputs::b,
+                 f32 distance=140){
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={attacker,defender};config.spawn={BattlePoint{0,0},BattlePoint{0,distance}};
+        config.teams={u8(swap),u8(!swap)};config.teams_declared=true;
+        check(world.start(config),"split damage role fixture starts");
+        for(unsigned tick=0;tick<20&&!world.hits();++tick)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{tick==0?button:u8(0),0,0},{}}),"split damage role fixture steps");
+        check(world.hits()==1,"split damage role fixture lands one hit");
+        return defender->health-world.actors()[1].health;
+    };
+    check(hit(melee,receiver,false)==40&&hit(melee,receiver,true)==15,
+          "credit follows the attacker team and class/rank follow the opposite receiver team");
+    check(hit(parse(std::string(player)+credit),receiver,false)==38,
+          "the same split factors apply at a direct projectile hit");
+    check(hit(melee,parse(target),false)==20,"an unbound receiver does not partially scale a new credit profile");
+    check(hit(parse(std::string(player)+"damage-side=0|0.5|1|1|1\n"),receiver,false)==9,
+          "legacy rows do not stack on the new receiver factors");
+    const auto field=parse(std::string(player)+credit+
+        "move=well|x|80|any|4|0:4\nfield=well|1|sphere|170|170|170|10|400|50|95|50|160|80\n"
+        "field-core-damage=well|enemies|40|7|3\n");
+    check(hit(field,receiver,false,BorgBattleInputs::x,400)==7,"an indirect field never borrows split direct-hit factors");
+
+    const std::string paired_roles="damage-credit=0|1|1\ndamage-credit=1|1|1\n"
+        "damage-receive=0|1|1\ndamage-receive=1|1|1\n";
+    const auto copper=parse(std::string(player)+paired_roles+
+        "damage-matchup-group=copper\ndamage-matchup-from=silver|0.75\n");
+    const auto silver=parse(std::string(player)+paired_roles+
+        "damage-matchup-group=silver\ndamage-matchup-from=copper|1.25\n");
+    const auto neutral=parse(std::string(player)+paired_roles+"damage-matchup-group=author-neutral\n");
+    check(hit(copper,silver,false)==23&&hit(silver,copper,false)==14&&
+          hit(neutral,silver,false)==19,"matchups use receiver-owned rows indexed by the attacking group");
+
+    BorgGameplayProfile rejected;
+    for(const auto& bad:{std::string("damage-credit=0|1|1\n"),std::string("damage-receive=1|1|1\n"),
+                         credit+"damage-credit=1|1|1\n",credit+"damage-vs=10|1|1|1|1\n",
+                         credit+"damage-side=0|1|1|1|1\n",credit+"damage-factors=1|1|1|1\n",
+                         std::string("damage-credit=2|1|1\n"),std::string("damage-receive=0|nan|1\n")})
+        check(!borg_read_gameplay_profile(std::string(player)+bad,&rejected,nullptr),
+              "split damage roles refuse incomplete, invalid, duplicate or mixed attacker rows");
+    auto malformed=*melee;malformed.damage_credit.declared=1;
+    check(!borg_gameplay_profile_valid(malformed),"programmatic damage roles need the same validated pair");
+    for(const auto& bad:{paired_roles+"damage-matchup-from=copper|1.25\n",
+                         paired_roles+"damage-matchup-group=silver\ndamage-matchup-from=copper|1.25\n"
+                                      "damage-matchup-from=copper|0.9\n",
+                         credit+"damage-matchup-group=silver\ndamage-matchup-from=copper|1.25\n",
+                         std::string("damage-matchup-group=copper\n")})
+        check(!borg_read_gameplay_profile(std::string(player)+bad,&rejected,nullptr),
+              "matchup rows require a unique incoming group and an opted-in receiving role");
+}
+void contact_power_cases(){
+    const std::string shared=R"(GFBORG-GAMEPLAY 1
+variant=normal
+movement=grounded-v1|8|13|14
+health=250
+rig-prefix=visual/prefix
+pose-profile=visual/pose
+idle=0:0
+walk=0:1
+air=0:2
+dash=0:3
+projectile=shot|beam|1|60|0|0|0|8|30|19|ignore-floor
+move=primary|b|10|any|8|0:4
+move=secondary|x|11|any|8|0:4
+release=primary|2|none|0|shot
+release=secondary|2|none|0|shot
+)";
+    const std::string power="contact-power=primary|30\n";
+    const auto shoot=parse(shared+power);
+    check(shoot->projectiles[0].damage==19&&shoot->moves[0].contact_power==30&&
+          !shoot->moves[1].contact_power,"contact-power does not mutate a shared projectile definition");
+    auto hit=[](const auto& attacker,const auto& defender,u8 button,f32 distance){
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={attacker,defender};config.spawn={BattlePoint{0,0},BattlePoint{0,distance}};
+        check(world.start(config),"contact power fixture starts");
+        for(unsigned tick=0;tick<30&&!world.hits();++tick)
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{tick==0?button:u8(0),0,0},{}}),"contact power fixture steps");
+        check(world.hits()==1,"contact power fixture lands one hit");
+        return 500-world.actors()[1].health;
+    };
+    check(hit(shoot,parse(target),BorgBattleInputs::b,200)==30&&
+          hit(shoot,parse(target),BorgBattleInputs::x,200)==19,
+          "only the projectile emitted by the declaring move inherits its new base");
+    const auto melee=parse(std::string(player)+
+        "move=slash|b|30|grounded|18|0:0\nmelee=slash|4|8|90|40|60|22|12\n"
+        "contact-power=slash|40\ndamage-credit=0|1|1\ndamage-credit=1|1|1\n");
+    const auto receiver=parse(std::string(target)+"damage-receive=0|1|1\ndamage-receive=1|0.5|1\n");
+    check(hit(melee,receiver,BorgBattleInputs::b,90)==20,
+          "the recovered melee base passes through the same receiver scaling pipeline");
+    BorgGameplayProfile rejected;
+    for(const auto& bad:{std::string("contact-power=primary|0\n"),std::string("contact-power=primary|10001\n"),
+                         std::string("contact-power=missing|30\n"),power+power,
+                         power+"blast=shot|actor|160|19|opponent\n",
+                         power+"melee=primary|1|2|90|40|60|22|12\n"})
+        check(!borg_read_gameplay_profile(shared+bad,&rejected,nullptr),
+              "invalid, mixed or indirect contact-power refuses");
+}
+std::string damage_ladder(std::string_view key,unsigned cell,std::string_view factor,unsigned teams=3){
+    std::string lines;
+    for(unsigned team=0;team<2;++team)if(teams&(1u<<team)){
+        lines+=std::string(key)+"="+std::to_string(team);
+        for(unsigned i=0;i<kBorgDamageLadderCells;++i){
+            lines+='|';lines+=i==cell?factor:"1.0";
+        }
+        lines+='\n';
+    }
+    return lines;
+}
+void damage_receiver_ladder_cases(){
+    check(!borg_damage_hp_cell(250,300,49)&&
+          borg_damage_hp_cell(250,300,50)==0&&borg_damage_hp_cell(250,300,51)==1&&
+          borg_damage_hp_cell(100,100,20)==7&&borg_damage_hp_cell(10,100,20)==31,
+          "HP probe subtracts raw base, skips above 200, and clamps the divisor and zero-HP index");
+    check(!borg_damage_force_cell(0,0)&&borg_damage_force_cell(30,30)==0&&
+          borg_damage_force_cell(11,30)==21&&borg_damage_force_cell(0,30)==31,
+          "force lookup uses a tracked cap, including a depleted pool");
+    const std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    const std::string receive="damage-receive=0|1|1\ndamage-receive=1|1|1\n";
+    const auto shooter=parse(std::string(player)+credit);
+    const std::string force=damage_ladder("damage-receive-force",21,"0.5");
+    const auto receiver=parse(std::string(target)+receive+force);
+    for(bool tracked:{false,true}){
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={shooter,receiver};config.team_force[1]=tracked?30u:0u;
+        config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+        check(world.start(config),"receiver force ladder fixture");
+        bool saw_first=false;
+        for(unsigned tick=0;tick<30&&world.hits()<2;++tick){
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{u8((tick==0||tick==12)?BorgBattleInputs::b:0),0,0},{}}),"force ladder hit step");
+            if(!saw_first&&world.hits()==1){
+                check(world.actors()[1].health==481&&world.team_force()[1]==(tracked?11u:0u),
+                      "first hit probes the full pool before decrementing it");
+                saw_first=true;
+            }
+        }
+        check(saw_first&&world.hits()==2&&world.actors()[1].health==(tracked?472u:462u)&&
+              world.team_force()[1]==(tracked?2u:0u),
+              "second hit uses remaining force, while an untracked pool stays neutral");
+    }
+    BorgGameplayProfile rejected;
+    check(!borg_read_gameplay_profile(std::string(target)+force,&rejected,nullptr)&&
+          !borg_read_gameplay_profile(std::string(target)+receive+damage_ladder("damage-receive-hp",31,"0.5",1),&rejected,nullptr)&&
+          !borg_read_gameplay_profile(std::string(target)+receive+force+force,&rejected,nullptr)&&
+          !borg_read_gameplay_profile(std::string(target)+receive+damage_ladder("damage-receive-hp",31,"0"),&rejected,nullptr),
+          "receiver ladders refuse missing roles, incomplete pairs, duplicate teams and invalid cells");
+}
+void damage_attacker_ladder_cases(){
+    check(borg_damage_hp_cell(80,100)==7&&borg_damage_hp_cell(80,100,19)==13,
+          "outgoing HP uses the live pre-hit health, not the receiving projection");
+    std::string attacker(player);
+    attacker.replace(attacker.find("health=250"),10,"health=100");
+    const std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    const std::string curves=damage_ladder("damage-credit-hp",7,"2")+
+                              damage_ladder("damage-credit-force",22,"1.5");
+    const std::string marker="damage-credit-ladders=b-shot\n";
+    const auto shooter=parse(attacker+credit+curves+marker+
+        "move=swing|x|30|grounded|18|0:0\nmelee=swing|4|8|90|40|60|22|19\n");
+    const auto opponent=parse(std::string(player)+"contact-power=b-shot|20\n"
+        "damage-receive=0|1|1\ndamage-receive=1|1|1\n");
+    for(unsigned scenario=0;scenario<3;++scenario){
+        NativeBattleMvp world;BattleMvpConfig config;config.packages={shooter,opponent};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+        config.team_force[0]=scenario==1?0:30;
+        check(world.start(config),"attacker ladder fixture");
+        for(unsigned tick=0;tick<26&&world.hits()<2;++tick){
+            const u8 attack=tick==12?(scenario==2?BorgBattleInputs::x:BorgBattleInputs::b):0;
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                {BorgBattleInputs{attack,0,0},BorgBattleInputs{u8(tick==0?BorgBattleInputs::b:0),0,0}}),
+                "attacker ladder exchanges a wound and one response");
+        }
+        const unsigned expected=scenario==0?57u:scenario==1?38u:19u;
+        check(world.hits()==2&&world.actors()[0].health==80&&world.actors()[1].health==250-expected&&
+              world.team_force()[0]==(scenario==1?0u:10u),
+              "only the marked live move receives the attacker HP and tracked-force bonuses");
+    }
+    BorgGameplayProfile rejected;
+    for(const auto& suffix:{credit+curves,credit+marker,curves+marker,
+                            credit+curves+marker+marker,
+                            credit+damage_ladder("damage-credit-force",22,"1.5",1)+marker,
+                            credit+curves+marker+"blast=shot|actor|160|19|opponent\n"})
+        check(!borg_read_gameplay_profile(attacker+suffix,&rejected,nullptr),
+              "outgoing ladders refuse missing roles, incomplete tables, absent or mixed direct moves");
+}
+void damage_index_cases(){
+    const auto row=[](std::string_view key,unsigned cells,unsigned team,unsigned choice,std::string_view factor){
+        std::string line=std::string(key)+"="+std::to_string(team);
+        for(unsigned i=0;i<cells;++i)line+=i==choice?"|"+std::string(factor):"|1";
+        return line+'\n';
+    };
+    std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    std::string receive="damage-receive=0|1|1\ndamage-receive=1|1|1\n";
+    const auto credit_settings=row("damage-credit-setting",32,0,5,"2")+row("damage-credit-setting",32,1,22,"4");
+    const auto credit_ranks=row("damage-credit-rank",8,0,7,"1.5")+row("damage-credit-rank",8,1,7,"4");
+    const auto receive_settings=row("damage-receive-setting",32,0,5,"4")+row("damage-receive-setting",32,1,22,"0.5");
+    const auto receive_ranks=row("damage-receive-rank",8,0,3,"4")+row("damage-receive-rank",8,1,3,"2");
+    const auto shooter=parse(std::string(player)+"contact-power=b-shot|20\n"+credit+credit_settings+credit_ranks);
+    const auto defender=parse(std::string(target)+receive+receive_settings+receive_ranks);
+    BattleMvpConfig config;
+    config.declared_actors=3;config.teams={0,1,0};config.teams_declared=true;
+    config.spawn={BattlePoint{-100,0},BattlePoint{0,200},BattlePoint{100,0}};
+    NativeBattleMvp world;
+    for(unsigned variant=0;variant<3;++variant){
+        config.packages={shooter,variant==2?parse(target):defender,shooter};
+        if(variant)config.damage_indices=BattleMvpDamageIndices{{5,22},{7,3,0,0},3};
+        else config.damage_indices.reset();
+        check(world.start(config),"indexed damage fixture");
+        std::vector<u16> amounts;
+        for(unsigned tick=0;tick<29;++tick){
+            std::array<GamePadState,kBattleMvpMaxActors> pads{};
+            std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+            if(tick==0)inputs[0].pressed=BorgBattleInputs::b;
+            if(tick==12)inputs[2].pressed=BorgBattleInputs::b;
+            check(world.step_roster(pads,inputs,false),"indexed damage fixture tick");
+            for(const auto& event:world.package_events())if(event.kind==BorgBattleEventKind::Hit){
+                check(event.recipient==1&&event.actor==(amounts.empty()?0:2),"same-team attackers keep their actor slots");
+                amounts.push_back(event.value);
+            }
+        }
+        check(amounts==(variant==1?std::vector<u16>{60,40}:std::vector<u16>{20,20}),
+            "setting comes from each team, rank from each actor; no caller indices or split recipient stays at the old amount");
+    }
+    config.packages={shooter,defender,shooter};
+    config.damage_indices->ranks[2]=8;
+    check(!world.start(config),"out-of-range rank refuses");
+    config.damage_indices->ranks[2]=0;config.damage_indices->settings[1]=32;
+    check(!world.start(config),"out-of-range setting refuses");
+    config.damage_indices->settings[1]=22;config.damage_indices->rank_count=2;
+    check(!world.start(config),"indexes must cover every actor");
+    config.damage_indices->rank_count=3;
+    config.packages[1]=parse(std::string(target)+receive);
+    check(!world.start(config),"an existing split role without indexed rows cannot impersonate the selected row");
+    BorgGameplayProfile bad;
+    for(const auto& text:{std::string(player)+credit_settings+credit_ranks,
+                          std::string(player)+credit+credit_settings,
+                          std::string(player)+credit+credit_settings+credit_ranks+credit_ranks,
+                          std::string(player)+credit+credit_settings+row("damage-credit-rank",8,0,7,"0")+
+                              row("damage-credit-rank",8,1,7,"1"),
+                          std::string(target)+receive+row("damage-receive-setting",31,0,7,"1.5")+
+                              receive_ranks})
+        check(!borg_read_gameplay_profile(text,&bad,nullptr),"incomplete or invalid indexed roles refuse");
+}
+void damage_floor_cases(){
+    const std::string rules=std::string(player)+"contact-power=b-shot|4\n"
+        "damage-credit=0|1|1\ndamage-credit=1|1|1\n";
+    const std::string floor="contact-minimum=b-shot|1\n";
+    const std::string receive="damage-receive=0|0.2|1\ndamage-receive=1|0.2|1\n";
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.spawn={BattlePoint{0,0},BattlePoint{0,140}};
+    config.team_force={100,100};
+    for(unsigned variant=0;variant<5;++variant){
+        config.damage_scalar=variant==2?0.f:1.f;
+        config.packages={parse(rules+(variant==0?"":variant==4?"contact-minimum=x-volley|1\n":floor)),
+                         parse(std::string(target)+receive+(variant==3?"damage-mask=2\n":""))};
+        check(world.start(config),"native one HP floor fixture");
+        int accepted=-1;
+        for(unsigned tick=0;tick<14;++tick){
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                  {BorgBattleInputs{u8(tick==0?BorgBattleInputs::b:0),0,0},{}}),"floor fixture tick");
+            for(const auto& event:world.package_events())if(event.kind==BorgBattleEventKind::Hit)accepted=event.value;
+        }
+        const unsigned amount=variant==1?1:0;
+        check(world.hits()==(variant==3?0:1)&&accepted==(variant==3?-1:int(amount))&&
+              world.actors()[1].health==500-amount&&world.team_force()[1]==100-amount,
+            "only opted-in positive direct hits affect HP and force; zero scalar and refused hits stay zero");
+    }
+    BorgGameplayProfile invalid;
+    for(const auto& suffix:{floor+floor,std::string("contact-minimum=b-shot|0\n"),
+                           std::string("contact-minimum=b-shot|2\n"),std::string("contact-minimum=unknown|1\n"),
+                           floor+"blast=shot|actor|160|19|opponent\n"})
+        check(!borg_read_gameplay_profile(rules+suffix,&invalid,nullptr),"ambiguous or indirect floor rule refuses");
+}
+void contact_tier_cases(){
+    BattleMvpDamageTier meter;
+    meter.accept(255,60);
+    check(meter.level==1&&meter.meter==0&&meter.remaining==60,"overshoot is discarded and promotes only once");
+    for(unsigned i=0;i<100;++i)meter.accept(100,60);
+    check(meter.level==63&&meter.meter==0,"tier caps at the last cell");
+    for(unsigned i=0;i<59;++i)meter.advance();
+    check(meter.level==63&&meter.remaining==1,"the tier lasts until the final compatible idle tick");
+    meter.advance();
+    check(!meter.level&&!meter.meter&&!meter.remaining,"expiry clears receiver charge and tier together");
+    meter.accept(100,4,50,25);
+    check(meter.level==1&&meter.reset_gauge==25,"reset wear and tier charge use different operands");
+    meter.accept(100,4,50,25);
+    check(meter.level==1&&meter.reset_gauge==50&&meter.reset_this_tick,
+          "exact depletion clears the old tier before adding this hit's charge");
+    meter.accept(60,4,50,50);
+    check(meter.level==1&&meter.meter==60&&meter.reset_gauge==50,
+          "one receiver's same-tick reset gate skips further wear, not charge");
+    meter.advance();
+    meter.accept(40,4,50,25);
+    check(meter.level==2&&meter.reset_gauge==25&&!meter.reset_this_tick,"next tick resumes wear");
+    for(unsigned i=0;i<3;++i)meter.advance();
+    meter.accept(0,4);
+    meter.advance();
+    check(meter.level==2&&!meter.reset_gauge&&!meter.reset_remaining&&meter.remaining==3,
+          "a contact with no wear binding can refresh the tier but not the reset gauge");
+
+    std::string table="damage-tier-receive=18";
+    for(unsigned i=0;i<kBorgDamageTierCells;++i)
+        table+=i==0?"|1.0":i==1?"|0.8":i==2?"|0.5":"|0.25";
+    table+='\n';
+    const std::string credit="damage-credit=0|1|1\ndamage-credit=1|1|1\ncontact-power=b-shot|20\n";
+    const std::string receive="damage-receive=0|1|1\ndamage-receive=1|1|1\n";
+    const std::string scaled="contact-tier=b-shot|60|scale\n",bypass="contact-tier=b-shot|60|bypass\n";
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.packages={parse(std::string(player)+credit+scaled),parse(std::string(target)+receive+table),
+                     parse(std::string(player)+credit+bypass)};
+    config.declared_actors=3;config.teams={0,1,0};config.teams_declared=true;
+    config.spawn={BattlePoint{-100,0},BattlePoint{0,200},BattlePoint{100,0}};
+    check(world.start(config),"receiver-owned tier fixture");
+    auto step=[&](u8 left=0,u8 right=0){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+        inputs[0].pressed=left;inputs[2].pressed=right;
+        check(world.step_roster(pads,inputs,false),"tier fixture step");
+    };
+    const std::array<unsigned,5> amounts{20,20,16,20,10},levels{0,1,1,2,2},meters{60,0,60,0,60};
+    unsigned hit=0,previous=500;
+    for(unsigned tick=0;tick<58&&hit<amounts.size();++tick){
+        const auto button=BorgBattleInputs::b;
+        step((tick==0||tick==24||tick==48)?button:0,(tick==12||tick==36)?button:0);
+        if(world.hits()==hit)continue;
+        const auto& victim=world.actors()[1];
+        check(world.hits()==hit+1&&previous-victim.health==amounts[hit]&&
+              victim.damage_tier.level==levels[hit]&&victim.damage_tier.meter==meters[hit]&&
+              victim.damage_tier.remaining==18,
+              "tier uses the prior receiver level, then charges across owners even on a bypass hit");
+        previous=victim.health;++hit;
+    }
+    check(hit==amounts.size(),"all five scoped hits reach the shared receiver");
+    for(unsigned i=0;i<18;++i)step();
+    check(!world.actors()[1].damage_tier.level&&!world.actors()[1].damage_tier.meter,
+          "idle simulation clears the meter without another hit");
+    check(world.start(config)&&!world.actors()[1].damage_tier.remaining,"restart has no surviving tier state");
+    const std::string wear="contact-tier-reset=b-shot|25\n";
+    const std::string capacity="damage-tier-reset=50\n";
+    config.packages={parse(std::string(player)+credit+scaled+wear),parse(std::string(target)+receive+table+capacity),
+                     parse(std::string(player)+credit+bypass+wear)};
+    check(world.start(config),"receiver reset fixture");
+    hit=0;previous=500;
+    const std::array<unsigned,5> reset_levels{0,0,1,0,1};
+    for(unsigned tick=0;tick<58&&hit<amounts.size();++tick){
+        const auto button=BorgBattleInputs::b;
+        step((tick==0||tick==24||tick==48)?button:0,(tick==12||tick==36)?button:0);
+        if(world.hits()==hit)continue;
+        const auto& victim=world.actors()[1];
+        check(world.hits()==hit+1&&previous-victim.health==20&&victim.damage_tier.level==reset_levels[hit]&&
+              victim.damage_tier.reset_gauge==(hit%2?50:25),
+              "qualified hits deplete the shared gauge and clear old tier before charging");
+        previous=victim.health;++hit;
+    }
+    check(hit==amounts.size()&&world.start(config)&&!world.actors()[1].damage_tier.reset_remaining,
+          "restart clears the separate receiver gauge");
+    BorgGameplayProfile rejected;
+    for(const auto& suffix:{scaled,credit+scaled+scaled,credit+scaled+"damage-chain=1|0.8|0.5|0.25\n",
+                            credit+scaled+"blast=shot|actor|160|19|opponent\n",table,credit+wear,
+                            credit+scaled+wear+wear,credit+scaled+"contact-tier-reset=b-shot|256\n",
+                            receive+capacity,receive+table+capacity+capacity})
+        check(!borg_read_gameplay_profile(std::string(player)+suffix,&rejected,nullptr),
+              "contact tier refuses missing roles, duplicates, legacy chain mixing and indirect moves");
+}
 void aim_commit_cases(){
     constexpr std::string_view setup=R"(GFBORG-GAMEPLAY 1
 variant=normal
@@ -209,6 +1018,56 @@ release=channel|2|none|0|ray
               "only clipped beams query stage each visit; visible width does not define contact");
         check(scenario==2?(hits>0&&hits<6):hits==(scenario==1||scenario==4?3u:scenario==5?0u:6u),
               "damage tracks eligible exposure, not a guaranteed total");
+    }
+    {
+        struct RaisedAimWall final:IBattleMvpTerrain {
+            f32 plane=170;mutable unsigned queries=0;
+            bool height(f32,f32,f32 y,f32* out)const override{*out=y>=200?300.f:0.f;return true;}
+            bool supports_projectile_stage()const override{return true;}
+            bool projectile_stage(const BattleMvpVec& start,const BattleMvpVec& end,NativeBorgStageProjectileHit* hit)const override{
+                ++queries;
+                *hit={};
+                if(start[2]<plane&&end[2]>=plane)*hit={true,(plane-start[2])/(end[2]-start[2]),2};
+                return true;
+            }
+        } terrain;
+        const std::string brace=std::string(player)+"move=brace|x|50|any|18|0:4\nguard=brace|1|16|1|1|shots\n";
+        const auto blocker=parse(brace),immune=parse(brace+"damage-mask=2\n");
+        BattleMvpConfig config;config.declared_actors=4;config.teams={0,1,1,1};config.teams_declared=true;
+        config.spawn={BattlePoint{0,0},BattlePoint{0,100},BattlePoint{0,220},BattlePoint{0,360}};
+        config.spawn_query_y[1]=300;
+        NativeBattleMvp world;
+        for(unsigned scenario=0;scenario<6;++scenario){
+            terrain.plane=scenario==5?300.f:170.f;terrain.queries=0;
+            const auto front=scenario==1?recover:scenario==2?immune:scenario==3||scenario==4?blocker:plain;
+            config.packages={scenario>=4?clipped:p,plain,front,plain};
+            check(world.start(config,&terrain)&&world.target_of(0)==1&&world.actors()[1].position[1]==300,
+                  "roster beam aims at a fighter above its segment");
+            std::vector<unsigned> hit_ticks;
+            unsigned blocks=0;
+            for(unsigned tick=0;tick<18;++tick){
+                std::array<GamePadState,kBattleMvpMaxActors> pads{};
+                std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+                if(!tick)inputs[0].pressed=inputs[2].pressed=BorgBattleInputs::x;
+                check(world.step_roster(pads,inputs,false,&terrain),"roster beam visit");
+                if(tick==2&&scenario==4)
+                    check(world.projectiles()[0].active&&world.projectiles()[0].beam_fraction<1&&!world.hits(),
+                          "tied stage surface clips the beam rather than retiring it");
+                for(const auto& e:world.package_events()){
+                    if(e.kind==BorgBattleEventKind::GuardBlocked&&e.actor==2)++blocks;
+                    if(e.kind!=BorgBattleEventKind::Hit||e.actor!=0)continue;
+                    check(e.recipient==(scenario==2?3:2)&&e.value==7,"one pulse uses the first physically eligible recipient");
+                    hit_ticks.push_back(e.tick);
+                }
+            }
+            const std::vector<unsigned> full{3,5,7,9,11,13},recovered{3,7,11},guarded{5,7,9,11,13};
+            check(hit_ticks==(scenario==4?std::vector<unsigned>{}:scenario==1?recovered:scenario==3?guarded:full)&&
+                  blocks==unsigned(scenario==3)&&terrain.queries==(scenario>=4?12u:0u)&&
+                  world.target_of(0)==1&&world.actors()[1].health==500,
+                  "beam contact, guard and recovery are independent of aiming, with no hit through a wall");
+            check(world.actors()[3].health==(scenario==2?458u:500u),
+                  "recovery and a guard occlude the farther body; relation refusal does not");
+        }
     }
     std::string swept_text(clipped_text);
     const auto steer=swept_text.find("|700|2|0.05");
@@ -352,7 +1211,60 @@ release=drop|1|bombs|1|charge
               "fuse tail retains the carrier and spent stock");
     }
     check(arm_tick&&burst_tick==arm_tick+3&&world.shots_spawned()==5&&world.package_action(0).stocks[0].current==1,
-          "one authored fuse tail and one child volley");
+           "one authored fuse tail and one child volley");
+
+    struct ChargeRosterGround final:IBattleMvpTerrain {
+        bool blocked=false;mutable unsigned queries=0;
+        bool height(f32,f32,f32 y,f32* out)const override{*out=y>=200?300.f:0.f;return true;}
+        bool supports_projectile_stage()const override{return true;}
+        bool projectile_stage(const BattleMvpVec&,const BattleMvpVec&,NativeBorgStageProjectileHit* out)const override{
+            ++queries;*out=blocked?NativeBorgStageProjectileHit{true,0.5f,2}:NativeBorgStageProjectileHit{};return true;
+        }
+    } roster_ground;
+    const auto body=parse(target),immune=parse(std::string(target)+"damage-mask=2\n");
+    auto all_text=std::string(setup);
+    all_text.replace(all_text.find("|opponent"),9,"|all");
+    const auto ordinary_roster=parse(std::string(setup)+"bomb-proximity=charge|150|4|blast\n");
+    const auto quiet_at_expiry=parse(std::string(setup)+"bomb-proximity=charge|150|11|retire\nbomb-fuse-tail=charge|3\n");
+    const auto all_roster=parse(all_text+"bomb-proximity=charge|150|4|blast\n");
+    BattleMvpConfig roster;roster.declared_actors=4;roster.teams_declared=true;roster.spawn_query_y[1]=300;
+    for(unsigned scene=0;scene<6;++scene){
+        const bool moves=scene==3||scene==4;
+        roster_ground.blocked=scene==4;roster_ground.queries=0;
+        roster.teams={0,1,1,u8(scene==5?1:0)};
+        roster.spawn={BattlePoint{0,0},BattlePoint{0,100},BattlePoint{0,200},BattlePoint{90,100}};
+        if(moves)roster.spawn[2]={30,187};
+        if(scene==5){roster.spawn[2]={45,188};roster.spawn[3]={-45,188};}
+        roster.packages={moves?magnetic:scene==1?quiet_at_expiry:scene==2?all_roster:ordinary_roster,
+                         body,scene==1?immune:body,body};
+        check(world.start(roster,&roster_ground)&&world.target_of(0)==1&&world.actors()[1].position[1]==300,
+              "charge fixture keeps the elevated enemy as the caster's aim target");
+        unsigned sensed=255,sensor_tick=0,blasts=0,returns=0,tail=0;
+        bool attracted=false;
+        for(unsigned tick=0;tick<22;++tick){
+            std::array<GamePadState,kBattleMvpMaxActors> pads{};
+            std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+            if(!tick)inputs[0].pressed=BorgBattleInputs::x;
+            check(world.step_roster(pads,inputs,false,&roster_ground),"roster charge visit");
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::BombProximity){check(sensed==255,"one sensor exit per carrier");sensed=e.recipient;sensor_tick=e.tick;}
+                blasts+=unsigned(e.kind==BorgBattleEventKind::BlastTriggered);
+                returns+=unsigned(e.kind==BorgBattleEventKind::StockReturned);
+                tail+=unsigned(e.kind==BorgBattleEventKind::BombFuseCommitted);
+            }
+            attracted|=world.projectiles()[0].bomb_travel_speed>0&&world.projectiles()[0].position[0]>0;
+        }
+        check(sensed==(scene==4?255u:scene==5?3u:2u)&&world.target_of(0)==1&&returns==1&&
+              world.package_action(0).stocks[0].current==1,
+              "the device senses the nearest enemy to itself, breaking ties by later slot and returning stock once");
+        check(blasts==unsigned(scene!=1)&&tail==0&&(scene!=1||sensor_tick==13),
+              "quiet proximity wins over the tied expiry without committing the fuse tail");
+        check(attracted==(scene==3)&&(moves?roster_ground.queries>0:roster_ground.queries==0),
+              "attraction follows the physical enemy in X/Z and still respects an obstructed step");
+        check(world.actors()[0].health==(scene==2?230u:250u)&&world.actors()[1].health==500&&
+              world.actors()[2].health==(scene==1?500u:480u)&&world.actors()[3].health==(scene==2||scene==5?480u:500u),
+              "opponent blasts exclude allies; all blasts still include the owner and ally in range");
+    }
 }
 void smoke_cases(){
     constexpr std::string_view smoke_setup=R"(GFBORG-GAMEPLAY 1
@@ -460,6 +1372,22 @@ release=fire|1|none|0|bolt
         if(world.fields()[0].id)check(world.fields()[0].centre==position,"placed sphere doesn't chase the target");
         check(world.start(config,&wall)&&!world.fields()[0].id,"field state does not survive restart");
     }
+    NativeBattleMvp world;BattleMvpConfig config;WallGround terrain;
+    std::string defender(target);
+    defender.replace(defender.find("health=500"),10,"health=100");
+    config.packages={parse(placed+"damage-credit=0|1|1\ndamage-credit=1|1|1\n"),
+                     parse(defender+"damage-receive=0|1|1\ndamage-receive=1|1|1\n"+
+                           damage_ladder("damage-receive-hp",4,"0.5"))};
+    config.spawn={BattlePoint{0,0},BattlePoint{0,190}};
+    check(world.start(config,&terrain),"powered HP ladder fixture");
+    for(unsigned tick=0;tick<20&&!world.hits();++tick){
+        const u8 button=tick==0?BorgBattleInputs::x:tick==5?BorgBattleInputs::b:0;
+        check(world.step({},false,&terrain,nullptr,nullptr,nullptr,
+            {BorgBattleInputs{button,0,0},{}}),"powered HP ladder step");
+    }
+    const auto& bolt=world.projectiles()[0];
+    check(world.hits()==1&&bolt.package_base_damage==10&&bolt.package_damage==20&&world.actors()[1].health==90,
+          "HP response indexes raw ten at cell four, not the power-field doubled damage");
 }
 void slow_field_cases(){
     constexpr std::string_view setup=R"(GFBORG-GAMEPLAY 1
@@ -829,6 +1757,54 @@ void movement_and_attraction_cases(){
               world.actors()[0].health==250&&world.actors()[1].health==(scenario==0?487u:500u),
               "only grounded walking pulses hit the opposing actor, once per wave");
     }
+    {
+        struct HighAimFloor final:IBattleMvpTerrain {
+            bool height(f32,f32,f32 y,f32* out)const override{*out=y>=200?300.f:0.f;return true;}
+        } terrain;
+        const auto walker=parse(std::string(player)+"walk-pulse=16|8|180|20|8|13\n");
+        const auto body=parse(target);
+        const std::string brace=std::string(player)+"move=brace|x|50|grounded|25|0:0\nguard=brace|1|22|0.75|1|all\n";
+        const auto blocker=parse(brace),immune=parse(brace+"damage-mask=2\n");
+        BattleMvpConfig config;config.declared_actors=4;config.teams_declared=true;config.spawn_query_y[1]=300;
+        NativeBattleMvp world;
+        for(unsigned scene=0;scene<5;++scene){
+            config.teams={0,1,1,u8(scene==4?0:1)};
+            config.packages={walker,body,body,scene==2?immune:scene==3?blocker:body};
+            config.spawn={BattlePoint{0,0},BattlePoint{0,89},BattlePoint{55,168},BattlePoint{-55,scene==1?185.f:168.f}};
+            check(world.start(config,&terrain)&&world.target_of(0)==1&&world.actors()[1].position[1]==300,
+                  "pulse fixture aims at a body too high for the annulus");
+            u32 object=0,born=0,contact=0;
+            u8 recipient=255;
+            unsigned hits=0,blocks=0;
+            for(unsigned tick=0;tick<24;++tick){
+                std::array<GamePadState,kBattleMvpMaxActors> pads{};
+                std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+                pads[0].dpad_down=!object;
+                if(!tick&&(scene==2||scene==3))inputs[3].pressed=BorgBattleInputs::x;
+                check(world.step_roster(pads,inputs,false,&terrain),"roster pulse tick");
+                for(const auto& e:world.package_events()){
+                    if(e.kind==BorgBattleEventKind::WalkPulseCreated){
+                        check(!object,"one accepted stride starts one wave");
+                        object=e.object;born=e.tick;
+                    }
+                    if(e.object!=object||!object)continue;
+                    if(e.kind==BorgBattleEventKind::Hit&&e.actor==0){
+                        ++hits;recipient=e.recipient;contact=e.tick;
+                    }
+                    if(e.kind==BorgBattleEventKind::GuardBlocked&&e.recipient==0){
+                        ++blocks;recipient=e.actor;contact=e.tick;
+                    }
+                }
+            }
+            check(object&&contact==born+6&&hits==unsigned(scene!=3)&&blocks==unsigned(scene==3)&&
+                  recipient==(scene==0||scene==3?3:2)&&world.target_of(0)==1,
+                  "annulus entry selects one actual enemy, not the aim target, and an eligible guard spends the contact");
+            check(world.actors()[1].health==500&&world.actors()[2].health==(recipient==2?487u:500u)&&
+                  world.actors()[3].health==(scene==0?487u:scene==2||scene==3?250u:500u)&&
+                  std::none_of(world.walk_pulses().begin(),world.walk_pulses().end(),[](const auto& w){return w.id!=0;}),
+                  "resolve only once and expire without spending guards on immune or allied bodies");
+        }
+    }
     for(bool enemy:{false,true}){
         NativeBattleMvp world;BattleMvpConfig config;
         config.packages={parse(core_base+"field-core-damage=well|"+(enemy?"enemies":"source")+"|40|7|3\n"),parse(target)};
@@ -1022,6 +1998,115 @@ anchor-fence=fence|12|17|12
               "fence expires, owner is immune, one entry can damage or be guarded, only opt-in recoil moves");
         check(world.actors()[1].position[2]==(scenario?340.f:352.f),"recoil takes one accepted step away");
     }
+}
+void roster_fence_cases(){
+    const std::string rules=std::string(player)+R"(
+anchor-set=wire|2
+move=place|x|80|any|6|0:4
+place-anchor=place|1|wire|none|0
+place-anchor=place|2|wire|none|0
+place-anchor-offset=place|1|120|50
+place-anchor-offset=place|2|380|50
+anchor-fence=wire|12|17|100
+)";
+    const auto dummy=parse(target);
+    const auto mask=parse(std::string(target)+"damage-mask=2\n");
+    const auto walker=parse(player);
+    const auto fence=parse(rules);
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.declared_actors=4;config.teams_declared=true;config.teams={1,1,0,0};
+    config.spawn={BattlePoint{0,150},BattlePoint{35,280},BattlePoint{0,0},BattlePoint{-40,370}};
+    std::array<unsigned,kBattleMvpMaxActors> hits{};
+    unsigned guarded=0,recoils_to_guard=0;
+    auto visit=[&](GamePadState runner={},bool place=false,bool guard=false){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> buttons{};
+        pads[0]=runner;
+        if(place)buttons[2].pressed=BorgBattleInputs::x;
+        if(guard)buttons[1].pressed=BorgBattleInputs::x;
+        check(world.step_roster(pads,buttons,false),"late-owner fence visit");
+        for(const auto& e:world.package_events()){
+            if(e.kind==BorgBattleEventKind::Hit&&e.actor==2){
+                check(e.recipient<world.actor_count(),"fence trace identifies a live roster slot");
+                ++hits[e.recipient];
+            }
+            if(e.kind==BorgBattleEventKind::GuardBlocked&&e.actor==1&&e.recipient==2)++guarded;
+            if((e.kind==BorgBattleEventKind::FenceRecoilApplied||e.kind==BorgBattleEventKind::FenceRecoilRefused)&&
+               e.actor==2&&e.recipient==1)++recoils_to_guard;
+        }
+    };
+
+    config.packages={walker,dummy,fence,dummy};
+    check(world.start(config)&&world.target_of(2)==0,"fence owner outside the first two slots");
+    visit({},true);visit();
+    check(world.anchor_paths()[2][0].count==1&&world.fence_links().empty(),"one late-owner anchor is inactive");
+    visit();visit();visit();
+    check(hits[0]==1&&hits[1]==1&&hits[2]==0&&hits[3]==0&&world.fence_links().size()==1,
+          "one visible fence hits two enemies once without hitting the ally inside it");
+    GamePadState right;right.dpad_right=true;
+    for(unsigned tick=0;tick<17;++tick)visit(right);
+    check(world.actors()[0].position[0]>55&&hits[0]==1&&hits[1]==1,"one enemy exits while the other stays latched");
+    GamePadState left;left.dpad_left=true;
+    for(unsigned tick=0;tick<55&&hits[0]==1;++tick)visit(left);
+    check(hits[0]==2&&hits[1]==1,"only the fighter who reenters can take a second hit");
+    for(unsigned tick=world.tick();tick<105;++tick)visit();
+    check(world.anchor_paths()[2][0].count==0&&world.fence_links().empty()&&hits[1]==1,
+          "late-owner points expire and leave no active link");
+
+    const std::string guard=std::string(player)+"move=block|x|80|any|8|0:4\nguard=block|1|6|3.1|1|all\n";
+    for(bool immune:{true,false}){
+        config.packages={immune?dummy:mask,parse(guard+(immune?"damage-mask=2\n":"")),
+                         parse(rules+"fence-recoil=wire|12\n"),dummy};
+        check(world.start(config)&&world.fence_links().empty(),"new round has no fence or latch");
+        hits={};guarded=recoils_to_guard=0;
+        visit({},true,true);
+        for(unsigned tick=0;tick<14;++tick)visit();
+        check(guarded==unsigned(!immune)&&!recoils_to_guard&&hits[0]==unsigned(immune)&&!hits[1]&&!hits[3],
+              "an immune body spends no guard; a guarded crossing does not hit or recoil when the guard expires");
+    }
+    auto fragile=rules;fragile.replace(fragile.find("health=250"),10,"health=1");
+    config.packages={walker,dummy,parse(fragile),dummy};
+    check(world.start(config),"late-owner defeat fixture");
+    visit({},true);
+    for(unsigned tick=0;tick<15;++tick)visit();
+    check(world.fence_links().size()==1&&world.actors()[2].health==1,"late owner's fence is active before defeat");
+    for(unsigned tick=0;tick<10&&world.actors()[2].health;++tick){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> buttons{};
+        if(!tick)buttons[0].pressed=BorgBattleInputs::b;
+        check(world.step_roster(pads,buttons,false),"late fence owner receives a direct hit");
+    }
+    check(!world.actors()[2].health,"the late owner has been defeated");
+    visit();
+    check(world.anchor_paths()[2][0].count==0&&world.fence_links().empty(),"defeat retires the late owner's path");
+}
+void full_roster_fence_capacity(){
+    std::string rules(player);
+    for(unsigned set=0;set<kBorgBattleAnchorSets;++set){
+        const auto name="fence-"+std::to_string(set),move="place-"+std::to_string(set);
+        rules+="anchor-set="+name+"|"+std::to_string(kBorgBattleAnchors)+"\n";
+        rules+="anchor-fence="+name+"|12|1|50\n";
+        rules+="move="+move+(set?"|x":"|b")+"|"+std::to_string(80+set)+"|any|12|0:4\n";
+        for(unsigned frame=1;frame<=kBorgBattleAnchors;++frame){
+            const auto tick=std::to_string(frame);
+            rules+="place-anchor="+move+"|"+tick+"|"+name+"|none|0\n";
+            rules+="place-anchor-offset="+move+"|"+tick+"|"+std::to_string(50+20*frame)+"|50\n";
+        }
+    }
+    NativeBattleMvp world;BattleMvpConfig config;
+    config.declared_actors=kBattleMvpMaxActors;config.packages.fill(parse(rules));
+    config.spawn={BattlePoint{-450,-450},BattlePoint{450,-450},BattlePoint{-450,0},
+                  BattlePoint{450,0},BattlePoint{-450,450},BattlePoint{450,450}};
+    check(world.start(config),"full fence roster fixture");
+    for(unsigned tick=0;tick<75;++tick){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> buttons{};
+        for(auto& input:buttons)input.pressed=u8(tick==0?BorgBattleInputs::b:tick==14?BorgBattleInputs::x:0);
+        check(world.step_roster(pads,buttons,false),"full fence roster tick");
+        if(tick==26)check(world.fence_links().size()==kBattleMvpMaxActors*kBorgBattleAnchorSets*(kBorgBattleAnchors-1),
+                         "the display holds exactly one link per active segment at full legal roster capacity");
+    }
+    check(world.fence_links().empty(),"every owner's full fence set expires");
 }
 void anchor_return_cases(){
     const auto text=std::string(player)+R"(
@@ -1368,11 +2453,13 @@ release=toss|1|ball|1|ball
             for(const auto& event:world.package_events())if(event.kind==BorgBattleEventKind::FlightChildren){
                 ++volleys;
                 check(event.object==1&&event.value==2&&(i==2||i==4),"only scheduled surviving flight updates emit");
-                const auto& parent=world.projectiles()[0];
-                unsigned fresh=0;
-                for(const auto& shot:world.projectiles())if(shot.active&&shot.id!=1&&shot.born_tick==world.tick()){
-                    ++fresh;check(shot.owner==0&&shot.position==parent.position&&shot.life==6&&shot.velocity[2]>20,
-                                  "child copies accepted position and direction, starts next visit");
+                 const auto& parent=world.projectiles()[0];
+                 check(parent.package_direct_release,"move emission owns a direct flight sample");
+                 unsigned fresh=0;
+                 for(const auto& shot:world.projectiles())if(shot.active&&shot.id!=1&&shot.born_tick==world.tick()){
+                     ++fresh;check(shot.owner==0&&shot.position==parent.position&&shot.life==6&&shot.velocity[2]>20&&
+                                   !shot.package_direct_release,
+                                   "child copies accepted position and direction, not the direct release provenance");
                 }
                 check(fresh==2,"all-or-nothing child volley allocation");
             }
@@ -1776,6 +2863,22 @@ int main(){
                    "move=keep-motion|b|30|any|6|none\nrelease=keep-motion|2|primary|1|shot\npose-start=keep-motion|1\n"})
         check(!borg_read_gameplay_profile(std::string(player)+text,&invalid_scope,&scope_error),
               "pose-free ground move cannot fake an animation or an unpaid/nonprojectile move");
+    pose_followup_api_cases();
+    damage_role_cases();
+    contact_power_cases();
+    damage_receiver_ladder_cases();
+    damage_attacker_ladder_cases();
+    damage_index_cases();
+    damage_floor_cases();
+    contact_tier_cases();
+    contact_sound_cases();
+    roster_audio_cases();
+    contact_impact_cases();
+    contact_pose_hold_cases();
+    roster_direct_contact_cases();
+    roster_body_motion_cases();
+    roster_body_sweep_cases();
+    roster_hit_history_cases();
     aim_commit_cases();
     body_heading_release_cases();
     sustained_beam_cases();
@@ -1791,6 +2894,8 @@ int main(){
     movement_and_attraction_cases();
     drifting_field_cases();
     fence_cases();
+    roster_fence_cases();
+    full_roster_fence_capacity();
     anchor_return_cases();
     add_debit_stock_cases();
     entry_stock_cases();
@@ -2207,8 +3312,10 @@ int main(){
     pull_step(false,true);pull_step();pull_step();
     area=world.package_events();
     check(area.size()==8&&has(world,BorgBattleEventKind::ProjectileContact)&&has(world,BorgBattleEventKind::BlastTriggered)&&
-          !has(world,BorgBattleEventKind::Hit)&&world.hits()==2&&world.actors()[0].health==222&&world.actors()[1].health==472,
-          "accepted contact triggers area without direct damage; explicit all policy includes caster once");
+           !has(world,BorgBattleEventKind::Hit)&&world.hits()==2&&world.actors()[0].health==222&&world.actors()[1].health==472,
+           "accepted contact triggers area without direct damage; explicit all policy includes caster once");
+    check(world.actors()[0].reaction_ticks==0&&world.actors()[1].reaction_ticks>0,
+          "a self blast still applies damage but cannot open an attacker-directed reaction");
     const auto floor_bombs=replace_one(replace_one(bombs,"20|0|0|0|8|5|0|ignore-floor","20|-80|0|0|8|5|0|stop-on-floor"),
                                        "blast=bomb|expiry","blast=bomb|floor");
     config.packages[0]=parse(floor_bombs);check(world.start(config,&terrain),"floor blast fixture");
@@ -2832,8 +3939,8 @@ int main(){
               "a direction above squared 0.01 keeps its own yaw");
         check(native_battle_reaction_mode_valid(0)&&native_battle_reaction_mode_valid(1)&&
               native_battle_reaction_mode_valid(2)&&native_battle_reaction_mode_valid(3)&&
-              !native_battle_reaction_mode_valid(4),
-              "modes 0..3 have native inputs; later modes are refused");
+              native_battle_reaction_mode_valid(4)&&!native_battle_reaction_mode_valid(5),
+              "mode 4 is known; higher modes are refused");
         const f32 origin[3]{0,0,0},target[3]{0,0,-1};
         f32 direction[3];
         native_battle_reaction_direction(2,origin,BattlePoint{1,0},target,direction);
@@ -2841,13 +3948,31 @@ int main(){
               "mode 2 uses the attacker velocity as the direction");
         native_battle_reaction_direction(1,origin,BattlePoint{1,0},target,direction);
         check(direction[2]==-1,"mode 1 uses receiver minus attacker");
+        check(!native_battle_reaction_direction(4,origin,{1,0},target,direction),
+              "mode 4 requires a direct body basis");
+        check(native_battle_reaction_direction(4,origin,{1,0},target,direction,
+                                              NativeBattleReactionContact{BattlePoint{.6f,.8f},{}})&&
+              direction[0]==.6f&&direction[1]==0&&direction[2]==.8f,
+              "mode 4 uses body forward, not travel velocity or receiver position");
+        NativeBattleReactionContact contact;
+        contact.motion=NativeBattleReactionMotion{{0,0,0},{0,.05f,0},{0,10,60}};
+        check(native_battle_reaction_direction(0,origin,{1,0},target,direction,contact)&&
+              direction[0]==0&&direction[1]==10&&direction[2]==60,
+              "a zero object delta uses the live three-dimensional object vector, not its caster velocity");
+        check(native_battle_reaction_direction(2,origin,{1,0},target,direction,contact)&&
+              direction[0]==0&&direction[1]==.05f&&direction[2]==0&&
+              native_battle_reaction_angles(direction,{0,1}).pitch==0,
+              "a nonzero small pair delta reaches the final epsilon gate before any vector fallback");
     }
 
     {
         BorgGameplayProfile rejected;std::string error;
         check(!borg_read_gameplay_profile(std::string(player)+"reaction-mode=b-shot|4\n",
+                                          &rejected,&error)&&error.find("melee-only")!=error.npos,
+              "reaction mode 4 cannot bind a projectile");
+        check(!borg_read_gameplay_profile(std::string(player)+"reaction-mode=b-shot|5\n",
                                           &rejected,&error),
-              "reaction-mode refuses a mode with no native analogue");
+              "reaction mode 5 stays unsupported");
         const auto velocity=parse(std::string(player)+"reaction-mode=b-shot|2\n");
         check(velocity->moves.size()>0&&velocity->moves[0].reaction_mode==2,
               "reaction-mode declares the velocity analogue");
@@ -2870,6 +3995,149 @@ int main(){
         check(!borg_read_gameplay_profile(std::string(player)+
               "reaction-offset=b-shot|1|0\nreaction-offset=b-shot|2|0\n",&rejected,&error),
               "reaction-offset needs one row per move");
+    }
+
+    {
+        const std::string slash=std::string(player)+
+            "move=root-test|b|30|grounded|18|0:0\nrange=root-test|145\n"
+            "melee=root-test|4|8|90|40|60|22|20\n"
+            "reaction-mode=root-test|4\nreaction-offset=root-test|0|24\n";
+        BorgGameplayProfile rejected;std::string error;
+        check(!borg_read_gameplay_profile(slash+"release=root-test|4|primary|1|shot\n",&rejected,&error)&&
+              error.find("melee-only")!=error.npos,"reaction mode 4 refuses a mixed melee and projectile move");
+        auto mutated=*parse(player);mutated.moves.front().reaction_mode=kBorgReactionBodyRoot;
+        check(!borg_gameplay_profile_valid(mutated),"programmatic profiles enforce the same reaction scope");
+        const auto attacker=parse(slash);
+        check(attacker->moves.back().reaction_mode==4,"an actor-bound melee move accepts mode 4");
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={attacker,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+        check(world.start(config),"body-root reaction fixture");
+        const NativeBorgMovementFrame frame{{0,1},{1,0}};
+        for(unsigned tick=0;tick<16&&!world.hits();++tick){
+            std::array<GamePadState,2> pads{};
+            pads[0].dpad_right=tick<2;
+            check(world.step(pads,false,nullptr,nullptr,&frame,nullptr,
+                {BorgBattleInputs{u8(tick==2?BorgBattleInputs::b:0),0,0},{}}),"body-root reaction step");
+        }
+        const auto& from=world.actors()[0];const auto& to=world.actors()[1];
+        const f32 receiver_yaw=std::atan2(to.facing.x,to.facing.z);
+        const f32 root_yaw=std::atan2(from.facing.x,from.facing.z);
+        const f32 ray_yaw=std::atan2(to.position[0]-from.position[0],to.position[2]-from.position[2]);
+        check(world.hits()==1&&to.health==480&&to.reaction_ticks>0&&
+              std::abs(native_battle_reaction_wrap(root_yaw-ray_yaw))>.15f,
+              "body-root test lands a direct melee hit with a distinct off-centre target ray");
+        check(std::abs(native_battle_reaction_wrap(to.reaction_yaw-(root_yaw-receiver_yaw)))<1e-4f&&
+              std::abs(to.reaction_pitch+24*kNativeBattleReactionUnit)<1e-4f,
+              "direct mode 4 uses the contact-time body root and keeps the recovered pitch offset");
+    }
+
+    {
+        const std::string rules=std::string(player)+
+            "reaction-root=b-shot|linked-owner\nreaction-mode=b-shot|4\nreaction-offset=b-shot|0|24\n";
+        BorgGameplayProfile rejected;std::string error;
+        for(const auto& invalid:{
+                std::string(player)+"reaction-root=b-shot|linked-owner\n",
+                rules+"reaction-root=b-shot|linked-owner\n",
+                rules+"blast=shot|actor|160|19|opponent\n",
+                rules+"melee=b-shot|1|2|90|40|60|22|20\n"})
+            check(!borg_read_gameplay_profile(invalid,&rejected,&error),
+                  "linked-owner mode requires one explicit direct projectile move");
+        const auto linked=parse(rules);
+        auto invalid=*linked;
+        invalid.projectiles[0].blast_children=1;
+        check(!borg_battle_reaction_scope_valid(invalid,invalid.moves[0]),
+              "a linked-owner move refuses a child-producing projectile");
+        BattleMvpConfig config;
+        config.packages={linked,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,550}};
+        NativeBattleMvp world;
+        check(world.start(config),"linked-owner reaction fixture");
+        const NativeBorgMovementFrame frame{{0,1},{1,0}};
+        BattlePoint at_launch{};
+        for(unsigned tick=0;tick<20&&!world.hits();++tick){
+            std::array<GamePadState,2> pads{};
+            pads[0].dpad_right=world.shots_spawned()>0;
+            const unsigned before=world.shots_spawned();
+            check(world.step(pads,false,nullptr,nullptr,&frame,nullptr,
+                {BorgBattleInputs{u8(tick==0?BorgBattleInputs::b:0),0,0},{}}),"linked-owner reaction step");
+            if(world.shots_spawned()!=before)at_launch=world.actors()[0].facing;
+        }
+        const auto& caster=world.actors()[0];const auto& victim=world.actors()[1];
+        const f32 root=std::atan2(caster.facing.x,caster.facing.z)-
+                       std::atan2(victim.facing.x,victim.facing.z);
+        check(world.hits()==1&&victim.health==481&&victim.reaction_ticks&&
+              caster.package_move==BorgBattleActionState::none&&std::abs(caster.facing.x-at_launch.x)>.2f&&
+              std::abs(native_battle_reaction_wrap(victim.reaction_yaw-root))<1e-4f&&
+              std::abs(victim.reaction_pitch+24*kNativeBattleReactionUnit)<1e-4f,
+              "a separated shot uses the live caster heading at contact after its original move has ended");
+
+        config.declared_actors=3;
+        config.packages[0]=parse(rules+"damage-credit=0|1|1\ndamage-credit=1|1|1\n"
+            "damage-matchup-group=linked-caster\ndamage-credit-ladders=b-shot\n"+
+            damage_ladder("damage-credit-hp",31,"2"));
+        config.packages[1]=parse(replace_one(std::string(player),"|1|60|0|0|0|8|30|19|","|1|140|0|0|0|8|30|300|")+
+            "damage-receive=0|1|1\ndamage-receive=1|1|1\n"
+            "damage-matchup-group=opponent\ndamage-matchup-from=linked-caster|2\n");
+        config.packages[2]=parse(target);
+        config.spawn[2]={800,900}; // living caster team-mate keeps the battle open
+        check(world.start(config),"linked-owner loss fixture");
+        for(unsigned tick=0;tick<20&&world.hits()<2;++tick){
+            const BorgBattleInputs press{u8(tick==0?BorgBattleInputs::b:0),0,0};
+            check(world.step_roster(std::array<GamePadState,kBattleMvpMaxActors>{},
+                std::array<BorgBattleInputs,kBattleMvpMaxActors>{press,press},false),"linked-owner loss step");
+        }
+        check(world.hits()==2&&!world.actors()[0].health&&world.actors()[1].health==231&&
+              world.actors()[1].reaction_ticks&&std::abs(world.actors()[1].reaction_pitch)<1e-5f,
+              "losing the linked owner keeps shot damage but omits its live matchup, outgoing curves, root and offsets");
+    }
+
+    {
+        // At 130 units the default muzzle starts at (0,60,54).
+        // The combined radius is 50; contact clips the shot at z=80,
+        // but the segment submitted to the pair solver spans 60.
+        const auto rising=replace_one(std::string(player),"shot|beam|1|60|0|","shot|beam|1|60|18|");
+        for(const int mode:{-1,0,1,2,3}){
+            const auto fighter=parse(mode<0?rising:rising+"reaction-mode=b-shot|"+std::to_string(mode)+"\n");
+            BattleMvpConfig config;config.packages={fighter,parse(target)};
+            config.spawn={BattlePoint{0,0},BattlePoint{0,130}};
+            NativeBattleMvp world;
+            check(world.start(config),"direct projectile displacement fixture");
+            for(unsigned tick=0;tick<12&&!world.hits();++tick){
+                const BorgBattleInputs press{u8(tick==0?BorgBattleInputs::b:0),0,0};
+                check(world.step({},false,nullptr,nullptr,nullptr,nullptr,{press,{}}),
+                      "direct projectile displacement step");
+            }
+            const auto& recipient=world.actors()[1];
+            const f32 rise=18.f*26.f/60.f;
+            f32 pitch=0;
+            if(mode==0)pitch=-std::atan2(rise,26.f*26.f);
+            if(mode==1)pitch=std::atan2(60.f+rise,50.f*50.f);
+            if(mode==2)pitch=-std::atan2(18.f,60.f*60.f);
+            if(mode==3)pitch=std::atan2(60.f+rise-50.f,50.f*50.f);
+            check(world.hits()==1&&recipient.health==481&&recipient.reaction_ticks&&
+                  std::abs(std::abs(recipient.reaction_yaw)-kNativeBattleReactionPi)<1e-4f&&
+                  std::abs(recipient.reaction_pitch-pitch)<1e-4f,
+                  "a rising shot distinguishes motion, object origin, pair centre and undeclared legacy reactions");
+        }
+    }
+
+    {
+        const auto fighter=parse(std::string(player)+
+            "move=centre-slash|b|30|grounded|18|0:0\nrange=centre-slash|145\n"
+            "melee=centre-slash|4|8|90|40|65|22|20\nreaction-mode=centre-slash|3\n");
+        BattleMvpConfig config;config.packages={fighter,parse(target)};
+        config.spawn={BattlePoint{0,0},BattlePoint{0,90}};
+        NativeBattleMvp world;
+        check(world.start(config),"melee pair centres fixture");
+        for(unsigned tick=0;tick<12&&!world.hits();++tick){
+            const BorgBattleInputs press{u8(tick==0?BorgBattleInputs::b:0),0,0};
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,{press,{}}),"melee pair centres step");
+        }
+        const auto& recipient=world.actors()[1];
+        check(world.hits()==1&&recipient.health==480&&
+              std::abs(recipient.reaction_pitch-std::atan2(15.f,45.f*45.f))<1e-4f,
+              "mode 3 uses the melee capsule midpoint and target cylinder centre");
     }
 
     {

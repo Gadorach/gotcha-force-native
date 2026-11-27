@@ -107,15 +107,18 @@ inline bool stage_view_fade_occludes(const StageViewFadeProfile& p,const std::ar
     }
     return nonzero;
 }
+inline bool stage_view_fade_near(const StageViewFadeProfile& p,const std::array<f32,3>& position){
+    f32 distance=0;
+    for(unsigned k=0;k<3;++k){
+        const auto delta=position[k]-std::clamp(position[k],p.lower[k],p.upper[k]);distance+=delta*delta;
+    }
+    return distance<=p.range*p.range;
+}
 
 struct StageViewFadeState {
     f32 alpha=1;u32 tick=0;bool sampled=false;
     f32 update(const StageViewFadeProfile& p,const std::array<f32,3>& position,u32 now){
-        f32 distance=0;
-        for(unsigned k=0;k<3;++k){
-            const auto delta=position[k]-std::clamp(position[k],p.lower[k],p.upper[k]);distance+=delta*delta;
-        }
-        return update_gate(p,distance<=p.range*p.range,now);
+        return update_gate(p,stage_view_fade_near(p,position),now);
     }
     f32 update_gate(const StageViewFadeProfile& p,bool hidden,u32 now){
         if(sampled&&now==tick)return alpha;

@@ -154,6 +154,7 @@ def battle_test(model, joints, role_clips, pace, level, source, sounds, *, launc
     return ("\n".join(lines)+"\n").encode("ascii"), whole_body_pose(joints), {
         "kind":"authored normal ground shot pair, retains locomotion","retail_behavior_verified":False,
         "preview_clip":"none","body_binding":"strict record zero","source_level":1,
-        "source_factory_calls":source["ordered_calls"],"source_debit_site":source["debit"]["site"],
+         "source_factory_calls":source["ordered_calls"],"source_debit_site":source["debit"]["site"],
+         "reaction_releases":{"basic-shot":[(call["family"],call["key"]) for call in source["ordered_calls"]]},
         "native_timing":{"release_tick":12,"move_ticks":28,"refill_ticks":180},"authored_launch_sounds":audio,
     }

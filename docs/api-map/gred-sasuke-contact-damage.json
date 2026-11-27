@@ -8,7 +8,7 @@
   "factors": {
     "conditional_half": {
       "applied": false,
-      "condition": "owner998 != 0 && owner136 == 0",
+      "condition": "Settings+50 in {0,1} && owner998 != 0 && owner136 == 0",
       "reason": "owner998 = 0 on this hit"
     },
     "credit_difficulty": {

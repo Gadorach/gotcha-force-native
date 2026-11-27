@@ -136,7 +136,7 @@
     },
     {
       "confidence": "open",
-      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
+      "note": "reads the cached receiving amount, updates team force and credit, and visits six observer slots with an eight-entry ring per actor",
       "phase": "reaction",
       "role": "force-ledger-update",
       "site": "8002F200",
@@ -144,7 +144,7 @@
     },
     {
       "confidence": "open",
-      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
+      "note": "reads the cached receiving amount, updates team force and credit, and visits six observer slots with an eight-entry ring per actor",
       "phase": "reaction",
       "role": "force-ledger-update",
       "site": "8002F21C",
@@ -243,9 +243,9 @@
     },
     {
       "confidence": "matched",
-      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
+      "note": "guards receiver+0x2AE and requests fixed impact sound ID 38",
       "phase": "reaction",
-      "role": "impact-effect",
+      "role": "impact-sound",
       "site": "8002F674",
       "target": "8002FCBC"
     },
@@ -258,9 +258,9 @@
     },
     {
       "confidence": "matched",
-      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
+      "note": "guards receiver+0x2AE and requests fixed impact sound ID 38",
       "phase": "reaction",
-      "role": "impact-effect",
+      "role": "impact-sound",
       "site": "8002F6B0",
       "target": "8002FCBC"
     },
@@ -330,15 +330,15 @@
     {
       "confidence": "matched",
       "phase": "reaction",
-      "role": "color",
+      "role": "impact-visual",
       "site": "8002F87C",
       "target": "80019550"
     },
     {
-      "confidence": "open",
-      "note": "impact effect variant 800F088C with a threshold-derived selector",
+      "confidence": "recovered",
+      "note": "guards receiver+0x2AE and selects an impact sound pair through receiver size thresholds",
       "phase": "reaction",
-      "role": "impact-effect",
+      "role": "impact-sound",
       "site": "8002F894",
       "target": "8002FC18"
     }

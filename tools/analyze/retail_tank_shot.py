@@ -117,6 +117,7 @@ def battle_test(model,joints,role_clips,pace,level,source,sfx,*,launch_audio=Fal
     return ("\n".join(lines)+"\n").encode("ascii"),whole_body_pose(joints),{
         "kind":"authored normal tank single shot, retains locomotion","retail_behavior_verified":False,
         "preview_clip":"none","body_binding":"strict record zero",
-        "source_level":1,"source_normal_factory_family":FAMILY,"source_normal_factory_key":key,
+         "source_level":1,"source_normal_factory_family":FAMILY,"source_normal_factory_key":key,
+         "reaction_releases":{"basic-shot":[(FAMILY,key)]},
         "source_debit_site":source["debit"]["site"],"native_timing":{"release_tick":8,"move_ticks":24,"refill_ticks":180},
         "authored_launch_sounds":sounds}

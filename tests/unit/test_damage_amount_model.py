@@ -86,12 +86,24 @@ class DamageAmountModelTest(unittest.TestCase):
         self.assertEqual(amount, 7)
         self.assertAlmostEqual(product, 7.0)
 
-    def test_negative_clamps_and_fraction_truncates(self):
+    def test_one_hp_floor_is_after_the_zero_exits(self):
         amount, _ = model.evaluate(20, {"credit_difficulty": 0.5,
                                         "attacker_rank": 0.5})
         self.assertEqual(amount, 5)
-        amount, _ = model.evaluate(1, {"credit_difficulty": 0.5})
-        self.assertEqual(amount, 0)
+        self.assertEqual(model.evaluate(1, {"credit_difficulty": 0.5}), (1, 0.5))
+        self.assertEqual(model.evaluate(0, {"receiver_rank": 1.15}), (0, 0.0))
+        self.assertEqual(model.evaluate(20, {}, suppressed=True), (0, 0.0))
+
+    def test_condition_axes_and_finalizer(self):
+        by_name = {s["name"]: s for s in model.STAGES}
+        self.assertIn("Settings+50 is 0 or 1", by_name["attacker_conditional_half"]["condition"])
+        self.assertIn("Settings+50 is 0 or 1", by_name["defender_conditional_half"]["condition"])
+        self.assertIn("!= 0", by_name["defender_1504_half"]["condition"])
+        self.assertIn("actual recipient+131", by_name["scale_divisor_40"]["condition"])
+        path = Path(__file__).resolve().parents[2] / "docs/api-map/damage-amount-model.json"
+        finalizer = json.loads(path.read_bytes())["finalizer"]
+        self.assertEqual([r["return_site"] for r in finalizer["early_zero"]], ["8003CDB4", "8003CDEC"])
+        self.assertEqual((finalizer["minimum"], finalizer["truncate_toward_zero"]), (1, "8003D310"))
 
     def test_runtime_mirrors(self):
         artifact = (Path(__file__).resolve().parents[2]

@@ -1,53 +1,31 @@
-"""Map retail action groups to the shared reaction attack table.
+"""Map raw retail collision queues to the per-model reaction attack tables.
 
-Each character's `pl####hit.bin` block has a 4-byte queue at +0xA20 (first
-byte = step index, 0xFF terminates) and 0x50-byte steps at +0xAA0; step
-+4 is the 24-byte attack-table index. The artifact records, for the pilot
-Borgs, each group's step list and each step's reaction fields.
+Each character's `pl####hit.bin` block has 4-byte queues at +0xA20 and
+0x50-byte steps at +0xAA0. This inventory does not bind controller input
+contexts to the queues; a move needs an independently proven selector.
 """
 import argparse
 import hashlib
 import json
-import struct
 from pathlib import Path
 
-from tools.analyze import reaction_installer_tables
+from tools.analyze import reaction_emit, reaction_installer_tables
 from tools.analyze.reaction_attack_table import COUNT, entry
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.retail_borg_roster import RetailArchive
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
 MODELS = ("0615", "000a", "061e")
-QUEUE = 0xA20
-STEPS = 0xAA0
-STEP_SIZE = 0x50
-GROUPS = 32
-MAX_STEP = 63
-
-
 def _model(image, payload, model, base, installer):
     groups = []
-    used = []
-    for group in range(GROUPS):
-        raw = payload[QUEUE + group * 4:QUEUE + group * 4 + 4]
-        steps = []
-        for byte in raw:
-            if byte == 0xFF:
-                break
-            if byte not in steps:
-                steps.append(byte)
-            if byte not in used:
-                used.append(byte)
-        groups.append({"group": group, "steps": steps})
-    steps = {}
-    for step in sorted(used):
-        if step > MAX_STEP:
-            raise ValueError(f"step index outside budget: {step}")
-        row = payload[STEPS + step * STEP_SIZE:STEPS + (step + 1) * STEP_SIZE]
-        index = struct.unpack_from(">H", row, 4)[0]
-        steps[str(step)] = ({"step": step, "table": index,
-                              **entry(image, base, index)}
-                            if index < COUNT else {"step": step, "table": index})
+    used = {}
+    for group in range(reaction_emit.GROUPS):
+        rows = reaction_emit.read_group(payload, group)
+        groups.append({"group": group, "steps": [step for step, _ in rows]})
+        used.update(rows)
+    steps = {str(step): {"step": step, "table": index,
+                         **(entry(image, base, index) if index < COUNT else {})}
+             for step, index in sorted(used.items())}
     return {
         "model": model,
         "installer": f"{installer:08X}",
@@ -60,6 +38,8 @@ def _model(image, payload, model, base, installer):
 
 def recover(dol_path, afs_path):
     with ReadOnlyFile(dol_path) as source:
+        if not 0 < source.size <= 8 << 20:
+            raise ValueError("source DOL extent")
         image = DolImage(source.read(0, source.size), SOURCE_SHA256)
     with Path(afs_path).open("rb") as stream:
         archive = RetailArchive(stream)
@@ -82,15 +62,14 @@ def recover(dol_path, afs_path):
                 afs_sha.update(chunk)
     return {
         "kind": "gf-reaction-action-map",
-        "revision": 1,
+        "revision": 2,
         "source_dol_sha256": SOURCE_SHA256,
         "source_afs_sha256": afs_sha.hexdigest(),
         "models": models,
         "notes": [
-            "Group bytes are the 4-byte queue at +0xA20; 0xFF terminates.",
-            "Step +4 indexes the shared 24-byte table at 80354160.",
-            "The queue group is selected by the source action byte; mapping "
-            "that byte to a packaged move is still open.",
+            "Each group contains up to four step bytes at +0xA20; any signed negative byte terminates.",
+            "The low byte of the step halfword at +4 indexes the model's 24-byte table.",
+            "Queues are not controller input contexts; see reaction-projectile-map.json for verified release selectors.",
         ],
     }
 

@@ -2,6 +2,7 @@
 #include <charconv>
 #include <cmath>
 #include "engine/assets/borg_catalog_profile.hpp"
+#include "engine/assets/stage_body_partition.hpp"
 
 namespace gf {
 inline constexpr std::size_t kStageManifestBytes=16u<<10;
@@ -23,6 +24,7 @@ struct StagePackageManifest {
     f32 arena_half=0;
     std::array<std::string,kStageAssetCount> asset_paths;
     std::vector<StageSpawnMarker> spawns;
+    std::vector<StageBodyPartition> body_partitions;
     const std::string& path(StageAsset asset)const{return asset_paths[unsigned(asset)];}
     const StageSpawnMarker* spawn(std::string_view id)const{
         const auto it=std::find_if(spawns.begin(),spawns.end(),[&](const auto& marker){return marker.id==id;});
@@ -35,7 +37,8 @@ inline bool stage_package_manifest_valid(const StagePackageManifest& manifest){
     if(!borg_package_id_valid(manifest.id)||!display_name_valid(manifest.name,96)||
        !std::isfinite(manifest.arena_half)||manifest.arena_half<=0||manifest.arena_half>10000||
        manifest.path(StageAsset::Model).empty()||manifest.path(StageAsset::Floor).empty()||
-       manifest.spawns.size()<2||manifest.spawns.size()>kStageSpawnCount)return false;
+       manifest.spawns.size()<2||manifest.spawns.size()>kStageSpawnCount||
+       manifest.body_partitions.size()>kStageBodyPartitionCount)return false;
     const bool projectile=!manifest.path(StageAsset::ProjectileStage).empty();
     if(projectile!=!manifest.path(StageAsset::Secondary).empty()||projectile!=!manifest.path(StageAsset::Tertiary).empty())return false;
     for(const auto& path:manifest.asset_paths)if(!path.empty()&&!borg_package_asset_path_valid(path))return false;
@@ -44,6 +47,13 @@ inline bool stage_package_manifest_valid(const StagePackageManifest& manifest){
            !std::isfinite(marker.query[0])||std::abs(marker.query[0])>10000||
            !std::isfinite(marker.query[1])||std::abs(marker.query[1])>20000||
            !std::isfinite(marker.query[2])||std::abs(marker.query[2])>10000)return false;
+    for(std::size_t i=0;i<manifest.body_partitions.size();++i){
+        const auto& box=manifest.body_partitions[i];
+        if(!borg_catalog_variant_id_valid(box.id)||!(box.min_x<box.max_x)||!(box.min_z<box.max_z))return false;
+        for(f32 v:{box.min_x,box.min_z,box.max_x,box.max_z})
+            if(!std::isfinite(v)||std::abs(v)>manifest.arena_half)return false;
+        for(std::size_t j=0;j<i;++j)if(manifest.body_partitions[j].id==box.id)return false;
+    }
     return true;
 }
 
@@ -88,6 +98,16 @@ inline bool stage_package_read_manifest(std::string_view text,StagePackageManife
             StageSpawnMarker spawn;spawn.id=fields[0];
             for(unsigned i=0;i<3;++i)if(!number(fields[i+1],&spawn.query[i]))return bad_row();
             next.spawns.push_back(std::move(spawn));
+        }else if(key=="body-partition"){
+            std::array<std::string_view,5> fields{};
+            StageBodyPartition box;
+            auto footprint=value;
+            constexpr std::string_view melee_tag="|melee";
+            if(footprint.ends_with(melee_tag)){box.blocks_melee=true;footprint.remove_suffix(melee_tag.size());}
+            if(next.body_partitions.size()>=kStageBodyPartitionCount||!borg_package_detail::split_fields(footprint,&fields)||
+               !borg_catalog_variant_id_valid(fields[0])||!number(fields[1],&box.min_x)||!number(fields[2],&box.min_z)||
+               !number(fields[3],&box.max_x)||!number(fields[4],&box.max_z))return bad_row();
+            box.id=fields[0];next.body_partitions.push_back(std::move(box));
         }else{
             const auto it=std::find(kStageAssetKeys.begin(),kStageAssetKeys.end(),key);
             if(it==kStageAssetKeys.end()||!borg_package_asset_path_valid(value))return bad_row();
@@ -96,7 +116,7 @@ inline bool stage_package_read_manifest(std::string_view text,StagePackageManife
             target=value;
         }
     }
-    if(!stage_package_manifest_valid(next))return fail("required fields, projectile group, or numeric domain");
+    if(!stage_package_manifest_valid(next))return fail("required fields, projectile group, partitions, or numeric domain");
     *out=std::move(next);if(error)error->clear();return true;
 }
 

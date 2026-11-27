@@ -141,6 +141,8 @@ def close_b_pose(linker,model,actions,slots,parts,*,publish_preview):
             rows[0]["entry_clip_candidate"]=pose
     return {"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,
             "same_opening_programs":checked,"live_contact_verified":False,
+            "program_addresses":sorted({row["program_address"] for row in checked}),
+            **({"neutral_contact_relay":"80108168"} if model in GUARDS else {}),
             "scope":"exact close opening request, no source combos, guard/barrier state or weapon scripts"}
 
 
@@ -181,4 +183,5 @@ def later_close_b_pose(linker,model,actions,slots,parts,*,publish_preview):
         if publish_preview:
             rows[0]["entry_clip_candidate"]=pose
     return {"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,
+            "program_addresses":[f"{script:08X}"],
             "scope":"later matching-lane attack only; no source hold, lead-in, movement, or hit timing","live_contact_verified":False}

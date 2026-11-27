@@ -1,0 +1,151 @@
+{
+  "descriptors": {
+    "0": {
+      "allocation_code": 1,
+      "family": 0,
+      "reviewed": false,
+      "variant": 0
+    },
+    "1": {
+      "allocation_code": 1,
+      "family": 1,
+      "reviewed": true,
+      "variant": 0
+    },
+    "2": {
+      "allocation_code": 3,
+      "family": 2,
+      "reviewed": true,
+      "variant": 0
+    },
+    "3": {
+      "allocation_code": 3,
+      "family": 2,
+      "reviewed": true,
+      "variant": 1
+    },
+    "4": {
+      "allocation_code": 3,
+      "family": 2,
+      "reviewed": true,
+      "variant": 2
+    },
+    "5": {
+      "allocation_code": 3,
+      "family": 2,
+      "reviewed": false,
+      "variant": 3
+    },
+    "6": {
+      "allocation_code": 3,
+      "family": 2,
+      "reviewed": false,
+      "variant": 4
+    },
+    "7": {
+      "allocation_code": 3,
+      "family": 2,
+      "reviewed": false,
+      "variant": 5
+    },
+    "8": {
+      "allocation_code": 8,
+      "family": 3,
+      "reviewed": true,
+      "variant": 0
+    }
+  },
+  "kind": "gf-contact-impact-visuals",
+  "native": {
+    "clock": "one representative family-1 particle by attacking team; families 2/3 layered immediately for template+2 native ticks; static source geometry, authored placement and scale",
+    "family_1_ticks": 16,
+    "scale_percent": 100,
+    "scope": "ordinary direct contacts with single normal receiver"
+  },
+  "revision": 1,
+  "source": {
+    "descriptor_payload": [
+      "family",
+      "variant",
+      "allocation code"
+    ],
+    "family_templates": "802C8154",
+    "normal_archive": {
+      "member": 697,
+      "sha256": "18761bf6cf2d39b9ddf0a9f08f5ba7926f220911e5a30c5485277ad7a0000ff0",
+      "slot": 1
+    },
+    "ordinary_call": "8002F87C",
+    "selector_offset": 9,
+    "selector_table": "802C7ED0",
+    "source_family_1": "bind source slot record at 80019B8C, clone JObjs, spawn in two randomized groups",
+    "source_family_2": "records 144..146 are sublayers (not alternative records per selector); 8001A628 binds each, lifetime at template+2",
+    "source_family_3": "records 53 and 54 bind at 8001AA30; second sublayer can start later",
+    "visual_gate_offset": 687
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "templates": {
+    "1": [
+      {
+        "curves": [
+          "00000000",
+          "00000000"
+        ],
+        "halfword_02": 10,
+        "record": 2
+      },
+      {
+        "curves": [
+          "00000000",
+          "00000000"
+        ],
+        "halfword_02": 10,
+        "record": 3
+      }
+    ],
+    "2": [
+      {
+        "curves": [
+          "802C7F78",
+          "802C7FB8"
+        ],
+        "halfword_02": 7,
+        "record": 144
+      },
+      {
+        "curves": [
+          "802C7FD0",
+          "802C8000"
+        ],
+        "halfword_02": 10,
+        "record": 145
+      },
+      {
+        "curves": [
+          "802C8018",
+          "802C8068"
+        ],
+        "halfword_02": 13,
+        "record": 146
+      }
+    ],
+    "3": [
+      {
+        "curves": [
+          "802C80BC",
+          "00000000"
+        ],
+        "halfword_02": 10,
+        "record": 53
+      },
+      {
+        "curves": [
+          "802C80FC",
+          "00000000"
+        ],
+        "halfword_02": 6,
+        "record": 54
+      }
+    ]
+  }
+}

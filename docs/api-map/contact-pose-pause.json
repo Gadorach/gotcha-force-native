@@ -1,0 +1,47 @@
+{
+  "kind": "gf-contact-pose-pause",
+  "native": {
+    "both_bodies": "proved opcode-10 direct melee, with each normal native participant opted in",
+    "formula": "max(0, source seed - 1) whole native ticks; starts at accepted hit presentation",
+    "max_reviewed_seed": 8,
+    "receiver_only": "ordinary direct projectile contact",
+    "scope": "held skeletal presentation sample only; no change to simulation or live bone/socket ownership"
+  },
+  "revision": 1,
+  "source": {
+    "attack_record_offset": 8,
+    "attacking_object": {
+      "does_not_follow_credit_link": true,
+      "kind": 0,
+      "kind_offset": 131,
+      "pair_offset": 32,
+      "write": "8002E628"
+    },
+    "body_timer_offset": 1820,
+    "combine": "max(current, u8(record+8))",
+    "decrement": "8005A520",
+    "melee_body": {
+      "allocator_call": "8004C6F0",
+      "carrier": "opcode-10 executing actor",
+      "opcode_handler": "8004C6B4"
+    },
+    "receiving_object": {
+      "kind": 0,
+      "kind_offset": 131,
+      "pair_offset": 32,
+      "record_flags_offset": 18,
+      "skip_mask": 4032,
+      "write": "8002E6A8"
+    },
+    "slowdown": {
+      "condition": "timer still positive after decrement",
+      "constant": "804373DC",
+      "factor": 0.03,
+      "writes": [
+        1524,
+        7624
+      ]
+    }
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

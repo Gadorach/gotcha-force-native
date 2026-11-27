@@ -1,0 +1,692 @@
+{
+  "kind": "gf-reaction-melee-map",
+  "pilots": {
+    "0001": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "8031AD70": 3
+        },
+        "contacts": [
+          {
+            "program": "8031AAD4",
+            "queue_group": 4,
+            "selector_address": "8031AAD5",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 5,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 6,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 5,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 5,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "lane": 0,
+        "lines": [
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "800FEE88",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "800FEEA4",
+        "table": "8031AF90"
+      },
+      "configs": [
+        "8031AD70"
+      ],
+      "programs": [
+        "8031AAD4"
+      ],
+      "request_mask": 15,
+      "request_site": "800FEEA4"
+    },
+    "0106": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "80335E30": 3,
+          "80335F48": 3,
+          "80336060": 3
+        },
+        "contacts": [
+          {
+            "program": "80335278",
+            "queue_group": 1,
+            "selector_address": "80335279",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 2,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "continuation": {
+          "dispatcher": "801613FC",
+          "group": 3,
+          "opening_request": "801615F8",
+          "phase": 2,
+          "phase_table": "8034C6A8",
+          "programs": [
+            {
+              "first_contact_program": "80335278",
+              "lead_in": "8033525C",
+              "root": "80334E20"
+            }
+          ],
+          "relay": "801315D4",
+          "request_site": "801616D4",
+          "seed": 1
+        },
+        "lane": 0,
+        "lines": [
+          "# close-B reaction: first proved continuation; native timing is authored",
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "8016169C",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "801616D4",
+        "table": "80336340"
+      },
+      "configs": [
+        "80335E30",
+        "80335F48",
+        "80336060"
+      ],
+      "continuation_pose": {
+        "archive_offset": 115744,
+        "clip": [
+          1,
+          1
+        ],
+        "clip_end_frame": 41.0,
+        "descriptor_choice": 1,
+        "policy": "authored switch three ticks before native melee arming; not source phase timing",
+        "public_joint_count": 20,
+        "source_program": [
+          3,
+          1
+        ],
+        "source_start_frame": 0,
+        "switch_frame": 6
+      },
+      "program": [
+        3,
+        0
+      ],
+      "programs": [
+        "8033525C"
+      ],
+      "request_mask": 15,
+      "request_site": "801615F8"
+    },
+    "0202": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "8032E4B0": 3
+        },
+        "contacts": [
+          {
+            "program": "8032DDE8",
+            "queue_group": 3,
+            "selector_address": "8032DDE9",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 6,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 3,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 7,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 9,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "lane": 0,
+        "lines": [
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "80123ECC",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "80123EE8",
+        "table": "8032E718"
+      },
+      "configs": [
+        "8032E4B0"
+      ],
+      "programs": [
+        "8032DDE8"
+      ],
+      "request_mask": 15,
+      "request_site": "80123EE8"
+    },
+    "0209": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "80382238": 3
+        },
+        "contacts": [
+          {
+            "program": "8034342A",
+            "queue_group": 1,
+            "selector_address": "8034342B",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 25,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 26,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 36,
+                "yaw": 0
+              }
+            ]
+          },
+          {
+            "program": "803436DA",
+            "queue_group": 1,
+            "selector_address": "803436DB",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 25,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 26,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 36,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "lane": 0,
+        "lines": [
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "801B82EC",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "801B8318",
+        "table": "80342D40"
+      },
+      "configs": [
+        "80382238"
+      ],
+      "programs": [
+        "8034342A",
+        "803436DA"
+      ],
+      "request_mask": 15,
+      "request_site": "801B8318"
+    },
+    "0301": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "80322F40": 3
+        },
+        "contacts": [
+          {
+            "program": "80322568",
+            "queue_group": 1,
+            "selector_address": "80322569",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 2,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 2,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 25,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "continuation": {
+          "dispatcher": "8010B2F4",
+          "group": 3,
+          "opening_request": "8010B478",
+          "phase": 2,
+          "phase_table": "80325A68",
+          "programs": [
+            {
+              "first_contact_program": "80322568",
+              "lead_in": "80322548",
+              "root": "80322060"
+            }
+          ],
+          "relay": "801072FC",
+          "request_site": "8010B5E0",
+          "seed": 1
+        },
+        "lane": 0,
+        "lines": [
+          "# close-B reaction: first proved continuation; native timing is authored",
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "8010B5A8",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "8010B5E0",
+        "table": "80323208"
+      },
+      "configs": [
+        "80322F40"
+      ],
+      "continuation_pose": {
+        "archive_offset": 91232,
+        "clip": [
+          1,
+          1
+        ],
+        "clip_end_frame": 35.0,
+        "descriptor_choice": 1,
+        "policy": "authored switch three ticks before native melee arming; not source phase timing",
+        "public_joint_count": 20,
+        "source_program": [
+          3,
+          1
+        ],
+        "source_start_frame": 0,
+        "switch_frame": 6
+      },
+      "program": [
+        3,
+        0
+      ],
+      "programs": [
+        "80322548"
+      ],
+      "request_mask": 15,
+      "request_site": "8010B478"
+    },
+    "0304": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "80336E40": 3,
+          "80389D48": 3
+        },
+        "contacts": [
+          {
+            "program": "8033765A",
+            "queue_group": 1,
+            "selector_address": "8033765B",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 2,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              }
+            ]
+          },
+          {
+            "program": "8038943E",
+            "queue_group": 1,
+            "selector_address": "8038943F",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 2,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "continuation": {
+          "dispatcher": "8010B2F4",
+          "group": 3,
+          "opening_request": "8010B478",
+          "phase": 2,
+          "phase_table": "80325A68",
+          "programs": [
+            {
+              "first_contact_program": "8033765A",
+              "lead_in": "80337636",
+              "root": "803371E0"
+            },
+            {
+              "first_contact_program": "8038943E",
+              "lead_in": "8038941A",
+              "root": "80389120"
+            }
+          ],
+          "relay": "80134604",
+          "request_site": "8010B5E0",
+          "seed": 1
+        },
+        "lane": 0,
+        "lines": [
+          "# close-B reaction: first proved continuation; native timing is authored",
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "8010B5A8",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "8010B5E0",
+        "table": "803370A8"
+      },
+      "configs": [
+        "80336E40",
+        "80389D48"
+      ],
+      "continuation_pose": {
+        "archive_offset": 108512,
+        "clip": [
+          1,
+          1
+        ],
+        "clip_end_frame": 35.0,
+        "descriptor_choice": 1,
+        "policy": "authored switch three ticks before native melee arming; not source phase timing",
+        "public_joint_count": 20,
+        "source_program": [
+          3,
+          1
+        ],
+        "source_start_frame": 0,
+        "switch_frame": 6
+      },
+      "program": [
+        3,
+        0
+      ],
+      "programs": [
+        "80337636",
+        "8038941A"
+      ],
+      "request_mask": 15,
+      "request_site": "8010B478"
+    },
+    "0700": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "80308150": 3
+        },
+        "contacts": [
+          {
+            "program": "80307C72",
+            "queue_group": 1,
+            "selector_address": "80307C73",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 18,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 24,
+                "repeat": 0,
+                "step": 19,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "lane": 0,
+        "lines": [
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|24"
+        ],
+        "mask_site": "80148E74",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "80148E90",
+        "table": "803083B8"
+      },
+      "configs": [
+        "80308150"
+      ],
+      "programs": [
+        "80307C72"
+      ],
+      "request_mask": 15,
+      "request_site": "80148E90"
+    },
+    "0807": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "80377918": 3
+        },
+        "contacts": [
+          {
+            "program": "80377E40",
+            "queue_group": 1,
+            "selector_address": "80377E41",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": -64,
+                "repeat": 0,
+                "step": 2,
+                "yaw": 0
+              }
+            ]
+          }
+        ],
+        "lane": 0,
+        "lines": [
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|-64"
+        ],
+        "mask_site": "800FEE88",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "800FEEA4",
+        "table": "80377AC0"
+      },
+      "configs": [
+        "80377918"
+      ],
+      "programs": [
+        "80377E40"
+      ],
+      "request_mask": 15,
+      "request_site": "800FEEA4"
+    },
+    "0a03": {
+      "binding": {
+        "allocator_call": "8004C6F0",
+        "config_masks": {
+          "8031D4A0": 7
+        },
+        "contacts": [
+          {
+            "program": "8031DEA2",
+            "queue_group": 1,
+            "selector_address": "8031DEA3",
+            "steps": [
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 48,
+                "repeat": 0,
+                "step": 1,
+                "yaw": 0
+              },
+              {
+                "flags": 1,
+                "index": 1,
+                "mode": 4,
+                "pitch": 48,
+                "repeat": 0,
+                "step": 7,
+                "yaw": 0
+              }
+            ],
+            "unmapped_secondary_state": 127
+          }
+        ],
+        "lane": 0,
+        "lines": [
+          "# source reaction mode 4 uses the native planar body root",
+          "reaction-mode=opening-slash|4",
+          "reaction-offset=opening-slash|0|48"
+        ],
+        "mask_site": "80147F30",
+        "opcode_handler": "8004C6B4",
+        "request_mask": 15,
+        "request_site": "80147F64",
+        "table": "8031D708"
+      },
+      "configs": [
+        "8031D4A0"
+      ],
+      "programs": [
+        "8031DEA2"
+      ],
+      "request_mask": 15,
+      "request_site": "80147F64"
+    }
+  },
+  "revision": 4,
+  "scope": "audited normal neutral close-B direct contacts; no live collision, damage, or timing proof",
+  "source": {
+    "allocator_call": "8004C6F0",
+    "config_mask_seed": "8004BCD8",
+    "dispatch_slot": "802D0DC8",
+    "mask_intersect": "8004BEEC",
+    "opcode_handler": "8004C6B4",
+    "request": "8004BEB8"
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

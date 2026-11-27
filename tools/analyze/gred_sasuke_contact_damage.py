@@ -107,7 +107,7 @@ def recover(image):
             },
             "conditional_half": {
                 "applied": False,
-                "condition": "owner998 != 0 && owner136 == 0",
+                "condition": "Settings+50 in {0,1} && owner998 != 0 && owner136 == 0",
                 "reason": "owner998 = 0 on this hit",
             },
             "scalar": {

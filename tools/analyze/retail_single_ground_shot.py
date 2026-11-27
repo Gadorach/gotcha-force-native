@@ -362,7 +362,8 @@ def battle_test(model, joints, role_clips, pace, level, source, sounds, *, launc
         "kind": f"authored single ground shot, exact poses, {description}", "retail_behavior_verified": False,
         "preview_clip": "none", "body_binding": "strict record zero", "source_level": 1,
         "source_release_entry": source["release_entry"], "source_debit_site": source["debit"]["site"],
-        "source_normal_factory_family": route["family"], "source_normal_factory_key": route["key"],
+         "source_normal_factory_family": route["family"], "source_normal_factory_key": route["key"],
+         "reaction_releases": {move: [(route["family"], key) for _, key, _, _ in shots]},
         "native_timing": {"release_tick": route["marker"], "move_ticks": route["length"], "refill_ticks": 180},
         **({"native_pace": "authored 6.00; this static body never walks, so no source-relative pace applies"}
            if authored_pace else {}),

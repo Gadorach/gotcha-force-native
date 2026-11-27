@@ -1,0 +1,477 @@
+{
+  "kind": "gf-reaction-projectile-map",
+  "notes": [
+    "The factory key is independent of controller input-context coordinates.",
+    "8008AC80 reads the owner hit block and caches the low byte of step +4 as the reaction table index.",
+    "One native move receives a binding only if all reviewed launches and all queued steps agree on mode and signed offsets.",
+    "Reviewed type-0/49/94 mode-4 contacts use the normal fighter link that the pair caches at allocation, not the carrier's aim or motion."
+  ],
+  "pilots": {
+    "000a": {
+      "factory": "8006EE14",
+      "lines": [
+        "reaction-mode=basic-shot|2",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "800705AC",
+      "releases": [
+        {
+          "allocator_call": "8006F1AC",
+          "family": "type-14",
+          "key": 4,
+          "queue_group": 0,
+          "read_site": "8006F1A4",
+          "selector_address": "802D3A83",
+          "steps": [
+            {
+              "flags": 0,
+              "index": 0,
+              "mode": 2,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 0,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "802D4160"
+    },
+    "0501": {
+      "factory": "8013A050",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "80119888",
+      "releases": [
+        {
+          "allocator_call": "8013A380",
+          "family": "type-49",
+          "key": 0,
+          "linked_body_proof": {
+            "allocation": "8013A07C",
+            "carrier_tag": 16,
+            "constructor": "8013A050",
+            "copy_from_caster": "8013A0C4",
+            "copy_to_carrier": "8013A0C8",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 6,
+          "read_site": "8013A378",
+          "selector_address": "803396B1",
+          "steps": [
+            {
+              "flags": 0,
+              "index": 6,
+              "mode": 4,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 9,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "8032B9C8"
+    },
+    "050b": {
+      "factory": "801D4D00",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "801198A0",
+      "releases": [
+        {
+          "allocator_call": "801D51A0",
+          "family": "type-94",
+          "key": 0,
+          "linked_body_proof": {
+            "allocation": "801D4D44",
+            "carrier_tag": 16,
+            "constructor": "801D4D00",
+            "copy_from_caster": "801D4D88",
+            "copy_to_carrier": "801D4D8C",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 0,
+          "read_site": "801D5198",
+          "selector_address": "8038CD1A",
+          "steps": [
+            {
+              "flags": 257,
+              "index": 0,
+              "mode": 4,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 0,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "8038D058"
+    },
+    "050d": {
+      "factory": "8013A050",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "801198B8",
+      "releases": [
+        {
+          "allocator_call": "8013A380",
+          "family": "type-49",
+          "key": 1,
+          "linked_body_proof": {
+            "allocation": "8013A07C",
+            "carrier_tag": 16,
+            "constructor": "8013A050",
+            "copy_from_caster": "8013A0C4",
+            "copy_to_carrier": "8013A0C8",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 6,
+          "read_site": "8013A378",
+          "selector_address": "803396DD",
+          "steps": [
+            {
+              "flags": 0,
+              "index": 6,
+              "mode": 4,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 9,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "8032BA88"
+    },
+    "0517": {
+      "factory": "801D4D00",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "801198D0",
+      "releases": [
+        {
+          "allocator_call": "801D51A0",
+          "family": "type-94",
+          "key": 2,
+          "linked_body_proof": {
+            "allocation": "801D4D44",
+            "carrier_tag": 16,
+            "constructor": "801D4D00",
+            "copy_from_caster": "801D4D88",
+            "copy_to_carrier": "801D4D8C",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 0,
+          "read_site": "801D5198",
+          "selector_address": "8038CD92",
+          "steps": [
+            {
+              "flags": 257,
+              "index": 0,
+              "mode": 4,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 0,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "8038D118"
+    },
+    "0615": {
+      "factory": "800C3BE0",
+      "lines": [
+        "reaction-mode=basic-shot|2",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "8018DD34",
+      "releases": [
+        {
+          "allocator_call": "800C3D80",
+          "family": "type-2",
+          "key": 43,
+          "queue_group": 0,
+          "read_site": "800C3D70",
+          "selector_address": "80303CA6",
+          "steps": [
+            {
+              "flags": 0,
+              "index": 0,
+              "mode": 2,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 15,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "80365EC0"
+    },
+    "061e": {
+      "factory": "800C3BE0",
+      "lines": [
+        "reaction-mode=basic-shot|2",
+        "reaction-offset=basic-shot|0|24"
+      ],
+      "release_site": "8015AAE4",
+      "releases": [
+        {
+          "allocator_call": "800C3D80",
+          "family": "type-2",
+          "key": 85,
+          "queue_group": 9,
+          "read_site": "800C3D70",
+          "selector_address": "803047CE",
+          "steps": [
+            {
+              "flags": 1,
+              "index": 9,
+              "mode": 2,
+              "pitch": 24,
+              "repeat": 0,
+              "step": 9,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "80344C88"
+    },
+    "0800": {
+      "factory": "80082824",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|32"
+      ],
+      "release_site": "80076C10",
+      "releases": [
+        {
+          "allocator_call": "80082F00",
+          "family": "type-0",
+          "key": 12,
+          "linked_body_proof": {
+            "allocation": "80082868",
+            "carrier_tag": 16,
+            "constructor": "80082824",
+            "copy_from_caster": "800828A8",
+            "copy_to_carrier": "800828AC",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 1,
+          "read_site": "80082EF8",
+          "selector_address": "802D7DB3",
+          "steps": [
+            {
+              "flags": 0,
+              "index": 1,
+              "mode": 4,
+              "pitch": 32,
+              "repeat": 0,
+              "step": 2,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "802D6258"
+    },
+    "0801": {
+      "factory": "80082824",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|32"
+      ],
+      "release_site": "800A403C",
+      "releases": [
+        {
+          "allocator_call": "80082F00",
+          "family": "type-0",
+          "key": 125,
+          "linked_body_proof": {
+            "allocation": "80082868",
+            "carrier_tag": 16,
+            "constructor": "80082824",
+            "copy_from_caster": "800828A8",
+            "copy_to_carrier": "800828AC",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 1,
+          "read_site": "80082EF8",
+          "selector_address": "802D966B",
+          "steps": [
+            {
+              "flags": 0,
+              "index": 1,
+              "mode": 4,
+              "pitch": 32,
+              "repeat": 0,
+              "step": 21,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "802F7C18"
+    },
+    "0802": {
+      "factory": "80082824",
+      "lines": [
+        "# source reaction mode 4 uses the direct projectile owner's native planar body root",
+        "reaction-root=basic-shot|linked-owner",
+        "reaction-mode=basic-shot|4",
+        "reaction-offset=basic-shot|0|0"
+      ],
+      "release_site": "8013D77C",
+      "releases": [
+        {
+          "allocator_call": "80082F00",
+          "family": "type-0",
+          "key": 45,
+          "linked_body_proof": {
+            "allocation": "80082868",
+            "carrier_tag": 16,
+            "constructor": "80082824",
+            "copy_from_caster": "800828A8",
+            "copy_to_carrier": "800828AC",
+            "linked_root_read": "80030204",
+            "normal_body_tag": "800537D8",
+            "normal_self_link": "80053754",
+            "pair_link_store": "8008AD1C"
+          },
+          "queue_group": 0,
+          "read_site": "80082EF8",
+          "selector_address": "802D84EB",
+          "steps": [
+            {
+              "flags": 1,
+              "index": 0,
+              "mode": 4,
+              "pitch": 0,
+              "repeat": 0,
+              "step": 0,
+              "yaw": 0
+            }
+          ]
+        }
+      ],
+      "table": "80339E18"
+    }
+  },
+  "revision": 2,
+  "scope": "ordinary allocation, normal hit block; static source operands only",
+  "selectors": {
+    "type-0": {
+      "allocator_call": "80082F00",
+      "dispatch": "802D9748",
+      "factory_table": "802D7B10",
+      "initializer": "80082B08",
+      "read_site": "80082EF8",
+      "reviewed_key_count": 129,
+      "selector_offset": 3,
+      "stride": 56
+    },
+    "type-14": {
+      "allocator_call": "8006F1AC",
+      "dispatch": "802D3AC4",
+      "factory_table": "802D39B0",
+      "initializer": "8006F11C",
+      "read_site": "8006F1A4",
+      "reviewed_key_count": 5,
+      "selector_offset": 3,
+      "stride": 52
+    },
+    "type-15": {
+      "allocator_call": "8007DE04",
+      "dispatch": "802D6F98",
+      "factory_table": "802D6D68",
+      "initializer": "8007DD84",
+      "read_site": "8007DDFC",
+      "reviewed_key_count": 10,
+      "selector_offset": 3,
+      "stride": 56
+    },
+    "type-2": {
+      "allocator_call": "800C3D80",
+      "dispatch": "803051E4",
+      "factory_table": "80303138",
+      "initializer": "800C3D2C",
+      "read_site": "800C3D70",
+      "reviewed_key_count": 123,
+      "selector_offset": 2,
+      "stride": 68
+    },
+    "type-47": {
+      "allocator_call": "800BED44",
+      "dispatch": "80301C08",
+      "factory_table": "80301AE8",
+      "initializer": "800BECB8",
+      "read_site": "800BED3C",
+      "reviewed_key_count": 6,
+      "selector_offset": 3,
+      "stride": 48
+    },
+    "type-49": {
+      "allocator_call": "8013A380",
+      "dispatch": "80339708",
+      "factory_table": "803396B0",
+      "initializer": "8013A1FC",
+      "read_site": "8013A378",
+      "reviewed_key_count": 2,
+      "selector_offset": 1,
+      "stride": 44
+    },
+    "type-94": {
+      "allocator_call": "801D51A0",
+      "dispatch": "8038CE08",
+      "factory_table": "8038CD18",
+      "initializer": "801D4FA8",
+      "read_site": "801D5198",
+      "reviewed_key_count": 3,
+      "selector_offset": 2,
+      "stride": 60
+    }
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

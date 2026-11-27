@@ -1,0 +1,7 @@
+GFROSTER 1
+# One timed local co-op round. Add rounds-to-win=2 to play a series.
+stage=example:workshop
+round-seconds=45
+fighter=0|example:flight-stick|normal|west
+fighter=0|example:flight-stick|normal|west-outer
+fighter=1|example:jump-stick|normal|east

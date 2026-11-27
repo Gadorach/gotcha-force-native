@@ -17,6 +17,7 @@
       },
       "confidence": "open",
       "effect": {
+        "details": "battle-hit-ledger.json",
         "fields": [
           "actor+0x4AA",
           "actor+0x424",
@@ -26,7 +27,7 @@
         ],
         "role": "force/ledger update"
       },
-      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
+      "note": "reads the cached receiving amount, updates team force and credit, and visits six observer slots with an eight-entry ring per actor",
       "role": "force-ledger-update",
       "site": "8002F200",
       "target": "8002F8DC"
@@ -50,6 +51,7 @@
       },
       "confidence": "open",
       "effect": {
+        "details": "battle-hit-ledger.json",
         "fields": [
           "actor+0x4AA",
           "actor+0x424",
@@ -59,7 +61,7 @@
         ],
         "role": "force/ledger update"
       },
-      "note": "subtracts the amount from the team force record, adds the per-actor ledgers and a six-slot hit-history ring",
+      "note": "reads the cached receiving amount, updates team force and credit, and visits six observer slots with an eight-entry ring per actor",
       "role": "force-ledger-update",
       "site": "8002F21C",
       "target": "8002F8DC"
@@ -453,18 +455,18 @@
       "confidence": "matched",
       "effect": {
         "dispatch": "800F04B4",
-        "opcode": "0x26",
-        "role": "impact record",
+        "role": "fixed impact sound",
+        "size": "receiver+0x7FC",
+        "size_branch": "receiver+0x83 gates the read; the matched source calls 800F04B4(38, position, s8(receiver+0x96)) in every branch",
+        "sound_id": 38,
         "state": "object+0x2AE = 4",
         "thresholds": {
           "80436F94": 2.5,
           "80436FB8": 1.5
-        },
-        "volume": "object+0x7FC",
-        "volume_branch": "object+0x83 gates the read; the matched source calls 800F04B4(0x26, callback, s8(object+0x96)) in every branch"
+        }
       },
-      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
-      "role": "impact-effect",
+      "note": "guards receiver+0x2AE and requests fixed impact sound ID 38",
+      "role": "impact-sound",
       "site": "8002F674",
       "target": "8002FCBC"
     },
@@ -526,18 +528,18 @@
       "confidence": "matched",
       "effect": {
         "dispatch": "800F04B4",
-        "opcode": "0x26",
-        "role": "impact record",
+        "role": "fixed impact sound",
+        "size": "receiver+0x7FC",
+        "size_branch": "receiver+0x83 gates the read; the matched source calls 800F04B4(38, position, s8(receiver+0x96)) in every branch",
+        "sound_id": 38,
         "state": "object+0x2AE = 4",
         "thresholds": {
           "80436F94": 2.5,
           "80436FB8": 1.5
-        },
-        "volume": "object+0x7FC",
-        "volume_branch": "object+0x83 gates the read; the matched source calls 800F04B4(0x26, callback, s8(object+0x96)) in every branch"
+        }
       },
-      "note": "guards object+0x2AE and calls impact effect 800F04B4 with a volume-derived selector",
-      "role": "impact-effect",
+      "note": "guards receiver+0x2AE and requests fixed impact sound ID 38",
+      "role": "impact-sound",
       "site": "8002F6B0",
       "target": "8002FCBC"
     },
@@ -775,10 +777,11 @@
       },
       "confidence": "matched",
       "effect": {
-        "role": "color",
+        "role": "impact visual descriptor",
+        "selector": "attack record byte +9; family, variant and allocation code, not RGB",
         "table": "802C7ED0"
       },
-      "role": "color",
+      "role": "impact-visual",
       "site": "8002F87C",
       "target": "80019550"
     },
@@ -804,11 +807,11 @@
           "op": "lbz"
         }
       },
-      "confidence": "open",
+      "confidence": "recovered",
       "effect": {
         "dispatch": "800F088C",
-        "role": "impact record variant",
-        "selector": "value & 0xFFFFFF7C, plus one per exceeded volume threshold",
+        "role": "indexed impact sound",
+        "selector": "when bit 0x80 is set, value & 0xFFFFFF7C plus one per exceeded receiver size threshold",
         "state": "object+0x2AE = 4",
         "thresholds": {
           "80436F94": 2.5,
@@ -816,8 +819,8 @@
           "80436FBC": 3.5
         }
       },
-      "note": "impact effect variant 800F088C with a threshold-derived selector",
-      "role": "impact-effect",
+      "note": "guards receiver+0x2AE and selects an impact sound pair through receiver size thresholds",
+      "role": "impact-sound",
       "site": "8002F894",
       "target": "8002FC18"
     }
@@ -885,10 +888,12 @@
       "role": "slot update"
     },
     "80019550": {
-      "role": "color",
+      "role": "impact visual descriptor",
+      "selector": "attack record byte +9; family, variant and allocation code, not RGB",
       "table": "802C7ED0"
     },
     "8002F8DC": {
+      "details": "battle-hit-ledger.json",
       "fields": [
         "actor+0x4AA",
         "actor+0x424",
@@ -900,8 +905,8 @@
     },
     "8002FC18": {
       "dispatch": "800F088C",
-      "role": "impact record variant",
-      "selector": "value & 0xFFFFFF7C, plus one per exceeded volume threshold",
+      "role": "indexed impact sound",
+      "selector": "when bit 0x80 is set, value & 0xFFFFFF7C plus one per exceeded receiver size threshold",
       "state": "object+0x2AE = 4",
       "thresholds": {
         "80436F94": 2.5,
@@ -911,30 +916,29 @@
     },
     "8002FCBC": {
       "dispatch": "800F04B4",
-      "opcode": "0x26",
-      "role": "impact record",
+      "role": "fixed impact sound",
+      "size": "receiver+0x7FC",
+      "size_branch": "receiver+0x83 gates the read; the matched source calls 800F04B4(38, position, s8(receiver+0x96)) in every branch",
+      "sound_id": 38,
       "state": "object+0x2AE = 4",
       "thresholds": {
         "80436F94": 2.5,
         "80436FB8": 1.5
-      },
-      "volume": "object+0x7FC",
-      "volume_branch": "object+0x83 gates the read; the matched source calls 800F04B4(0x26, callback, s8(object+0x96)) in every branch"
+      }
     },
     "800300BC": {
       "fallback": "(0,0,-1) when x*x+y*y+z*z < 0.01",
       "modes": {
-        "0": "actor+0x20 - actor+0x2C",
-        "1": "target+0x20 - attacker+0x20",
-        "2": "side+0x30 - side+0x3C",
-        "3": "side+0x64 - other+0x64",
-        "4": "actor+0x8DC/8EC/8FC",
-        "5": "linked+0x8DC/8EC/8FC",
-        "default": "actor+0x11C/12C/13C"
+        "0": "attacking object's current - previous origin (+0x20 - +0x2C); zero uses object +0x38",
+        "1": "receiver object +0x20 - attacker object +0x20",
+        "2": "pair's current - previous transformed shape centre (+0x30 - +0x3C); zero uses object +0x38",
+        "3": "receiver pair's current shape centre +0x64 - attacker pair's +0x64",
+        "4": "third matrix column at +0x8DC/8EC/8FC on the attacking object or its link; if both are non-body, use the attacking object's matrix column at +0x11C/12C/13C",
+        "other": "branches to 80030238 without initializing the local vector; no supported direction inferred"
       },
       "pitch": "-atan2(y,x*x+z*z)",
       "role": "reaction-direction",
-      "table_offsets": "table+0x14/+0x15 * 0x100 subtracted; not recovered",
+      "table_offsets": "signed table+0x14/+0x15 * 0x100 subtracted; row selected by attack pair+0x11",
       "writes": "receiver+0x284 yaw, receiver+0x282 pitch; mirrored to linked actor when +0x1DA bit1",
       "yaw": "atan2(x,z)"
     },
@@ -958,9 +962,9 @@
     "800F088C": {
       "alternate": "value += row[slot] & 1 before incrementing the row counter",
       "counter_row": "803D3AE8 + s8(object+0x96)*13",
-      "role": "impact-record-variant",
+      "role": "impact sound selection",
       "slot": "code & ~0xC0, +12 when code&0x40",
-      "state": "object+0x2AE = 4"
+      "sound_table": "8031B874"
     },
     "8010E158": {
       "allocator": "80088AA0(owner, 2, 0x18, 0, entry[0])",
@@ -998,6 +1002,83 @@
     "size": 5672
   },
   "kind": "gf-reaction-effect-map",
+  "mode_4_body_root": {
+    "binary_angle_offsets": [
+      112,
+      114,
+      116
+    ],
+    "calls": {
+      "80046BF8": "8020AEFC",
+      "80046C10": "8020B4AC",
+      "80046C4C": "80045838",
+      "80046C68": "80045838",
+      "80046C7C": "8020B4F8",
+      "80046C8C": "8020AF5C",
+      "80046C98": "8020AF28",
+      "80046CCC": "8004679C"
+    },
+    "copy_offset": 276,
+    "guarded_yaw_adjustment": "80046C14..80046C4C can add timer at +0x6B8 shifted left by 10",
+    "matrix_offset": 2260,
+    "native_scope": "actor-bound melee uses the native planar collision-root +Z column",
+    "position_offsets": [
+      32,
+      36,
+      40
+    ],
+    "positive_z_offsets": [
+      2268,
+      2284,
+      2300
+    ],
+    "producer": "80046BD0",
+    "read_sites": [
+      "800301D8",
+      "800301E0",
+      "800301E8"
+    ],
+    "rotation_order": [
+      "Z",
+      "Y",
+      "X"
+    ],
+    "scale_offsets": [
+      88,
+      92,
+      96
+    ]
+  },
+  "motion_inputs": {
+    "native_scope": "main-move free-flight direct actor hits; clipped object motion vs full proxy sweep",
+    "object": {
+      "current_offset": 32,
+      "ordinary_vector_add": "80083B80",
+      "previous_offset": 44,
+      "snapshot_sites": [
+        "80089910",
+        "80089A1C",
+        "80056874"
+      ],
+      "vector_offset": 56
+    },
+    "pair": {
+      "current_offset": 48,
+      "definition_point_offset": 12,
+      "initial_equal_copy": "8008A734",
+      "initial_point": "8008A728",
+      "previous_offset": 60,
+      "roll_previous": "8008A864",
+      "selected_matrix_pointer_offset": 96,
+      "update_point": "8008A888"
+    },
+    "selection": {
+      "mode_0_subtract": "80030128",
+      "mode_2_subtract": "80030180",
+      "object_vector_only_on_zero": true,
+      "then_apply_direction_epsilon": "80436FC0"
+    }
+  },
   "notes": [
     "The argument map is the last write to r3-r7 in the 12-instruction window before each call.",
     "`constants` holds the float thresholds and fallback operands read from the initialized data section.",
@@ -1005,6 +1086,28 @@
     "Immediates and field offsets are decoded from the DOL; the effect labels come from matched helper summaries.",
     "This is presentation/reaction data, not a recovered renderer."
   ],
-  "revision": 1,
+  "position_inputs": {
+    "mode_1": {
+      "origin_offset": 32,
+      "pair_object_pointer_offset": 32,
+      "subtract": "8003016C",
+      "uses_owner_link": false
+    },
+    "mode_3": {
+      "centre_distance_gate": "80039FC4",
+      "local_point_offset": 12,
+      "matrix_pointer_offset": 96,
+      "ordinary_sphere_centre_seed": "8003A4E0",
+      "ordinary_sphere_centre_update": "8003A634",
+      "pair_centre_offset": 100,
+      "subtract": "800301C4"
+    },
+    "native_scope": "explicit mode 1 can read the direct projectile origin; mode 3 uses accepted native proxy centres",
+    "nearest_contact_correction": {
+      "object_add": "8002DE90",
+      "pair_centre_add": "8002DEB0"
+    }
+  },
+  "revision": 4,
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

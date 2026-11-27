@@ -19,7 +19,7 @@ enum class BorgBattleEventKind:u8 {Started,Marker,StockSpent,StockRefused,StockR
     ImpactTrailStarted,ImpactTrailRefused,ImpactHazardStarted,ImpactHazardPlaced,ImpactHazardRefused,
     ExtraEmitted,ExtraEmitRefused,WalkPulseCreated,WalkPulseRefused,FieldShotPulled,FieldActorPulled,FieldActorPullRefused,
     FenceRecoilApplied,FenceRecoilRefused,EntryStockRefused,FieldReplaced,LaunchSound,ReleaseSound,ImpactSound,
-    ActionSound};
+    ActionSound,ContactSound};
 enum class BorgBattlePullRefusal:u16 {AlreadyQueued=1,OwnerBusy,NoTravel,SupportUnavailable,TerrainOrBody,RoundEnded};
 inline const char* borg_battle_pull_reason(u16 value){
     switch(BorgBattlePullRefusal(value)){
@@ -69,6 +69,15 @@ struct BorgBattleActionState {
     static WeaponStockRefillMode stock_mode(const BorgBattleStockDefinition& spec){
         if(spec.add_on_debit)return WeaponStockRefillMode::AddOnDebit;
         return spec.refill_ticks?WeaponStockRefillMode::SeedOnDepletion:WeaponStockRefillMode::ClearClockOnDebit;
+    }
+    // Read-only admission probe. Only the scheduler advances clocks or
+    // commits a debit at a release marker.
+    bool stock_ready(const BorgGameplayProfile& profile,u8 channel,u8 amount)const{
+        if(!amount)return true;
+        if(channel>=profile.stocks.size()||channel>=stocks.size())return false;
+        WeaponStockPlan check;
+        return weapon_stock_plan(stocks[channel],stock_mode(profile.stocks[channel]),
+                                 WeaponStockOperation::CheckOnly,amount,&check)&&check.accepted;
     }
     // Called after movement, before contact. Prior accepted damage interrupts
     // before this visit's marker; new contact is delivered by the world later.
@@ -149,11 +158,8 @@ struct BorgBattleActionState {
         const auto has_entry_stock=[&](const BorgBattleMove& action,u8 index){
             if(!action.entry_stock)return true;
             const auto& gate=*action.entry_stock;
-            const auto& current=stocks[gate.stock];
-            WeaponStockPlan plan;
-            if(weapon_stock_plan(current,stock_mode(p.stocks[gate.stock]),WeaponStockOperation::CheckOnly,
-                                 gate.minimum,&plan)&&plan.accepted)return true;
-            trace(BorgBattleEventKind::EntryStockRefused,index,0,0,u16(current.current));
+            if(stock_ready(p,gate.stock,gate.minimum))return true;
+            trace(BorgBattleEventKind::EntryStockRefused,index,0,0,u16(stocks[gate.stock].current));
             return false;
         };
         const auto max_spin=[](const BorgBattleHeldFire& spec){return u32(spec.warmup)*std::max<u32>(1,spec.cooldown);};

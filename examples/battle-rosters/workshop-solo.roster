@@ -1,0 +1,10 @@
+GFROSTER 1
+# P1 has two CPU allies and three CPU opponents.
+locals=1
+stage=example:workshop
+fighter=0|example:flight-stick|normal|west
+fighter=0|example:jump-stick|normal|west-outer
+fighter=0|example:flight-stick|normal|west-rear
+fighter=1|example:flight-stick|normal|east
+fighter=1|example:jump-stick|normal|east-outer
+fighter=1|example:jump-stick|normal|east-rear

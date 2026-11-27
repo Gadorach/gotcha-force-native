@@ -19,7 +19,12 @@ from tools.analyze.retail_action_sfx import DIRECT, action_sfx_index
 
 RELAY_SOUND_ID = 162
 from tools.analyze.retail_actor_data_binding import actor_record_binding, binding_schema
-from tools.analyze import damage_content_row, reaction_emit
+from tools.analyze import (
+    contact_impact_visuals, contact_pose_pause, contact_sound, damage_amount_model, damage_attacker_ladders, damage_contact_indices,
+    damage_contact_power, damage_contact_roles,
+    damage_contact_tiers, damage_content_row,
+    damage_receiver_ladders, reaction_emit, reaction_melee, reaction_melee_continuation,
+)
 from tools.analyze.retail_basic_shot_test import (
     ACTOR_RELEASE_SOUND, ANIMATED_CRUISE_SHOTS, CLOCKED_GROUND_SHOTS, COHORT as BASIC_SHOT_COHORT, CRUISE_CHARGE_SHOTS,
     PREFERRED_B_SHOT, STATIC_CRUISE_PHASE_SHOTS, STATIC_CRUISE_SHOTS, STATIC_GROUND_MODELS, basic_shot_test, cruise_charge_shot_test, pilot_launch_tone,
@@ -864,7 +869,6 @@ def basic_shot_damage_lines(dol, model):
     except ValueError:
         return []
     return ["# authored test damage rows: attacker settings 0, defender settings 16; not universal battle state",
-            "damage-factors=1.0|1.0|1.0|1.0",
             *contact_side_lines(),
             row["content"]["line"]]
 
@@ -873,7 +877,9 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             move_labels=(), launch_tables=None, linker=None, landing_pcm=None, origin_markers=False, action_clips=False,
              cruise_lab=False, movement_operands=False, source_pace=False, basic_shot=False, stock_guards=None,
              launch_pcm=None, projectile_sounds=None, tone_banks=None, dragon_carrier=None, dragon_impact_art=None,
-             dragon_impact_pcm=None, worm_source=None, basic_melee=False, action_pcm=None):
+            dragon_impact_pcm=None, worm_source=None, basic_melee=False, action_pcm=None, contact_roles=None,
+            contact_power_test=False,contact_ladders=None,contact_tiers=None,contact_tier_reset_test=False,
+            contact_audio=None,contact_visuals=None,contact_indices=None,contact_floor=None,contact_pause=False):
     cruise_pilot = basic_shot and cruise_lab and (row.model==VIOLET_SHOT["model"] or any(row.model in cohort for cohort in (
         STATIC_CRUISE_SHOTS, STATIC_CRUISE_PHASE_SHOTS, CRUISE_CHARGE_SHOTS, ANIMATED_CRUISE_SHOTS)))
     clocked_pilot = basic_shot and row.model in CLOCKED_GROUND_SHOTS
@@ -1102,6 +1108,21 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         gameplay,pose,battle_receipt=knight.melee_battle_test(
             row.model,joints,candidates,pace,level[0],source,clip_metadata=loop_metadata,mounts=mounts,
             body_material=("immutable-highlight" if row.model==bombers.REMOTE else None))
+        hit_block,_=member.read(2,reaction_emit.HIT_BYTES)
+        gameplay=reaction_melee.append_binding(dol,hit_block,row.model,gameplay,battle_receipt,source,actions["profiles"])
+        if continuation:=battle_receipt.get("reaction",{}).get("opening-slash",{}).get("continuation"):
+            native=battle_receipt["native_timing"]
+            follow=reaction_melee_continuation.qualify_pose(
+                linker,continuation,actions["profiles"],clips,timing,len(joints),battle_receipt["source_pose"],
+                frame=native["active_frames"][0]-3,duration=native["move_ticks"])
+            if follow is None:
+                battle_receipt["continuation_pose_status"]="no exact bounded local clip; authored lead-in retained"
+            else:
+                g,c=follow["clip"]
+                gameplay+=(f"# Authored switch before melee arming; not source phase timing.\n"
+                           f"pose-followup=opening-slash|{follow['switch_frame']}|{g}:{c}|{follow['source_start_frame']}\n"
+                           ).encode("ascii")
+                battle_receipt["continuation_pose"]=follow
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         manifest += "gameplay=gameplay.txt\n"
     elif (roach_source is not None or zeta_source is not None or charge_source is not None or
@@ -1127,7 +1148,6 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         stop=next((r[1:] for r in candidates if r[0]=="ground-stop"),None)
         stop_at=next((at for g,c,at in clips if (g,c)==stop),None)
         idle_timing=next((r for r in timing if r["archive_offset"]==stop_at),None)
-        basic_shot_gameplay=False
         if dragon_pilot:
             if not motion or mounts or not dragon_impact_art:
                 raise ValueError("elemental pilot requires exact unmounted body and local motion bank")
@@ -1206,18 +1226,13 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
                                                        actor_sfx=action_sfx_index(actions,tone_banks)
                                                        if launch_pcm is not None and row.model==ACTOR_RELEASE_SOUND[0] else (),
                                                        idle_timing=idle_timing)
-            basic_shot_gameplay=True
-        if basic_shot and basic_shot_gameplay:
-            context=PREFERRED_B_SHOT.get(row.model,(0,0))
-            lines=reaction_emit.content_lines(dol,archive,row.model,context)
-            damage_lines=basic_shot_damage_lines(dol,row.model)
-            if lines or damage_lines:
-                gameplay += ("\n".join(lines+damage_lines)+"\n").encode("ascii")
-                battle_receipt = dict(battle_receipt)
-                if lines:
-                    battle_receipt["reaction"]={"context":list(context),"lines":lines}
-                if damage_lines:
-                    battle_receipt["damage_rows"]=damage_lines
+            damage_lines=basic_shot_damage_lines(dol,row.model) if contact_roles is None else ()
+            if damage_lines:
+                gameplay += ("\n".join(damage_lines)+"\n").encode("ascii")
+                battle_receipt["damage_rows"]=damage_lines
+        if battle_receipt.get("reaction_releases"):
+            hit_block,_=member.read(2,reaction_emit.HIT_BYTES)
+            gameplay=reaction_emit.append_bindings(dol,hit_block,row.model,gameplay,battle_receipt)
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         for cue in battle_receipt.get("authored_launch_sounds",()):
             if "path" in cue:
@@ -1225,6 +1240,73 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         if cue:=battle_receipt.get("authored_release_sound"):
             files[cue["path"]]=launch_pcm[cue["bank"],cue["tone"]]
         manifest += "gameplay=gameplay.txt\n"
+    if contact_roles is not None and battle_receipt is not None:
+        report, selectors = contact_roles
+        roles = damage_contact_roles.profile_rows(report, selectors, row.model, actor, image=dol)
+        if contact_indices is not None:
+            selector=roles["receiver_selector"]
+            binding=operands["class_installer_binding"]
+            if selector is not None and (binding["status"]!="one-static-slot-0-record" or binding["selected_record"]!=0):
+                raise ValueError("indexed damage receiver lacks proved single normal data record")
+            indexed=damage_contact_indices.profile_lines(contact_indices,selector[0] if selector is not None else None)
+            roles["lines"].extend(indexed)
+            roles["indexed_tables"]=indexed
+        if contact_ladders is not None:
+            receiver_ladders, attacker_ladders = contact_ladders
+            ladder_rows = damage_receiver_ladders.profile_rows(receiver_ladders,roles["receiver_selector"])
+            roles["lines"].extend(ladder_rows)
+            roles["receiver_ladders"]=bool(ladder_rows)
+            outgoing = damage_attacker_ladders.profile_rows(attacker_ladders,dol,battle_receipt.get("reaction",{}))
+            roles["lines"].extend(outgoing["lines"])
+            roles["attacker_ladders"]=outgoing
+        if contact_tiers is not None:
+            receiver=roles["receiver_selector"] is not None
+            reset=(damage_contact_tiers.receiver_reset(actor,operands["class_installer_binding"],receiver=receiver)
+                   if contact_tier_reset_test else None)
+            tier_rows = damage_contact_tiers.profile_rows(contact_tiers,dol,battle_receipt.get("reaction",{}),
+                                                          receiver=receiver,reset=reset)
+            roles["lines"].extend(tier_rows["lines"])
+            battle_receipt["contact_tier_test"]=tier_rows
+        files["gameplay.txt"]+=("\n".join(roles["lines"])+"\n").encode("ascii")
+        battle_receipt["contact_scale_test"]=roles
+    if contact_power_test and battle_receipt is not None:
+        files["gameplay.txt"]=damage_contact_power.append(files["gameplay.txt"],battle_receipt,dol)
+    if contact_floor is not None and battle_receipt is not None:
+        files["gameplay.txt"]=damage_contact_power.append_floor(files["gameplay.txt"],battle_receipt,dol,
+                                                               minimum=contact_floor["minimum"])
+    if contact_pause and battle_receipt is not None:
+        held=contact_pose_pause.profile_rows(dol,battle_receipt.get("reaction",{}),
+                                           operands["class_installer_binding"],len(actor),
+                                           native=b"movement=normal-gred-gfmm9" not in files["gameplay.txt"].splitlines())
+        if held["lines"]:
+            files["gameplay.txt"]+=("\n".join(held["lines"])+"\n").encode("ascii")
+        battle_receipt["contact_pose_pause"]=held
+    if contact_audio is not None and battle_receipt is not None:
+        report, tones, samples=contact_audio
+        receiver=contact_sound.receiver_band(report,dol,actions,operands["class_installer_binding"],len(actor))
+        cue_rows, paths=contact_sound.profile_rows(report,dol,battle_receipt.get("reaction",{}),receiver,tones)
+        if cue_rows["lines"]:
+            files["gameplay.txt"]+=("\n".join(cue_rows["lines"])+"\n").encode("ascii")
+        files.update((path,samples[tone]) for path,tone in paths.items())
+        battle_receipt["contact_audio"]=cue_rows
+    if contact_visuals is not None and battle_receipt is not None:
+        actor_retirement_art=any(line.startswith(b"impact-record=") and line.split(b"|",2)[1:2]==[b"actor"]
+                                 for line in files["gameplay.txt"].splitlines())
+        cue_rows=contact_impact_visuals.profile_rows(contact_visuals,dol,battle_receipt.get("reaction",{}),
+                                                    operands["class_installer_binding"],len(actor),
+                                                    actor_retirement_art=actor_retirement_art)
+        if cue_rows["requires_records"]:
+            path="visual/impact.hsd"
+            package_banks=[line for line in files["gameplay.txt"].splitlines() if line.startswith(b"impact-record-bank=")]
+            if package_banks and (package_banks!=[f"impact-record-bank={path}".encode("ascii")] or
+                                  files.get(path)!=dragon_impact_art):
+                raise ValueError("contact visual bank conflicts with package impact records")
+            if not package_banks:
+                files[path]=dragon_impact_art
+                files["gameplay.txt"]+=f"impact-record-bank={path}\n".encode("ascii")
+        if cue_rows["lines"]:
+            files["gameplay.txt"]+=("\n".join(cue_rows["lines"])+"\n").encode("ascii")
+        battle_receipt["contact_visuals"]=cue_rows
     if battle_receipt is not None and pace is not None and operands is not None:
         text=files["gameplay.txt"].decode("ascii")
         if "cruise-boost=" not in text and "air-jump-points=" not in text:
@@ -1440,7 +1522,9 @@ def write_new(folder, files):
 def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_clips=False,
              spec_text=None, source_variants=False, landing_decoder=None, origin_markers=False, action_clips=False,
              cruise_lab=False, movement_operands=False, source_pace=False, basic_shot=False, shot_audio_decoder=None,
-             dragon_impact_audio=False,basic_melee=False):
+             dragon_impact_audio=False,basic_melee=False,contact_scale_test=False,contact_power_test=False,
+             contact_ladder_test=False,contact_tier_test=False,contact_tier_reset_test=False,contact_audio_decoder=None,
+             contact_art_test=False,contact_index_test=False,contact_floor_test=False,contact_pause_test=False):
     output = Path(output)
     repo = Path(__file__).resolve().parents[2]
     destination = output.resolve()
@@ -1460,6 +1544,26 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         raise ValueError("--basic-shot-audio requires --basic-shot-test")
     if dragon_impact_audio and shot_audio_decoder is None:
         raise ValueError("--dragon-impact-audio requires --basic-shot-audio")
+    if contact_scale_test and not (basic_shot or basic_melee):
+        raise ValueError("--contact-scale-test requires an authored shot or melee Battle Test")
+    if contact_power_test and not (basic_shot or basic_melee):
+        raise ValueError("--contact-power-test requires an authored shot or melee Battle Test")
+    if contact_ladder_test and not contact_scale_test:
+        raise ValueError("--contact-ladder-test requires --contact-scale-test")
+    if contact_tier_test and not contact_scale_test:
+        raise ValueError("--contact-tier-test requires --contact-scale-test")
+    if contact_tier_reset_test and not contact_tier_test:
+        raise ValueError("--contact-tier-reset-test requires --contact-tier-test")
+    if contact_audio_decoder is not None and not (basic_shot or basic_melee):
+        raise ValueError("--contact-audio requires an authored shot or melee Battle Test")
+    if contact_art_test and not (basic_shot or basic_melee):
+        raise ValueError("--contact-art-test requires an authored shot or melee Battle Test")
+    if contact_index_test and not contact_scale_test:
+        raise ValueError("--contact-index-test requires --contact-scale-test")
+    if contact_floor_test and not (basic_shot or basic_melee):
+        raise ValueError("--contact-floor-test requires an authored shot or melee Battle Test")
+    if contact_pause_test and not (basic_shot or basic_melee):
+        raise ValueError("--contact-pause-test requires an authored shot or melee Battle Test")
     rows = read_catalog(catalog)
     labels = ()
     if spec_text is not None:
@@ -1473,9 +1577,46 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         if len(data) > 8 << 20:
             raise ValueError("GG4E08 DOL byte budget")
         dol = DolImage(data, DOL_DIGEST)
+    if contact_power_test or contact_floor_test:
+        damage_contact_power.verify_source(dol)
+    contact_ladders = (damage_receiver_ladders.recover(dol), damage_attacker_ladders.recover(dol)
+                       ) if contact_ladder_test else None
+    contact_tiers = damage_contact_tiers.recover(dol) if contact_tier_test else None
+    contact_indices = damage_contact_indices.recover(dol) if contact_index_test else None
+    contact_floor = damage_amount_model.recover_finalizer(dol) if contact_floor_test else None
+    contact_pause = contact_pose_pause.recover(dol) if contact_pause_test else None
+    contact_roles = None
+    if contact_scale_test:
+        with open_regular(DAMAGE_SELECTORS) as stream:
+            raw = stream.read((64 << 10) + 1)
+        if len(raw) > 64 << 10:
+            raise ValueError("contact selector artifact extent")
+        selectors = json.loads(raw)
+        if selectors.get("kind") != "gf-borg-damage-selectors":
+            raise ValueError("incorrect contact selector artifact")
+        contact_roles = damage_contact_roles.recover(dol), selectors
     with open_regular(afs_path) as stream:
         archive = RetailArchive(stream)
         shared_files, shared_index = archive.shared_assets()
+        if contact_power_test:
+            shared_index["contact_power_test"] = "uniform positive HP base of qualified direct contact rows"
+        if contact_roles is not None:
+            report = contact_roles[0]
+            shared_index["contact_scale_test"] = {key: report[key] for key in ("settings", "rank", "scope")}
+        if contact_ladders is not None:
+            shared_index["contact_ladder_test"] = {
+                key: report["native_scope"] for key, report in zip(("receiving", "outgoing"), contact_ladders, strict=True)
+            }
+        if contact_tiers is not None:
+            shared_index["contact_tier_test"] = contact_tiers["scope"]
+        if contact_tier_reset_test:
+            shared_index["contact_tier_reset_test"] = contact_tiers["reset"]["native_scope"]
+        if contact_indices is not None:
+            shared_index["contact_index_test"] = contact_indices["scope"]
+        if contact_floor is not None:
+            shared_index["contact_floor_test"] = contact_floor["native_scope"]
+        if contact_pause is not None:
+            shared_index["contact_pause_test"] = contact_pause["native"]
         pcm=None
         if landing_decoder is not None:
             pcm=decode_lab_landing_pcm(landing_decoder,shared_files,shared_index)
@@ -1487,6 +1628,17 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         launches = origin_tables(dol)
         projectile_sound = projectile_sound_index(dol,launches,shared_files,shared_index["audio_bank_members"])
         tone_banks = normal_tone_banks(dol,shared_files,shared_index["audio_bank_members"])
+        contact_audio=None
+        if contact_audio_decoder is not None:
+            report=contact_sound.recover(dol)
+            tones=contact_sound.tone_files(report,tone_banks)
+            pairs=sorted({(tone["bank"],tone["tone"]) for tone in tones.values()})
+            samples={}
+            for at in range(0,len(pairs),16):
+                samples.update(decode_shot_audio(contact_audio_decoder,pairs[at:at+16],shared_files,
+                                                 shared_index["audio_bank_members"]))
+            contact_audio=report,tones,samples
+            shared_index["contact_audio"]={"policy":report["policy"],"tones":tones}
         worm_shots=worm_source_index(dol,lambda cue:tone_candidate(cue,tone_banks))
         launch_pcm = None
         if shot_audio_decoder is not None:
@@ -1576,6 +1728,13 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         if len(effects.entries)!=len(dragon_art.EFFECT_BLOCKS):
             raise ValueError("common effect block count")
         art_files,common_effects=dragon_art.common_art([effects.read(i,size)[0] for i,(size,_,_) in enumerate(dragon_art.EFFECT_BLOCKS)])
+        contact_visuals=None
+        if contact_art_test:
+            contact_visuals=contact_impact_visuals.recover(dol)
+            shared_index["contact_visuals"]={
+                "archive":contact_impact_visuals.qualify_archive(contact_visuals,art_files["effects/common-single.hsd"]),
+                "native":contact_visuals["native"],
+            }
         shared_files.update(art_files)
         shared_index["common_effect_archive"]=common_effects
         dragon_carriers["shared_descendant_visual"]=common_effects["descendant_record"]
@@ -1621,7 +1780,12 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
                                         dragon_carrier=dragon_carriers["borgs"].get(row.id),
                                          dragon_impact_art=art_files["effects/common-single.hsd"],dragon_impact_pcm=impact_pcm,
                                          worm_source=worm_shots.get(row.model),basic_melee=basic_melee,
-                                         action_pcm=action_pcm)
+                                          action_pcm=action_pcm,contact_roles=contact_roles,
+                                          contact_power_test=contact_power_test,contact_ladders=contact_ladders,
+                                           contact_tiers=contact_tiers,contact_tier_reset_test=contact_tier_reset_test,
+                                            contact_audio=contact_audio,contact_visuals=contact_visuals,
+                                            contact_indices=contact_indices,contact_floor=contact_floor,
+                                            contact_pause=contact_pause is not None)
             if "dragon_carrier_collision" in summary:
                 dragon_carriers["borgs"][row.id]["collision"]=summary["dragon_carrier_collision"]
                 dragon_carriers["borgs"][row.id]["visuals"]=summary["dragon_carrier_visuals"]
@@ -1812,9 +1976,29 @@ def main():
     parser.add_argument("--basic-shot-test", action="store_true",
                          help="add a normal-only authored B-shot Battle Test to the qualified cohort")
     parser.add_argument("--basic-melee-test", action="store_true",
-                        help="add a normal-only authored close-B Battle Test to the qualified melee cohort")
+                         help="add a normal-only authored close-B Battle Test to the qualified melee cohort")
+    parser.add_argument("--contact-scale-test", action="store_true",
+                         help="use the authored paired settings-7/rank-0 damage snapshot in Battle Test packages")
+    parser.add_argument("--contact-index-test", action="store_true",
+                         help="bind complete settings/rank curves; requires --contact-scale-test")
+    parser.add_argument("--contact-power-test", action="store_true",
+                         help="bind the recovered uniform positive HP base on reviewed direct Battle Test moves")
+    parser.add_argument("--contact-floor-test", action="store_true",
+                         help="keep qualified positive direct hit damage from truncating below one HP")
+    parser.add_argument("--contact-pause-test", action="store_true",
+                         help="hold native skeletal samples on verified direct-hit slowdown routes")
+    parser.add_argument("--contact-ladder-test", action="store_true",
+                         help="bind qualified receiving and outgoing HP/force ladders; requires --contact-scale-test")
+    parser.add_argument("--contact-tier-test", action="store_true",
+                         help="bind the receiver-owned contact meter and damage tiers; requires --contact-scale-test")
+    parser.add_argument("--contact-tier-reset-test", action="store_true",
+                         help="bind the separate gauge that can reset the tier; requires --contact-tier-test")
     parser.add_argument("--basic-shot-audio", type=Path, metavar="WAV_DECODER",
-                        help="bind exact dry launch tones using the local retail_borg_sound helper")
+                         help="bind exact dry launch tones using the local retail_borg_sound helper")
+    parser.add_argument("--contact-audio", type=Path, metavar="WAV_DECODER",
+                         help="bind ordinary direct-contact tone pairs using the local retail_borg_sound helper")
+    parser.add_argument("--contact-art-test", action="store_true",
+                         help="show qualified common impact records at accepted normal direct contacts")
     parser.add_argument("--dragon-impact-audio", action="store_true",
                         help="bind an authored accepted-contact cue for elemental Dragon tests")
     args = parser.parse_args()
@@ -1825,7 +2009,12 @@ def main():
                                     origin_markers=args.origin_markers, action_clips=args.action_clips, cruise_lab=args.cruise_lab,
                                      movement_operands=args.movement_operands, source_pace=args.source_pace,basic_shot=args.basic_shot_test,
                                        shot_audio_decoder=args.basic_shot_audio,dragon_impact_audio=args.dragon_impact_audio,
-                                       basic_melee=args.basic_melee_test)
+                                        basic_melee=args.basic_melee_test,contact_scale_test=args.contact_scale_test,
+                                        contact_power_test=args.contact_power_test,contact_ladder_test=args.contact_ladder_test,
+                                        contact_tier_test=args.contact_tier_test,
+                                         contact_tier_reset_test=args.contact_tier_reset_test,contact_audio_decoder=args.contact_audio,
+                                          contact_art_test=args.contact_art_test,contact_index_test=args.contact_index_test,
+                                          contact_floor_test=args.contact_floor_test,contact_pause_test=args.contact_pause_test)
     except (ValueError, OSError) as exc:
         parser.exit(1, f"retail roster extraction: {exc}\n")
     print(f"GG4E08: {normal} normal asset packages, {previews} preview declarations (not runtime-validated)")

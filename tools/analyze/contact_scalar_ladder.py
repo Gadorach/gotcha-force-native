@@ -54,11 +54,11 @@ def recover(image):
         "address": f"{LADDER:08X}",
         "count": COUNT,
         "entries": [round(value, 6) for value in entries],
-        "formula": "trunc(base * credit_difficulty(side, settings[attacker+136]) "
+        "formula": "observed positive-route subset: trunc(max(1, base * credit_difficulty(side, settings[attacker+136]) "
+                   "* (Settings+50 in {0,1} && owner998 != 0 && owner136 == 0 ? 0.5 : 1) "
                    "* attacker_rank(attacker+1082) "
-                   "* (owner998 != 0 && owner136 == 0 ? 0.5 : 1) "
                    "* defender_class_row(model+156, settings[defender+136]) "
-                   "* receiver_rank(defender+1082) * tier * relative)",
+                   "* relative * receiver_rank(defender+1082) * tier))",
         "credit_rows": {
             "pointer_table": "804335E0",
             "variants": [

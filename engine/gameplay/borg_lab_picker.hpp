@@ -6,14 +6,16 @@
 #include <vector>
 #include "engine/graphics/scene_draw.hpp"
 #include "engine/graphics/text.hpp"
+#include "engine/graphics/transform.hpp"
 #include "engine/input/input_snapshot.hpp"
 
 namespace gf {
-// Desktop lab overlay. Rows are supplied from the same validated installed
-// catalogue; this widget holds no assets, actors, or save authority.
+// Desktop dropdown shared by the lab and roster browser. The caller
+// supplies rows and input edges. This widget holds no assets or authority.
 class BorgLabPicker {
 public:
     struct Entry {std::string id,name,variant;};
+    enum class Command {Up,Down,PreviousPage,NextPage,Confirm,Cancel};
     static constexpr s32 left=20,top=20,row_height=24,page_size=8;
     explicit BorgLabPicker(std::vector<Entry> entries,s32 rows=page_size):
         entries_(std::move(entries)),rows_(std::size_t(std::clamp(rows,1,page_size))){}
@@ -22,16 +24,37 @@ public:
     static s32 fitting_rows(s32 height){return std::clamp((height-top)/row_height-2,1,page_size);}
     void fit_height(s32 height){
         const auto rows=std::size_t(fitting_rows(height));
-        if(rows!=rows_){page_=(open_?page_*rows_:active_)/rows;rows_=rows;}
+        if(rows!=rows_){page_=(open_?focus_.value_or(page_*rows_):active_)/rows;rows_=rows;}
     }
     bool open()const{return open_;}
     void activate(std::size_t index){if(index<entries_.size())active_=index;}
     static s32 width(s32 viewport){return std::min(viewport-2*left,540);}
+    // Page changes by pointer clear keyboard focus. Switching back to
+    // navigation starts on the active row if visible, else the page start.
+    std::size_t focused_row()const{
+        return focus_.value_or(!open_||active_/rows_==page_?active_:page_*rows_);
+    }
+    std::optional<std::size_t> navigate(Command command){
+        if(entries_.empty())return {};
+        if(command==Command::Cancel){open_=false;focus_.reset();return {};}
+        if(!open_){
+            open_=true;page_=active_/rows_;
+            if(command==Command::Confirm){focus_=active_;return {};}
+        }
+        auto row=focused_row();
+        if(command==Command::Confirm){open_=false;focus_.reset();return row;}
+        if(command==Command::Up&&row) --row;
+        if(command==Command::Down&&row+1<entries_.size()) ++row;
+        if(command==Command::PreviousPage&&page_)row-=rows_;
+        if(command==Command::NextPage&&(page_+1)*rows_<entries_.size())row=std::min(row+rows_,entries_.size()-1);
+        focus_=row;page_=row/rows_;
+        return {};
+    }
     std::optional<std::size_t> step(const PointerState& pad,s32 viewport){
         if(!pad.within_window||entries_.empty()||width(viewport)<=0)return {};
         const bool inside=pad.x>=left&&pad.x<left+width(viewport);
         if(pad.left_pressed&&inside&&pad.y>=top&&pad.y<top+row_height){
-            open_=!open_;
+            open_=!open_;focus_.reset();
             if(open_)page_=active_/rows_;
             return {};
         }
@@ -39,17 +62,19 @@ public:
         const auto end=std::min(entries_.size(),(page_+1)*rows_);
         const auto footer=top+s32(end-page_*rows_+1)*row_height;
         if(inside&&pad.y>=top&&pad.y<footer+row_height&&pad.wheel){
+            focus_.reset();
             if(pad.wheel>0&&page_)--page_;
             if(pad.wheel<0&&end<entries_.size())++page_;
             return {};
         }
         if(!pad.left_pressed)return {};
         if(inside&&pad.y>=footer&&pad.y<footer+row_height){
+            focus_.reset();
             if(pad.x<left+width(viewport)/2){if(page_)--page_;}
             else if(end<entries_.size())++page_;
             return {};
         }
-        open_=false;
+        open_=false;focus_.reset();
         if(inside&&pad.y>=top+row_height&&pad.y<footer)
             return page_*rows_+std::size_t((pad.y-top)/row_height-1);
         return {};
@@ -70,7 +95,7 @@ public:
         const auto first=page_*rows_,end=std::min(entries_.size(),first+rows_);
         const auto footer=s32(end-first+1);
         if(open_){
-            for(auto i=first;i<end;++i)panel(s32(i-first+1),i==active_?Tint{37,69,99,252}:Tint{22,32,51,252});
+            for(auto i=first;i<end;++i)panel(s32(i-first+1),i==focus_.value_or(active_)?Tint{37,69,99,252}:Tint{22,32,51,252});
             panel(footer,{17,25,41,250});
         }else if(!notice.empty())panel(1,{51,39,20,250});
         auto offset=render.append_vertices(geometry.data(),geometry.size());
@@ -99,6 +124,7 @@ public:
 private:
     std::vector<Entry> entries_;
     std::size_t rows_,active_=0,page_=0;
+    std::optional<std::size_t> focus_;
     bool open_=false;
     TextRenderer text_;
 };

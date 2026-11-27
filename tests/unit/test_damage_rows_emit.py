@@ -19,7 +19,6 @@ class DamageRowsEmitTest(unittest.TestCase):
             image = DolImage(source.read(0, source.size), SOURCE_SHA256)
             expected = [
                 "# authored test damage rows: attacker settings 0, defender settings 16; not universal battle state",
-                "damage-factors=1.0|1.0|1.0|1.0",
                 "# authored: side rows carry the recovered credit and receiver-rank pair;",
                 "# the per-receiver class row stays in the damage-vs line.",
                 "damage-side=0|0.867|1.0|1.15|1.0",

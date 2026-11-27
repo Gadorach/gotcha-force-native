@@ -31,7 +31,6 @@ def main():
         def add_row(rules):
             return rules + (b"# authored test damage-vs: attacker settings 0, "
                             b"defender settings 16; not universal battle state\n"
-                            b"damage-factors=1.0|1.0|1.0|1.0\n"
                             b"damage-vs=10|0.867|1.13|1.15|1.0\n")
         prepare("g-red", art, root / "borgs/g-red", movement, True,
                 gameplay_transform=add_row)

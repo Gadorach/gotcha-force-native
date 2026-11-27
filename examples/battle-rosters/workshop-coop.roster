@@ -1,0 +1,7 @@
+GFROSTER 1
+# Both local players are on team 0. The next two fighters are CPU opponents.
+stage=example:workshop
+fighter=0|example:flight-stick|normal|west
+fighter=0|example:jump-stick|normal|west-outer
+fighter=1|example:jump-stick|normal|east
+fighter=1|example:flight-stick|normal|east-outer

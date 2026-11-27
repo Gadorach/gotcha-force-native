@@ -1,0 +1,150 @@
+{
+  "kind": "gf-damage-contact-roles",
+  "matchup": {
+    "dimensions": [
+      20,
+      20
+    ],
+    "mapper": "80066298",
+    "matrix": "802C5D60",
+    "model_index_root": "802F2E28",
+    "multiply": "8003D024",
+    "neutral": 1.0,
+    "nonneutral_rows": {
+      "gg4e08-class-0": {},
+      "gg4e08-class-1": {
+        "gg4e08-class-15": 1.1,
+        "gg4e08-class-3": 1.1,
+        "gg4e08-class-8": 1.1,
+        "gg4e08-class-9": 1.1
+      },
+      "gg4e08-class-10": {
+        "gg4e08-class-1": 0.95
+      },
+      "gg4e08-class-11": {
+        "gg4e08-class-12": 0.95
+      },
+      "gg4e08-class-12": {
+        "gg4e08-class-12": 1.1,
+        "gg4e08-class-15": 1.25
+      },
+      "gg4e08-class-13": {
+        "gg4e08-class-11": 1.1
+      },
+      "gg4e08-class-14": {
+        "gg4e08-class-16": 1.1
+      },
+      "gg4e08-class-15": {
+        "gg4e08-class-1": 0.9,
+        "gg4e08-class-12": 0.75,
+        "gg4e08-class-16": 1.1
+      },
+      "gg4e08-class-16": {
+        "gg4e08-class-14": 1.1,
+        "gg4e08-class-15": 1.1,
+        "gg4e08-class-17": 1.2
+      },
+      "gg4e08-class-17": {
+        "gg4e08-class-16": 1.1
+      },
+      "gg4e08-class-18": {},
+      "gg4e08-class-19": {
+        "gg4e08-class-4": 1.1
+      },
+      "gg4e08-class-2": {
+        "gg4e08-class-5": 0.99,
+        "gg4e08-class-6": 1.1
+      },
+      "gg4e08-class-3": {
+        "gg4e08-class-1": 0.9
+      },
+      "gg4e08-class-4": {
+        "gg4e08-class-19": 0.9
+      },
+      "gg4e08-class-5": {},
+      "gg4e08-class-6": {
+        "gg4e08-class-2": 0.9,
+        "gg4e08-class-6": 0.95
+      },
+      "gg4e08-class-7": {
+        "gg4e08-class-7": 0.95
+      },
+      "gg4e08-class-8": {},
+      "gg4e08-class-9": {
+        "gg4e08-class-1": 0.95
+      }
+    },
+    "order": [
+      "receiver",
+      "attacker"
+    ],
+    "source_gate": "ordinary live linked attacker and live body receiver (phase 1)"
+  },
+  "rank": 0,
+  "revision": 2,
+  "scope": "authored snapshot for opted-in direct native move hits; no live source battle-mode selection",
+  "settings": 7,
+  "settings_state": 2,
+  "settings_writer": "80006ABC",
+  "sides": [
+    {
+      "attacker_rank": 0.85,
+      "class_rows": [
+        "802C63A0",
+        "802C6420",
+        "802C64A0",
+        "802C6520",
+        "802C65A0",
+        "802C6620",
+        "802C66A0",
+        "802C6720"
+      ],
+      "credit_difficulty": 1.0,
+      "receive_class": [
+        0.9,
+        0.92,
+        0.88,
+        0.8,
+        1.0,
+        1.0,
+        0.58,
+        0.28
+      ],
+      "receiver_rank": 1.15,
+      "team": 0
+    },
+    {
+      "attacker_rank": 0.85,
+      "class_rows": [
+        "802C67A0",
+        "802C6820",
+        "802C68A0",
+        "802C6920",
+        "802C69A0",
+        "802C6A20",
+        "802C6AA0",
+        "802C6B20"
+      ],
+      "credit_difficulty": 0.9,
+      "receive_class": [
+        0.99,
+        1.04,
+        0.96,
+        0.86,
+        1.0,
+        1.0,
+        0.78,
+        0.33
+      ],
+      "receiver_rank": 1.15,
+      "team": 1
+    }
+  ],
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "table_roots": [
+    "804335E0",
+    "804335F8",
+    "80433600",
+    "80433618"
+  ]
+}

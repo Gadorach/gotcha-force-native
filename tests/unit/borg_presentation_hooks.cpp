@@ -246,7 +246,7 @@ movement-sound=landing|audio/land.pcm
     check(borg_movement_sound_decode(pcm,&bank[2])&&bank[2]==std::vector<s16>{2000,2000}&&
           !borg_movement_sound_decode("xx",&bank[1]),"bounded little-endian stereo decode");
     bank[1]=bank[2];bank[3]=bank[2];
-    const std::array<const BorgMovementSoundBank*,2> banks{&bank,nullptr};
+    const std::array banks{BorgAudioSlot{.movement=&bank},BorgAudioSlot{}};
     BorgMovementAudio music;std::vector<s16> out;
     check(world.start(config),"movement cues fixture");
     step(0,true);
@@ -271,18 +271,18 @@ movement-sound=landing|audio/land.pcm
     }
     BorgLaunchSoundBank launch;
     launch[0].assign(1800,2000); // beyond one block, to exercise round-scope discard
-    const std::array<const BorgLaunchSoundBank*,2> launches{&launch,nullptr};
+    auto launches=banks;launches[0].launch=&launch;
     origin.accept=true;
     check(world.start(config),"launch sound round");
     step(BorgBattleInputs::b);
-    check(music.visit(world,banks,&out,launches)&&out.empty(),"starting the move is not a launch cue");
+    check(music.visit(world,launches,&out)&&out.empty(),"starting the move is not a launch cue");
     step();
-    check(music.visit(world,banks,&out,launches)&&music.launch_started()==1&&out[0]==700&&
-          !music.visit(world,banks,&out,launches),"accepted shot queues one bounded sound visit");
+    check(music.visit(world,launches,&out)&&music.launch_started()==1&&out[0]==700&&
+          !music.visit(world,launches,&out),"accepted shot queues one bounded sound visit");
     origin.accept=false;
     check(world.start(config),"launch refusal round");
     step(BorgBattleInputs::b);step();
-    check(music.visit(world,banks,&out,launches)&&!music.launch_started()&&out.empty(),
+    check(music.visit(world,launches,&out)&&!music.launch_started()&&out.empty(),
           "refused socket queues no sound and an old launch tail cannot survive the restart");
     const auto paid_sound=sound_setup+"release-sound=throw|1|audio/paid.pcm\n";
     config.packages[0]=parse(paid_sound);
@@ -293,16 +293,16 @@ movement-sound=landing|audio/land.pcm
     }
     BorgReleaseSoundBank release_sounds;
     release_sounds[0]={0,1,{4000,4000}};
-    const std::array<const BorgReleaseSoundBank*,2> release_banks{&release_sounds,nullptr};
+    auto release_banks=launches;release_banks[0].release=&release_sounds;
     check(world.start(config),"paid sound with refused socket");
     step(BorgBattleInputs::b);step();
-    check(music.visit(world,banks,&out,launches,release_banks)&&music.release_started()==1&&
+    check(music.visit(world,release_banks,&out)&&music.release_started()==1&&
           !music.launch_started()&&out[0]==1400&&!world.shots_spawned(),
           "paid actor cue survives socket refusal without a child cue");
     origin.accept=true;
     check(world.start(config),"paid and accepted launch sounds");
     step(BorgBattleInputs::b);step();
-    check(music.visit(world,banks,&out,launches,release_banks)&&music.release_started()==1&&music.launch_started()==1&&
+    check(music.visit(world,release_banks,&out)&&music.release_started()==1&&music.launch_started()==1&&
           out[0]==2100,"actor and child cues sum on the shared mixer");
     BorgBattleActionState unpaid;unpaid.reset(*config.packages[0]);unpaid.stocks[0].current=0;
     std::vector<BorgBattleEventKind> trace;
@@ -313,25 +313,26 @@ movement-sound=landing|audio/land.pcm
           std::find(trace.begin(),trace.end(),BorgBattleEventKind::ReleaseSound)==trace.end(),
           "refused debit never starts the paid cue");
     BattleMvpConfig lab;lab.provisional_walk=lab.provisional_jump=true;
+    const auto solo_banks=std::span<const BorgAudioSlot>(banks).first(1);
     check(world.start(lab),"solo jump audio setup");
     GamePadState jump;jump.b=true;
     check(world.step({jump,{}},false)&&!world.actors()[0].package_movement_cues&&
-          music.visit(world,banks,&out)&&out.empty(),"solo takeoff does not reuse authored package rise audio");
+          music.visit(world,solo_banks,&out)&&out.empty(),"solo takeoff does not reuse authored package rise audio");
     unsigned solo_landings=0,solo_blocks=0;
     for(unsigned j=0;j<70;++j){
         const bool airborne=!world.actors()[0].grounded;
-        check(world.step({},false)&&music.visit(world,banks,&out),"solo fixed-tick cue consumption");
+        check(world.step({},false)&&music.visit(world,solo_banks,&out),"solo fixed-tick cue consumption");
         const bool landed=airborne&&world.actors()[0].grounded;
         check(unsigned(world.actors()[0].package_movement_cues)==(landed?u8(BorgMovementCue::Landing):0),
               "solo landing cue only at accepted contact");
         solo_landings+=unsigned(landed);
         if(!out.empty()){
             ++solo_blocks;
-            check(landed&&out[0]==1000&&!music.visit(world,banks,&out),"single mixed landing pulse; duplicate tick refuses");
+            check(landed&&out[0]==1000&&!music.visit(world,solo_banks,&out),"single mixed landing pulse; duplicate tick refuses");
         }
     }
     check(solo_landings==1&&solo_blocks==1,"one pulse for a complete native solo jump");
-    check(world.start(lab)&&world.step({},false)&&music.visit(world,banks,&out)&&out.empty(),
+    check(world.start(lab)&&world.step({},false)&&music.visit(world,solo_banks,&out)&&out.empty(),
           "solo reset discards audio state before any new landing");
     std::puts("Borg presentation: socket release, shuriken geometry, movement cues and PCM lifetime PASS");
 }

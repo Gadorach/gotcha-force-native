@@ -10,7 +10,7 @@ ARTIFACT = ROOT / "docs/api-map/reaction-installer-tables.json"
 class ReactionInstallerTablesTest(unittest.TestCase):
     def test_models(self):
         data = json.loads(ARTIFACT.read_text())
-        self.assertEqual(data["revision"], 1)
+        self.assertEqual(data["revision"], 2)
         self.assertEqual(data["installer_table"], "802D3224")
         self.assertEqual(len(data["models"]), 42)
         self.assertTrue(all(model["table"] for model in data["models"]))

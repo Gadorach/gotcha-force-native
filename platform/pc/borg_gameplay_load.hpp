@@ -14,8 +14,12 @@ struct BorgBattlePackageFiles {
     BorgMovementSoundBank movement_sounds;
     BorgLaunchSoundBank launch_sounds;
     BorgActionSoundBank action_sounds;
+    BorgContactSoundBank contact_sounds;
     BorgImpactSoundBank impact_sounds;
     BorgReleaseSoundBank release_sounds;
+    BorgAudioSlot audio()const{
+        return {&movement_sounds,&launch_sounds,&release_sounds,&impact_sounds,&action_sounds,&contact_sounds};
+    }
     BorgBattleVisualAssets visuals()const{
         BorgBattleVisualAssets result;
         const auto view=[](const std::string& s){return ByteView{reinterpret_cast<const u8*>(s.data()),s.size()};};
@@ -75,6 +79,14 @@ inline bool load_borg_battle_package(const std::filesystem::path& root,const Bor
         if(!read_local(folder,path,kBorgMovementSoundBytes,&bytes)||!borg_movement_sound_decode(bytes,&next.action_sounds[i]))
             return fail("missing or unqualified action sound: expected bounded stereo 48 kHz s16le PCM");
     }
+    for(unsigned i=0;i<definition.moves.size();++i)for(unsigned band=0;band<kBorgContactSoundBands;++band)
+        if(const auto& cue=definition.moves[i].contact_sounds[band];cue)
+            for(unsigned sample=0;sample<cue->paths.size();++sample){
+                std::string bytes;
+                auto& clip=next.contact_sounds[i*kBorgContactSoundClips+2*band+sample];
+                if(!read_local(folder,cue->paths[sample],kBorgMovementSoundBytes,&bytes)||!borg_movement_sound_decode(bytes,&clip))
+                    return fail("missing or unqualified contact sound: expected bounded stereo 48 kHz s16le PCM");
+            }
     for(unsigned i=0;i<definition.projectiles.size();++i)if(const auto& cue=definition.projectiles[i].impact_sound;cue){
         std::string bytes;
         if(!read_local(folder,cue->path,kBorgImpactSoundBytes,&bytes)||

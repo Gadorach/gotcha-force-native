@@ -56,6 +56,7 @@ projectile-stage=collision/bounds.gfsr
 secondary=collision/walls.stih
 tertiary=collision/props.stih
 view-fade=art/view-fade.txt
+body-partition=wall|-620|-6|620|6|melee
 spawn=west|-240|0|300
 spawn=east|240|0|-300
 ```
@@ -72,15 +73,48 @@ not an override for the pinned retail source-ground qualification or a
 claim that moving props, hazards or general traversal work. Additional
 capabilities should be typed declarations referencing engine-owned services.
 
-The native Package Battle Test accepts an exact stage and ordered marker pair
-via `--battle-stage ID --stage-spawns PLAYER ENEMY`, with explicit variants
-for both Borgs. It does not combine a portable stage with legacy stage paths,
-debug spawn distance, or G-Red movement practice. On Linux, `--list-stages`
-reads the bounded manifests and checks the declared paths; admission pins
-the selected bytes and validates the actual stage. `arena-half` and horizontal
-spawn coordinates are bounded by the native arena domain (10,000 world
-units), and floor-query Y is bounded to ±20,000. The selected spawn markers
-must have support and leave room for both duel bodies.
+Optional `body-partition=ID|MIN_X|MIN_Z|MAX_X|MAX_Z` rows declare up
+to 16 unique, nonempty rectangles inside the arena. The shared native
+body sweep pads each rectangle by the fighter radius, clips movement
+before penetration, and can choose a clear axis for a diagonal slide.
+The padded corners stay square.
+A partition blocks at all heights; it is not a floor or a platform.
+Fighters can go around its ends, not jump over it. The Workshop uses
+one for its center wall. Stages without a declaration keep the old
+body movement even if they have projectile walls.
+
+Append `|melee` to a partition to block direct melee through it, as the
+Workshop does. The attacker-to-recipient centre line is tested against
+the unpadded footprint after the normal melee overlap check. A blocked
+candidate cannot consume a guard or the swing's one contact. A visible
+candidate around the edge can still be hit. Body-only partitions do
+not block melee, and neither form affects projectile or field queries.
+
+Short-range roster CPUs with
+ordinary movement can detour around declared partitions. They follow
+clear segments between padded corners. If the nearest enemy is behind
+a partition, they prefer another enemy with a clear approach; if
+there is none, they try the usual detour to the nearest. They stop
+advancing if no route is found. This does not route around other
+fighters, unsupported floors, or scenery with no partition declaration.
+
+The native Package Battle Test takes an exact stage ID and one spawn
+marker per actor via `--battle-stage ID --stage-spawns P1 P2 [CPU ...]`.
+The first two markers belong to the Borgs selected with `--battle-borg` and
+`--against-borg`, which require explicit variants. For an [explicit
+roster](borg-gameplay-api.md#choose-a-roster), append markers in
+`--roster-borg` order, for up to six actors total. Every selected marker
+must be distinct, have floor support, fit the arena with room for the
+actor radius, and not overlap a body partition or any other starting
+body horizontally.
+
+Portable stages do not combine with legacy stage paths, debug spawn
+distance, G-Red movement practice, or the mirrored roster demo. On Linux,
+`--list-stages` reads the bounded manifests and checks the declared paths;
+admission pins the selected bytes and validates the actual stage.
+`arena-half` and horizontal spawn coordinates are bounded by the native
+arena domain (10,000 world units), and floor-query Y is bounded to
+±20,000. Story and Challenge handoffs still admit only duels.
 
 For an authored example, generate content into a new local folder from
 the repository root:
@@ -91,8 +125,135 @@ python3 -B -m tools.extract.portable_stage_example local/workshop-example
 cd local/workshop-example
 /path/to/gf_native --battle-borg example:flight-stick --borg-variant normal \
   --against-borg example:jump-stick --against-variant normal \
-  --battle-stage example:workshop --stage-spawns west east
+  --roster-borg 0 example:flight-stick --roster-borg 0 example:flight-stick \
+  --roster-borg 1 example:jump-stick --roster-borg 1 example:jump-stick \
+  --battle-stage example:workshop \
+  --stage-spawns west east west-rear west-outer east-outer east-rear
 ```
+
+For a duel, omit the `--roster-borg` arguments and use `--stage-spawns west east`.
+
+### Reusable Battle Test rosters
+
+`--battle-roster FILE` loads a `GFROSTER 1` preset on Linux. The preset
+contains only a stage ID and ordered `fighter=TEAM|BORG_ID|VARIANT|SPAWN`
+rows. For example:
+
+```text
+GFROSTER 1
+stage=example:workshop
+fighter=0|example:flight-stick|normal|west
+fighter=1|example:jump-stick|normal|east
+fighter=0|example:flight-stick|normal|west-outer
+```
+
+By default, the first two rows are local players. P1 is on team 0.
+Put P2 on team 1 for a competitive match or on team 0 for local co-op.
+Set `locals=1` to keep only the first row under local control and make
+all other slots CPUs, including any allies. `locals=2` explicitly
+selects the default. Each team needs at least one fighter, with three
+to six fighters total and at most three per team.
+Each row names an exact variant and a distinct marker. Duplicate Borg
+IDs are allowed; spawn markers cannot be reused. The current host admits
+only each package's declared base variant.
+
+To play the asset-free [Workshop 3v3 preset](../examples/battle-rosters/workshop-3v3.roster)
+after generating the Workshop content above, run this from the directory
+containing the installed `borgs/` and `stages/`:
+
+```sh
+/path/to/gf_native --battle-roster /path/to/repo/examples/battle-rosters/workshop-3v3.roster
+```
+
+To team up against two CPUs, launch the [Workshop co-op preset](../examples/battle-rosters/workshop-coop.roster)
+instead:
+
+```sh
+/path/to/gf_native --battle-roster /path/to/repo/examples/battle-rosters/workshop-coop.roster
+```
+
+Both locals keep their own controls and target selection. Shared aim
+labels stack on the same target, and the match continues as long as
+each team still has a fighter alive. This does not change Story or
+Challenge.
+
+To play without a second local player, use the [Workshop one-local preset](../examples/battle-rosters/workshop-solo.roster):
+
+```sh
+/path/to/gf_native --battle-roster /path/to/repo/examples/battle-rosters/workshop-solo.roster
+```
+
+It puts P1 and two CPU allies against three CPU opponents. Only P1
+gets local input, aim controls, ammo and movement readouts. The match
+still uses the shared roster camera, facing the opposing side at spawn.
+
+Add `rounds-to-win=2` (or another number from 1 to 5) to play a
+first-to-N series. The [Workshop first-to-two preset](../examples/battle-rosters/workshop-first-to-two.roster)
+is a co-op example. After a round ends, press Q (or N with a second local) to advance, or to
+start a fresh match if a team clinched the series. Draws award no point.
+Restarting a live round restores the fighters without changing the
+score. Omit the row for the ordinary single-round behavior. The score
+is session-only and does not affect campaign or save data.
+
+Add `round-seconds=45` (1–600 seconds) for a timed round, with or
+without series scoring. The [timed Workshop preset](../examples/battle-rosters/workshop-timed.roster)
+shows the clock on the HUD. Pausing freezes it. A KO on the last tick
+takes precedence. Otherwise the team with the greater fraction of
+its starting team HP remaining wins; equal fractions give a draw.
+Defeated fighters still count toward their team's starting HP. Q or
+N starts the next round with a fresh clock. The CLI `--seconds` flag
+still just closes the host after a wall-clock duration.
+
+The host reads one regular file, at most 4 KiB, without following links
+or accepting `..` in the path.
+The preset cannot supply asset paths, other modes, or save commands.
+Use presentation and trace flags as usual, but do not mix the preset
+with manual fighter or stage flags. Missing packages, unavailable
+variants, and invalid stage placements are refused without substitution.
+
+To discover presets before installing their assets:
+
+```sh
+gf_native --list-battle-rosters /path/to/presets
+```
+
+This lists `.roster` files in filename order, with no recursion and a
+256-entry directory budget. It checks only the preset text; missing
+Borgs and stages do not affect listing. Invalid or linked entries are
+reported separately.
+
+From the installed content directory, check a chosen preset with:
+
+```sh
+gf_native --check-battle-roster /path/to/preset.roster
+```
+
+The check uses the normal package and stage admission, validates the
+actual placements, and submits the initial scene to the headless
+renderer at tick zero. It reports the selected slots without playing
+the round or writing saves, and refuses a preset if any fighter's body
+fails to submit geometry. This does not verify a GPU backend or later
+gameplay. Neither tool combines with launch options.
+
+To pick a match in the desktop window, run from the installed content
+directory:
+
+```sh
+gf_native --browse-battle-rosters /path/to/presets
+```
+
+Click the dropdown or press **Enter** or the first controller's **A** button
+to open it. Use the mouse, arrow keys, or D-pad to pick a row. Left/Right
+and the **Prev**/**Next** buttons change pages. Enter or **A** confirms the
+highlighted row; **B** closes the dropdown without selecting.
+
+Choosing a row runs the headless startup check before starting Battle Test.
+If the check fails, the picker shows the reason and lets you choose another
+preset. Press **Esc** or the controller's **Back** button during a match to
+return to the picker. Press it again to close the window. Each launch starts
+a fresh match; **Q** still restarts or advances the round.
+The picker uses the same folder limits and content roots as the command-line
+tools; it does not edit presets or saves.
 
 ## Challenge
 

@@ -1,0 +1,250 @@
+{
+  "close_b": {
+    "0001": {
+      "base": 40,
+      "entries": [
+        {
+          "hp_base": 40,
+          "index": 5,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "8031AF90"
+    },
+    "0106": {
+      "base": 20,
+      "entries": [
+        {
+          "hp_base": 20,
+          "index": 2,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80336340"
+    },
+    "0202": {
+      "base": null,
+      "entries": [
+        {
+          "hp_base": 30,
+          "index": 6,
+          "separate_contact_operand": 100
+        },
+        {
+          "hp_base": 40,
+          "index": 7,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "source steps disagree; authored base retained",
+      "table": "8032E718"
+    },
+    "0209": {
+      "base": 10,
+      "entries": [
+        {
+          "hp_base": 10,
+          "index": 1,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80342D40"
+    },
+    "0301": {
+      "base": 10,
+      "entries": [
+        {
+          "hp_base": 10,
+          "index": 2,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80323208"
+    },
+    "0304": {
+      "base": 10,
+      "entries": [
+        {
+          "hp_base": 10,
+          "index": 2,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "803370A8"
+    },
+    "0700": {
+      "base": 30,
+      "entries": [
+        {
+          "hp_base": 30,
+          "index": 1,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "803083B8"
+    },
+    "0807": {
+      "base": 20,
+      "entries": [
+        {
+          "hp_base": 20,
+          "index": 1,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80377AC0"
+    },
+    "0a03": {
+      "base": 30,
+      "entries": [
+        {
+          "hp_base": 30,
+          "index": 1,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "8031D708"
+    }
+  },
+  "kind": "gf-damage-contact-power",
+  "projectiles": {
+    "000a": {
+      "base": 5,
+      "entries": [
+        {
+          "hp_base": 5,
+          "index": 0,
+          "separate_contact_operand": 35
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "802D4160"
+    },
+    "0501": {
+      "base": null,
+      "entries": [
+        {
+          "hp_base": 0,
+          "index": 6,
+          "separate_contact_operand": 0
+        }
+      ],
+      "status": "source base is zero or outside native bounds; authored base retained",
+      "table": "8032B9C8"
+    },
+    "050b": {
+      "base": 30,
+      "entries": [
+        {
+          "hp_base": 30,
+          "index": 0,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "8038D058"
+    },
+    "050d": {
+      "base": null,
+      "entries": [
+        {
+          "hp_base": 0,
+          "index": 6,
+          "separate_contact_operand": 0
+        }
+      ],
+      "status": "source base is zero or outside native bounds; authored base retained",
+      "table": "8032BA88"
+    },
+    "0517": {
+      "base": 15,
+      "entries": [
+        {
+          "hp_base": 15,
+          "index": 0,
+          "separate_contact_operand": 100
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "8038D118"
+    },
+    "0615": {
+      "base": 20,
+      "entries": [
+        {
+          "hp_base": 20,
+          "index": 0,
+          "separate_contact_operand": 50
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80365EC0"
+    },
+    "061e": {
+      "base": 50,
+      "entries": [
+        {
+          "hp_base": 50,
+          "index": 9,
+          "separate_contact_operand": 300
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80344C88"
+    },
+    "0800": {
+      "base": 20,
+      "entries": [
+        {
+          "hp_base": 20,
+          "index": 1,
+          "separate_contact_operand": 25
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "802D6258"
+    },
+    "0801": {
+      "base": 20,
+      "entries": [
+        {
+          "hp_base": 20,
+          "index": 1,
+          "separate_contact_operand": 25
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "802F7C18"
+    },
+    "0802": {
+      "base": 20,
+      "entries": [
+        {
+          "hp_base": 20,
+          "index": 0,
+          "separate_contact_operand": 25
+        }
+      ],
+      "status": "uniform positive HP base",
+      "table": "80339E18"
+    }
+  },
+  "revision": 1,
+  "scope": "raw positive base only; no claim about original landed shape, scaling or effect",
+  "source": {
+    "amount_call": "8002F108",
+    "base_load": "8003CD88",
+    "base_offset": 0,
+    "record_size": 24,
+    "separate_operand_load": "8002E3C4"
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

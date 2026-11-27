@@ -1,6 +1,7 @@
 """Exercise the generated examples without any proprietary input or loose retail art."""
 from argparse import ArgumentParser
 from pathlib import Path
+import re
 from subprocess import run
 from tempfile import TemporaryDirectory
 
@@ -70,6 +71,21 @@ def smoke(binary, opengl=False):
                      cwd=pulse_root, capture_output=True, text=True, timeout=35)
         log = result.stdout + result.stderr
         assert result.returncode == 0 and "event=walk-pulse-created" in log, log
+        # Broaden this scratch wave to reach both enemies. Cadence should
+        # stay the same, and each emitted wave still resolves only once.
+        pulse_profile = pulse_root / "borgs/flight-stick/gameplay.txt"
+        rules = pulse_profile.read_text()
+        assert rules.count("walk-pulse=40|12|130|25|10|6\n") == 1
+        pulse_profile.write_text(rules.replace("walk-pulse=40|12|130|25|10|6\n", "walk-pulse=16|12|240|25|10|6\n"))
+        result = run([binary, "--battle-borg", "example:flight-stick", "--against-borg", "example:jump-stick",
+                      "--battle-mvp-assets", "arena", "--demo-roster-battle", "--trace-package-battle",
+                      "--package-battle-distance", "200", "--no-audio", "--frames", "60",
+                      *([] if opengl else ["--headless"])], cwd=pulse_root, capture_output=True, text=True, timeout=35)
+        log = result.stdout + result.stderr
+        waves = re.findall(r"actor=0 move=- event=walk-pulse-created .*object=(\d+)", log)
+        contacts = re.findall(r"actor=0 move=- event=hit .*object=(\d+) recipient=(\d+) value=6", log)
+        assert result.returncode == 0 and len(waves) == len(contacts) == 12 and "actors=4 " in log, log
+        assert {obj for obj, _ in contacts} == set(waves) and all(slot in ("1", "3") for _, slot in contacts), log
         if not opengl:
             cruise = Path(scratch) / "cruise"
             prepare(cruise, cruise_boost=True)
@@ -104,6 +120,19 @@ def smoke(binary, opengl=False):
         log = result.stdout + result.stderr
         assert result.returncode == 0 and log.count("move=paint-scope event=anchor-placed") == 2, log
         assert "move=- event=fence-recoil" in log and "move=- event=hit frame=0" in log, log
+        # The wide authored fence reaches both enemies from the four-actor
+        # spawn, including the one outside the owner's current aim line.
+        profile = fence / "borgs/flight-stick/gameplay.txt"
+        rules = profile.read_text()
+        assert rules.count("anchor-fence=fence|26|8|90\n") == 1
+        profile.write_text(rules.replace("anchor-fence=fence|26|8|90\n", "anchor-fence=fence|120|8|90\n"))
+        roster = run([binary, "--battle-borg", "example:flight-stick", "--against-borg", "example:jump-stick",
+                      "--battle-mvp-assets", "arena", "--demo-roster-battle", "--trace-package-battle",
+                      "--package-battle-distance", "200", "--no-audio", "--frames", "60",
+                      *([] if opengl else ["--headless"])], cwd=fence, capture_output=True, text=True, timeout=35)
+        log = roster.stdout + roster.stderr
+        recipients = re.findall(r"actor=0 move=- event=hit frame=0 object=\d+ recipient=(\d+) value=8", log)
+        assert roster.returncode == 0 and "actors=4 " in log and recipients == ["1", "3"], log
         trail = Path(scratch) / "impact-trail"
         prepare(trail, impact_trail=True)
         result = run(wall_cmd, cwd=trail, capture_output=True, text=True, timeout=35)

@@ -106,6 +106,7 @@ def close_b_pose(linker,model,actions,slots,parts,body,*,publish_preview):
         if publish_preview:
             rows[0]["entry_clip_candidate"]=pose
     info={"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,"live_contact_verified":False,
+          "program_addresses":[f"{script:08X}"],
           "neutral_program_seed":{"relay":f"{relay:08X}","value":seed,"actor_byte":"6EA"},
           "scope":"grounded opening; no retail hover, aerial attacks, or combos"}
     if model in HIERARCHIES:

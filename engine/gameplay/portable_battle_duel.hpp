@@ -5,7 +5,7 @@
 
 namespace gf {
 
-struct PortableDuelInput {
+struct PortableBattleInput {
     GamePadState movement;
     BorgBattleInputs attack;
 };
@@ -14,18 +14,20 @@ struct PortableDuelInput {
 // attack into the authored action scheduler as explicit held/edge samples.
 // Unlike the legacy weapon path, an authored Press cannot retrigger from the
 // same held bit. The v1 bridge gives it a deterministic release/repress cycle.
-inline PortableDuelInput portable_duel_enemy_input(const NativeBattleMvp& world){
-    auto pad=world.duel_ai_pad();
+inline PortableBattleInput portable_battle_ai_input(GamePadState pad,u32 tick){
     BorgBattleInputs attack;
     if(pad.a){
         constexpr u32 period=30,hold=18;
-        const auto phase=world.tick()%period;
+        const auto phase=tick%period;
         if(phase<hold)attack.held=BorgBattleInputs::b;
         if(phase==0)attack.pressed=BorgBattleInputs::b;
         if(phase==hold)attack.released=BorgBattleInputs::b;
     }
     pad.a=false;
     return {pad,attack};
+}
+inline PortableBattleInput portable_duel_enemy_input(const NativeBattleMvp& world){
+    return portable_battle_ai_input(world.duel_ai_pad(),world.tick());
 }
 
 enum class PortableDuelEnd {Fighting,Win,Loss,Draw,Timeout,Cancelled};

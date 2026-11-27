@@ -115,80 +115,26 @@ action group isolates one:
 against a single one in the shot programs, which use `directional_select`
 instead.
 
-Its encoding is `0a AA BB ff`, four bytes, where `AA` ranges over **0..7** and
-`BB` is `00` or `7f`. The `AA` range matches a per-Borg attack slot rather than a
-shape id, and `BB` behaves like a side or height flag.
+In the sampled programs the four-byte encoding is `0a AA BB ff`, with `AA`
+in 0..7 and `BB` either `00` or `7f`. The handler (`8004C6B4`) advances the
+cursor by four bytes and checks lane bit 0. On that lane, if signed `AA` is
+positive, the call at `8004C6F0` passes `AA` to `8008AC80` and the following
+store records it at `actor+0x744`. Zero does not allocate a contact via this
+branch. Do not use the sampled `AA` range as the allocator's queue extent
+or interpret `BB` as a shape or height without tracing its separate branch.
 
-The dispatch path is now traced. The interpreter `8004C050` selects handlers from
-`802D0DA0 + opcode*4`; opcode 10's handler is `8004C6B4`, which calls
-`8008AC80(actor, AA)` and also stores `AA` at `actor+0x744`. `8008AC80` is the
-slot lookup:
-
-```text
-owner = *(actor + 0x90)
-block = *(owner + 0x3FC)
-entry = *(block + 0xA20 + slot*4)   // 8 pointers, slot 0..7
-child = 80088AA0(actor, 4, 0x30, 0, 0)
-```
-
-So each contact resolves through a per-model array of eight pointers at
-`block+0xA20`, and the pointed-to record initialises a 48-byte child.
-
-Following the child initialisation shows what those records hold:
-
-```text
-byte  = *(slot_record + 0)          // first byte of the slot record
-row   = block + 0xAA0 + byte*80     // 80-byte stride
-child+0x28 = row
-child+0x0C = 0x8009A65C             // contact update
-child+0x14 = slot
-child+0x20 = actor
-```
-
-The slot record's first byte indexes an **80-byte row**, and that is the same row
-format the projectile pilots already read from the shared table at `802D9758`
-(speed, lifetime, scale, timing). So melee contact and projectiles share one
-attack-row format; they differ in which table and which row they select.
-
-That makes the remaining work a single decode of the 80-byte row fields, plus
-finding where damage lives in that row — and it applies to melee (91 Borgs) and
-projectiles together rather than to each family separately.
-
-The block itself is placed by `800544A0`:
-
-```text
-block = *(actor + 0x9C) + index*7840      // 0x1EA0 bytes per class block
-*(owner + 0x3FC) = block
-```
-
-So `actor+0x9C` is an array of 7840-byte class-data blocks, selected by a signed
-index and installed as `owner+0x3FC`. That is not the actor record — the
-extractor's actor stride is 432 bytes — so these blocks are built or copied
-separately, and finding where `actor+0x9C` is filled is the last link in the
-chain. A second writer, `8003CC48`, installs a pointer from a small table at
-`index*4+0x80`, which looks like the simpler class-selection path.
-
-Summary of the remaining decode, in order: fill source for `actor+0x9C`, then
-the eight pointers at `+0xA20`, then the 80-byte rows at `+0xAA0` including the
-damage field. Everything above that is traced.
-
-## The contact child is visual
-
-One more check changes what binding those rows would buy. The child's update
-`8009A65C` is a matrix and transform pass: it calls `8020B238` and `8020AF5C`
-for vector maths and submits the child's model through `800076D0`/`800097B4`
-using its render object at `+0xE0`. There is no collision or HP write in it.
-
-So the opcode-10 child that carries the 80-byte row is the **swing effect**, not
-the hit. The actual contact is resolved by the collision service against the
-actor's own shapes, and its damage goes through the unreachable HP writer. That
-matches the melee pilots' description of a body proxy: the geometry they stand
-in for is real, but the amount is not in the visual path.
-
-Consequently, recovering the `+0xAA0` rows would give the **effect** asset,
-timing and scale for melee — genuinely useful for presentation — but it would
-not by itself yield damage. Damage still needs the dynamic trace of the
-collision receiver described earlier.
+The allocator reads the hit block via `actor+0x90` → `owner+0x3FC`.
+`block+0xA20` holds 32 inline four-byte queues, **not pointers**. Each
+nonnegative byte in the selected queue chooses an 80-byte collision step at
+`block+0xAA0`. The callback stored at pair `+0x0C` is `8008A65C`, **not**
+`8009A65C`: this is a pair record, not a visual swing-only child. The pair
+caches the step pointer at `+0x28`, owner's attack table at `+0x2C`, and low
+byte of the step halfword at `+4` as its table index at `+0x11`. The amount
+and reaction path (`8002E2A8`) consumes that index. See
+[the battle recovery map](battle-engine-recovery.md) for the installer and
+projectile selectors. The normal 7,840-byte source block is present in
+`pl####.pzz` slot 2; it is not the 432-byte actor spec or a shape inside the
+render model.
 
 ## The melee window is authored because the source has none
 
@@ -202,48 +148,21 @@ command in the stream, before any descriptor select or wait:
 0x8030dc78 wait             00020004
 ```
 
-So the source raises the contact request at program start rather than at a
-timed frame, and the actual overlap is decided by the animated body shapes
-during the swing. Summing the waits before the contact therefore always gives
-frame 0, which is why the native pilots' `melee=...|9|14|...` window is authored:
-it stands in for shape overlap that the program does not describe.
-
-That closes the last cheap route to melee timing. Exact melee geometry, timing
-and damage all reduce to the same missing piece — the animated shape data behind
-`8008AC80` — and every path to it now ends at either `actor+0x9C` or the
-collision receiver.
-
-The rendered model was checked as a last alternative and does not carry them.
-Across the roster its PObj types are only `skin` (7,052), `envelope` (2,680) and
-`shapeanim` (15); `0001` individually shows flags `a001` (18), `8000` (48) and
-`0000` (1) with no third collision type. So the melee contact volumes are not
-DObj/PObj geometry in `body.hsd`; they belong to the `owner+0x3FC` class block
-that is still unreached.
-
-That makes the order unambiguous for the next pass: the dynamic collision-
-receiver trace is the only item that can move melee geometry, melee timing and
-damage at once, and nothing left in the static data substitutes for it.
-
-The class blocks were also searched for directly. Their decoded signature is
-distinctive — eight pointers at `+0xA20` into the same 7,840-byte block, whose
-records' first bytes select 80-byte rows at `+0xAA0` — so both data sections
-were scanned for it. The only hits were overlapping sliding windows in texture
-and palette regions (`0x802dc998` decodes to colour values `0.046`/`0.747` and
-`00FA`-style indices), not class blocks. The blocks are therefore built at run
-time rather than stored in `main.dol`, which matches `actor+0x9C` being filled
-by a loader.
-
-Do not repeat that scan; it produces false positives on palette data.
-
-The packaged wrapper headers were checked too. `visual/body.prefix` is 256 bytes
-and is the `rig-prefix` joint remap — pairs such as `01 0E 00` and `0F 11 0D`
-mapping logical joints to JObj indices — not class data. So the class blocks are
-not in the DOL, not in `body.hsd`, and not in the wrapper prefix: they come from
-another archive member or are synthesised at load, and only the loader tells us
-which.
-
-Every packaged file has now been examined. Further progress on melee geometry or
-damage needs the dynamic trace, not another guess at an archive region.
+The example queues contact at program entry; it does not identify the frame
+of animated overlap. The native pilots' `melee=...|9|14|...` window,
+12 damage, and body proxy stay authored. For direct opening contacts the
+packager joins the audited neutral programs and their lane-zero masks to the
+positive `AA` queues. It emits only when all decoded routes and steps agree
+on direction operands. For a verified pose-only windup it resolves the
+first scheduled continuation instead of guessing from the empty windup.
+The [close-B reaction map](api-map/reaction-melee-map.json) includes a
+two-program entry (`0209`), distinct table rows that agree (`0202`), and
+two continuation families (`0106` and `0301`), including alternate program
+roots (`0304`). For the 14 verified continuations, `pose-followup` switches
+from the lead-in to the exact local swing clip at authored tick 6. Only
+the clip and its start frame are recovered; a collision trace is still
+needed to establish actual hit timing, geometry, and which of those steps
+overlap.
 
 ## The trace harness exists
 
@@ -613,17 +532,18 @@ byte that indexes the 32-entry defender class row at `0x802C6820`
 The Mana hit is the generalisation check: a different credit record (base 5),
 different receiver (model 261) and a different settings byte all flow through
 the same computation, and the `D100` factor is exactly **1.400000**. The amount
-is `trunc(base × credit_difficulty × attacker_rank × conditional_half ×
-defender_class_row(settings[team]) × receiver_rank × tier × relative)`; only the
-base, credit difficulty, class row and receiver rank vary per pair.
+comes from the base, credit difficulty, conditional half, attacker
+rank, receiver class, and receiver rank. The other scale terms were
+neutral on this hit.
 
 The per-pair factor is resolved too. The Mana pre-`D024` factor `0.391` is
 **credit difficulty × attacker rank × a conditional 0.5**:
 
 - credit difficulty for that side is `0.92` (`0x802C4C20[0]`);
 - attacker rank is `0.85` (`0x802C5D20[0]`);
-- the code at `8003CEB8` applies `×0.5` when the settings byte is 0, the
-  `+998` flag is set and `+136 == 0`.
+- the branch at `8003CEB8` applies `×0.5` when the outer `Settings+50`
+  state is 0 or 1, the `+998` flag is set, and `+136 == 0`. This is
+  not a test for setting index 0.
 
 `0.92 × 0.85 × 0.5 = 0.391`, and the full amount is:
 
@@ -634,23 +554,27 @@ The per-pair factor is resolved too. The Mana pre-`D024` factor `0.391` is
 The Kakeru hit has `owner998 = 0`, so the half does not apply:
 `1.02 × 0.85 × 1 = 0.867`, and `20 × 0.867 × 1.13 × 1.15 = 22`.
 
-So the complete contact formula is:
+The factors relevant to these observed routes are:
 
 ```text
-amount = trunc(base
+amount = trunc(max(1, base
                × carrier_relative
                × credit_difficulty(side, settings[attacker+136])
-               × attacker_rank(attacker+1082)
-               × (conditional_half ? 0.5 : 1)
-               × attacker_hp_row(record+6, HP index)
-               × team_force_row(record+7, force index)
+                × (conditional_half ? 0.5 : 1)
+                × attacker_hp_row(record+6, HP index)
+                × team_force_row(record+7, force index)
+                × attacker_rank(attacker+1082)
                × matchup(attacker model, defender model)
                × defender_class_row(model+156, settings[defender+136])
                × relative(defender+180)
-               × defender_hp_row_157/158(post-hit HP index)
+                × defender_hp_row_157(projected HP from raw base)
+                × defender_force_row_158(receiving slot force ratio)
                × receiver_rank(defender+1082)
-               × tier(defender+1738))
+                × tier(defender+1738)))
 ```
+
+The [amount map](api-map/damage-amount-model.json) records the remaining
+conditional stages and the two zero returns that bypass rounding.
 
 Both captured hits reproduce exactly. The **credit difficulty** is a pair by
 side at `0x804335E0`; the difficulty **ranks** are separate pairs:
@@ -688,9 +612,9 @@ hit. Both
 G-Red moves therefore select **per-Borg config records**, and the shared pool at
 `0x802D4148` is used by a different carrier path.
 
-The same X sequence looked like a decay, but it is the **ReceiverTier** row.
-`actor+0x6CA` increments on each successive hit and indexes
-`0x802C7CA0 = [1.0, 0.8, 0.5, 0.25]`:
+The same X sequence uses the **ReceiverTier** row. Here `actor+0x6CA`
+advanced on each observed hit and indexed the first cells of
+`0x802C7CA0 = [1.0, 0.8, 0.5, 0.25, …]`:
 
 ```text
 tier 0: 33.8 x 1.0 = 33.8 -> 33
@@ -700,8 +624,12 @@ tier 2: 33.8 x 0.5 = 16.9 -> 16
 
 The live checks are exact: `d290 f0=1.0 index=0 tier6ca=0`, then
 `f0=0.8 index=4 tier6ca=1`, then `f0=0.5 index=8 tier6ca=2`. There is no
-separate combo factor; the tier byte **is** the hit-chain counter. The published
-move-base amounts are the first hit (tier 0).
+separate combo factor in this trace. The tier byte is **not** a general
+hit counter: attack-record `+5` adds to a receiver-owned meter, and
+reaching 100 advances the tier. See the
+[contact tier map](api-map/damage-contact-tiers.json) for the full row,
+bypass bit and expiry. The published move-base amounts are the first hit
+(tier 0).
 
 The Mana hit's carrier is `0x8064AAB8`, a separate object rather than the actor,
 unlike the X hit where the carrier is `0x805DBDC0` itself. But the **B-close/boost
@@ -820,4 +748,3 @@ Binding them needs four coordinated pieces:
 
 That is one unit, not a one-line change, and it is the honest prerequisite for
 "action SFX" beyond the landing candidate.
-

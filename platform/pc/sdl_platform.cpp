@@ -190,10 +190,12 @@ public:
         for (unsigned i = 0; i < InputSnapshot::kMaxPorts; ++i) {
             SDL_GameController* pad = controller(i);if(!pad)continue;
             RawInputState& state = snapshot_.pad(i);
+            if(i==0) snapshot_.menu_back=SDL_GameControllerGetButton(pad,SDL_CONTROLLER_BUTTON_BACK)!=0;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_A)) state.buttons |= kButtonA;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_B)) state.buttons |= kButtonB;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_X)) state.buttons |= kButtonX;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_Y)) state.buttons |= kButtonY;
+            if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)) state.buttons |= kButtonZ;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_START)) state.buttons |= kButtonStart;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_UP)) state.buttons |= kButtonDpadUp;
             if (SDL_GameControllerGetButton(pad, SDL_CONTROLLER_BUTTON_DPAD_DOWN)) state.buttons |= kButtonDpadDown;

@@ -92,5 +92,7 @@ def close_b_pose(linker,model,actions,slots,parts,*,publish_preview):
         if publish_preview:
             rows[0]["entry_clip_candidate"]=pose
     return {"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,
-            "neutral_program_seed":{"value":seed,"actor_byte":"6EA"},"live_contact_verified":False,
+             "program_addresses":[f"{script:08X}"],
+             "neutral_program_seed":{"value":seed,"actor_byte":"6EA"},"live_contact_verified":False,
+             **({"neutral_contact_relay":f"{relay:08X}"} if family==TIME else {}),
             **({"status":"strict normal body refuses material/texture-matrix stages"} if model==REMOTE else {})}

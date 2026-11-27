@@ -1,0 +1,7 @@
+GFROSTER 1
+# Two local allies versus a Workshop CPU. First team to two wins.
+stage=example:workshop
+rounds-to-win=2
+fighter=0|example:flight-stick|normal|west
+fighter=0|example:flight-stick|normal|west-outer
+fighter=1|example:jump-stick|normal|east

@@ -980,6 +980,151 @@ PYTHONPATH=. python3 -B tests/host/retail_basic_shot_smoke.py \
   local/content/native-battle-mvp-v1
 ```
 
+For the recovered reaction rows, use the direct output directory of
+`retail_borg_roster` from a fresh conversion with the flags above (including
+`--cruise-lab`). This smoke checks modes, offsets, the explicit linked-owner
+root on seven mode-4 shots, and the authored training-target damage. It
+verifies contact in the host before and after restart:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_projectile_reaction_smoke.py \
+  /path/to/gf_native /path/to/direct-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+A fresh conversion with `--basic-melee-test --source-pace --role-clips
+--action-clips` emits neutral close-B reaction mode 4 and offsets wherever
+the audited direct contact steps agree. It uses the native planar body root
+and leaves the authored melee windows and damage unchanged. For the 14
+pose-only openings with a verified first continuation, it also appends
+`pose-followup=opening-slash|6|1:1|0`. This shows the exact local swing from
+frame 0 before the existing hit window, using an authored switch tick
+rather than the source phase timer. To check all 14 continuation packages
+and compare the sampled entries with the public map before and after restart:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_melee_reaction_smoke.py \
+  /path/to/gf_native /path/to/direct-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+Add `--contact-scale-test` to a separate, fresh shot or melee conversion for
+an authored settings-7/rank-0 damage comparison. Direct hits combine the
+attacking team's credit row, a qualified directional matchup, and the
+actual receiving Borg's class row.
+Unqualified receivers, including combined forms without a proved active
+component, receive no class row and keep the authored base. Without this
+flag the existing damage rows stay unchanged. The source snapshot and scope
+are documented in [the contact roles map](api-map/damage-contact-roles.json).
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_scale_smoke.py \
+  /path/to/gf_native /path/to/contact-scale-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+`--contact-index-test` requires `--contact-scale-test` and adds the full
+setting and rank tables. Use `gf_native` with
+`--package-damage-indices TEAM0,TEAM1:R0,R1` (four ranks for
+`--demo-roster-battle`) to select them for an explicit package Battle
+Test. For example `--package-damage-indices 0,31:3,0` gives the first
+actor rank 3 and the second rank 0. Omit the selector to keep the
+fixed snapshot. This is not a retail difficulty or Story scheduler.
+
+For the indexed smoke, include `--contact-power-test` but leave the
+HP/force ladder option off:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_damage_indices_smoke.py \
+  /path/to/gf_native /path/to/contact-index-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+`--contact-power-test` optionally binds the recovered raw HP base of each
+reviewed direct move. Zero-power or disagreeing source steps leave the
+authored base intact. To check both raw bases and their composition with
+receiver scaling, generate a fresh roster with **both** damage-test flags:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_power_smoke.py \
+  /path/to/gf_native /path/to/contact-power-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+`--contact-floor-test` optionally keeps positive direct hits from
+truncating below one HP. It is independent of `--contact-power-test`.
+For the sub-one damage comparison, generate with scale, index,
+power, and floor enabled and leave HP/force ladders off:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_floor_smoke.py \
+  /path/to/gf_native /path/to/contact-floor-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+Add `--contact-ladder-test` alongside `--contact-scale-test` to bind the
+verified normal receivers' and proved direct attacks' HP/force curves.
+An untracked force pool stays neutral. Unqualified receiver records get
+no receiving curve, and the outgoing curves apply only to marked moves.
+To check the generated HP response against a controlled
+low-health recipient, generate with all three contact-test flags:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_receiver_ladder_smoke.py \
+  /path/to/gf_native /path/to/contact-ladder-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+`--contact-tier-test` requires `--contact-scale-test` and is independent
+of the HP/force ladders. It binds the verified direct moves' charge and
+the qualified receivers' tier table. The native idle window is 60
+battle ticks, not the source actor clock. For the following comparison,
+generate with scale, power, and tier enabled but leave the ladders off:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_tier_smoke.py \
+  /path/to/gf_native /path/to/contact-tier-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+Add `--contact-tier-reset-test` to additionally bind the receiver's
+independent gauge capacity and the proved moves' wear. For the reset
+comparison pass `--reset-gauge` to the same smoke: it verifies Sasuke's
+exported capacity of 500, then lowers it to 50 in a temporary fixture so
+that two 25-wear hits exhaust it in one burst.
+
+Add `--contact-audio /path/to/retail_borg_sound` to a shot or melee
+Battle Test extraction to bind the reviewed normal hit cues. It is
+independent of the damage-test flags and `--basic-shot-audio`.
+The decoder uses your local retail banks; do not publish the PCM.
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_sound_smoke.py \
+  /path/to/gf_native /path/to/contact-audio-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+`--contact-art-test` is a separate opt-in for exact common hit records
+at reviewed ordinary projectile and close-B contacts. It uses the
+local common effect bank, keeps existing authored actor-retirement
+art where present, and does not require the audio decoder.
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_impact_smoke.py \
+  /path/to/gf_native /path/to/contact-art-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
+Add `--contact-pause-test` to hold the native local skeletal sample
+on verified direct contacts. This needs neither the audio decoder
+nor any damage-test flags:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_contact_pause_smoke.py \
+  /path/to/gf_native /path/to/contact-pause-roster-output \
+  local/content/native-battle-mvp-v1
+```
+
 Add `--basic-shot-audio /path/to/retail_borg_sound` to a fresh pilot
 extraction to bind the indexed dry launch tones (`snd_com01:6`,
 `snd_com01:8`, `snd_com02:57`, `snd_com02:71`) and the separate `080c` actor cue
@@ -1505,6 +1650,157 @@ using tone 18, and **8** using tone 22. Two audio-enabled extractions
 were byte-identical. Offscreen SDL
 with a dummy audio device accepted PCM on all 12 Dragon jump tests;
 audible playback was not verified.
+
+## Mixed Workshop roster check
+
+With the converted normal packages, authored Flight Stick, and
+[Workshop stage](portable-content-v1.md#reusable-battle-test-rosters)
+installed in one local content root:
+
+```sh
+python3 -B -m tools.analyze.native_roster_matrix \
+  /path/to/gf_native /path/to/content-root
+```
+
+The audit sorts the 206 stable IDs and puts up to five at a time in CPU
+slots with an idle Flight Stick in P1. It requires each fighter's body
+to submit geometry at tick zero, then runs the same preset for 120
+headless frames. It writes temporary presets only and prints a JSON
+report with the exact groups, the IDs that started a move, and the IDs
+with a positive `hit` or `blast-hit` event on an opposing slot.
+
+To compare two cutoffs without replaying the opening, add
+`--frames 240 --checkpoint 120`. The report records first move, first
+damaging enemy hit, and KO ticks, as well as the accepted simulation
+ticks and outcome for each group. A round can stop on a KO before its
+render frame budget is exhausted. A quiet subject is counted separately
+if it was defeated, survived an ended round, or was still fighting at
+the cutoff. For a targeted run, `--trace-package-battle` also prints the
+final HP, position, planar travel, nearest rival and aimed rival for each
+explicit roster slot.
+
+All **206 of 206** passed preflight and ran the 120-frame budget across
+**42** presets. Allowing a normal dash on sufficiently long,
+clear detour legs raised the number of CPUs starting a move from
+**110 to 150** in the same fixtures; none of the original 110 stopped
+starting. The other 56 are not admission failures. This counts starts
+in these particular matchups, not hits, every B/X route, later combat,
+or original game behavior.
+
+After adding cruise routing and boost, all 206 still passed. The same
+120-frame sweep saw **149** move starts: `0e01` added one, while `0e02`
+and `0e04` started after the cutoff (at ticks 132 and 135). In a
+240-frame check of the two affected groups, `0e01` and `0e05` both
+placed and landed their fields, where neither started before the
+change. This favors reaching opponents around the wall over maximizing
+opening starts.
+
+Height-aware rival choice kept the 120-frame totals at **206 admitted,
+149 move starts**. In a separate mixed-height Workshop fixture, the
+converted Normal Samurai (`0700`) hit the lower rival at tick 55 after
+switching away from a closer cruiser at height 500. The previous
+planner landed no hit in 100 frames in the same fixture. This is a
+native CPU decision, not a recovered retail targeting rule.
+
+Using the declared dash speed and native dash duration for direct
+approaches raised the 120-frame totals from **149 to 153 move starts**
+and **135 to 138 subjects with a damaging enemy hit**, with no previous
+starts or damaging hitters lost in those fixtures. All 206 still
+passed. In a separate 330-unit approach, converted Army Robot
+(`0408`) hit at tick 35; the previous planner did not hit within 78
+frames. These are native AI results, not retail timing measurements.
+
+Local ally avoidance kept the same 206 admissions, 153 starts and 138
+damaging hitters. In a dedicated same-side fixture, converted Claw Robot
+(`0400`) stepped around a stationary ally and hit at tick 155. The
+previous planner got stuck behind the ally and did not hit within 175
+frames. A separate authored fixture verifies both side routes and the
+case where neither flank is passable.
+
+Read-only stock checks for paid field-only attacks kept the same
+206 admissions, 153 starts and 138 damaging hitters in the 120-frame
+sweep. In a separate 260-frame close-range fixture, `0e00`, `0e05`
+and `0f03` each placed two fields before and after the change. Each
+previously made six empty-stock attempts; the updated CPU made none
+and waited for the actual stock refill before its second start. The
+native debit marker and refill timing were not changed.
+
+Allowing a grounded owner-following field charge to start on a clear
+approach kept the same 206 admissions, 153 starts and 138 damaging
+hitters in the sweep. In a separate 350-unit fixture, Acceleration
+Ninja (`0004`) started its charge at tick 1 and hit at tick 10, down
+from ticks 25 and 34 with the old planner. This uses the native charge
+and field timings; it is not a retail range or timing claim.
+
+The field height check also kept the sweep at **206 admissions, 153
+starts and 138 damaging hitters**. Against a closer cruiser at height
+500, converted Nu III (`0f03`) kept its field stock when no enemy was
+in reach. When a lower rival stood inside the field, it paid and hit
+that rival. The previous planner paid in both cases. This did not
+change either aim selection or the live area damage rule.
+
+### 240-frame follow-up
+
+All 206 passed preflight and each preset rendered its complete frame
+budget. In one match, team 0 knocked out the last opponent at tick
+131, so its simulation stopped before frame 240. Using the same runs
+for both cutoffs:
+
+| Accepted-tick cutoff | Started a move | Damaged an enemy | No start, defeated | No start, survived an ended round | No start, still fighting |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 120 | 153 | 138 | 0 | 0 | 53 |
+| 240 | 178 | 172 | 5 | 0 | 23 |
+
+For example, Cosmic Dragon (`0504`) and Space Dragon (`0510`) both
+first started at tick 121 and first damaged an enemy at tick 133.
+The shorter run missed those starts, not their admission or their
+move support. The 23 still-fighting subjects need more specific
+matchups before their inactivity can be attributed to a cause.
+
+The baseline's 23 quiet survivors had 20 melee-only profiles, two
+cruise/field profiles, and one grounded field profile. That split
+describes their authored moves, not the reason they stayed quiet.
+
+Letting simple field CPUs pursue a lower rival kept both audit cutoffs
+unchanged. In a separate test, converted Nu III (`0f03`) left a
+closer cruiser at height 500 and closed on a lower rival 240 units
+away. It started at tick 45 and hit at tick 54. The previous planner
+did not start or land a move in 100 frames in that fixture.
+
+Applying ally avoidance to routed legs as well as direct approaches
+raised the 240-tick totals to **179 starts and 173 damaging hitters**,
+with 22 still-fighting quiet subjects. Sonic Samurai (`0703`) and Ring
+Valkyrie (`0b04`) started by that cutoff after neither had started
+before. In a separate test with a parked ally directly on the first
+wall-route leg, Proto Blue (`0617`) hit at tick 113 and Army Robot
+(`0408`) at tick 309. The previous planner hit with the leg clear but
+did not attack within 320 frames with that ally in place. The ally and
+wall remained solid throughout.
+
+Separating movement clearance from melee visibility raised the
+240-tick totals to **183 starts and 175 damaging hitters**, with 19
+still-fighting quiet subjects. A legal corner strike no longer forces a
+detour just because the Borg's body would not fit. In a corner fixture,
+Magnet Robot (−), `0409`, hit at tick 10 instead of tick 23. Both `0407`
+and `0409` also landed hits in the full sweep after remaining quiet
+through the previous cutoff. A strike whose line crosses a `|melee`
+partition is still blocked.
+
+Comparing the lengths of blocked approaches raised the 120-tick
+totals from **153 to 161 starts** and **138 to 144 damaging hitters**.
+By 240 ticks, the totals were unchanged at 183 and 175; all 206 still
+passed. In a two-route fixture, Proto Blue (`0617`) took the shorter
+way around the wall and hit at tick 104 instead of tick 149. The
+nearer body remained available to the ordinary contact system.
+
+The clear-route preference now has one exception: a valid detour to
+the nearer rival can win if it is less than half the clear walking
+distance. In a separate fixture, Proto Blue hit the nearer rival at
+tick 50 instead of taking the long straight chase and first hitting
+at tick 116. The full sweep held at **161 starts and 144 damaging
+hitters** by tick 120 and **183 starts and 175 damaging hitters** by
+tick 240, with all 206 admitted. A broader comparison that reduced
+activity in the full sweep was not kept.
 
 ## Baseline check
 

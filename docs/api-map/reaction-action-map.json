@@ -1594,11 +1594,11 @@
     }
   ],
   "notes": [
-    "Group bytes are the 4-byte queue at +0xA20; 0xFF terminates.",
-    "Step +4 indexes the shared 24-byte table at 80354160.",
-    "The queue group is selected by the source action byte; mapping that byte to a packaged move is still open."
+    "Each group contains up to four step bytes at +0xA20; any signed negative byte terminates.",
+    "The low byte of the step halfword at +4 indexes the model's 24-byte table.",
+    "Queues are not controller input contexts; see reaction-projectile-map.json for verified release selectors."
   ],
-  "revision": 1,
+  "revision": 2,
   "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
   "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
 }

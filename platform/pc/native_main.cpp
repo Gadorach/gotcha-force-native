@@ -40,6 +40,7 @@
 #include "engine/gameplay/battle_test_view.hpp"
 #include "engine/gameplay/borg_control_selector.hpp"
 #include "engine/gameplay/native_battle_mvp_view.hpp"
+#include "engine/gameplay/portable_roster_ai.hpp"
 #include "engine/gameplay/native_gred_ground_dash_demo.hpp"
 #include "engine/gameplay/native_animation_mosaic.hpp"
 #include "engine/gameplay/borg_installed_browser_view.hpp"
@@ -55,6 +56,7 @@
 #include "engine/input/input_router.hpp"
 #include "engine/log.hpp"
 #include "platform/gl/gl_renderer.hpp"
+#include "platform/pc/battle_roster_load.hpp"
 #include "platform/pc/borg_selected_save.hpp"
 #include "platform/pc/borg_acquisition_load.hpp"
 #include "platform/pc/borg_effect_load.hpp"
@@ -103,12 +105,24 @@ struct Options {
          exercise_gred_touchdown=false;
     std::string demo_battle_pick;
     std::string battle_borg,against_borg,against_variant,walk_borg;
+    struct RosterBorg {gf::u8 team;std::string id,variant{};};
+    std::vector<RosterBorg> roster_borgs;
+    std::array<gf::u8,2> first_roster_teams{0,1};
+    gf::u8 roster_local_players=2;
+    gf::u8 roster_rounds_to_win=0;
+    gf::u16 roster_round_seconds=0;
+    std::string battle_roster_file;
+    std::string list_battle_rosters;
+    std::string browse_battle_rosters,demo_roster_select,demo_roster_next;
+    bool check_battle_roster=false,demo_roster_cancel=false;
+    bool roster_browser_match=false,demo_roster_pad=false;
     std::string battle_stage;
-    std::array<std::string,2> battle_stage_spawns;
+    std::vector<std::string> battle_stage_spawns;
     bool list_challenges=false;
     std::optional<gf::pc::PortableChallengeSelection> portable_challenge;
     bool list_stages=false,explicit_battle_mvp_assets=false;
     unsigned package_battle_distance=0;
+    std::optional<gf::BattleMvpDamageIndices> package_damage_indices;
     bool practice_from_picker=false;
     std::string selected_save_root,retail_force_catalogue;
     gf::u64 selected_account=0,selected_save=0,recovery_notice=0,inspect_force=0,owned_instance=0,placement_force=0,placement_slot=0;
@@ -242,6 +256,22 @@ struct Options {
     unsigned capture_frame = 0;
 };
 
+void apply_battle_roster_preset(Options& options,gf::BattleRosterPreset preset){
+    static_assert(gf::kBattleRosterPresetMaxActors<=gf::kBattleMvpMaxActors);
+    options.battle_stage=std::move(preset.stage);
+    options.roster_local_players=preset.locals;
+    options.roster_rounds_to_win=preset.rounds_to_win;
+    options.roster_round_seconds=preset.round_seconds;
+    for(std::size_t i=0;i<preset.fighters.size();++i){
+        auto& fighter=preset.fighters[i];
+        options.battle_stage_spawns.push_back(std::move(fighter.spawn));
+        if(i<2)options.first_roster_teams[i]=fighter.team;
+        if(i==0){options.battle_borg=std::move(fighter.borg);options.borg_variant=std::move(fighter.variant);}
+        else if(i==1){options.against_borg=std::move(fighter.borg);options.against_variant=std::move(fighter.variant);}
+        else options.roster_borgs.push_back({fighter.team,std::move(fighter.borg),std::move(fighter.variant)});
+    }
+}
+
 bool parse(int argc, char** argv, Options* options) {
     auto id=[](std::string_view text,gf::u64* out){
         if(text.empty())return false;
@@ -249,8 +279,9 @@ bool parse(int argc, char** argv, Options* options) {
         const auto value=std::from_chars(text.data(),end,*out);
         return value.ec==std::errc{}&&value.ptr==end&&*out!=0;
     };
-    bool story_map_flags_only = true,challenge_flags_only=true;
+    bool story_map_flags_only = true,challenge_flags_only=true,roster_file_flags_only=true;
     bool story_run_flags_only = true;
+    bool roster_browser_flags_only=true;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         // The read-only map accepts only presentation flags, not other host
@@ -265,6 +296,13 @@ bool parse(int argc, char** argv, Options* options) {
             (arg=="--run-challenge"||arg=="--headless"||arg=="--no-audio"||arg=="--frames"||
              arg=="--seconds"||arg=="--size"||arg=="--screenshot"||arg=="--capture-frame"||
              arg=="--retail-catalog"||arg=="--trace-package-battle");
+        roster_file_flags_only=roster_file_flags_only&&
+            (arg=="--battle-roster"||arg=="--check-battle-roster"||arg=="--headless"||arg=="--no-audio"||arg=="--frames"||
+             arg=="--seconds"||arg=="--size"||arg=="--screenshot"||arg=="--capture-frame"||
+             arg=="--demo-package-battle"||arg=="--trace-package-battle"||arg=="--package-damage-indices");
+        roster_browser_flags_only=roster_browser_flags_only&&
+            (arg=="--browse-battle-rosters"||arg=="--demo-roster-select"||arg=="--demo-roster-next"||arg=="--headless"||
+             arg=="--demo-roster-pad"||arg=="--no-audio"||arg=="--frames"||arg=="--size"||arg=="--trace-package-battle");
         if (arg == "--headless") options->headless = true;
         else if(arg=="--list-stories"){
             if(argc!=2)return false;
@@ -312,6 +350,37 @@ bool parse(int argc, char** argv, Options* options) {
             if(++i>=argc||!value.empty()||!(arg=="--against-variant"?gf::borg_catalog_variant_id_valid(argv[i]):gf::borg_package_id_valid(argv[i])))return false;
             value=argv[i];
         }
+        else if(arg=="--roster-borg"){
+            if(argc-i<=2||options->roster_borgs.size()>=gf::kBattleMvpMaxActors-2)return false;
+            const std::string_view team=argv[++i];const std::string_view id=argv[++i];
+            if((team!="0"&&team!="1")||!gf::borg_package_id_valid(id))return false;
+            const auto side=gf::u8(team=="1");
+            if(std::count_if(options->roster_borgs.begin(),options->roster_borgs.end(),
+                [&](const auto& member){return member.team==side;})>=2)return false;
+            options->roster_borgs.push_back({side,std::string(id)});
+        }
+        else if(arg=="--list-battle-rosters"){
+            if(argc!=3||++i>=argc||!*argv[i])return false;
+            options->list_battle_rosters=argv[i];
+        }
+        else if(arg=="--browse-battle-rosters"||arg=="--demo-roster-select"||arg=="--demo-roster-next"){
+            auto& value=arg=="--browse-battle-rosters"?options->browse_battle_rosters:
+                arg=="--demo-roster-select"?options->demo_roster_select:options->demo_roster_next;
+            if(++i>=argc||!value.empty()||!*argv[i])return false;
+            value=argv[i];
+        }
+        else if(arg=="--demo-roster-pad"){
+            if(options->demo_roster_pad)return false;
+            options->demo_roster_pad=true;
+        }
+        else if(arg=="--battle-roster"||arg=="--check-battle-roster"){
+            if(arg=="--check-battle-roster"){
+                if(argc!=3)return false;
+                options->check_battle_roster=options->headless=options->no_audio=true;
+            }
+            if(++i>=argc||!options->battle_roster_file.empty()||!*argv[i])return false;
+            options->battle_roster_file=argv[i];
+        }
         else if(arg=="--battle-stage"){
             if(++i>=argc||!options->battle_stage.empty()||!gf::borg_package_id_valid(argv[i]))return false;
             options->battle_stage=argv[i];
@@ -336,9 +405,13 @@ bool parse(int argc, char** argv, Options* options) {
             options->portable_challenge=std::move(selection);
         }
         else if(arg=="--stage-spawns"){
-            if(argc-i<=2||!options->battle_stage_spawns[0].empty()||
-               !gf::borg_catalog_variant_id_valid(argv[i+1])||!gf::borg_catalog_variant_id_valid(argv[i+2]))return false;
-            options->battle_stage_spawns={argv[i+1],argv[i+2]};i+=2;
+            auto& spawns=options->battle_stage_spawns;
+            if(!spawns.empty())return false;
+            while(i+1<argc&&!std::string_view(argv[i+1]).starts_with('-')){
+                if(spawns.size()>=gf::kBattleMvpMaxActors||!gf::borg_catalog_variant_id_valid(argv[i+1]))return false;
+                spawns.emplace_back(argv[++i]);
+            }
+            if(spawns.size()<2)return false;
         }
         else if(arg=="--demo-package-battle")options->demo_package_battle=true;
         else if(arg=="--demo-roster-battle"){options->demo_roster_battle=true;options->demo_package_battle=true;}
@@ -351,6 +424,32 @@ bool parse(int argc, char** argv, Options* options) {
             gf::u64 value=0;
             if(++i>=argc||options->package_battle_distance||!id(argv[i],&value)||value<90||value>1200)return false;
             options->package_battle_distance=unsigned(value);
+        }
+        else if(arg=="--package-damage-indices"){
+            if(++i>=argc||options->package_damage_indices)return false;
+            const std::string_view encoded=argv[i];
+            const auto divider=encoded.find(':');
+            if(divider==encoded.npos||encoded.size()>20)return false;
+            const auto row=[](std::string_view value,std::span<gf::u8> out,unsigned limit)->unsigned{
+                unsigned n=0;
+                while(!value.empty()){
+                    const auto comma=value.find(',');
+                    const auto cell=value.substr(0,comma);
+                    if(cell.empty()||n==out.size())return 0;
+                    unsigned index=0;const auto end=cell.data()+cell.size();
+                    const auto parsed=std::from_chars(cell.data(),end,index);
+                    if(parsed.ec!=std::errc{}||parsed.ptr!=end||index>=limit)return 0;
+                    out[n++]=gf::u8(index);
+                    if(comma==value.npos)return n;
+                    value.remove_prefix(comma+1);
+                }
+                return 0;
+            };
+            gf::BattleMvpDamageIndices indices;
+            if(row(encoded.substr(0,divider),indices.settings,gf::kBorgDamageSettings)!=indices.settings.size())return false;
+            indices.rank_count=gf::u8(row(encoded.substr(divider+1),indices.ranks,gf::kBorgDamageRanks));
+            if(indices.rank_count<2)return false;
+            options->package_damage_indices=indices;
         }
         else if (arg == "--list-borgs") options->list_borgs = true;
         else if(arg=="--practice-start"){
@@ -789,6 +888,12 @@ bool parse(int argc, char** argv, Options* options) {
                           "       gf_native --cheat-offer-picker (metadata offers only; no ownership or save changes)\n"
                           "       gf_native --preview-borg NAMESPACE:ID [--borg-variant ID] [--preview-clip ID] [--preview-origin ID] [--headless] [--frames N]\n"
                           "       gf_native --battle-borg NAMESPACE:ID --against-borg NAMESPACE:ID [--demo-package-battle] [--demo-roster-battle] [--trace-package-battle]\n"
+                           "       [--roster-borg TEAM NAMESPACE:ID ...] (up to two CPU fighters per team)\n"
+                           "       gf_native --battle-roster FILE [--trace-package-battle] [--headless]\n"
+                           "       gf_native --list-battle-rosters DIRECTORY\n"
+                           "       gf_native --browse-battle-rosters DIRECTORY [--size W H] [--no-audio]\n"
+                           "       gf_native --check-battle-roster FILE (validate and draw tick zero headless)\n"
+                           "       [--package-damage-indices TEAM0,TEAM1:R0,R1[,R2...]]\n"
                            "       gf_native --list-stages\n"
                            "       gf_native --list-challenges\n"
                            "       gf_native --run-challenge NAMESPACE:ID ENCOUNTER SAVE_ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
@@ -796,9 +901,35 @@ bool parse(int argc, char** argv, Options* options) {
                             "       gf_native --story-map NAMESPACE:ID [--headless] [--frames N] [--size W H]\n"
                             "       gf_native --run-story NAMESPACE:ID SAVE_ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
                           "       gf_native --battle-borg NAMESPACE:ID --borg-variant VARIANT --against-borg NAMESPACE:ID --against-variant VARIANT\n"
-                          "                 --battle-stage NAMESPACE:ID --stage-spawns PLAYER_MARKER ENEMY_MARKER\n");
+                           "                 --battle-stage NAMESPACE:ID --stage-spawns P1_MARKER P2_MARKER [CPU_MARKER ...]\n");
             return false;
         }
+    }
+    if(!options->browse_battle_rosters.empty()||!options->demo_roster_select.empty()||!options->demo_roster_next.empty()||options->demo_roster_pad){
+        const auto& scripted=options->demo_roster_select;
+        const auto& followup=options->demo_roster_next;
+        const auto valid_row=[](std::string_view name){
+            return name.ends_with(".roster")&&name.find('/')==std::string_view::npos&&gf::borg_package_asset_path_valid(name);
+        };
+        if(options->browse_battle_rosters.empty()||!roster_browser_flags_only||
+           options->width<200||options->width>4096||options->height<160||options->height>4096||
+           ((options->headless||options->demo_roster_pad)&&scripted.empty())||
+           (!scripted.empty()&&(!options->frames||options->frames>240||!valid_row(scripted)))||
+           (!followup.empty()&&(scripted.empty()||!valid_row(followup)))){
+            std::fputs("Roster browser: unsupported options or scripted selection\n",stderr);return false;
+        }
+    }
+    if(!options->battle_roster_file.empty()){
+        if(!roster_file_flags_only){
+            std::fputs("Borg Battle Test preset: cannot combine --battle-roster with other modes or match overrides\n",stderr);
+            return false;
+        }
+        gf::BattleRosterPreset preset;
+        std::string error;
+        if(!gf::pc::load_battle_roster_preset(options->battle_roster_file,&preset,&error)){
+            std::fprintf(stderr,"Borg Battle Test preset: %s\n",error.c_str());return false;
+        }
+        apply_battle_roster_preset(*options,std::move(preset));
     }
     if(!options->story_map.empty()&&(!story_map_flags_only||options->width<112||options->height<112||
        options->width>4096||options->height>4096||(options->headless&&!options->screenshot.empty())))return false;
@@ -827,6 +958,11 @@ bool parse(int argc, char** argv, Options* options) {
        (options->lab_glide&&options->lab_air_dash)||
        (options->lab_cruise&&(options->walk_borg.empty()||options->lab_jump||options->lab_dash)))return false;
     if(options->battle_borg.empty()!=options->against_borg.empty())return false;
+    if(!options->roster_borgs.empty()&&(options->battle_borg.empty()||options->demo_roster_battle||
+       options->battle_picker||options->exercise_gred_touchdown))return false;
+    const unsigned battle_actor_count=options->demo_roster_battle?4u:2u+unsigned(options->roster_borgs.size());
+    if(options->package_damage_indices&&(options->battle_borg.empty()||options->battle_picker||
+       !options->package_damage_indices->valid(battle_actor_count)))return false;
     if(options->exercise_battle_mobility&&!options->demo_package_battle)return false;
     if(options->exercise_gred_touchdown&&(!options->demo_package_battle||!options->frames||options->frames>240))return false;
     if(options->battle_picker&&(options->battle_borg.empty()||options->demo_package_battle||
@@ -834,12 +970,16 @@ bool parse(int argc, char** argv, Options* options) {
        (options->headless&&options->demo_battle_pick.empty())))return false;
     if(!options->demo_battle_pick.empty()&&(!options->battle_picker||!options->frames||options->frames>240||
        !gf::borg_package_id_valid(options->demo_battle_pick)))return false;
-    if(options->battle_stage.empty()!=options->battle_stage_spawns[0].empty())return false;
+    if(options->battle_stage.empty()!=options->battle_stage_spawns.empty())return false;
     if(!options->battle_stage.empty()&&(options->battle_borg.empty()||options->borg_variant.empty()||
-       options->against_variant.empty()||options->explicit_battle_mvp_assets||!options->source_ground_assets.empty()||
-       options->package_battle_distance))return false;
+        options->against_variant.empty()||options->explicit_battle_mvp_assets||!options->source_ground_assets.empty()||
+        options->package_battle_distance||options->demo_roster_battle))return false;
+    if(!options->battle_stage.empty()&&options->battle_stage_spawns.size()!=battle_actor_count){
+        std::fprintf(stderr,"--stage-spawns requires one marker per actor (%u), in slot order\n",battle_actor_count);
+        return false;
+    }
     if(options->battle_borg.empty()){
-        if(options->demo_package_battle||(!options->portable_challenge&&options->trace_package_battle)||
+        if(options->demo_package_battle||(!options->portable_challenge&&options->browse_battle_rosters.empty()&&options->trace_package_battle)||
            options->package_battle_distance||!options->against_variant.empty())return false;
     }else{
         if(options->battle_mvp||options->test_battle||options->borg_controls||options->menu||options->animation_mosaic||
@@ -1105,7 +1245,7 @@ int run_borg_walk_controls(gf::Context& context,gf::RenderEngine& render,const O
                        context.audio().open(gf::kBorgMovementSampleRate,2);
     struct CloseLabAudio {gf::IAudioBackend* device;~CloseLabAudio(){if(device)device->close();}}
         close_lab_audio{audible?&context.audio():nullptr};
-    const std::array<const gf::BorgMovementSoundBank*,2> banks{&sounds,nullptr};
+    const std::array banks{gf::BorgAudioSlot{.movement=&sounds}};
     gf::BorgMovementAudio movement_audio;
     std::vector<gf::s16> mixed;
     unsigned audio_cues=0,audio_blocks=0;
@@ -1516,38 +1656,122 @@ struct BattlePickerSession {
     bool suppress_actions=false;
 };
 
+struct PackageBattleFiles {
+    std::array<gf::pc::BorgBattlePackageFiles,2> first;
+    std::vector<gf::pc::BorgBattlePackageFiles> extra;
+    std::shared_ptr<const gf::StagePackageSnapshot> stage;
+};
+
+bool load_package_battle_files(const Options& options,const gf::BorgPackageCatalog& catalog,
+                               PackageBattleFiles& out,std::string& error){
+    PackageBattleFiles next;
+    if(!gf::pc::load_borg_battle_package("borgs",catalog,options.battle_borg,options.borg_variant,&next.first[0],&error)||
+       !gf::pc::load_borg_battle_package("borgs",catalog,options.against_borg,options.against_variant,&next.first[1],&error))
+        return false;
+    next.extra.reserve(options.roster_borgs.size());
+    for(const auto& member:options.roster_borgs){
+        gf::pc::BorgBattlePackageFiles candidate;
+        if(!gf::pc::load_borg_battle_package("borgs",catalog,member.id,member.variant,&candidate,&error)){
+            error="roster "+member.id+": "+error;return false;
+        }
+        next.extra.push_back(std::move(candidate));
+    }
+    if(!options.battle_stage.empty()&&!gf::pc::pin_stage_package("stages",gf::pc::scan_stage_packages("stages"),
+       options.battle_stage,&next.stage,&error))return false;
+    out=std::move(next);return true;
+}
+
 int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Options& options,
                         const std::array<gf::pc::BorgBattlePackageFiles,2>& test_packages,const gf::StagePackageSnapshot* stage,
                         gf::pc::PortableBattleHost* hosted=nullptr,gf::pc::PortableBattleHostReport* report=nullptr,
-                        BattlePickerSession* selection=nullptr){
+                        BattlePickerSession* selection=nullptr,
+                        std::span<const gf::pc::BorgBattlePackageFiles> extra_packages={},std::string* probe_error=nullptr){
     using namespace gf;
     NativeBattleMvp world;NativeGRedGroundDashDemo source,source2;
     std::string error;
     auto fail=[&](const char* reason){
-        gf::log_error(context,"package-battle","%s: %s",reason,error.c_str());render.shutdown();return 2;
+        if(probe_error)*probe_error=error.empty()?std::string(reason):error;
+        else gf::log_error(context,"package-battle","%s: %s",reason,error.c_str());
+        render.shutdown();return 2;
     };
     const auto* accepted=hosted?hosted->accepted():nullptr;
+    const bool explicit_roster=!options.roster_borgs.empty();
+    if(options.check_battle_roster&&(!options.headless||!options.no_audio||!explicit_roster||!stage||hosted||selection)){
+        error="roster check requires a standalone preset and bound stage on the silent headless host";
+        return fail("roster check refused");
+    }
+    BattleRosterSeries series(options.roster_rounds_to_win,options.roster_round_seconds);
+    if((options.roster_rounds_to_win||options.roster_round_seconds)&&(!series.enabled()||!explicit_roster||!stage)){
+        error="series rules require a standalone roster preset and bound stage";
+        return fail("series admission refused");
+    }
+    const bool local_roster=explicit_roster||options.demo_roster_battle;
     if(report)*report={};
     if(bool(hosted)!=bool(report)||(selection&&(hosted||stage))||(hosted&&(!accepted||stage||options.demo_package_battle||
-       !options.battle_stage.empty()||options.package_battle_distance))){
+        !options.battle_stage.empty()||options.package_battle_distance||options.package_damage_indices))){
         error="hosted duel requires its accepted request with no Battle Test overrides";
         return fail("battle handoff refused");
     }
+    if(extra_packages.size()!=options.roster_borgs.size()||extra_packages.size()>kBattleMvpMaxActors-2||
+       (explicit_roster&&(hosted||selection||options.demo_roster_battle))){
+        error="explicit roster needs its own admitted standalone package list";
+        return fail("roster handoff refused");
+    }
     const auto& packages=hosted?hosted->packages():test_packages;
+    const auto actor_package=[&](unsigned slot)->const gf::pc::BorgBattlePackageFiles&{
+        return explicit_roster&&slot>=2?extra_packages[slot-2]:packages[slot%packages.size()];
+    };
     auto test_view=hosted?nullptr:std::make_unique<NativeBattleMvpView>();
     auto& view=hosted?hosted->view():*test_view;
     auto config=hosted?hosted->config():BattleMvpConfig{};
     const auto tick_limit=accepted?accepted->request.tick_limit:0;
     if(!hosted)for(unsigned i=0;i<2;++i)config.packages[i]=packages[i].definition;
-    if(!hosted&&options.demo_roster_battle){
+    if(explicit_roster){
+        config.declared_actors=2+unsigned(extra_packages.size());config.teams_declared=true;
+        std::copy(options.first_roster_teams.begin(),options.first_roster_teams.end(),config.teams.begin());
+        config.local_aim_cycle=true;config.roster_local_players=options.roster_local_players;
+        std::array<unsigned,2> lanes{};
+        const f32 half=f32(options.package_battle_distance?options.package_battle_distance:600)*.5f;
+        for(unsigned i=0;i<config.declared_actors;++i){
+            auto& definition=config.packages[i];
+            definition=actor_package(i).definition;
+            if(!definition||definition->movement==BorgBattleMovement::NormalGRed){
+                error="explicit rosters require native package movement; use duel or mirrored demo for borrowed source motion";
+                return fail("roster actor admission refused");
+            }
+            if(i>=2)config.teams[i]=options.roster_borgs[i-2].team;
+            const u8 team=config.teams[i];
+            if(team>1||lanes[team]>=3){
+                error="explicit roster allows three actors per team";
+                return fail("roster actor admission refused");
+            }
+            const auto lane=lanes[team]++;
+            if(!stage)config.spawn[i]={team?half:-half,lane==0?0.f:lane==1?-240.f:240.f};
+        }
+        if(!lanes[0]||!lanes[1]){
+            error="explicit roster needs at least one fighter per team";
+            return fail("roster actor admission refused");
+        }
+    }else if(!hosted&&options.demo_roster_battle){
         config.packages[2]=packages[0].definition;config.packages[3]=packages[1].definition;
         config.declared_actors=4;
         config.teams={0,1,0,1};config.teams_declared=true;
         config.allow_multi_source=true;
         config.source_allow_active_opponent=true;
     }
-    config.package_strafe=selection||options.exercise_battle_mobility;
-    if(!hosted&&options.package_battle_distance){
+    if(!hosted&&options.package_damage_indices){
+        config.damage_indices=options.package_damage_indices;
+        if(!battle_mvp_damage_indices_valid(config,config.declared_actors)){
+            error="indexed damage selection requires matching complete package tables";
+            return fail("damage selection refused");
+        }
+    }
+    if(config.declared_actors<2||config.declared_actors>kBattleMvpMaxActors){
+        error="package actor count outside the native roster capacity";
+        return fail("roster actor admission refused");
+    }
+    config.package_strafe=selection||options.exercise_battle_mobility||explicit_roster;
+    if(!hosted&&!explicit_roster&&options.package_battle_distance){
         const auto scale=f32(options.package_battle_distance)/std::hypot(config.spawn[0].x-config.spawn[1].x,config.spawn[0].z-config.spawn[1].z);
         for(auto& spawn:config.spawn){spawn.x*=scale;spawn.z*=scale;}
     }
@@ -1586,20 +1810,23 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         error="exact requested stage snapshot required; no legacy fallback";
         return fail("stage admission refused");
     }
-    const std::array visuals{packages[0].visuals(),packages[1].visuals()};
-    const std::array<std::shared_ptr<const BorgGameplayProfile>,2> duel_packages{config.packages[0],config.packages[1]};
-    const std::array<std::shared_ptr<const BorgGameplayProfile>,4> roster_packages{config.packages[0],config.packages[1],config.packages[2],config.packages[3]};
-    const std::array<BorgBattleVisualAssets,4> roster_visuals{visuals[0],visuals[1],visuals[0],visuals[1]};
-    const std::span<const std::shared_ptr<const BorgGameplayProfile>> view_packages=
-        options.demo_roster_battle?std::span<const std::shared_ptr<const BorgGameplayProfile>>(roster_packages):
-                                   std::span<const std::shared_ptr<const BorgGameplayProfile>>(duel_packages);
-    const std::span<const BorgBattleVisualAssets> view_visuals=
-        options.demo_roster_battle?std::span<const BorgBattleVisualAssets>(roster_visuals):
-                                   std::span<const BorgBattleVisualAssets>(visuals);
+    std::array<BorgBattleVisualAssets,kBattleMvpMaxActors> visuals{};
+    std::array<BorgAudioSlot,kBattleMvpMaxActors> audio_slots{};
+    for(unsigned i=0;i<config.declared_actors;++i){
+        visuals[i]=actor_package(i).visuals();
+        audio_slots[i]=actor_package(i).audio();
+    }
+    const auto view_packages=std::span<const std::shared_ptr<const BorgGameplayProfile>>(config.packages).first(config.declared_actors);
+    const auto view_visuals=std::span<const BorgBattleVisualAssets>(visuals).first(config.declared_actors);
     if(stage){
-        const std::array<std::string_view,2> markers{options.battle_stage_spawns[0],options.battle_stage_spawns[1]};
+        std::array<std::string_view,kBattleMvpMaxActors> markers{};
+        if(options.battle_stage_spawns.size()!=config.declared_actors||options.demo_roster_battle){
+            error="exact stage markers required for every actor; mirrored placement is not supported";
+            return fail("portable stage admission refused");
+        }
+        std::copy(options.battle_stage_spawns.begin(),options.battle_stage_spawns.end(),markers.begin());
         if(!view.bind_stage(*stage,render,&error)||
-           !view.configure_stage_duel(options.battle_stage,markers,&config,&error)||
+           !view.configure_stage_roster(options.battle_stage,std::span<const std::string_view>(markers).first(config.declared_actors),&config,&error)||
            !view.load_packages(render,view_packages,view_visuals,&error))return fail("portable stage admission refused");
     }else if(!hosted&&!view.load_packages(context.files(),options.battle_mvp_assets,render,view_packages,view_visuals,&error,inputs))
         return fail("asset binding refused");
@@ -1609,23 +1836,24 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     }
     gf::pc::GRedPracticeInput practice_input;
     BorgMovementAudio movement_audio;
-    const std::array<const BorgMovementSoundBank*,2> sound_banks{&packages[0].movement_sounds,&packages[1].movement_sounds};
-    const std::array<const BorgLaunchSoundBank*,2> launch_banks{&packages[0].launch_sounds,&packages[1].launch_sounds};
-    const std::array<const BorgReleaseSoundBank*,2> release_banks{&packages[0].release_sounds,&packages[1].release_sounds};
-    const std::array<const BorgImpactSoundBank*,2> impact_banks{&packages[0].impact_sounds,&packages[1].impact_sounds};
-    const std::array<const BorgActionSoundBank*,2> action_banks{&packages[0].action_sounds,&packages[1].action_sounds};
-    const auto has_pcm=[](const auto& banks){return std::any_of(banks.begin(),banks.end(),[](const auto* bank){
-        return std::any_of(bank->begin(),bank->end(),[](const auto& clip){return !clip.empty();});
-    });};
-    const bool has_launch_sounds=has_pcm(launch_banks);
-    const bool has_impact_sounds=has_pcm(impact_banks);
-    const bool has_release_sounds=std::any_of(release_banks.begin(),release_banks.end(),[](const auto* bank){
-        return std::any_of(bank->begin(),bank->end(),[](const auto& cue){return !cue.pcm.empty();});
-    });
-    const bool has_action_sounds=has_pcm(action_banks);
-    const bool has_sounds=has_pcm(sound_banks)||has_launch_sounds||has_release_sounds||has_impact_sounds||has_action_sounds;
+    const auto battle_audio=std::span<const BorgAudioSlot>(audio_slots).first(config.declared_actors);
+    const auto has_pcm=[&](auto member){
+        return std::any_of(battle_audio.begin(),battle_audio.end(),[&](const BorgAudioSlot& slot){
+            const auto* bank=slot.*member;
+            return bank&&std::any_of(bank->begin(),bank->end(),[](const auto& clip){
+                if constexpr(requires{clip.pcm;})return !clip.pcm.empty();
+                else return !clip.empty();
+            });
+        });
+    };
+    const bool has_launch_sounds=has_pcm(&BorgAudioSlot::launch);
+    const bool has_impact_sounds=has_pcm(&BorgAudioSlot::impact);
+    const bool has_release_sounds=has_pcm(&BorgAudioSlot::release);
+    const bool has_contact_sounds=has_pcm(&BorgAudioSlot::contact);
+    const bool has_sounds=has_pcm(&BorgAudioSlot::movement)||has_launch_sounds||has_release_sounds||has_impact_sounds||
+        has_pcm(&BorgAudioSlot::action)||has_contact_sounds;
     const bool audible=has_sounds&&!options.no_audio&&!options.headless&&context.audio().open(kBorgMovementSampleRate,2);
-    const bool mix_audio=audible||((has_launch_sounds||has_release_sounds||has_impact_sounds)&&options.trace_package_battle&&!options.no_audio);
+    const bool mix_audio=audible||(has_sounds&&options.trace_package_battle&&!options.no_audio);
     struct CloseMovementAudio {IAudioBackend* device;~CloseMovementAudio(){if(device)device->close();}}
         close_movement_audio{audible?&context.audio():nullptr};
     std::vector<s16> movement_pcm;
@@ -1635,9 +1863,23 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     unsigned release_audio_starts=0,release_audio_blocks=0;
     bool release_audio_nonzero=false;
     unsigned impact_audio_starts=0;
+    unsigned contact_audio_starts=0;
+    unsigned audio_mixed_actors=0;
+    u64 audio_dropped=0;
+    bool contact_audio_nonzero=false;
     bool wait_for_jump_release=false;
+    PortableRosterAi roster_ai;
+    const bool second_human=local_roster&&config.roster_local_players==2;
+    const bool trace_roster=explicit_roster&&options.trace_package_battle;
+    const auto roster_alive=[&](){
+        unsigned mask=0;
+        for(unsigned i=0;i<world.actor_count();++i)if(world.actors()[i].health)mask|=1u<<i;
+        return mask;
+    };
+    unsigned previous_roster_alive=0;
     auto restart=[&](){
         source.reject();source2.reject();view.reset_control_test_pose();practice_input={};wait_for_jump_release=false;
+        roster_ai.reset();
         movement_audio.reset();if(audible)context.audio().discard_queued();
         if(!world.start(config,&view)){
             error=stage||hosted?"pinned stage or Borg definitions refused":
@@ -1645,6 +1887,9 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             return false;
         }
         if(!view.update(world,&error))return false;
+        if(series.enabled()&&!series.open_round(world)){
+            error="series could not bind the new round";return false;
+        }
         if(source_movement){
             NativeBorgAnimationSeed seed;
             if(!view.source_seed(0,world,&seed)||!source.bind(0,context.files(),options.battle_mvp_assets,inputs,
@@ -1655,20 +1900,56 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                    world,seed2,&error,NativeGRedGroundDashDemo::Mode::GroundWindupEntryPush,&practice))return false;
             }
         }
+        if(trace_roster)previous_roster_alive=roster_alive();
         return true;
     };
     if(!restart())return fail("actor admission refused");
+    if(options.check_battle_roster){
+        // Use the identical prepared world and first draw as play, but
+        // never enter the event loop or advance its simulation clock.
+        render.begin_frame({0,.15f,.21f,.3f,false});render.reset_arena();
+        const auto draws=view.draw(render,world,options.width,options.height,&error,false,0,nullptr,true,
+                                   series.enabled()?&series:nullptr);
+        const auto submitted=render.end_frame();
+        if(!draws||!submitted)return fail("initial headless draw refused");
+        for(unsigned i=0;i<world.actor_count();++i)if(!view.package_body_draws(i)){
+            error="slot "+std::to_string(i)+" ("+actor_package(i).identity.id+") did not submit body geometry";
+            return fail("initial headless draw refused");
+        }
+        if(!probe_error){
+            std::printf("Roster admission passed: stage=%s slots=%u locals=%u ticks=%u (headless)\n",
+                    options.battle_stage.c_str(),world.actor_count(),unsigned(config.roster_local_players),world.tick());
+            for(unsigned i=0;i<world.actor_count();++i){
+                const auto& p=world.actors()[i].position;
+                std::printf("slot=%u team=%u driver=%s id=%s variant=%s spawn=%s position=%.2f,%.2f,%.2f body-draws=%u\n",
+                    i,unsigned(config.teams[i]),i<config.roster_local_players?"local":"cpu",
+                    actor_package(i).identity.id.c_str(),config.packages[i]->variant.c_str(),options.battle_stage_spawns[i].c_str(),
+                    double(p[0]),double(p[1]),double(p[2]),view.package_body_draws(i));
+            }
+        }else probe_error->clear();
+        render.shutdown();
+        return 0;
+    }
     if(accepted){
         const auto& request=accepted->request;
         gf::log_info(context,"package-battle","stage=%s player-spawn=%s enemy-spawn=%s",
             request.stage.id.c_str(),request.player_spawns[0].id.c_str(),request.enemy_spawns[0].id.c_str());
-    }else if(stage)gf::log_info(context,"package-battle","stage=%s player-spawn=%s enemy-spawn=%s",
+    }else if(stage&&explicit_roster&&config.roster_local_players==1)
+        gf::log_info(context,"package-battle","stage=%s p1-spawn=%s locals=1",
+                     options.battle_stage.c_str(),options.battle_stage_spawns[0].c_str());
+    else if(stage&&explicit_roster&&config.teams[0]==config.teams[1])
+        gf::log_info(context,"package-battle","stage=%s p1-spawn=%s p2-spawn=%s local-coop=1",
+                     options.battle_stage.c_str(),options.battle_stage_spawns[0].c_str(),options.battle_stage_spawns[1].c_str());
+    else if(stage)gf::log_info(context,"package-battle","stage=%s player-spawn=%s enemy-spawn=%s",
         options.battle_stage.c_str(),options.battle_stage_spawns[0].c_str(),options.battle_stage_spawns[1].c_str());
-    for(unsigned i=0;i<2;++i){
+    for(unsigned i=0;i<(explicit_roster?config.declared_actors:2u);++i){
         const auto tally=view.package_texture_tally(world,i);
         gf::log_info(context,"package-battle","slot=%u id=%s variant=%s moves=%zu textured=%u untextured=%u unresolved=%u",
-            i,packages[i].identity.id.c_str(),config.packages[i]->variant.c_str(),
+            i,actor_package(i).identity.id.c_str(),config.packages[i]->variant.c_str(),
             config.packages[i]->moves.size(),tally[0],tally[1],tally[2]);
+        if(explicit_roster)gf::log_info(context,"borg-roster-slot","actor=%u team=%u driver=%s id=%s",i,unsigned(config.teams[i]),
+                                       i<config.roster_local_players?"local":"cpu",actor_package(i).identity.id.c_str());
+        if(explicit_roster&&stage)gf::log_info(context,"borg-stage-spawn","actor=%u marker=%s",i,options.battle_stage_spawns[i].c_str());
     }
     gf::log_info(context,"package-battle",hosted?
          "authored duel, not retail-equivalent; arrows move, Alt+Arrow dash, Shift jump, Space B, E X if available, Q cancel":
@@ -1689,7 +1970,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         "impact-trail-started","impact-trail-refused","impact-hazard-started","impact-hazard-placed","impact-hazard-refused",
         "extra-emit","extra-emit-refused","walk-pulse-created","walk-pulse-refused","field-shot-pulled",
         "field-actor-pulled","field-actor-pull-refused","fence-recoil","fence-recoil-refused","entry-stock-refused","field-replaced",
-        "launch-sound","release-sound","impact-sound"};
+        "launch-sound","release-sound","impact-sound","action-sound","contact-sound"};
     struct Origins final:IBorgBattleOrigins {
         explicit Origins(const NativeBattleMvpView& observed):view(observed){}
         const NativeBattleMvpView& view;
@@ -1701,6 +1982,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         }
     } origins(view);
     InputRouter router;std::array<GamePadState,2> previous{};std::array<BorgBattleInputs,2> action_input{};
+    u8 pending_aim_cycles=0;
     const auto action_bits=[](const GamePadState& pad){return u8((pad.a?BorgBattleInputs::b:0)|(pad.x?BorgBattleInputs::x:0));};
     const bool demo_guard_x=std::any_of(config.packages[1]->moves.begin(),config.packages[1]->moves.end(),
         [](const auto& move){return move.button==BorgBattleButton::X&&move.guard.has_value();});
@@ -1718,12 +2000,15 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     bool captured=false,paused=false,first_hit=false,after_restart_hit=false,moved=false,airborne=false;
     auto end=PortableDuelEnd::Fighting;
     std::array<u8,gf::kBattleMvpMaxActors> previous_cues{};
+    std::array<BorgStockHud,2> previous_stock{};
+    std::array<std::optional<BorgMobilityHud>,2> previous_mobility{};
     std::array<unsigned,gf::kBattleMvpMaxActors> previous_reaction_ticks{};
-    std::optional<f32> previous_fade;
+    f32 previous_fade=-1.f; // no sample yet; admitted fade alpha is nonnegative
     std::string picker_notice;
     std::string movement_notice;
     bool source_blocked=false;
     bool pointer_held=false;
+    bool wait_for_confirm=options.roster_browser_match,wait_for_start=options.roster_browser_match;
     TextRenderer mechanics_text;
     unsigned ground_dashes=0,air_dashes=0,peak_jumps=0,boost_frames=0;
     bool strafed=false;
@@ -1739,12 +2024,18 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         const auto now=context.clock().monotonic_ns();
         if(options.seconds&&now-start>=u64(options.seconds)*1000000000ull)break;
         unsigned width=options.width,height=options.height;
-        if(selection&&!options.headless)context.window().size(&width,&height);
+        if((selection||explicit_roster)&&!options.headless)context.window().size(&width,&height);
         if(!width||!height){last=now;phase=0;continue;}
         context.input().pump();const auto& snapshot=context.input().snapshot();
         std::array<GamePadState,2> pads{router.route(snapshot,0),router.route(snapshot,1)};
         if(snapshot.alt_arrow){pads[0].l=true;pads[0].stick_x=pads[0].stick_y=0;}
-        if(snapshot.quit||pads[0].quit_requested)break;
+        const bool demo_exit=options.demo_roster_cancel&&frame==4;
+        const bool menu_back=snapshot.menu_back||(demo_exit&&options.demo_roster_pad);
+        if(snapshot.quit||pads[0].quit_requested||(options.roster_browser_match&&menu_back)||
+           (demo_exit&&!options.demo_roster_pad))break;
+        if(options.demo_roster_pad&&frame<3)pads[0].a=pads[0].start=true; // exercise held picker confirm
+        if(wait_for_confirm){wait_for_confirm=pads[0].a;pads[0].a=false;}
+        if(wait_for_start){wait_for_start=pads[0].start;pads[0].start=false;}
         bool choosing=false;
         if(selection){
             auto& picker=selection->picker;
@@ -1832,9 +2123,13 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             if(demo_anchor_double_tap)
                 pads[0].x=frame==18||frame==29||frame==44||frame==47||frame==127||frame==130;
             if(demo_fence)pads[0].x=frame==2;
+            if(explicit_roster){
+                // A hold is one cycle; a second press advances again.
+                pads[0].z=pads[1].z=(frame>=2&&frame<=4)||frame==6;
+            }
             // The roster demo exercises the second local player's session
             // control; the ordinary demo keeps P1 restart.
-            if(options.demo_roster_battle)pads[1].y=frame==85;
+            if(second_human)pads[1].y=frame==85;
             else pads[0].y=frame==85;
             pads[0].dpad_right=!demo_gravity&&!demo_magnet&&!demo_fence&&frame>=2&&frame<=4;
             if(config.packages[0]->walk_pulse)pads[0].dpad_right|=frame>=10&&frame<43;
@@ -1872,10 +2167,8 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 }
             }
         }
-        // In the local roster both keyboard pads are players, so either can
-        // restart or pause. Other modes keep the second pad out of session
-        // control.
-        const bool second_human=options.demo_roster_battle;
+        // The CPU seat must never consume P2's physical pad or aim edge.
+        if(explicit_roster&&!second_human)pads[1]={};
         const bool reset=!choosing&&((pads[0].y&&!previous[0].y)||
             (second_human&&pads[1].y&&!previous[1].y)),
             pause=!choosing&&!source_blocked&&((pads[0].start&&!previous[0].start)||
@@ -1884,6 +2177,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         const bool source_dash_edge=!choosing&&dash_held(pads[0])&&!dash_held(previous[0]);
         if(hosted&&reset)break;
         for(unsigned i=0;i<2;++i){
+            if(explicit_roster&&i<config.roster_local_players&&pads[i].z&&!previous[i].z)pending_aim_cycles|=u8(1u<<i);
             auto& input=action_input[i];
             const auto current=action_bits(pads[i]),prior=action_bits(previous[i]);
             if(const auto pressed=u8(current&~prior);pressed)input.pressed=pressed; // don't merge separate press samples
@@ -1895,7 +2189,9 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             total_shots+=world.shots_spawned();total_hits+=world.hits();if(!restart())return fail("restart refused");
             ++restarts;paused=false;source_blocked=false;movement_notice.clear();
             previous_cues={};
-            previous_fade.reset();
+            previous_stock={};
+            previous_mobility={};
+            previous_fade=-1.f;
         }else if(pause){
             paused=!paused;
             if(!world.set_paused(paused))return fail("pause refused");
@@ -1907,14 +2203,15 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             steps=unsigned(std::min<u64>(phase/1000000000ull,8));phase%=1000000000ull;
         }
         last=now;
-        const bool running=!choosing&&!paused&&!source_blocked&&!reset&&!pause&&world.result()==BattleMvpResult::Fighting;
-        if(!running){action_input={};steps=0;phase=0;}
+        const bool running=!choosing&&!paused&&!source_blocked&&!reset&&!pause&&
+            !series.ended()&&world.result()==BattleMvpResult::Fighting;
+        if(!running){action_input={};pending_aim_cycles=0;steps=0;phase=0;}
         for(auto& pad:pads)pad.a=pad.x=pad.y=pad.start=false;
         if(source_movement){
             pads[0]=pc::gred_battle_pad(pads[0],source_dash_edge);
             practice_input.sample(pads[0],source.practice_flick_direction(pads[0]),running);
         }
-        while(steps--&&world.result()==BattleMvpResult::Fighting&&(!tick_limit||world.tick()<tick_limit)){
+        while(steps--&&!series.ended()&&world.result()==BattleMvpResult::Fighting&&(!tick_limit||world.tick()<tick_limit)){
             if(hosted){
                 const auto enemy=portable_duel_enemy_input(world);
                 pads[1]=enemy.movement;action_input[1]=enemy.attack;
@@ -1922,7 +2219,9 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             const auto before=world.actors()[0].position;
             const auto prior_facing=world.actors()[0].facing;
             const auto prior_dash=world.actors()[0].dash_ticks;
-            const auto movement=NativeBattleMvpView::movement_frame(world,width,height);
+            const auto movement=explicit_roster?
+                NativeBattleMvpView::roster_movement_frame(world):
+                NativeBattleMvpView::movement_frame(world,width,height);
             if(source_movement&&options.demo_roster_battle){
                 auto input=pads[0];practice_input.take(input);NativeBorgMotionOffer offer;
                 const bool touchdown=source.battle_landing_entry_pending();
@@ -1989,13 +2288,46 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 if(!source.commit(world,view.source_binding(),&error)||!source.pose(world,&pose)||!view.update_source(world,pose,&error))
                     return fail("accepted source pose was not published");
                 if(touchdown&&source.landing_entry_accepted()&&offer.kind==NativeBorgMotionKind::JumpLanding)touchdown_entry=true;
-            }else if(options.demo_roster_battle){
-                std::array<GamePadState,4> roster_pads{pads[0],pads[1],{},{}};
-                std::array<BorgBattleInputs,4> roster_input{action_input[0],action_input[1],{},{}};
-                if(!world.step_roster(roster_pads,roster_input,false,&view,{},&movement,nullptr,&origins)||!view.update(world,&error))
+            }else if(local_roster){
+                std::array<GamePadState,kBattleMvpMaxActors> roster_pads{pads[0],pads[1]};
+                std::array<BorgBattleInputs,kBattleMvpMaxActors> roster_input{action_input[0],action_input[1]};
+                const auto count=world.actor_count();
+                const unsigned first_cpu=config.roster_local_players;
+                std::array<u8,kBattleMvpMaxActors-1> cpu_aim{};
+                bool has_cpu_aim=false;
+                if(explicit_roster)for(unsigned i=first_cpu;i<count;++i){
+                    const auto ai=roster_ai.input(world,i,&view);
+                    roster_pads[i]=ai.movement;roster_input[i]=ai.attack;
+                    cpu_aim[i-first_cpu]=ai.aim_target;has_cpu_aim|=ai.aim_target!=255;
+                }
+                const BattleMvpLocalRosterInput roster_controls{explicit_roster&&second_human?&movement:nullptr,pending_aim_cycles,
+                    has_cpu_aim?std::span<const u8>(cpu_aim).first(count-first_cpu):std::span<const u8>{}};
+                if(!world.step_roster(std::span<const GamePadState>(roster_pads).first(count),
+                                      std::span<const BorgBattleInputs>(roster_input).first(count),
+                                      false,&view,{},&movement,nullptr,&origins,{},roster_controls)||
+                   !view.update(world,&error))
                     return fail("authored roster update refused");
+                if(options.trace_package_battle)for(unsigned i=0;i<config.roster_local_players;++i)if(pending_aim_cycles&(1u<<i))
+                    gf::log_info(context,"borg-aim-cycle","round=%u tick=%u actor=%u target=%u",
+                                 restarts,world.tick(),i,unsigned(world.aim_target_of(i)));
+                pending_aim_cycles=0;
             }else if(!world.step(pads,false,&view,nullptr,&movement,nullptr,action_input,&origins)||!view.update(world,&error))
                 return fail("authored battle update refused");
+            if(trace_roster){
+                const auto alive=roster_alive(),knocked_out=previous_roster_alive&~alive;
+                for(unsigned i=0;i<world.actor_count();++i)if(knocked_out&(1u<<i))
+                    log_info(context,"borg-roster-ko","round=%u tick=%u actor=%u",restarts,world.tick(),i);
+                previous_roster_alive=alive;
+            }
+            if(series.observe(world)){
+                const char* outcome=series.outcome()==BattleMvpResult::Draw?"draw":
+                    series.outcome()==BattleMvpResult::GRedWins?"team0":"team1";
+                if(series.keeps_score())gf::log_info(context,"borg-series","round=%u tick=%u outcome=%s score=%u:%u goal=%u winner=%u",
+                    restarts,world.tick(),outcome,unsigned(series.wins()[0]),unsigned(series.wins()[1]),
+                    unsigned(series.goal()),unsigned(series.winner()));
+                if(series.timed_out())gf::log_info(context,"borg-round-clock","round=%u tick=%u timeout=%s",
+                    restarts,world.tick(),outcome);
+            }
             for(auto& input:action_input)input.pressed=input.released=0;
             for(unsigned i=0;i<world.actor_count();++i){
                 const unsigned ticks=world.actors()[i].reaction_ticks;
@@ -2014,10 +2346,17 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 if(actor.grounded&&!actor.dash_ticks)peak_walk=std::max(peak_walk,actor.movement_speed);
             }
             max_flight=std::max(max_flight,unsigned(world.actors()[0].package_flight_used));
-            if(mix_audio&&movement_audio.visit(world,sound_banks,&movement_pcm,launch_banks,release_banks,impact_banks,action_banks)){
+            if(mix_audio){
+                if(!movement_audio.visit(world,battle_audio,&movement_pcm)){
+                    error="actor slots or round audio bindings changed";return fail("package audio refused");
+                }
                 launch_audio_starts+=movement_audio.launch_started();
                 release_audio_starts+=movement_audio.release_started();
                 impact_audio_starts+=movement_audio.impact_started();
+                contact_audio_starts+=movement_audio.contact_started();
+                contact_audio_nonzero|=movement_audio.contact_nonzero();
+                audio_mixed_actors|=movement_audio.mixed_actors();
+                audio_dropped+=movement_audio.dropped();
                 if(has_launch_sounds&&!movement_pcm.empty()){
                     ++launch_audio_blocks;
                     launch_audio_nonzero|=std::any_of(movement_pcm.begin(),movement_pcm.end(),[](s16 sample){return sample!=0;});
@@ -2045,7 +2384,7 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                 previous_cues[i]=cues;
             }
             for(const auto& e:world.package_events()){
-                const bool credited_hit=e.actor==0&&(options.demo_roster_battle?
+                const bool credited_hit=e.actor==0&&(local_roster?
                     (e.recipient<world.actor_count()&&world.actors()[e.recipient].team!=world.actors()[0].team):
                     e.recipient==1);
                 if((e.kind==BorgBattleEventKind::Hit||e.kind==BorgBattleEventKind::BlastHit)&&credited_hit)
@@ -2061,16 +2400,37 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                     reason?" reason=":"",reason?reason:"");
             }
         }
-        render.begin_frame({frame,.15f,.21f,.3f,selection!=nullptr});render.reset_arena();
-        const auto draws=view.draw(render,world,width,height,&error);
+        if(explicit_roster&&options.trace_package_battle)for(unsigned i=0;i<config.roster_local_players;++i){
+            if(!world.actors()[i].health)continue;
+            const auto& profile=*world.config().packages[i];
+            const auto stock=borg_stock_hud(profile,world.package_action(i));
+            if(stock!=previous_stock[i]){
+                for(unsigned j=0;j<stock.count;++j){
+                    const auto& row=stock.rows[j];
+                    gf::log_info(context,"borg-ammo","round=%u tick=%u actor=%u pool=%s buttons=%s stock=%u/%u phase=%s",
+                        restarts,world.tick(),i,profile.stocks[row.channel].id.c_str(),borg_stock_hud_buttons(row.buttons),
+                        unsigned(row.current),unsigned(row.capacity),borg_stock_hud_phase(row.phase));
+                }
+                previous_stock[i]=stock;
+            }
+            const auto mobility=borg_mobility_hud(profile,world.actors()[i]);
+            if(mobility!=previous_mobility[i]){
+                if(mobility)gf::log_info(context,"borg-mobility","round=%u tick=%u actor=%u resource=%s remaining=%u/%u",
+                    restarts,world.tick(),i,borg_mobility_labels(mobility->kind).trace,
+                    unsigned(mobility->remaining),unsigned(mobility->capacity));
+                previous_mobility[i]=mobility;
+            }
+        }
+        render.begin_frame({frame,.15f,.21f,.3f,selection!=nullptr||explicit_roster});render.reset_arena();
+        const auto draws=view.draw(render,world,width,height,&error,false,0,nullptr,explicit_roster,
+                                   series.enabled()?&series:nullptr);
         if(selection){
             selection->picker.draw(render,s32(width),source_blocked?movement_notice:picker_notice);
             if(width>=440&&height>=270&&!selection->picker.open()){
                 const auto& p=*config.packages[0];const auto& a=world.actors()[0];
+                const auto meter=borg_mobility_hud(p,a);
                 std::string mobility=source_movement?"FLIGHT "+std::to_string(source.resource())+"/10000":
-                    p.cruise?"BOOST "+std::to_string(a.package_boost_meter.value736)+"/"+std::to_string(p.cruise->capacity):
-                    p.air_jump_points?"JUMPS "+std::to_string(p.air_jump_points-a.package_air_points_used)+"/"+std::to_string(p.air_jump_points):
-                    p.flight_ticks?"LIFT "+std::to_string(p.flight_ticks-a.package_flight_used)+"/"+std::to_string(p.flight_ticks):"";
+                    meter?borg_mobility_text(*meter):"";
                 std::string keys=source_movement?"ARROWS MOVE  SHIFT FLY  ALT+ARROW DASH  SPACE B":
                     p.cruise?"ARROWS STEER  SHIFT BOOST  SPACE B":"ARROWS MOVE  SHIFT JUMP  R STRAFE  SPACE B";
                 if(!source_movement&&!p.cruise&&!p.dash_disabled)keys+="  ALT+ARROW DASH";
@@ -2092,6 +2452,10 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         if(options.trace_package_battle&&view.impact_record_draws())
             gf::log_info(context,"impact-record","round=%u tick=%u draws=%u",restarts,world.tick(),view.impact_record_draws());
         if(options.trace_package_battle)for(unsigned i=0;i<world.actor_count();++i)
+            if(view.package_body_draws(i)&&view.package_pose_held(world,i))
+                gf::log_info(context,"contact-pose-hold","round=%u tick=%u actor=%u remaining=%u",restarts,world.tick(),i,
+                             unsigned(world.actors()[i].contact_pose_hold_ticks));
+        if(options.trace_package_battle)for(unsigned i=0;i<world.actor_count();++i)
             if(const auto parts=view.package_part_draws(i);parts)
                 gf::log_info(context,"borg-parts","round=%u tick=%u actor=%u draws=%u",restarts,world.tick(),i,parts);
         if(options.trace_package_battle)
@@ -2100,9 +2464,9 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
             gf::log_info(context,"borg-body","round=%u tick=%u actor=0 draws=%u floor=%.2f..%.2f",
                 restarts,world.tick(),view.package_body_draws(0),bounded?low[1]:0.f,bounded?high[1]:0.f);
         }
-        if(options.trace_package_battle)if(const auto fade=view.stage_view_alpha(0);fade&&fade!=previous_fade){
+        if(options.trace_package_battle)if(const auto fade=view.stage_view_alpha(0);fade&&*fade!=previous_fade){
             gf::log_info(context,"stage-view","viewer=0 tick=%u alpha=%.3f",world.tick(),double(*fade));
-            previous_fade=fade;
+            previous_fade=*fade;
         }
         if(!captured)captured=capture_if_requested(context,options,frame);
         render.present();context.advance_frame();++frame;
@@ -2114,9 +2478,31 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     }
     gf::log_info(context,"package-battle","frames=%u actors=%u restarts=%u moved=%u airborne=%u shots=%u hits=%u reactions=%u",
         frame,world.actor_count(),restarts,unsigned(moved),unsigned(airborne),total_shots+world.shots_spawned(),total_hits+world.hits(),total_reactions);
+    if(trace_roster){
+        const auto result=series.ended()?series.outcome():world.result();
+        const char* name=result==BattleMvpResult::GRedWins?"team0":result==BattleMvpResult::SasukeWins?"team1":
+            result==BattleMvpResult::Draw?"draw":"fighting";
+        log_info(context,"borg-roster-round","round=%u tick=%u result=%s alive=0x%x",restarts,world.tick(),name,roster_alive());
+        for(unsigned i=0;i<world.actor_count();++i){
+            const auto& actor=world.actors()[i];
+            log_info(context,"borg-roster-state","round=%u tick=%u actor=%u hp=%u position=%.2f,%.2f,%.2f travel=%.2f nearest=%u aim=%u",
+                     restarts,world.tick(),i,unsigned(actor.health),double(actor.position[0]),double(actor.position[1]),
+                     double(actor.position[2]),actor.travel_distance,unsigned(world.target_of(i)),unsigned(world.aim_target_of(i)));
+        }
+    }
+    if(options.trace_package_battle&&world.actor_count()>2)for(unsigned i=0;i<world.actor_count();++i){
+        const auto& actor=world.actors()[i];const auto& history=actor.hit_history;
+        const auto& last=history[(actor.hit_history_index+history.size()-1)%history.size()];
+        gf::log_info(context,"borg-hit-history","round=%u actor=%u cursor=%u ally-hits=%u ally-damage=%u last=%u:%u",
+            restarts,i,unsigned(actor.hit_history_index),unsigned(actor.hit_history_count),actor.hit_history_total,
+            unsigned(last.type),unsigned(last.slot));
+    }
     if(options.trace_package_battle&&has_sounds)
         gf::log_info(context,"borg-audio","device=%s frames-accepted=%llu",audible?"open":"off",
             static_cast<unsigned long long>(movement_audio_frames));
+    if(options.trace_package_battle&&has_sounds&&world.actor_count()>2)
+        gf::log_info(context,"borg-roster-audio","mixed-actors=0x%x dropped=%llu",audio_mixed_actors,
+            static_cast<unsigned long long>(audio_dropped));
     if(options.trace_package_battle&&has_launch_sounds)
         gf::log_info(context,"borg-launch-audio","starts=%u blocks=%u nonzero=%u",
                      launch_audio_starts,launch_audio_blocks,unsigned(launch_audio_nonzero));
@@ -2125,12 +2511,14 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                      release_audio_starts,release_audio_blocks,unsigned(release_audio_nonzero));
     if(options.trace_package_battle&&has_impact_sounds)
         gf::log_info(context,"borg-impact-audio","starts=%u",impact_audio_starts);
+    if(options.trace_package_battle&&has_contact_sounds)
+        gf::log_info(context,"borg-contact-audio","starts=%u nonzero=%u",contact_audio_starts,unsigned(contact_audio_nonzero));
     if(options.trace_package_battle&&config.packages[0]->flight_ticks)
         gf::log_info(context,"package-flight","peak=%u cap=%u",max_flight,unsigned(config.packages[0]->flight_ticks));
     if(options.exercise_battle_mobility)
         gf::log_info(context,"battle-mobility","strafed=%u ground-dashes=%u air-dashes=%u jump-points-used=%u boost-frames=%u peak-walk=%.2f",
             unsigned(strafed),ground_dashes,air_dashes,peak_jumps,boost_frames,double(peak_walk));
-    const bool smoke=options.demo_package_battle&&!options.exercise_gred_touchdown&&frame>=150;
+    const bool smoke=options.demo_package_battle&&!options.exercise_gred_touchdown&&!series.tick_limit()&&frame>=150;
     if(options.exercise_gred_touchdown){
         gf::log_info(context,"gred-touchdown","attempt=%u entry=%u fresh-jump=%llu",
                      unsigned(touchdown_attempt),unsigned(touchdown_entry),static_cast<unsigned long long>(source.landing_jumps()));
@@ -2138,6 +2526,191 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
     }
     if(report)*report={end==PortableDuelEnd::Fighting?PortableDuelEnd::Cancelled:end,world.tick()};
     render.shutdown();return smoke&&(!moved||!airborne||restarts!=1||!first_hit||!after_restart_hit)?2:0;
+}
+
+bool probe_browser_roster(const Options& next,const PackageBattleFiles& files,std::string& error){
+    // The preflight consumes the pinned files only. It needs no real I/O,
+    // audio, or save backend and never touches the live renderer.
+    gf::headless::Bundle devices;
+    const auto services=devices.get();
+    gf::Context probe_context(services,60);
+    gf::RenderEngine probe(*services.render);
+    if(!probe.initialize({next.width,next.height,false,true,"Roster check"},services.window,&error))return false;
+    auto check=next;
+    check.headless=check.no_audio=check.check_battle_roster=true;
+    return run_package_battle(probe_context,probe,check,files.first,files.stage.get(),nullptr,nullptr,nullptr,files.extra,&error)==0;
+}
+
+int run_roster_browser(gf::Context& context,gf::RenderEngine& render,const Options& options,
+                       const gf::BorgPackageCatalog& catalog){
+    using namespace gf;
+    std::vector<pc::BattleRosterListing> entries;
+    std::string error,notice;
+    const auto fail=[&](const char* why){
+        log_error(context,"roster-browser","%s",why);render.shutdown();return 2;
+    };
+    if(!pc::scan_battle_roster_presets(options.browse_battle_rosters,&entries,&error))return fail(error.c_str());
+    for(const auto& entry:entries)if(!entry.preset)
+        log_warn(context,"roster-browser","skipped %s: %s",borg_package_asset_path_valid(entry.filename)?
+                 entry.filename.c_str():"<invalid filename>",entry.error.c_str());
+    std::erase_if(entries,[](const auto& entry){return !entry.preset;});
+    if(entries.empty())return fail("no valid preset metadata in the selected folder");
+    std::vector<BorgLabPicker::Entry> rows;
+    for(const auto& entry:entries){
+        const auto& preset=*entry.preset;
+        auto summary=std::to_string(preset.fighters.size())+" slots "+std::to_string(preset.locals)+" local";
+        if(preset.rounds_to_win)summary+=" first-to-"+std::to_string(preset.rounds_to_win);
+        if(preset.round_seconds)summary+=" "+std::to_string(preset.round_seconds)+"s";
+        rows.push_back({entry.filename,preset.stage,std::move(summary)});
+    }
+    const auto row_for=[&](std::string_view name)->std::optional<std::size_t>{
+        const auto row=std::find_if(entries.begin(),entries.end(),
+            [&](const auto& entry){return entry.filename==name;});
+        return row==entries.end()?std::nullopt:std::optional<std::size_t>(row-entries.begin());
+    };
+    auto scripted=row_for(options.demo_roster_select);
+    const auto followup=row_for(options.demo_roster_next);
+    if((!options.demo_roster_select.empty()&&!scripted)||(!options.demo_roster_next.empty()&&!followup))
+        return fail("scripted preset was not listed");
+    const unsigned expected_matches=followup?2u:scripted?1u:0u;
+    constexpr s32 controls_height=36;
+    BorgLabPicker picker(std::move(rows),BorgLabPicker::fitting_rows(s32(options.height)-controls_height));
+    using Command=BorgLabPicker::Command;
+    TextRenderer text;
+    TextRenderer::Style style;style.scale=1;
+    InputRouter router;GamePadState previous_pad;
+    bool pointer_held=false,wait_for_pointer_release=false,wait_for_back_release=false,scripted_back_held=false;
+    bool wait_for_menu_release=false;
+    unsigned menu_frames=0,matches=0,script_frame=0;
+    std::size_t active=0;
+    const auto start_frame=context.frame_index();
+    const auto elapsed=[&](){return context.frame_index()-start_frame;};
+    const auto expired=[&](){return options.frames&&elapsed()>=options.frames;};
+    log_info(context,"roster-browser","presets=%zu (metadata only)",entries.size());
+    while(context.window().pump_events()&&!context.window().should_close()&&!expired()){
+        unsigned width=options.width,height=options.height;
+        if(!options.headless)context.window().size(&width,&height);
+        if(!width||!height)continue;
+        context.input().pump();const auto& snapshot=context.input().snapshot();
+        auto pad=router.route(snapshot,0);
+        const bool back=pad.quit_requested||snapshot.menu_back||scripted_back_held;
+        scripted_back_held=false;
+        if(snapshot.quit||(back&&!wait_for_back_release))break;
+        wait_for_back_release=back;
+        const auto menu_active=[](const GamePadState& p){
+            return p.a||p.b||p.start||p.dpad_up||p.dpad_down||p.dpad_left||p.dpad_right;
+        };
+        if(wait_for_menu_release)wait_for_menu_release=menu_active(pad);
+        auto pointer=snapshot.pointer;
+        pointer.left_pressed|=pointer.left&&!pointer_held;pointer_held=pointer.left;
+        if(wait_for_pointer_release){
+            pointer.left_pressed=false;wait_for_pointer_release=pointer.left;
+        }
+        unsigned logical_w=width,logical_h=height;
+        if(!options.headless)context.window().logical_size(&logical_w,&logical_h);
+        pointer.x=logical_w?s32(s64(pointer.x)*width/logical_w):-1;
+        pointer.y=logical_h?s32(s64(pointer.y)*height/logical_h):-1;
+        picker.fit_height(s32(height)-controls_height);
+        if(scripted&&!back&&!wait_for_menu_release&&options.demo_roster_pad){
+            pointer={};pad={};
+            if(script_frame++%2==0){
+                const auto current=picker.focused_row(),target=*scripted;
+                const auto page=picker.rows_per_page();
+                if(!picker.open()||current==target)pad.a=true;
+                else if(target>current&&target-current>=page)pad.dpad_right=true;
+                else if(current>target&&current-target>=page)pad.dpad_left=true;
+                else if(current<target)pad.dpad_down=true;
+                else pad.dpad_up=true;
+            }
+        }else if(scripted&&!back&&!options.demo_roster_pad){
+            const auto rows=picker.rows_per_page(),from=active/rows,to=*scripted/rows;
+            const auto pages=to>from?to-from:from-to;
+            const auto frame=script_frame++;
+            pointer={};pointer.within_window=true;
+            pointer.x=BorgLabPicker::left+8;pointer.y=BorgLabPicker::top+8;
+            if(frame==0)pointer.left_pressed=true;
+            else if(frame<=pages){
+                const auto page=to>from?from+frame-1:from-frame+1;
+                const auto visible=std::min(rows,entries.size()-page*rows);
+                pointer.left_pressed=true;
+                if(to>from)pointer.x+=BorgLabPicker::width(s32(width))/2;
+                pointer.y+=s32(visible+1)*BorgLabPicker::row_height;
+            }
+            else if(frame==pages+1){
+                pointer.left_pressed=true;
+                pointer.y+=s32(*scripted%rows+1)*BorgLabPicker::row_height;
+            }
+        }
+        std::optional<std::size_t> picked;
+        if(!back){
+            if(pointer.left_pressed||pointer.wheel)picked=picker.step(pointer,s32(width));
+            else if(!wait_for_menu_release){
+                if(pad.b&&!previous_pad.b)picker.navigate(Command::Cancel);
+                else if((pad.a&&!previous_pad.a)||(pad.start&&!previous_pad.start))picked=picker.navigate(Command::Confirm);
+                else if(pad.dpad_up&&!previous_pad.dpad_up&&!pad.dpad_down)picker.navigate(Command::Up);
+                else if(pad.dpad_down&&!previous_pad.dpad_down&&!pad.dpad_up)picker.navigate(Command::Down);
+                else if(pad.dpad_left&&!previous_pad.dpad_left&&!pad.dpad_right)picker.navigate(Command::PreviousPage);
+                else if(pad.dpad_right&&!previous_pad.dpad_right&&!pad.dpad_left)picker.navigate(Command::NextPage);
+            }
+        }
+        previous_pad=pad;
+        if(picked){
+            active=*picked;picker.activate(active);scripted.reset();
+            const auto& entry=entries[*picked];
+            const auto file=std::filesystem::path(options.browse_battle_rosters)/entry.filename;
+            BattleRosterPreset selected;
+            bool ok=pc::load_battle_roster_preset(file,&selected,&error);
+            if(ok&&selected!=*entry.preset){ok=false;error="preset changed since listing; reopen the browser";}
+            Options next=options;
+            next.browse_battle_rosters.clear();next.demo_roster_select.clear();next.demo_roster_next.clear();
+            next.width=width;next.height=height;
+            if(next.frames)next.frames-=elapsed();
+            PackageBattleFiles files;
+            if(ok){
+                apply_battle_roster_preset(next,std::move(selected));
+                ok=load_package_battle_files(next,catalog,files,error)&&probe_browser_roster(next,files,error);
+            }
+            if(ok){
+                next.demo_roster_cancel=followup&&matches==0;
+                next.roster_browser_match=true;
+                const auto battle_start=context.frame_index();
+                log_info(context,"roster-browser","selected %s menu-frames=%u",entry.filename.c_str(),menu_frames);
+                context.window().set_title("Borg API Battle Test (Esc / Back: Presets)");render.state()={};
+                const int code=run_package_battle(context,render,next,files.first,files.stage.get(),nullptr,nullptr,nullptr,files.extra);
+                if(!code)++matches;
+                // Battle Test has released its renderer and audio by here.
+                if(context.window().should_close()||expired())return code?code:matches<expected_matches?2:0;
+                context.window().set_title("Battle Roster Presets");
+                render.clear_scene_lighting();render.clear_shared_texture_upload_error();render.state()={};
+                if(!render.initialize({width,height,!options.headless,true,"Battle Roster Presets"},
+                                      context.backends().window,&error))return fail(error.c_str());
+                wait_for_back_release=wait_for_pointer_release=wait_for_menu_release=true;
+                previous_pad={};
+                if(!code&&next.demo_roster_cancel){
+                    scripted=followup;script_frame=0;scripted_back_held=true;
+                }
+                notice=code?"BATTLE FAILED - CHOOSE A PRESET":"";
+                log_info(context,"roster-browser","returned %s battle-frames=%u status=%s",entry.filename.c_str(),
+                         context.frame_index()-battle_start,code?"failed":"closed");
+                continue;
+            }
+            log_warn(context,"roster-browser","refused %s: %s",entry.filename.c_str(),error.c_str());
+            notice="REFUSED: "+error;error.clear();
+        }
+        render.begin_frame({context.frame_index(),.065f,.09f,.14f,true});render.reset_arena();
+        picker.draw(render,s32(width),notice);
+        const auto state=render.state();render.state()={};render.state().blend=true;
+        render.state().blend_src=5;render.state().blend_dst=6;
+        text.draw(render,"MOVE: ARROWS / D-PAD",20,std::max(0,s32(height)-34),style);
+        text.draw(render,"PICK: CLICK / ENTER / A",20,std::max(0,s32(height)-23),style);
+        text.draw(render,"EXIT: ESC / BACK",20,std::max(0,s32(height)-12),style);
+        render.state()=state;
+        if(!render.end_frame())return fail("could not draw the preset browser");
+        render.present();context.advance_frame();++menu_frames;
+    }
+    log_info(context,"roster-browser","closed menu-frames=%u%s",menu_frames,matches?"":" without launch");
+    render.shutdown();
+    return matches<expected_matches?2:0;
 }
 
 int run_battle_picker(gf::Context& context,gf::RenderEngine& render,const Options& options,
@@ -4229,6 +4802,28 @@ int run_animation_mosaic(gf::Context& context,gf::RenderEngine& render,const Opt
 int main(int argc, char** argv) {
     Options options;
     if (!parse(argc, argv, &options)) return 2;
+    if(!options.list_battle_rosters.empty()){
+        std::vector<gf::pc::BattleRosterListing> entries;
+        std::string error;
+        if(!gf::pc::scan_battle_roster_presets(options.list_battle_rosters,&entries,&error)){
+            std::fprintf(stderr,"Battle rosters: %s\n",error.c_str());return 2;
+        }
+        for(const auto& entry:entries){
+            if(!entry.preset){
+                std::fprintf(stderr,"Battle roster %s: %s\n",gf::borg_package_asset_path_valid(entry.filename)?
+                             entry.filename.c_str():"<invalid filename>",entry.error.c_str());
+                continue;
+            }
+            const auto& preset=*entry.preset;
+            std::printf("%s | stage=%s | slots=%zu | locals=%u",entry.filename.c_str(),preset.stage.c_str(),
+                        preset.fighters.size(),unsigned(preset.locals));
+            if(preset.rounds_to_win)std::printf(" | first-to=%u",unsigned(preset.rounds_to_win));
+            if(preset.round_seconds)std::printf(" | seconds=%u",unsigned(preset.round_seconds));
+            std::puts(" | metadata only");
+        }
+        if(entries.empty())std::puts("No .roster files");
+        return 0;
+    }
     if(options.list_stories)return gf::pc::list_portable_stories("stories");
     if(options.list_challenges)return gf::pc::list_portable_challenges("challenges");
     std::unique_ptr<gf::pc::PortableStoryLaunch> portable_story;
@@ -4273,16 +4868,10 @@ int main(int argc, char** argv) {
             std::move(retail),&portable_challenge);
         if(!check){std::fprintf(stderr,"Portable Challenge: %s\n",check.reason.c_str());return 2;}
     }
-    std::array<gf::pc::BorgBattlePackageFiles,2> battle_packages;
-    std::shared_ptr<const gf::StagePackageSnapshot> battle_stage;
+    PackageBattleFiles battle_files;
     if(!options.battle_borg.empty()){
         std::string error;
-        if(!gf::pc::load_borg_battle_package("borgs",borg_packages,options.battle_borg,options.borg_variant,&battle_packages[0],&error)||
-           !gf::pc::load_borg_battle_package("borgs",borg_packages,options.against_borg,options.against_variant,&battle_packages[1],&error)){
-            std::fprintf(stderr,"Borg Battle Test: %s\n",error.c_str());return 2;
-        }
-        if(!options.battle_stage.empty()&&!gf::pc::pin_stage_package("stages",gf::pc::scan_stage_packages("stages"),
-            options.battle_stage,&battle_stage,&error)){
+        if(!load_package_battle_files(options,borg_packages,battle_files,error)){
             std::fprintf(stderr,"Borg Battle Test: %s\n",error.c_str());return 2;
         }
     }
@@ -4491,6 +5080,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::ILogBackend> headless_log;
     gf::Context context(headless.get(), 60);
     if(options.headless&&(options.test_battle||options.battle_mvp||options.borg_controls||!options.battle_borg.empty()||options.animation_mosaic||!options.preview_borg.empty()||
+       !options.browse_battle_rosters.empty()||
        options.browse_borgs||!options.selected_save_root.empty()||!options.story_map.empty()||options.portable_challenge||portable_story)){
         auto backends=headless.get();headless_files=gf::sdl::create_file_system();headless_log=gf::sdl::create_log_backend();
         backends.files=headless_files.get();backends.log=headless_log.get();context=gf::Context(backends,60);
@@ -4499,6 +5089,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<gf::IRenderBackend> renderer;
 
     const bool story_screen=portable_story||!options.story_map.empty();
+    const bool roster_browser=!options.browse_battle_rosters.empty();
     if (!options.headless) {
         platform = std::make_unique<gf::sdl::Platform>();
         renderer = gf::gl::create_renderer(nullptr);
@@ -4511,7 +5102,8 @@ int main(int argc, char** argv) {
             (options.browse_owned_borgs&&!options.practice_from_picker);
         gf::Backends backends =
              platform->create({options.width, options.height, story_screen?"Story Map":
-                                options.portable_challenge?"Portable Challenge":
+                                 options.portable_challenge?"Portable Challenge":
+                                 roster_browser?"Battle Roster Presets":
                                 options.placement_force?"Arrange Saved Force":
                                force_browser?"Saved Force Browser":
                               options.browse_owned_borgs?"Owned Borg Collection":
@@ -4520,7 +5112,7 @@ int main(int argc, char** argv) {
                                 options.browse_borgs?"Installed Borg Collection":!options.preview_borg.empty()?"Borg Package Preview":
                                  options.animation_mosaic?"Borg Animation Mosaic":options.borg_controls?"Borg Control Test":
                                   !options.battle_borg.empty()?"Borg API Battle Test":"Gotcha Force",
-                                   resizable_collection||story_screen||options.battle_picker,
+                                     resizable_collection||story_screen||roster_browser||options.battle_picker||!options.roster_borgs.empty(),
                                  !options.animation_export.empty()},
                              renderer.get(), &error);
         if (!backends.complete()) {
@@ -4539,7 +5131,7 @@ int main(int argc, char** argv) {
     // Windowed runs present with vsync so a --seconds demo runs in real time
     // rather than thousands of frames per second.
     if (!render.initialize({options.width, options.height, !options.headless&&options.animation_export.empty(), true,
-                            story_screen?"Story Map":"Gotcha Force"},
+                            story_screen?"Story Map":roster_browser?"Battle Roster Presets":"Gotcha Force"},
                            context.backends().window, &error)) {
         gf::log_error(context, "render", "initialization failed: %s", error.c_str());
         return 1;
@@ -4566,8 +5158,9 @@ int main(int argc, char** argv) {
     }
     if(options.test_battle)return run_battle_test(context,render,options);
     if(options.portable_challenge)return run_portable_challenge(context,render,options,borg_packages,portable_challenge);
-    if(!options.battle_borg.empty())return options.battle_picker?run_battle_picker(context,render,options,borg_packages,battle_packages):
-        run_package_battle(context,render,options,battle_packages,battle_stage.get());
+    if(roster_browser)return run_roster_browser(context,render,options,borg_packages);
+    if(!options.battle_borg.empty())return options.battle_picker?run_battle_picker(context,render,options,borg_packages,battle_files.first):
+        run_package_battle(context,render,options,battle_files.first,battle_files.stage.get(),nullptr,nullptr,nullptr,battle_files.extra);
     if(options.borg_controls)return options.walk_borg.empty()?run_borg_controls(context,render,options):
         run_borg_walk_controls(context,render,options,borg_packages);
     if(options.battle_mvp)return run_battle_mvp(context,render,options,package,owned_practice.get());

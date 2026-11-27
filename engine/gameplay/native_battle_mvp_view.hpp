@@ -3,6 +3,9 @@
 #include "engine/assets/stage_package.hpp"
 #include "engine/assets/stage_view_fade.hpp"
 #include "engine/gameplay/animated_model_scene.hpp"
+#include "engine/gameplay/battle_roster_series.hpp"
+#include "engine/gameplay/borg_mobility_hud.hpp"
+#include "engine/gameplay/borg_stock_hud.hpp"
 #include "engine/gameplay/stage_inclined_ledge.hpp"
 #include "engine/gameplay/native_battle_mvp_borg.hpp"
 #include "engine/gameplay/attachment_model_scene.hpp"
@@ -283,31 +286,42 @@ public:
         return true;
     }
     std::string_view stage_id()const{return stage_manifest_?stage_manifest_->id:std::string_view{};}
-    // Preflight can resolve physical placement before copying any Borg
-    // presentation or starting a world. start() still owns initial facing and
-    // the final atomic admission of the duel.
     bool configure_stage_duel(std::string_view id,const std::array<std::string_view,2>& marker_ids,
                               BattleMvpConfig* config,std::string* error)const{
+        return configure_stage_roster(id,marker_ids,config,error);
+    }
+    // Preflight resolves placement before loading Borg visuals. start()
+    // still owns initial facing and final atomic admission of the world.
+    bool configure_stage_roster(std::string_view id,std::span<const std::string_view> marker_ids,
+                                BattleMvpConfig* config,std::string* error)const{
         const auto fail=[&](std::string reason){if(error)*error=std::move(reason);return false;};
         if(!config||!stage_manifest_||id!=stage_manifest_->id)return fail("exact bound stage ID required");
-        if(config->solo())return fail("unsupported portable stage mode: only two-actor placement is available");
-        if(marker_ids[0]==marker_ids[1])return fail("stage spawn markers must be distinct");
+        if(config->solo()||marker_ids.size()<2||marker_ids.size()>kBattleMvpMaxActors||
+           marker_ids.size()!=config->declared_actors)return fail("one stage spawn marker per battle actor required");
+        for(unsigned i=0;i<marker_ids.size();++i)for(unsigned j=0;j<i;++j)
+            if(marker_ids[i]==marker_ids[j])return fail("stage spawn markers must be distinct: "+std::string(marker_ids[i]));
         auto next=*config;next.arena_half=stage_manifest_->arena_half;
         if(!std::isfinite(next.actor_radius)||next.actor_radius<=0||4*next.actor_radius>=next.arena_half)
-            return fail("stage arena is too small for the native duel body bounds");
+            return fail("stage arena is too small for the native battle body bounds");
         for(unsigned i=0;i<marker_ids.size();++i){
             const auto* marker=stage_manifest_->spawn(marker_ids[i]);
             if(!marker)return fail("missing stage spawn marker: "+std::string(marker_ids[i]));
             const auto& p=marker->query;
             if(std::abs(p[0])>next.arena_half-next.actor_radius||std::abs(p[2])>next.arena_half-next.actor_radius)
                 return fail("stage spawn outside arena body bounds: "+marker->id);
+            f32 clearance=0;
+            if(!native_borg_partition_portion(this,{p[0],p[2]},{},next.actor_radius,&clearance)||clearance<1)
+                return fail("stage spawn intersects a body partition: "+marker->id);
             f32 support=0;
             if(!height(p[0],p[2],p[1],&support)||!std::isfinite(support)||std::abs(support)>20000)
                 return fail("stage spawn has no supported floor: "+marker->id);
             next.spawn[i]={p[0],p[2]};next.spawn_query_y[i]=p[1];
+            for(unsigned j=0;j<i;++j){
+                const f32 dx=p[0]-next.spawn[j].x,dz=p[2]-next.spawn[j].z;
+                if(dx*dx+dz*dz<=4*next.actor_radius*next.actor_radius)
+                    return fail("stage spawn markers overlap the native bodies: "+std::string(marker_ids[j])+" and "+marker->id);
+            }
         }
-        const auto dx=next.spawn[0].x-next.spawn[1].x,dz=next.spawn[0].z-next.spawn[1].z;
-        if(dx*dx+dz*dz<=4*next.actor_radius*next.actor_radius)return fail("stage spawn markers overlap the duel bodies");
         *config=std::move(next);if(error)error->clear();return true;
     }
     bool load_packages(RenderEngine& render,std::span<const std::shared_ptr<const BorgGameplayProfile>> definitions,
@@ -358,12 +372,15 @@ private:
             if(!borgs_[i].load_package(definitions[i],a.model,a.prefix,a.pose,a.motions,error))return false;
             borgs_[i].upload(render,10000+i*2000);
             HsdRecordAnimationBank projectile_bank,impact_bank;
+            const auto bind_impact=[&](u8 slot,u16 record,u16 scale,u16 ticks,u16 end_scale){
+                if(!impact_bank.records()&&!impact_bank.load(a.impact_record_bank,error,true))return false;
+                auto& entry=impact_record_scenes_[i][slot];
+                entry.scale_percent=scale;entry.end_scale=end_scale;entry.ticks=ticks;
+                return bind_record(entry.scene,impact_bank,record,end_scale!=0);
+            };
             for(u8 j=0;j<definitions[i]->projectiles.size();++j){
                 if(const auto& effect=definitions[i]->projectiles[j].impact_record;effect){
-                    if(!impact_bank.records()&&!impact_bank.load(a.impact_record_bank,error,true))return false;
-                    auto& entry=impact_record_scenes_[i][j];entry.scale_percent=effect->scale_percent;
-                    entry.end_scale=effect->end_scale;entry.ticks=effect->ticks;
-                    if(!bind_record(entry.scene,impact_bank,effect->record,effect->end_scale!=0))return false;
+                    if(!bind_impact(j,effect->record,effect->scale_percent,effect->ticks,effect->end_scale))return false;
                 }
                 const auto& look=definitions[i]->projectiles[j].record_look;
                 if(!look)continue;
@@ -376,6 +393,13 @@ private:
                 }
             }
             for(unsigned m=0;m<definitions[i]->moves.size();++m){
+                const auto& contact=definitions[i]->moves[m].contact_impacts;
+                for(unsigned team=0;team<contact.size();++team)
+                    for(unsigned layer=0;layer<contact[team].size();++layer){
+                        const auto& effect=contact[team][layer];
+                        if(!bind_impact(borg_contact_impact_slot(m,team,layer),effect.record,effect.scale_percent,
+                                        effect.ticks,0))return false;
+                    }
                 const auto& field=definitions[i]->moves[m].field;
                 if(!field||field->texture.empty())continue;
                 const auto tex=a.field_texture[m];
@@ -419,6 +443,10 @@ public:
             next={true,f32(std::clamp(fraction,0.,1.)),hit.surface.grid_code,hit.surface.nearest.triangle};
         }
         *out=next;return true;
+    }
+    std::span<const StageBodyPartition> body_partitions()const override{
+        return stage_manifest_?std::span<const StageBodyPartition>(stage_manifest_->body_partitions):
+                               std::span<const StageBodyPartition>{};
     }
     bool height(f32 x,f32 z,f32 current_y,f32* out)const override{
         NativeBorgStaticSurface surface;
@@ -570,6 +598,84 @@ public:
         camera.viewport_width=width;camera.viewport_height=height;
         return camera;
     }
+    static NativeBorgMovementFrame roster_movement_frame(const NativeBattleMvp& world){
+        // Derive the view from the opening placements, not live targets.
+        // For one local or allied locals, orient toward the opposition.
+        const auto& spawn=world.config().spawn;
+        const unsigned locals=world.config().roster_local_players;
+        auto from=spawn[0],to=spawn[1];
+        if(world.actor_count()>2&&(locals==1||world.actors()[0].team==world.actors()[1].team)){
+            BattlePoint enemies{};
+            unsigned count=0,first=0;
+            for(unsigned i=locals;i<world.actor_count();++i)if(world.actors()[i].team!=world.actors()[0].team){
+                if(!count)first=i;
+                enemies.x+=spawn[i].x;enemies.z+=spawn[i].z;++count;
+            }
+            if(count){
+                if(locals==2)from={(from.x+to.x)*.5f,(from.z+to.z)*.5f};
+                to={enemies.x/count,enemies.z/count};
+                if(from==to){from=spawn[0];to=spawn[first];}
+            }
+        }
+        const auto line=native_borg_direction(from,to);
+        NativeBorgMovementFrame frame;
+        native_borg_movement_frame({.6f*line.x-.8f*line.z,.6f*line.z+.8f*line.x},&frame);
+        return frame;
+    }
+    struct RosterBodyBounds {BattleMvpVec low,high;};
+    using RosterBounds=std::array<std::optional<RosterBodyBounds>,kBattleMvpMaxActors>;
+    struct RosterFraming {Camera camera;RosterBounds bodies;};
+    static Camera roster_camera_for(const NativeBattleMvp& world,s32 width,s32 height,const RosterBounds& bodies={}){
+        if(world.actor_count()<=2||width<1||height<1)return camera_for(world,width,height);
+        Camera camera;
+        camera.fov_y_degrees=55;camera.near_plane=5;camera.far_plane=25000;
+        camera.viewport_width=width;camera.viewport_height=height;
+        const auto& config=world.config();
+        const auto forward=roster_movement_frame(world).forward;
+        BattleMvpVec low{},high{};
+        bool found=false;
+        for(unsigned i=0;i<world.actor_count();++i){
+            const auto& actor=world.actors()[i];
+            if(!actor.health)continue;
+            const auto& p=actor.position;
+            BattleMvpVec min{p[0]-config.actor_radius,p[1],p[2]-config.actor_radius};
+            BattleMvpVec max{p[0]+config.actor_radius,p[1]+config.actor_height,p[2]+config.actor_radius};
+            if(bodies[i])for(unsigned k=0;k<3;++k){
+                min[k]=std::min(min[k],bodies[i]->low[k]);max[k]=std::max(max[k],bodies[i]->high[k]);
+            }
+            max[1]+=18; // leave room for the aim label above the body
+            for(unsigned k=0;k<3;++k){low[k]=found?std::min(low[k],min[k]):min[k];high[k]=found?std::max(high[k],max[k]):max[k];}
+            found=true;
+        }
+        if(!found)return camera_for(world,width,height);
+        constexpr f32 distance=800.f;
+        const f32 horizontal=distance*.9f;
+        for(unsigned k=0;k<3;++k)camera.target[k]=(low[k]+high[k])*.5f;
+        camera.eye[0]=camera.target[0]-forward.x*horizontal;
+        camera.eye[1]=camera.target[1]+distance*std::sqrt(1.f-.9f*.9f);
+        camera.eye[2]=camera.target[2]-forward.z*horizontal;
+        auto fitted=camera;
+        if(camera_dolly_to_fit_bounds(fitted,low,high,true))return fitted;
+        return camera;
+    }
+    RosterFraming roster_framing(const NativeBattleMvp& world,s32 width,s32 height)const{
+        RosterFraming frame{};
+        // A restart can publish another pose for the same tick. Check the
+        // world scope as well as the tick before using any rendered geometry.
+        if(ready_&&rendered_tick_==world.tick()&&world.owns_motion_scope(rendered_scope_)){
+            for(unsigned i=0;i<world.actor_count();++i)if(world.actors()[i].health){
+                RosterBodyBounds bounds{};
+                if(!package_body_bounds(world,i,&bounds.low,&bounds.high))continue;
+                bool valid=true;
+                for(unsigned k=0;k<3;++k)
+                    valid&=std::isfinite(bounds.low[k])&&std::isfinite(bounds.high[k])&&
+                           bounds.low[k]>=-1e5f&&bounds.high[k]<=1e5f&&bounds.low[k]<=bounds.high[k];
+                if(valid)frame.bodies[i]=bounds;
+            }
+        }
+        frame.camera=roster_camera_for(world,width,height,frame.bodies);
+        return frame;
+    }
     static Camera close_practice_camera(const NativeBattleMvp& world,s32 width,s32 height){
         auto camera=camera_for(world,width,height);
         //Keep the existing target-relative azimuth. Reframe G-Red for
@@ -583,8 +689,13 @@ public:
         camera.eye[2]=camera.target[2]-forward.z*430;
         return camera;
     }
+    static NativeBorgMovementFrame movement_frame(const Camera& camera){
+        NativeBorgMovementFrame frame;
+        native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);
+        return frame;
+    }
     static NativeBorgMovementFrame movement_frame(const NativeBattleMvp& world,s32 width,s32 height){
-        const auto camera=camera_for(world,width,height);NativeBorgMovementFrame frame;native_borg_movement_frame({camera.target[0]-camera.eye[0],camera.target[2]-camera.eye[2]},&frame);return frame;
+        return movement_frame(camera_for(world,width,height));
     }
     static NativeBorgMovementFrame movement_frame_for(const NativeBattleMvp& world,unsigned actor,s32 width,s32 height){
         if(actor>=world.actor_count())actor=0;
@@ -600,20 +711,30 @@ public:
         return NativeBorgMotion(borgs_[0].base_);
     }
     unsigned draw(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,std::string* error,
-                  bool practice_input_refused=false,unsigned viewer=0,const Camera* viewer_camera=nullptr){
+                   bool practice_input_refused=false,unsigned viewer=0,const Camera* viewer_camera=nullptr,
+                   bool shared_roster_view=false,const BattleRosterSeries* series=nullptr){
         projectile_record_draws_=0;
         projectile_trail_draws_=0;
         impact_record_draws_=0;
         package_part_draws_={};
         package_body_draws_={};
         if(!ready_||!world.ready()||width<=0||height<=0||viewer>=world.actor_count())return 0;
+        if(!stage_fades_.empty()&&viewer>=stage_fades_.front().views.size()){
+            if(error)*error="stage fade: viewport outside the two-view scope";
+            return 0;
+        }
         if(world.config().provisional_walk!=provisional_walk_view_||world.config().provisional_jump!=provisional_jump_view_||
            world.config().provisional_ground_dash!=provisional_dash_view_||
            world.config().provisional_air_dash!=provisional_air_dash_view_||
            world.config().provisional_glide!=provisional_glide_view_||
            bool(world.config().provisional_cruise)!=provisional_cruise_view_||
            (provisional_walk_view_&&(rendered_tick_!=world.tick()||!world.owns_motion_scope(rendered_scope_))))return 0;
-        auto camera=viewer_camera?*viewer_camera:
+        const bool roster_view=shared_roster_view&&world.actor_count()>2&&bool(world.config().packages[0]);
+        const unsigned locals=world.config().roster_local_players;
+        if(!roster_view||(series&&!series->owns_round(world)))series=nullptr;
+        const auto round_result=series&&series->ended()?series->outcome():world.result();
+        const auto framing=roster_view?roster_framing(world,width,height):RosterFraming{};
+        auto camera=viewer_camera?*viewer_camera:roster_view?framing.camera:
             source_practice_&&source_practice_close_camera_?close_practice_camera(world,width,height):
             viewer==1?camera_for_actors(world.actors()[1],world.actors()[0],width,height):camera_for(world,width,height);
         camera.viewport_width=width;camera.viewport_height=height;
@@ -630,11 +751,26 @@ public:
         }
         unsigned draws=0;
         bool replace_default=false;
+        const auto focus=roster_view?shared_roster_fade_focus(world,camera,framing.bodies):
+                                     std::array<std::optional<BattleMvpVec>,2>{};
         for(auto& obstacle:stage_fades_){
             const auto& spec=obstacle.profile;auto& fade=obstacle.views[viewer];
             if(spec.gate==StageViewFadeGate::Occlusion){
-                const std::array eye{camera.eye[0],camera.eye[1],camera.eye[2]},target{camera.target[0],camera.target[1],camera.target[2]};
-                fade.update_gate(spec,stage_view_fade_occludes(spec,eye,target),world.tick());
+                const std::array eye{camera.eye[0],camera.eye[1],camera.eye[2]};
+                bool have_subject=false,covered=false;
+                for(const auto& point:focus)if(point){
+                    have_subject=true;
+                    if(stage_view_fade_occludes(spec,eye,*point)){covered=true;break;}
+                }
+                // A single-player view or a shared view with no local in
+                // frame keeps the ordinary camera-target fallback.
+                if(!have_subject)covered=stage_view_fade_occludes(spec,eye,{camera.target[0],camera.target[1],camera.target[2]});
+                fade.update_gate(spec,covered,world.tick());
+            }else if(roster_view){
+                bool near=false;
+                for(unsigned i=0;i<locals;++i)
+                    near|=world.actors()[i].health&&stage_view_fade_near(spec,world.actors()[i].position);
+                fade.update_gate(spec,near,world.tick());
             }else fade.update(spec,world.actors()[viewer].position,world.tick());
             replace_default|=spec.normal==2;
             if(fade.alpha<1&&!obstacle.faded.replace_static_alpha(fade.alpha,error))return 0;
@@ -800,7 +936,7 @@ public:
              16,{255,210,70,u8(252u*impact.ticks/impact.total_ticks)},geometry_,&first,&count);}
         for(const auto& effect:world.impact_records())if(effect.ticks){
             auto& records=impact_record_scenes_[effect.owner];
-            const auto it=records.find(effect.projectile);
+            const auto it=records.find(effect.binding);
             if(it==records.end()){
                 if(error)*error="Borg Battle Test: impact record not bound";
                 render.state()=state;return 0;
@@ -839,7 +975,7 @@ public:
             draws+=render.draw(Primitive::Triangles,first,u32(geometry_.size()))?1:0;
             render.state().texture=0;geometry_.clear();
         }
-        for(unsigned i=0;i<2;++i){const f32 x=i?f32(width)-310:24;ScreenDraw::textured_quad(geometry_,x,24,x+286,42,0,0,0,1,1,{35,35,45,230});ScreenDraw::textured_quad(geometry_,x,24,x+286*f32(world.actors()[i].health)/world.maximum_health(i),42,0,0,0,1,1,i?Tint{100,170,255,255}:Tint{255,100,70,255});}
+        if(!roster_view)for(unsigned i=0;i<2;++i){const f32 x=i?f32(width)-310:24;ScreenDraw::textured_quad(geometry_,x,24,x+286,42,0,0,0,1,1,{35,35,45,230});ScreenDraw::textured_quad(geometry_,x,24,x+286*f32(world.actors()[i].health)/world.maximum_health(i),42,0,0,0,1,1,i?Tint{100,170,255,255}:Tint{255,100,70,255});}
         const auto practice=practice_readout(world);
         if(practice&&width>=200&&height>=190){
             const auto meter=practice->meter;
@@ -847,8 +983,12 @@ public:
             ScreenDraw::textured_quad(geometry_,24,52,24+width_px,62,0,0,0,1,1,{35,35,45,230});
             if(meter.value)ScreenDraw::textured_quad(geometry_,24,52,24+width_px*f32(meter.value)/meter.limit,62,0,0,0,1,1,{255,210,80,255});
         }
-        const auto base=render.append_vertices(geometry_.data(),geometry_.size());draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;
+        if(!geometry_.empty()){
+            const auto base=render.append_vertices(geometry_.data(),geometry_.size());
+            draws+=render.draw(Primitive::Triangles,base,u32(geometry_.size()))?1:0;
+        }
         TextRenderer::Style style;style.scale=width>=1000?2:1;
+        if(roster_view&&height<220)style.scale=1;
         s32 practice_notice_line=3;
         if(practice&&width>=200&&height>=190){
             const auto meter=practice->meter;
@@ -952,13 +1092,31 @@ public:
             status=std::string("PACKAGE BATTLE TEST / TEST COMBAT\n")+
                 (has_b?"SPACE B":"B NOT IMPLEMENTED")+"   Q RESTART\n"+
                 (has_x?"E: X MOVE":"X NOT IMPLEMENTED");
-            if(world.actor_count()>2)status+="\nP2: I J K ; MOVE   U B   H JUMP   O X";
+            if(world.config().local_aim_cycle){
+                status+="   Z TARGET";
+                if(locals==2)status+="\nP2: IJK/SEMI  U B  H JUMP  O X  . TARGET";
+            }
+            else if(world.actor_count()>2)status+="\nP2: I J K ; MOVE   U B   H JUMP   O X";
         }
-        if(world.result()!=BattleMvpResult::Fighting)status+="\n"+std::string(
-            world.result()==BattleMvpResult::GRedWins?(package?"PLAYER 1 WINS":"G-RED WINS"):
-            world.result()==BattleMvpResult::SasukeWins?(package?"PLAYER 2 WINS":"SASUKE WINS"):"DRAW")+" - Q TO RESTART";
+        if(round_result!=BattleMvpResult::Fighting){
+            if(series){
+                const auto winner=series->winner();
+                status+='\n';
+                if(series->timed_out())status+="TIME - ";
+                if(winner!=255)status+="TEAM "+std::to_string(winner)+" WINS MATCH";
+                else{
+                    if(round_result==BattleMvpResult::Draw)status+="ROUND DRAW";
+                    else status+="TEAM "+std::to_string(round_result==BattleMvpResult::GRedWins?0:1)+" WINS ROUND";
+                }
+                status+=locals==2?" - Q/N":" - Q";
+                status+=winner!=255?" REMATCH":series->keeps_score()?" NEXT ROUND":" RESTART";
+            }else status+="\n"+std::string(
+                round_result==BattleMvpResult::GRedWins?(roster_view?"TEAM 0 WINS":package?"PLAYER 1 WINS":"G-RED WINS"):
+                round_result==BattleMvpResult::SasukeWins?(roster_view?"TEAM 1 WINS":package?"PLAYER 2 WINS":"SASUKE WINS"):"DRAW")+" - Q TO RESTART";
+        }
         else if(world.paused())status+=source_practice_?"\nPAUSED AT TICK "+std::to_string(world.tick()):"\nPAUSED";
-        if(package&&world.actor_count()>0){
+        if(roster_view)draws+=draw_roster_health(render,world,width,height,style,series);
+        else if(package&&world.actor_count()>0){
             const auto& self=world.actors()[0];
             // A 20-cell bar per actor. The maximum comes from that actor's own
             // profile health, so the bar cannot imply a shared scale.
@@ -988,8 +1146,43 @@ public:
             }
             draws+=text_.draw(render,hud,24,16,style);
         }
-        const s32 status_y=source_practice_?std::max(0,height-16-
+        if(series&&series->tick_limit()&&width>=90&&height>=48){
+            const u32 seconds=(series->remaining_ticks(world)+kBattleRosterTicksPerSecond-1)/kBattleRosterTicksPerSecond;
+            const auto clock="TIME "+std::to_string(seconds/60)+(seconds%60<10?":0":":")+std::to_string(seconds%60);
+            draws+=text_.draw_centered(render,clock,width/2,width<248||height<156?16:4,style);
+        }
+        if(world.config().local_aim_cycle&&round_result==BattleMvpResult::Fighting){
+            const std::array targets{world.aim_target_of(0),locals==2?world.aim_target_of(1):u8(255)};
+            const bool shared=targets[0]!=255&&targets[0]==targets[1];
+            for(unsigned local=0;local<locals;++local){
+                const auto target=targets[local];
+                if(target==255)continue;
+                auto point=world.actors()[target].position;
+                point[1]+=world.config().actor_height;
+                if(const auto& bounds=framing.bodies[target]){
+                    point[0]=(bounds->low[0]+bounds->high[0])*.5f;
+                    point[1]=std::max(point[1],bounds->high[1]);
+                    point[2]=(bounds->low[2]+bounds->high[2])*.5f;
+                }
+                point[1]+=18;
+                f32 x=0,y=0;
+                if(!camera.project(point.data(),&x,&y,nullptr)||!(x>=0&&x<width&&y>=0&&y<height))continue;
+                auto label_style=style;label_style.scale=2;
+                label_style.r=local?115:255;label_style.g=local?220:205;label_style.b=local?255:90;
+                auto shadow=label_style;shadow.r=shadow.g=shadow.b=24;
+                const auto label=local?"P2 AIM":"P1 AIM";
+                const s32 margin=1+text_.measure_width(label,label_style)/2;
+                if(width<=2*margin)continue;
+                const s32 sx=std::clamp(s32(x),margin,width-margin);
+                const s32 line=text_.line_height(label_style);
+                const s32 sy=shared?std::max(0,s32(y)-2*line)+s32(local)*line:std::max(0,s32(y)-line);
+                draws+=text_.draw_centered(render,label,sx+1,sy+1,shadow);
+                draws+=text_.draw_centered(render,label,sx,sy,label_style);
+            }
+        }
+        const s32 status_y=(source_practice_||roster_view)?std::max(0,height-16-
             s32(1+std::count(status.begin(),status.end(),'\n'))*text_.line_height(style)):height-80;
+        if(roster_view)draws+=draw_roster_resources(render,world,width,status_y,style);
         draws+=text_.draw(render,status,24,status_y,style);render.state()=state;return draws;
     }
     unsigned projectile_record_draws()const{return projectile_record_draws_;}
@@ -1010,6 +1203,10 @@ public:
     }
     unsigned projectile_trail_draws()const{return projectile_trail_draws_;}
     unsigned impact_record_draws()const{return impact_record_draws_;}
+    bool package_pose_held(const NativeBattleMvp& world,unsigned actor)const{
+        return actor<world.actor_count()&&rendered_tick_==world.tick()&&world.owns_motion_scope(rendered_scope_)&&
+            borgs_[model_slot(world,actor)].package_pose_held();
+    }
     std::optional<f32> stage_view_alpha(unsigned viewer,u16 record=2)const{
         if(viewer>=2)return {};
         for(const auto& obstacle:stage_fades_)if(obstacle.profile.normal==record&&obstacle.views[viewer].sampled)
@@ -1017,6 +1214,142 @@ public:
         return {};
     }
 private:
+    static std::array<std::optional<BattleMvpVec>,2> shared_roster_fade_focus(
+        const NativeBattleMvp& world,const Camera& camera,const RosterBounds& bodies){
+        std::array<std::optional<BattleMvpVec>,2> focus{};
+        const f32 left=f32(camera.viewport_x),top=f32(camera.viewport_y);
+        for(unsigned i=0;i<world.config().roster_local_players;++i){
+            const auto& actor=world.actors()[i];
+            if(!actor.health)continue;
+            auto point=actor.position;
+            point[1]+=world.config().actor_height*.5f;
+            if(bodies[i])for(unsigned k=0;k<3;++k)point[k]=(bodies[i]->low[k]+bodies[i]->high[k])*.5f;
+            f32 x=0,y=0;
+            if(camera.project(point.data(),&x,&y,nullptr)&&x>=left&&x<left+camera.viewport_width&&
+               y>=top&&y<top+camera.viewport_height)focus[i]=point;
+        }
+        return focus;
+    }
+    unsigned draw_roster_resources(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 status_y,
+                                   const TextRenderer::Style& style){
+        constexpr s32 margin=24,gap=16;
+        const s32 column=(width-2*margin-gap)/2;
+        const s32 line=text_.line_height(style);
+        // Leave room for the largest team health panel (including both
+        // charges) and for the session/control status underneath us.
+        const s32 clear_top=16+line+3+3*(line+8)+2*line+12;
+        const s32 rows=(status_y-clear_top-8)/line-1;
+        if(column<100||rows<1)return 0;
+        unsigned draws=0;
+        for(unsigned local=0;local<world.config().roster_local_players;++local){
+            const auto& profile=*world.config().packages[local];
+            if(!world.actors()[local].health)continue;
+            const auto stock=borg_stock_hud(profile,world.package_action(local));
+            const auto mobility=borg_mobility_hud(profile,world.actors()[local]);
+            const bool show_mobility=mobility&&(rows>1||!stock.count);
+            const unsigned shown=std::min(stock.count,unsigned(rows)-unsigned(show_mobility));
+            if(!shown&&!show_mobility)continue;
+            const s32 x=local?margin+column+gap:margin;
+            s32 y=status_y-s32(shown+unsigned(show_mobility)+1)*line-8;
+            auto title="P"+std::to_string(local+1)+(show_mobility?" STATUS":" AMMO");
+            if(shown<stock.count)title+=" +"+std::to_string(stock.count-shown);
+            draws+=text_.draw(render,title,x,y,style);y+=line;
+            if(show_mobility){
+                auto tint=style;tint.r=137;tint.g=205;tint.b=246;
+                draws+=text_.draw(render,borg_mobility_text(*mobility),x,y,tint);y+=line;
+            }
+            for(unsigned i=0;i<shown;++i,y+=line){
+                const auto& row=stock.rows[i];
+                auto text=std::string(borg_stock_hud_buttons(row.buttons))+" "+
+                    std::to_string(row.current)+"/"+std::to_string(row.capacity);
+                auto tint=style;
+                std::string_view status;
+                if(row.phase==BorgStockHudPhase::Refill){tint.r=255;tint.g=222;tint.b=92;status=" REFILL";}
+                else if(row.phase==BorgStockHudPhase::Return){tint.r=130;tint.g=222;tint.b=217;status=" RETURN";}
+                else if(row.phase==BorgStockHudPhase::Empty){tint.r=tint.g=tint.b=160;status=" EMPTY";}
+                if(text_.measure_width(text+std::string(status),style)<=column)text+=status;
+                // Two pools used by the same button are real separate
+                // channels. Keep their names, not an invented combined count.
+                for(unsigned j=0;j<stock.count;++j)if(j!=i&&(row.buttons&stock.rows[j].buttons)){
+                    auto id=profile.stocks[row.channel].id;
+                    for(auto& c:id){
+                        if(c>='a'&&c<='z')c=char(c-'a'+'A');
+                        if(!TextRenderer::covers(c))c='?';
+                    }
+                    while(!id.empty()&&text_.measure_width(text+" "+id,style)>column)id.pop_back();
+                    if(!id.empty())text+=" "+id;
+                    break;
+                }
+                draws+=text_.draw(render,text,x,y,tint);
+            }
+        }
+        return draws;
+    }
+    unsigned draw_roster_health(RenderEngine& render,const NativeBattleMvp& world,s32 width,s32 height,
+                                const TextRenderer::Style& style,const BattleRosterSeries* series){
+        constexpr std::array<Tint,2> colors{{{255,175,83,255},{108,178,255,255}}};
+        constexpr s32 margin=16,gap=16;
+        const s32 column=std::min(286,(width-2*margin-gap)/2);
+        const s32 line=text_.line_height(style);
+        const bool compact=column<100||height<156;
+        const bool scored=series&&series->keeps_score();
+        const unsigned local_count=world.config().roster_local_players;
+        unsigned draws=0;
+        geometry_.clear();
+        for(unsigned team=0;team<colors.size();++team){
+            const auto color=colors[team];
+            auto team_style=style;team_style.r=color.r;team_style.g=color.g;team_style.b=color.b;
+            const auto score=scored?std::to_string(series->wins()[team])+"/"+std::to_string(series->goal()):std::string{};
+            const auto heading="TEAM "+std::to_string(team)+(scored?" WINS "+score:"");
+            if(compact){
+                if(scored){
+                    const auto summary="T"+std::to_string(team)+" W"+score;
+                    draws+=text_.draw_centered(render,summary,s32(team?3:1)*width/4,4,team_style);
+                    continue;
+                }
+                unsigned total=0,alive=0;
+                for(unsigned i=0;i<world.actor_count();++i)if(world.actors()[i].team==team){
+                    ++total;alive+=world.actors()[i].health!=0;
+                }
+                const auto summary="T"+std::to_string(team)+" "+std::to_string(alive)+"/"+std::to_string(total);
+                draws+=text_.draw_centered(render,summary,s32(team?3:1)*width/4,4,team_style);
+                continue;
+            }
+            const s32 x=team?width-margin-column:margin;
+            s32 y=margin;
+            draws+=text_.draw(render,heading,x,y,team_style);y+=line+3;
+            for(unsigned i=0;i<world.actor_count();++i){
+                const auto& actor=world.actors()[i];
+                if(actor.team!=team)continue;
+                const auto slot=std::string(i<local_count?"P":"CPU ")+std::to_string(i+1);
+                const auto maximum=world.maximum_health(i);
+                auto row_style=style;
+                if(!actor.health)row_style.r=row_style.g=row_style.b=160;
+                const auto label=slot+(actor.health?"  "+std::to_string(actor.health)+"/"+std::to_string(maximum):"  KO");
+                // On a narrow resize keep at least the slot label.
+                draws+=text_.draw(render,text_.measure_width(label,row_style)<=column?label:slot,x,y,row_style);
+                const f32 bar_y=f32(y+line);
+                ScreenDraw::textured_quad(geometry_,x,bar_y,x+column,bar_y+4,0,0,0,1,1,{35,35,45,230});
+                if(maximum&&actor.health){
+                    const auto filled=f32(column)*std::min(actor.health,maximum)/maximum;
+                    ScreenDraw::textured_quad(geometry_,x,bar_y,x+filled,bar_y+4,0,0,0,1,1,color);
+                }
+                y+=line+8;
+                if(i<local_count&&actor.health){
+                    const auto gauge=battle_charge_gauge(actor.package_charge_total,actor.package_action_born,world.tick());
+                    if(gauge.total){
+                        const auto charge="CHARGE "+std::to_string(gauge.elapsed)+"/"+std::to_string(gauge.total);
+                        draws+=text_.draw(render,charge,x,y,team_style);y+=line;
+                    }
+                }
+            }
+        }
+        if(!geometry_.empty()){
+            const auto base=render.append_vertices(geometry_.data(),geometry_.size());
+            if(render.draw(Primitive::Triangles,base,u32(geometry_.size())))++draws;
+        }
+        return draws;
+    }
     bool fit_walk_camera(Camera& camera,std::string* error)const{
         BattleMvpVec low,high;
         if(!borgs_[0].scene_.bounds(&low,&high)){if(error)*error="walk lab: current body bounds required";return false;}

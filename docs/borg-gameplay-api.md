@@ -111,6 +111,96 @@ round, tick, selected move, marker, debit, object result, recipient and
 retirement. `--borg-variant` and `--against-variant` can request an exact
 variant; this version only accepts the profile's declared base variant.
 
+### Choose a roster
+
+Add `--roster-borg TEAM ID` once per CPU fighter, with team `0` or `1`.
+`--battle-borg` and `--against-borg` are the two local players on teams 0
+and 1. Each team can have up to two additional fighters. For example,
+using locally installed packages:
+
+```sh
+gf_native --battle-borg test:arc-scout --against-borg test:blade-scout \
+  --roster-borg 0 test:grapple-scout --roster-borg 1 test:seeker-scout \
+  --roster-borg 0 test:guard-scout --roster-borg 1 test:wingmate-scout
+```
+
+For a reusable roster on an authored stage, use
+[`--battle-roster FILE`](portable-content-v1.md#reusable-battle-test-rosters)
+instead of listing the fighters and spawn markers on every launch.
+Use `--list-battle-rosters DIRECTORY` to discover presets and
+`--check-battle-roster FILE` to check startup without playing. Use
+`--browse-battle-rosters DIRECTORY` to pick and launch a preset in the desktop window.
+Presets also support local co-op: set both local rows to team `0` and
+add at least one CPU on team `1`. Set `locals=1` to play without a
+second local player; only the first fighter is then under local control.
+Set `rounds-to-win=2` for a first-to-two
+match instead of playing isolated rounds. Add `round-seconds=45` for a
+round timer; expiry compares the teams' remaining HP fractions.
+
+CPU fighters use the package's move range and timing. They close in for
+short-range attacks and prefer a ready B attack. They can use X when B
+isn't ready, including while B's stock refills. They check entry stock
+and the first release cost, and release held fire when that weapon empties.
+They can hold for a charge and take a simple jump for air-only attacks.
+For direct melee they also check the target's height. They can hop to
+meet a reachable high target if the move is allowed in the air, but do
+not try to jump to unreachable targets or turn a grounded move into an
+aerial one. This is a planning estimate; contact is still resolved at
+the move's actual active frames.
+The normal scheduler still owns move selection, ammo, release timing,
+and contact. In this native test AI, short-range fighters with ordinary movement can go around
+authored partitions or turn toward a different enemy with a clear
+approach. This changes their aim, not which body an attack actually
+hits. They do not plan around fighters or floor hazards.
+The planner does not reproduce retail tactics or tap combos.
+
+Both local players move relative to the same resizable camera. It fits
+each living fighter's posed body and collision proxy without rotating
+when an aim target changes. Aim labels sit above the visible body.
+Health and KO status are grouped by team; very small windows show
+surviving fighters per team instead.
+Authored obstacle fades in this shared view account for both living
+local players, not just the player in the first slot.
+
+The roster HUD shows ammo for each living local player. These are live
+stock-pool counts, not a count of remaining attacks. B/X means that
+both buttons reference the same pool. `REFILL` means its timed clock
+is active; `RETURN` marks a depleted return-only pool, without
+predicting when or whether it comes back. Attacks that do not reference
+a stock pool show no counter. The HUD can omit extra rows in a small
+window; `--trace-package-battle` reports local changes as `borg-ammo`.
+
+Configured movement resources appear beside ammo: `LIFT` (remaining
+powered-lift ticks), `JUMPS` (including takeoff), `AIR ACTIONS` (a shared
+jump-and-dash budget), or `BOOST` (cruise boost units). These readings
+come from the live native actor; they do not predict whether the next
+input will be accepted. Fighters without one of these authored resources
+get no movement counter. The trace reports local changes as `borg-mobility`.
+
+P2 moves with I/J/K/;, uses H to jump, M to dash, comma to strafe, U
+for B and O for X. N restarts, and keypad Enter pauses.
+`--package-battle-distance` adjusts separation between team columns.
+
+Aim starts on the nearest opponent. Press the controller's **right
+shoulder** (P1 keyboard **Z**, P2 **.**) to cycle through living opponents
+in slot order. The `P1 AIM` and `P2 AIM` labels show each player's current
+selection. When a target is defeated, aim returns to the nearest living
+opponent. Restarting clears both selections. Cycling does not turn the
+body, retarget a committed launch or an in-flight shot, or override
+physical contact. If co-op players aim at the same fighter, both
+labels are shown above it.
+
+Explicit rosters require native package movement. Use the standalone arena
+(`--battle-mvp-assets`) or an [authored stage](portable-content-v1.md#stages).
+With an authored stage, supply `--borg-variant` and `--against-variant`
+for the local players and one distinct `--stage-spawns` marker per actor:
+P1, P2, then CPU fighters in `--roster-borg` order. Stage markers replace
+the default team columns and cannot be combined with
+`--package-battle-distance`. Additional packages use their default variants.
+If using indexed damage, supply one rank per actor in the same slot order.
+Explicit rosters do not combine with the mirrored `--demo-roster-battle`,
+battle picker, or borrowed source-motion actors.
+
 ## Profile
 
 In a `GFBORG 2` manifest declare `gameplay=gameplay.txt`. The file is optional:
@@ -301,9 +391,19 @@ release=arc-twin|6|arc-stock|1|arc
   launch timing, aiming and rendered stars are not exact retail playback.
 - `pose-loop-window=move|authored-bit` accepts the uniform authored loop
   flag for one explicitly named action on a grounded record-zero body.
-  The entire native action sample window must fit within the exact clip:
-  it never wraps or runs the source AObj lifecycle. Mixed flags and other
-  unsupported metadata still refuse.
+  Its native sample window must fit within the exact clip: it never wraps
+  or runs the source AObj lifecycle. On a move with a pose follow-up this
+  flag applies only to the initial clip. Mixed flags and other unsupported
+  metadata still refuse.
+- `pose-followup=move|switch tick|group:choice|start frame` plays one
+  second exact local clip on a grounded, animated melee-only move. The
+  switch must be after tick 0 and no later than the first melee-active
+  tick. Before the switch the lead-in uses the ordinary `pose-start`
+  clock; from the switch the second clip starts at `start frame`. Both
+  assigned windows must fit, and the second clip uses strict metadata
+  validation. No missing-clip substitution, loop, or blend is implied.
+  This changes presentation only: the move, hitbox, activation, and
+  damage clocks are unchanged.
 - `projectile-record=projectile|record|scale percent` replaces an `orb`'s
   procedural appearance with a static drawable record from the owning
   package's model archive. Record indices are 1–31 and scale is 1–400%.
@@ -495,12 +595,26 @@ release=arc-twin|6|arc-stock|1|arc
   windows are stockless; an optional projectile marker is a separate
   operation. This is native body-proxy contact, not recovered retail hit
   geometry, wall occlusion, or a continuous bone sweep.
+- `contact-power=move|base` opts one direct melee-only or ordinary
+  projectile-only move into a different positive HP base (`1..10000`).
+  Projectiles capture the base at emission without altering their shared
+  definition or other moves. Melee supplies it at accepted contact. In
+  either case, existing power-field, role and hit-chain scaling remains
+  in charge of the final amount. Mixed moves, child producers, blasts,
+  sustained beams, rewind/anchor actions and fields cannot bind this key.
+  It does not change collision, timing, stock or receiver rules.
+- `contact-minimum=move|1` optionally keeps a positive, accepted direct
+  hit from truncating to zero HP after its final multiplier. It has
+  the same direct-move restrictions as `contact-power`; a rejected hit,
+  zero base, or a native product explicitly scaled to zero stays zero.
+  Without this key, the existing native truncation is unchanged.
 - `damage-factors=credit|scalar|receiver-rank|relative` and
   `damage-chain=first|second|third|fourth` scale every package hit for the
   declaring package. The four factors are the measured contact multipliers
   (credit rows, battle scalar, receiver rank, relative); the chain is the
-  successive-hit tier row (`1.0|0.8|0.5|0.25` in the recovered G-Red/Sasuke
-  case). Both default to neutral, so a package that omits them keeps its
+  legacy authored hit-count approximation, which can use the first
+  four source tier factors (`1.0|0.8|0.5|0.25`). Both default to neutral,
+  so a package that omits them keeps its
   authored damage. The chain resets after a 30-tick gap or when the
   attacker changes. These are scale factors, not recovered hit geometry or
   per-Borg branches.
@@ -519,6 +633,115 @@ release=arc-twin|6|arc-stock|1|arc
   This mirrors the original's side-paired credit rows. The battle host also
   supplies a damage scalar (the recovered settings-ladder value); it multiplies
   the profile factors before the hit-chain row.
+- `damage-credit=team|difficulty|attacker-rank` and
+  `damage-receive=team|class|receiver-rank` declare independent roles. Each
+  declared role requires exactly one row for team 0 and one for team 1, with
+  finite factors in `[0.01, 4]`. For direct melee and ordinary direct
+  projectiles, the engine multiplies the attacker's credit row and the
+  actual recipient's receive row, chosen by their respective teams.
+  Without both roles it does not apply a partial multiplier. Blasts,
+  fields, detached children and sustained beams do not use the split
+  rows. Credit cannot coexist with legacy `damage-factors`, `damage-side`
+  or `damage-vs` in the same attacking profile; receivers may still declare
+  their own old attack policy independently. The battle scalar and optional
+  hit chain apply as before. These rows contain a caller-chosen snapshot,
+  not a mechanism for selecting live battle settings.
+- `damage-credit-setting`, `damage-receive-setting`,
+  `damage-credit-rank`, and `damage-receive-rank` each have the format
+  `team|cell0|...`. Supply 32 setting cells and 8 rank cells, all finite
+  factors in `[0.01, 4]`, for each of both teams. Each indexed role must
+  be complete and also declare its corresponding fixed role above.
+  The caller may supply two setting indices (`0..31`, by team) and one
+  rank index (`0..7`) per active actor at round start. This replaces
+  the fixed role components on direct split-role hits; it does not
+  stack with them or change the other stages. A declared fixed role
+  without matching indexed rows refuses that round setup, as does a
+  round with no indexed roles at all. An actor
+  with no receiving role does not acquire one through round settings.
+  With no round selection, existing fixed rows are used as before.
+- `damage-matchup-group=id` assigns a package to an optional named group
+  for the split damage roles. `damage-matchup-from=attacking-group|factor`
+  declares an incoming multiplier on a **receiver** with `damage-receive`.
+  It is selected by the attacking package's group, not by team, model ID,
+  or roster index. Up to 20 distinct incoming rows are allowed, with
+  finite factors in `[0.01, 4]`. Missing matches use 1. A matchup applies
+  only on a direct hit with both split roles present and both actors
+  alive. It is multiplied after credit/rank and before receiver
+  class/rank. Legacy attack rows and indirect hits never borrow it.
+- `damage-receive-hp=team|cell0|...|cell31` and
+  `damage-receive-force=team|cell0|...|cell31` optionally refine the split
+  receiving role. Each declared ladder requires both teams and exactly
+  32 finite factors per row (`[0.01, 4]`). HP selection subtracts the raw
+  base, not the scaled or power-field-modified amount, from current HP.
+  Probes above 200 are neutral; otherwise it uses
+  `min(31, 32 - floor(32 * probe / min(maxHP, 200)))` with probe floored at
+  zero. The force ladder uses `min(31, 32 - floor(32 * remaining / cap))`
+  from the receiving team's pre-hit ledger; no configured cap is neutral.
+  These factors do not run without both split roles or on indirect hits.
+- `damage-credit-hp=team|cell0|...|cell31` and
+  `damage-credit-force=team|cell0|...|cell31` declare the outgoing
+  equivalents. The HP probe uses current attacker HP without subtracting
+  the hit base; the force probe uses the attacking team's pre-hit ledger.
+  A package can bind one set of outgoing curves and must opt individual
+  direct moves in with `damage-credit-ladders=move`. Unmarked moves,
+  defeated attackers and indirect hits do not borrow the rows. Each
+  declared curve needs both teams and a complete `damage-credit` role.
+  Outgoing curves are applied after credit difficulty and before
+  attacker rank, matchup and receiving factors.
+- `damage-tier-receive=idle-ticks|cell0|...|cell63` declares a receiver
+  meter with a `1..600` tick idle window and 64 finite factors in
+  `[0.01, 4]`. It requires `damage-receive`. A package with `damage-credit`
+  can add `contact-tier=move|charge|scale` (or `bypass`) to a direct
+  melee-only or ordinary projectile-only move. On an accepted hit with
+  both roles and declarations, `scale` uses the current tier after
+  receiver rank; `bypass` omits only that multiplier. Both refresh the
+  window and add charge (`0..255`) after the hit. At 100 the meter
+  discards overflow and advances one tier, capped at 63. The meter
+  persists across different attackers but clears on expiry, defeat or
+  restart. `contact-tier` cannot coexist with the declaring attacker's
+  legacy `damage-chain`; unmarked or indirect hits do not advance it.
+- `damage-tier-reset=capacity` (`1..32767`) and
+  `contact-tier-reset=move|wear` (`0..255`) optionally add a separate
+  reset gauge. The receiver must declare `damage-tier-receive`, and the
+  move must declare `contact-tier`. Without both reset declarations,
+  the hit does not touch the gauge. Damage still samples the old tier.
+  After the hit, wear is subtracted; at zero or below, refill the gauge
+  and clear the tier and charge before adding this hit's charge.
+  Further hits that tick still charge the tier but cannot wear the
+  freshly refilled gauge. The gauge has its own idle countdown with the
+  receiver's same `idle-ticks` duration. This does not lock movement,
+  change the existing hit interrupt, or select a stagger animation.
+- `contact-sound-band=0..3` declares a receiver's contact audio band.
+  `contact-sound=move|band|lane|even-path|odd-path` declares a local
+  PCM pair for one band on a direct melee-only or ordinary
+  projectile-only move. The lane (`0..12`) shares an alternation
+  counter across moves striking the same receiver. An accepted cue
+  starts a four-tick receiver cooldown; further hits in that window
+  do not play or advance the counter. A missing band or pair plays
+  nothing. A move may not also declare projectile actor-impact
+  retirement audio. Both paths are bounded package-relative stereo
+  48 kHz s16le PCM, loaded before battle.
+- `contact-impact-receive=normal` opts a receiver into move-bound
+  hit visuals. `contact-impact=move|team|record|scale-percent|ticks`
+  binds one static layer from the local `impact-record-bank`.
+  Both attacking teams need 1–3 distinct record IDs (`1..255`) per
+  move, with scale `1..400` percent and lifetime `1..120` ticks. Use
+  only on direct melee or ordinary projectile-only moves, not together
+  with actor-impact retirement art on a projectile from that move.
+  Layers replace the normal hit ring at the existing contact
+  cooldown; missing receiver admission or insufficient visual slots
+  retains the ring. This does not change hit geometry, damage, audio
+  or stock. Records share the existing static impact presenter.
+- `contact-pose-hold=move|ticks|receiver` or `...|bodies` holds the
+  preceding local skeletal sample for `1..7` native ticks on an
+  accepted direct hit. `bodies` also holds the attacking body and is
+  melee-only. Each participant must declare
+  `contact-pose-hold-receive=normal` and use its own native package pose.
+  Overlapping holds take the greater remaining count rather than
+  adding. The deliberately presentation-only hold keeps the live root,
+  reaction angles, attachment clocks and bone/socket queries; movement,
+  collision, attack timing and resources continue normally. Missing
+  snapshots, defeated actors and borrowed source poses are not held.
 - `damage-attack-key=key`, `damage-mask=bits` and `damage-immunity=key`
   (repeatable, up to 48) declare the recovered `8002FD7C` pair-relation fields
   for the MVP hit boundary. Before a package hit is applied, the engine tests
@@ -527,28 +750,44 @@ release=arc-twin|6|arc-stock|1|arc
   packages keep every hit. `damage-kind=0..255` declares the actor class for
   the class rules; the MVP supplies zero record flags, so only the immunity and
   mask rules change behaviour today.
-- `reaction-mode=move|0..3` selects the recovered `800300BC` reaction direction
-  for hits from that move. Modes 1/3 use the attacker/receiver positions (link
-  and side `+0x64`, both mapped to the native actor positions). Modes 0/2 read
-  a source pair-position delta; the native analogue is the attacker's per-tick
-  velocity. The source reads the mode from a signed byte at the attacker's
-  move-table entry `+0x0E`; modes 4/5 and the default use vectors the native
-  actor does not have and are refused at load (content can declare the
-  explicit mode-1 fallback). The default is 1. The
+- `reaction-mode=move|0..4` selects a native mapping of the `800300BC` reaction
+  direction for hits from that move. On a direct main-move free-flight
+  projectile hit, mode 0 uses the projectile's actual
+  displacement up to contact, and mode 2 uses its full tested centre sweep.
+  Both use the live projectile velocity only when that displacement is zero.
+  Unsampled contact paths keep the planar attacker-velocity approximation.
+  Explicit mode 1 subtracts the actual carrier origin from the receiver's
+  body origin on that same path. Mode 3 instead subtracts the native proxy
+  centres: clipped projectile position or melee capsule midpoint against
+  the target cylinder midpoint. Without a qualified sample, modes 1 and 3
+  use the two actor origins. Omitting `reaction-mode` keeps the existing
+  caster-to-receiver default, including for projectiles.
+  The source reads the mode from a signed byte at the attacker's
+  move-table entry `+0x0E`. Mode 4 uses the attacking proxy's planar
+  world-root forward at contact on a melee-only move. A projectile-only
+  move requires the explicit `reaction-root` binding below. Mixed or
+  indirect moves cannot declare it. Values outside 0–4 are refused.
+  Content can explicitly declare a labelled mode-1 approximation. The default is 1. The
   engine writes the receiver's yaw/pitch relative to its facing (the source
   writes absolute link-object angles) and presents them on the upper-body root
   for an authored 8-tick window. The provisional G-Red exact-clip path keeps
   its existing no-aim rule but adds the reaction angles, so the hit pose shows
-  without injecting attack aim. The attack-table yaw/pitch offsets
-  (`+0x14`/`+0x15`) are not yet recovered, and the pitch bone axis is an
-  authored native mapping.
+   without injecting attack aim. The pitch bone axis is an authored native
+   mapping.
 - `reaction-offset=move|yaw|pitch` declares the recovered attack-table bytes
   (`+0x14`/`+0x15`) subtracted from the reaction angles. Each value is a signed
   byte in 0x100 16-bit-angle units (one full turn per 256), from -128 to 127.
-  The default is 0|0. The per-move retail values are not yet extracted; the key
-  lets a package carry them once they are. A hit without an explicit move (a
-  field core or wave) uses the attacker's active package move, matching the
-  source's current attack-table index.
+   The default is 0|0. The roster extractor emits offsets for reviewed
+   projectile and direct neutral close-B moves whose steps agree. A hit
+   without an explicit move can use the attacker's active package move; it
+   does not inherit mode 4 or its offsets without the move's direct basis.
+- `reaction-root=move|linked-owner` requires mode 4 and a projectile-only
+  move. Every release must be a direct damaging contact, not a blast, field,
+  sustained beam, child producer, anchor, or rewind. The shot takes the
+  living original owner's planar forward at contact, even if the attack
+  has ended. If the owner is defeated, the direct hit still applies damage
+  with the unbound default reaction. The root is never reassigned to a
+  replacement actor or inferred from flight direction, aim, or target.
 - `activation=move|release-window|min ticks|max ticks` opts a move into
   selection on **physical button release**. Hold bounds are inclusive,
   from 0 to 600 qualifying simulation ticks. Two moves can share a
@@ -626,6 +865,14 @@ The trace reports remaining spin in thousandths (`held-fire-start` and
 
 ### Movement effect and sound bindings
 
+The shared native mixer binds samples by actor slot for the entire
+round. Roster actors can share the same package assets without sharing
+playback cursors. Movement, launch, paid-release, action, impact and
+contact cues all use those slots. The mixer reserves space for bound
+movement lanes and drops new cues at its limit rather than cutting
+existing voices or changing the battle. Starting a new round clears the
+old cursors.
+
 ```text
 movement-effect=left-jet|rise|jet|0|-25|22|-42|54|0
 movement-effect=dust|landing|puff|0|0|0|0|72|20
@@ -689,6 +936,24 @@ policy, not reconstructed sound timing, pan or envelopes. The
 separate intro and battle evidence. G-Red's twin jets and Sasuke's dust and
 air-jump puffs remain authored visual effects, not retail emitters.
 
+### Direct contacts in roster battles
+
+In roster battles with more than two actors, a direct shot or pure melee
+window tests all eligible enemies with the existing collision proxy, rather
+than only the current aim target. It contacts at most one body: smallest
+sweep fraction first, later slot on a tie. Only that recipient can block.
+For shots, an earlier or tied surface still wins. This does not change aim
+or move admission. Duel contacts keep the previous policy. Sustained
+beams use the same contact ordering at each eligible pulse; area effects
+follow their own recipient rules below.
+
+In the same roster scope, native movement checks every other living
+body, including allies and damage-immune fighters. Body checks use the
+existing vertical overlap and swept planar radius. Walking and cruise
+clip at the first blocker, a clipped dash uses its existing exit rule,
+and a blocked pull or rewind refuses without moving partway. Externally
+accepted source-motion offers retain their original validation path.
+
 ### Directional guards
 
 `guard=move|first frame|last frame|half angle radians|contacts|mask` arms a
@@ -722,9 +987,10 @@ a known retiring floor impact; `stage` requires an accepted static-stage
 segment hit; `impact` allows actor contact or the contact supplied by the
 chosen environment policy. `expiry` uses the carrier's lifetime; `remote` needs a
 separate command. Contact or floor retirement, unavailable floor, leaving the
-arena, and restart don't count as fuse expiry. Recipients are `opponent` or `all`
-(explicitly includes the owner). Radius is tested against current body centres
-in the native duel. The ring is presentation only; it cannot cause damage.
+arena, and restart don't count as fuse expiry. `opponent` affects
+living enemies only. `all` also includes allies and the owner if in
+range. Radius is tested against current body centres. The ring is
+presentation only; it cannot cause damage.
 
 Direct damage is independent. A zero-direct-damage carrier must declare a
 blast. Set `actor-contact=projectile|ignore` for a carrier that should pass
@@ -764,6 +1030,15 @@ sustained-beam damage during the declared period after an accepted hit,
 including the hit tick. This opt-in does not change ordinary projectile
 or melee recovery. A miss, block, or protected tick isn't accumulated
 and does not retire the beam.
+
+In roster battles, a main-move beam pulse tests the clipped segment
+against all living enemies that pass the pair-relation gate, without
+changing its launch aim or steering. Only the first body along the
+segment is considered; an exact tie keeps the later actor slot. A
+guarded or recovering body consumes that pulse rather than allowing a
+hit farther down the beam. This changes which body can take damage,
+not the beam's visible length or eligibility for direct-only damage
+rows. Duel and detached-effect behavior is unchanged.
 
 This pilot accepts direct single releases. Use `ignore-floor` to pass
 through geometry or `clip-on-stage` to stop the visible and damaging
@@ -1046,8 +1321,10 @@ inferred retail homing algorithm or vertical target steering.
 proximity exit to a single `land-on-floor` carrier with ignored direct
 actor contact and an `expiry` blast. The arming clock counts from
 allocation; sensing requires an already-landed bomb with current floor
-support. The engine checks the current opponent's body centre, not the
-aim target or a contact carried over from another tick.
+support. The engine selects the living enemy whose body centre is
+nearest to the bomb in 3D; exact ties keep the later actor slot. It
+does not use the caster's aim target or last contact. The sensor
+does not apply damage filters.
 
 `blast` uses the same area spec as expiry. Use `retire` if proximity
 should end the carrier quietly while expiry still blasts. Under this
@@ -1060,7 +1337,7 @@ trace is a sensor result, not proof of damage.
 `bomb-attraction=projectile|outer radius|acceleration|speed cap` is an
 optional, separate motion rule. An armed, supported bomb in the
 outer radius but outside the trigger radius can move toward the
-opponent in X/Z. Both ranges are measured to the same current
+selected enemy in X/Z. Both ranges are measured to the same current
 body-centre proxy. Each accepted step increases speed by the authored
 amount up to the cap. Lost attraction eligibility or a refused step
 zeros speed. The stage must supply current centre-segment queries;
@@ -1311,12 +1588,16 @@ grounded walking distance while there is movement input. Idle, air, dash,
 landing, forced movement and interruption do not advance that cadence.
 A completed stride snapshots the accepted root at floor height, then
 the pulse expands there for the declared ticks. Each update tests the
-newly swept annulus against the opponent's planar body radius and root
-height. It never hits the caster. An accepted hit or an `all` guard
-resolves that wave's only contact in Battle Test. The visual ring does
-not drive collision; this pilot does not clip the wave at walls or
-conform it to slopes. There are 16 wave slots; refusal spends the cadence
-and is not retried. Try Flight Stick with `--walk-pulse`.
+newly swept annulus against current planar body radii and root heights.
+In roster battles it considers all eligible enemies, not the current
+aim target. The first radial entry wins; ties keep the later actor slot.
+An accepted hit or an `all` guard resolves that wave's only contact.
+Allies, the caster, and relation-refused bodies cannot intercept it in
+that roster path. Duels retain the previous contact policy. The
+visual ring does not drive collision; this pilot does not sweep the
+opponent's movement, clip the wave at walls, or conform it to slopes.
+There are 16 wave slots; refusal spends the cadence and is not retried.
+Try Flight Stick with `--walk-pulse`.
 
 ### Owner-following emitters
 
@@ -1403,20 +1684,22 @@ accepted point stays in space. This option works independently of fences.
 
 `anchor-fence=set|radius|damage|anchor ticks` connects consecutive
 surviving points in placement order. A single point is inactive. The
-first version tests a swept actor-centre sphere against each finite 3D
-link. Entering the union of links can damage the opponent once; staying
-inside or straddling adjacent links does not repeat the hit. A guarded
-entry is also spent. There is no owner damage, stage clipping, or link
-across sets. Link art does not supply collision geometry. Points expire
-individually and reset with the round; a defeated owner has no active
-fence. A fence set cannot also be consumed as a rewind route.
+engine tests each eligible enemy's swept centre sphere against the
+finite 3D links. Each enemy can take damage once when entering the
+union of a set's links. Staying inside or straddling adjacent links
+does not repeat the hit, and a guarded entry also counts. Immune
+fighters cannot spend guard or receive recoil. The same link is drawn
+only once, regardless of how many fighters cross it. Owners and allies
+are excluded. Points expire individually in every actor slot and reset
+with the round; defeated owners cannot keep a fence active. There is
+no stage clipping or cross-set link, and a fence set cannot also be
+consumed as a rewind route.
 
 `fence-recoil=set|units` optionally requests one sideways/away step
 on the next visit after an accepted hit. The shared forced-movement
 checks can refuse that step without undoing damage. No recoil is
-requested for a block. Airborne recoil, target-team rules beyond two
-opponents, and exact Lightning Robot placement and connectivity are
-not yet qualified.
+requested for a block. Airborne recoil and exact retail Lightning Robot
+placement and connectivity are not yet qualified.
 
 ### Hit-triggered recipient rewind
 

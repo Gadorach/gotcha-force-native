@@ -1,0 +1,70 @@
+{
+  "kind": "gf-contact-sound",
+  "policy": {
+    "ordinary_codes": [
+      0,
+      128,
+      132,
+      136
+    ],
+    "scope": "normal direct contacts; source tone pairs, native impact gate and receiver-local parity",
+    "status_refusal_masks": [
+      782,
+      4140
+    ],
+    "unbound": "special audio slots, status/model branches, mixed-size configurations, combined receivers"
+  },
+  "revision": 1,
+  "source": {
+    "alternate_helper_fixed_id": 38,
+    "cooldown": 4,
+    "counter_rows": "803D3AE8",
+    "cue_offset": 10,
+    "dispatch": "800F088C",
+    "divisor": 167.75999450683594,
+    "divisor_address": "80437620",
+    "normal_base_ids": [
+      48,
+      50,
+      52,
+      54,
+      56,
+      58,
+      60,
+      62,
+      64,
+      66,
+      68,
+      70,
+      116
+    ],
+    "normal_call": "8002F894",
+    "normal_counter_width": 13,
+    "normal_helper": "8002FC18",
+    "range_mask": 128,
+    "receiver_gate_offset": 686,
+    "silence_code": 255,
+    "size_call_sites": [
+      "8005442C",
+      "80057C98",
+      "80058304"
+    ],
+    "size_config_offsets": [
+      76,
+      80
+    ],
+    "size_expression": "max(config+76, config+80) divided by divisor",
+    "size_field_offset": 2044,
+    "size_pointer_offset": 1200,
+    "size_producer": "80068004",
+    "sound_table": "8031B874",
+    "special_group_mask": 64,
+    "thresholds": [
+      1.5,
+      2.5,
+      3.5
+    ],
+    "visual_selector_offset": 9
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

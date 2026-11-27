@@ -40,9 +40,9 @@ ROOTS = {
     "defender_class_row": (0x80433600, "row pointers",
                            "model+156 (plXXXXdata.bin), then byte at 803C4E60"),
     "defender_hp_row_157": (0x80433608, "row pointers",
-                            "model+157 (plXXXXdata.bin), then post-hit HP index"),
-    "defender_hp_row_158": (0x80433610, "row pointers",
-                            "model+158 (plXXXXdata.bin), then post-hit HP index"),
+                             "model+157 (plXXXXdata.bin), then projected HP index from raw base"),
+    "defender_force_row_158": (0x80433610, "row pointers",
+                                "model+158 (plXXXXdata.bin), then receiving slot force index"),
     "receiver_rank": (0x80433618, "float row", "defender+1082 (difficulty)"),
 }
 
@@ -58,14 +58,14 @@ STAGES = (
      "index": "settings[attacker+136]"},
     {"site": "CEB8", "name": "attacker_conditional_half", "op": "mul",
      "value": 0.5,
-     "condition": "settings[attacker+136] == 0 && attacker+998 != 0 "
+     "condition": "Settings+50 is 0 or 1 && attacker+998 != 0 "
                   "&& attacker+136 == 0"},
     {"site": "CF48", "name": "attacker_hp_row", "op": "mul",
      "table": "attacker_hp_row",
      "side": "attacker+998 != 0",
      "row": "record+6",
-     "index": "32 - borg_hp[attacker+996] * 32 / "
-              "(attacker+452 < 200 ? attacker+452 : 25); borg_hp is the "
+     "index": "skip if HP > 200; min(31, 32 - borg_hp[attacker+996] * 32 / "
+                "min(attacker+452, 200)); borg_hp is the "
               "803B069C mirror of actor+454"},
     {"site": "CFC0", "name": "team_force_row", "op": "mul",
      "table": "team_force_row",
@@ -81,7 +81,7 @@ STAGES = (
      "table": "802C5D60",
      "index": "model_index(defender+1000) * 80 "
               "+ model_index(attacker+1000) * 4"},
-    {"site": "D0B0", "name": "defender_1788", "op": "mul",
+    {"site": "D0B4", "name": "defender_1788", "op": "mul",
      "value": 0.5, "condition": "defender+1788 != 0"},
     {"site": "D100", "name": "defender_class_row", "op": "mul",
      "table": "defender_class_row",
@@ -90,7 +90,7 @@ STAGES = (
      "index": "settings[defender+136]"},
     {"site": "D128", "name": "defender_conditional_half", "op": "mul",
      "value": 0.5,
-     "condition": "settings[defender+136] == 0 && defender+998 != 0 "
+     "condition": "Settings+50 is 0 or 1 && defender+998 != 0 "
                   "&& defender+136 == 0"},
     {"site": "D16C", "name": "relative", "op": "mul",
      "selection": "1 / (1 + 0.5 * (defender+180 - 1))"},
@@ -98,35 +98,36 @@ STAGES = (
      "table": "defender_hp_row_157",
      "side": "defender+998 != 0",
      "row": "model+157 (plXXXXdata.bin)",
-     "index": "post-hit defender HP index"},
-    {"site": "D260", "name": "defender_hp_row_158", "op": "mul",
-     "table": "defender_hp_row_158",
+     "index": "projected defender HP from raw base (not final damage)"},
+    {"site": "D260", "name": "defender_force_row_158", "op": "mul",
+     "table": "defender_force_row_158",
      "side": "defender+998 != 0",
      "row": "model+158 (plXXXXdata.bin)",
-     "index": "post-hit defender HP index"},
+     "index": "receiving slot force index; independent of the HP cutoff"},
     {"site": "D270", "name": "receiver_rank", "op": "mul",
      "table": "receiver_rank",
      "side": "defender+998 != 0",
      "index": "defender+1082"},
     {"site": "D290", "name": "tier", "op": "mul",
      "table": "802C7CA0", "index": "defender+1738",
-     "condition": "record+16 & 0x4000"},
+     "condition": "(record+18 & 0x4000) == 0 under the live receiver gate"},
     {"site": "D2A4", "name": "defender_1504_half", "op": "mul",
-     "value": 0.5, "condition": "defender+1504 & 0x04000000 == 0"},
+     "value": 0.5, "condition": "(defender+1504 & 0x04000000) != 0 under the live receiver gate"},
     {"site": "D2D0", "name": "same_player_quarter", "op": "mul",
      "value": 0.25,
-     "condition": "attacker+136 == defender+136 && record+16 & 0x1000 == 0"},
+     "condition": "linked attacker and recipient's link (or recipient if unlinked) have equal signed +136 slots "
+                  "and (record+16 & 0x1000) == 0"},
     {"site": "D2FC", "name": "scale_divisor_40", "op": "div",
      "value": 40.0,
-     "condition": "attacker+131 == 0 && record+16 & 0x1000 "
-                  "&& defender+1436 & 0x1000"},
+     "condition": "actual recipient+131 == 0 && (record+16 & 0x1000) != 0 "
+                  "&& (actual recipient+1436 & 0x1000) != 0"},
 )
 
-# Post-hit HP index: clamp to 0, skip above 200, divide by max HP (or 25 at
-# the 200 sentinel), then 32 - value and clamp to 31.
-HP_INDEX = ("post = max(0, borg_hp[+996] - base); if post > 200: skip; "
-            "divisor = (+452 < 200 ? +452 : 25); "
-            "index = min(32 - post * 32 / divisor, 31)")
+# The magic 0x51EB851F / signed-high / shift-6 path divides by 200.
+HP_INDEX = ("probe = max(0, borg_hp[+996] - raw record+0 base); if probe > 200: skip; "
+            "index = min(32 - probe * 32 / min(+452, 200), 31)")
+RECEIVER_FORCE_INDEX = ("slot = defender+136; "
+                        "index = min(32 - mirrored_force[slot] * 32 / force_cap[slot], 31)")
 
 # Live observations. The stage values are the measured scalars; values not
 # listed are neutral (1.0). `source` marks which values were directly probed.
@@ -220,8 +221,10 @@ OBSERVATIONS = (
 )
 
 
-def evaluate(base, factors):
-    """Apply the recovered chain. Missing named factors are neutral."""
+def evaluate(base, factors, *, suppressed=False):
+    """Reference product and final integer. Suppression is a separate earlier gate."""
+    if base <= 0 or suppressed:
+        return 0, 0.0
     value = float(base)
     for stage in STAGES:
         factor = factors.get(stage["name"])
@@ -231,9 +234,7 @@ def evaluate(base, factors):
             value /= factor
         else:
             value *= factor
-    if value < 0.0:
-        value = 0.0
-    return int(value), value
+    return int(max(1.0, value)), value
 
 
 def _data(image, at, size):
@@ -251,6 +252,32 @@ def _f32(image, at):
 def _check(value, expected, what):
     if abs(value - expected) > 1e-6:
         raise ValueError(f"{what} changed: {value}")
+
+
+def recover_finalizer(image):
+    if image.sha256 != SOURCE_SHA256:
+        raise ValueError("unqualified source revision")
+    for address, size, digest in (
+        (0x8003CD84, 112, "7c0d4caf930b562cea879a0793821aa3db5a9924d8c85be9640386766313c496"),
+        (0x8003CE88, 56, "42449151493224811a97c5dfbe50d6176e940b48d94184019aea0937ac1cf5dc"),
+        (0x8003D0F4, 56, "f1d46c80ba67db5655512308f41fc11911cb89da28df2ec465893443f2572dca"),
+        (0x8003D294, 136, "d221954e6e1485a00420d4f8ecd0f649d7784ba8f4c4ec02dedd952af001cb54"),
+    ):
+        if hashlib.sha256(image.read(address, size, "text")).hexdigest() != digest:
+            raise ValueError("amount guards, conditional factors or finalizer changed")
+    for addr, expected in ((0x80436F68, 0.0), (0x80436F78, 1.0), (0x80436F7C, 0.5),
+                           (0x80437024, 0.25), (0x80437028, 40.0)):
+        _check(_f32(image, addr), expected, "amount constant")
+    return {
+        "early_zero": [
+            {"return_site": "8003CDB4", "condition": "u16(record+0) == 0"},
+            {"return_site": "8003CDEC",
+             "condition": "actual recipient+131 == 0 and (recipient+1440 & slw(1, s8(recipient+1818))) != 0"},
+        ],
+        "minimum": 1, "minimum_constant": "80436F78", "compare": "8003D304",
+        "replace_if_below": "8003D30C", "truncate_toward_zero": "8003D310",
+        "native_scope": "opted-in direct contacts with a positive native product; does not bypass refusal or zero-base gates",
+    }
 
 
 def model_index(image, model):
@@ -289,6 +316,7 @@ def recover(image):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
 
+    finalizer = recover_finalizer(image)
     tables = _table_map(image)
     # Pin the cells that the two observations use.
     _check(_f32(image, _u32(image, 0x804335E0)), 1.02, "credit difficulty side 0")
@@ -332,7 +360,7 @@ def recover(image):
 
     return {
         "kind": "gf-damage-amount-model",
-        "revision": 1,
+        "revision": 3,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {
             "address": f"{FUNCTION:08X}",
@@ -345,8 +373,10 @@ def recover(image):
         },
         "base": {"field": "record+0", "type": "u16"},
         "stages": list(STAGES),
+        "finalizer": finalizer,
         "tables": tables,
         "hp_index": HP_INDEX,
+        "receiver_force_index": RECEIVER_FORCE_INDEX,
         "runtime_mirrors": {
             "borg_hp": {
                 "array": "803B069C",
@@ -410,6 +440,11 @@ def recover(image):
             "The force/HP rows read per-frame mirrors: 803B068C[team] is "
             "team+0x118 and 803B069C[slot] is actor+454, both refreshed at "
             "the top of the collision walk 8002BB14.",
+            "D1EC indexes receiver HP after subtracting the raw base, with a divisor capped at 200. "
+            "D260 uses receiving slot force, not a second HP probe.",
+            "CEB8/D128 depend on the outer Settings+50 state, not on setting index 0. "
+            "D2A4 halves for a set bit; D2FC checks the actual recipient kind.",
+            "The final minimum is one HP, after the two early-zero exits.",
             "The per-slot settings byte 803C4E60 is written by 80006ABC: "
             "state 1 uses a complementary d / 31-d pair, state 2 writes 7.",
             "The defender selectors at model+156/157/158 are the AFS bytes "

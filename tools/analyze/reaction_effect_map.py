@@ -27,34 +27,36 @@ STORE = {36: "stw", 38: "stb", 44: "sth", 52: "stfs"}
 EFFECTS = {
     "8002FCBC": {
         "dispatch": "800F04B4",
-        "opcode": "0x26",
+        "sound_id": 38,
         "state": "object+0x2AE = 4",
-        "volume": "object+0x7FC",
+        "size": "receiver+0x7FC",
         "thresholds": {"80436FB8": 1.5, "80436F94": 2.5},
-        "volume_branch": "object+0x83 gates the read; the matched source calls "
-                         "800F04B4(0x26, callback, s8(object+0x96)) in every branch",
-        "role": "impact record",
+        "size_branch": "receiver+0x83 gates the read; the matched source calls "
+                         "800F04B4(38, position, s8(receiver+0x96)) in every branch",
+        "role": "fixed impact sound",
     },
     "8002FC18": {
         "dispatch": "800F088C",
-        "selector": "value & 0xFFFFFF7C, plus one per exceeded volume threshold",
+        "selector": "when bit 0x80 is set, value & 0xFFFFFF7C plus one per exceeded receiver size threshold",
         "state": "object+0x2AE = 4",
         "thresholds": {"80436FB8": 1.5, "80436F94": 2.5, "80436FBC": 3.5},
-        "role": "impact record variant",
+        "role": "indexed impact sound",
     },
     "800F088C": {
-        "role": "impact-record-variant",
-        "state": "object+0x2AE = 4",
+        "role": "impact sound selection",
+        "sound_table": "8031B874",
         "counter_row": "803D3AE8 + s8(object+0x96)*13",
         "slot": "code & ~0xC0, +12 when code&0x40",
         "alternate": "value += row[slot] & 1 before incrementing the row counter",
     },
     "8002F8DC": {
         "role": "force/ledger update",
+        "details": "battle-hit-ledger.json",
         "fields": ["actor+0x4AA", "actor+0x424", "attacker+0x420",
                    "team+0x118", "ring +0x464/+0x484"],
     },
-    "80019550": {"role": "color", "table": "802C7ED0"},
+    "80019550": {"role": "impact visual descriptor", "table": "802C7ED0",
+                 "selector": "attack record byte +9; family, variant and allocation code, not RGB"},
     "8013F300": {"role": "object spawn", "allocator": "80088AA0"},
     "80176EC0": {"role": "object spawn", "allocator": "80088AA0"},
     "8010E158": {
@@ -84,19 +86,19 @@ EFFECTS = {
     "800300BC": {
         "role": "reaction-direction",
         "modes": {
-            "0": "actor+0x20 - actor+0x2C",
-            "1": "target+0x20 - attacker+0x20",
-            "2": "side+0x30 - side+0x3C",
-            "3": "side+0x64 - other+0x64",
-            "4": "actor+0x8DC/8EC/8FC",
-            "5": "linked+0x8DC/8EC/8FC",
-            "default": "actor+0x11C/12C/13C",
+            "0": "attacking object's current - previous origin (+0x20 - +0x2C); zero uses object +0x38",
+            "1": "receiver object +0x20 - attacker object +0x20",
+            "2": "pair's current - previous transformed shape centre (+0x30 - +0x3C); zero uses object +0x38",
+            "3": "receiver pair's current shape centre +0x64 - attacker pair's +0x64",
+            "4": "third matrix column at +0x8DC/8EC/8FC on the attacking object or its link; "
+                 "if both are non-body, use the attacking object's matrix column at +0x11C/12C/13C",
+            "other": "branches to 80030238 without initializing the local vector; no supported direction inferred",
         },
         "yaw": "atan2(x,z)",
         "pitch": "-atan2(y,x*x+z*z)",
         "fallback": "(0,0,-1) when x*x+y*y+z*z < 0.01",
         "writes": "receiver+0x284 yaw, receiver+0x282 pitch; mirrored to linked actor when +0x1DA bit1",
-        "table_offsets": "table+0x14/+0x15 * 0x100 subtracted; not recovered",
+        "table_offsets": "signed table+0x14/+0x15 * 0x100 subtracted; row selected by attack pair+0x11",
     },
     "8003CD5C": {"role": "amount"},
     "8003D344": {"role": "HP write"},
@@ -202,6 +204,120 @@ def _value_definitions(image):
     return entries
 
 
+def _body_root_producer(image):
+    # The qualified body pose path builds an actor world matrix at +0x8D4
+    # before dispatching child joints, and copies the same root to +0x114.
+    sites = {
+        0x80046BF8: 0x8020AEFC,  # identity
+        0x80046C10: 0x8020B4AC,  # translation
+        0x80046C4C: 0x80045838,  # status-adjusted rotation
+        0x80046C68: 0x80045838,  # ordinary rotation
+        0x80046C7C: 0x8020B4F8,  # scale matrix
+        0x80046C8C: 0x8020AF5C,  # concatenate
+        0x80046C98: 0x8020AF28,  # copy
+        0x80046CCC: 0x8004679C,  # child joint pass, ordinary arm
+    }
+    for site, target in sites.items():
+        if decode_calls(image.read(site, 4, "text"), site) != [
+                {"site": f"{site:08X}", "target": f"{target:08X}"}]:
+            raise ValueError("mode-4 body matrix call chain changed")
+    for site, op, offset in ((0x80046BF0, 14, 0x8D4), (0x80046C94, 14, 0x114),
+                             (0x80046BFC, 48, 0x20), (0x80046C04, 48, 0x24), (0x80046C0C, 48, 0x28),
+                             (0x80046C54, 42, 0x70), (0x80046C5C, 42, 0x72), (0x80046C64, 42, 0x74),
+                             (0x80046C6C, 48, 0x58), (0x80046C74, 48, 0x5C), (0x80046C78, 48, 0x60),
+                             (0x80045874, 14, ord("z")), (0x800458B0, 14, ord("y")),
+                             (0x800458E4, 14, ord("x")), (0x800301D8, 48, 0x8DC),
+                             (0x800301E0, 48, 0x8EC), (0x800301E8, 48, 0x8FC)):
+        word, = struct.unpack(">I", image.read(site, 4, "text"))
+        if word >> 26 != op or word & 0xFFFF != offset:
+            raise ValueError("mode-4 body matrix operand changed")
+    return {
+        "producer": "80046BD0", "matrix_offset": 0x8D4, "copy_offset": 0x114,
+        "position_offsets": [0x20, 0x24, 0x28], "binary_angle_offsets": [0x70, 0x72, 0x74],
+        "scale_offsets": [0x58, 0x5C, 0x60], "rotation_order": ["Z", "Y", "X"],
+        "read_sites": ["800301D8", "800301E0", "800301E8"],
+        "positive_z_offsets": [0x8DC, 0x8EC, 0x8FC],
+        "guarded_yaw_adjustment": "80046C14..80046C4C can add timer at +0x6B8 shifted left by 10",
+        "native_scope": "actor-bound melee uses the native planar collision-root +Z column",
+        "calls": {f"{site:08X}": f"{target:08X}" for site, target in sites.items()},
+    }
+
+
+def _motion_inputs(image):
+    calls = {
+        0x80030128: 0x8020BA78, 0x80030180: 0x8020BA78,
+        0x80030130: 0x8020BB14, 0x80030188: 0x8020BB14,
+        0x8008A728: 0x8020B7A8, 0x8008A888: 0x8020B7A8,
+        0x80083B6C: 0x8020BA54, 0x80083B80: 0x8020BA54,
+    }
+    for site, target in calls.items():
+        if decode_calls(image.read(site, 4, "text"), site) != [
+                {"site": f"{site:08X}", "target": f"{target:08X}"}]:
+            raise ValueError("reaction motion call chain changed")
+    for site, op, offset in (
+        (0x80089910, 32, 0x20), (0x8008991C, 36, 0x2C),
+        (0x80089920, 36, 0x30), (0x80089928, 36, 0x34),
+        (0x80089A1C, 32, 0x20), (0x80089A28, 36, 0x2C),
+        (0x80056874, 32, 0x20), (0x8005687C, 36, 0x2C),
+        (0x8008A720, 14, 0x0C), (0x8008A724, 14, 0x30),
+        (0x8008A734, 36, 0x3C), (0x8008A738, 36, 0x40), (0x8008A740, 36, 0x44),
+        (0x8008A864, 32, 0x30), (0x8008A874, 36, 0x3C),
+        (0x8008A878, 36, 0x40), (0x8008A880, 36, 0x44), (0x8008A884, 32, 0x60),
+        (0x8003011C, 14, 0x20), (0x80030120, 14, 0x2C), (0x80030144, 32, 0x38),
+        (0x80030174, 14, 0x30), (0x80030178, 14, 0x3C), (0x8003019C, 32, 0x38),
+        (0x80083B74, 14, 0x20), (0x80083B78, 14, 0x38),
+    ):
+        word, = struct.unpack(">I", image.read(site, 4, "text"))
+        if word >> 26 != op or word & 0xFFFF != offset:
+            raise ValueError("reaction motion operand changed")
+    return {
+        "object": {"current_offset": 0x20, "previous_offset": 0x2C,
+                   "snapshot_sites": ["80089910", "80089A1C", "80056874"],
+                   "vector_offset": 0x38, "ordinary_vector_add": "80083B80"},
+        "pair": {"current_offset": 0x30, "previous_offset": 0x3C,
+                 "definition_point_offset": 0x0C, "selected_matrix_pointer_offset": 0x60,
+                 "initial_point": "8008A728", "initial_equal_copy": "8008A734",
+                 "roll_previous": "8008A864", "update_point": "8008A888"},
+        "selection": {"mode_0_subtract": "80030128", "mode_2_subtract": "80030180",
+                      "object_vector_only_on_zero": True, "then_apply_direction_epsilon": "80436FC0"},
+        "native_scope": "main-move free-flight direct actor hits; clipped object motion vs full proxy sweep",
+    }
+
+
+def _position_inputs(image):
+    calls = {
+        0x8003016C: 0x8020BA78, 0x800301C4: 0x8020BA78,
+        0x8003A4E0: 0x8020B7A8, 0x8003A634: 0x8020B7A8,
+        0x80039FC4: 0x8020BC88, 0x8002DE90: 0x8020BA54, 0x8002DEB0: 0x8020BA54,
+    }
+    for site, target in calls.items():
+        if decode_calls(image.read(site, 4, "text"), site) != [
+                {"site": f"{site:08X}", "target": f"{target:08X}"}]:
+            raise ValueError("reaction centre call chain changed")
+    for site, op, offset in (
+        (0x800300EC, 32, 0x20), (0x800300F0, 32, 0x20),
+        (0x80030160, 14, 0x20), (0x80030164, 14, 0x20),
+        (0x800301B8, 14, 0x64), (0x800301BC, 14, 0x64),
+        (0x8003A4CC, 14, 0x64), (0x8003A4D8, 32, 0x60), (0x8003A4DC, 14, 0x0C),
+        (0x8003A608, 14, 0x64), (0x8003A618, 36, 0x70),
+        (0x8003A614, 14, 0x0C), (0x8003A630, 32, 0x60),
+        (0x8002DE84, 14, 0x20), (0x8002DEA4, 14, 0x64),
+    ):
+        word, = struct.unpack(">I", image.read(site, 4, "text"))
+        if word >> 26 != op or word & 0xFFFF != offset:
+            raise ValueError("reaction centre operand changed")
+    return {
+        "mode_1": {"pair_object_pointer_offset": 0x20, "origin_offset": 0x20,
+                   "subtract": "8003016C", "uses_owner_link": False},
+        "mode_3": {"pair_centre_offset": 0x64, "subtract": "800301C4",
+                   "ordinary_sphere_centre_seed": "8003A4E0", "ordinary_sphere_centre_update": "8003A634",
+                   "local_point_offset": 0x0C, "matrix_pointer_offset": 0x60,
+                   "centre_distance_gate": "80039FC4"},
+        "nearest_contact_correction": {"object_add": "8002DE90", "pair_centre_add": "8002DEB0"},
+        "native_scope": "explicit mode 1 can read the direct projectile origin; mode 3 uses accepted native proxy centres",
+    }
+
+
 def recover(image):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
@@ -226,12 +342,15 @@ def recover(image):
         })
     return {
         "kind": "gf-reaction-effect-map",
-        "revision": 1,
+        "revision": 4,
         "source_dol_sha256": SOURCE_SHA256,
         "function": {"address": f"{FUNCTION:08X}", "size": SIZE,
                      "calls": len(mapped)},
         "effects": {key: value for key, value in sorted(EFFECTS.items())},
         "constants": _constants(image),
+        "mode_4_body_root": _body_root_producer(image),
+        "motion_inputs": _motion_inputs(image),
+        "position_inputs": _position_inputs(image),
         "effect_values": {
             "table": f"{VALUE_TABLE:08X}",
             "entries": _value_definitions(image),

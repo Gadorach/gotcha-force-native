@@ -21,6 +21,7 @@ class ReactionScaffoldTest(unittest.TestCase):
         calls = {call["site"]: call for call in data["calls"]}
         self.assertEqual(calls["8002F200"]["role"], "force-ledger-update")
         self.assertIn("team force", calls["8002F200"]["note"])
+        self.assertIn("eight-entry ring", calls["8002F200"]["note"])
 
     def test_artifact_phases(self):
         data = json.loads(ARTIFACT.read_text())
@@ -40,7 +41,7 @@ class ReactionScaffoldTest(unittest.TestCase):
         data = json.loads(ARTIFACT.read_text())
         roles = {call["role"] for call in data["calls"]
                  if call["phase"] == "reaction"}
-        self.assertIn("impact-effect", roles)
+        self.assertIn("impact-sound", roles)
         self.assertIn("object-spawn", roles)
         self.assertNotIn("amount", roles)
 

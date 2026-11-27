@@ -96,6 +96,7 @@ def close_b_pose(linker, model, actions, slots, parts, *, publish_preview):
         "site":"80116F50","value":0,"actor_byte":"6EA","guard":"signed actor +6F6 <= 0",
         "excluded_positive_branch":{"site":"80116F64","value":6}}
     return {"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":defaults,
+            "program_addresses":[f"{program:08X}"],
             "neutral_program_seed":seed_receipt,
             "program_class_commands":[{"site":f"{op['address']:08X}","raw":op["raw"]} for op in decoded["commands"]
                                       if op["kind"]=="class_event"],"live_contact_verified":False}

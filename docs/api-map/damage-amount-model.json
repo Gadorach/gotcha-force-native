@@ -9,10 +9,31 @@
     "The receiver rank 1.15 is 802C7C60[defender+1082] at D270.",
     "The matchup mapper 80066298 is a 256-entry pointer table at 802F2E28: G-Red 0615 -> 4, Sasuke 000a -> 0, cell [0][4] = 1.0.",
     "The force/HP rows read per-frame mirrors: 803B068C[team] is team+0x118 and 803B069C[slot] is actor+454, both refreshed at the top of the collision walk 8002BB14.",
+    "D1EC indexes receiver HP after subtracting the raw base, with a divisor capped at 200. D260 uses receiving slot force, not a second HP probe.",
+    "CEB8/D128 depend on the outer Settings+50 state, not on setting index 0. D2A4 halves for a set bit; D2FC checks the actual recipient kind.",
+    "The final minimum is one HP, after the two early-zero exits.",
     "The per-slot settings byte 803C4E60 is written by 80006ABC: state 1 uses a complementary d / 31-d pair, state 2 writes 7.",
     "The defender selectors at model+156/157/158 are the AFS bytes plXXXXdata.bin+156..158; the roster map is api-map/borg-damage-selectors.json (Sasuke 1,1,0; G-Red 2,2,2).",
     "The 0.85 rank is at 804335F8[side], not inside the 804335E0 credit-difficulty pair."
   ],
+  "finalizer": {
+    "compare": "8003D304",
+    "early_zero": [
+      {
+        "condition": "u16(record+0) == 0",
+        "return_site": "8003CDB4"
+      },
+      {
+        "condition": "actual recipient+131 == 0 and (recipient+1440 & slw(1, s8(recipient+1818))) != 0",
+        "return_site": "8003CDEC"
+      }
+    ],
+    "minimum": 1,
+    "minimum_constant": "80436F78",
+    "native_scope": "opted-in direct contacts with a positive native product; does not bypass refusal or zero-base gates",
+    "replace_if_below": "8003D30C",
+    "truncate_toward_zero": "8003D310"
+  },
   "function": {
     "address": "8003CD5C",
     "arguments": {
@@ -22,7 +43,7 @@
     },
     "instructions": 378
   },
-  "hp_index": "post = max(0, borg_hp[+996] - base); if post > 200: skip; divisor = (+452 < 200 ? +452 : 25); index = min(32 - post * 32 / divisor, 31)",
+  "hp_index": "probe = max(0, borg_hp[+996] - raw record+0 base); if probe > 200: skip; index = min(32 - probe * 32 / min(+452, 200), 31)",
   "kind": "gf-damage-amount-model",
   "matchup": {
     "address": "802C5D60",
@@ -177,7 +198,8 @@
       "state": "mana_combat_hud"
     }
   ],
-  "revision": 1,
+  "receiver_force_index": "slot = defender+136; index = min(32 - mirrored_force[slot] * 32 / force_cap[slot], 31)",
+  "revision": 3,
   "runtime_mirrors": {
     "borg_hp": {
       "array": "803B069C",
@@ -227,14 +249,14 @@
       "table": "credit_difficulty"
     },
     {
-      "condition": "settings[attacker+136] == 0 && attacker+998 != 0 && attacker+136 == 0",
+      "condition": "Settings+50 is 0 or 1 && attacker+998 != 0 && attacker+136 == 0",
       "name": "attacker_conditional_half",
       "op": "mul",
       "site": "CEB8",
       "value": 0.5
     },
     {
-      "index": "32 - borg_hp[attacker+996] * 32 / (attacker+452 < 200 ? attacker+452 : 25); borg_hp is the 803B069C mirror of actor+454",
+      "index": "skip if HP > 200; min(31, 32 - borg_hp[attacker+996] * 32 / min(attacker+452, 200)); borg_hp is the 803B069C mirror of actor+454",
       "name": "attacker_hp_row",
       "op": "mul",
       "row": "record+6",
@@ -270,7 +292,7 @@
       "condition": "defender+1788 != 0",
       "name": "defender_1788",
       "op": "mul",
-      "site": "D0B0",
+      "site": "D0B4",
       "value": 0.5
     },
     {
@@ -283,7 +305,7 @@
       "table": "defender_class_row"
     },
     {
-      "condition": "settings[defender+136] == 0 && defender+998 != 0 && defender+136 == 0",
+      "condition": "Settings+50 is 0 or 1 && defender+998 != 0 && defender+136 == 0",
       "name": "defender_conditional_half",
       "op": "mul",
       "site": "D128",
@@ -296,7 +318,7 @@
       "site": "D16C"
     },
     {
-      "index": "post-hit defender HP index",
+      "index": "projected defender HP from raw base (not final damage)",
       "name": "defender_hp_row_157",
       "op": "mul",
       "row": "model+157 (plXXXXdata.bin)",
@@ -305,13 +327,13 @@
       "table": "defender_hp_row_157"
     },
     {
-      "index": "post-hit defender HP index",
-      "name": "defender_hp_row_158",
+      "index": "receiving slot force index; independent of the HP cutoff",
+      "name": "defender_force_row_158",
       "op": "mul",
       "row": "model+158 (plXXXXdata.bin)",
       "side": "defender+998 != 0",
       "site": "D260",
-      "table": "defender_hp_row_158"
+      "table": "defender_force_row_158"
     },
     {
       "index": "defender+1082",
@@ -322,7 +344,7 @@
       "table": "receiver_rank"
     },
     {
-      "condition": "record+16 & 0x4000",
+      "condition": "(record+18 & 0x4000) == 0 under the live receiver gate",
       "index": "defender+1738",
       "name": "tier",
       "op": "mul",
@@ -330,21 +352,21 @@
       "table": "802C7CA0"
     },
     {
-      "condition": "defender+1504 & 0x04000000 == 0",
+      "condition": "(defender+1504 & 0x04000000) != 0 under the live receiver gate",
       "name": "defender_1504_half",
       "op": "mul",
       "site": "D2A4",
       "value": 0.5
     },
     {
-      "condition": "attacker+136 == defender+136 && record+16 & 0x1000 == 0",
+      "condition": "linked attacker and recipient's link (or recipient if unlinked) have equal signed +136 slots and (record+16 & 0x1000) == 0",
       "name": "same_player_quarter",
       "op": "mul",
       "site": "D2D0",
       "value": 0.25
     },
     {
-      "condition": "attacker+131 == 0 && record+16 & 0x1000 && defender+1436 & 0x1000",
+      "condition": "actual recipient+131 == 0 && (record+16 & 0x1000) != 0 && (actual recipient+1436 & 0x1000) != 0",
       "name": "scale_divisor_40",
       "op": "div",
       "site": "D2FC",
@@ -388,22 +410,22 @@
         "802C6BC0"
       ]
     },
-    "defender_hp_row_157": {
-      "index": "model+157 (plXXXXdata.bin), then post-hit HP index",
-      "kind": "row pointers",
-      "root": "80433608",
-      "sides": [
-        "802C73E0",
-        "802C7400"
-      ]
-    },
-    "defender_hp_row_158": {
-      "index": "model+158 (plXXXXdata.bin), then post-hit HP index",
+    "defender_force_row_158": {
+      "index": "model+158 (plXXXXdata.bin), then receiving slot force index",
       "kind": "row pointers",
       "root": "80433610",
       "sides": [
         "802C7C20",
         "802C7C40"
+      ]
+    },
+    "defender_hp_row_157": {
+      "index": "model+157 (plXXXXdata.bin), then projected HP index from raw base",
+      "kind": "row pointers",
+      "root": "80433608",
+      "sides": [
+        "802C73E0",
+        "802C7400"
       ]
     },
     "receiver_rank": {

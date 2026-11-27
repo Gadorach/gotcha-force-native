@@ -25,12 +25,10 @@ AMOUNT = 0x8002F108
 HP_WRITE = 0x8002F1D8
 
 ROLE_NOTES = {
-    0x8002F8DC: "subtracts the amount from the team force record, adds the "
-                "per-actor ledgers and a six-slot hit-history ring",
-    0x8002FCBC: "guards object+0x2AE and calls impact effect 800F04B4 with a "
-                "volume-derived selector",
-    0x8002FC18: "impact effect variant 800F088C with a threshold-derived "
-                "selector",
+    0x8002F8DC: "reads the cached receiving amount, updates team force and credit, "
+                "and visits six observer slots with an eight-entry ring per actor",
+    0x8002FCBC: "guards receiver+0x2AE and requests fixed impact sound ID 38",
+    0x8002FC18: "guards receiver+0x2AE and selects an impact sound pair through receiver size thresholds",
     0x8003D344: "writes the amount to actor+0x1C6 HP and actor+0x41C ledger",
     0x8003CD5C: "the 19-stage amount routine",
     0x800300BC: "takes the mode from s8(attacker move-table entry +0x0E); "
@@ -50,14 +48,14 @@ ROLES = {
     0x8018214C: ("reaction-helper", "open"),
     0x80006C24: ("slot-update", "matched"),
     0x800DB250: ("effect-values", "open"),
-    0x8002FCBC: ("impact-effect", "matched"),
+    0x8002FCBC: ("impact-sound", "matched"),
     0x8010E158: ("effect-spawn", "open"),
     0x8013F300: ("object-spawn", "matched"),
     0x80176EC0: ("object-spawn", "matched"),
     0x801EC1BC: ("reaction-effect", "matched"),
     0x801DFF24: ("reaction-effect", "matched"),
-    0x80019550: ("color", "matched"),
-    0x8002FC18: ("impact-effect", "open"),
+    0x80019550: ("impact-visual", "matched"),
+    0x8002FC18: ("impact-sound", "recovered"),
 }
 
 

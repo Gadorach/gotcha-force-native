@@ -211,6 +211,7 @@ def close_b_pose(linker, model, actions, slots, parts, *, publish_preview):
         for entry in bindings:
             entry["entry_clip_candidate"] = pose
     return {"model":f"{model:04X}","pose":pose,"raw_context":[0,0],"default_part_candidates":defaults,
+            "program_addresses":[f"{program_at:08X}"],
             "program_class_commands":[{"site":f"{op['address']:08X}","raw":op["raw"]} for op in program["commands"]
                                       if op["kind"]=="class_event"],
             "live_contact_verified":False,

@@ -19,9 +19,8 @@ from tools.analyze import reaction_installer_tables
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
-DEFAULT_TABLE = 0x80354160
 SIZE = 24
-COUNT = 64
+COUNT = 64  # Review budget, not a proven physical extent of every table.
 
 
 def entry(image, table, index):
@@ -54,12 +53,10 @@ def recover(image):
             tables[table] = _entries(image, int(table, 16))
     return {
         "kind": "gf-reaction-attack-table",
-        "revision": 3,
+        "revision": 4,
         "source_dol_sha256": SOURCE_SHA256,
         "entry_size": SIZE,
         "count": COUNT,
-        "default_table": {"table": f"{DEFAULT_TABLE:08X}",
-                          "entries": _entries(image, DEFAULT_TABLE)},
         "tables": tables,
         "models": models,
         "pointer_chain": {
@@ -68,19 +65,18 @@ def recover(image):
                             "step": "+0x28", "table": "+0x2C",
                             "move": "+0x11"},
             "installer_table": "802D3224",
-            "default_setter": "8006F5EC",
+            "example_store": {"site": "8006F5EC", "table": "802D4160"},
             "pair_allocator": "8008AC80",
             "pair_update": "8008A65C",
         },
         "notes": [
-            "The installer's lis/addi pair feeding stw ..., 0x27C selects "
-            "the model table.",
+            "The model table is the literal returned by the bounded installer paths for actor+0x27C.",
             "Models are the authored basic-shot cohort; tables are "
             "deduplicated by address.",
             "The pair record copies actor+0x27C to +0x2C.",
-            "Indices are the action-step byte (record+4) copied to pair+0x11.",
-            "The source switch handles modes 0..5; other values take the "
-            "default actor+0x11C vector.",
+            "Indices are the low byte of the step halfword at +4, copied to pair+0x11.",
+            "Count is a fixed inspection window, not the verified extent of each table. Use an independently recovered queue to establish a live index.",
+            "800300BC initializes a direction for modes 0..4. Other values skip vector initialization in this function.",
         ],
     }
 

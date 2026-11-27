@@ -56,7 +56,7 @@
     1.4,
     2.0
   ],
-  "formula": "trunc(base * credit_difficulty(side, settings[attacker+136]) * attacker_rank(attacker+1082) * (owner998 != 0 && owner136 == 0 ? 0.5 : 1) * defender_class_row(model+156, settings[defender+136]) * receiver_rank(defender+1082) * tier * relative)",
+  "formula": "observed positive-route subset: trunc(max(1, base * credit_difficulty(side, settings[attacker+136]) * (Settings+50 in {0,1} && owner998 != 0 && owner136 == 0 ? 0.5 : 1) * attacker_rank(attacker+1082) * defender_class_row(model+156, settings[defender+136]) * relative * receiver_rank(defender+1082) * tier))",
   "kind": "gf-contact-scalar-ladder",
   "notes": [
     "The row is a battle/team value, not a Borg value.",

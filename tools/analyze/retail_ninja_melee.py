@@ -94,6 +94,7 @@ def close_b_pose(linker,model,actions,slots,parts,*,publish_preview,body=None):
         for row in bindings:
             row["entry_clip_candidate"]=pose
     return {"model":f"{model:04X}","raw_context":[0,0],"pose":pose,"default_part_candidates":hands,
+            "program_addresses":[f"{script:08X}"],
             **({"empty_default_hand_records":empty_hands,"hand_record_receipt":receipt} if flame else {}),
             "neutral_program_seed":{"address":f"{seed_at:08X}","value":seed,"actor_byte":"6EA"},
             "upper_controls":[{"site":f"{op['address']:08X}","raw":op["raw"]} for op in commands if op["kind"]=="upper_controls"],

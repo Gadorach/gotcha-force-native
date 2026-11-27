@@ -1,0 +1,58 @@
+{
+  "admission": {
+    "receiver_kind_offset": 131,
+    "required_kind": 0
+  },
+  "amount": {
+    "note": "uses the recipient's cached hit amount, not the incoming r5",
+    "read": "8002F8F0",
+    "recipient_cache_offset": 1194,
+    "type": "s16"
+  },
+  "credit": {
+    "amount_offset": 1056,
+    "condition": "attacker kind 0 and attacker player slot differs from recipient player slot",
+    "count_offset": 1076,
+    "player_tally_increment": 100
+  },
+  "function": "8002F8DC",
+  "kind": "gf-battle-hit-ledger",
+  "native_analogue": "accepted package hit ledger; each admitted nonrecipient actor observes until restart; native team replaces source player slot for observer relation only",
+  "observers": {
+    "active_byte_offset": 0,
+    "active_test": "nonzero; not a health check",
+    "actor_array_pointer": "803C4E84",
+    "cursor_offset": 1156,
+    "cursor_rule": "increment modulo eight",
+    "different_player": {
+      "relation": 3,
+      "write": "8002FBCC"
+    },
+    "exclude_recipient": true,
+    "fields": [
+      "u16 relation",
+      "i16 recipient slot"
+    ],
+    "group_offset": 136,
+    "group_semantics": "player slot, not portable team",
+    "history_offset": 1124,
+    "recipient_slot_offset": 996,
+    "recipient_slot_type": "sign-extended byte stored as halfword",
+    "record_bytes": 4,
+    "records": 8,
+    "same_player": {
+      "amount_offset": 1072,
+      "count_offset": 1079,
+      "relation": 4,
+      "write": "8002FB6C"
+    },
+    "slots": 6,
+    "stride": 7680
+  },
+  "recipient_totals": {
+    "amount_offset": 1060,
+    "count_offset": 1077
+  },
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

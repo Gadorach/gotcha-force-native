@@ -1,9 +1,8 @@
-"""Resolve each pilot model's reaction table from its installer code.
+"""Resolve the per-model reaction table from bounded installer paths.
 
-The installer function writes a literal table address to `actor+0x27C`.
-The `lis`+`addi` pair immediately feeding the `stw ..., 0x27C` is
-decoded directly from the DOL, so no private decompilation input is
-needed. Covers the authored basic-shot cohort.
+The installer writes a literal address to `actor+0x27C`. Check all
+bounded paths, resolving direct model equality gates before accepting
+the returned binding. No private decompilation input is needed.
 """
 import argparse
 import hashlib
@@ -12,11 +11,13 @@ import struct
 from pathlib import Path
 
 from tools.analyze.retail_basic_shot_test import COHORT
+from tools.analyze.retail_action_tables import MODEL_JUMP
+from tools.analyze.retail_movement_tables import literal_at_store
 from tools.extract.battle_initial_target import SOURCE_SHA256
 from tools.extract.source_image import DolImage, ReadOnlyFile
 
 INSTALLER_TABLE = 0x802D3224
-INSTALLER_BYTES = 288
+INSTALLER_BYTES = 144 * 4
 
 
 def _signed(value, bits):
@@ -30,33 +31,76 @@ def _table_address(image, model):
     return struct.unpack(">I", image.read(address, 4, "data"))[0]
 
 
-def resolve_installer(image, installer):
-    code = image.read(installer, INSTALLER_BYTES, "text")
-    registers = {}
-    for offset in range(0, len(code), 4):
-        word = struct.unpack_from(">I", code, offset)[0]
+def resolve_installer(image, installer, model):
+    words = tuple(word for word, in struct.iter_unpack(">I", image.read(installer, INSTALLER_BYTES, "text")))
+    pending = [(0, None, False, None)]
+    seen, returned = set(), set()
+    while pending:
+        state = pending.pop()
+        index, table, model_in_r0, comparison = state
+        if state in seen:
+            continue
+        if not 0 <= index < len(words) or len(seen) >= 384:
+            return None
+        seen.add(state)
+        if words[index:index + len(MODEL_JUMP)] == MODEL_JUMP:
+            member = model - 0x0506
+            if not 0 <= member < 15:
+                returned.add(table)
+                continue
+            address, = struct.unpack(">I", image.read(0x802FF278 + 4 * member, 4, "data"))
+            target, tail = divmod(address - installer, 4)
+            if tail or target < index + len(MODEL_JUMP):
+                return None
+            pending.append((target, table, False, None))
+            continue
+        word = words[index]
+        if word & 0xFC1FFFFF == 0x9003027C:  # stw literal, 0x27C(r3)
+            try:
+                table = literal_at_store(words, index)
+            except ValueError:
+                return None
         op = word >> 26
-        destination = (word >> 21) & 31
-        source = (word >> 16) & 31
-        immediate = word & 0xFFFF
-        if op == 15:
-            registers[destination] = _signed(immediate << 16, 32)
-        elif op == 14:
-            if source == 0:
-                registers[destination] = _signed(immediate, 16)
-            elif source in registers:
-                registers[destination] = registers[source] + _signed(immediate, 16)
+        taken = None
+        bo, bi = (word >> 21) & 31, (word >> 16) & 31
+        if op in (16, 19) and bo in (4, 12) and bi < 3 and comparison is not None:
+            matches = bi == comparison
+            taken = matches if bo == 12 else not matches
+        if op in (16, 18):
+            if word & 3:  # Absolute transfers and calls are not followed.
+                return None
+            bits = 16 if op == 16 else 26
+            target = index + _signed(word & ((1 << bits) - 4), bits) // 4
+            if target <= index:
+                return None
+            if taken is not False:
+                pending.append((target, table, model_in_r0, comparison))
+            if op == 16 and taken is not True:
+                pending.append((index + 1, table, model_in_r0, comparison))
+        elif op == 19:
+            if (word >> 1) & 1023 != 16 or word & 1:  # Only returns.
+                return None
+            if taken is not False:
+                returned.add(table)
+            if bo != 20 and taken is not True:
+                pending.append((index + 1, table, model_in_r0, comparison))
+        elif word:
+            # Track only lha r0, actor+0x3E8 followed by a local chain of
+            # cmpwi r0 and branches. Other instructions kill provenance.
+            if model_in_r0 and word >> 16 == 0x2C00:
+                rhs = _signed(word & 0xFFFF, 16)
+                comparison = 0 if model < rhs else 1 if model > rhs else 2
             else:
-                registers.pop(destination, None)
-        elif op == 36:  # stw RS, off(RA)
-            if immediate == 0x27C and destination in registers:
-                return registers[destination] & 0xFFFFFFFF
-    return None
+                model_in_r0, comparison = word == 0xA80303E8, None
+            pending.append((index + 1, table, model_in_r0, comparison))
+        else:
+            return None
+    return returned.pop() if len(returned) == 1 else None
 
 
 def model_table(image, model):
     installer = _table_address(image, model)
-    table = resolve_installer(image, installer)
+    table = resolve_installer(image, installer, model)
     if table is None:
         return installer, None
     try:
@@ -77,15 +121,13 @@ def recover(image):
                        "table": f"{table:08X}" if table else None})
     return {
         "kind": "gf-reaction-installer-tables",
-        "revision": 1,
+        "revision": 2,
         "source_dol_sha256": SOURCE_SHA256,
         "installer_table": f"{INSTALLER_TABLE:08X}",
         "models": models,
         "notes": [
-            "The table address is the lis/addi pair feeding stw ..., 0x27C "
-            "in the model's installer.",
-            "A null table means the installer does not use the direct literal "
-            "pattern.",
+            "The table address is the literal returned by the bounded actor+0x27C installer paths for the model.",
+            "A null table means the installer did not return one proven literal on all reviewed paths.",
             "Models cover the authored basic-shot cohort.",
         ],
     }

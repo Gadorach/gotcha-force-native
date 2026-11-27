@@ -81,7 +81,7 @@ def recover(image):
             "Both records are per-Borg config rows; the shared pool at 802D4160 (base 5) is the other side's record in the Mana battle.",
             "The X and B-close amounts are captured from live original hits; the shared pool range per action is still being mapped.",
             "The B-shot entry is the third record in the 0x198-stride table and is inferred, not captured; it is marked verified=false.",
-            "The published amounts are first-hit values (tier 0). The X action's 33, 27 and 16 are the ReceiverTier row [1.0, 0.8, 0.5, 0.25] indexed by actor+0x6CA incrementing 0 -> 1 -> 2.",
+            "The published amounts are first-hit values (tier 0). The X action's 33, 27 and 16 use ReceiverTier cells 0, 1 and 2, observed at actor+0x6CA. Tier advances when the receiver's meter reaches 100, not on every hit in general.",
             "This is one pair and one side; do not treat it as a roster-wide damage rule.",
         ],
         "retail_behaviour_verified": True,

@@ -226,10 +226,15 @@ public:
             // An action with the authored loop bit samples one bounded
             // window; unlike locomotion it never wraps on the native clock.
             const auto action_mode=move.pose_authored_loop_window?HsdBoneMotionLoadMode::NativeActionLoopWindow:HsdBoneMotionLoadMode::Strict;
-            const auto required_end=move.pose_start+(move.pose_authored_loop_window?unsigned(move.duration-1):move.last_marker());
+            const auto required_end=move.pose_start+(move.pose_followup?unsigned(move.pose_followup->frame-1):
+                move.pose_authored_loop_window?unsigned(move.duration-1):move.last_marker());
             if(!move.static_pose&&(!load_package_clip(move.clip,&package_moves_[i],error,action_mode)||
                package_moves_[i].end_frame<f32(required_end)))
                 return fail("Borg gameplay: unavailable action clip or active frame outside clip for "+move.id);
+            if(const auto& follow=move.pose_followup;follow&&
+               (!load_package_clip(follow->clip,&package_followups_[i],error)||
+                package_followups_[i].end_frame<f32(follow->start+move.duration-1-follow->frame)))
+                return fail("Borg gameplay: unavailable exact follow-up clip or incomplete follow-up window for "+move.id);
             for(const auto& spin:move.part_spins)
                 if(spin.bone>=scene_.rig().binding.bones.size())
                     return fail("Borg gameplay: unbound part-spin bone for "+move.id);
@@ -322,6 +327,7 @@ public:
         *this=std::move(next);return true;
     }
     bool update(const BattleMvpActor& actor,u32 tick,std::string* error,const IBattleMvpTerrain* terrain=nullptr){
+        package_pose_held_=false;
         if(!ready_||actor.model!=model_id_||actor.source_ground_motion){presentation_ready_=false;if(error)*error="native Borg: accepted source pose required for source movement";return false;}
         if(package_profile_&&package_profile_->movement!=BorgBattleMovement::NormalGRed)return update_package(actor,tick,error,terrain);
         if(provisional_cruise_&&(actor.grounded||actor.attack_ticks||actor.dash_ticks)){
@@ -407,7 +413,7 @@ public:
     }
     void refuse_source_pose(){presentation_ready_=false;}
     void reset_control_test_pose(){
-        presentation_ready_=false;source_pose_active_=false;source_frame_scope_.reset();
+        presentation_ready_=false;source_pose_active_=false;package_pose_held_=false;source_frame_scope_.reset();
         active_parts_={};mount_turns_={};trailing_chain_={};
         last_tick_=std::numeric_limits<u32>::max();
     }
@@ -417,7 +423,7 @@ public:
     bool update_source_pose(unsigned index,const NativeBattleMvp& accepted,const NativeBorgSourcePose& source,std::string* error){
         if(index>=accepted.actor_count())return false;
         const auto& actor=accepted.actors()[index];const auto tick=accepted.tick();
-        presentation_ready_=false;
+        presentation_ready_=false;package_pose_held_=false;
         const auto owned=source.frame_scope.lock();const auto binding=scene_.instance_binding();
         if(!ready_||!owned||!binding||source.binding.lock()!=binding||owned->binding_.lock()!=binding||
            !accepted.motion_receipt_current(source.receipt,index)||!accepted.motion_receipt_current(owned->receipt_,index)||
@@ -502,6 +508,7 @@ public:
         for(const auto& mesh:scene_.world_geometry().world_vertices)for(const auto& vertex:mesh){any=true;for(unsigned k=0;k<3;++k){(*low)[k]=std::min((*low)[k],vertex.position[k]);(*high)[k]=std::max((*high)[k],vertex.position[k]);}}
         return any;
     }
+    bool package_pose_held()const{return presentation_ready_&&package_pose_held_;}
 private:
     friend class NativeBattleMvpView;
     bool load_package_clip(BorgBattleClip choice,HsdBoneMotionClip* out,std::string* error,
@@ -534,10 +541,15 @@ private:
     bool apply_package_action(const BattleMvpActor& actor,CharacterLocalPose* local,CharacterPoseFrame* frame,std::string* error)const{
         if(actor.package_move==BorgBattleActionState::none)return true;
         if(!package_profile_||actor.package_move>=package_profile_->moves.size())return false;
-        if(package_profile_->moves[actor.package_move].static_pose)return true;
-        const auto& clip=package_moves_[actor.package_move];HsdBoneMotionSample sample;
-        const auto start=package_profile_->moves[actor.package_move].pose_start;
-        if(!sample_package_clip(clip,std::min(u32(clip.end_frame),u32(start)+actor.package_frame),&sample,error))return false;
+        const auto& move=package_profile_->moves[actor.package_move];
+        if(move.static_pose)return true;
+        const auto& follow=move.pose_followup;
+        const bool continued=follow&&actor.package_frame>=follow->frame;
+        const auto& clip=(continued?package_followups_:package_moves_)[actor.package_move];
+        const u32 sample_frame=continued?u32(follow->start)+actor.package_frame-follow->frame:
+            u32(move.pose_start)+actor.package_frame;
+        HsdBoneMotionSample sample;
+        if(!sample_package_clip(clip,std::min(u32(clip.end_frame),sample_frame),&sample,error))return false;
         const auto& rig=scene_.rig();
         std::array<CharacterPoseLane,4> lanes;for(auto& lane:lanes)lane.current=&sample;
         CharacterLocalPose attack;
@@ -697,13 +709,26 @@ private:
         return true;
     }
     bool update_package(const BattleMvpActor& actor,u32 tick,std::string* error,const IBattleMvpTerrain* terrain){
+        const bool hold=actor.health&&actor.contact_pose_hold_ticks&&package_profile_->contact_pose_hold_receive&&
+            presentation_ready_&&!source_pose_active_&&tick>=last_tick_&&tick-last_tick_<=1&&!displayed_.bones.empty();
         presentation_ready_=false;
         const auto role=package_locomotion_role(actor);const auto clock=package_clock(actor,tick);
         CharacterLocalPose local;
         CharacterPoseFrame frame;
-        if(!sample_package_local(actor,clock,&local,error)||!build_package_pose(actor,local,&frame,&world_,error)||
-           !present_package_pose(actor,tick,local,frame,world_,error,terrain))return false;
-        displayed_=std::move(local);base_=role;clock_=clock;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;last_reaction_yaw_=actor.reaction_yaw;last_reaction_pitch_=actor.reaction_pitch;
+        if(!sample_package_local(actor,clock,&local,error)||!build_package_pose(actor,local,&frame,&world_,error))return false;
+        if(hold){
+            // Only presentation borrows the last sample. The current root,
+            // reaction angles and independent part clocks stay live; world_
+            // and the live sampler continue to serve bone/socket queries.
+            CharacterWorldPose held;
+            if(!character_pose_direct_world(scene_.rig(),displayed_,frame,&held,error)||
+               !present_package_pose(actor,tick,displayed_,frame,held,error,terrain))return false;
+        }else{
+            if(!present_package_pose(actor,tick,local,frame,world_,error,terrain))return false;
+            displayed_=std::move(local);
+        }
+        package_pose_held_=hold;
+        base_=role;clock_=clock;last_tick_=tick;last_position_=actor.position;last_facing_=actor.facing;last_aim_yaw_=actor.upper_body_yaw;last_reaction_yaw_=actor.reaction_yaw;last_reaction_pitch_=actor.reaction_pitch;
         source_pose_active_=false;source_frame_scope_.reset();presentation_ready_=true;return true;
     }
     bool observe_receiver_key2(const BattleMvpActor& actor,u32 tick,Mat4* out)const{
@@ -733,9 +758,11 @@ private:
     bool provisional_walk_=false,provisional_jump_=false,provisional_dash_=false,provisional_air_dash_=false,
           provisional_glide_=false,provisional_cruise_=false,provisional_animated_cruise_=false;
     std::weak_ptr<const NativeBorgSourcePoseScope> source_frame_scope_;
+    bool package_pose_held_=false;
     std::shared_ptr<const BorgGameplayProfile> package_profile_;
     std::array<HsdBoneMotionClip,10> package_locomotion_;
     std::array<HsdBoneMotionClip,kBorgBattleMoves> package_moves_;
+    std::array<HsdBoneMotionClip,kBorgBattleMoves> package_followups_;
     std::array<std::vector<HsdBoneMotionClip>,kBorgBattleMoves> package_parts_;
     struct PresentPart {u16 record=0;AttachmentBoneTransform transform;u32 born=0,tick=0;};
     struct AnimatedPart {BorgBattlePartMaterial clip;AnimatedModelScene scene;};

@@ -2,7 +2,7 @@
 
 The credit difficulty, attacker rank and receiver rank roots each hold two row
 pointers (side 0 and side 1). This tool reads element 0 of each row and emits
-the paired values used by `damage-side` content. The rank rows are 16-entry
+the paired values used by `damage-side` content. The rank rows are eight-entry
 difficulty sheets; element 0 is the base difficulty. Numeric API data only.
 """
 import argparse
