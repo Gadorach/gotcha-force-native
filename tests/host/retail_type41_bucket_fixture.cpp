@@ -1,5 +1,6 @@
 // Original type-41 placement, bucket order, area request and stock return.
 #include "retail_stationary_contact.hpp"
+#include <algorithm>
 
 namespace {
 using namespace retail_fixture;
@@ -25,6 +26,12 @@ constexpr Options cases[]{
     {7,1,1,1,4,false},{7,0,0,0,5,false},{7,3,2,4,3,false},{6,2,1,3,2,false},
 };
 inline u32 cell_at(unsigned index,bool reverse){return carriers[reverse?(1-index):index];}
+struct AreaCase {float distance;bool shape,ally,masked;};
+constexpr AreaCase area_cases[]{
+    {22,false,false,false},{22,true,false,false},{70,true,false,false},{409,true,false,false},
+    {409.5f,true,false,false},{410,true,false,false},{22,true,true,false},{22,true,false,true},
+};
+struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;};
 
 class Check {
     const Module& mod;
@@ -92,9 +99,98 @@ class Check {
            word(actor+0x778)||word(actor+0x418))
             fail("type-41 tested path changed another actor, clock or HP");
     }
+    void follow_area(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
+        const auto rule=area_cases[probe.index];
+        const auto real=[&](u32 a){return std::bit_cast<float>(word(a));};
+        constexpr u32 shape=shapes[1],receiver=contact::receiver,attack_count=0x8043B5A0-21328;
+        const unsigned group=c.model==6?179:180,descriptor=246+unsigned(c.model==7),amount_index=26+unsigned(c.model==7);
+        const u32 amount_row=0x802C4760+24*amount_index;
+        unsigned first_publish=0,hit=0,lost=0,token=0,parent_retired=0,shape_retired=0,area_retired=0,requests=0,hit_stock=0;
+        unsigned opponent_ledger=0,ally_ledger=0,receiver_ledger=0;
+        float peak_radius=0,hit_radius=0,opening_radius=0;
+        if(at(blast+0x18)[0]!=(rule.shape?1:2))
+            fail("type-41 area initializer did not run during the original terminal bucket");
+        for(unsigned n=1;n<=64;++n){
+            // Visit 1 is the bucket that already requested and initialized
+            // the child; visit 2 consumes the parent's bound return channel.
+            if(n>1){
+                const auto grant=observe(0x80089A94,8,return_stock);
+                if(n==2)check_return(grant);
+                else if(grant.count)fail("type-41 area returned stock again after its parent");
+            }
+            if(half(actor+0x774)!=capacity-unsigned(n==1)||word(actor+0x778)||half(side+0x774)!=9)
+                fail("type-41 area changed either actor's stock");
+            call(0x80089554,0);
+            rebuild();
+            const bool has_shape=at(shape)[0]!=0;
+            const bool published=half(attack_count)!=0;
+            if(half(attack_count)>1||half(contact::receiver_count)!=unsigned(!rule.masked)||
+               (published&&(!has_shape||word(0x803C477C)!=shape))||
+               (n==1&&has_shape!=rule.shape)){
+                std::fprintf(stderr,"type41-area %u/%u n=%u atk=%u/%08X recv=%u active shape=%u child phase=%u parent phase=%u free=%u\n",
+                             c.model,probe.index,n,half(attack_count),word(0x803C477C),half(contact::receiver_count),
+                             unsigned(has_shape),at(blast+0x18)[0],at(parent+0x18)[0],half(contact::free_count+8));
+                fail("type-41 area published the wrong role or shape");
+            }
+            if(has_shape){
+                const float r=real(shape+0x7C);
+                if(word(shape+0x20)!=blast||word(shape+0x24)!=actor||word(shape+0x2C)!=0x802C4760||
+                   word(shape+0x28)!=common+0x400+descriptor*80||at(shape+0x11)[0]!=amount_index||
+                   at(shape+0x14)[0]!=group||real(shape+0x64)!=200.f||real(shape+0x68)!=100.f||
+                   real(shape+0x6C)!=300.f||half(blast+0x26C)!=2){
+                    std::fprintf(stderr,"type41-area %u/%u n=%u ptrs=%08X/%08X/%08X/%08X group=%u record=%u center=%g/%g/%g token=%u parent=%u\n",
+                                 c.model,probe.index,n,word(shape+0x20),word(shape+0x24),word(shape+0x28),word(shape+0x2C),
+                                 at(shape+0x14)[0],at(shape+0x11)[0],double(real(shape+0x64)),double(real(shape+0x68)),
+                                 double(real(shape+0x6C)),half(blast+0x26C),half(parent+0x26C));
+                    std::fprintf(stderr,"type41-area root=%g/%g/%g matrix=%g/%g/%g parent root=%g/%g/%g radius=%g\n",
+                                 double(real(blast+0x20)),double(real(blast+0x24)),double(real(blast+0x28)),
+                                 double(real(blast+0x118)),double(real(blast+0x128)),double(real(blast+0x138)),
+                                 double(real(parent+0x20)),double(real(parent+0x24)),double(real(parent+0x28)),double(r));
+                    fail("type-41 area lost its original common row, fresh token, or origin");
+                }
+                token=half(blast+0x26C);
+                if(n==1)opening_radius=r;
+                if(published&&!first_publish)first_publish=n;
+                peak_radius=std::max(peak_radius,r);
+            }else if(token&&!shape_retired)shape_retired=n;
+
+            CPUState pair{};CallObservation amount{contact::amount_entry};
+            const auto cut=mod.run_to_or_return(pair,ram,contact::pair_pass,{contact::hp_write},&amount,4096);
+            if(amount.count!=unsigned(cut!=0)||(cut&&(amount.caller!=0x8002F108||amount.arguments[0]!=amount_row||
+               amount.arguments[1]!=blast||amount.arguments[2]!=receiver)))
+                fail("type-41 HP attempt did not originate at the child");
+            if(cut){
+                if(!published||hit||rule.masked||pair.lr!=0x8002F1DC||pair.gpr[3]!=receiver||
+                   pair.gpr[4]>180||!amount.count||half(receiver+0x1C6)!=180)
+                    fail("type-41 area repeated a token or used the wrong HP recipient");
+                hit=n;requests=pair.gpr[4];hit_radius=real(shape+0x7C);hit_stock=half(actor+0x774);
+                mod.finish_stopped_leaf(pair,contact::hp_write,164);
+                lost=180-half(receiver+0x1C6);
+                opponent_ledger=word(actor+0x418);ally_ledger=word(actor+0x42C);receiver_ledger=word(receiver+0x41C);
+                if(lost!=requests||word(receiver+0x290)!=blast||word(blast+0x290)!=receiver||
+                   half(receiver+0x20C)!=token||at(blast+0x1D9)[0]!=16)
+                    fail("type-41 child HP, contact history or effect gate changed");
+            }
+            if(half(receiver+0x1C6)!=180-lost||half(actor+0x1C6)!=220||
+               word(actor+0x418)!=opponent_ledger||word(actor+0x42C)!=ally_ledger||word(receiver+0x41C)!=receiver_ledger||
+               (at(parent)[0]&&word(parent+0x290))||
+               (at(blast)[0]&&(word(blast+0x8C)!=parent||word(blast+0x90)!=actor)))
+                fail("type-41 retained parent/child did not preserve stock and credited HP separation");
+            if(!at(parent)[0]&&!parent_retired)parent_retired=n;
+            if(!at(blast)[0]&&!area_retired)area_retired=n;
+            if(parent_retired&&area_retired)break;
+        }
+        if(!parent_retired||!area_retired||word(head+9*4)||half(contact::free_count+6)!=2||
+           half(pool+18)!=3||half(contact::free_count+8)!=1+unsigned(rule.shape)||half(attack_count))
+            fail("type-41 area lifecycle did not restitute its own resources");
+        std::printf("type41-area-hp: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %08X %08X %08X\n",
+                    c.model,probe.index,capacity,first_publish,hit,token,requests,lost,hit_stock,opponent_ledger,ally_ledger,
+                    receiver_ledger,parent_retired,shape_retired,area_retired,
+                    std::bit_cast<u32>(opening_radius),std::bit_cast<u32>(hit_radius),std::bit_cast<u32>(peak_radius));
+    }
 public:
     Check(const Module& module,std::vector<u8> data,Options c,const contact::ActorSpec& spec,
-          const contact::HitBlock& hit,const Common& bank_data,unsigned index):mod(module),ram(std::move(data)){
+          const contact::HitBlock& hit,const Common& bank_data,unsigned index,const AreaProbe* probe=nullptr):mod(module),ram(std::move(data)){
         std::memcpy(at(actor_spec),spec.data(),spec.size());
         put32(at(0x803C4D94),actor_spec);
         put32(at(0x8043B5A0-31852),contact::scene);
@@ -126,14 +222,21 @@ public:
         at(0x803D0000+15080+852)[0]=1;
         put32(at(bank+0x600),visual);put32(at(visual_links),visual_rows);
         put32(at(0x803BB374),visual);put32(at(visual+16),visual_links);
-        for(unsigned record:{3u,5u,18u,22u})put32(at(visual_rows+4*record),empty);
+        for(unsigned record:{3u,5u,18u,22u,23u})put32(at(visual_rows+4*record),empty);
         put32(at(0x80436380),pool);
         put32(at(pool+12),c.descriptor_cells?desc:0);put16(at(pool+18),c.descriptor_cells);
         for(unsigned i=0;i<c.descriptor_cells;++i)put32(at(desc+i*0x80),i+1<c.descriptor_cells?desc+(i+1)*0x80:0);
+        if(probe){
+            const auto rule=area_cases[probe->index];
+            contact::bind_sasuke(mod,ram,{200.f+rule.distance,100.f,300.f},probe->hurt,spec,probe->spec,220);
+            put32(at(actor+0x4AC),actor_spec);
+            at(contact::receiver+0x88)[0]=rule.ally?0:1;
+            put16(at(contact::receiver+0x272),rule.masked?2:0);
+        }
         // Rows 8/11 have an area cell; row 9 refuses that cell, row 10
         // offers it with only one spare descriptor.
-        const bool area_cell=index==6||index==7||index==8||index==10||index==11||index>=14;
-        const unsigned bomb_count=c.exit==3?2u:1u;
+        const bool area_cell=probe||index==6||index==7||index==8||index==10||index==11||index>=14;
+        const unsigned bomb_count=c.exit==3&&!probe?2u:1u;
         set_pool(3,{cell_at(0,c.reverse),c.carrier_cells==1?blast:cell_at(1,c.reverse),blast},
                  c.carrier_cells+unsigned(area_cell));
         set_pool(4,{shapes[0],shapes[1],extra_shape},c.shape_cells);
@@ -192,13 +295,14 @@ public:
             after_exit=half(actor+0x774);
             retire_count=1;
         }else{
+            if(probe)place(first+0x20,200.f);
             if(c.exit==3){
                 put32(at(actor+0x5BC),0x400);call(owner_hook);
                 if(half(actor+0x774)!=after_pay||at(actor+0x6F7)[0]!=1)
                     fail("type-41 remote command did not arm independently of the debit");
                 // Keep the nonselected sibling alive through the bounded
                 // visits; declared positions and substate, not live flight.
-                at(second+0x19)[0]=2;
+                if(bomb_count==2)at(second+0x19)[0]=2;
             }else{
                 put16(at(first+0x152),1); // explicit near-expiry inlet after original bind
                 at(actor+0x6F7)[0]=1; // Time must not consume the remote latch
@@ -210,13 +314,14 @@ public:
             if(request.count!=1||request.caller!=(c.exit==2?0x800E0B4C:0x800E0AAC)||
                request.arguments[0]!=first||request.arguments[1]!=first+0x20||request.arguments[2]!=fx_key||
                at(first+0x18)[0]!=2||after_exit!=after_pay||latch!=unsigned(c.exit==2)||
-               (c.exit==3&&(at(second+0x18)[0]!=1||half(second+0x152)!=initial2-1)))
+               (bomb_count==2&&(at(second+0x18)[0]!=1||half(second+0x152)!=initial2-1)))
                 fail("type-41 selected the wrong bomb, point, area key or stock boundary");
             area_made=at(blast)[0]!=0;
             if(bool(area_made)!=(area_cell&&c.descriptor_cells>=bomb_count+2)||
                (area_made&&(at(blast+0x10)[0]!=5||at(blast+0x11)[0]!=fx_key||
                             word(blast+0x8C)!=first||word(blast+0x90)!=actor||word(blast+0x20)!=word(first+0x20))))
                 fail("type-41 area allocation changed credit or parent");
+            if(probe){follow_area(c,*probe,capacity,first);return;}
             rebuild();
             check_return(observe(0x80089A94,8,return_stock));
             phase=at(first+0x18)[0];
@@ -254,7 +359,8 @@ public:
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so < qualified-payload");
+    const bool area_hp=argc==4&&!std::strcmp(argv[3],"--area-hp");
+    if(argc!=3&&!area_hp)fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -262,6 +368,16 @@ int main(int argc,char** argv){
     Common bank{};contact::HitBlock hit{};std::array<contact::ActorSpec,2> specs{};
     read(bank);read(hit);
     for(auto& spec:specs)read(spec);
-    for(unsigned i=0;i<std::size(cases);++i)Check(mod,original,cases[i],specs[cases[i].model-6],hit,bank,i);
+    if(area_hp){
+        contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
+        for(unsigned m=6;m<=7;++m)
+            for(unsigned i=0;i<std::size(area_cases);++i){
+                const AreaProbe probe{i,hurt,defender};
+                const Options opts{u8(m),u8(1+unsigned(area_cases[i].shape)),1,3,u8(m==6?2:3),false};
+                Check(mod,original,opts,specs[m-6],hit,bank,0,&probe);
+            }
+    }else{
+        for(unsigned i=0;i<std::size(cases);++i)Check(mod,original,cases[i],specs[cases[i].model-6],hit,bank,i);
+    }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra type-41 payload");
 }

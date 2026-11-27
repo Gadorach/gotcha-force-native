@@ -1788,8 +1788,8 @@ visit, unlike the [tested Thunder Wire exit](#stock-returns-owner-gates-and-thun
 All **16 cases** matched on O0/O1/O2. The original bucket is tested
 in isolation; roots, the sibling substate, and Time's near-expiry
 counter are supplied. The randomized initialization seeds do not
-measure live lifetime. No area damage, live controller scheduling,
-or native gameplay is qualified.
+measure live lifetime. The next replay checks area damage;
+live controller scheduling and native gameplay remain unqualified.
 
 Compile [`retail_type41_bucket_fixture.cpp`](../tests/host/retail_type41_bucket_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -1798,6 +1798,41 @@ with the [phase fixture](#shared-action-gate) flags:
 python3 -m tools.analyze.retail_type41_bucket \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type41-bucket.json
+```
+
+#### Type-41 area HP: credit, role gate and exact tangent
+
+The [area HP replay](api-map/gg4e08-type41-area-hp.json) follows one
+paid Time or Remote bomb into the original child initializer, sphere
+publication, ordinary pair and HP writer. Time uses common amount
+record `802C49D0`; Remote uses `802C49E8`. Both have raw power 20.
+In the tested settings both removed **17 HP** from opposing Sasuke
+and **4 HP** from allied Sasuke. The caster's opponent or ally ledger
+and Sasuke's receiver ledger record the corresponding amount.
+
+The terminal bucket initializes the child. The next bucket returns
+stock **before** the first close hit, and the following visit returns
+the parent carrier. Only the child owns the accepted token, which
+does not hit the same recipient again. Refusing the opening shape
+or masking Sasuke's receiver role prevents damage without preventing
+the stock return.
+
+The spheres reach radius **387.5** against Sasuke's radius 22.
+At the tested stationary axis separation, **409.5 hits** (exact
+tangency), while **410 misses**. The child shape returns on visit
+18 and its carrier on 51. Time key 19 also matches the earlier
+type-33 sibling replay's shape-refusal, near and middle cases, without
+equating their parent routes or stock handling.
+
+All **16 cases** matched across O0/O1/O2. Visit numbers start at
+the terminal bucket and use separate original registry/pair passes.
+The root and receiver pose are declared; moving-body sweeps, full
+scene/input order, rendering and native gameplay remain unqualified.
+
+```sh
+python3 -m tools.analyze.retail_type41_area_hp \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type41-area-hp.json
 ```
 
 ### Contact rates through an original joint sample

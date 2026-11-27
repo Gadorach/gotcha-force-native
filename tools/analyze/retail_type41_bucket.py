@@ -105,12 +105,7 @@ def decode(report):
     return rows
 
 
-def export(dol, afs, fixture, module, output):
-    output = Path(output)
-    if output.exists() or output.is_symlink():
-        raise FileExistsError("type-41 bucket output already exists")
-    dol, module = (Path(p).resolve(strict=True) for p in (dol, module))
-    image = s.DolImage(s.read_bounded(dol, 8 << 20), s.SOURCE_SHA256)
+def qualified_payload(image, afs, receiver=None):
     s.verify_text(image, (*s.TEXT, *returns.TEXT, *TEXT))
     verify_source(image, s.read_metadata(s.MAPS / "gg4e08-standalone-installers.json", s.INSTALLERS_SHA256),
                   s.read_metadata(s.MAPS / "gg4e08-stock-returns.json", STOCK_RETURNS_SHA256),
@@ -126,9 +121,21 @@ def export(dol, afs, fixture, module, output):
             hit, spec = read_normal(archive, model, HIT_SHA256, digest)
             hits.append(hit)
             specs.append(spec)
+        payload = common+hits[0]+b"".join(specs)
+        if receiver is not None:
+            payload += b"".join(read_normal(archive, *receiver))
         if hits[0] != hits[1] or s.archive_stamp(stream) != stamp:
             raise ValueError("type-41 exact shared hit block or archive input changed")
-    rows = decode(s.fixture_report(fixture, dol, module, payload=common+hits[0]+b"".join(specs)))
+    return payload
+
+
+def export(dol, afs, fixture, module, output):
+    output = Path(output)
+    if output.exists() or output.is_symlink():
+        raise FileExistsError("type-41 bucket output already exists")
+    dol, module = (Path(p).resolve(strict=True) for p in (dol, module))
+    image = s.DolImage(s.read_bounded(dol, 8 << 20), s.SOURCE_SHA256)
+    rows = decode(s.fixture_report(fixture, dol, module, payload=qualified_payload(image, afs)))
     raw = s.encode({
         "kind": "gf-retail-type41-bucket", "revision": 1, "source_dol_sha256": s.SOURCE_SHA256,
         "source_afs_sha256": s.AFS_SHA256, "stock_returns_sha256": STOCK_RETURNS_SHA256, "type5_roster_sha256": TYPE5_SHA256,

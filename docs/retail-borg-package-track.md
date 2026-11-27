@@ -1655,8 +1655,11 @@ The [original bucket replay](retail-code-atlas.md#type-41-bombs-bucket-order-are
 now joins paid placement, initialization, command and phase‑2 return
 for Time and Remote. The first placed Remote bomb consumes a single
 command in both tested cell orders, even if the area refuses. Both
-child shapes can be bound with a spare cell; no child HP or live
-controller timing is qualified.
+child shapes can be bound with a spare cell. The
+[area HP replay](retail-code-atlas.md#type-41-area-hp-credit-role-gate-and-exact-tangent)
+then checks stationary Sasuke contacts for both children: 17 HP on the
+opposing team and 4 HP on the allied team. No live controller timing
+or native damage binding is qualified.
 
 Regenerate with `time-bomber` and `remote-bomber`. Neither package
 admits gameplay or an alternate variant.
