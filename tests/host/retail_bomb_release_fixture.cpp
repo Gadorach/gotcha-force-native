@@ -63,6 +63,8 @@ constexpr std::array cue_pilots{
     CuePilot{12,5,0x8019E9A4,0x803766F8,0x80376A60,0x801A0414,{0x80377188,0x803771E0}},
 };
 enum class CueCase {paid,empty_stock,empty_carriers,lower_only};
+enum class AimCase {no_target,cached,point_overwritten,gate_added,gate_removed,high,below,
+                    tracking_lost,tracking_moved,socket_shift};
 
 class Check {
     const Module& mod;
@@ -493,6 +495,9 @@ public:
     }
     void run_case(const Case& c,bool report=true){
         owner(c);free_pools(c.carriers,c.descriptors);
+        paid_release(c,report);
+    }
+    void paid_release(const Case& c,bool report){
         const bool gun=c.model==0x0101,charged=gun&&c.state==3;
         const bool ordinary_paid=!charged&&c.stock;
         std::array<u8,4> keys{};
@@ -540,6 +545,106 @@ public:
         if(report)std::printf("bomb: %u %u %u %u %u %u %u %u %u %u %u %.0f %u\n",
                     c.model,c.state,c.extra,c.stock,c.carriers,c.descriptors,count,attempted,
                     made,published,remaining,double(clock),boundary==audio?1:boundary==normal_x_helper?2:boundary==movement_tail?3:0);
+    }
+    void targeted_aim(const CuePilot& pilot,const HitBlock& block,AimCase scenario){
+        constexpr u32 matrix_update=0x80047AA4;
+        constexpr u32 target_refresh=0x8006BDA8,validity_actor=0x8101E000;
+        const bool copy_target=scenario!=AimCase::no_target&&scenario!=AimCase::gate_added;
+        const bool live_gate=scenario!=AimCase::no_target&&scenario!=AimCase::gate_removed;
+        const bool shifted=scenario==AimCase::socket_shift;
+        const bool lost=scenario==AimCase::tracking_lost;
+        const Point stored=scenario==AimCase::high?Point{465,9000,700}:
+                           scenario==AimCase::below?Point{-135,-30,700}:Point{465,200,700};
+        const auto write_point=[&](u32 at_base,const Point& p){
+            for(unsigned i=0;i<p.size();++i)put_float(at(at_base+4*i),p[i]);
+        };
+        const auto point=[&](u32 at_base){return Point{fp(at_base),fp(at_base+4),fp(at_base+8)};};
+
+        const Case c{pilot.model,2,0,1,1,1};
+        owner(c);free_pools(1,1);
+        at(receiver)[0]=1;
+        at(validity_actor)[0]=1;
+        write_point(receiver+0x20,{-200,50,-600}); // Deliberately different from either aim operand.
+        write_point(receiver+0x64,stored);
+        put_float(at(receiver+0xB4),1.f);
+        put_float(at(validity_actor+0xB4),1.f);
+        if(copy_target){
+            // The target-selection inputs are declared, not scheduled.
+            // Run the original refresh to publish both references and
+            // cache the sampled point rather than seeding its outputs.
+            put32(at(actor+0x504),receiver);put32(at(actor+0x508),validity_actor);
+            put16(at(actor+0x6B8),0); // Do not clear the declared selected references.
+            CPUState refresh{};refresh.gpr[3]=actor;
+            mod.run(refresh,ram,target_refresh);
+            if(be32(at(actor+0xC8))!=receiver||be32(at(actor+0xCC))!=validity_actor||point(actor+0x518)!=stored)
+                fail("original target refresh did not sample the exact point reference");
+        }else{
+            write_point(actor+0x518,stored); // Declared leftover cache with both references absent.
+        }
+        paid_release(c,false);
+        const auto obj=cell(0);
+        if(point(obj+0x144)!=stored||be32(at(obj+0xC8))!=(copy_target?receiver:0)||
+           be32(at(obj+0xCC))!=(copy_target?validity_actor:0)||half(actor+0x784)||
+           at(obj)[0x11]!=pilot.key)
+            fail("type-15 did not copy the declared point and target references at release");
+        put32(at(actor+0xC8),live_gate?receiver:0);
+        if(scenario==AimCase::point_overwritten)write_point(actor+0x518,{-500,800,-700});
+        if(shifted)put_float(at(actor+0x8D4+11*48+12),160.f);
+
+        bind_inlets(c,block,1);
+        const u32 reaction=pilot.model==3?0x8033B198:pilot.model==12?0x80376960:0x802D4160;
+        put32(at(actor+0x27C),reaction);
+        put32(at(0x8103A080+4*2),0x8103A880); // Alpha II's absent visual record.
+        const auto before=ram;
+        CPUState launch{};launch.gpr[3]=8;
+        CallObservation shape_bind{bind};
+        const auto reached=mod.run_to_or_return(launch,ram,visit,{matrix_update},&shape_bind);
+        const auto origin=point(obj+0x20),velocity=point(obj+0x38);
+        const auto speed=std::hypot(velocity[0],velocity[1],velocity[2]);
+        if(reached!=matrix_update||launch.lr!=0x8007E1D4||launch.gpr[3]!=obj||
+           shape_bind.count!=1||shape_bind.caller!=0x8007DE04||
+           shape_bind.arguments[0]!=obj||shape_bind.arguments[1]!=1||
+           at(obj)[0x18]!=1||half(obj+0x1C)!=600||half(obj+0x1E)!=4||fp(obj+0x50)!=0.3f||
+           origin!=Point{shifted?215.f:165.f,200.f,300.f}||std::abs(speed-40.f)>0.002f||
+           be32(at(shapes+0x20))!=obj||be32(at(shapes+0x2C))!=reaction){
+            std::fprintf(stderr,"bomb aim model=%04X case=%u reached=%08X lr=%08X binds=%u phase=%u clock=%u "
+                         "radius actor=%08X reaction=%08X velocity=(%.6f,%.6f,%.6f)\n",
+                         pilot.model,unsigned(scenario),reached,launch.lr,shape_bind.count,at(obj)[0x18],half(obj+0x1C),
+                         be32(at(shapes+0x20)),be32(at(shapes+0x2C)),double(velocity[0]),double(velocity[1]),double(velocity[2]));
+            fail("source bomb initializer, socket, group or launch magnitude did not match");
+        }
+        if(live_gate){
+            const float x=stored[0]-origin[0],z=stored[2]-origin[2];
+            const auto horizontal=std::hypot(velocity[0],velocity[2]);
+            if(horizontal<=0||std::abs((velocity[0]*z-velocity[2]*x)/std::hypot(x,z))>0.002f||
+               velocity[0]*x+velocity[2]*z<=0)
+                fail("source bomb launch did not aim horizontally at the cached point");
+        }else if(std::abs(velocity[0])>0.0001f||std::abs(velocity[1])>0.0001f||std::abs(velocity[2]-40.f)>0.0001f){
+            fail("ungated bomb launch did not keep its body heading");
+        }
+
+        // Fresh replay of the complete first visit. Change only the
+        // tracker's declared state between later visits, not the carrier.
+        std::memcpy(ram.data(),before.data(),ram.size());
+        for(unsigned n=1;n<=4;++n){
+            if(lost&&n==2)at(validity_actor)[0]=0;
+            if(lost&&n==3)at(validity_actor)[0]=1;
+            if(scenario==AimCase::tracking_moved&&n==4)write_point(receiver+0x64,{665,650,700});
+            CPUState step{};step.gpr[3]=n==1?8:9;
+            mod.run(step,ram,visit,1024);
+            const bool tracking=copy_target&&(!lost||n==1);
+            const unsigned until_recheck=tracking?(n==4?4:4-n):lost?3:4;
+            const auto moved=point(obj+0x38);
+            if(at(obj)[0x18]!=1||half(obj+0x1C)!=600-n||half(obj+0x1E)!=until_recheck||
+               be32(at(obj+0xC8))!=(tracking?receiver:0)||point(obj+0x144)!=stored||
+               std::abs(velocity[0]*moved[2]-velocity[2]*moved[0])>0.01f||
+               half(actor+0x784)||(n<4&&fp(obj+0x50)!=0.3f))
+                fail("type-15 tracking, stock or correction cadence mismatch");
+        }
+        std::printf("bomb-aim: %u %u %u %u %u %u %.0f %.0f %.0f %.5f %.5f %.5f %.7f\n",
+                    pilot.model,unsigned(scenario),unsigned(copy_target),unsigned(live_gate),unsigned(be32(at(obj+0xC8))!=0),
+                    half(obj+0x1E),double(origin[0]),double(origin[1]),double(origin[2]),
+                    double(velocity[0]),double(velocity[1]),double(velocity[2]),double(fp(obj+0x50)));
     }
     void first_bind(const Case& c,const HitBlock& block,unsigned capacity,bool report=true,Terrain terrain=Terrain::empty){
         run_case(c,false);
@@ -994,9 +1099,10 @@ int main(int argc,char** argv){
     const bool floor_contact=argc==4&&!std::strcmp(argv[3],"--floor-contact");
     const bool actor_area=argc==4&&!std::strcmp(argv[3],"--actor-area");
     const bool x_cue=argc==4&&!std::strcmp(argv[3],"--x-cue");
-    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&!actor_area&&!x_cue&&std::strcmp(argv[3],"--first-bind"))))
+    const bool aim=argc==4&&!std::strcmp(argv[3],"--aim");
+    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&!actor_area&&!x_cue&&!aim&&std::strcmp(argv[3],"--first-bind"))))
         fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so "
-             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact|--actor-area|--x-cue]");
+             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact|--actor-area|--x-cue|--aim]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
     if(x_cue){
@@ -1004,6 +1110,20 @@ int main(int argc,char** argv){
             for(auto scenario:{CueCase::paid,CueCase::empty_stock,CueCase::empty_carriers,CueCase::lower_only}){
                 Check test(module,original);
                 test.ordinary_x_cue(pilot,flag,scenario);
+            }
+        return 0;
+    }
+    if(aim){
+        std::array<HitBlock,cue_pilots.size()> blocks{};
+        for(auto& b:blocks)
+            if(std::fread(b.data(),1,b.size(),stdin)!=b.size())fail("ordinary bomb aim block extent");
+        if(std::getc(stdin)!=EOF)fail("ordinary bomb aim trailing input");
+        for(unsigned i=0;i<cue_pilots.size();++i)
+            for(auto scenario:{AimCase::no_target,AimCase::cached,AimCase::point_overwritten,AimCase::gate_added,
+                               AimCase::gate_removed,AimCase::high,AimCase::below,AimCase::tracking_lost,
+                               AimCase::tracking_moved,AimCase::socket_shift}){
+                Check test(module,original);
+                test.targeted_aim(cue_pilots[i],blocks[i],scenario);
             }
         return 0;
     }

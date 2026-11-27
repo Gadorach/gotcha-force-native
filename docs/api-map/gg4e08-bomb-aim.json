@@ -1,0 +1,331 @@
+{
+  "common_cases_verified_for_each_pilot": [
+    {
+      "case": "no-target-with-leftover-cache",
+      "fourth_active_visit": {
+        "gravity": 0.3,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": false
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": false,
+      "original_target_refresh_used": false,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": false,
+      "velocity_before_first_active_visit": [
+        0.0,
+        0.0,
+        40.0
+      ]
+    },
+    {
+      "case": "cached-diagonal-point",
+      "fourth_active_visit": {
+        "gravity": 0.3003559,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        23.97356,
+        1.87707,
+        31.96474
+      ]
+    },
+    {
+      "case": "owner-cache-overwritten-before-launch",
+      "fourth_active_visit": {
+        "gravity": 0.3003559,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        23.97356,
+        1.87707,
+        31.96474
+      ]
+    },
+    {
+      "case": "launch-gate-added-after-release",
+      "fourth_active_visit": {
+        "gravity": 0.3,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": false
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": false,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": false,
+      "velocity_before_first_active_visit": [
+        23.97356,
+        1.87707,
+        31.96474
+      ]
+    },
+    {
+      "case": "launch-gate-removed-after-release",
+      "fourth_active_visit": {
+        "gravity": 0.15,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": false,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        0.0,
+        0.0,
+        40.0
+      ]
+    },
+    {
+      "case": "high-point-pitch-cap",
+      "fourth_active_visit": {
+        "gravity": 0.15,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        9000,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        16.72096,
+        28.69424,
+        22.29461
+      ]
+    },
+    {
+      "case": "point-below-and-left",
+      "fourth_active_visit": {
+        "gravity": 0.2625512,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        -135,
+        -30,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        -22.24162,
+        -15.02868,
+        29.6555
+      ]
+    },
+    {
+      "case": "validity-lost-then-restored",
+      "fourth_active_visit": {
+        "gravity": 0.3,
+        "refit_countdown_after": 3,
+        "tracking_reference_retained": false
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        23.97356,
+        1.87707,
+        31.96474
+      ]
+    },
+    {
+      "case": "tracking-point-moved-before-refit",
+      "fourth_active_visit": {
+        "gravity": 0.15,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        165,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        23.97356,
+        1.87707,
+        31.96474
+      ]
+    },
+    {
+      "case": "later-socket-shift",
+      "fourth_active_visit": {
+        "gravity": 0.3003326,
+        "refit_countdown_after": 4,
+        "tracking_reference_retained": true
+      },
+      "key_11_origin_at_launch": [
+        215,
+        200,
+        300
+      ],
+      "live_caster_gate_at_launch": true,
+      "original_target_refresh_used": true,
+      "point_copied_at_release": [
+        465,
+        200,
+        700
+      ],
+      "target_references_copied_at_release": true,
+      "velocity_before_first_active_visit": [
+        21.17917,
+        1.77059,
+        33.88668
+      ]
+    }
+  ],
+  "entries": {
+    "active_visit": "8007E200",
+    "declared_target_refresh": "8006BDA8",
+    "factory": "8007DB5C",
+    "initializer": "8007DD84",
+    "matrix_update_call_before_first_active_visit": "8007E1D0"
+  },
+  "kind": "gf-retail-bomb-aim",
+  "notes": [
+    "Each fixture starts at the paid release leaf. With both selected references declared, the original refresh populates the owner's aim and validity references and caches the first reference's point.",
+    "The constructor copies the cached point and both target references. The initializer tests the caster's live aim reference, but reads the carrier's stored point and the later supplied key-11 pose.",
+    "In flight the separate validity reference can clear tracking without choosing a new target. Gravity can refit using the tracked live point without changing horizontal heading.",
+    "The first three active visits retain 0.3 gravity. The receipt observes the fourth, not a whole-flight intercept.",
+    "Target selection, matrices, and pose are declared; no global scheduler, moving-body hit, or native launch rule is established."
+  ],
+  "operands": {
+    "gravity_limits": [
+      0,
+      7.5
+    ],
+    "initial_gravity": 0.3,
+    "launch_speed": 40,
+    "max_gravity_change_per_refit": 0.15,
+    "maximum_upward_pitch_rad": 0.8,
+    "refit_interval": 4
+  },
+  "pilots": [
+    {
+      "borg": "gg4e08:0000",
+      "factory_row": "802D6D68",
+      "group": 1,
+      "key": 0,
+      "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "reaction_table": "802D4160",
+      "release_site": "80071678"
+    },
+    {
+      "borg": "gg4e08:0003",
+      "factory_row": "802D6DA0",
+      "group": 1,
+      "key": 1,
+      "normal_hit_block_sha256": "787114791beb040ca95a23bc15b0e98a23c170ed775cd41eee3a9e7ffec6e70c",
+      "reaction_table": "8033B198",
+      "release_site": "80071690"
+    },
+    {
+      "borg": "gg4e08:000a",
+      "factory_row": "802D6E10",
+      "group": 1,
+      "key": 3,
+      "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "reaction_table": "802D4160",
+      "release_site": "800716C0"
+    },
+    {
+      "borg": "gg4e08:000c",
+      "factory_row": "802D6E80",
+      "group": 1,
+      "key": 5,
+      "normal_hit_block_sha256": "0e834cbf67276635456f28fd2e5c1a82ce6eaa69f693a9a8cce6a43e282daa4f",
+      "reaction_table": "80376960",
+      "release_site": "801A04D8"
+    }
+  ],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

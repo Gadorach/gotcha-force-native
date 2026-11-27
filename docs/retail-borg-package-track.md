@@ -1177,9 +1177,12 @@ body-slot admission, or the parent shape's post-impact contact on
 terrain. No Ninja move is bound to either rule.
 The [ordinary-X cue replay](retail-code-atlas.md#ordinary-x-installed-program-vm-cue-and-paid-bomb-release)
 now joins the original phase handler to its VM-generated cue, stock,
-and the constructor's later key-11 sample. It supplies the pose and
-does not run live controls or qualify the target-dependent aim path.
-Live scheduling and prop response remain separate checks.
+and the constructor's later key-11 sample. The separate
+[targeted launch replay](retail-code-atlas.md#ordinary-x-bombs-copied-aim-live-gate-and-gravity-refit)
+distinguishes copied aim, the live launch gate, and later gravity
+correction. The replays supply the pose and target selection; they
+do not run live controls, qualify a full intercept, or bind a native
+launch rule. Live scheduling and prop response remain separate checks.
 
 ### Command Girl: B and X do not request the same family of beam
 

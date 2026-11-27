@@ -669,6 +669,41 @@ python3 -m tools.analyze.retail_bomb_x_cue \
   /tmp/opencode/gf-bomb-x-cue.json
 ```
 
+### Ordinary X bombs: copied aim, live gate, and gravity refit
+
+The [aim replay](api-map/gg4e08-bomb-aim.json) checks keys 0, 1, 3
+and 5 for the same four normal owners. It declares the selected
+target references, lets the original refresh cache the target point,
+and then runs the paid release and launch. Three inputs are separate:
+
+- **At release**, the factory copies the aim point and both references.
+  Overwriting the caster's point after release does not turn the bomb.
+- **At launch**, the caster's current `+0xC8` reference gates the
+  target solve. That solve uses the *copied* point and the *later*
+  logical-key-11 socket. Removing the gate produces body-heading
+  launch even if the carrier still has tracking. Adding the gate
+  after release enables aimed launch without supplying a tracking
+  reference. The measured speed is 40; the high-point case reaches
+  the 0.8-radian upward cap.
+- **In flight**, a separate validity reference can clear tracking.
+  Restoring it did not reacquire tracking through visit four. With
+  valid tracking, the fourth visit can refit gravity from the
+  tracked actor's current point without changing horizontal heading.
+  Moving that point before the fourth visit changed gravity from
+  the initial 0.3 to 0.15 in the tested case.
+
+All 40 cases matched across O0, O1 and O2. The replay uses declared
+target selection and socket matrices and observes four active
+visits, not a verified intercept or live lock-on scheduler. It
+does not bind a native launch rule or a retail move.
+
+```sh
+python3 -m tools.analyze.retail_bomb_aim \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-aim.json
+```
+
 ### Type-15 bomb requests under pool pressure
 
 The [bomb release receipt](api-map/gg4e08-bomb-release.json) runs
