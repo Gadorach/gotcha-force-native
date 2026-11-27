@@ -96,6 +96,57 @@ commit vs. refusal, the two rows from the unmodified DOL, and the
 slot-61 relay: 36 checks passed on each of the unmodified O0, O1,
 and O2 recomp modules. It does not run the whole live tick dispatcher.
 
+### Processed input and charge operands
+
+The [input map](api-map/gg4e08-action-input.json) joins the shared
+processed-pad consumer (`80056900`), conditioner (`800685C0`) and
+action arbiter (`800699D8`). In a scoped human-source visit, the
+consumer derives pressed and released edges from the current and previous
+held masks. A source-switch visit explicitly clears those edges.
+Fresh B (`0x200` in the processed packet) generates two candidate
+bits; it does not by itself choose ranged or close-B. Fresh X
+(`0x400`) supplies its own bit. Holding either button does not recreate
+the ordinary fresh-press request.
+
+The original arbiter stops at the first nonzero probe: linked action,
+charged X, charged B, ordinary X, close B, then ordinary B. The normal
+X or close-B branch can refuse and let the later B branch try. The
+linked-actor probe can consume priority without installing a row; that
+live path was not tested. The conditioner can also produce requests
+that are not acted on by this arbiter. None of this determines when
+other handlers run before or instead of the arbiter.
+
+The charge updater reads held buttons and produces separate release
+requests when the prior accumulator has reached the actor-spec limit.
+The map resolves the standalone slot-0 record for **all 206 Borgs**.
+Across 317 profile references, **78 Borgs** have at least one enabled
+charge mode: 59 have B-charge, 30 have X-charge, and 11 have both
+somewhere in their installer profiles. Group 4 has no enabled profile
+in this atlas. The three recorded floats per Borg are source limits,
+not measured frames or guarantees that a particular profile is active.
+
+The [bounded original-input fixture](../tests/host/retail_action_input_fixture.cpp)
+feeds processed packets into the unmodified functions with declared
+actor/scene state and six separate slot records. It reaches Machine
+Red's ranged-B and X rows, Sasuke's close-B row, and both G-Black charge
+profiles. With the same sufficiently long B+X hold and release, profile
+`p088` commits charged B (`group 3`, state `3`); `p089` generates both
+requests and commits charged X (`group 5`, state `4`). All 12
+sequences passed on the original O0, O1 and O2 recomp modules. These are
+isolated profile comparisons with a supplied clock step and no live
+move during the hold. They neither pick a profile at runtime nor prove
+cancel timing, actual release payloads, or a hit.
+
+Generate the metadata locally using the qualified AFS as well as the
+atlas inputs. Compile the fixture in place of the phase fixture in the
+command below; it takes the same DOL and recomp-module arguments.
+
+```sh
+python3 -m tools.analyze.retail_action_input \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  "$GF_CATALOG" "$GF_SYMBOLS" /tmp/opencode/gf-action-input.json
+```
+
 ## Shared action gate
 
 The [phase-gate map](api-map/gg4e08-action-phase-gate.json) isolates

@@ -62,7 +62,7 @@ constexpr Case cases[]{
 void prepare_scene(std::vector<u8>& ram){
     put32(ram.data()+0x8043B5A0-31852-GC_RAM_BASE,settings);
     ram[settings-GC_RAM_BASE+69]=5; // Early return from the unrelated sample/sound selector.
-    for(unsigned i=0;i<6;++i)put32(ram.data()+0x803C4E84-GC_RAM_BASE+4*i,peer);
+    for(unsigned i=0;i<6;++i)put32(ram.data()+0x803C4E84-GC_RAM_BASE+4*i,i?peer+0x1E00*(i-1):actor);
 }
 
 void check_retail_zero_rows(const Module& mod,const std::vector<u8>& original){

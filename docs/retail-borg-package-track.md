@@ -1286,6 +1286,13 @@ and configuration roots. Its local motion bank also differs from Neo
 G-Red's. Shared class logic and the player's comparable-control report
 are not exact movement or attack bindings.
 
+The [processed-input fixture](retail-code-atlas.md#processed-input-and-charge-operands)
+now verifies a prefix of branch selection. With an idle actor and
+both buttons held past their supplied limit then released together,
+the actual B-only profile selects charged B and the profile with
+both modes selects charged X. It does not identify when the live
+installer picks each config or join either row to a cue.
+
 **API gap:** separate, qualified accepted charge/pose routes and
 object-specific emitter/receiver transactions. `aim-lock` can cover a
 committed direction only after its clock and sample owner are proved;
