@@ -614,6 +614,11 @@ After decrement at `8005A520`, a still-positive count sets the
 two local time factors (`+1524` and `+7624`) to `0.03`. Seed 1 has no
 slow tick on this branch.
 
+The [original body-clock replay](retail-code-atlas.md#contact-pose-clock-receiver-timer-and-linked-rate-copying)
+checks that distinction for four projectile contacts and verifies
+rate copying in the declared linked-body inlet. These body-clock
+visits are not native render ticks or evidence of frame scheduling.
+
 `--contact-pause-test` converts agreeing seeds to `seed - 1` held
 native render ticks for 83 melee moves and 34 projectile moves.
 There are 188 qualified receiving bodies. Another 53 reviewed moves

@@ -1177,6 +1177,55 @@ python3 -m tools.analyze.retail_contact_gate_clock \
   /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-gate-clock.json
 ```
 
+### Contact pose clock: receiver timer and linked rate copying
+
+The [body-clock replay](api-map/gg4e08-contact-pose-clock.json)
+separates arming a timer from consuming it. The original pair
+has already written the receiver timer at the amount entry,
+before writing HP or changing either rate. An existing timer
+of 0, 2 or 6 is replaced only by a larger attack-record seed.
+The credited fighter never acquires that timer from the tested
+non-body collision objects.
+
+| Tested attack | Source seed | Slow body-clock visits from a clear timer |
+| --- | ---: | ---: |
+| Red Attacker B / Orange Fighter X (type 76) | 1 | 0 |
+| Flying Saucer type-32 carrier | 4 | 3 |
+| Standalone type-9 key 4 | 0 | 0 |
+
+`8005A378` decrements before testing the remaining timer. A
+positive remainder writes **0.03** to both local rates. On
+expiry the primary rate restores the base; the secondary rate
+restores the base times both local multipliers. For a declared
+base of 1.5 and multipliers 0.5 and 0.75, that is **0.5625**.
+These visits do not decrement the separate contact-visual gate.
+
+With link kind `+0x4A0 = 2`, the follower reads the linked
+body's current rates and leaves its own timer untouched. Reading
+before and after the leader's visit gave the old and new rates,
+respectively. The separate `+0x4A1` override takes precedence:
+it writes three unit rates without using the link or ticking the
+timer. Clearing the link resumes the follower's own countdown.
+These are tests of declared body fields, not a replay of a live
+linked form.
+
+The static census found seeds 0/1/2/4/8 in the 73 scoped actor
+records and only seed 0 in the 22 common records. None of these
+95 records uses the receiver-timer bypass mask. Twelve accepted
+pair cases and 25 isolated clock observations matched across
+O0, O1, and O2. Melee timer playback, original frame scheduling,
+pose sampling, and native mechanics remain outside this replay.
+
+Compile [`retail_contact_pose_clock_fixture.cpp`](../tests/host/retail_contact_pose_clock_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_contact_pose_clock \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/pose-clock /tmp/opencode/type76-paid /tmp/opencode/type32-bind \
+  /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-pose-clock.json
+```
+
 ### Contact sound: strict size bands and shared counter bytes
 
 The [sound replay](api-map/gg4e08-contact-sound-replay.json)

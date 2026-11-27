@@ -1,5 +1,6 @@
 // Execute the two exact normal type-76 request leaves and optional opening contact.
 #include "retail_contact_effect_join.hpp"
+#include "retail_contact_pose_clock.hpp"
 #include <algorithm>
 
 namespace {
@@ -28,6 +29,7 @@ struct Opening {
     int impact_case=-1;
     const impact_art::Source* source_art=nullptr;
     bool type3=false;
+    int pose_prior=-1;
 };
 struct ShapeCase {unsigned slots;float z;int exit_cells=-1;};
 constexpr ShapeCase shape_cases[]={{0,25},{1,25},{2,25,1},{2,-40},{2,-80},{2,25,0}};
@@ -227,6 +229,11 @@ void opening_contact(const Module& mod,std::vector<u8>& ram,Route r,u32 carrier,
                                             r.table+24*r.high_index,1,1,1,35);
         return;
     }
+    if(inlet.pose_prior>=0){
+        retail_contact_pose_clock::projectile(mod,ram,76,r.model,carrier,r.table+24*r.high_index,
+                                               1,unsigned(inlet.pose_prior),35);
+        return;
+    }
     CPUState writer{};
     CallObservation amount{contact::amount_entry};
     const auto cut=mod.run_to_or_return(writer,ram,contact::pair_pass,{contact::hp_write},&amount);
@@ -360,11 +367,12 @@ int main(int argc,char** argv){
     const bool incoming_mode=argc==4&&!std::strcmp(argv[3],"--incoming");
     const bool impact_mode=argc==4&&!std::strcmp(argv[3],"--impact");
     const bool art_mode=argc==4&&!std::strcmp(argv[3],"--impact-art");
-    if(argc!=3&&!opening_mode&&!incoming_mode&&!impact_mode&&!art_mode)
-        fail("usage: type76-paid-fixture qualified.dol unmodified-recomp.so [--opening|--incoming|--impact|--impact-art]");
+    const bool pose_mode=argc==4&&!std::strcmp(argv[3],"--pose-clock");
+    if(argc!=3&&!opening_mode&&!incoming_mode&&!impact_mode&&!art_mode&&!pose_mode)
+        fail("usage: type76-paid-fixture qualified.dol unmodified-recomp.so [--opening|--incoming|--impact|--impact-art|--pose-clock]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(opening_mode||incoming_mode||impact_mode||art_mode){
+    if(opening_mode||incoming_mode||impact_mode||art_mode||pose_mode){
         const auto source=art_mode?impact_art::read_source():impact_art::Source{};
         contact::HitBlock body{};
         contact::ActorSpec defender{};
@@ -378,6 +386,14 @@ int main(int argc,char** argv){
             contact::HitBlock attack{};
             contact::ActorSpec attacker{};
             read(attack);read(attacker);
+            if(pose_mode){
+                for(int prior:{0,2,6}){
+                    Opening inlet{0,2,attack,body,attacker,defender};
+                    inlet.pose_prior=prior;
+                    replay(mod,original,route,0,&inlet);
+                }
+                continue;
+            }
             if(art_mode){
                 for(bool type3:{true,false}){
                     const Opening inlet{0,2,attack,body,attacker,defender,nullptr,-1,&source,type3};

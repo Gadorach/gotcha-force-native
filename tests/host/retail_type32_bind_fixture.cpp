@@ -1,5 +1,6 @@
 // Original type-32 carrier paths and type-11 handoff.
 #include "retail_contact_effect_join.hpp"
+#include "retail_contact_pose_clock.hpp"
 #include <array>
 #include <cmath>
 
@@ -478,7 +479,7 @@ public:
                     unsigned(segment_made),double(endpoint[0]),double(endpoint[1]),double(endpoint[2]));
     }
     void saucer_contact(const Block& block,const Contact& inlet,unsigned scenario,int impact_case=-1,
-                        const retail_contact_effect_archive::Source* source_art=nullptr,bool type3=false){
+                        const retail_contact_effect_archive::Source* source_art=nullptr,bool type3=false,int pose_prior=-1){
         const auto rule=saucer_cases[scenario];
         constexpr auto p=pilots[0];
         constexpr Point first{100,200,300},clear_second{220,200,1500},floor_second{220,-200,500},floor_point{160,0,400};
@@ -513,11 +514,13 @@ public:
         if(get(shape+0x64)!=position||get(body+0x64)!=target||half(receiver_count)!=1||word(receiver_registry)!=body||
            scalar(body+0x7C)!=22.f||at(carrier)[0x1D9]||half(receiver+0x20C)||!half(carrier+0x26C))
             fail("Saucer contact point or token changed when the body was admitted");
-        if(impact_case>=0||source_art){
+        if(impact_case>=0||source_art||pose_prior>=0){
             constexpr u32 audio=0x8103E000;
             put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;
             at(0x803D0000+15080+852)[0]=1;
             if(source_art)retail_contact_effect_join::observe(mod,ram,*source_art,type3,32,p.model,carrier,p.table+24,8,8,3,26);
+            else if(pose_prior>=0)retail_contact_pose_clock::projectile(mod,ram,32,p.model,carrier,p.table+24,
+                                                                       4,unsigned(pose_prior),26);
             else retail_contact_effect_tail::observe(mod,ram,32,p.model,unsigned(impact_case),carrier,p.table+24,8,8,3,26);
             return;
         }
@@ -819,11 +822,12 @@ int main(int argc,char** argv){
     const bool saucer=argc==4&&!std::strcmp(argv[3],"--saucer-contact");
     const bool impact=argc==4&&!std::strcmp(argv[3],"--saucer-impact");
     const bool art=argc==4&&!std::strcmp(argv[3],"--saucer-impact-art");
-    if(argc!=3&&!shared&&!contact&&!stream&&!cannon&&!terrain&&!saucer&&!impact&&!art)
-        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon|--borrowed-terrain|--saucer-contact|--saucer-impact|--saucer-impact-art]");
+    const bool pose=argc==4&&!std::strcmp(argv[3],"--saucer-pose-clock");
+    if(argc!=3&&!shared&&!contact&&!stream&&!cannon&&!terrain&&!saucer&&!impact&&!art&&!pose)
+        fail("usage: type32-bind-fixture qualified.dol unmodified-recomp.so [--shared|--contact|--stream|--cannon|--borrowed-terrain|--saucer-contact|--saucer-impact|--saucer-impact-art|--saucer-pose-clock]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(cannon||saucer||impact||art){
+    if(cannon||saucer||impact||art||pose){
         const auto source=art?retail_contact_effect_archive::read_source():retail_contact_effect_archive::Source{};
         Block attack{},body_hit{};
         ActorSpec owner{},target{};
@@ -832,6 +836,14 @@ int main(int argc,char** argv){
         for(auto* spec:{&owner,&target})
             if(std::fread(spec->data(),1,spec->size(),stdin)!=spec->size())fail("single-model actor record extent");
         if(std::getc(stdin)!=EOF)fail("unexpected single-model payload");
+        if(pose){
+            const Contact inlet{ContactCase::clear_hit,250,body_hit,owner,target};
+            for(int prior:{0,2,6}){
+                Check test(mod,original);
+                test.saucer_contact(attack,inlet,1,-1,nullptr,false,prior);
+            }
+            return 0;
+        }
         if(art){
             const Contact inlet{ContactCase::clear_hit,250,body_hit,owner,target};
             for(bool type3:{true,false}){
