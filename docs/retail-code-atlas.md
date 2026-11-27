@@ -1027,7 +1027,9 @@ point, with the credited actor as its parent. If the effect lacks
 a carrier or descriptor cell, its
 allocation fails **after** the endpoint write; the correction
 still stands. Terrain alone does not request the actor-contact
-area. The effect's update and any effect damage are untested.
+area. This replay stops at effect allocation; the
+[standalone type-9 contact replay](#type-9-census-shared-shape-admission-and-contact)
+starts at the effect's constructor.
 
 The exact `0e02` key-9 control does not take the key-8 worker,
 even when an independent original query hits the same floor.
@@ -1082,7 +1084,7 @@ python3 -m tools.analyze.retail_saucer_contact \
   /tmp/opencode/gf-saucer-contact.json
 ```
 
-### Type-9 census: shared zero-power queue and shape admission
+### Type-9 census: shared shape admission and contact
 
 The [census and bind replay](api-map/gg4e08-type9-roster.json)
 account for five direct calls to the type-9 factory and three
@@ -1096,18 +1098,31 @@ Key 2 has a table row but no resolved type-9 call key in this
 census.
 
 All seven type-9 rows attempt common group **84**. Its sole
-descriptor, **122**, is a sphere with raw radius **150** and
-uses common record `802C4760` with **zero raw power**. In the
-14 bounded cases, the constructor took one carrier and one
+descriptor, **122**, is a sphere with raw radius **150**. In the
+14 bind cases, the constructor took one carrier and one
 descriptor cell. A spare shape cell let the opening leaf bind
 descriptor 122 under the credited actor. With no shape cell,
 the same leaf returned in phase 2.
 
-All cases matched across O0, O1, and O2. The successful replay
-cuts after shape bind, before presentation initialization or an
-attack registry pass. It does not measure runtime radius,
-contact, reaction, HP, or retirement. This effect is separate
-from both the carrier hit and the type-5 contact area.
+The 28 contact cases instantiate type 9 directly under normal
+Saucer and complete initialization with empty stage and render
+records. Every key published an opening radius of **150**
+despite the differing scale operands. Against stationary Sasuke
+(radius 22), offsets **0** and **171** hit, while **172** and
+**173** missed. A hit removed **17 HP** and added **17** to each
+damage ledger. Resolving the retained registry again did not
+apply the same token twice.
+
+**Correction to revision 1:** descriptor +4 is amount index **9**,
+selecting common record `802C4838` with raw power **20**. The zero
+at descriptor +6 is the first step, not an index into `802C4760`.
+The original resolver reached `802C4838` before the HP writer.
+
+All cases matched across O0, O1, and O2. The contact runs start at
+the effect constructor, not Saucer's terrain callback, and stop
+before the reaction tail. Effect lifetime, live scheduling, and
+native gameplay remain unqualified. The carrier hit and type-5
+contact area still have separate damage paths.
 
 Compile [`retail_type9_bind_fixture.cpp`](../tests/host/retail_type9_bind_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:

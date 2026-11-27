@@ -1,4 +1,4 @@
-"""Inventory type-8/type-9 relay keys and replay type-9 common shape admission."""
+"""Inventory type-8/type-9 relay keys and replay type-9 shape admission and contact."""
 import argparse
 from hashlib import sha256
 import json
@@ -7,16 +7,19 @@ import re
 import struct
 from subprocess import run
 
-from tools.analyze import retail_type32_roster as beam
+from tools.analyze import retail_saucer_contact as saucer, retail_type32_bind as borrowed, retail_type32_roster as beam
 from tools.analyze.retail_action_input import archive_stamp, verify_archive
 from tools.analyze.retail_action_links import ActionLinker, immediate_argument, literal_flow
 from tools.analyze.retail_code_atlas import read_bounded
 from tools.analyze.retail_projectile_census import (
     AFS_SHA256, ATLAS_SHA256, SOURCE_SHA256, address, callers, encode, read_metadata,
 )
+from tools.analyze.retail_rifle_contact_hp import ACTOR_SHA256, SLICES
+from tools.analyze.retail_shape_sweep import source_operands
+from tools.analyze.retail_type0_contact import PAIR_TEXT, RECEIVER, RECEIVER_BLOCK_SHA256, read_normal
 from tools.analyze.retail_type5_roster import common_bank
 from tools.extract.retail_borg_placeholders import open_regular
-from tools.extract.retail_borg_roster import RetailArchive
+from tools.extract.retail_borg_roster import RetailArchive, levels
 from tools.extract.source_image import DolImage
 
 
@@ -25,12 +28,15 @@ TABLE, STRIDE, ROW_COUNT = 0x8031EB60, 48, 7
 TYPE76_TABLE, SCRATCH_WORKERS = 0x8031EE18, 0x80391658
 INIT, BIND, AMOUNT_TABLE = 0x800FC810, 0x8008AE3C, 0x802C4760
 GROUP, DESCRIPTOR = 84, 122
+AMOUNT_INDEX, AMOUNT_RECORD = 9, AMOUNT_TABLE+9*24
 TYPE32_DIGEST = "947c3048c451682f2e2e7b694a4e42d5ec98dd5b3a5690b00ebfefc8b1cf3806"
 LITERALS = {0x8018D234: (PARENT, 5), 0x801C0398: (PARENT, 6),
             0x801DF69C: (EFFECT, 3), 0x801DF8CC: (EFFECT, 4)}
 MIRRORS = {0x800FC428: "type-8-initializer", 0x800FC678: "type-8-active"}
 INDEXED = {0x800FD314: (PARENT, 0), 0x800FD324: (EFFECT, 1)}
 ROW = re.compile(r"type9-bind: [0-6] [01] [0-9]{1,3} [01] [0-9] [0-9]{1,3} [0-9]")
+CONTACT_ROW = re.compile(r"type9-contact:(?: [0-9]{1,3}){9}(?: [0-9]\.[0-9]{5}){2}")
+OFFSETS = (0, 171, 172, 173)
 TEXT = (
     (PARENT, 292, "a76123aad2604c1b0f4f430bf9195ec90e0e564a7ef4516d2898e9f484ffc5fb"),
     (0x800FC32C, 80, "e3459ea3be7ff9f79741a95acd545f94b5f913167b15aed9e914e658e8336242"),
@@ -49,6 +55,14 @@ TEXT = (
     (0x801DEF80, 1156, "97e5de60c309f204b00e12b5e98ac191d75b723adcb2e19094d40dc741b38f90"),
     (BIND, 36, "4a5238df2bbfcfc97ddc6e932511a41407c18a16b307bcfa3eb7827b46ecd02f"),
     (0x8008AE60, 400, "ed773c3f3f4973120e9f352561f67629417f7a374b39e2215c65901ffba46c62"),
+)
+CONTACT_TEXT = (
+    (0x80047AA4, 404, "d1034c09b0f68dabce25aa8dc2fd55eb99b31ee2e017cf379fad8fa7c23eb779"),
+    (0x80018F88, 80, "788e847ebd5cea63e6ad8b3ea7587bb1546f3d41944efb8d37983623049da25e"),
+    (0x80089554, 260, "14d54d2183c44456974e44418019670cfd857a373e5baced583924c4c74280df"),
+    (0x8008A28C, 48, "94cb040d0d0bd380e6ab2d81aec5d82583aaf212f52408a7050212f7e39acc08"),
+    (0x80089AEC, 276, "03e4a562cd8742937f8f85f602f0f3a3a682457f8f5887accc0b15cbf24f4802"),
+    *tuple((at, *SLICES[at]) for at in PAIR_TEXT),
 )
 
 
@@ -90,18 +104,21 @@ def source_index(image, bank):
             raise ValueError("type-76 selector outside reviewed domains")
         parent_rows.append({"row_index": i, "row": address(TYPE76_TABLE+32*i), "lane": lane,
                             "descendant_type": 8+lane, "descendant_key": key})
-    raw_record = pinned_data(image, AMOUNT_TABLE, 24, "52253b38116d55f3b6d8d597f5ffbedf4d62c138753a6b4ed05a4429299d582c")
+    raw_record = pinned_data(image, AMOUNT_RECORD, 24, "8d6034b865e0ba192d49a839f34ba9b4df0d3981552ca737f184075d8e720c4c")
     off = 0x400+DESCRIPTOR*80
-    kind, matrix, flags, scale_mode, index, last, tail, *sphere = struct.unpack_from(">BBHHhhH4f", bank, off)
+    # The binder copies +4 into the shape's amount index (+0x11).
+    # Descriptor +6 instead goes to the shape's signed opening step (+0x48).
+    kind, matrix, flags, index, first, last, tail, *sphere = struct.unpack_from(">BBHHhhH4f", bank, off)
     raw_power, = struct.unpack_from(">H", raw_record)
     if (bank[GROUP*4:GROUP*4+4] != bytes((DESCRIPTOR, 255, 255, 255))
-            or (kind, matrix, flags, scale_mode, index, last, tail) != (0, 0, 1, 9, 0, -1, 0)
-            or sphere != [0., 0., 0., 150.] or raw_power != 0):
+            or (kind, matrix, flags, index, first, last, tail) != (0, 0, 1, AMOUNT_INDEX, 0, -1, 0)
+            or sphere != [0., 0., 0., 150.] or raw_power != 20):
         raise ValueError("type-9 common shape or amount record changed")
     initializer, active, phase2, phase3 = struct.unpack_from(">4I", phases, 16)
     return effect_rows, parent_rows, workers, {
         "group": GROUP, "descriptor": DESCRIPTOR, "shape": "sphere", "raw_radius": sphere[3],
-        "local_center": sphere[:3], "amount_index": index, "amount_record": address(AMOUNT_TABLE), "raw_power": raw_power,
+        "local_center": sphere[:3], "amount_index": index, "amount_table": address(AMOUNT_TABLE),
+        "amount_record": address(AMOUNT_RECORD), "raw_power": raw_power, "first_step": first, "last_step": last,
     }, {
         "dispatch": "8031ED2C", "phase_entries": [address(v) for v in (initializer, active, phase2, phase3)],
         "configured_active_limit": struct.unpack_from(">h", effect_data, 2)[0], "post_bind_cut": "800055FC",
@@ -170,6 +187,50 @@ def decode_report(report):
     return cases
 
 
+def decode_contact(report, rows):
+    lines = report.splitlines()
+    if len(report) > 4096 or len(lines) != ROW_COUNT*len(OFFSETS) or len(rows) != ROW_COUNT:
+        raise ValueError("type-9 contact report extent")
+    cases = []
+    for i, line in enumerate(lines):
+        key, scenario = divmod(i, len(OFFSETS))
+        offset = OFFSETS[scenario]
+        hit = offset < 172
+        damage = 17 if hit else 0
+        if CONTACT_ROW.fullmatch(line) is None:
+            raise ValueError("malformed type-9 contact row")
+        fields = line.split()[1:]
+        scales = tuple(map(float, fields[9:]))
+        expected_scales = tuple(round(rows[key][f"{axis}_scale_operand"], 5) for axis in ("xz", "y"))
+        if (tuple(map(int, fields[:9])) != (key, scenario, offset, 150, hit, damage, 180-damage, hit, AMOUNT_INDEX)
+                or scales != expected_scales):
+            raise ValueError(f"type-9 contact geometry, scope or HP mismatch: {key}/{offset}")
+        cases.append({"key": key, "x_offset": offset, "attack_radius": 150, "opening_xz_scale": scales[0],
+                      "opening_y_scale": scales[1], "amount_record_reached": address(AMOUNT_RECORD) if hit else None,
+                      "hp_loss": damage, "receiver_hp_after": 180-damage, "accepted_token": 1 if hit else None,
+                      "duplicate_token_refused": hit})
+    return cases
+
+
+def contact_inlet(image, archive):
+    beam.verify_text(image, CONTACT_TEXT)
+    beam.link(image, 0x8002F108, 0x8003CD5C)
+    beam.link(image, 0x8002F1D8, 0x8003D344)
+    pinned_data(image, 0x8031ECB0, 96, "72d6ba22a49c764450e73d1d97e97d76fd14ae44011cda3d599b6212fe872753")
+    _, owner = read_normal(archive, saucer.MODEL, borrowed.PILOTS[0][-1], saucer.ACTOR_DIGEST)
+    body, defender = read_normal(archive, RECEIVER, RECEIVER_BLOCK_SHA256, ACTOR_SHA256[RECEIVER])
+    if (levels(image, saucer.MODEL)[0][0], levels(image, RECEIVER)[0][0]) != (250, 180):
+        raise ValueError("type-9 actor HP scope changed")
+    return body+owner+defender, source_operands(body)["receiver"]
+
+
+def fixture_report(args, inlet):
+    result = run(args, input=inlet, capture_output=True, timeout=45)
+    if result.returncode or result.stderr:
+        raise ValueError(f"type-9 fixture failed: {result.stderr.decode('utf-8', 'replace').strip()}")
+    return result.stdout.decode("ascii")
+
+
 def export(dol, afs, atlas, type32, fixture, module, output):
     output = Path(output)
     if output.exists() or output.is_symlink():
@@ -181,7 +242,9 @@ def export(dol, afs, atlas, type32, fixture, module, output):
     with open_regular(afs) as stream:
         stamp = archive_stamp(stream)
         verify_archive(stream)
-        bank = common_bank(RetailArchive(stream))
+        archive = RetailArchive(stream)
+        bank = common_bank(archive)
+        actors, body = contact_inlet(image, archive)
         if stamp != archive_stamp(stream):
             raise ValueError("type-9 AFS changed during extraction")
     rows, parent_rows, workers, collision, phase_data = source_index(image, bank)
@@ -199,32 +262,35 @@ def export(dol, afs, atlas, type32, fixture, module, output):
     if [(r["borg"], r["parent_key"], r["descendant_key"]) for r in candidates] != [("gg4e08:0d03", 8, 4)]:
         raise ValueError("type-9 scoped parent action join changed")
     args = [str(Path(fixture).resolve(strict=True)), str(dol), str(Path(module).resolve(strict=True))]
-    result = run(args, input=bank, capture_output=True, timeout=45)
-    if result.returncode or result.stderr:
-        raise ValueError(f"type-9 fixture failed: {result.stderr.decode('utf-8', 'replace').strip()}")
-    cases = decode_report(result.stdout.decode("ascii"))
+    cases = decode_report(fixture_report(args, bank))
+    contacts = decode_contact(fixture_report(args+["--contact"], bank+actors), rows)
     effect_sites = [r for r in sites.values() if r["factory"] == address(EFFECT)]
     effect_keys = {key for row in effect_sites for key in
                    row["key_source"].get("possible_keys", row["key_source"].get("possible_keys_through_reviewed_type8_calls", ()))}
     payload = {
-        "kind": "gf-retail-type9-roster", "revision": 1, "source_dol_sha256": SOURCE_SHA256, "source_afs_sha256": AFS_SHA256,
+        "kind": "gf-retail-type9-roster", "revision": 2, "source_dol_sha256": SOURCE_SHA256, "source_afs_sha256": AFS_SHA256,
         "code_atlas_sha256": ATLAS_SHA256, "type32_census_sha256": TYPE32_DIGEST,
         "factories": {"type8": address(PARENT), "type9": address(EFFECT), "type76_predecessor": "800FCD38"},
         "common_collision": collision, "type9_dispatch": phase_data, "factory_rows": rows, "type76_rows": parent_rows,
         "call_sites": [sites[pc] for pc in sorted(sites)], "candidates": candidates, "cases": cases,
+        "contact_cases": contacts,
+        "contact_inlet": {"owner": "gg4e08:0d03", "owner_level_one_hp": 250, "origin": [160, 0, 400],
+                          "receiver": {**body, "borg": "gg4e08:000a", "level_one_hp": 180}},
         "rows_without_resolved_type9_call_keys": sorted(set(range(ROW_COUNT))-effect_keys),
         "counts": {"type8_call_sites": len(sites)-len(effect_sites), "type9_call_sites": len(effect_sites),
                    "rows": len(rows), "candidate_rows": len(candidates),
-                   "bind_cases": len(cases)},
+                   "bind_cases": len(cases), "contact_cases": len(contacts)},
         "notes": [
             "Factory call coverage is direct atlas edges; a copied type-8 key preserves the supplied selector.",
             "Only the reviewed Saucer worker has a scoped installed action ancestor here. The other edges are not action assignments.",
             "For each declared key, one carrier and descriptor allocate with distinct parent and credited actor. Shape slots are supplied separately.",
-            "The replay enters the original opening leaf and stops after bind, before presentation initialization; it does not run an attack registry pass.",
-            "Zero raw power is a source operand, not a measured overlap, reaction, damage, visual, or lifetime result. No native gameplay is emitted.",
+            "Bind cases stop before presentation initialization and registry publication. Contact cases instead complete initialization with empty stage and render records.",
+            "For contact the credited Saucer actor is the declared constructor parent; keys are supplied, not joined to live actions or the original floor callback.",
+            "Revision 1 misread the first step at descriptor +6 as the amount index. The binder and resolver instead use +4, selecting common record 9, raw power 20.",
+            "The original pair pass and HP writer run against stationary Sasuke. The retained registry refuses the same token on re-entry. The reaction tail and effect lifetime are unqualified.",
         ],
     }
-    raw = encode(payload, expanded=("factory_rows", "call_sites", "candidates", "type76_rows", "cases"))
+    raw = encode(payload, expanded=("factory_rows", "call_sites", "candidates", "type76_rows", "cases", "contact_cases"))
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("xb") as stream:
         stream.write(raw)
