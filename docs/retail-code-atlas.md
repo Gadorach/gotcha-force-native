@@ -368,6 +368,50 @@ python3 -m tools.analyze.retail_contact_hp \
   /tmp/opencode/gf-contact-hp.json
 ```
 
+### Original damage setup writers
+
+The [damage setup receipt](api-map/gg4e08-damage-setup.json) runs the
+original settings writer, the ordinary constructor's controller
+selection slice, and the rank initializer, using declared Scene,
+mode and slot inputs.
+
+- `80006ABC` in mode 1 writes `bias & 31` and `(31 - bias) & 31`
+  to the first two cells, leaving the other two alone. Mode 2
+  writes four `7`s. The tested modes 0, 3 and 255 do not write.
+- `8005438C` tests the Mode input mask against the actor's assigned
+  slot bit. An intersection writes bank and input mode 0; otherwise
+  the slice writes 1 to both. It does not change the actor's team.
+- The rank initialization slice copies `Scene[62 + slot]` to the
+  actor. The byte is copied without a clamp. Values outside the
+  table were tested only at the writer, never fed into damage.
+
+Keeping team 0 attacking team 1 with the exact same Sasuke attack
+record, the joined original writers produced these results:
+
+| Declared setup | Observed settings / ranks / banks | Amount |
+| --- | --- | ---: |
+| Mode 2, both slots in the input mask | `7,7:0,0:0,0` | 35 |
+| Mode 2, only the attacker in the mask | `7,7:0,0:0,1` | 40 |
+| Same mask, attacker rank 3 | `7,7:3,0:0,1` | 47 |
+| Mode 1, bias 0, rank 0, same mask | `0,31:0,0:0,1` | 79 |
+
+The asset-free native CLI fixture reproduces these amounts with
+explicit rows and authored contact geometry. No native runtime
+assignment rules changed. O0, O1 and O2 produced identical reports
+for 139 writer checks and all four joined cases. The test doesn't establish who
+produces the live mask or ranks, run the separate special
+constructors, schedule a hit, or write HP.
+
+Compile [`retail_damage_setup_fixture.cpp`](../tests/host/retail_damage_setup_fixture.cpp)
+with the [phase fixture](#shared-action-gate) build flags, then run:
+
+```sh
+python3 -m tools.analyze.retail_damage_setup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-source-damage-setup-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-damage-setup.json
+```
+
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the
 command below; it takes the same DOL and recomp-module arguments.

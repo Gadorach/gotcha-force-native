@@ -837,6 +837,11 @@ written by `80006ABC`: state 1 sets slot 0 = `d` and slot 1 = `31 - d` (with
 slots 2 and 3 untouched. State 2 sets slots 0..3 to 7. The observed
 defender slot values 16 and 30 correspond to d = 15 and d = 1; that is
 consistent with, not proof of, that writer for those battles.
+The [bounded original setup fixture](retail-code-atlas.md#original-damage-setup-writers)
+now exercises the settings writes, the ordinary constructor's bank
+selection and the rank copy. It joins their outputs to the original
+amount routine before returning, but does not recreate the producers
+of the Scene inputs or run a match.
 
 `tools/analyze/damage_content_row.py` turns the tables and the public selector
 artifact into native content rows. A battle can pass up to 16 defender models

@@ -9,9 +9,9 @@ from tools.extract.demo_borgs import prepare
 from tools.extract.portable_stage_example import prepare_stage
 
 
-def rows(key, width, index, factors):
-    return "".join(f"{key}={bank}|" + "|".join(value if i == index else "1" for i in range(width)) + "\n"
-                   for bank, value in enumerate(factors))
+def rows(key, width, selected):
+    return "".join(f"{key}={bank}|" + "|".join(selected.get(i, ("1", "1"))[bank] for i in range(width)) + "\n"
+                   for bank in range(2))
 
 
 def smoke(executable, opengl):
@@ -30,13 +30,13 @@ def smoke(executable, opengl):
             base + "movement=grounded-v1|0.4|13|0.4\nwalk=0:1\nair=0:2\ndash=0:3\n"
                    "move=slash|b|10|grounded|24|0:4\nrange=slash|150\nmelee=slash|9|14|95|38|52|44|12\n"
                    "contact-power=slash|40\ndamage-credit=0|1|0.85\ndamage-credit=1|1|0.85\n" +
-            rows("damage-credit-setting", 32, 7, ("1", "1")) +
-            rows("damage-credit-rank", 8, 0, ("0.85", "0.85"))
+            rows("damage-credit-setting", 32, {0: ("1.02", "0.92"), 7: ("1", "0.9")}) +
+            rows("damage-credit-rank", 8, {0: ("0.85", "0.85"), 3: ("1", "1")})
         )
         (root / "borgs/flight-stick/gameplay.txt").write_text(
             base + "movement=stationary-v1\ndamage-receive=0|0.92|1.15\ndamage-receive=1|1.04|1.15\n" +
-            rows("damage-receive-setting", 32, 7, ("0.92", "1.04")) +
-            rows("damage-receive-rank", 8, 0, ("1.15", "1.15"))
+            rows("damage-receive-setting", 32, {7: ("0.92", "1.04"), 31: ("0.98", "2")}) +
+            rows("damage-receive-rank", 8, {0: ("1.15", "1.15")})
         )
         preset = root / "damage.roster"
         base_preset = (
@@ -66,7 +66,11 @@ def smoke(executable, opengl):
             hits = re.findall(r"actor=0 move=slash event=hit .*recipient=(\d+) value=(\d+)", result.stderr)
             assert result.returncode == 0 and hits == [("1", str(expected))], result.stderr[-4500:]
 
-        for selection, expected in (("7,7:0,0,0", 40), ("7,7:0,0,0:0,0,1", 35), ("7,7:0,0,0:0,1,1", 40)):
+        # Reproduce the four source-setup sums with authored geometry.
+        # The third fighter is idle and is not part of the damage comparison.
+        for selection, expected in (("7,7:0,0,0", 40), ("7,7:0,0,0:0,0,1", 35),
+                                    ("7,7:0,0,0:0,1,1", 40), ("7,7:3,0,0:0,1,1", 47),
+                                    ("0,31:0,0,0:0,1,1", 79)):
             hit(play(selection), expected)
         for malformed in ("7,7:0,0,0:", "7,7:0,0,0:0,1", "7,7:0,0,0:0,2,1",
                           "7,7:0,0,0:0,1,1,", "7,7:0,0,0:0,1,1:0", "7,7:0,0:0,1"):
