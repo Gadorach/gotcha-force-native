@@ -480,12 +480,30 @@ admit a move, infer a single hit amount, or assign Machine Red's
 lifetime to another key. The carrier lifetime receipt above is a
 separate bounded original execution.
 
+The [speed-order replay](api-map/gg4e08-rifle-speed.json) checked
+162 active key-21 updates on a declared empty stage. The first
+visit moves 80 units before writing 80.5. Visit 160 moves 159.5
+before writing the cap 160, and visits 161–162 move 160. O0, O1
+and O2 agree. These are cardinal source visits, not a conversion
+to native units or a live battle clock. The native
+[speed ramp](borg-gameplay-api.md#travelling-projectile-speed-ramp)
+expresses the order without copying these numbers into a package.
+
 ```sh
 python3 -m tools.analyze.retail_type2_roster \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   docs/api-map/gg4e08-code-atlas.json \
   docs/api-map/gg4e08-standalone-installers.json \
   /tmp/opencode/gf-type2-roster.json
+```
+
+The speed-order replay uses the transaction fixture binary:
+
+```sh
+python3 -m tools.analyze.retail_rifle_speed \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-rifle-speed.json
 ```
 
 ### Ordinary type-0 carriers across the roster

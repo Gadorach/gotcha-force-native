@@ -1,0 +1,67 @@
+{
+  "active_update": "800C4088",
+  "borg": "gg4e08:0600",
+  "carrier_key": 21,
+  "carrier_row": "803036CC",
+  "checked_visits": 162,
+  "kind": "gf-retail-rifle-speed",
+  "movement": "800C4540",
+  "notes": [
+    "Continues the original paid release and first attack-shape registration on a declared empty stage.",
+    "Each isolated carrier visit uses the old speed, then writes the increased and clamped scalar.",
+    "The pose is supplied and the trajectory is cardinal. No live clock, steering, collision, or native conversion is implied."
+  ],
+  "revision": 1,
+  "samples": [
+    {
+      "position_delta_z": 80.0,
+      "speed_after": 80.5,
+      "speed_before": 80.0,
+      "timer_after": 299,
+      "visit": 1
+    },
+    {
+      "position_delta_z": 80.5,
+      "speed_after": 81.0,
+      "speed_before": 80.5,
+      "timer_after": 298,
+      "visit": 2
+    },
+    {
+      "position_delta_z": 159.0,
+      "speed_after": 159.5,
+      "speed_before": 159.0,
+      "timer_after": 141,
+      "visit": 159
+    },
+    {
+      "position_delta_z": 159.5,
+      "speed_after": 160.0,
+      "speed_before": 159.5,
+      "timer_after": 140,
+      "visit": 160
+    },
+    {
+      "position_delta_z": 160.0,
+      "speed_after": 160.0,
+      "speed_before": 160.0,
+      "timer_after": 139,
+      "visit": 161
+    },
+    {
+      "position_delta_z": 160.0,
+      "speed_after": 160.0,
+      "speed_before": 160.0,
+      "timer_after": 138,
+      "visit": 162
+    }
+  ],
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "source_hit_block_sha256": "89e4a919e5989aad5b2fb36985d55859b8cfdf9387bec0149265cbf716b9aec3",
+  "speed": {
+    "cap": 160.0,
+    "gain": 0.5,
+    "initial": 80.0
+  }
+}

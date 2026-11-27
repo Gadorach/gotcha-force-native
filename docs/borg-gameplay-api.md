@@ -1021,6 +1021,34 @@ than the original collision scheduler. The
 [authored roster smoke](../tests/host/projectile_continuation_smoke.py)
 compares both policies without retail assets.
 
+### Travelling projectile speed ramp
+
+`projectile-speed-ramp=projectile|gain|cap` optionally increases
+a travelling shot's planar speed after each surviving flight
+update. The current speed determines that update's sweep. A shot
+that survives keeps the increased speed for its next update,
+capped at the declared limit. All velocity components scale
+together, preserving the accepted socket aim slope. For example:
+
+```text
+projectile=bolt|bullet|1|20|0|0|0|8|24|19|stop-on-stage
+projectile-speed-ramp=bolt|7|35
+```
+
+It travels at 20, then 27, then 34, then 35 native units per
+unobstructed update. A slow field shortens travel without changing
+the stored speed; an actual shot-pull impulse cancels the ramp
+for that projectile so pull physics owns the resulting velocity.
+An opt-in actor-contact continuation may retain the ramp, but
+guards, terrain, and expiration still retire as usual.
+
+Gain must be `0.01..20`, and the cap must exceed launch speed
+without exceeding 140. Guided, sustained, landing, gravity, and
+explicit rise combinations are refused. The existing default is
+unchanged. The [original rifle replay](retail-code-atlas.md#type-2-carriers-across-the-roster)
+informs the order, not the authored numbers. No retail-derived
+profile selects this option yet.
+
 ### Blast triggers and recipients
 
 `blast=projectile|trigger|radius|damage|recipients` adds one instantaneous

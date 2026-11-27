@@ -172,6 +172,7 @@ release=fire|2|primary|1|bolt
     const std::string policy="actor-contact=bolt|continue-once-per-actor\n";
     const std::string base(setup),rules=base+policy;
     const auto plain=parse(base),continuing=parse(rules),body=parse(target);
+    const auto ramping=parse(rules+"projectile-speed-ramp=bolt|7|35\n");
     const auto guard=parse(base+"move=block|x|50|grounded|22|0:1\nguard=block|1|20|0.5|1|shots\n");
     const auto immune=parse(std::string(target)+"damage-mask=2\n");
     check(!plain->projectiles[0].continue_after_actor_hit&&continuing->projectiles[0].continue_after_actor_hit,
@@ -198,15 +199,15 @@ release=fire|2|primary|1|bolt
     invalid_value.moves.clear();
     check(!borg_gameplay_profile_valid(invalid_value),"unreachable continuation declarations refuse");
 
-    enum class Scene {Default,Continue,SecondGuard,TiedWall,FirstImmune,FreshShot,Duel};
-    for(const auto scenario:{Scene::Default,Scene::Continue,Scene::SecondGuard,Scene::TiedWall,
+    enum class Scene {Default,Continue,Ramp,SecondGuard,TiedWall,FirstImmune,FreshShot,Duel};
+    for(const auto scenario:{Scene::Default,Scene::Continue,Scene::Ramp,Scene::SecondGuard,Scene::TiedWall,
                              Scene::FirstImmune,Scene::FreshShot,Scene::Duel}){
         WallGround terrain;
         terrain.plane=1000;
         BattleMvpConfig config;
         config.declared_actors=scenario==Scene::Duel?2:scenario==Scene::SecondGuard?4:3;
         config.teams_declared=true;config.teams={0,1,1,1};
-        config.packages={scenario==Scene::Default?plain:continuing,
+        config.packages={scenario==Scene::Default?plain:scenario==Scene::Ramp?ramping:continuing,
                          scenario==Scene::FirstImmune?immune:body,
                          scenario==Scene::SecondGuard?guard:body,body};
         for(unsigned i=config.declared_actors;i<config.packages.size();++i)config.packages[i].reset();
@@ -246,7 +247,7 @@ release=fire|2|primary|1|bolt
         }
         std::vector<u8> recipients;
         for(const auto& hit:contacts)recipients.push_back(hit.recipient);
-        if(scenario==Scene::Continue||again){
+        if(scenario==Scene::Continue||scenario==Scene::Ramp||again){
             check(recipients==(again?std::vector<u8>{1,2,1,2}:std::vector<u8>{1,2}),
                   "each shot visits both bodies once and a new shot has fresh history");
             check(contacts[0].object==contacts[1].object&&contacts[0].tick<contacts[1].tick,
@@ -263,6 +264,78 @@ release=fire|2|primary|1|bolt
               world.shots_spawned()==debit&&std::none_of(world.projectiles().begin(),world.projectiles().end(),
                                                           [](const auto& shot){return shot.active;}),
               "continuation does not allocate or debit again and still expires");
+    }
+}
+void projectile_speed_ramp_cases(){
+    const std::string base(player),rule="projectile-speed-ramp=shot|7|75\n";
+    BorgGameplayProfile rejected;
+    for(const auto& text:std::array<std::string,8>{
+        base+rule+rule, base+"projectile-speed-ramp=missing|7|75\n",
+        base+"projectile-speed-ramp=shot|7|60\n", base+"projectile-speed-ramp=shot|nan|75\n",
+        base+"projectile-speed-ramp=shot|0|75\n", base+"projectile-speed-ramp=shot|7|141\n",
+        base+rule+"guidance=shot|tracking|0.1|10\n", base+"projectile-speed-ramp=twin|7|75\n",
+    })check(!borg_read_gameplay_profile(text,&rejected,nullptr),"invalid or incompatible flight ramp refuses");
+    struct Muzzle final:IBorgBattleOrigins {
+        bool socket(unsigned,const BattleMvpActor&,u32,u8,u16,const BorgBattleSocket&,BattleMvpVec* out)const override{
+            *out={0,200,54};return true;
+        }
+    } muzzle;
+    for(const bool pitched:{false,true})for(const bool accelerate:{false,true}){
+        const auto profile=parse(base+(pitched?"origin=shot|0|0|0|0|target-height\n":"")+(accelerate?rule:""));
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={profile,parse(target)};config.spawn={BattlePoint{0,0},BattlePoint{0,1400}};
+        check(world.start(config),"ramp fixture starts");
+        constexpr std::array<f32,5> travel{60,67,74,75,75},next{67,74,75,75,75};
+        unsigned visits=0;
+        for(unsigned tick=0;tick<12&&visits<travel.size();++tick){
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,
+                             {BorgBattleInputs{u8(!tick?BorgBattleInputs::b:0),0,0},{}},&muzzle),"ramp fixture steps");
+            const auto& shot=world.projectiles()[0];
+            if(!shot.active)continue;
+            const f32 distance=shot.position[2]-shot.previous[2];
+            const f32 slope=pitched?-150.f/(1400.f-54.f):0.f;
+            check(std::abs(distance-(accelerate?travel[visits]:60.f))<.001f&&
+                  std::abs(shot.velocity[2]-(accelerate?next[visits]:60.f))<.001f&&
+                  std::abs(shot.velocity[1]-shot.velocity[2]*slope)<.001f&&
+                  std::abs(shot.position[1]-shot.previous[1]-distance*slope)<.001f,
+                  "flight moves at old speed, ramps up to the cap, and retains its launch slope");
+            ++visits;
+        }
+        check(visits==travel.size()&&world.shots_spawned()==1&&!world.hits(),"ramp did not replace or repeat the shot");
+    }
+    const auto field_move=base+"move=well|x|80|any|8|0:4\n";
+    const auto attacker=parse(base+rule);
+    for(const bool pull:{false,true}){
+        const auto field=parse(field_move+(pull?
+            "field=well|1|box|170|170|170|5|500|100|95|50|160|80\nfield-shot-pull=well|enemies|10\n":
+            "slow-field=well|1|250|24|500|60|100|50|keep-guidance\n"));
+        NativeBattleMvp world;BattleMvpConfig config;
+        config.packages={field,attacker};config.spawn={BattlePoint{0,0},BattlePoint{0,600}};
+        check(world.start(config),"ramp field fixture starts");
+        bool saw_field=false,after_pull=false;
+        for(unsigned tick=0;tick<15;++tick){
+            const auto prior=world.projectiles()[0];
+            const auto input=BorgBattleInputs{u8(!tick?BorgBattleInputs::x:0),0,0};
+            const auto fire=BorgBattleInputs{u8(!tick?BorgBattleInputs::b:0),0,0};
+            check(world.step({},false,nullptr,nullptr,nullptr,nullptr,{input,fire}),"ramp field fixture steps");
+            const auto& shot=world.projectiles()[0];
+            if(!shot.active)continue;
+            if(pull){
+                saw_field|=shot.pulling_field!=0;
+                if(saw_field&&!shot.pulling_field&&prior.active){
+                    check(shot.package_ramp_deflected&&shot.velocity==prior.velocity,
+                          "ordinary ramp stays cancelled after field deflection");
+                    after_pull=true;
+                }
+            }else{
+                const f32 speed=prior.active?std::abs(prior.velocity[2]):60.f;
+                const auto travelled=std::abs(shot.position[2]-shot.previous[2]);
+                saw_field|=travelled<speed-.001f;
+                check(std::abs(shot.velocity[2]+std::min(75.f,speed+7.f))<.001f,
+                      "slow field shortens travel without changing the stored speed ramp");
+            }
+        }
+        check(saw_field&&(!pull||after_pull),"ramp field controls exercised their actual field paths");
     }
 }
 void roster_body_motion_cases(){
@@ -3061,6 +3134,7 @@ int main(){
     contact_pose_hold_cases();
     roster_direct_contact_cases();
     projectile_contact_continuation_cases();
+    projectile_speed_ramp_cases();
     roster_body_motion_cases();
     roster_body_sweep_cases();
     roster_hit_history_cases();

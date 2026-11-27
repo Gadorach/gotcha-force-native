@@ -690,6 +690,23 @@ public:
         }
         fail("rifle carrier did not retire within fixture visit budget");
     }
+    void rifle_speed_ramp(){
+        empty_stage(62500.f);
+        for(unsigned visit=1;visit<=162;++visit){
+            const auto before=fp(object_cell+0x44),z=fp(object_cell+0x28);
+            projectile_visit();
+            const auto after=fp(object_cell+0x44),travel=fp(object_cell+0x28)-z;
+            const auto expected_before=std::min(160.f,80.f+float(visit-1)*.5f);
+            const auto expected_after=std::min(160.f,expected_before+.5f);
+            if(before!=expected_before||after!=expected_after||!(std::abs(travel-before)<.01f)||
+               at(object_cell)[0x18]!=1||half(object_cell+0x1C)!=300-visit||
+               half(actor+0x774)!=1||half(attack_count)!=1||be32(at(attack_registry))!=hurt_cell)
+                fail("source rifle did not move before increasing its speed");
+            if(visit<=2||visit>=159)
+                std::printf("rifle-speed: %u %.2f %.2f %.5f %u\n",visit,
+                            double(before),double(after),double(travel),half(object_cell+0x1C));
+        }
+    }
     void rifle_next_receiver(const HitBlock& body,unsigned extra_distance,bool duplicate){
         auto* cell=at(object_cell);
         auto* first=at(peer);
@@ -1048,6 +1065,7 @@ public:
 }
 
 int main(int argc,char** argv){
+    const bool rifle_speed=argc==4&&std::strcmp(argv[3],"--rifle-speed")==0;
     const bool rifle_next=argc==4&&std::strcmp(argv[3],"--rifle-next-receiver")==0;
     const bool worm=argc==4&&std::strcmp(argv[3],"--worm-contact")==0;
     const bool type0_contact=argc==4&&std::strcmp(argv[3],"--type0-contact")==0;
@@ -1057,9 +1075,9 @@ int main(int argc,char** argv){
     const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!worm&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!rifle_next&&
+    if(argc!=3&&!worm&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!rifle_next&&!rifle_speed&&
        !(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--rifle-next-receiver|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--rifle-next-receiver|--rifle-speed|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     if(worm){
@@ -1103,7 +1121,7 @@ int main(int argc,char** argv){
         }
         return 0;
     }
-    if(rifle_bucket||rifle_contact||rifle_life||rifle_next){
+    if(rifle_bucket||rifle_contact||rifle_life||rifle_next||rifle_speed){
         HitBlock block{};
         HitBlock receiver{};
         ActorSpec credit_spec{},defender_spec{};
@@ -1119,7 +1137,11 @@ int main(int argc,char** argv){
             put16(c.a+0x94,0x0600); // Declared ordinary owner model mirror, copied at allocation.
             c.machine_red_release(2,true,true,true);
         };
-        if(rifle_next){
+        if(rifle_speed){
+            Check c(mod,original);release(c);
+            c.machine_red_bucket(block,true,true,false);
+            c.rifle_speed_ramp();
+        }else if(rifle_next){
             struct Case {unsigned distance;bool duplicate;};
             for(const auto test:{Case{256,false},Case{0,true},Case{0,false}}){
                 Check c(mod,original);release(c);

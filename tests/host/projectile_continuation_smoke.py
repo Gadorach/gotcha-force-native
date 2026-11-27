@@ -39,7 +39,10 @@ def smoke(executable, opengl):
                 "--frames", "40", "--no-audio"]
         if not opengl:
             args.append("--headless")
-        for suffix, expected in (("", [1]), ("actor-contact=bolt|continue-once-per-actor\n", [1, 2])):
+        policy = "actor-contact=bolt|continue-once-per-actor\n"
+        second_visits = []
+        for suffix, expected in (("", [1]), (policy, [1, 2]),
+                                 (policy + "projectile-speed-ramp=bolt|7|75\n", [1, 2])):
             (root / "borgs/jump-stick/gameplay.txt").write_text(attack + suffix, encoding="ascii")
             result = run([executable, *args], cwd=root, capture_output=True, text=True, timeout=45)
             hits = re.findall(r"tick=(\d+) actor=0 move=fire event=hit frame=\d+ object=(\d+) recipient=(\d+) value=(\d+)",
@@ -48,7 +51,10 @@ def smoke(executable, opengl):
             assert {int(row[3]) for row in hits} == {19}, hits
             assert len({row[1] for row in hits}) == 1, hits
             assert all(int(a[0]) < int(b[0]) for a, b in zip(hits, hits[1:])), hits
-    print(f"Authored projectile recipients: first-contact default and opt-in continuation ({'OpenGL' if opengl else 'headless'})")
+            if len(hits) == 2:
+                second_visits.append(int(hits[1][0]))
+        assert second_visits[1] < second_visits[0], second_visits
+    print(f"Authored projectile recipients: default, continuation, and speed ramp ({'OpenGL' if opengl else 'headless'})")
 
 
 if __name__ == "__main__":

@@ -155,6 +155,7 @@ struct BattleMvpProjectile {
     bool package_direct_release=false; // ordinary move emission; not a detached emitter or spawned child
     u16 package_base_damage=0; // snapshotted at allocation, before field damage changes
     u8 package_hit_recipients=0; // per-shot history; actors keep their round slots
+    bool package_ramp_deflected=false; // a shot-pull field owns subsequent velocity
 };
 struct BorgProjectileVisualSample {f32 scale=1,angle=0;};
 inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpProjectile& shot,u32 tick){
@@ -2424,6 +2425,7 @@ private:
         if(shot.pulling_field!=selected->id)
             record_package(BorgBattleEventKind::FieldShotPulled,shot.owner,shot.package_move,0,shot.id,0);
         shot.pulling_field=selected->id;
+        shot.package_ramp_deflected=true;
         const f32 step=std::min(selected->spec.shot_pull->acceleration,nearest)/nearest;
         const auto speed=[](const auto& v){return std::hypot(v[0],v[1],v[2]);};
         const f32 cap=std::max(200.f,speed(shot.velocity));
@@ -3871,12 +3873,23 @@ private:
             }
         }
         if(retire!=PackageRetirement::None)retire_package_shot(shot,retire);
-        else if(!shot.landed&&definition.flight_children){
-            const auto& spec=*definition.flight_children;
-            const u32 age=tick_-shot.born_tick;
-            if(age>=spec.first&&(age-spec.first)%spec.interval==0&&(age-spec.first)/spec.interval<spec.count){
-                const auto aim=native_borg_direction({0,0},{shot.velocity[0],shot.velocity[2]},actors_[shot.owner].facing);
-                queue_package_children(shot,spec.projectile,aim,false,ChildTrigger::Flight);
+        else if(!shot.landed){
+            if(const auto& ramp=definition.speed_ramp;ramp&&!shot.package_ramp_deflected){
+                // Use the current speed for the entire tested step. A
+                // surviving shot gains speed only for its next visit.
+                const f32 speed=std::hypot(shot.velocity[0],shot.velocity[2]);
+                if(speed>0&&speed<ramp->cap){
+                    const f32 scale=std::min(ramp->cap,speed+ramp->gain)/speed;
+                    for(auto& v:shot.velocity)v*=scale;
+                }
+            }
+            if(definition.flight_children){
+                const auto& spec=*definition.flight_children;
+                const u32 age=tick_-shot.born_tick;
+                if(age>=spec.first&&(age-spec.first)%spec.interval==0&&(age-spec.first)/spec.interval<spec.count){
+                    const auto aim=native_borg_direction({0,0},{shot.velocity[0],shot.velocity[2]},actors_[shot.owner].facing);
+                    queue_package_children(shot,spec.projectile,aim,false,ChildTrigger::Flight);
+                }
             }
         }
     }

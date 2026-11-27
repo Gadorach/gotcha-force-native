@@ -72,6 +72,7 @@ struct BorgImpactPattern {
 struct BorgImpactTrail : BorgImpactPattern {u16 mark_size=0,mark_ticks=0;};
 struct BorgImpactHazard : BorgImpactPattern {u16 hit_radius=0,height=0,ticks=0,damage=0,first_query=0;};
 struct BorgBattleRewindHit {u8 set=0,speed=0,fallback=255;};
+struct BorgProjectileSpeedRamp {f32 gain=0,cap=0;};
 struct BorgBattleBlast {
     BorgBlastTrigger trigger=BorgBlastTrigger::Actor;
     u16 radius=0,damage=0;
@@ -120,6 +121,7 @@ struct BorgBattleProjectileDefinition {
     bool launch_body_heading=false;
     std::string launch_sound;
     bool continue_after_actor_hit=false; // one accepted contact per round actor slot
+    std::optional<BorgProjectileSpeedRamp> speed_ramp;
 };
 inline bool borg_hit_continuation_valid(const BorgBattleProjectileDefinition& a){
     // A non-terminal actor hit must not silently skip a retirement effect.
@@ -735,6 +737,10 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     for(const auto& s:p.stocks)if(!s.capacity||s.capacity>kBorgStockCapacity||s.refill_ticks>3600||(s.add_on_debit&&!s.refill_ticks))return false;
     for(const auto& a:p.projectiles){
         if(a.continue_after_actor_hit&&!borg_hit_continuation_valid(a))return false;
+        if(const auto& ramp=a.speed_ramp;ramp&&(
+           a.sustained||a.guidance||a.rise||a.gravity||a.floor==BorgProjectileFloor::Land||
+           !finite(ramp->gain,.01f,20.f)||!finite(ramp->cap,1.f,140.f)||ramp->cap<=a.speed))
+            return false;
         if(const auto& s=a.impact_sound;s&&(a.sustained||!borg_impact_lane_reachable(a,s->lane)||
                                          !borg_package_asset_path_valid(s->path)))return false;
         if(const auto& r=a.impact_record;r&&(a.sustained||!borg_impact_lane_reachable(a,r->lane)||
@@ -1183,6 +1189,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct MountSpinRef {unsigned line;std::string slot;BorgBattlePartSpin spec;};
     struct PartBoneRef {unsigned line;std::string move,slot;u8 bone;};
     struct GuidanceRef {unsigned line;std::string projectile;BorgBattleGuidance spec;};
+    struct SpeedRampRef {unsigned line;std::string projectile;BorgProjectileSpeedRamp spec;};
     std::vector<ReleaseRef> refs;
     std::vector<EntryStockRef> entry_stocks;
     std::vector<ReleaseGateRef> release_gates;
@@ -1196,6 +1203,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     std::vector<HeldFireRef> held_fire;
     std::vector<BlastRef> blasts;
     std::vector<ActorContactRef> passes;
+    std::vector<SpeedRampRef> speed_ramps;
     std::vector<DetonationRef> detonations;
     std::vector<std::pair<unsigned,std::string>> first_detonations;
     std::vector<ReturnRef> returns;
@@ -1827,6 +1835,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
                  a[1]=="floor"?BorgProjectileReturn::Floor:a[1]=="expiry"?BorgProjectileReturn::Expiry:
                  a[1]=="expiry-or-proximity"?BorgProjectileReturn::ExpiryOrProximity:
                 a[1]=="stage"?BorgProjectileReturn::Stage:BorgProjectileReturn::Remote});
+        }else if(key=="projectile-speed-ramp"){
+            std::array<std::string_view,3> a;BorgProjectileSpeedRamp ramp;
+            if(speed_ramps.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
+               !scalar(a[1],.01f,20.f,&ramp.gain)||!scalar(a[2],1.f,140.f,&ramp.cap))
+                return fail("invalid projectile-speed-ramp");
+            speed_ramps.push_back({line,std::string(a[0]),ramp});
         }else if(key=="actor-contact"){
             std::array<std::string_view,2> a;
             if(passes.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
@@ -2305,6 +2319,12 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             if(a.damage||a.pull_units||a.walk_ticks)return fail("ignoring actor contact cannot also apply direct-hit effects");
             a.ignore_actors=true;
         }
+    }
+    for(const auto& r:speed_ramps){
+        line=r.line;const auto pi=index(next.projectiles,r.projectile);
+        if(pi==next.projectiles.size()||next.projectiles[pi].speed_ramp)
+            return fail("unknown projectile or duplicate projectile-speed-ramp");
+        next.projectiles[pi].speed_ramp=r.spec;
     }
     for(const auto& link:rewind_hits){
         line=link.line;
