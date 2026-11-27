@@ -517,7 +517,11 @@ private:
         const BattleMvpField* first=nullptr;
         f32 nearest=1.f;
         for(const auto& field:world.fields()){
-            if(field.spec.follow||field.spec.drift||!hostile_damage_field(world,owner,field)||field.born>world.tick())continue;
+            // A plain owner-following core stays with the rival being
+            // approached. Use its current footprint, never a forecast
+            // of a different carrier, animated socket, or drifting core.
+            if(field.spec.drift||(field.spec.follow&&(field.owner!=rival||field.spec.socket))||
+               !hostile_damage_field(world,owner,field)||field.born>world.tick())continue;
             const auto interval=field.spec.core_damage->interval;
             const auto age=world.tick()-field.born;
             if(!interval||(age/interval+1)*interval>=field.spec.ticks)continue;

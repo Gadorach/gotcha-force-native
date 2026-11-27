@@ -1916,6 +1916,15 @@ All 206 passed, with 162 starts and 148 damaging hitters at tick
 120 and 191 starts and 183 damaging hitters at tick 240, unchanged
 from the previous sweep.
 
+The same approach fixture with a plain owner-following field also
+went from eight pulses and no Star Hero hit to zero pulses and a
+hit at tick 35. The CPU used only the chased rival's current field
+footprint. Fields carried by another rival, animated sockets, and
+drifting fields are not forecast by this approach check. All 206
+still passed, with unchanged activity at both Workshop cutoffs.
+The five interrupted melee subjects still deployed no payload by
+tick 240 in the mixed sweep.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.
