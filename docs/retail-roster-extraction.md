@@ -1829,6 +1829,20 @@ hitters**, one fewer start and the same hit count. The broader
 ground-dash rule was not kept because it reduced early and late
 activity.
 
+As a separate 480-frame spot check of three quiet subjects in their
+ordinary audit groups, Army Robot (`0408`) first started at tick 280
+and hit at tick 289. Normal Samurai (`0700`) was still fighting
+without a start, and Nu III (`0f03`) was defeated at tick 420 without
+a start. Extending the window separates some late attacks from the
+cases that need a closer look; it does not explain every quiet slot.
+
+In a narrow corridor with an off-center ally, the shorter sidestep
+probe let Proto Blue (`0617`) reach the enemy and hit at tick 45.
+With only the full-width probes, it stood still for the entire
+120-frame fixture. The full Workshop sweep was unchanged at both
+cutoffs, with all 206 admitted and 191 starts and 182 damaging
+hitters by tick 240.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

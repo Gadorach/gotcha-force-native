@@ -507,23 +507,28 @@ private:
         if(!blocker)return {};
         const BattlePoint lateral{-toward.z,toward.x};
         const f32 offset=(blocker->position[0]-start.x)*lateral.x+(blocker->position[2]-start.z)*lateral.z;
-        // Prefer the side away from the blocker. Consider just two short
-        // legs; this is not a dynamic navmesh or a change to body contacts.
+        // Prefer the side away from the blocker. These local leg probes
+        // are steering hints, not a change to body contacts.
         const f32 sign=offset>0?-1.f:1.f;
-        for(const auto side:{sign,-sign}){
+        const auto sidestep=[&](f32 side,f32 span)->std::optional<BattlePoint>{
             const BattlePoint dir{side*lateral.x,side*lateral.z};
-            const auto span=2*cfg.actor_radius+8.f;
             const BattlePoint step{dir.x*span,dir.z*span},end{start.x+step.x,start.z+step.z};
             const auto bound=cfg.arena_half-cfg.actor_radius;
             if(std::abs(end.x)>bound||std::abs(end.z)>bound||
-               (terrain&&!battle_partition_route_clear(*terrain,start,end,cfg.actor_radius+4.f)))continue;
-            bool occupied=false;
+               (terrain&&!battle_partition_route_clear(*terrain,start,end,cfg.actor_radius+4.f)))return {};
             for(unsigned i=0;i<world.actor_count();++i){
                 f32 fraction=0;
-                if(solid(i)&&blocks(world.actors()[i],step,&fraction)){occupied=true;break;}
+                if(solid(i)&&blocks(world.actors()[i],step,&fraction))return {};
             }
-            if(!occupied)return dir;
-        }
+            return dir;
+        };
+        const auto span=2*cfg.actor_radius+8.f;
+        for(const auto side:{sign,-sign})if(const auto dir=sidestep(side,span))return dir;
+        // A parked ally that is already off the approach line needs
+        // less sideways travel on the open flank. Keep the normal
+        // preferences above; only shorten the probe before giving up.
+        const auto needed=std::max(8.f,span-std::abs(offset));
+        if(needed<span)if(const auto dir=sidestep(sign,needed))return dir;
         return BattlePoint{};
     }
 

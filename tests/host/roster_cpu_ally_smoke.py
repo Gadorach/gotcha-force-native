@@ -45,6 +45,24 @@ def smoke(binary, opengl):
             if count == 2:
                 assert "actor=2 move=slash event=start " not in log
 
+        manifest.write_text(layout + (
+            "body-partition=left-pass|-230|-755|-126|-245\n"
+            "body-partition=right-stop|65|-755|125|-575\n"
+            "spawn=off-target|0|0|-295\nspawn=off-ally|35|0|-515\nspawn=off-cpu|0|0|-625\n"
+        ))
+        (root / "offset-pass.roster").write_text(
+            "GFROSTER 1\nstage=example:workshop\n"
+            "fighter=0|example:flight-stick|normal|off-target\n"
+            "fighter=1|example:flight-stick|normal|off-ally\n"
+            "fighter=1|example:jump-stick|normal|off-cpu\n"
+        )
+        battle = run([binary, mode, "--battle-roster", "offset-pass.roster", "--frames", "78",
+                      "--no-audio", "--trace-package-battle"], cwd=root, capture_output=True, text=True, timeout=45)
+        log = battle.stderr
+        assert battle.returncode == 0 and "frames=78 actors=3 restarts=0" in log, log[-4500:]
+        hits = re.findall(r"borg-api: round=0 tick=\d+ actor=2 move=slash event=hit .*recipient=(\d+) ", log)
+        assert set(hits) == {"0"}, log[-4500:]
+
         # Put the parked ally directly on the first leg to the wall's
         # eastern corner. The pursuer must pass both objects, not just
         # find a straight shot at the target.
@@ -74,5 +92,5 @@ if __name__ == "__main__":
     parser.add_argument("--opengl", action="store_true")
     args = parser.parse_args()
     smoke(args.binary, args.opengl)
-    print(f"Roster ally pass: direct flanks and routed legs work; two blocked flanks hold "
+    print(f"Roster ally pass: direct flanks, offset fallback and routed legs work; two blocked flanks hold "
           f"({'OpenGL' if args.opengl else 'headless'})")

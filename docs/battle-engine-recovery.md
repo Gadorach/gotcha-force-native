@@ -1124,9 +1124,10 @@ bodies, and shorten the remaining route. The planner holds the checked
 stick direction; the mover still owns the dash duration and cooldown.
 If a living ally at body height blocks a grounded CPU's direct approach
 or a leg around a partition, the planner checks two short lateral legs
-and either sidesteps or waits. It doesn't change the target or grant
-passage through the ally; native contact still resolves actual
-movement against all solid fighters.
+and either sidesteps or waits. If neither full-width probe fits, it
+can check a shorter step away from an off-center ally. This does not
+change the target or grant passage through the ally; native contact
+still resolves actual movement against all solid fighters.
 A planted roster CPU can turn at the normal angular rate when its
 stick requests movement but a solid peer prevents translation. The
 turn uses the stick direction, not the aim target. It does not move

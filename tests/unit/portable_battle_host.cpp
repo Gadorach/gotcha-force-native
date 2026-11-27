@@ -858,6 +858,23 @@ void roster_cpu_ally_pass_cases(){
     start();
     const auto under=cpu.input(world,2);
     check(!under.movement.stick_x&&under.movement.l,"a cruiser above body height is not a planar blocker");
+
+    terrain.walls={{{"left-rail",-230,-130,-126,380},{"right-bump",65,-130,125,50}}};
+    config.packages[1]=idle;config.spawn[1]={35,110};start(&terrain);
+    hit=false;
+    for(unsigned n=0;n<100&&!hit;++n){
+        const auto ai=cpu.input(world,2,&terrain);
+        if(!n)check(ai.movement.stick_x<0&&!ai.movement.l,"take the short flank when the ally is off-center");
+        check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+                               std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false,&terrain),"step through native corridor contact");
+        const auto& pos=world.actors()[2].position;
+        check(pos[0]>=-84.01f&&std::hypot(pos[0]-35,pos[2]-110)>=2*config.actor_radius-.01f,
+              "the narrow pass still respects the rail and the allied body");
+        for(const auto& e:world.package_events())if(e.kind==BorgBattleEventKind::Hit&&e.actor==2){
+            check(e.recipient==0,"the sidestep does not change enemy selection");hit=true;
+        }
+    }
+    check(hit,"a shorter legal sidestep can get past an offset ally");
 }
 
 void roster_cpu_detour_ally_cases(){
