@@ -1082,6 +1082,44 @@ python3 -m tools.analyze.retail_saucer_contact \
   /tmp/opencode/gf-saucer-contact.json
 ```
 
+### Type-9 census: shared zero-power queue and shape admission
+
+The [census and bind replay](api-map/gg4e08-type9-roster.json)
+account for five direct calls to the type-9 factory and three
+to its type-8 predecessor. Type 8 forwards its own key on
+initialization and on a separate active branch. Type-76 rows
+0 and 2 select type 8/key 0; rows 1, 3, 4, and 5 select type
+9/key 1. The two borrowed-endpoint workers request type 9
+with key 3 (type-32 rows 0 and 7) or key 4 (row 8). Only the
+row-8 Saucer route has a scoped installed action join here.
+Key 2 has a table row but no resolved type-9 call key in this
+census.
+
+All seven type-9 rows attempt common group **84**. Its sole
+descriptor, **122**, is a sphere with raw radius **150** and
+uses common record `802C4760` with **zero raw power**. In the
+14 bounded cases, the constructor took one carrier and one
+descriptor cell. A spare shape cell let the opening leaf bind
+descriptor 122 under the credited actor. With no shape cell,
+the same leaf returned in phase 2.
+
+All cases matched across O0, O1, and O2. The successful replay
+cuts after shape bind, before presentation initialization or an
+attack registry pass. It does not measure runtime radius,
+contact, reaction, HP, or retirement. This effect is separate
+from both the carrier hit and the type-5 contact area.
+
+Compile [`retail_type9_bind_fixture.cpp`](../tests/host/retail_type9_bind_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type9_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-type32-roster.json \
+  /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type9-roster.json
+```
+
 ### Type-32 model-relative segments: copied aim and live gate
 
 The [shared replay](api-map/gg4e08-type32-shared.json) runs the

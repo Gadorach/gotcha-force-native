@@ -1,0 +1,60 @@
+{
+  "call_sites": [
+    {"factory":"800FC6A0","function":"800FC37C","key_source":{"kind":"signed-type8-object-key","object_offset":"0x11","phase":"type-8-initializer","possible_keys_through_reviewed_type8_calls":[0,5,6]},"site":"800FC428"},
+    {"factory":"800FC6A0","function":"800FC440","key_source":{"kind":"signed-type8-object-key","object_offset":"0x11","phase":"type-8-active","possible_keys_through_reviewed_type8_calls":[0,5,6]},"site":"800FC678"},
+    {"factory":"800FC208","function":"800FD2D0","key_source":{"eligible_rows":[0,2],"kind":"type76-row-signed-key","lane":0,"possible_keys":[0]},"site":"800FD314"},
+    {"factory":"800FC6A0","function":"800FD2D0","key_source":{"eligible_rows":[1,3,4,5],"kind":"type76-row-signed-key","lane":1,"possible_keys":[1]},"site":"800FD324"},
+    {"factory":"800FC208","function":"8018D1D8","key_source":{"kind":"literal-r5","possible_keys":[5]},"site":"8018D234"},
+    {"factory":"800FC208","function":"801C033C","key_source":{"kind":"literal-r5","possible_keys":[6]},"site":"801C0398"},
+    {"factory":"800FC6A0","function":"801DF648","key_source":{"kind":"literal-r5","possible_keys":[3],"type32_borrowed_rows":[0,7]},"site":"801DF69C"},
+    {"factory":"800FC6A0","function":"801DF878","key_source":{"kind":"literal-r5","possible_keys":[4],"type32_borrowed_rows":[8]},"site":"801DF8CC"}
+  ],
+  "candidates": [
+    {"action":"X","borg":"gg4e08:0d03","condition":"phase zero; paid borrowed-endpoint factory","descendant_key":4,"descendant_scope":"later terrain crossing","descendant_site":"801DF8CC","parent_call":"801895B8","parent_key":8,"profile":"p155","state":2}
+  ],
+  "cases": [
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":0,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":0,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":1,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":1,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":2,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":2,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":3,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":3,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":4,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":4,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":5,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":5,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":null,"key":6,"phase_at_cut":2,"reached_post_bind_frontier":false,"requested_group":84,"spare_shape_cells":0},
+    {"allocated":true,"attack_registry_count_at_cut":0,"bound_descriptor":122,"key":6,"phase_at_cut":1,"reached_post_bind_frontier":true,"requested_group":84,"spare_shape_cells":1}
+  ],
+  "code_atlas_sha256": "1bfb0ac7d8885156336b7de2e40e0019daca170b25b4afd762bf172662f36eae",
+  "common_collision": {"amount_index":0,"amount_record":"802C4760","descriptor":122,"group":84,"local_center":[0.0,0.0,0.0],"raw_power":0,"raw_radius":150.0,"shape":"sphere"},
+  "counts": {"bind_cases":14,"candidate_rows":1,"rows":7,"type8_call_sites":3,"type9_call_sites":5},
+  "factories": {"type76_predecessor":"800FCD38","type8":"800FC208","type9":"800FC6A0"},
+  "factory_rows": [
+    {"common_group":84,"key":0,"row":"8031EB60","type8_short_operand":4,"xz_scale_operand":1.0,"y_scale_operand":1.0},
+    {"common_group":84,"key":1,"row":"8031EB90","type8_short_operand":4,"xz_scale_operand":1.0,"y_scale_operand":1.0},
+    {"common_group":84,"key":2,"row":"8031EBC0","type8_short_operand":4,"xz_scale_operand":2.0,"y_scale_operand":2.0},
+    {"common_group":84,"key":3,"row":"8031EBF0","type8_short_operand":4,"xz_scale_operand":1.0,"y_scale_operand":1.0},
+    {"common_group":84,"key":4,"row":"8031EC20","type8_short_operand":4,"xz_scale_operand":0.5,"y_scale_operand":0.30000001192092896},
+    {"common_group":84,"key":5,"row":"8031EC50","type8_short_operand":4,"xz_scale_operand":0.4000000059604645,"y_scale_operand":0.5},
+    {"common_group":84,"key":6,"row":"8031EC80","type8_short_operand":4,"xz_scale_operand":0.5,"y_scale_operand":0.5}
+  ],
+  "kind": "gf-retail-type9-roster",
+  "notes": ["Factory call coverage is direct atlas edges; a copied type-8 key preserves the supplied selector.","Only the reviewed Saucer worker has a scoped installed action ancestor here. The other edges are not action assignments.","For each declared key, one carrier and descriptor allocate with distinct parent and credited actor. Shape slots are supplied separately.","The replay enters the original opening leaf and stops after bind, before presentation initialization; it does not run an attack registry pass.","Zero raw power is a source operand, not a measured overlap, reaction, damage, visual, or lifetime result. No native gameplay is emitted."],
+  "revision": 1,
+  "rows_without_resolved_type9_call_keys": [2],
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "type32_census_sha256": "947c3048c451682f2e2e7b694a4e42d5ec98dd5b3a5690b00ebfefc8b1cf3806",
+  "type76_rows": [
+    {"descendant_key":0,"descendant_type":8,"lane":0,"row":"8031EE18","row_index":0},
+    {"descendant_key":1,"descendant_type":9,"lane":1,"row":"8031EE38","row_index":1},
+    {"descendant_key":0,"descendant_type":8,"lane":0,"row":"8031EE58","row_index":2},
+    {"descendant_key":1,"descendant_type":9,"lane":1,"row":"8031EE78","row_index":3},
+    {"descendant_key":1,"descendant_type":9,"lane":1,"row":"8031EE98","row_index":4},
+    {"descendant_key":1,"descendant_type":9,"lane":1,"row":"8031EEB8","row_index":5}
+  ],
+  "type9_dispatch": {"configured_active_limit":30,"dispatch":"8031ED2C","phase_entries":["800FC810","800FC9B4","800FCA6C","800FCA80"],"post_bind_cut":"800055FC"}
+}
