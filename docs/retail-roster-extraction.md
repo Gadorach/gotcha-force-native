@@ -1898,6 +1898,15 @@ tick 99 without the retreat. The Workshop sweep kept its totals at
 both cutoffs, with all 206 admitted. The five interrupted melee
 subjects still deployed no payload by tick 240 in that mixed sweep.
 
+With a clear enemy on the safe side of the same field, Star Hero can
+now leave the interrupted fight and take that approach. It hit the
+alternate rival at tick 111 while the field was still active; the
+previous planner waited outside and did not hit that rival in the
+136-frame fixture. The hint does not change field occlusion, actual
+recipients, or damage. All 206 still passed and the Workshop sweep was
+unchanged at both cutoffs: 162 starts and 148 damaging hitters at
+tick 120, and 191 starts and 183 damaging hitters at tick 240.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

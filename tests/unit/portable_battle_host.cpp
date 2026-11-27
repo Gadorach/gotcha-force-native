@@ -1104,6 +1104,11 @@ void roster_cpu_follow_charge_cases(){
 }
 
 void roster_cpu_field_escape_cases(){
+    struct Terrain final:IBattleMvpTerrain {
+        std::array<StageBodyPartition,1> boxes{{{"remote",900,-50,1000,100,true}}};
+        std::span<const StageBodyPartition> body_partitions()const override{return boxes;}
+        bool height(f32,f32,f32,f32* out)const override{if(!out)return false;*out=0;return true;}
+    } terrain;
     const auto idle=definition("stationary-v1","health=500\n");
     const std::string clips="health=500\nwalk=0:1\nair=0:2\ndash=0:3\n";
     const auto caster=definition("grounded-v1|8|13|15",clips+
@@ -1114,26 +1119,29 @@ void roster_cpu_field_escape_cases(){
     BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;
     config.teams={0,0,1};config.packages={caster,idle,melee};
     config.spawn={BattlePoint{0,150},BattlePoint{600,400},BattlePoint{0,0}};
-    struct Result {unsigned pulses=0;bool interrupted=false,resumed_hit=false;};
-    const auto visit=[&](bool explicit_roster){
+    struct Result {unsigned pulses=0,alternate_hit=0;bool interrupted=false,resumed_hit=false;};
+    const auto visit=[&](bool explicit_roster,const IBattleMvpTerrain* stage=nullptr){
         config.local_aim_cycle=explicit_roster;
         NativeBattleMvp world;PortableRosterAi cpu;
-        check(world.start(config),"start resident field escape fixture");
+        check(world.start(config,stage),"start resident field escape fixture");
         Result seen;
         for(unsigned n=0;n<130;++n){
-            const auto ai=cpu.input(world,2);
+            const auto ai=cpu.input(world,2,stage);
             if(!n)check(ai.attack.pressed==BorgBattleInputs::b,"melee windup starts before the field first pulses");
             if(explicit_roster&&seen.pulses==1&&!seen.interrupted){
                 check(ai.movement.stick_y<0&&!ai.movement.l&&!ai.attack.pressed&&ai.attack.released==BorgBattleInputs::b,
                       "step away using ordinary walking and release the interrupted attack input");
             }
             const BorgBattleInputs initial=n?BorgBattleInputs{}:BorgBattleInputs{BorgBattleInputs::b,BorgBattleInputs::b,0};
+            const std::array<u8,1> hints{ai.aim_target};
             check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
-                                   std::array<BorgBattleInputs,3>{{initial,{},ai.attack}},false),"advance native field and melee");
+                std::array<BorgBattleInputs,3>{{initial,{},ai.attack}},false,stage,{},nullptr,nullptr,nullptr,{},
+                {nullptr,0,ai.aim_target==255?std::span<const u8>{}:std::span<const u8>(hints)}),"advance native field and melee");
             for(const auto& e:world.package_events()){
                 if(e.kind==BorgBattleEventKind::Hit&&e.actor==0&&e.recipient==2)++seen.pulses;
                 if(e.kind==BorgBattleEventKind::Interrupted&&e.actor==2&&e.frame<9)seen.interrupted=true;
                 if(e.kind==BorgBattleEventKind::Hit&&e.actor==2&&e.recipient==0&&e.tick>62)seen.resumed_hit=true;
+                if(e.kind==BorgBattleEventKind::Hit&&e.actor==2&&e.recipient==1&&!seen.alternate_hit)seen.alternate_hit=e.tick;
             }
         }
         return seen;
@@ -1141,6 +1149,15 @@ void roster_cpu_field_escape_cases(){
     const auto control=visit(false),evaded=visit(true);
     check(control.interrupted&&evaded.interrupted&&evaded.pulses>0&&evaded.pulses<control.pulses&&evaded.resumed_hit,
           "escaping the real field reduces hits and opens a later ordinary strike");
+    config.spawn[1]={250,-100};
+    const auto alternate=visit(true,&terrain);
+    check(alternate.interrupted&&alternate.alternate_hit>0&&alternate.alternate_hit<62,
+          "take a clear alternate rival before the field expires");
+    const auto unbound=visit(true);
+    check(!unbound.alternate_hit||unbound.alternate_hit>=62,"an unbound stage does not admit the alternate hint");
+    terrain.boxes[0]={"sealed-alternate",110,-220,120,-10,true};
+    const auto blocked=visit(true,&terrain);
+    check(!blocked.alternate_hit||blocked.alternate_hit>=62,"do not cut through a partition to a safe-side rival");
 }
 
 void roster_cpu_field_height_cases(){

@@ -1055,8 +1055,11 @@ empty field pool does not suppress another payload on the same move.
 A grounded roster CPU can step out when a confirmed hostile field hit
 interrupts its melee windup before the window arms. It uses ordinary
 walking, releases the interrupted input, and avoids returning through
-that same active field. Damage, interruption, field lifetime, and
-movement acceptance still belong to the native simulation.
+that same active field. On a stage that admits CPU aim hints, it can
+pursue another grounded rival along a clear path outside the field.
+It waits outside if there is no such path. Damage, interruption,
+field lifetime, and movement acceptance still belong to the native
+simulation.
 Simple slow ground drops with an opponent-only expiry blast use the
 declared blast radius for a finite flat-floor approach. The planner
 discounts body-centre height and does not count launch offset or

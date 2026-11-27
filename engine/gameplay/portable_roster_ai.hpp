@@ -52,6 +52,7 @@ public:
             return state.output;
         }
         state.burst_leg=BurstLeg::None;
+        u8 field_rival=255;
         if(world.config().local_aim_cycle&&self.grounded&&profile->movement==BorgBattleMovement::Grounded){
             const auto* active=action.move<profile->moves.size()?&profile->moves[action.move]:nullptr;
             if(self.hit_flash&&active&&borg_battle_direct_melee(*active)&&action.frame<active->melee->first){
@@ -61,7 +62,7 @@ public:
                 }
             }
             if(const auto* field=hostile_damage_field(world,slot,state.evade_field)){
-                if(const auto escape=field_escape(world,slot,nearest,*field,terrain)){
+                if(const auto escape=field_escape(world,slot,nearest,*field,terrain,field_rival)){
                     pad.stick_x=s8(std::lround(127*escape->x));pad.stick_y=s8(std::lround(127*escape->z));
                     if(state.button){
                         attack.released=std::exchange(state.button,u8(0));
@@ -129,7 +130,8 @@ public:
             }
             return nullptr;
         };
-        auto target=nearest;
+        auto target=field_rival==255?nearest:field_rival;
+        if(target!=nearest)aim=target;
         const bool short_range=reach>0&&std::isfinite(reach);
         const bool melee_only=short_range&&std::none_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
             return supported(move)&&!borg_battle_direct_melee(move);
@@ -139,7 +141,8 @@ public:
             !self.hit_flash&&!state.button&&action.move==BorgBattleActionState::none;
         bool detour=false,keep_route_probe=false;
         const BorgBattleMove* close_strike=nullptr;
-        if(short_range&&profile->movement==BorgBattleMovement::Grounded&&terrain&&!terrain->body_partitions().empty()){
+        if(target==nearest&&short_range&&profile->movement==BorgBattleMovement::Grounded&&
+           terrain&&!terrain->body_partitions().empty()){
             const auto clear=[&](unsigned rival){return battle_partition_route_clear(*terrain,start,point(rival),radius);};
             detour=!clear(nearest);
             // The padded body route and the authored melee line are
@@ -484,10 +487,10 @@ private:
     }
 
     // Input-only response to a field that actually interrupted a windup.
-    // No direction means that ordinary planning is needed; a zero vector
-    // holds just outside a field that still lies across the approach.
+    // No direction resumes ordinary planning (possibly with a clear rival
+    // hint); a zero vector holds outside a field across the approach.
     static std::optional<BattlePoint> field_escape(const NativeBattleMvp& world,unsigned owner,unsigned rival,
-                                                   const BattleMvpField& field,const IBattleMvpTerrain* terrain){
+                                                   const BattleMvpField& field,const IBattleMvpTerrain* terrain,u8& clear_rival){
         const auto& cfg=world.config();
         const auto& actors=world.actors();
         const auto& self=actors[owner];
@@ -498,9 +501,34 @@ private:
         if(planar<=0)return {};
         const auto buffer=std::sqrt(planar)+cfg.actor_radius*.5f;
         if(std::hypot(start.x-centre.x,start.z-centre.z)>=buffer){
-            f32 fraction=0;
-            if(battle_swept_hit(start,{goal[0]-start.x,goal[2]-start.z},centre,buffer,&fraction))return BattlePoint{};
-            return {};
+            const auto crosses=[&](BattlePoint to){
+                const BattlePoint step{to.x-start.x,to.z-start.z};
+                f32 fraction=0;
+                return (centre.x-start.x)*step.x+(centre.z-start.z)*step.z>0&&
+                    battle_swept_hit(start,step,centre,buffer,&fraction);
+            };
+            if(!crosses({goal[0],goal[2]}))return {};
+            // An alternate is only an aim hint on stages that admit one.
+            // Keep the old wait when reaching any rival would enter the
+            // observed core, or when a direct grounded strike is unknown.
+            if(terrain&&!terrain->body_partitions().empty()){
+                f32 best=std::numeric_limits<f32>::infinity();
+                for(u8 i=0;i<world.actor_count();++i){
+                    const auto& other=actors[i];
+                    if(!other.health||other.team==self.team||!other.grounded)continue;
+                    const BattlePoint to{other.position[0],other.position[2]};
+                    const auto distance=std::hypot(to.x-start.x,to.z-start.z);
+                    if(distance>=best||crosses(to)||!battle_partition_route_clear(*terrain,start,to,cfg.actor_radius))continue;
+                    if(!std::any_of(cfg.packages[owner]->moves.begin(),cfg.packages[owner]->moves.end(),[&](const auto& move){
+                        return supported(move)&&borg_battle_direct_melee(move)&&move.context!=BorgBattleContext::Airborne&&
+                            native_borg_melee_height_overlap(self.position[1]+move.melee->height,move.melee->half_height,
+                                                            other.position[1],cfg.actor_height);
+                    }))continue;
+                    best=distance;clear_rival=i;
+                }
+                if(clear_rival!=255)return {};
+            }
+            return BattlePoint{};
         }
         const auto away=native_borg_direction(centre,start,{-self.facing.x,-self.facing.z});
         const BattlePoint side{-away.z,away.x};
