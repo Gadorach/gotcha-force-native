@@ -104,7 +104,7 @@ void check_main_relay(const Module& mod,const std::vector<u8>& original){
 int main(int argc,char** argv){
     if(argc!=3)fail("usage: action-selector-fixture qualified.dol unmodified-recomp.so");
     const auto original=load_ram(argv[1]);
-    const Module mod(argv[2]);
+    const Module mod(argv[2],original);
     for(const auto& test:cases){
         auto ram=original;prepare_scene(ram);
         const auto at=[&](u32 va){return ram.data()+va-GC_RAM_BASE;};

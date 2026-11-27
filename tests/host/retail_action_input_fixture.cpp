@@ -1,6 +1,7 @@
 // Original processed pad packet -> conditioned requests -> action arbiter.
 // The scene, actor flags, and missing services are fixture inlets, not a match.
 #include "retail_recomp_fixture.hpp"
+#include <cstdint>
 
 namespace {
 using namespace retail_fixture;
@@ -27,6 +28,12 @@ class Check {
         mod.run(cpu,ram,entry);
         return cpu.gpr[3];
     }
+    u32 relative_table(u32 root,u32 index){
+        if(root<GC_RAM_BASE||root>=0x80440000||index>=128)fail("unsupported program table operand");
+        const auto* p=at(root+2*index);
+        const auto relative=std::bit_cast<int16_t>(u16(u16(p[0])<<8|p[1]));
+        return root+u32(relative);
+    }
 public:
     u8* const a;
     Check(const Module& module,const std::vector<u8>& original,Profile p=synthetic)
@@ -51,6 +58,37 @@ public:
     }
     void disable(unsigned group){at(config)[0xB8+group]=255;}
     void refuse_first_row(unsigned group){at(rows)[group*0x20]=255;}
+    void install(u32 entry,u16 model,Profile p,u32 main){
+        put16(a+0x3E8,model);
+        put32(at(0x803C4D94),spec); // Declared role-0 resource; no model/scene load.
+        call(entry);
+        if(be32(a+0x4B0)!=p.cfg||be32(a+0x4EC)!=p.context||be32(a+0x4F0)!=p.selector||
+           be32(a+0x4B4)!=main||be32(a+0x4AC)!=spec)fail("unexpected original installer writes");
+        // Fixture inlet from config+2, normally published by constructor 8004BB14.
+        a[0x579]=at(p.cfg)[2];
+    }
+    void pre_callback(){call(be32(a+0x4BC));}
+    u32 frontier(CPUState& cpu){
+        if(a[0x5DA]!=61||a[0x5DB]!=0)fail("expected admitted first slot and no-op second slot");
+        pre_callback();
+        cpu.gpr[3]=actor;
+        return mod.run_to(cpu,ram,0x80065DFC,{0x8004BEB8,0x80088AA0,0x8003E0A8});
+    }
+    void request(u32 site,u32 group,u32 choice,u32 effective_mask,u32 program){
+        CPUState cpu{};
+        const auto reached=frontier(cpu);
+        if(reached!=0x8004BEB8||cpu.lr!=site+4||cpu.gpr[3]!=actor||cpu.gpr[4]!=15||
+           cpu.gpr[5]!=group||cpu.gpr[6]!=choice||cpu.gpr[7]!=0xFFFFFFFFu||cpu.gpr[8]!=0xFFFFFFFFu||
+           (cpu.gpr[4]&a[0x579])!=effective_mask){
+            std::fprintf(stderr,"request site=%08X mask=%u group=%u choice=%u r7=%08X r8=%08X effective=%u\n",
+                         cpu.lr-4,cpu.gpr[4],cpu.gpr[5],cpu.gpr[6],cpu.gpr[7],cpu.gpr[8],cpu.gpr[4]&a[0x579]);
+            fail("first program request mismatch");
+        }
+        // Qualify the local bank address from the observed operands without
+        // giving the cut-off original request a result or executing cues.
+        const auto local=relative_table(be32(a+0x1D80),cpu.gpr[5]);
+        if(relative_table(local,cpu.gpr[6])!=program)fail("first request's local program address mismatch");
+    }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
         put_float(at(spec)+0x184+4*channel,limit);
@@ -86,7 +124,7 @@ public:
 int main(int argc,char** argv){
     if(argc!=3)fail("usage: action-input-fixture qualified.dol unmodified-recomp.so");
     const auto original=load_ram(argv[1]);
-    const Module mod(argv[2]);
+    const Module mod(argv[2],original);
     {
         Check c(mod,original,red);
         c.input(0,0,0,0,0,"neutral");
@@ -166,5 +204,42 @@ int main(int argc,char** argv){
         c.expect(profile?5:3,profile?4:3,"G-Black uses each profile's original charged row");
         c.input(0,0,0,0,0,"no repeated charge pulse after release");
     }
-    std::puts("action input: 12 scoped sequences passed (actual Machine Red, Sasuke and G-Black rows)");
+    {
+        Check c(mod,original);
+        c.install(0x800C91BC,0x0600,red,0x800C94D4);
+        c.a[0x6EE]=5;
+        c.pre_callback();
+        if(c.a[0x6EE])fail("Machine Red neutral pre-callback did not seed choice");
+        c.input(b,b,b,0,0x60,"installed Machine Red B");
+        c.expect(0,0,"installed Machine Red B row");
+        c.request(0x800C9634,2,0,7,0x8030903E);
+    }
+    {
+        constexpr Profile installed_sasuke{0x802D3EE0,0x802D4148,0x802D3FF8};
+        Check c(mod,original);
+        c.install(0x8006F4F8,0x000A,installed_sasuke,0x8006FACC);
+        c.a[0x7D2]=8;
+        c.input(b,b,b,0,0x60,"installed Sasuke close B");
+        c.expect(1,1,"installed Sasuke close row");
+        c.request(0x800FEEA4,3,1,3,0x802BE3B6);
+    }
+    for(const bool use_x:{false,true}){
+        Check c(mod,original);
+        // The real model-gated installer selects p089 for model 062A.
+        c.install(0x8018CCFC,0x062A,black[1],0x8018D24C);
+        c.pre_callback();
+        c.charge(0,60.f);c.charge(2,120.f);
+        const u32 button=use_x?b|x:b;
+        c.input(button,button,button,0,use_x?0xE0:0x60,"installed G-Black fresh press");
+        for(unsigned i=0;i<140;++i)c.input(button,button,0,0,0,"installed G-Black hold");
+        c.input(0,0,0,button,use_x?0x1400:0x400,"installed G-Black release");
+        c.expect(use_x?5:3,use_x?4:3,"installed G-Black charged row");
+        CPUState cpu{};
+        const auto reached=c.frontier(cpu);
+        if(cpu.gpr[3]!=actor||
+           (use_x?(reached!=0x8003E0A8||cpu.lr!=0x800677F4||cpu.gpr[4]!=actor+0x20):
+                  (reached!=0x80088AA0||cpu.lr!=0x8016CC54||cpu.gpr[4]!=3||cpu.gpr[5]!=8||
+                   cpu.gpr[6]!=0||cpu.gpr[7]!=1)))fail("G-Black did not reach its expected pre-request service");
+    }
+    std::puts("action input: 12 scoped sequences, 2 program requests and 2 pre-request boundaries passed");
 }

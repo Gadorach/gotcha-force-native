@@ -31,7 +31,7 @@ constexpr Case cases[]{
 int main(int argc,char** argv){
     if(argc!=3)fail("usage: phase-gate-fixture qualified.dol unmodified-recomp.so");
     const auto original=load_ram(argv[1]);
-    const Module mod(argv[2]);
+    const Module mod(argv[2],original);
     for(const auto& test:cases){
         auto ram=original;
         auto* obj=ram.data()+actor-GC_RAM_BASE;

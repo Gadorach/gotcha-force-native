@@ -24,7 +24,9 @@ and the [native Borg API coverage map](api-map/gg4e08-borg-api-map.json).
   they share 119 distinct installers. The installer walks produce 317
   profile references to 170 distinct profiles. The full six action groups
   retain the static controller contexts, explicit refusals, main handlers
-  and the available config and program-table identities.
+  and the available config and program-table identities. The
+  [standalone installer run](#standalone-profile-selection) separates the
+  observed normal selections from this static superset.
 - **Action code:** All 4,142 selector candidate rows (counting profile
   references) now identify a first code entry: 4,140 via a family table and
   2 via a direct main handler. 2,833 rows have a recognized substate entry
@@ -44,6 +46,44 @@ substate table is not proof that a handler is a leaf: some families use
 other dispatch patterns. The original shares executable code between
 Borgs; referencing a function does not make it exclusive to that Borg or
 establish what action or payload it produces.
+
+## Standalone profile selection
+
+The [installer execution map](api-map/gg4e08-standalone-installers.json)
+runs the original installer for all **206** model IDs against isolated
+actor records with zero variant/form fields and a declared slot-0
+resource pointer. Each execution joined exactly one atlas profile by
+its main handler and seven installed action-table pointers: **158**
+distinct profiles. **82** Borgs had more than one static candidate.
+The actor-data offsets also agreed with the independent static slot-0
+record analysis for every model (200 select record 0, five record 1,
+and one record 2).
+
+For this inlet, **62** Borgs select a profile with a charge mode,
+compared with 78 if all static alternatives are counted. Of the
+selected profiles, 44 enable B-charge, 25 enable X-charge, and seven
+enable both. In particular, Sasuke selects `p013`, and G-Black's
+actual `062A` installer selects `p089` (dual charge). `p088` was a
+useful explicit control in the earlier fixture, **not another observed
+selection for normal standalone G-Black**.
+
+The report was byte-identical across the original O0, O1 and O2
+recomp modules. The CPU fixtures check each module's declared text
+chunk hashes against the DOL, and a copy with one changed instruction
+byte is refused. No constructor, scene, slot population, combined
+form, or full battle was run. The map is not imported as native
+gameplay or used to relax package refusals.
+
+To reproduce, compile [`retail_installer_execution_fixture.cpp`](../tests/host/retail_installer_execution_fixture.cpp)
+using the same flags and headers as the [phase fixture](#shared-action-gate),
+then pass the compiled fixture and the local module to:
+
+```sh
+python3 -m tools.analyze.retail_installer_execution \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_CATALOG" "$GF_SYMBOLS" \
+  /tmp/opencode/gf-installer-execution-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-standalone-installers.json
+```
 
 ## Shared action selector
 
@@ -129,13 +169,33 @@ The [bounded original-input fixture](../tests/host/retail_action_input_fixture.c
 feeds processed packets into the unmodified functions with declared
 actor/scene state and six separate slot records. It reaches Machine
 Red's ranged-B and X rows, Sasuke's close-B row, and both G-Black charge
-profiles. With the same sufficiently long B+X hold and release, profile
+profiles when supplied explicitly. With the same sufficiently long B+X hold and release, profile
 `p088` commits charged B (`group 3`, state `3`); `p089` generates both
 requests and commits charged X (`group 5`, state `4`). All 12
 sequences passed on the original O0, O1 and O2 recomp modules. These are
 isolated profile comparisons with a supplied clock step and no live
 move during the hold. They neither pick a profile at runtime nor prove
 cancel timing, actual release payloads, or a hit.
+
+### From the installed row to the first program request
+
+An extension of the input fixture runs the actual installers, carries
+each committed row through the installed pre-callback and slot-61 relay,
+and stops before the program or a required service executes. These were
+the first observed boundaries for the declared actor state:
+
+| Model and action | Boundary |
+| --- | --- |
+| Machine Red (`0600`), ranged B | Call `800C9634` to `8004BEB8`: program `2:0` at `8030903E`; requested lane mask `15`, intersecting the config seed to `7`. The idle pre-callback zeroed the old `+0x6EE` choice. |
+| Sasuke (`000A`), close B | Call `800FEEA4` to `8004BEB8`: program `3:1` at `802BE3B6`; mask `15` intersects to `3`. The selected close handler supplies choice 1; the fixture does not seed the choice. |
+| G-Black (`062A`), charged B | Call `8016CC50` to allocator `80088AA0` with operands `(actor, 3, 8, 0, 1)` before a program request. No allocated object is supplied. |
+| G-Black (`062A`), charged X | Call `800677F0` to world-query entry `8003E0A8` before a program request. No world-query result is supplied. |
+
+The program addresses are checked by following the original local-bank
+tables with the observed arguments. The fixture stops before
+`8004BEB8` runs; it does not claim the engine accepted that mask or began
+executing the program. All four boundaries matched across O0, O1 and O2.
+Timing, cue execution and the connection to a real accepted hit remain open.
 
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the

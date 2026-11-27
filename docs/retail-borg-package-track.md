@@ -1290,8 +1290,12 @@ The [processed-input fixture](retail-code-atlas.md#processed-input-and-charge-op
 now verifies a prefix of branch selection. With an idle actor and
 both buttons held past their supplied limit then released together,
 the actual B-only profile selects charged B and the profile with
-both modes selects charged X. It does not identify when the live
-installer picks each config or join either row to a cue.
+both modes selects charged X. The [isolated installer run](retail-code-atlas.md#standalone-profile-selection)
+now identifies the dual-charge config as the selection for standalone
+model `062A`; the B-only config was an explicitly supplied comparison.
+With that installer selection, charged B reaches an allocator and
+charged X reaches a world query before either reaches a program. No
+service result or cue is supplied.
 
 **API gap:** separate, qualified accepted charge/pose routes and
 object-specific emitter/receiver transactions. `aim-lock` can cover a
@@ -1760,7 +1764,7 @@ press, its actual cue, a hit, and rifle stock refill.
 
 | Boundary | Evidence and remaining gap |
 | --- | --- |
-| Program request | Class state `+0x580 = 3` dispatches through `800C9590`. Its entry `800C95D8` requests local group 2 with the entry from `+0x6EE`; the class hook at `800C93B8` resets that byte to 0 on its checked branch. The installed program root is `80308CA0`. Local `P2:0` begins at `8030903E`. This identifies the base program, not every input context or the priority that selects it. |
+| Program request | The [scoped original-input fixture](retail-code-atlas.md#from-the-installed-row-to-the-first-program-request) joins fresh ranged B to class state `+0x580 = 0`, family `800C9510`, then `800C9590` and entry `800C95D8`. The idle pre-callback zeroes `+0x6EE`, and the leaf requests local `P2:0` at `8030903E` through `800C9634`. The fixture stops before executing it, with a declared actor/scene and no live terrain witness. |
 | Exact cue and guard | `P2:0` first executes upper-control command `80309046` (`1CEF = 0`). After waits and a directional descriptor change, `8030906A` writes `1CEF = 1` via opcode 2 (`8004C424`), provided the effective mask includes the upper lane. At `800C96C0` a pending cue temporarily zeroes the step for the VM call. The checked release branch requires a nonzero cue **and** either a passing aim test (`8006D0DC`) or local clock expiry. Neither physical B release nor clock expiry alone fires. No original visit number or native frame is inferred from the program bytes. |
 | Debit, refill and movement | All ten normal level rows give channel 0 initial/max **5**, mode **0**, preset **300**. `800C9F78` spends one before requesting type 2/key 21. Shared `8006DBE0` only arms mode 0 on an emptying debit; the refill visit `80055D08 → 8006DCC0` checks the channel inhibit mask at `+0x597`, decrements by the effective stock step, then restores the cap and clears the clock at expiry. **300 is a source clock value, not a native tick count.** The saved Machine Red fall trace establishes fall, landing, neutral and fresh walk from supplied terrain, including a separate cache-based movement refill probe. It does not establish the weapon's inhibit/step schedule or admit idle-to-B in the native controller. |
 | Carrier and contact | Key 21 specifies owner matrix key 7 and local `(-249.4, -9, 64)`. The paid request precedes allocation and a separate resource bind; neither implies contact. The live accepted pose, carrier direction and sweep, receiver/HP result and retirement have not been joined. |
