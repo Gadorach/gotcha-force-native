@@ -706,8 +706,8 @@ control closes with neither request.
 The separate stage-probe branches use `+0x20` on all four parents
 in the static census. The bounds control is not a replay of those
 terrain branches. All 36 cases matched across O0, O1, and O2.
-No overlap, area initialization, HP, live action, or native
-gameplay ran.
+This replay stops at allocation; the follow-up below separately
+checks area growth and HP.
 
 Compile [`retail_type5_sibling_exit_fixture.cpp`](../tests/host/retail_type5_sibling_exit_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -717,6 +717,37 @@ python3 -m tools.analyze.retail_type5_sibling_exit \
   "$GF_RETAIL_ROOT/sys/main.dol" docs/api-map/gg4e08-type5-roster.json \
   /tmp/opencode/area-exit "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type5-sibling-exits.json
+```
+
+### Type-5 sibling follow-up: shared damage, different reach
+
+The [follow-up replay](api-map/gg4e08-type5-sibling-followup.json)
+continues the allocated areas for all six scoped Borgs against a
+stationary Sasuke. Visit 1 initializes the area and binds a radius
+**3.1** sphere, but does not publish it for attack. Offering a slot
+on visit 2 did not make a refused area retry; it retired on visit 3.
+
+| Area key | First published radius (visit 2) | First hit at offset 70 / 90 / 420 | Peak radius | Shape / carrier return |
+| --- | ---: | --- | ---: | --- |
+| 6, 11, 19 | 34.1 | Visits 3 / 4 / miss | 387.5 | Visits 18 / 51 |
+| 7 | 65.1 | Visits 2 / 3 / 8 | 1240 | Visits 22 / 55 |
+
+All four keys hit at offset 22 on visit 2. An accepted hit removed
+**17 HP** using that area's common amount record. The same token
+wrote nothing more. The original parent returned on visit 2; the
+admitted area kept its own shape and resources until its later
+return. The parent cell was not reused.
+
+All 30 cases matched across O0, O1, and O2. The parent latch and
+initial positions were supplied. This does not replay the
+parent's hit, live reaction tail, whole move, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_type5_sibling_followup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-type5-roster.json \
+  /tmp/opencode/area-exit "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type5-sibling-followup.json
 ```
 
 ### Type-89 exits: cached area key 16
