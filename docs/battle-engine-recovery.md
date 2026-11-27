@@ -842,6 +842,12 @@ now exercises the settings writes, the ordinary constructor's bank
 selection and the rank copy. It joins their outputs to the original
 amount routine before returning, but does not recreate the producers
 of the Scene inputs or run a match.
+The [earlier scene-input producers](retail-code-atlas.md#producers-of-the-source-scene-inputs)
+are now checked separately on three paths. In the four-slot automatic
+setup, Mode input mask 0 coexists with Scene active mask `0x0F`.
+The selected-slot rank-3 branch updates the active mask, not the
+input mask. A separate port helper can add input bits. These are
+bounded setup paths, not a live rank or controller scheduler.
 
 `tools/analyze/damage_content_row.py` turns the tables and the public selector
 artifact into native content rows. A battle can pass up to 16 defender models

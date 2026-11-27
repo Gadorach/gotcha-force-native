@@ -412,6 +412,50 @@ python3 -m tools.analyze.retail_damage_setup \
   /tmp/opencode/gf-damage-setup.json
 ```
 
+### Producers of the source scene inputs
+
+The [scene-input receipt](api-map/gg4e08-scene-damage-inputs.json)
+goes one step earlier than the setup writers, on three original
+paths:
+
+- The four-slot automatic setup `80018494` runs to completion
+  using the original RNG from a fresh declared seed. It writes
+  Mode state 2 and **input mask 0**, but the resulting Scene
+  **active mask is `0x0F`** with count 4. The settings writer
+  supplies 7, and the Scene rank bytes are zero. Passing those
+  outputs to the ordinary actor slices yields bank 1 and rank 0
+  on both teams. `damage-indices=7,7:0,0,0,0:1,1,1,1` expresses
+  that damage selection for a separately authored four-fighter
+  preset; it does not reproduce the original lineup or match.
+- The admitted-slot slice at `80173680` uses a declared port map
+  and tests the mapped port's `0x40` status bit. When clear, it
+  adds the slot to the **Scene active mask**, increments the
+  count, and writes **rank 3**. A blocked slot leaves those fields
+  alone. Neither path rewrites the **Mode input mask**. These
+  checks stop before the next random draw.
+- The port helper `8019052C` scans four declared port words for
+  the first requested-bit match excluding the current port.
+  It ORs that port into the Mode input mask, then counts the
+  low four bits. For example, selecting port 1 with prior mask
+  `0x01` produces `0x03` and count 2. The ordinary source bank
+  slice then selects bank 0 for slots 0 and 1, and bank 1 for
+  slots 2 and 3, regardless of their team labels.
+
+The receipt matched across O0, O1 and O2. It does not identify
+hardware polling, front-end mode transitions, or every rank
+producer. Native presets remain explicit; no live policy or
+automatic bank assignment was added.
+
+Compile [`retail_scene_damage_inputs_fixture.cpp`](../tests/host/retail_scene_damage_inputs_fixture.cpp)
+with the [phase fixture](#shared-action-gate) build flags, then run:
+
+```sh
+python3 -m tools.analyze.retail_scene_damage_inputs \
+  "$GF_RETAIL_ROOT/sys/main.dol" \
+  /tmp/opencode/gf-scene-damage-inputs "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-damage-inputs.json
+```
+
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the
 command below; it takes the same DOL and recomp-module arguments.

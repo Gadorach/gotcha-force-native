@@ -1,0 +1,265 @@
+{
+  "automatic": {
+    "entry": "80018494",
+    "mode_input_mask": 0,
+    "mode_state": 2,
+    "ordinary_banks": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "ranks": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "rng_initializer": "800055E0",
+    "scene_active_count": 4,
+    "scene_active_mask": 15,
+    "team_settings": [
+      7,
+      7
+    ],
+    "teams": [
+      0,
+      1,
+      0,
+      1
+    ]
+  },
+  "kind": "gf-retail-scene-damage-inputs",
+  "notes": [
+    "The automatic routine runs original RNG from a fresh isolated seed. It is not a replay of a live match RNG stream.",
+    "Mode input mask and Scene active mask are separate, and a valid CPU slot can have no input bit.",
+    "The slot builder uses a declared port map and port status. Rank 3 is published only on the admitted branch.",
+    "The enrollment helper consumes declared port words, not hardware input. It does not change ranks or select a battle mode.",
+    "Bank readback uses the original ordinary constructor slice with declared slot bits; no complete actor or match is constructed.",
+    "Native presets remain explicit. The fixture is not a mode, controller or rank scheduler."
+  ],
+  "port_enrollment": {
+    "cases": [
+      {
+        "declared_port_words": [
+          2,
+          2,
+          2,
+          0
+        ],
+        "mode_input_mask": 3,
+        "mode_input_port_count": 2,
+        "ordinary_banks": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "picked_port": 1,
+        "prior_current_port": 0,
+        "prior_input_mask": 1,
+        "requested_port_bits": 2
+      },
+      {
+        "declared_port_words": [
+          0,
+          2,
+          2,
+          0
+        ],
+        "mode_input_mask": 7,
+        "mode_input_port_count": 3,
+        "ordinary_banks": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "picked_port": 2,
+        "prior_current_port": 1,
+        "prior_input_mask": 3,
+        "requested_port_bits": 2
+      },
+      {
+        "declared_port_words": [
+          0,
+          2,
+          2,
+          0
+        ],
+        "mode_input_mask": 3,
+        "mode_input_port_count": 2,
+        "ordinary_banks": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "picked_port": null,
+        "prior_current_port": 1,
+        "prior_input_mask": 3,
+        "requested_port_bits": 4
+      },
+      {
+        "declared_port_words": [
+          0,
+          2,
+          0,
+          0
+        ],
+        "mode_input_mask": 3,
+        "mode_input_port_count": 2,
+        "ordinary_banks": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "picked_port": null,
+        "prior_current_port": 1,
+        "prior_input_mask": 3,
+        "requested_port_bits": 2
+      },
+      {
+        "declared_port_words": [
+          0,
+          2,
+          0,
+          0
+        ],
+        "mode_input_mask": 134,
+        "mode_input_port_count": 2,
+        "ordinary_banks": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "picked_port": 1,
+        "prior_current_port": 2,
+        "prior_input_mask": 132,
+        "requested_port_bits": 2
+      },
+      {
+        "declared_port_words": [
+          0,
+          2,
+          2,
+          0
+        ],
+        "mode_input_mask": 7,
+        "mode_input_port_count": 3,
+        "ordinary_banks": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "picked_port": 1,
+        "prior_current_port": 2,
+        "prior_input_mask": 7,
+        "requested_port_bits": 2
+      }
+    ],
+    "count_write": "801905D0",
+    "entry": "8019052C",
+    "mask_write": "80190580"
+  },
+  "revision": 1,
+  "selected_slot": {
+    "cases": [
+      {
+        "assigned_team": null,
+        "mapped_port": 2,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173DB0",
+        "port_status_bit_0x40_clear": false,
+        "scene_active_count": 1,
+        "scene_active_mask": 32,
+        "scene_rank_after": 7,
+        "slot": 0
+      },
+      {
+        "assigned_team": 0,
+        "mapped_port": 2,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173A04",
+        "port_status_bit_0x40_clear": true,
+        "scene_active_count": 2,
+        "scene_active_mask": 33,
+        "scene_rank_after": 3,
+        "slot": 0
+      },
+      {
+        "assigned_team": null,
+        "mapped_port": 3,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173DB0",
+        "port_status_bit_0x40_clear": false,
+        "scene_active_count": 1,
+        "scene_active_mask": 32,
+        "scene_rank_after": 7,
+        "slot": 0
+      },
+      {
+        "assigned_team": 1,
+        "mapped_port": 3,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173A04",
+        "port_status_bit_0x40_clear": true,
+        "scene_active_count": 2,
+        "scene_active_mask": 33,
+        "scene_rank_after": 3,
+        "slot": 0
+      },
+      {
+        "assigned_team": null,
+        "mapped_port": 2,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173DB0",
+        "port_status_bit_0x40_clear": false,
+        "scene_active_count": 1,
+        "scene_active_mask": 32,
+        "scene_rank_after": 7,
+        "slot": 3
+      },
+      {
+        "assigned_team": 0,
+        "mapped_port": 2,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173A04",
+        "port_status_bit_0x40_clear": true,
+        "scene_active_count": 2,
+        "scene_active_mask": 40,
+        "scene_rank_after": 3,
+        "slot": 3
+      },
+      {
+        "assigned_team": null,
+        "mapped_port": 3,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173DB0",
+        "port_status_bit_0x40_clear": false,
+        "scene_active_count": 1,
+        "scene_active_mask": 32,
+        "scene_rank_after": 7,
+        "slot": 3
+      },
+      {
+        "assigned_team": 1,
+        "mapped_port": 3,
+        "mode_input_mask": 5,
+        "next_rng_caller": "80173A04",
+        "port_status_bit_0x40_clear": true,
+        "scene_active_count": 2,
+        "scene_active_mask": 40,
+        "scene_rank_after": 3,
+        "slot": 3
+      }
+    ],
+    "rank_write": "80173710",
+    "slice": "80173680",
+    "stop_before": "800055FC"
+  },
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
