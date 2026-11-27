@@ -804,6 +804,14 @@ supplied animation fields, contact owners and allocation results; they
 did not establish full targeting, cast interruption, reload/effect
 lifetimes, or live contacts. Neither actor gained admission.
 
+The [alternate VM replay](retail-code-atlas.md#alternate-vm-contacts-nurse-healing-and-patra-damage)
+now follows exact selected Nurse commands into the original alternate
+pair and signed HP writer. The tested command requests 200 HP for an
+ally and 50 for an opponent, with an HP cap and no revival. The Patra
+group-3 probe produces damage; it does not exercise the separate
+type-60 Big Spell route above. The replay still does not run the full
+X controller or stock path.
+
 The detached support planners reuse the mode-0 stock proposal and keep
 Patra's release event, caster object and recipient effect separate. Nurse's
 setup, lane-gated shape and ordinary same-team HP write also remain distinct.

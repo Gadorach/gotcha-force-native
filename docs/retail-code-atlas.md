@@ -1422,6 +1422,53 @@ python3 -m tools.analyze.retail_alternate_contact \
   /tmp/opencode/alternate-contact "$GF_RECOMP_MODULE" /tmp/opencode/gf-alternate-contact.json
 ```
 
+### Alternate VM contacts: Nurse healing and Patra damage
+
+The [alternate VM replay](api-map/gg4e08-alternate-vm.json)
+joins **23** indexed program choices on **nine** Borgs to
+role-`0x80` group-3 or group-4 shapes. The bounded scan of 3,798
+indexed programs found no group-26 opcode-10 request. No group-26
+constant was proved at the 102 direct binder sites either, but
+91 arguments remain unresolved. This does not rule out a live
+group-26 trigger.
+
+Three exact Angel Nurse and Patra Witch programs run in a
+declared lane and pose. Their shapes publish only to the
+alternate attack list. With the contacted Sasuke at 90 of
+180 HP, the original signed HP writer gives:
+
+| Tested command | Ally | Opponent |
+| --- | --- | --- |
+| Angel Nurse, groups 3 and 4 | Requests +200 HP; gains 90 HP and reaches cap | Requests and gains 50 HP |
+| Patra Witch, group 3 | Removes 2 HP | Removes 8 HP |
+
+Nurse bypasses the damage calculator and still requests healing
+on the declared zero-HP receiver, but the writer does not revive
+it. Patra calls the damage calculator. Its positive ally or
+opponent ledger is already written at the HP entry; the
+zero-HP control keeps that distinction between requested damage
+and HP removed.
+
+Nurse's group-4 command writes secondary state bytes
+`81/7F/FF` even when shape allocation fails. With a cell,
+the original VM returns with its first wait installed, and the
+shape stays unpublished at frames 0 and 8. The fixture supplies
+frame 9 to test admission separately from live pose progression.
+
+All **12 cases** matched across O0, O1, and O2. The original HP
+writer completes, but its caller is not resumed. This does not
+qualify a live X cast or stock debit, the Patra type-60 Big
+Spell route, later effects, or native gameplay.
+
+Compile [`retail_alternate_vm_fixture.cpp`](../tests/host/retail_alternate_vm_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_alternate_vm \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/alternate-vm "$GF_RECOMP_MODULE" /tmp/opencode/gf-alternate-vm.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
