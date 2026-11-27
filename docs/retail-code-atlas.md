@@ -367,6 +367,44 @@ python3 -m tools.analyze.retail_rifle_contact_hp \
   /tmp/opencode/gf-rifle-contact-hp.json
 ```
 
+### Machine Red: rifle continuation and pool return
+
+The [rifle lifetime receipt](api-map/gg4e08-rifle-lifetime.json)
+follows the same original carrier and shape through separate calls
+to the carrier bucket pass, late pass, registry reset, and class-4
+sweep. The fixture supplies a bounded empty terrain grid and stage
+limits. Visit counts refer to that sequence, not live battle frames.
+
+| Fork | Attack removed | Carrier and descriptor returned |
+| --- | --- | --- |
+| Timer expiry | Visit 300; timer reaches zero, phase `2:2` | Visit 335, after phase 3 begins at 334 |
+| Forward stage-bounds exit | Visit 237; timer still 64, phase `2:2` | Visit 272 |
+| Declared carrier stop bit `0x02` | Visit 1, phase `2:1` | Visit 4 |
+| Shape pool empty during binding | Never published; starts in phase `2:0` | Visit 2 |
+| Accepted rifle hit, contact flag `0x10` | Still registered after one following visit | Not tested past that visit |
+
+For the after-hit control, the original carrier advanced from
+`z=365` to `z=445` and the timer went from 300 to 299. The accepted
+hit flag alone did not shut down flight or registration. This
+does not demonstrate another contact or penetration.
+
+On the stopped paths, the class-4 sweep unlinked and recycled
+the attack shape before the carrier was recycled. The later
+carrier release removed both its gameplay and late-list links
+and returned the descriptor. The fixture did not repair the
+lists or refund stock.
+
+All five cases matched across O0, O1 and O2. No live terrain or
+full Scene scheduling ran, and native gameplay is unchanged.
+Use the same fixture binary and inputs:
+
+```sh
+python3 -m tools.analyze.retail_rifle_lifetime \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-rifle-lifetime.json
+```
+
 ### From shape publication to the amount call
 
 The [shape sweep receipt](api-map/gg4e08-shape-sweep.json) carries the

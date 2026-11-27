@@ -34,6 +34,7 @@ struct RifleContact {
     unsigned distance;
     bool duplicate=false, mask_reaction=false;
 };
+enum class RifleLife : unsigned {expiry, after_hit, stop_flag, no_shape, stage_exit};
 struct Profile {u32 cfg,context,selector;};
 constexpr Profile synthetic{config,contexts,pairs};
 constexpr Profile red{0x8030A130,0x8030A380,0x8030A248}; // Machine Red, p076
@@ -597,6 +598,71 @@ public:
                     half(peer+0x1C6),half(peer+0x1C8),be32(a+0x418),be32(target+0x41C),
                     carrier[0x1D9],half(peer+0x20C),cursor,target[0x71A],curve);
     }
+    void rifle_lifetime(RifleLife scenario){
+        // A bounded, empty terrain grid. All three original query layers
+        // can look up cells; the result comes from their -1 lists.
+        constexpr u32 stage=0x81040000,grid=stage+0x100,refs=stage+0x200,side=128,empty=refs+side*side*4;
+        put32(at(0x8043B5A0-21316),stage);
+        for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+        put_float(at(stage+52),9000.f);
+        put_float(at(stage+56),31000.f);put_float(at(stage+60),-1000.f);
+        put_float(at(stage+64),scenario==RifleLife::stage_exit?31000.f:62500.f);
+        put_float(at(stage+68),-1000.f);
+        put32(at(grid+12),side);put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));
+        put32(at(grid+24),refs);put32(at(empty),0xFFFFFFFFu);
+        for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),empty);
+
+        auto* cell=at(object_cell);
+        if(scenario==RifleLife::stop_flag)cell[0x1D9]=2; // Declared flag, not a contact result.
+        const auto sample=[&](unsigned n){
+            std::printf("rifle-life: %u %u %u %u %u %u %u %u %u %u %u %u %.5f %.5f\n",
+                        unsigned(scenario),n,cell[0x18],cell[0x19],cell[0x1D8],cell[0x1D9],half(object_cell+0x1C),
+                        half(attack_count),half(free_count+8),half(free_count+6),half(descriptor_row+18),
+                        half(actor+0x774),double(fp(object_cell+0x28)),double(fp(object_cell+0xB4)));
+        };
+        sample(0);
+        for(unsigned n=1;n<=350;++n){
+            const auto old_phase=cell[0x18];
+            const auto old_timer=half(object_cell+0x1C);
+            CPUState tick{};tick.gpr[3]=8;
+            mod.run(tick,ram,0x80089A94);
+            call(0x80089554);
+            call(0x8008A28C);
+            call(0x80089AEC);
+            if(old_phase==1){
+                const bool decremented=cell[0x18]==1||scenario==RifleLife::expiry;
+                if(!old_timer||half(object_cell+0x1C)!=old_timer-unsigned(decremented))
+                    fail("rifle timer changed outside the original flight countdown");
+            }
+            if(cell[0x1D8]&&scenario!=RifleLife::no_shape&&
+               (be32(at(group_head+4*49))||be32(at(group_tail+4*49))||
+                be32(at(free_head+16))!=hurt_cell||half(free_count+8)!=1||half(attack_count)))
+                fail("stopped rifle kept its attack shape live");
+            if(n==1||cell[0x18]!=old_phase||!cell[0])sample(n);
+            if(half(actor+0x774)!=1)fail("carrier lifetime visit changed rifle stock");
+            if(scenario==RifleLife::after_hit&&n==1){
+                if(cell[0x18]!=1||cell[0x1D8]||cell[0x1D9]!=0x10||half(object_cell+0x1C)!=299||
+                   half(attack_count)!=1||be32(at(attack_registry))!=hurt_cell||
+                   half(peer+0x1C6)!=172||half(receiver_count)!=1)
+                    fail("ordinary contact flag unexpectedly stopped the next rifle flight update");
+                return;
+            }
+            if(!cell[0]){
+                if(be32(at(group_head+4*9))||be32(at(group_tail+4*9))||
+                   be32(at(group_head+4*49))||be32(at(group_tail+4*49))||
+                   be32(at(0x8043B5A0-21272+4))||be32(at(0x8043B5A0-21264+4))||
+                   be32(at(descriptor_row+8))||be32(at(descriptor_row+12))!=descriptor_cell||
+                   half(descriptor_row+18)!=1||be32(at(free_head+12))!=object_cell||
+                   be32(at(free_tail+12))!=object_cell||half(free_count+6)!=1||
+                   half(free_count+8)!=unsigned(scenario!=RifleLife::no_shape)||
+                   (scenario!=RifleLife::no_shape&&(be32(at(free_head+16))!=hurt_cell||be32(at(free_tail+16))!=hurt_cell))||
+                   half(attack_count))
+                    fail("carrier, shape or descriptor did not return to its original pool");
+                return;
+            }
+        }
+        fail("rifle carrier did not retire within fixture visit budget");
+    }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
         put_float(at(spec)+0x184+4*channel,limit);
@@ -630,20 +696,21 @@ public:
 }
 
 int main(int argc,char** argv){
+    const bool rifle_life=argc==4&&std::strcmp(argv[3],"--rifle-lifetime")==0;
     const bool rifle_contact=argc==4&&std::strcmp(argv[3],"--rifle-contact-hp")==0;
     const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!sweep&&!rifle_bucket&&!rifle_contact&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--rifle-bucket|--rifle-contact-hp|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+    if(argc!=3&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(rifle_bucket||rifle_contact){
+    if(rifle_bucket||rifle_contact||rifle_life){
         HitBlock block{};
         HitBlock receiver{};
         ActorSpec credit_spec{},defender_spec{};
         const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
-        if(!read(block)||(rifle_contact&&(!read(receiver)||!read(credit_spec)||!read(defender_spec)))||std::fgetc(stdin)!=EOF)
+        if(!read(block)||((rifle_contact||rifle_life)&&(!read(receiver)||!read(credit_spec)||!read(defender_spec)))||std::fgetc(stdin)!=EOF)
             fail("rifle hit-block inlet extent");
         const auto release=[](Check& c){
             c.install(0x800C91BC,0x0600,red,0x800C94D4);
@@ -654,7 +721,17 @@ int main(int argc,char** argv){
             put16(c.a+0x94,0x0600); // Declared ordinary owner model mirror, copied at allocation.
             c.machine_red_release(2,true,true,true);
         };
-        if(rifle_contact){
+        if(rifle_life){
+            for(const auto scenario:{RifleLife::expiry,RifleLife::after_hit,RifleLife::stop_flag,
+                                     RifleLife::no_shape,RifleLife::stage_exit}){
+                Check c(mod,original);release(c);
+                const RifleContact contact{receiver,credit_spec,defender_spec,0};
+                const bool after_hit=scenario==RifleLife::after_hit;
+                c.machine_red_bucket(block,true,scenario!=RifleLife::no_shape,false,after_hit?&contact:nullptr);
+                if(after_hit)c.rifle_outcome(contact);
+                c.rifle_lifetime(scenario);
+            }
+        }else if(rifle_contact){
             struct Case {unsigned distance;bool duplicate=false,mask=false;};
             for(const auto test:{Case{256},Case{0,true},Case{0},Case{0,false,true}}){
                 Check c(mod,original);release(c);

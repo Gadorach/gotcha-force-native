@@ -1,0 +1,348 @@
+{
+  "borg": "gg4e08:0600",
+  "cases": [
+    {
+      "case": "timer-expiry",
+      "stage_max_z": 62500,
+      "visits": [
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 365.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 0
+        },
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 299,
+          "carrier_z": 445.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 1
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 2,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": true,
+          "carrier_subphase": 2,
+          "carrier_timer": 0,
+          "carrier_z": 41925.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 300
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 3,
+          "carrier_scale": 0.04515,
+          "carrier_stopped": true,
+          "carrier_subphase": 2,
+          "carrier_timer": 0,
+          "carrier_z": 47365.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 334
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 1,
+          "carrier_phase": 3,
+          "carrier_scale": 0.04515,
+          "carrier_stopped": true,
+          "carrier_subphase": 2,
+          "carrier_timer": 0,
+          "carrier_z": 47365.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 1,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 335
+        }
+      ]
+    },
+    {
+      "case": "after-accepted-contact",
+      "stage_max_z": 62500,
+      "visits": [
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 365.0,
+          "contact_flags": 16,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 0
+        },
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 299,
+          "carrier_z": 445.0,
+          "contact_flags": 16,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 1
+        }
+      ]
+    },
+    {
+      "case": "declared-stop-bit",
+      "stage_max_z": 62500,
+      "visits": [
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 365.0,
+          "contact_flags": 2,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 0
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 2,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": true,
+          "carrier_subphase": 1,
+          "carrier_timer": 300,
+          "carrier_z": 445.0,
+          "contact_flags": 2,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 1
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 3,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": true,
+          "carrier_subphase": 1,
+          "carrier_timer": 300,
+          "carrier_z": 445.0,
+          "contact_flags": 2,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 3
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 1,
+          "carrier_phase": 3,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": true,
+          "carrier_subphase": 1,
+          "carrier_timer": 300,
+          "carrier_z": 445.0,
+          "contact_flags": 2,
+          "descriptor_free_count": 1,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 4
+        }
+      ]
+    },
+    {
+      "case": "empty-shape-pool",
+      "stage_max_z": 62500,
+      "visits": [
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 2,
+          "carrier_scale": 0.0,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 0.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 0
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 3,
+          "carrier_scale": 0.0,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 0.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 1
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 1,
+          "carrier_phase": 3,
+          "carrier_scale": 0.0,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 0.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 1,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 2
+        }
+      ]
+    },
+    {
+      "case": "stage-bounds-exit",
+      "stage_max_z": 31000,
+      "visits": [
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 300,
+          "carrier_z": 365.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 0
+        },
+        {
+          "attack_registry_count": 1,
+          "carrier_free_count": 0,
+          "carrier_phase": 1,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": false,
+          "carrier_subphase": 0,
+          "carrier_timer": 299,
+          "carrier_z": 445.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 0,
+          "visit": 1
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 2,
+          "carrier_scale": 1.62338,
+          "carrier_stopped": true,
+          "carrier_subphase": 2,
+          "carrier_timer": 64,
+          "carrier_z": 31845.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 237
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 0,
+          "carrier_phase": 3,
+          "carrier_scale": 0.04515,
+          "carrier_stopped": true,
+          "carrier_subphase": 2,
+          "carrier_timer": 64,
+          "carrier_z": 37285.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 0,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 271
+        },
+        {
+          "attack_registry_count": 0,
+          "carrier_free_count": 1,
+          "carrier_phase": 3,
+          "carrier_scale": 0.04515,
+          "carrier_stopped": true,
+          "carrier_subphase": 2,
+          "carrier_timer": 64,
+          "carrier_z": 37285.0,
+          "contact_flags": 0,
+          "descriptor_free_count": 1,
+          "rifle_stock": 1,
+          "shape_free_count": 1,
+          "visit": 272
+        }
+      ]
+    }
+  ],
+  "cleanup": {
+    "cell_return": "80089814",
+    "descriptor_return": "80197AD8",
+    "unlink": "80088E50"
+  },
+  "declared_stage": {
+    "grid_side": 128,
+    "layers": 3,
+    "max_visits": 350,
+    "no_terrain_triangles": true
+  },
+  "kind": "gf-retail-rifle-lifetime",
+  "notes": [
+    "Visit zero is the previously verified rifle prefix, with an accepted hit in only the after-contact fork.",
+    "Each continuation invokes the four original passes separately; this is not a resumed Scene or a live frame count.",
+    "Except for the bounded after-hit control, no receiver is present. No further collision or reaction work is invoked.",
+    "The explicit stop flag is supplied. The accepted-hit branch preserves the original 0x10 flag and tests only one following visit.",
+    "Original stopped-shape unlink precedes original carrier and descriptor return. No pool link or count is repaired by the fixture."
+  ],
+  "per_visit": [
+    "80089A94(8)",
+    "80089554",
+    "8008A28C",
+    "80089AEC"
+  ],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

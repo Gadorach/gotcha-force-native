@@ -84,6 +84,22 @@ def read_spec(archive, model):
     return spec
 
 
+def load_contact_inputs(afs):
+    with open_regular(afs) as stream:
+        stamp = archive_stamp(stream)
+        verify_archive(stream)
+        archive = RetailArchive(stream)
+        attack = qualified_hit_block(archive, CREDIT_MODEL)
+        body = qualified_hit_block(archive, RECEIVER_MODEL)
+        credit_spec = read_spec(archive, CREDIT_MODEL)
+        receiver_spec = read_spec(archive, RECEIVER_MODEL)
+        if stamp != archive_stamp(stream):
+            raise ValueError("rifle contact source AFS changed during extraction")
+    source_shape(attack)
+    source_operands(body)
+    return attack, body, credit_spec, receiver_spec
+
+
 def export(dol, afs, fixture, module, output):
     output = Path(output)
     if output.exists() or output.is_symlink():
@@ -96,17 +112,7 @@ def export(dol, afs, fixture, module, output):
     power, = struct.unpack(">H", image.read(RECORD, 2, "data"))
     if power != 10 or (levels(image, CREDIT_MODEL)[0][0], levels(image, RECEIVER_MODEL)[0][0]) != (CREDIT_HP, RECEIVER_HP):
         raise ValueError("rifle power or level-one actor HP disagrees")
-    with open_regular(afs) as stream:
-        stamp = archive_stamp(stream)
-        verify_archive(stream)
-        archive = RetailArchive(stream)
-        attack = qualified_hit_block(archive, CREDIT_MODEL)
-        body = qualified_hit_block(archive, RECEIVER_MODEL)
-        credit_spec = read_spec(archive, CREDIT_MODEL)
-        receiver_spec = read_spec(archive, RECEIVER_MODEL)
-        if stamp != archive_stamp(stream):
-            raise ValueError("rifle contact source AFS changed during extraction")
-    source_shape(attack)
+    attack, body, credit_spec, receiver_spec = load_contact_inputs(afs)
     receiver = source_operands(body)["receiver"]
     argv = [str(Path(fixture).resolve(strict=True)), str(dol), str(Path(module).resolve(strict=True)), "--rifle-contact-hp"]
     result = run(argv, input=attack + body + credit_spec + receiver_spec, capture_output=True, timeout=45)

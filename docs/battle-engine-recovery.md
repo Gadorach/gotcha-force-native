@@ -291,6 +291,12 @@ now checks that order from real allocated records. It shows that broad
 overlap is neither registry admission nor relation permission, and joins
 the positive sphere decision to the original amount call without writing HP.
 
+The [original Machine Red continuation](retail-code-atlas.md#machine-red-rifle-continuation-and-pool-return)
+also distinguishes contact from retirement. Its accepted `0x10` hit
+flag leaves the rifle registered on the next isolated visit; expiry
+removes the shape before returning the carrier and descriptor. This
+does not establish a second hit or change native shot consumption.
+
 ### Native roster contact selection
 
 An aim target and a body that intersects an attack are separate. In native
