@@ -641,10 +641,11 @@ entry requests a bucket relative to the credited actor. The other
 uses a fixed bucket and a different bind submode, but still copies
 the parent and credited actor. Both request two descriptor cells.
 
-Thirty sites have a literal key in `r5`; 13 read a key from a bounded
-parent table. Two read object byte `+0x17D`, whose producer is not
-qualified here. Key 16 has no resolved site in this census; that is
-not proof it is unused. A literal key does not identify its owner.
+Thirty sites have a literal key in `r5`; 13 read a key directly from
+a bounded parent table. The remaining two read the type-89 cache at
+`+0x17D`; all 17 reviewed type-89 rows write area key 16 there. This
+resolves key sources for all 45 sites and accounts for all 27 keys.
+A literal key does not identify its owner.
 
 The 27 rows select 21 groups in the scene common collision bank.
 Each descriptor is a local-origin sphere with raw radius 310, but
@@ -653,7 +654,7 @@ The growth and cap also vary by key: the six Dragon areas share
 group 60 and raw power 40, but not one common scale curve. These
 are neither measured live radii nor HP amounts.
 
-The census ties scoped predecessors to 14 Borgs without calling
+The census ties scoped predecessors to 16 Borgs without calling
 the downstream area a direct cast. For instance:
 
 - The normal Ninja type-15 selectors use area key 0; the conditional
@@ -676,6 +677,39 @@ python3 -m tools.analyze.retail_type5_roster \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
   /tmp/opencode/gf-type5-roster.json
+```
+
+### Type-89 exits: cached area key 16
+
+`8016CC24` creates a type-89 carrier with update `8016CD1C`.
+The initializer writes row byte 3 to object `+0x17D` at `8016CE48`,
+after the carrier's opening bind succeeds. Both exit calls in
+`8016D2D0` consume that byte. The bounded rows all select key 16,
+whose area uses common group 110, descriptor 150.
+
+The [allocation replay](api-map/gg4e08-type89-area.json) uses exact
+normal Nu III key 11 and G-Black key 16. An empty opening shape pool
+leaves the byte unwritten. With an initialized carrier, a supplied
+contact latch requests the area at `+0x2A0`; the alternate flag
+alone requests it at the carrier root. Contact wins if both gates
+are set; neither gate means no request. A missing area carrier
+or too few descriptors leaves the request visible but creates
+no area. Successful requests bind a separate common-group shape.
+
+All 14 cases matched across O0, O1 and O2. This invokes the
+constructor directly and supplies the exit gates; it does not
+qualify paid-action timing, the flag producer, beam damage, or
+area overlap and HP. The area cue is observed before playback.
+No native gameplay changed.
+
+Compile [`retail_type89_area_fixture.cpp`](../tests/host/retail_type89_area_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags, then run:
+
+```sh
+python3 -m tools.analyze.retail_type89_area \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type89-area "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type89-area.json
 ```
 
 ### Ordinary X: installed program, VM cue, and paid bomb release

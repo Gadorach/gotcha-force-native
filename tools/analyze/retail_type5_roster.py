@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 import struct
 
-from tools.analyze import retail_dragon_area as area, retail_dragon_carrier as dragon
+from tools.analyze import retail_dragon_area as area, retail_dragon_carrier as dragon, retail_type89 as type89
 from tools.analyze.reaction_projectile_map import word
 from tools.analyze.retail_action_links import ActionLinker, direct_branch, immediate_argument, literal_flow
 from tools.analyze.retail_code_atlas import address
@@ -33,7 +33,6 @@ TEXT = (
     (0x800E0A30, 844, "8103e7ed14df49e0061911901e2b20264cea236f557e9b85918a6a3c62a226d5"),
     (0x800FEAE8, 448, "fd0829145dcd4b9c0b18b63a9169fca6ddb58ea2ed2427736c30f0fac62aad47"),
     (0x801292C8, 516, "b744c1858d8d9e008a75f35e602393b2c85810cdf5fc0948908910b0cabb3675"),
-    (0x8016D2D0, 116, "5aaced7096314bbcedb4492f92d89c12bfbeb0d5d79cccc8a3503c8fc9b31768"),
     (0x801E7F28, 60, "8805dca0c59a482c23a6106dd6d126fe80341f03293ba6e90014b40640d164e9"),
     (0x801E7F74, 108, "a11932aded525593c34e0112ede0ed815fde0ac14f9fc7f08eeafbe47cc50885"),
     (0x801FAD10, 276, "aeaacbdb24ef68f20daca96a08dedc1025b7497201f1504d48f6c5e24e110505"),
@@ -73,9 +72,6 @@ SELECTORS = {
                                 "68751d3d884c5220478a91548f50bd2f4dd91c9d3282a25c7183311b2c14af8f",
                                 (0x80129354, 0x801294B0)),
 }
-BYTE_SITES = {0x8016D30C: 0x8016D300, 0x8016D32C: 0x8016D320}
-
-
 def link(image, site, target):
     value = word(image, site)
     if value & 0xFC000003 != 0x48000001 or direct_branch(site, value) != target:
@@ -152,7 +148,7 @@ def selector_tables(image):
     return tables, by_site
 
 
-def static_call_sites(image, atlas, selectors):
+def static_call_sites(image, atlas, selectors, type89_rows):
     linker = ActionLinker(image, {}, ())
     sites = []
     for factory in FACTORIES:
@@ -168,11 +164,15 @@ def static_call_sites(image, atlas, selectors):
                 if local is not None or flow is not None or selectors[pc]["parent_handler"] != address(function):
                     raise ValueError(f"type-5 indexed selector changed at {address(pc)}")
                 source = selectors[pc]
-            elif pc in BYTE_SITES:
-                at = BYTE_SITES[pc]
-                if word(image, at) != 0x88BF017D or local is not None or flow is not None:
-                    raise ValueError("type-5 unresolved runtime byte changed")
-                source = {"kind": "runtime-byte-unassigned", "read_site": address(at), "object_offset": "0x17D"}
+            elif pc in type89.AREA_SITES:
+                at = type89.AREA_SITES[pc]
+                if word(image, at) != 0x88BF017D or local is not None or flow is not None or function != type89.EXIT:
+                    raise ValueError("type-5 cached type-89 byte changed")
+                source = {"kind": "cached-parent-byte", "parent_domain": "type-89", "read_site": address(at),
+                          "write_site": "8016CE48", "object_offset": "0x17D",
+                          "parent_table": address(type89.TABLE), "parent_stride": type89.STRIDE,
+                          "parent_operand_offset": 3, "bounded_parent_rows": len(type89_rows),
+                          "possible_area_keys": sorted({row["area_key"] for row in type89_rows})}
             else:
                 if local is None or local != flow or not 0 <= local < KEY_COUNT:
                     raise ValueError(f"type-5 fixed key proof mismatch at {address(pc)}")
@@ -241,6 +241,7 @@ def normal_predecessors(image, atlas, selections, parent_census, tables):
                                                                 if pc != 0x800E0AAC or key == 3],
                            "scope": "later type-41 branches; placement, command, and area keys are separate"},
         })
+    linked += type89.ancestors(image, atlas, selections)
     return sorted(linked, key=lambda r: (r["borg"], r["parent"]["site"]))
 
 
@@ -256,21 +257,21 @@ def recover(image, archive, atlas, selections):
     bank = common_bank(archive)
     rows, groups = area_rows(image, bank)
     tables, selectors = selector_tables(image)
-    sites = static_call_sites(image, atlas, selectors)
+    sites = static_call_sites(image, atlas, selectors, type89.rows(image))
     parent = read_metadata(Path(__file__).resolve().parents[2] / "docs/api-map" / PARENT_CENSUS, PARENT_CENSUS_SHA256)
     predecessors = normal_predecessors(image, atlas, selections, parent, tables)
     resolved = {key for s in sites for key in s["key_source"].get("possible_area_keys", (
         [s["key_source"]["key"]] if "key" in s["key_source"] else []))}
     counts = Counter(s["key_source"]["kind"] for s in sites)
     return {
-        "kind": "gf-retail-type5-roster", "revision": 1, "source_dol_sha256": SOURCE_SHA256,
+        "kind": "gf-retail-type5-roster", "revision": 2, "source_dol_sha256": SOURCE_SHA256,
         "source_afs_sha256": AFS_SHA256, "code_atlas_sha256": ATLAS_SHA256,
         "standalone_installers_sha256": INSTALLERS_SHA256, "parent_census_sha256": PARENT_CENSUS_SHA256,
         "common_bank": {"member": COMMON_MEMBER, "pzz_slot": 0, "sha256": area.COMMON_COLLISION_SHA,
                         "reaction_table": address(REACTIONS), "groups": groups},
         "counts": {"factory_rows": len(rows), "common_groups": len(groups), "direct_call_sites": len(sites),
                    "literal_site_keys": counts["literal-r5"], "indexed_parent_sites": counts["indexed-parent-row"],
-                   "unassigned_runtime_sites": counts["runtime-byte-unassigned"],
+                   "cached_parent_sites": counts["cached-parent-byte"],
                    "resolved_area_keys": len(resolved), "candidate_rows": len(predecessors),
                    "known_ancestor_models": len({r["borg"] for r in predecessors})},
         "factory_rows": rows, "call_sites": sites, "candidates": predecessors,
@@ -280,7 +281,7 @@ def recover(image, archive, atlas, selections):
                         "retains_parent_and_credit": True} for entry, (path, mode, allocator) in FACTORIES.items()],
         "notes": [
             "The 45 atlas edges are direct calls into area factories, not necessarily direct actor actions.",
-            "Literal keys do not identify an owner. Indexed keys describe bounded parent rows and not every local branch guard.",
+            "Literal keys do not identify an owner. Indexed and cached keys describe bounded parent rows and not every local branch guard.",
             "Only the scoped ancestor links are associated with a Borg. No area is attributed to a button by analogy.",
             "Common raw power and radius are descriptor operands, not HP removed or a live radius. No current gameplay is emitted.",
         ],

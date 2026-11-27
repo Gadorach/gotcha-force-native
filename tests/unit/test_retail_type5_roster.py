@@ -22,15 +22,19 @@ class RetailType5RosterTest(unittest.TestCase):
         self.assertEqual(data["source_afs_sha256"], area.AFS_SHA256)
         self.assertEqual(data["counts"], {
             "factory_rows": 27, "common_groups": 21, "direct_call_sites": 45,
-            "literal_site_keys": 30, "indexed_parent_sites": 13, "unassigned_runtime_sites": 2,
-            "resolved_area_keys": 26, "candidate_rows": 15, "known_ancestor_models": 14,
+            "literal_site_keys": 30, "indexed_parent_sites": 13, "cached_parent_sites": 2,
+            "resolved_area_keys": 27, "candidate_rows": 17, "known_ancestor_models": 16,
         })
-        self.assertEqual(data["area_keys_not_resolved_to_any_site"], [16])
+        self.assertEqual(data["area_keys_not_resolved_to_any_site"], [])
         calls = {r["site"]: r for r in data["call_sites"]}
         self.assertEqual(calls["801AE790"]["factory"], "80085F28")
         self.assertEqual(calls["801AE790"]["key_source"], {"kind": "literal-r5", "key": 17})
-        self.assertEqual({s for s, r in calls.items() if r["key_source"]["kind"] == "runtime-byte-unassigned"},
+        self.assertEqual({s for s, r in calls.items() if r["key_source"]["kind"] == "cached-parent-byte"},
                          {"8016D30C", "8016D32C"})
+        for site in ("8016D30C", "8016D32C"):
+            source = calls[site]["key_source"]
+            self.assertEqual((source["bounded_parent_rows"], source["possible_area_keys"], source["write_site"]),
+                             (17, [16], "8016CE48"))
         self.assertEqual(calls["800E0AAC"]["key_source"]["eligible_parent_keys"], [3])
         self.assertEqual(calls["800E0AAC"]["key_source"]["possible_area_keys"], [20])
         self.assertEqual(calls["8007E284"]["key_source"]["area_key_by_parent_key"],
@@ -63,6 +67,9 @@ class RetailType5RosterTest(unittest.TestCase):
         self.assertEqual((time["descendant"]["key"], remote["descendant"]["key"]), (19, 20))
         self.assertNotIn("800E0AAC", time["descendant"]["sites"])
         self.assertIn("800E0AAC", remote["descendant"]["sites"])
+        nu, black = (next(r for r in parents if r["borg"] == borg) for borg in ("gg4e08:0f03", "gg4e08:062a"))
+        self.assertEqual((nu["parent"]["key"], black["parent"]["key"]), (11, 16))
+        self.assertEqual([r["descendant"]["key"] for r in (nu, black)], [16, 16])
 
     def test_existing_output_remains_unmodified(self):
         with TemporaryDirectory() as tmp:

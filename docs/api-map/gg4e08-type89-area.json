@@ -1,0 +1,280 @@
+{
+  "area_source": {
+    "common_group": 110,
+    "descriptor": 150,
+    "family": "type-5",
+    "key": 16,
+    "reaction_table": "802C4760"
+  },
+  "entries": {
+    "cached_area_write": "8016CE48",
+    "carrier_constructor": "8016CC24",
+    "carrier_update": "8016CD1C",
+    "exit_leaf": "8016D2D0"
+  },
+  "kind": "gf-retail-type89-area",
+  "notes": [
+    "The carrier factory is invoked directly. It is not a stock or controller fixture.",
+    "The original initializer samples a declared socket and writes the area byte only after a successful opening bind.",
+    "The original exit leaf consumes declared subphase, contact latch or alternate flag on that same carrier.",
+    "The area binds a separate class-4 shape, keeps the carrier parent and credits the character. The source sound request is a cut, not playback.",
+    "The observations establish no area activation timing, overlap, HP write or native admission."
+  ],
+  "pilots": [
+    {
+      "borg": "gg4e08:0f03",
+      "carrier_key": 11,
+      "carrier_opening_group": 2,
+      "cases": [
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": false,
+          "area_requested_key": null,
+          "carrier_opening_shape_bound": false,
+          "case": "carrier-shape-empty",
+          "copied_area_key": null,
+          "origin": null,
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": false,
+          "area_requested_key": null,
+          "carrier_opening_shape_bound": true,
+          "case": "neither-exit-gate",
+          "copied_area_key": 16,
+          "origin": null,
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": true,
+          "area_bound_common_group": 110,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "contact-point",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": true,
+          "area_bound_common_group": 110,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "alternate-root",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x20",
+            "point": [
+              400,
+              210,
+              620
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": true,
+          "area_bound_common_group": 110,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "contact-wins",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "area-carrier-empty",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "area-descriptors-short",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        }
+      ],
+      "source": {
+        "factory_row": "803503D0",
+        "hit_block_sha256": "305d15c7c64b7208d4644ea05101c20a9dd6b7ee55a8d099c9dd0f437d56fcf4",
+        "opening_descriptor": 2,
+        "opening_reaction_index": 2,
+        "owner_table": "803810F8"
+      }
+    },
+    {
+      "borg": "gg4e08:062a",
+      "carrier_key": 16,
+      "carrier_opening_group": 28,
+      "cases": [
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": false,
+          "area_requested_key": null,
+          "carrier_opening_shape_bound": false,
+          "case": "carrier-shape-empty",
+          "copied_area_key": null,
+          "origin": null,
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": false,
+          "area_requested_key": null,
+          "carrier_opening_shape_bound": true,
+          "case": "neither-exit-gate",
+          "copied_area_key": 16,
+          "origin": null,
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": true,
+          "area_bound_common_group": 110,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "contact-point",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": true,
+          "area_bound_common_group": 110,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "alternate-root",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x20",
+            "point": [
+              400,
+              210,
+              620
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": true,
+          "area_bound_common_group": 110,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "contact-wins",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "area-carrier-empty",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        },
+        {
+          "area_allocated": false,
+          "area_bound_common_group": null,
+          "area_factory_requested": true,
+          "area_requested_key": 16,
+          "carrier_opening_shape_bound": true,
+          "case": "area-descriptors-short",
+          "copied_area_key": 16,
+          "origin": {
+            "carrier_field": "0x2A0",
+            "point": [
+              510,
+              220,
+              630
+            ]
+          },
+          "owner_stock_after": 5
+        }
+      ],
+      "source": {
+        "factory_row": "8035045C",
+        "hit_block_sha256": "da9d7d33b1c8b66f93c0beb7572e5140f82ae120558e5f908398526fbd37e4c3",
+        "opening_descriptor": 37,
+        "opening_reaction_index": 32,
+        "owner_table": "80365EC0"
+      }
+    }
+  ],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

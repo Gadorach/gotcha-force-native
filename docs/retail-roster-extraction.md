@@ -2139,24 +2139,22 @@ rounds. Each family below records how it was admitted and what stays authored:
   **74** through `80082824` (index into 56-byte rows at `802D7B10`);
   `0F02` calls `800C3BE0(actor, 61)`; every other model, `0F03` included,
   calls `8016CC24(actor, 11)`. That last call allocates through
-  `80088AA0`, copies the parent transform and velocity, stores the variant
-  byte `11` at child `+0x11`, and installs the shared effect-command
-  interpreter `8017CD1C` at child `+0x0C` (plus `8017D4AC` at `+0x10C`).
+  `80088AA0`, stores type 89/key 11, and installs update `8016CD1C`
+  at child `+0x0C` (and `8016D4AC` at `+0x10C`).
 
-  That difference is why the same family is bound two ways: the exact row
-  (key 74, speed 32, lifetime 70) exists only for `0F01`'s branch, so that
-  sibling is a shot, while `0F03`'s payload is a bytecode-driven effect
-  child with no origin row, speed or lifetime to bind. `8017CD1C` reads a
-  command stream into a shared context (`-21068(r13)`), so it is the
-  effect-VM runtime.
+  The [type-89 replay](retail-code-atlas.md#type-89-exits-cached-area-key-16)
+  shows the initializer sampling a declared owner pose and binding
+  its opening shape, then caching area key 16 for later exits.
+  This does not use the sibling `0F01` speed/lifetime row or establish
+  live activation, trajectory, or damage.
 
   `0f03` is admitted through that exact debit and child call: a
   capacity-one `f03-stock` pool plus `field-debit` pays channel-0 cost 1,
-  and the owner-following field carries the payload because the child
-  inherits the parent's transform and velocity rather than launching. The
-  field radius 120, damage 8, interval 6, height band 40 and the family
-  pace 3.33 are authored; the command program is unclaimed. Its siblings
-  stay as they were: `0F01`'s table child has an explicit speed/lifetime
+  and an owner-following field approximates the payload. The field
+  radius 120, damage 8, interval 6, height band 40 and the family
+  pace 3.33 are authored. It does not reproduce the type-89 opening
+  shape or exit area. Its siblings stay as they were:
+  `0F01`'s table child has an explicit speed/lifetime
   row, which is why that one is a shot and this one is a follow.
 
   The `0f05` child is a third shape again (allocator

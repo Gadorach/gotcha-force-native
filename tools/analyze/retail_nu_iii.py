@@ -6,16 +6,14 @@ The whole 0f01-0f03 family shares the state-2 handler `801B3824`. It pays
 `800C3BE0(actor, 61)`, and every other model, `0F03` included, calls
 `8016CC24(actor, 11)`.
 
-`8016CC24` allocates through `80088AA0`, copies the parent's transform
-**and velocity**, stores variant byte `11`, and installs the shared
-effect-command interpreter `8017CD1C` at child `+0x0C`. There is no origin
-row, speed or lifetime: the child is a scripted follow, not a launch. The
-native expression is therefore the paid owner-following field, matching the
-0e00/0e05 children, rather than a forward shot.
+`8016CC24` allocates through `80088AA0`, stores type 89 and key `11`,
+and installs `8016CD1C` at child `+0x0C`. The initializer samples the
+owner's pose, binds its opening shape, and caches area key 16. The
+authored owner-following field remains a proxy, not this carrier's
+shape, motion, or area lifecycle.
 
 The exact debit and the exact child call are bound; the radius, damage,
-interval, height band and stock capacity are authored, and the command
-program remains unclaimed.
+interval, height band and stock capacity are authored.
 """
 from tools.analyze.retail_basic_shot_test import whole_body_pose
 
@@ -27,7 +25,7 @@ SHARED_STATE2 = "801B3824"
 DEBIT_SITE = "801B392C"
 CHILD_CALL = "8016CC24"
 CHILD_VARIANT = 11
-INTERPRETER = "8017CD1C"
+CHILD_UPDATE = "8016CD1C"
 FAMILY_PACE = 333  # the documented 0F01/0F02 family pace
 
 AUTHORED_RADIUS = 120
@@ -81,15 +79,15 @@ def battle_test(model, joints, level, actions):
                            "shared_state2": SHARED_STATE2, "debit_site": DEBIT_SITE,
                            "debit": "8006DBE0(actor,0,1,1) channel 0 cost 1",
                            "child_call": CHILD_CALL, "child_variant": CHILD_VARIANT,
-                           "child_interpreter": INTERPRETER,
-                           "child_motion": "inherits the parent transform and velocity",
+                           "child_type": 89, "child_update": CHILD_UPDATE,
+                           "child_motion": "initializer samples owner pose; active motion not bound",
+                           "exit_area_key": 16,
                            "sibling_routes": {"0F01": "80082824 table child 74",
                                               "0F02": "800C3BE0(actor,61)"}},
         "authored": {"field_radius": AUTHORED_RADIUS, "height_band": AUTHORED_HEIGHT_BAND,
                      "ticks": AUTHORED_TICKS, "damage": AUTHORED_DAMAGE,
                      "interval": AUTHORED_INTERVAL, "stock_cap": STOCK_CAP,
                      "pace": FAMILY_PACE,
-                     "note": "the child runs the shared effect-command interpreter with no "
-                             "origin row, speed or lifetime; the paid following field and its "
-                             "geometry, damage and timing are authored"},
+                     "note": "the paid following field is a proxy; type-89 shape, motion, "
+                             "exit area, damage and timing are not bound"},
     }
