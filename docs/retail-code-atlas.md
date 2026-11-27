@@ -1314,15 +1314,55 @@ shapes returned on that callback. The carrier and its descriptor
 returned on the third follow-up, even if the type-4 effect
 could not allocate a class-2 cell or descriptor.
 
-All 20 cases matched across O0, O1, and O2. The replay does not
-initialize the type-4 effect or qualify nonlethal hits, incoming
-reactions after the writer, terrain behavior, or native gameplay.
+All 20 cases matched across O0, O1, and O2. This replay stops the
+type-4 effect at allocation; the standalone lifetime replay below
+checks its update. Nonlethal hits, incoming reactions after the
+writer, terrain behavior, and native gameplay remain unqualified.
 
 ```sh
 python3 -m tools.analyze.retail_type76_incoming \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type76-paid "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type76-incoming.json
+```
+
+### Type-4 key 0: shared effect, no collision publication
+
+The [type-4 census and lifetime replay](api-map/gg4e08-type4-roster.json)
+accounts for 33 direct sites in 20 functions calling `8001BDA8`.
+All pass literal key 0 and a `+0x20` position pointer. Four sites
+have scoped ancestry: the negative area-selector arms of Powered
+Gunman's charged type-15 sequence, and the zero-HP or expiry arms
+of Red Attacker and Orange Fighter's type-76 carriers. The other
+29 sites are not assigned to Borg actions here.
+
+The object takes one class-2 cell and one descriptor. Counting
+initialization as visit 1, it selects visual record **67**, switches
+to record **23** on visit **9**, and returns both cells on visit
+**41**. It never takes a shape slot or publishes collision in this
+replay. Owner clock steps 1 and 0.5 gave the same visit counts.
+
+The original initializer used the parent scale of **2** from
+retained storage, not the **0.75** supplied at allocation. A later
+parent change to **7** did not override the child's curves; measured
+scales at initialization, the visual switch, and phase 2 were
+**2**, **2.5**, and **3.125**. Marking the parent inactive before
+initialization gave the same result while its storage remained
+intact. Parent cell reuse was not tested.
+
+All four cases (164 visits) matched across O0, O1, and O2. The
+render records were empty stand-ins. This is key-0 lifecycle and
+collision evidence, not a retail draw comparison or a claim about
+every object tagged type 4. Native gameplay is unchanged.
+
+Compile [`retail_type4_fixture.cpp`](../tests/host/retail_type4_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type4_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/type4 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type4-roster.json
 ```
 
 ### Type-32 model-relative segments: copied aim and live gate
