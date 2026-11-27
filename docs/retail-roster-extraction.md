@@ -1882,6 +1882,15 @@ damaging an enemy, four emitted projectiles. The other five recorded
 an interruption and no payload. None of the nine logged a stage
 impact. This is a breakdown of the trace, not a gameplay change.
 
+Using a finite CPU approach range for slow land-and-expire drops let
+Roach (`0f05`) hit at tick 114 in the same 550-unit fixture where its
+six earlier mines missed. In the mixed sweep Roach did not start by
+tick 240, rather than deploying a mine without a hit. All 206 still
+passed: 162 starts and 148 damaging hitters by tick 120, and 191
+starts and 183 damaging hitters by tick 240. Both ICBM variants kept
+their previous openings. The change is to CPU approach and timing,
+not to landing, blast reach, or stock rules.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

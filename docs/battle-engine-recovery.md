@@ -1052,6 +1052,14 @@ held/released samples for charge windows. Read-only stock checks cover
 entry gates, the first projectile release cost and attacks whose only
 payload is a paid field. The field marker still owns its debit, and an
 empty field pool does not suppress another payload on the same move.
+Simple slow ground drops with an opponent-only expiry blast use the
+declared blast radius for a finite flat-floor approach. The planner
+discounts body-centre height and does not count launch offset or
+forward travel as extra reach. This only applies when speed times
+lifetime is at most a quarter of the blast radius; it is not a
+landing-point prediction. Thrown, guided, remote, and mixed payloads
+keep their existing behavior. Actual landing, blasts, and stock
+returns remain in the ordinary projectile system.
 A grounded move-charge that carries only an owner-following field can
 start from farther out. The planner checks the projected body path
 and field reach at the first damage pulse, without extending an

@@ -67,7 +67,7 @@ public:
         f32 any_reach=0,current_reach=0;
         for(const auto& move:profile->moves){
             if(move.button!=preferred||!supported(move))continue;
-            const auto reach=attack_reach(move,radius);
+            const auto reach=attack_reach(*profile,move,radius,body_height);
             any_reach=std::max(any_reach,reach);
             if(fits_context(move))current_reach=std::max(current_reach,reach);
         }
@@ -99,12 +99,13 @@ public:
                 if(!move||!supported(*move)||!first_stock_ready(*profile,action,*move))continue;
                 const bool melee=borg_battle_direct_melee(*move);
                 if(blocked_approach&&!melee)continue;
-                if(distance>attack_reach(*move,radius)&&
+                if(distance>attack_reach(*profile,*move,radius,body_height)&&
                    (blocked_approach||!follow_charge_reaches(world,slot,rival,*move,distance,terrain)))continue;
                 if(melee&&(!height_overlaps(*move->melee,world.actors()[rival].position[1])||
                            !native_borg_melee_path_clear(terrain,start,goal)))continue;
                 if(!field_height_allows(world,slot,rival,*move))continue;
-                const bool needs_heading=move->melee||move->charge||(damaging_field(*move)&&move->field->forward>0);
+                const bool needs_heading=move->melee||move->charge||(damaging_field(*move)&&move->field->forward>0)||
+                    slow_drop(*profile,*move);
                 if(!needs_heading||facing>=.7f)return move; // ready B before ready X
             }
             return nullptr;
@@ -341,7 +342,7 @@ public:
         bool air_in_range=false,jump_for_melee=false;
         if(!detour&&!candidate)for(const auto& move:profile->moves){
             if(!has_entry_stock(move))continue;
-            if(supported(move)&&distance<=attack_reach(move,radius)&&first_stock_ready(*profile,action,move)){
+            if(supported(move)&&distance<=attack_reach(*profile,move,radius,body_height)&&first_stock_ready(*profile,action,move)){
                 const bool melee=borg_battle_direct_melee(move);
                 if(move.button==preferred&&!melee&&move.context==BorgBattleContext::Airborne)air_in_range=true;
                 // Do not invent an aerial variant of a grounded move or
@@ -676,11 +677,36 @@ private:
         const auto& first=move.releases.front();
         return action.stock_ready(profile,first.stock,first.cost);
     }
-    static f32 attack_reach(const BorgBattleMove& move,f32 body_radius){
+    static const BorgBattleProjectileDefinition* slow_drop(const BorgGameplayProfile& profile,const BorgBattleMove& move){
+        if(profile.movement!=BorgBattleMovement::Grounded||profile.cruise||move.context!=BorgBattleContext::Grounded||
+           move.activation!=BorgBattleActivation::Press||
+           move.releases.size()!=1||move.melee||move.held_fire||move.field||move.power_field||move.slow_field||
+           move.charge||move.detonation||move.release_gate||move.guard||!move.emitters.empty()||!move.anchors.empty())return nullptr;
+        const auto& release=move.releases.front();
+        if(release.count||release.return_pair||release.projectile>=profile.projectiles.size())return nullptr;
+        const auto& shot=profile.projectiles[release.projectile];
+        if(shot.floor!=BorgProjectileFloor::Land||shot.count!=1||!shot.ignore_actors||shot.damage||
+           !shot.blast||shot.blast->trigger!=BorgBlastTrigger::Expiry||!shot.blast->damage||shot.blast->include_owner||
+           shot.spread||shot.sustained||shot.guidance||shot.attraction||shot.rewind_hit||shot.plant_on_stage!=255||
+           shot.fuse_tail||(shot.proximity&&!shot.proximity->blast)||
+           shot.blast_children!=255||shot.flight_children||shot.impact_children||shot.impact_hazard||shot.impact_trail||
+           (shot.socket&&(shot.socket->bone||shot.socket->aim_height||shot.socket->local[0]!=0||shot.socket->local[2]<0)))
+            return nullptr;
+        // Only short deployables count here, not thrown bombs. Even
+        // unimpeded flight must cover little of the blast radius.
+        return shot.speed*shot.lifetime<=shot.blast->radius*.25f?&shot:nullptr;
+    }
+    static f32 attack_reach(const BorgGameplayProfile& profile,const BorgBattleMove& move,f32 body_radius,f32 body_height){
         f32 reach=move.entry_range?move.entry_range:std::numeric_limits<f32>::infinity();
         if(move.melee)reach=std::min(reach,move.melee->reach+move.melee->radius+body_radius);
         else if(!move.held_fire&&move.releases.empty()&&damaging_field(move))
             reach=std::min(reach,move.field->core_damage->radius+std::max(0.f,move.field->forward));
+        else if(const auto* shot=slow_drop(profile,move)){
+            // Use a flat-floor approach budget, with no credit for
+            // launch offset or forward travel before the mine settles.
+            const f32 blast=shot->blast->radius,body_centre=body_height*.5f;
+            if(blast>body_centre)reach=std::min(reach,std::sqrt(blast*blast-body_centre*body_centre));
+        }
         return reach;
     }
     static unsigned hold_for(const BorgBattleMove& move){

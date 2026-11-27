@@ -667,6 +667,42 @@ void roster_cpu_route_cost_cases(){
     check(modest.aim_target==1&&modest.movement.stick_x<0,"keep the clear approach when the detour doesn't halve the distance");
 }
 
+void roster_cpu_drop_cases(){
+    const auto idle=definition("stationary-v1","health=500\n");
+    const auto drop=[](unsigned speed,std::string tail={}){
+        return definition("grounded-v1|3.33|13|15","health=400\nwalk=0:1\nair=0:2\ndash=0:3\n"
+            "stock=cell|1|on-return\nprojectile=mine|bullet|1|"+std::to_string(speed)+"|0|1|0|16|70|0|land-on-floor\n"
+            "actor-contact=mine|ignore\nblast=mine|expiry|310|12|opponent\nreturn-stock=mine|expiry\n"
+            "move=drop|b|10|grounded|28|0:4\nentry-stock=drop|cell|1\nrelease=drop|12|cell|1|mine\n"+tail);
+    };
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;
+    config.teams={0,0,1};config.packages={idle,idle,drop(1)};
+    config.spawn={BattlePoint{0,0},BattlePoint{700,0},BattlePoint{0,-550}};
+    NativeBattleMvp world;PortableRosterAi cpu;
+    const auto start=[&](){cpu.reset();check(world.start(config),"start slow drop fixture");};
+    start();
+    bool hit=false,returned=false;
+    unsigned spent=0;
+    for(unsigned n=0;n<180&&!hit;++n){
+        const auto ai=cpu.input(world,2);
+        if(!n)check(!ai.attack.pressed&&ai.movement.stick_y>0,"approach instead of spending mine stock at long range");
+        check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+                               std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false),"step native drop, settling and fuse");
+        for(const auto& e:world.package_events())if(e.actor==2){
+            spent+=e.kind==BorgBattleEventKind::StockSpent;
+            if(e.kind==BorgBattleEventKind::BlastHit){check(e.recipient==0,"blast reaches the actual enemy");hit=true;}
+            returned|=e.kind==BorgBattleEventKind::StockReturned;
+        }
+    }
+    check(hit&&returned&&spent==1&&world.package_action(2).stocks[0].current==1,
+          "landing and expiry own the real blast and stock return");
+
+    config.packages[2]=drop(10);start();
+    check(cpu.input(world,2).attack.pressed==BorgBattleInputs::b,"a faster thrown bomb keeps its previous attack intent");
+    config.packages[2]=drop(1,"range=drop|240\n");config.spawn[2]={0,-270};start();
+    check(!cpu.input(world,2).attack.pressed,"the approach estimate does not extend a declared entry range");
+}
+
 void roster_cpu_corner_melee_cases(){
     struct Terrain final:IBattleMvpTerrain {
         std::array<StageBodyPartition,1> boxes{{{"wall",-620,-6,620,6,true}}};
@@ -1496,6 +1532,7 @@ int main(int argc,char** argv){
     roster_aim_cases();
     roster_cpu_aim_cases();
     roster_cpu_detour_dash_cases();
+    roster_cpu_drop_cases();
     roster_cpu_route_cost_cases();
     roster_cpu_corner_melee_cases();
     roster_cpu_body_turn_cases();
