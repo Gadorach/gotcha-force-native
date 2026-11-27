@@ -812,6 +812,12 @@ group-3 probe produces damage; it does not exercise the separate
 type-60 Big Spell route above. The replay still does not run the full
 X controller or stock path.
 
+The [Nurse fallback setup replay](retail-code-atlas.md#angel-nurse-fallback-shape-request-precedes-stock-debit)
+joins the original program selection to the stock debit once class
+setup has already been entered. A refused shape can still spend stock;
+zero stock does not retract the already allocated shape during the
+tested follow-up. Neither case establishes entry from a live X press.
+
 The detached support planners reuse the mode-0 stock proposal and keep
 Patra's release event, caster object and recipient effect separate. Nurse's
 setup, lane-gated shape and ordinary same-team HP write also remain distinct.

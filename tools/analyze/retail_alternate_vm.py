@@ -149,7 +149,7 @@ def direct_scope(image, atlas):
             "unresolved_arguments": values[None], "proved_group_26_constants": 0}
 
 
-def qualified_inputs(image, afs, joined):
+def qualified_inputs(image, afs, joined, routes=ROUTES):
     with open_regular(afs) as stream:
         stamp = archive_stamp(stream)
         verify_archive(stream)
@@ -157,7 +157,7 @@ def qualified_inputs(image, afs, joined):
         body, data = opening.read_normal(archive, opening.RECEIVER, opening.RECEIVER_BLOCK_SHA256, ACTOR_SHA256[opening.RECEIVER])
         payload = body+data
         sources = []
-        for r in ROUTES:
+        for r in routes:
             key = f"gg4e08:{r.model:04x}"
             if not any((p["borg"], p["program"], p["opcode"], p["queue_group"], p["shape_step"]) ==
                        (key, address(r.program), address(r.opcode), r.group, r.step) for p in joined):

@@ -1469,6 +1469,39 @@ python3 -m tools.analyze.retail_alternate_vm \
   /tmp/opencode/alternate-vm "$GF_RECOMP_MODULE" /tmp/opencode/gf-alternate-vm.json
 ```
 
+#### Angel Nurse fallback: shape request precedes stock debit
+
+The [Nurse setup replay](api-map/gg4e08-nurse-setup.json) starts at the
+original class substate dispatcher `8007BB6C` with no selected target.
+The normal installer supplies the bank; substate 0 selects program `4:0`
+at `8007BD84`. An entry cut at the debit called from `8007BDC4`
+observes the group-3 bind before the channel-2 debit changes stock.
+A separate run completes setup and visits the next fallback substate once.
+
+- **No shape cell:** the bind is refused, but mode-0 stock still falls
+  from one to zero and starts the declared refill clock.
+- **No stock:** the debit leaves the old stock fields unchanged, leaves
+  latch `+0x548` at zero, and overwrites the VM cue at `+0x6E8` from
+  `4` to `8`. The admitted shape survives the next fallback substate.
+- **Shape lane masked:** the VM does not request group 3, even with a
+  free cell. This does not prevent the debit.
+
+The retained shape stays unpublished at the supplied frame 21 and
+publishes at frame 22. With or without a successful debit, the
+separately scheduled alternate pair requests 200 HP for the declared
+ally, raising it from 90 to its 180 cap. This does not establish that
+a zero-stock X press starts a cast or that live animation and collision
+reach this schedule. Directed setup, later substates, and native gameplay
+remain outside the replay.
+
+The same fixture reproduced all **eight cases** across O0/O1/O2:
+
+```sh
+python3 -m tools.analyze.retail_nurse_setup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/alternate-vm "$GF_RECOMP_MODULE" /tmp/opencode/gf-nurse-setup.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches

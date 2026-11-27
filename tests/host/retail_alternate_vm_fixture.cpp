@@ -8,6 +8,7 @@ constexpr u32 interpreter=0x8004C050,allocator=0x8008AC80,clip_entry=0x80048648,
 constexpr u32 hit_block=0x81035000,shape=0x81039000,descriptor_pool=0x81033A00,body=contact::receiver;
 constexpr u32 ordinary_attacks=0x8043B5A0-21328,alternate_attacks=0x8043B5A0-21344;
 constexpr u32 alternate_list=0x803C177C,alternate_receivers=0x8043B5A0-21346;
+constexpr u32 nurse_installer=0x80079410,nurse_dispatch=0x8007BB6C,debit=0x8006DBE0;
 struct Route {unsigned model,group,step,index,joint,first_frame,secondary;u32 program,table;};
 constexpr Route routes[]{
     {0x0900,3,5,3,1,22,0,0x802C2B36,0x802D6930},
@@ -18,13 +19,15 @@ constexpr contact::Point center{200.f,150.f,325.f};
 
 void observe(const Module& mod,std::vector<u8> ram,const Route& route,unsigned scenario,
              const contact::HitBlock& receive_hit,const contact::ActorSpec& defender,
-             const contact::HitBlock& attack_hit,const contact::ActorSpec& spec){
+             const contact::HitBlock& attack_hit,const contact::ActorSpec& spec,bool setup=false){
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
     const auto scalar=[&](u32 a){return std::bit_cast<float>(word(a));};
-    const bool slot=scenario!=0,ally=scenario==1||scenario==3;
-    const unsigned hp_before=scenario==3?0:90;
+    const bool slot=setup?!(scenario&1):scenario!=0;
+    const bool ally=setup||scenario==1||scenario==3;
+    const unsigned hp_before=!setup&&scenario==3?0:90;
+    const bool stock=!(scenario&2),upper=!(scenario&4),admitted=slot&&(!setup||upper);
     put32(at(0x80436380),descriptor_pool);
     contact::bind_sasuke(mod,ram,center,receive_hit,spec,defender,150);
     at(actor)[0]=1;at(actor+0x18)[0]=1;at(body+0x88)[0]=ally?0:1;
@@ -50,14 +53,66 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& route,unsigned s
         put32(at(contact::free_head+16),shape);put32(at(contact::free_tail+16),shape);
         put16(at(contact::free_count+8),1);
     }
-    CPUState vm{};vm.gpr[3]=actor;vm.gpr[4]=1;vm.gpr[5]=route.program;
-    vm.gpr[6]=vm.gpr[7]=0xFFFFFFFF;vm.fpr[1]=-1.;
-    CallObservation bind{allocator};
-    const auto reached=mod.run_to_or_return(vm,ram,interpreter,{clip_entry},&bind,4096);
-    if(reached!=(route.group==3?clip_entry:0)||bind.count!=1||
-       bind.caller!=0x8004C6F0||bind.arguments[0]!=actor||bind.arguments[1]!=route.group||
-       at(actor+0x744)[0]!=route.group||bool(at(shape)[0])!=slot||
-       (slot&&(word(shape+0x20)!=actor||word(shape+0x24)!=actor||word(shape+0x28)!=descriptor||word(shape+0x2C)!=route.table))||
+    if(setup){
+        // The normal installer selects the original bank. The selected class
+        // substate, lane mask and stock counts are inlets, not controller work.
+        put32(at(0x803C4D94),word(actor+0x4AC));
+        CPUState install{};install.gpr[3]=actor;
+        mod.run(install,ram,nurse_installer,4096);
+        if(word(actor+0x1D80)!=0x802C2660||word(actor+0x27C)!=route.table)
+            fail("Nurse installer bank or amount table changed");
+        at(actor+0x579)[0]=upper?3:2;
+        put16(at(actor+0x784),stock?1:0);
+        put16(at(actor+0x786),7);
+        put16(at(actor+0x7A2),120); // Declared refill preset, not runtime initialization.
+        put_float(at(actor+0x788),17.f);
+        put_float(at(actor+0x1DC8),1.f);
+        auto prefix_ram=ram;
+        CPUState prefix{};prefix.gpr[3]=actor;
+        CallObservation bind{allocator};
+        const auto reached=mod.run_to_or_return(prefix,prefix_ram,nurse_dispatch,{debit},&bind,4096);
+        const auto pre=[&](u32 a){return contact::at(prefix_ram,a);};
+        if(reached!=debit||prefix.lr!=0x8007BDC8||prefix.gpr[3]!=actor||
+           prefix.gpr[4]!=2||prefix.gpr[5]!=1||prefix.gpr[6]!=1||bind.count!=unsigned(upper)||
+           (upper&&(bind.caller!=0x8004C6F0||bind.arguments[0]!=actor||bind.arguments[1]!=route.group))||
+           bool(pre(shape)[0])!=admitted||pre(actor+0x6E8)[0]!=(upper?4:0)||
+           contact::half(prefix_ram,actor+0x784)!=unsigned(stock)||
+           contact::half(prefix_ram,actor+0x786)!=7)
+            fail("Nurse allocation and debit order changed");
+        CPUState cast{};cast.gpr[3]=actor;
+        mod.run(cast,ram,nurse_dispatch,4096);
+        if(at(actor+0x540)[0]!=1||at(actor+0x541)[0]!=1||word(actor+0xCC)||
+           at(actor+0x1CEC)[0]!=(upper?4:0)||at(actor+0x1CED)[0]||
+           at(actor+0x1D0C)[0]!=4||at(actor+0x1D0D)[0]||
+           word(actor+0x1CD4)!=(upper?route.program+36:0)||
+           word(actor+0x1CF4)!=route.program+36||scalar(actor+0x1CE8)!=(upper?14.f:0.f)||
+           scalar(actor+0x1D08)!=14.f||half(actor+0x784)||
+           half(actor+0x786)!=(stock?1:7)||scalar(actor+0x788)!=(stock?120.f:17.f)||
+           half(actor+0x548)!=unsigned(stock)||at(actor+0x6E8)[0]!=(stock?(upper?4:0):8)){
+            std::fprintf(stderr,"Nurse setup case=%u phase=%u/%u target=%08X event=%02X/%02X %02X/%02X pc=%08X stock=%u/%u/%g latch=%u failure=%u frame=%g\n",
+                         scenario,at(actor+0x540)[0],at(actor+0x541)[0],word(actor+0xCC),
+                         at(actor+0x1CEC)[0],at(actor+0x1CED)[0],at(actor+0x1D0C)[0],at(actor+0x1D0D)[0],
+                         word(actor+0x1CD4),half(actor+0x784),half(actor+0x786),double(scalar(actor+0x788)),
+                         half(actor+0x548),at(actor+0x6E8)[0],double(scalar(actor+0x1CDC)));
+            fail("Nurse setup, program wait or stock write changed");
+        }
+        CPUState follow{};follow.gpr[3]=actor;
+        mod.run(follow,ram,nurse_dispatch,4096);
+        if(at(actor+0x540)[0]!=2||at(actor+0x144)[0]!=1||
+           bool(at(shape)[0])!=admitted||half(actor+0x548)!=unsigned(stock)||
+           half(actor+0x784)||half(contact::free_count+8)!=unsigned(slot&&!admitted))
+            fail("Nurse fallback's next phase did not retain the setup result");
+    }else{
+        CPUState vm{};vm.gpr[3]=actor;vm.gpr[4]=1;vm.gpr[5]=route.program;
+        vm.gpr[6]=vm.gpr[7]=0xFFFFFFFF;vm.fpr[1]=-1.;
+        CallObservation bind{allocator};
+        const auto reached=mod.run_to_or_return(vm,ram,interpreter,{clip_entry},&bind,4096);
+        if(reached!=(route.group==3?clip_entry:0)||bind.count!=1||
+           bind.caller!=0x8004C6F0||bind.arguments[0]!=actor||bind.arguments[1]!=route.group)
+            fail("alternate VM did not reach exact queue bind");
+    }
+    if(at(actor+0x744)[0]!=((!setup||upper)?route.group:0)||bool(at(shape)[0])!=admitted||
+       (admitted&&(word(shape+0x20)!=actor||word(shape+0x24)!=actor||word(shape+0x28)!=descriptor||word(shape+0x2C)!=route.table))||
        (route.secondary?(at(actor+0x43D)[0]!=129||at(actor+0x6F8)[0]!=127||at(actor+0x6F9)[0]!=255):
                         (at(actor+0x43D)[0]||at(actor+0x6F8)[0]||at(actor+0x6F9)[0])))
         fail("alternate VM did not retain its exact allocator and secondary writes");
@@ -66,7 +121,14 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& route,unsigned s
             CPUState step{};mod.run(step,ram,entry,1024);
         }
     };
-    if(route.group==4){
+    if(setup){
+        put_float(at(actor+0x1CDC),21.f);
+        publish();
+        if(half(alternate_attacks)||half(ordinary_attacks)||half(actor+0x26C)||
+           (admitted&&(!at(shape)[0]||at(shape+0x10)[0])))
+            fail("Nurse fallback shape published before frame 22");
+        put_float(at(actor+0x1CDC),22.f);
+    }else if(route.group==4){
         if(scalar(actor+0x1CDC)!=0.f||word(actor+0x1CD4)!=route.program+4||scalar(actor+0x1CE8)!=10.f)
             fail("alternate group-4 VM did not return with its first wait installed");
         // The VM returned at frame zero. Check its waiting shape again
@@ -81,8 +143,8 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& route,unsigned s
         put_float(at(actor+0x1CDC),9.f);
     }
     publish();
-    if(half(ordinary_attacks)||half(alternate_attacks)!=unsigned(slot)||half(alternate_receivers)!=1||
-       (slot&&(word(alternate_list)!=shape||word(shape+0x64)!=std::bit_cast<u32>(center[0])||half(actor+0x26C)!=1))){
+    if(half(ordinary_attacks)||half(alternate_attacks)!=unsigned(admitted)||half(alternate_receivers)!=1||
+       (admitted&&(word(alternate_list)!=shape||word(shape+0x64)!=std::bit_cast<u32>(center[0])||half(actor+0x26C)!=1))){
         std::fprintf(stderr,"VM publish %04X/%u case=%u lists=%u/%u/%u phase=%u frame=%g token=%u active=%u\n",
                      route.model,route.group,scenario,half(ordinary_attacks),half(alternate_attacks),
                      half(alternate_receivers),at(shape+0x10)[0],double(scalar(actor+0x1CDC)),half(actor+0x26C),at(shape)[0]);
@@ -103,6 +165,15 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& route,unsigned s
         fail("alternate VM pair changed the amount or HP writer boundary");
     const auto requested=hp_entry?std::bit_cast<std::int32_t>(pair.gpr[4]):0;
     if(hp_entry)mod.finish_stopped_leaf(pair,contact::hp_write,164);
+    if(setup){
+        if(amount.count||bool(hp_entry)!=admitted||half(body+0x20C)!=unsigned(admitted))
+            fail("Nurse setup did not reach the exact signed HP route");
+        std::printf("nurse-setup: %u %u %u %u %u %u %u %u %u %d %u\n",scenario,
+                    unsigned(upper),unsigned(admitted),half(actor+0x784),half(actor+0x786),
+                    unsigned(scalar(actor+0x788)),half(actor+0x548),at(actor+0x6E8)[0],at(actor+0x540)[0],
+                    requested,half(body+0x1C6));
+        return;
+    }
     std::printf("alternate-vm: %u %u %u %u %u %u %u %u %u %d %u %u %u %u %u %u %u %u\n",
                 route.model,route.group,scenario,unsigned(slot),at(actor+0x43D)[0],at(actor+0x6F8)[0],at(actor+0x6F9)[0],
                 amount.count,unsigned(hp_entry!=0),requested,half(body+0x1C6),half(body+0x20C),at(actor+timer)[0],
@@ -111,7 +182,8 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& route,unsigned s
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: alternate-vm-fixture qualified.dol unmodified-recomp.so");
+    const bool setup=argc==4&&!std::strcmp(argv[3],"nurse-setup");
+    if(argc!=3&&!setup)fail("usage: alternate-vm-fixture qualified.dol unmodified-recomp.so [nurse-setup]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     const auto read=[](auto& row){
@@ -119,6 +191,14 @@ int main(int argc,char** argv){
     };
     contact::HitBlock hit{};contact::ActorSpec defender{};
     read(hit);read(defender);
+    if(setup){
+        contact::HitBlock attack{};contact::ActorSpec spec{};
+        read(attack);read(spec);
+        for(unsigned scenario=0;scenario<8;++scenario)
+            observe(mod,original,routes[0],scenario,hit,defender,attack,spec,true);
+        if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("unexpected Nurse setup payload");
+        return 0;
+    }
     for(const auto& route:routes){
         contact::HitBlock attack{};contact::ActorSpec spec{};
         read(attack);read(spec);
