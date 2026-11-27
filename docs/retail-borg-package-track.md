@@ -1173,7 +1173,7 @@ expresses delayed growth and independent hit identity. Its optional
 `impact-area-shapes` rule preserves the verified no-borrow order
 for a bounded native budget. It does not reproduce retail capacity,
 body-slot admission, or the parent shape's post-impact contact on
-terrain. No Ninja move is bound to either rule.
+terrain.
 The [ordinary-X cue replay](retail-code-atlas.md#ordinary-x-installed-program-vm-cue-and-paid-bomb-release)
 now joins the original phase handler to its VM-generated cue, stock,
 and the constructor's later key-11 sample. The separate
@@ -1182,9 +1182,11 @@ distinguishes copied aim, the live launch gate, and later gravity
 correction. The replays supply the pose and target selection; they
 do not run live controls or qualify a full intercept. The
 [authored ballistic aim and refit](borg-gameplay-api.md#ballistic-aim-and-gravity-refit)
-use native target selection, body centres, and ticks. They are not
-bound to these retail moves. Live scheduling and prop response remain
-separate checks.
+use native target selection, body centres, and ticks. The
+[grounded X Workshop opt-in](retail-roster-extraction.md#normal-ninja-and-sasuke-grounded-x-bomb-test)
+uses them for two authored test profiles only. It preserves their B
+moves and does not enable X by default. Live scheduling and prop
+response remain separate checks.
 
 ### Command Girl: B and X do not request the same family of beam
 

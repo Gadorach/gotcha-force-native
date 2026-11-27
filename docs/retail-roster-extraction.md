@@ -1207,6 +1207,45 @@ declared Workshop placement, the first hit moves from tick 26
 to 25, and with continuation the second moves from 29 to 28.
 Those are fixture timings, not universal or original hit frames.
 
+#### Normal Ninja and Sasuke grounded X bomb test
+
+Add `--ninja-bomb-test` to a fresh `--basic-shot-test` extraction. It
+appends an authored grounded **X** bomb to exact normal Normal Ninja
+(`0000`) and Sasuke (`000a`), leaving their existing B declarations
+unchanged. No other profile, clone route, or alternate form inherits
+it. The extractor checks the normal members, local clip `4:0`, logical
+joint 11, and the pinned [ordinary-X cue](api-map/gg4e08-bomb-x-cue.json),
+[aim](api-map/gg4e08-bomb-aim.json), and hit/area receipts.
+
+```sh
+python3 -m tools.extract.retail_borg_roster "$GF_CATALOG" \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  local/ninja-bomb --role-clips --source-pace --action-clips \
+  --basic-shot-test --ninja-bomb-test
+```
+
+The trial uses a separate five-round stock, an authored release at
+tick 12, native ballistic aim/refit, and a growing area on an accepted
+actor or static-stage hit. A stage with projectile geometry, such as
+the authored Workshop, is required. The socket point and clip are
+source operands; the single full-body pose, native frames, collision
+geometry, damage inputs and slot budget are authored, not retail
+conversions. The trial plays no original bomb launch audio.
+
+To compare it against the same extraction without the flag and
+exercise both impact paths in a generated Workshop:
+
+```sh
+PYTHONPATH=. python3 -B tests/host/retail_ninja_bomb_smoke.py \
+  /path/to/gf_native /path/to/baseline /path/to/ninja-bomb
+```
+
+The headless and offscreen OpenGL fixtures changed only two of 206
+gameplay profiles. Both bombs removed 9 HP on direct contact at tick
+64 and 19 more at tick 65. The wall case placed the area without a
+direct hit. These are authored fixture results, not retail damage
+or timing.
+
 ### Try the opt-in close-B melee Battle Test
 
 Add `--basic-melee-test --source-pace --role-clips --action-clips` to the

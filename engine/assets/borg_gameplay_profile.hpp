@@ -72,7 +72,7 @@ struct BorgImpactPattern {
 struct BorgImpactTrail : BorgImpactPattern {u16 mark_size=0,mark_ticks=0;};
 struct BorgImpactHazard : BorgImpactPattern {u16 hit_radius=0,height=0,ticks=0,damage=0,first_query=0;};
 struct BorgImpactArea {
-    BorgImpactLane lane=BorgImpactLane::Stage;
+    BorgBlastTrigger trigger=BorgBlastTrigger::Stage;
     f32 initial_radius=0,gain=0,cap=0;
     u16 queries=0,damage=0;
     bool shared_shape=false;
@@ -802,7 +802,8 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
                a.impact_hazard->hit_radius>180||a.impact_hazard->height>600||!a.impact_hazard->ticks||
                a.impact_hazard->ticks>60||!a.impact_hazard->damage||a.impact_hazard->damage>10000||a.impact_hazard->first_query>60))||
              (a.impact_area&&(a.sustained||a.blast||a.impact_hazard||a.rewind_hit||a.plant_on_stage!=255||
-               !borg_impact_lane_reachable(a,a.impact_area->lane)||
+               a.impact_area->trigger==BorgBlastTrigger::Expiry||a.impact_area->trigger==BorgBlastTrigger::Remote||
+               !borg_blast_trigger_reachable(a,a.impact_area->trigger)||
                !finite(a.impact_area->initial_radius,0,1200)||!finite(a.impact_area->gain,.01f,100)||
                !finite(a.impact_area->cap,.01f,1200)||a.impact_area->cap<=a.impact_area->initial_radius||
                !a.impact_area->queries||a.impact_area->queries>60||!a.impact_area->damage||a.impact_area->damage>10000))||
@@ -1812,12 +1813,13 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
         }else if(key=="impact-area"){
             std::array<std::string_view,7> a;BorgImpactArea spec;
             if(impact_areas.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
-               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage")||
+               (a[1]!="actor"&&a[1]!="floor"&&a[1]!="stage"&&a[1]!="impact")||
                !scalar(a[2],0,1200,&spec.initial_radius)||!scalar(a[3],.01f,100,&spec.gain)||
                !scalar(a[4],.01f,1200,&spec.cap)||spec.cap<=spec.initial_radius||
                !number(a[5],1,60,&spec.queries)||!number(a[6],1,10000,&spec.damage))
                 return fail("invalid impact-area binding");
-            spec.lane=a[1]=="actor"?BorgImpactLane::Actor:a[1]=="floor"?BorgImpactLane::Floor:BorgImpactLane::Stage;
+            spec.trigger=a[1]=="actor"?BorgBlastTrigger::Actor:a[1]=="floor"?BorgBlastTrigger::Floor:
+                         a[1]=="stage"?BorgBlastTrigger::Stage:BorgBlastTrigger::Impact;
             impact_areas.push_back({line,std::string(a[0]),spec});
         }else if(key=="impact-area-shapes"){
             std::array<std::string_view,2> a;

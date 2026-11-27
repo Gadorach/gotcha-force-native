@@ -3419,9 +3419,7 @@ private:
         if(!shot.package_blast)return;
         const auto& blast=*shot.package_blast;
         const auto& definition=config_.packages[shot.owner]->projectiles[shot.package_projectile];
-        if(!((why==PackageRetirement::Actor&&(blast.trigger==BorgBlastTrigger::Actor||blast.trigger==BorgBlastTrigger::Impact))||
-             (why==PackageRetirement::Floor&&(blast.trigger==BorgBlastTrigger::Floor||blast.trigger==BorgBlastTrigger::Impact))||
-             (why==PackageRetirement::Stage&&(blast.trigger==BorgBlastTrigger::Stage||blast.trigger==BorgBlastTrigger::Impact))||
+        if(!(matches_impact_trigger(why,blast.trigger)||
              (why==PackageRetirement::Expired&&blast.trigger==BorgBlastTrigger::Expiry)||
              (why==PackageRetirement::Proximity&&definition.proximity&&definition.proximity->blast)||
              (why==PackageRetirement::Remote&&blast.trigger==BorgBlastTrigger::Remote)))return;
@@ -3496,6 +3494,11 @@ private:
         return (reason==PackageRetirement::Actor&&lane==BorgImpactLane::Actor)||
                (reason==PackageRetirement::Floor&&lane==BorgImpactLane::Floor)||
                (reason==PackageRetirement::Stage&&lane==BorgImpactLane::Stage);
+    }
+    static bool matches_impact_trigger(PackageRetirement reason,BorgBlastTrigger trigger){
+        return (reason==PackageRetirement::Actor&&(trigger==BorgBlastTrigger::Actor||trigger==BorgBlastTrigger::Impact))||
+               (reason==PackageRetirement::Floor&&(trigger==BorgBlastTrigger::Floor||trigger==BorgBlastTrigger::Impact))||
+               (reason==PackageRetirement::Stage&&(trigger==BorgBlastTrigger::Stage||trigger==BorgBlastTrigger::Impact));
     }
     template<class Spec,std::size_t N>
     void start_package_impact_pattern(const BattleMvpProjectile& shot,const Spec& spec,
@@ -3623,7 +3626,7 @@ private:
         if(const auto& hazard=definition.impact_hazard;hazard&&matches_impact_lane(reason,hazard->lane))
             start_package_impact_pattern(shot,*hazard,definition.impact_world_space,hazard_patterns_,BorgBattleEventKind::ImpactHazardStarted,
                                         BorgBattleEventKind::ImpactHazardRefused);
-        if(const auto& area=definition.impact_area;area&&matches_impact_lane(reason,area->lane))
+        if(const auto& area=definition.impact_area;area&&matches_impact_trigger(reason,area->trigger))
             place_package_impact_hazard({.centre=shot.position,.owner=shot.owner,.move=shot.package_move,
                 .remaining=area->queries,.damage=area->damage,.radius=area->initial_radius,
                 .gain=area->gain,.cap=area->cap,.shared_shape=area->shared_shape},shot.id);

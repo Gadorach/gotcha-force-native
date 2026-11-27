@@ -3119,11 +3119,12 @@ move=toss|b|10|any|4|0:4
 release=toss|1|ball|1|ball
 )";
     constexpr std::string_view shared="impact-area-shapes=ball|shared\n";
-    const auto profile=[&](unsigned lane){
-        return root+(lane==0?"projectile=ball|orb|1|55|0|0|0|9|12|12|ignore-floor\nimpact-area=ball|actor":
-                     lane==1?"projectile=ball|orb|1|20|-25|0|0|9|12|0|stop-on-floor\nimpact-area=ball|floor":
-                             "projectile=ball|orb|1|55|0|0|0|9|12|0|stop-on-stage\nimpact-area=ball|stage")+
-                     "|3.1|31|100|4|17\n";
+    const auto profile=[&](unsigned lane,bool combined=false){
+        const auto projectile=lane==0?"projectile=ball|orb|1|55|0|0|0|9|12|12|ignore-floor\n":
+                              lane==1?"projectile=ball|orb|1|20|-25|0|0|9|12|0|stop-on-floor\n":
+                                      "projectile=ball|orb|1|55|0|0|0|9|12|0|stop-on-stage\n";
+        return root+projectile+"impact-area=ball|"+(combined?"impact":lane==0?"actor":lane==1?"floor":"stage")+
+               "|3.1|31|100|4|17\n";
     };
     const auto idle=parse(target);
     const auto probe=parse(root+"projectile=ball|orb|1|5|0|0|0|9|3|0|stop-on-stage\n"
@@ -3157,7 +3158,7 @@ release=toss|1|ball|1|ball
         NativeBattleMvp world;BattleMvpConfig config;WallGround wall;wall.plane=150;
         config.actor_radius=22;config.actor_height=120;config.impact_shape_slots=slots;
         config.declared_actors=3;config.teams_declared=true;config.teams={0,1,0};
-        config.packages={parse(profile(lane)+std::string(shared)),idle,probe};
+        config.packages={parse(profile(lane,slots==2)+std::string(shared)),idle,probe};
         config.spawn={BattlePoint{0,0},BattlePoint{0,lane==1?135.f:206.f},BattlePoint{-300,0}};
         check(world.start(config,&wall),"shared impact shapes start");
         std::array<GamePadState,kBattleMvpMaxActors> pads{};

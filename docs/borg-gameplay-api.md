@@ -1566,6 +1566,8 @@ Stick's B. It does not use model 83 or the retail Dragon damage rules.
 `impact-area=carrier|stage|initial radius|radius gain|radius cap|queries|damage`
 opts into a single expanding sphere at the accepted impact point. Use
 `actor`, `floor`, or `stage` to select one reachable retirement reason.
+Use `impact` to accept actor contact or the carrier's known retiring
+terrain contact, using the one reason that actually retired the shot.
 Unknown geometry, guard-only retirement, and expiry do not trigger it.
 For example, `impact-area=ball|stage|3.1|31|65.1|4|17` starts at radius
 3.1, does not query on the impact tick, and queries at radii 34.1, 65.1,

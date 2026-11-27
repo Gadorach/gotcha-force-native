@@ -71,6 +71,7 @@ from tools.analyze.retail_ground_pace import cruise_pace_candidate, ground_pace_
 from tools.analyze.retail_projectile_origins import origin_candidates, origin_tables, preview_origin_markers, release_index
 from tools.analyze import retail_projectile_continuation as projectile_continuation
 from tools.analyze import retail_projectile_speed_ramp as projectile_speed_ramp
+from tools.analyze import retail_ninja_bomb_test as ninja_bomb
 
 from tools.extract.pzz import PzzArchive
 from tools.extract.borg_movement_sfx import BANK as COMMON_MOVEMENT_BANK
@@ -882,7 +883,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             dragon_impact_pcm=None, worm_source=None, basic_melee=False, action_pcm=None, contact_roles=None,
             contact_power_test=False,contact_ladders=None,contact_tiers=None,contact_tier_reset_test=False,
              contact_audio=None,contact_visuals=None,contact_indices=None,contact_floor=None,contact_pause=False,
-             continuation_source=None,speed_ramp_source=None):
+              continuation_source=None,speed_ramp_source=None,ninja_bomb_source=None):
     cruise_pilot = basic_shot and cruise_lab and (row.model==VIOLET_SHOT["model"] or any(row.model in cohort for cohort in (
         STATIC_CRUISE_SHOTS, STATIC_CRUISE_PHASE_SHOTS, CRUISE_CHARGE_SHOTS, ANIMATED_CRUISE_SHOTS)))
     clocked_pilot = basic_shot and row.model in CLOCKED_GROUND_SHOTS
@@ -906,6 +907,9 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
                                 dragon_pilot or worm_pilot or tank_pilot or pair_pilot or single_shot_pilot or breath_pilot)
     held_pilot = basic_shot and row.model==gatling.MODEL
     melee_pilot = basic_melee and row.model in knight.PILOTS
+    ninja_bomb_pilot=ninja_bomb_source is not None and row.model in ninja_bomb.PILOTS
+    if ninja_bomb_pilot and (not shot_pilot or melee_pilot):
+        raise ValueError(f"{row.id}: Ninja bomb requires the existing B-shot test")
     pilot = (shot_pilot or roach_pilot or zeta_pilot or charge_pilot or icbm_pilot or
              spawner_pilot or static_spawner_pilot or flying_pilot or nu_pilot or staged_pilot or
              melee_pilot or held_pilot)
@@ -979,7 +983,9 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
     if pilot:
         test_name=("close-B melee" if melee_pilot else "held-B" if held_pilot else
                    "X-shot (B not implemented)" if (row.model in single_shots.MODELS and
-                                                    single_shots.ROUTES[row.model].get("button")=="x") else "B-shot")
+                                                     single_shots.ROUTES[row.model].get("button")=="x") else "B-shot")
+        if ninja_bomb_pilot:
+            test_name="B-shot + grounded X-bomb"
         changes.update(description=f"Normal-only authored {test_name} Battle Test. Not retail combat.",
                        forms="none",**{"variant-overrides":"none"})
     moves = displayed_moves(dol, row.ordinal, spec, move_labels)
@@ -1403,6 +1409,10 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
                               "retail_trigger_verified": False})
             if bound:
                 battle_receipt["authored_action_sounds"] = bound
+    if ninja_bomb_pilot:
+        files["gameplay.txt"]=ninja_bomb.bind(
+            row.model,member_index,member_digest,files["gameplay.txt"],battle_receipt,ninja_bomb_source,
+            motion=motion,clips=clips,timing=timing,joints=joints,level=level[0])
     files["catalog.txt"] = catalog.encode("ascii")
     summary = {
         "id": row.id, "variant": 0, "member": member_index, "member_sha256": member_digest,
@@ -1532,7 +1542,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
              dragon_impact_audio=False,basic_melee=False,contact_scale_test=False,contact_power_test=False,
              contact_ladder_test=False,contact_tier_test=False,contact_tier_reset_test=False,contact_audio_decoder=None,
               contact_art_test=False,contact_index_test=False,contact_floor_test=False,contact_pause_test=False,
-              projectile_continuation_test=False,projectile_speed_ramp_test=False):
+              projectile_continuation_test=False,projectile_speed_ramp_test=False,ninja_bomb_test=False):
     output = Path(output)
     repo = Path(__file__).resolve().parents[2]
     destination = output.resolve()
@@ -1550,6 +1560,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         raise ValueError("--projectile-continuation-test requires --basic-shot-test")
     if projectile_speed_ramp_test and not basic_shot:
         raise ValueError("--projectile-speed-ramp-test requires --basic-shot-test")
+    if ninja_bomb_test and not basic_shot:
+        raise ValueError("--ninja-bomb-test requires --basic-shot-test")
     if basic_melee and not (source_pace and action_clips):
         raise ValueError("--basic-melee-test requires --source-pace and --action-clips")
     if shot_audio_decoder is not None and not basic_shot:
@@ -1599,6 +1611,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
     contact_pause = contact_pose_pause.recover(dol) if contact_pause_test else None
     continuation_source=projectile_continuation.qualify(dol) if projectile_continuation_test else None
     speed_ramp_source=projectile_speed_ramp.qualify(dol) if projectile_speed_ramp_test else None
+    ninja_bomb_source=ninja_bomb.qualify(dol) if ninja_bomb_test else None
     contact_roles = None
     if contact_scale_test:
         with open_regular(DAMAGE_SELECTORS) as stream:
@@ -1610,7 +1623,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             raise ValueError("incorrect contact selector artifact")
         contact_roles = damage_contact_roles.recover(dol), selectors
     with open_regular(afs_path) as stream:
-        if continuation_source is not None or speed_ramp_source is not None:
+        if continuation_source is not None or speed_ramp_source is not None or ninja_bomb_source is not None:
             from tools.analyze.retail_action_input import verify_archive
             verify_archive(stream)
         archive = RetailArchive(stream)
@@ -1638,6 +1651,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             shared_index["projectile_continuation_test"]={**continuation_source,"borg":"gg4e08:0600"}
         if speed_ramp_source is not None:
             shared_index["projectile_speed_ramp_test"]={**speed_ramp_source,"borg":"gg4e08:0600"}
+        if ninja_bomb_source is not None:
+            shared_index["ninja_bomb_test"]=ninja_bomb_source
         pcm=None
         if landing_decoder is not None:
             pcm=decode_lab_landing_pcm(landing_decoder,shared_files,shared_index)
@@ -1807,7 +1822,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
                                             contact_audio=contact_audio,contact_visuals=contact_visuals,
                                             contact_indices=contact_indices,contact_floor=contact_floor,
                                              contact_pause=contact_pause is not None,
-                                             continuation_source=continuation_source,speed_ramp_source=speed_ramp_source)
+                                             continuation_source=continuation_source,speed_ramp_source=speed_ramp_source,
+                                             ninja_bomb_source=ninja_bomb_source)
             if "dragon_carrier_collision" in summary:
                 dragon_carriers["borgs"][row.id]["collision"]=summary["dragon_carrier_collision"]
                 dragon_carriers["borgs"][row.id]["visuals"]=summary["dragon_carrier_visuals"]
@@ -2000,7 +2016,9 @@ def main():
     parser.add_argument("--projectile-continuation-test", action="store_true",
                         help="opt Machine Red's authored ordinary B shot into receiver continuation; requires --basic-shot-test")
     parser.add_argument("--projectile-speed-ramp-test", action="store_true",
-                        help="opt Machine Red's authored ordinary B shot into a scaled speed ramp; requires --basic-shot-test")
+                         help="opt Machine Red's authored ordinary B shot into a scaled speed ramp; requires --basic-shot-test")
+    parser.add_argument("--ninja-bomb-test", action="store_true",
+                         help="append an authored grounded X bomb for normal Normal Ninja and Sasuke; requires --basic-shot-test")
     parser.add_argument("--basic-melee-test", action="store_true",
                          help="add a normal-only authored close-B Battle Test to the qualified melee cohort")
     parser.add_argument("--contact-scale-test", action="store_true",
@@ -2042,7 +2060,8 @@ def main():
                                           contact_art_test=args.contact_art_test,contact_index_test=args.contact_index_test,
                                            contact_floor_test=args.contact_floor_test,contact_pause_test=args.contact_pause_test,
                                            projectile_continuation_test=args.projectile_continuation_test,
-                                           projectile_speed_ramp_test=args.projectile_speed_ramp_test)
+                                            projectile_speed_ramp_test=args.projectile_speed_ramp_test,
+                                            ninja_bomb_test=args.ninja_bomb_test)
     except (ValueError, OSError) as exc:
         parser.exit(1, f"retail roster extraction: {exc}\n")
     print(f"GG4E08: {normal} normal asset packages, {previews} preview declarations (not runtime-validated)")
