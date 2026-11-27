@@ -1160,9 +1160,15 @@ is a useful host for qualification, but it does not yet express this
 source launch correction or separately validated area-object lifecycle.
 The verified no-target handoff and portable body-heading option cover a
 scoped launch prerequisite, not the target solve or live admission.
-Next witness: accepted ordinary program cue and current key 11 through
-allocation and launch, then contact/no-contact and actual stage/actor
-response with the area shape and damage recipient observed separately.
+The [paid-release floor replay](retail-code-atlas.md#ordinary-ninja-bombs-floor-response-and-same-pass-area-bind)
+now checks real triangle response for keys 0 and 3. The floor branch
+keeps its opening shape registered through the impact visit and
+the same-pass area bind. The actor-contact replay unlinks in the
+impact visit's shape pass, but does not qualify earlier slot reuse.
+The current authored stage impact rule does not model that ordering.
+Next missing witness: the accepted ordinary program cue and current
+key-11 pose through launch, including the target-dependent aim path.
+Live scheduler and prop response remain separate checks.
 
 ### Command Girl: B and X do not request the same family of beam
 

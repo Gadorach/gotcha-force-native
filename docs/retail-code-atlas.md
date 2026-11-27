@@ -785,6 +785,41 @@ python3 -m tools.analyze.retail_bomb_area \
   /tmp/opencode/gf-bomb-area.json
 ```
 
+### Ordinary Ninja bombs: floor response and same-pass area bind
+
+The [floor replay](api-map/gg4e08-bomb-floor.json) runs Normal Ninja's
+key 0 and Sasuke's key 3 from the original paid X leaves, with
+declared sockets, no target and a synthetic collision grid. Both
+cross the `y=25` floor on visit 35. The original triangle query
+corrects the proposed point `(165, 16.25, 1684.49)` to
+`(165, 25, 1651.79)`. The type-5 key-0 request uses that
+corrected point. Shifting the triangle off the path exercises the
+same geometry query but keeps the bomb flying, as does the empty
+grid. The separate stage-bounds exit unlinks without an area request.
+
+Unlike the actor-contact route, the floor route leaves the
+parent's attack shape registered until visit 36; the parent
+returns its carrier and descriptor on visit 37. The area can
+initialize in the **same** bucket pass as impact, while the
+parent still holds its shape slot:
+
+- With no spare shape slot, the area refuses the bind. It does
+  not retry after the parent frees a slot on visit 36.
+- With one spare slot, the area binds on visit 35, then enters
+  the attack registry at radius 34.1 on visit 36.
+
+All 14 cases matched across O0, O1 and O2. This checks the real
+segment/triangle query and the pool handoff, not live Stage
+geometry, actor HP on the terrain branch, or target-dependent
+aim. The portable Battle Test is unchanged.
+
+```sh
+python3 -m tools.analyze.retail_bomb_floor \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-floor.json
+```
+
 ### Worm paid release, refunds and contact follow-up
 
 The [Worm contact receipt](api-map/gg4e08-worm-contact.json)

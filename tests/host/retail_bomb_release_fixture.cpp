@@ -18,6 +18,7 @@ constexpr u32 attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
 constexpr u32 receiver_count=0x8043B5A0-21330,receiver_registry=0x803C417C;
 constexpr u32 receiver=0x8101C000,body=0x81035200,body_block=0x8103B000;
 constexpr u32 effect_cell=0x81034000,common_collision=0x81068000;
+constexpr u32 stage=0x81040000;
 constexpr u32 factory=0x8007DB5C, powered=0x8016711C, ninja=0x800715F8, alpha=0x801A0458;
 constexpr u32 audio=0x800F036C, normal_x_helper=0x8016D584, movement_tail=0x800B22F4;
 constexpr u32 area_callback=0x80086048, area_amount=0x802C4778;
@@ -30,6 +31,7 @@ using HitBlock=std::array<u8,7840>;
 using ActorSpec=std::array<u8,432>;
 using CommonCollision=std::array<u8,21504>;
 enum class Contact {miss,duplicate,impact,child_cell_empty,child_descriptor_short};
+enum class Terrain {empty,floor,offset_floor,child_cell_empty,bounds_exit,area_no_spare,area_spare};
 constexpr std::array cases{
     Case{0x0101,3,0,1,4,4}, Case{0x0101,3,0,0,4,4},
     Case{0x0101,3,0,1,2,4}, Case{0x0101,3,0,1,4,2},
@@ -143,7 +145,7 @@ class Check {
         put32(at(resource+16),link);put32(at(link),table);
         put32(at(table+4*14),row);put32(at(table+4*125),row);
         // Supply an empty bounded stage, not a patched collision result.
-        constexpr u32 stage=0x81040000,grid=stage+0x100,refs=stage+0x200,side=128,empty=refs+side*side*4;
+        constexpr u32 grid=stage+0x100,refs=stage+0x200,side=128,empty=refs+side*side*4;
         put32(at(0x8043B5A0-21316),stage);
         for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
         put_float(at(stage+52),9000.f);put_float(at(stage+56),31000.f);
@@ -151,6 +153,28 @@ class Check {
         put32(at(grid+12),side);put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));
         put32(at(grid+24),refs);put32(at(empty),0xFFFFFFFFu);
         for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),empty);
+    }
+    void terrain_inlet(Terrain terrain){
+        if(terrain==Terrain::empty)return;
+        if(terrain==Terrain::bounds_exit){
+            put_float(at(stage+64),400.f);
+            return;
+        }
+        // One rebased STIH triangle in layer zero, no other geometry.
+        // List addresses and triangle references are guest pointers, as
+        // after the original loader's separate rebase.
+        constexpr u32 grid=stage+0x140,refs=0x81053000,side=16,list=refs+4*side*side,tri=list+8;
+        const float x=terrain==Terrain::offset_floor?2000.f:-500.f;
+        constexpr float y=25.f;
+        const std::array vertices{x,y,-500.f,x,y,6000.f,x+3500.f,y,-500.f};
+        put32(at(stage+28),grid);
+        put32(at(grid),500);put32(at(grid+4),500);put32(at(grid+8),side);put32(at(grid+12),side);
+        put32(at(grid+16),u32(-1000));put32(at(grid+20),u32(-1000));
+        put32(at(grid+24),refs);put32(at(grid+28),tri);
+        for(unsigned i=0;i<side*side;++i)put32(at(refs+4*i),list);
+        put32(at(list),tri);put32(at(list+4),0xFFFFFFFFu);
+        for(unsigned i=0;i<vertices.size();++i)put_float(at(tri+4+4*i),vertices[i]);
+        put_float(at(tri+44),1.f);put_float(at(tri+52),-y);
     }
     void retire_unbound(const Case& c,unsigned count,unsigned stock){
         // A shape becomes free before the next visit. The refused carriers
@@ -249,6 +273,47 @@ class Check {
         mod.run(pass,ram,visit,1024);
         class4_passes();
     }
+    void area_inlets(const CommonCollision& common){
+        std::memcpy(at(common_collision),common.data(),common.size());
+        put32(at(scene+152),common_collision); // Exact scene-bank inlet normally written by 80040FC0.
+        constexpr u32 resource_table=0x8103A080,empty_visual=0x8103A880;
+        put32(at(resource_table+4*22),empty_visual);
+        put32(at(resource_table+4*18),empty_visual);
+        put32(at(resource_table+4*23),empty_visual);
+    }
+    void floor_area_visit(u16 model,unsigned n,bool spare,float crossing_z,const std::vector<u8>& before){
+        // Repeat the original owner-list pass from before impact, this
+        // time letting the appended child initialize at its real position.
+        std::memcpy(ram.data(),before.data(),ram.size());
+        const u32 obj=cell(0),child=cell(1),child_shape=shapes+shape_stride;
+        CPUState pass{};pass.gpr[3]=9;
+        CallObservation bind_area{0x8008AE3C};
+        const auto cut=mod.run_to_or_return(pass,ram,visit,{audio},&bind_area);
+        if(bind_area.count!=1||bind_area.caller!=0x800860E0||bind_area.arguments[0]!=actor||
+           bind_area.arguments[1]!=child||bind_area.arguments[2]!=3||
+           cut!=(spare?audio:0)||(cut&&(pass.lr!=0x80086240||pass.gpr[3]!=child||pass.gpr[4]!=12))||
+           at(obj)[0x18]!=2||at(child)[0x18]!=(spare?1:2)||fp(child+0x24)!=25.f||fp(child+0x28)!=crossing_z)
+            fail("same-pass floor area initializer disagreed");
+        class4_passes();
+        if(half(attack_count)!=1||be32(at(attack_registry))!=shapes||be32(at(active_tail+49*4))!=shapes||
+           be32(at(active_head+49*4))!=(spare?child_shape:shapes)||half(free_count+8)||
+           at(child)[0x86]!=unsigned(spare)||half(child+0x26C)!=(spare?2:0))
+            fail("floor area shape result did not preserve the parent's first-visit publication");
+        CPUState next{};next.gpr[3]=9;
+        CallObservation retry{0x8008AE3C};
+        mod.run_observed(next,ram,visit,retry);
+        class4_passes();
+        if(retry.count||at(obj)[0x18]!=3||at(child)[0x18]!=(spare?1:3)||
+           be32(at(active_head+49*4))!=(spare?child_shape:0)||be32(at(free_head+16))!=shapes||
+           half(free_count+8)!=1||half(actor+0x784)!=1||half(attack_count)!=unsigned(spare)||
+           (spare&&(be32(at(attack_registry))!=child_shape||be32(at(child_shape+0x20))!=child||
+                   be32(at(child_shape+0x24))!=actor||fp(child_shape+0x68)!=25.f||
+                   fp(child_shape+0x6C)!=crossing_z||std::abs(fp(child_shape+0x7C)-34.1f)>0.001f)))
+            fail("next floor visit rebound a refusal or lost the grown area");
+        std::printf("bomb-floor-area: %u %u %u %u %u %u %u %u %u\n",
+                    model,unsigned(spare),n,unsigned(cut!=0),unsigned(spare),at(child)[0x18],
+                    half(attack_count),half(free_count+8),half(actor+0x784));
+    }
 public:
     Check(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
     void run_case(const Case& c,bool report=true){
@@ -301,9 +366,10 @@ public:
                     c.model,c.state,c.extra,c.stock,c.carriers,c.descriptors,count,attempted,
                     made,published,remaining,double(clock),boundary==audio?1:boundary==normal_x_helper?2:boundary==movement_tail?3:0);
     }
-    void first_bind(const Case& c,const HitBlock& block,unsigned capacity,bool report=true){
+    void first_bind(const Case& c,const HitBlock& block,unsigned capacity,bool report=true,Terrain terrain=Terrain::empty){
         run_case(c,false);
         bind_inlets(c,block,capacity);
+        terrain_inlet(terrain);
         const bool gun=c.model==0x0101;
         const unsigned count=gun?std::min(c.carriers,c.descriptors):1;
         const unsigned group=gun?15:1,step=gun?8:1,accepted=std::min(count,capacity);
@@ -451,17 +517,12 @@ public:
     void sasuke_area(const HitBlock& block,const ActorSpec& actor_spec,const CommonCollision& common,bool free_shape){
         contact(false,block,block,actor_spec,actor_spec,Contact::impact,true);
         const auto child=cell(1);
-        std::memcpy(at(common_collision),common.data(),common.size());
-        put32(at(scene+152),common_collision); // Exact scene-bank inlet normally written by 80040FC0.
+        area_inlets(common);
         // The released parent shape is the only free cell. A reservation
         // control withholds it for the area's bind then makes it free again.
         if(half(free_count+8)!=1||be32(at(free_head+16))!=shapes||be32(at(free_tail+16))!=shapes)
             fail("area expects a released opening shape");
         if(!free_shape)shape_pool(0);
-        constexpr u32 resource_table=0x8103A080,empty_visual=0x8103A880;
-        put32(at(resource_table+4*22),empty_visual);
-        put32(at(resource_table+4*18),empty_visual);
-        put32(at(resource_table+4*23),empty_visual);
         CPUState init{};init.gpr[3]=child;
         CallObservation select{0x8008AE3C};
         const auto frontier=mod.run_to_or_return(init,ram,area_callback,{audio},&select);
@@ -552,6 +613,123 @@ public:
                     double(grown_radius),double(peak_radius),after_growth,duplicate_passes,half(receiver+0x1C6),
                     unlink_visit,retired,half(actor+0x784));
     }
+    void floor_impact(u16 model,const HitBlock& block,const CommonCollision& common,Terrain terrain){
+        const bool replay_area=terrain==Terrain::area_no_spare||terrain==Terrain::area_spare;
+        const bool spawn=terrain==Terrain::floor||replay_area,bounds=terrain==Terrain::bounds_exit;
+        const bool floor=spawn||terrain==Terrain::child_cell_empty;
+        const unsigned shape_capacity=terrain==Terrain::area_spare?2:1;
+        const unsigned cap=terrain==Terrain::child_cell_empty?1:2;
+        const Case c{model,2,0,2,u8(cap),3};
+        first_bind(c,block,shape_capacity,false,terrain);
+        if(replay_area)area_inlets(common);
+        const auto obj=cell(0);
+        const auto* carrier=at(obj);
+        using Point=std::array<float,3>;
+        const auto pos=[&](u32 a){return Point{fp(a+0x20),fp(a+0x24),fp(a+0x28)};};
+        auto previous=pos(obj);
+        const auto launch=previous;
+        if(std::abs(launch[1]-199.85f)>0.0001f||launch[0]!=165.f||launch[2]!=340.f||
+           fp(obj+56)!=0.f||std::abs(fp(obj+64)-39.9988785f)>0.0001f||std::abs(fp(obj+60)+0.3f)>0.0001f){
+            std::fprintf(stderr,"floor model=%04X launch=%.7f/%.7f/%.7f delta=%.7f/%.7f/%.7f\n",
+                         model,double(launch[0]),double(launch[1]),double(launch[2]),
+                         double(fp(obj+56)),double(fp(obj+60)),double(fp(obj+64)));
+            fail("floor fixture did not start from actual no-target launch motion");
+        }
+        constexpr unsigned max_visits=64;
+        unsigned event=0,after_clock=0,requests=0,returned=0,segment_grid=0,triangle_tests=0,unlink=0;
+        Point segment_start{},proposal{},final{};
+        for(unsigned n=2;n<=max_visits;++n){
+            const auto predicted=Point{previous[0]+fp(obj+56),previous[1]+std::fma(-fp(obj+80),0.5f,fp(obj+60)),
+                                       previous[2]+fp(obj+64)};
+            const bool crosses=previous[1]>25.f&&predicted[1]<=25.f;
+            const auto before=replay_area&&crosses?ram:std::vector<u8>{};
+            CPUState pass{};pass.gpr[3]=9;
+            CallObservation observe{0x80085E00};
+            const auto cut=mod.run_to_or_return(pass,ram,visit,{area_callback,0x8001BDA8},&observe);
+            class4_passes();
+            if(carrier[0x1D9]||be32(at(obj+0x290))||half(receiver_count)||be32(at(actor+0x418))||
+               half(actor+0x784)!=1||observe.count>1)
+                fail("terrain replay saw an actor hit, changed stock, or repeated an allocation");
+            const bool terminal=carrier[0x18]==2;
+            const auto current=pos(obj);
+            if((crosses&&!bounds)||terminal){
+                // Independently verify the reader/kernel on the segment the
+                // carrier just presented, without feeding its result back.
+                constexpr u32 pair=0x81057000;
+                for(unsigned axis=0;axis<3;++axis){
+                    put_float(at(pair+4*axis),previous[axis]);
+                    put_float(at(pair+12+4*axis),predicted[axis]);
+                }
+                CPUState query{};query.gpr[3]=pair;query.gpr[4]=pair+12;query.gpr[5]=pair+24;
+                CallObservation triangles{0x80039DA4};
+                mod.run_observed(query,ram,0x8003E978,triangles,1024);
+                segment_grid=query.gpr[3];triangle_tests=triangles.count;
+                if((floor?(segment_grid!=1||!triangle_tests||fp(pair+28)!=25.f):(segment_grid!=0))||
+                   ((terrain==Terrain::offset_floor)!=bool(!floor&&triangle_tests)))
+                    fail("bomb terrain segment kernel returned the wrong proof");
+                event=n;segment_start=previous;proposal=predicted;final=current;after_clock=half(obj+0x1C);
+            }
+            if(observe.count){
+                if(!floor||!crosses||!terminal||observe.caller!=0x8007E5FC||observe.arguments[0]!=obj||
+                   observe.arguments[1]!=obj+0x20||observe.arguments[2]||current[1]!=25.f||
+                   std::abs(current[2]-fp(0x81057000+32))>0.0001f)
+                    fail("bomb used the wrong floor-impact call or corrected crossing point");
+                requests=observe.count;
+            }
+            const auto child=be32(at(obj+8));
+            const bool still_bound=!terminal||floor;
+            if(cut!=(spawn&&terminal?area_callback:0)||(cut&&pass.gpr[3]!=child)||
+               child!=(spawn&&terminal?cell(1):0)||bool(observe.count)!=(floor&&terminal)||
+               half(attack_count)!=unsigned(still_bound)||half(free_count+8)!=shape_capacity-unsigned(still_bound)||
+               be32(at(active_head+49*4))!=(still_bound?shapes:0)){
+                std::fprintf(stderr,"floor model=%04X case=%u n=%u phase=%u cut=%08X/%08X child=%08X "
+                             "requests=%u attacks=%u free-shapes=%u\n",model,unsigned(terrain),n,carrier[0x18],
+                             cut,pass.gpr[3],child,observe.count,half(attack_count),half(free_count+8));
+                fail("floor impact changed the wrong shape or child list");
+            }
+            if(child){
+                if(at(child)[0x10]!=5||at(child)[0x11]||at(child)[0x18]||
+                   be32(at(child+0x8C))!=obj||be32(at(child+0x90))!=actor||pos(child)!=current||
+                   half(descriptor_row+18)!=0||half(free_count+6)!=0)
+                    fail("floor child did not inherit the corrected position and original credit");
+            }
+            if(terminal){
+                if(!floor&&!bounds)fail("clear terrain unexpectedly terminated the bomb");
+                if(replay_area){
+                    if(before.empty()||!child)fail("missing floor area replay boundary");
+                    floor_area_visit(model,n,shape_capacity==2,current[2],before);
+                    return;
+                }
+                for(const bool retire:{false,true}){
+                    CPUState tail{};tail.gpr[3]=9;
+                    CallObservation again{0x80085E00};
+                    const auto stopped=mod.run_to_or_return(tail,ram,visit,{area_callback},&again);
+                    class4_passes();
+                    if(again.count||(stopped&&(!child||tail.gpr[3]!=child))||
+                       (retire?bool(carrier[0]):(!carrier[0]||carrier[0x18]!=3))||
+                       be32(at(active_head+9*4))!=(retire?child:obj)||
+                       half(descriptor_row+18)!=3-unsigned(!retire)-2u*unsigned(bool(child))||
+                       half(free_count+6)!=cap-unsigned(!retire)-unsigned(bool(child))||
+                       half(attack_count)||half(free_count+8)!=1||be32(at(free_head+16))!=shapes||
+                       be32(at(active_head+49*4)))
+                        fail("floor-impact parent did not complete its separate retirement");
+                }
+                unlink=still_bound?n+1:n;
+                returned=n+2;
+                break;
+            }
+            if(carrier[0x18]!=1||std::abs(current[1]-predicted[1])>0.0001f||current[0]!=predicted[0]||current[2]!=predicted[2])
+                fail("clear original terrain pass did not preserve integrated motion");
+            previous=current;
+        }
+        if(!event||bool(returned)!=(floor||bounds)||bool(requests)!=floor||
+           (!returned&&half(obj+0x1C)!=600-max_visits)||half(actor+0x784)!=1)
+            fail("floor fixture did not reach its expected bounded outcome");
+        std::printf("bomb-floor: %u %u %u %u %u %u %u %u %u %u %u %.5f %.5f %.5f %.5f %.5f\n",
+                    model,unsigned(terrain),event,after_clock,requests,unsigned(spawn),segment_grid,triangle_tests,unlink,returned,
+                    half(actor+0x784),double(segment_start[1]),double(proposal[1]),double(proposal[2]),
+                    double(final[1]),double(final[2]));
+    }
     void wrong_parent(){
         // A reviewed charged key, offered to a different normal actor.
         const Case c{0x000A,2,0,1,1,1};
@@ -568,10 +746,28 @@ public:
 int main(int argc,char** argv){
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
     const bool area=argc==4&&!std::strcmp(argv[3],"--sasuke-area");
-    if(argc!=3&&(argc!=4||(!contact&&!area&&std::strcmp(argv[3],"--first-bind"))))
-        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so [--first-bind|--contact|--sasuke-area]");
+    const bool floor=argc==4&&!std::strcmp(argv[3],"--floor");
+    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&std::strcmp(argv[3],"--first-bind"))))
+        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so [--first-bind|--contact|--sasuke-area|--floor]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
+    if(floor){
+        constexpr std::array<u16,2> models{0,0x000A};
+        std::array<HitBlock,models.size()> blocks{};
+        for(auto& block:blocks)
+            if(std::fread(block.data(),1,block.size(),stdin)!=block.size())fail("bomb floor hit block extent");
+        CommonCollision common{};
+        if(std::fread(common.data(),1,common.size(),stdin)!=common.size()||std::getc(stdin)!=EOF)
+            fail("bomb floor common collision extent");
+        for(unsigned i=0;i<models.size();++i){
+            for(auto terrain:{Terrain::empty,Terrain::floor,Terrain::offset_floor,Terrain::child_cell_empty,
+                              Terrain::bounds_exit,Terrain::area_no_spare,Terrain::area_spare}){
+                Check test(module,original);
+                test.floor_impact(models[i],blocks[i],common,terrain);
+            }
+        }
+        return 0;
+    }
     if(area){
         HitBlock sasuke{};
         ActorSpec sasuke_spec{};

@@ -507,6 +507,11 @@ Refused area allocations left no area object. A clear terrain query
 did not request one. Area overlap, accepted damage, target-dependent
 aim, and the complete scheduling and teardown remain open.
 
+The later [paid-release floor replay](retail-code-atlas.md#ordinary-ninja-bombs-floor-response-and-same-pass-area-bind)
+uses real triangle geometry for Normal Ninja and Sasuke. The floor
+route keeps the parent shape active through the same-pass area
+bind, so the child needs a spare shape slot on that visit.
+
 ### Movement contact and attraction leads
 
 The player recalls short spreading shockwaves around some Dragon feet

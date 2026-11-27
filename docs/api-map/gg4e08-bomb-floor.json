@@ -1,0 +1,434 @@
+{
+  "common_area_bank": {
+    "block": 0,
+    "center": [
+      0,
+      0,
+      0
+    ],
+    "context_assignment": "80040FC0",
+    "descriptor": 4,
+    "group": 3,
+    "member": 696,
+    "raw_radius": 310,
+    "sha256": "e6a41d20e919e0fcf77898af7800f2beaffc459e2267bf4c227879d38a40c0a1"
+  },
+  "entries": {
+    "area_callback": "80086048",
+    "scene_segment_query": "8003E978",
+    "terrain_child_call": "8007E5FC",
+    "terrain_response": "80084170"
+  },
+  "kind": "gf-retail-bomb-floor",
+  "notes": [
+    "Original paid X leaves, no-target launch, bucket visits, and triangle tests run on declared inputs.",
+    "The terrain is a synthetic rebased grid with one triangle, not an original Stage asset.",
+    "The observed crossing probe does not feed a result back into the carrier.",
+    "The area can initialize on the same visit; the opening shape keeps its cell through that visit on a floor hit.",
+    "No actor bodies or HP writes are exercised here. Child audio stops before playback.",
+    "No live scheduler, target-dependent aim, props, native gameplay, or other type-15 keys are qualified."
+  ],
+  "pilots": [
+    {
+      "borg": "gg4e08:0000",
+      "impact_cases": [
+        {
+          "case": "empty-grid",
+          "child_published": false,
+          "child_requested": false,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": 64,
+          "independent_segment_probe": {
+            "grid_code": 0,
+            "triangles_tested": 0
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": null,
+          "parent_carrier_and_descriptor_return_visit": null,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "floor",
+          "child_published": true,
+          "child_requested": true,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            25.0,
+            1651.78943
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": null,
+          "independent_segment_probe": {
+            "grid_code": 1,
+            "triangles_tested": 1
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": 36,
+          "parent_carrier_and_descriptor_return_visit": 37,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "offset-floor",
+          "child_published": false,
+          "child_requested": false,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": 64,
+          "independent_segment_probe": {
+            "grid_code": 0,
+            "triangles_tested": 1
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": null,
+          "parent_carrier_and_descriptor_return_visit": null,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "floor-child-pool-empty",
+          "child_published": false,
+          "child_requested": true,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            25.0,
+            1651.78943
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": null,
+          "independent_segment_probe": {
+            "grid_code": 1,
+            "triangles_tested": 1
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": 36,
+          "parent_carrier_and_descriptor_return_visit": 37,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "bounds-exit",
+          "child_published": false,
+          "child_requested": false,
+          "clock_at_event": 577,
+          "committed_point": [
+            165,
+            127.4,
+            1176.26709
+          ],
+          "event_visit": 23,
+          "flight_continued_through_visit": null,
+          "independent_segment_probe": {
+            "grid_code": 0,
+            "triangles_tested": 0
+          },
+          "opening_shape_registered_at_event": false,
+          "opening_shape_unlink_visit": 23,
+          "parent_carrier_and_descriptor_return_visit": 25,
+          "previous_y": 127.4,
+          "proposed_point": [
+            165,
+            120.65,
+            1215.72021
+          ],
+          "stock_after": 1
+        }
+      ],
+      "key": 0,
+      "same_pass_area_cases": [
+        {
+          "available_shape_cells_at_child_init": 0,
+          "child_attack_registered_at_init": false,
+          "child_attempt_visit": 35,
+          "child_audio_request": null,
+          "child_bound_shape": false,
+          "next_visit": {
+            "child_attack_count": 0,
+            "child_bind_retry": false,
+            "child_phase": 3,
+            "child_radius": null,
+            "free_shape_cells": 1,
+            "parent_shape_returned": true,
+            "visit": 36
+          },
+          "parent_shape_registered_after_child_init": true,
+          "stock_after": 1
+        },
+        {
+          "available_shape_cells_at_child_init": 1,
+          "child_attack_registered_at_init": false,
+          "child_attempt_visit": 35,
+          "child_audio_request": 12,
+          "child_bound_shape": true,
+          "next_visit": {
+            "child_attack_count": 1,
+            "child_bind_retry": false,
+            "child_phase": 1,
+            "child_radius": 34.1,
+            "free_shape_cells": 1,
+            "parent_shape_returned": true,
+            "visit": 36
+          },
+          "parent_shape_registered_after_child_init": true,
+          "stock_after": 1
+        }
+      ]
+    },
+    {
+      "borg": "gg4e08:000a",
+      "impact_cases": [
+        {
+          "case": "empty-grid",
+          "child_published": false,
+          "child_requested": false,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": 64,
+          "independent_segment_probe": {
+            "grid_code": 0,
+            "triangles_tested": 0
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": null,
+          "parent_carrier_and_descriptor_return_visit": null,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "floor",
+          "child_published": true,
+          "child_requested": true,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            25.0,
+            1651.78943
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": null,
+          "independent_segment_probe": {
+            "grid_code": 1,
+            "triangles_tested": 1
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": 36,
+          "parent_carrier_and_descriptor_return_visit": 37,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "offset-floor",
+          "child_published": false,
+          "child_requested": false,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": 64,
+          "independent_segment_probe": {
+            "grid_code": 0,
+            "triangles_tested": 1
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": null,
+          "parent_carrier_and_descriptor_return_visit": null,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "floor-child-pool-empty",
+          "child_published": false,
+          "child_requested": true,
+          "clock_at_event": 565,
+          "committed_point": [
+            165,
+            25.0,
+            1651.78943
+          ],
+          "event_visit": 35,
+          "flight_continued_through_visit": null,
+          "independent_segment_probe": {
+            "grid_code": 1,
+            "triangles_tested": 1
+          },
+          "opening_shape_registered_at_event": true,
+          "opening_shape_unlink_visit": 36,
+          "parent_carrier_and_descriptor_return_visit": 37,
+          "previous_y": 26.59997,
+          "proposed_point": [
+            165,
+            16.24997,
+            1684.49255
+          ],
+          "stock_after": 1
+        },
+        {
+          "case": "bounds-exit",
+          "child_published": false,
+          "child_requested": false,
+          "clock_at_event": 577,
+          "committed_point": [
+            165,
+            127.4,
+            1176.26709
+          ],
+          "event_visit": 23,
+          "flight_continued_through_visit": null,
+          "independent_segment_probe": {
+            "grid_code": 0,
+            "triangles_tested": 0
+          },
+          "opening_shape_registered_at_event": false,
+          "opening_shape_unlink_visit": 23,
+          "parent_carrier_and_descriptor_return_visit": 25,
+          "previous_y": 127.4,
+          "proposed_point": [
+            165,
+            120.65,
+            1215.72021
+          ],
+          "stock_after": 1
+        }
+      ],
+      "key": 3,
+      "same_pass_area_cases": [
+        {
+          "available_shape_cells_at_child_init": 0,
+          "child_attack_registered_at_init": false,
+          "child_attempt_visit": 35,
+          "child_audio_request": null,
+          "child_bound_shape": false,
+          "next_visit": {
+            "child_attack_count": 0,
+            "child_bind_retry": false,
+            "child_phase": 3,
+            "child_radius": null,
+            "free_shape_cells": 1,
+            "parent_shape_returned": true,
+            "visit": 36
+          },
+          "parent_shape_registered_after_child_init": true,
+          "stock_after": 1
+        },
+        {
+          "available_shape_cells_at_child_init": 1,
+          "child_attack_registered_at_init": false,
+          "child_attempt_visit": 35,
+          "child_audio_request": 12,
+          "child_bound_shape": true,
+          "next_visit": {
+            "child_attack_count": 1,
+            "child_bind_retry": false,
+            "child_phase": 1,
+            "child_radius": 34.1,
+            "free_shape_cells": 1,
+            "parent_shape_returned": true,
+            "visit": 36
+          },
+          "parent_shape_registered_after_child_init": true,
+          "stock_after": 1
+        }
+      ]
+    }
+  ],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "source_pilots": [
+    {
+      "borg": "gg4e08:0000",
+      "group": 1,
+      "key": 0,
+      "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "release_site": "80071678"
+    },
+    {
+      "borg": "gg4e08:000a",
+      "group": 1,
+      "key": 3,
+      "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "release_site": "800716C0"
+    }
+  ],
+  "terrain": {
+    "bounds_control_max_z": 400,
+    "bounds_margin": 750,
+    "cell_size": 500,
+    "offset_control_dx": 2500,
+    "plane_y": 25,
+    "triangle_vertices": [
+      [
+        -500,
+        25,
+        -500
+      ],
+      [
+        -500,
+        25,
+        6000
+      ],
+      [
+        3000,
+        25,
+        -500
+      ]
+    ]
+  }
+}
