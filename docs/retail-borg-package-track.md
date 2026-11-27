@@ -1971,6 +1971,14 @@ carrier's inline matrix pointer in the shape. Both stopped at
 insertion, current muzzle pose, release frame from B, refill visit,
 contact, or Battle Test admission follows from the result.
 
+The later [attack-transaction fixture](retail-code-atlas.md#paid-release-and-pair-allocation)
+joins the VM-produced cue to the paid rifle handler and executes the
+actual allocator with declared pool records. It independently verifies
+the empty-carrier and empty-descriptor refusals without a refund, and
+observes the original carrier list insertion on success. It stops at
+the next world query and does not replace this older bind witness or
+establish a scheduled carrier visit.
+
 Exclusive private receipt: `build/borg-ordered-audit/retail-0600-rifle-consumer-v3.json`,
 SHA-256 `87c3182900e0bda387ac335f0e86abdc1de42878e3f4be97b6e9aa0c271a8f33`.
 One process, soft/hard 1 GiB address-space cap, 58 s outer timeout;

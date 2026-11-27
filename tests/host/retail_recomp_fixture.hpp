@@ -129,5 +129,11 @@ public:
         if(!mark.reached)fail("fixture did not reach the requested call");
         return mark.reached;
     }
+    void run_observed(CPUState& cpu,std::vector<u8>& ram,u32 entry,CallObservation& observation)const{
+        Boundary mark{{},&observation};
+        cpu.host_call=cut;cpu.external_user_data=&mark;
+        dispatch(cpu,ram,entry,true);
+        cpu.host_call=nullptr;cpu.external_user_data=nullptr;
+    }
 };
 }

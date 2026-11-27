@@ -1,0 +1,136 @@
+{
+  "kind": "gf-retail-attack-transactions",
+  "machine_red": {
+    "allocator_site": "800C3C10",
+    "cases": [
+      {
+        "allocation_attempts": 1,
+        "carrier": {
+          "bucket": 9,
+          "class": 3,
+          "key": 21,
+          "physical_tag": 16,
+          "type": 2
+        },
+        "case": "paid-and-published",
+        "cue": true,
+        "free_carrier_cell": true,
+        "free_descriptor_cell": true,
+        "initial_stock": 2,
+        "published": true,
+        "refill_clock_after_attempt": 0,
+        "stock_after_attempt": 1
+      },
+      {
+        "allocation_attempts": 1,
+        "case": "carrier-pool-empty",
+        "cue": true,
+        "free_carrier_cell": false,
+        "free_descriptor_cell": true,
+        "initial_stock": 1,
+        "published": false,
+        "refill_clock_after_attempt": 300,
+        "refill_control": {
+          "inhibited_visit_keeps_clock": 300,
+          "restored_count": 5,
+          "unit_step_visits": 300
+        },
+        "stock_after_attempt": 0
+      },
+      {
+        "allocation_attempts": 1,
+        "case": "descriptor-pool-empty",
+        "cue": true,
+        "free_carrier_cell": true,
+        "free_descriptor_cell": false,
+        "initial_stock": 1,
+        "published": false,
+        "refill_clock_after_attempt": 300,
+        "refill_control": {
+          "inhibited_visit_keeps_clock": 300,
+          "restored_count": 5,
+          "unit_step_visits": 300
+        },
+        "stock_after_attempt": 0
+      },
+      {
+        "allocation_attempts": 0,
+        "case": "stock-empty",
+        "cue": true,
+        "free_carrier_cell": true,
+        "free_descriptor_cell": true,
+        "initial_stock": 0,
+        "published": false,
+        "refill_clock_after_attempt": 0,
+        "stock_after_attempt": 0
+      },
+      {
+        "allocation_attempts": 0,
+        "case": "cue-absent",
+        "cue": false,
+        "free_carrier_cell": true,
+        "free_descriptor_cell": true,
+        "initial_stock": 2,
+        "published": false,
+        "refill_clock_after_attempt": 0,
+        "stock_after_attempt": 2
+      }
+    ],
+    "cue": "8030906A",
+    "debit_site": "800C9F78",
+    "id": "gg4e08:0600",
+    "normal_channel_0": {
+      "initial": 5,
+      "limit": 5,
+      "mode": 0,
+      "preset": 300
+    },
+    "program": "8030903E",
+    "release": "800C96C0",
+    "world_query_cut": "8003E0A8"
+  },
+  "notes": [
+    "Fighter and scene inlets are synthetic; pulse, debit, original allocator writes and constructor execute.",
+    "No allocation result, physical tag, active list entry or pair record is supplied by the harness.",
+    "The fixture does not resume the stopped world query, visit the objects, or establish contact, damage or lifetime.",
+    "Rifle stock starts at a declared count and uses a supplied unit refill step. The 300 visits are not live frames.",
+    "The Sasuke hit block is checked against the matching archive, passed via stdin and never exported."
+  ],
+  "revision": 1,
+  "sasuke": {
+    "cases": [
+      {
+        "free_shape_cell": true,
+        "pair": {
+          "attack_table_index": 2,
+          "bucket": 49,
+          "class": 4,
+          "physical_tag": 26,
+          "step": 2
+        },
+        "published": true,
+        "queue_byte_after_attempt": 2
+      },
+      {
+        "free_shape_cell": false,
+        "published": false,
+        "queue_byte_after_attempt": 2
+      }
+    ],
+    "id": "gg4e08:000a",
+    "op10_allocator_call": "8004C6F0",
+    "pair_allocator_call": "8008ACE8",
+    "pair_callback": "8008A65C",
+    "program": "802BE3B6",
+    "source": {
+      "attack_table_index": 2,
+      "hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+      "matrix_selector": 7,
+      "queue": 2,
+      "shape_kind": 0,
+      "step": 2
+    }
+  },
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

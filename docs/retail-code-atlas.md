@@ -234,13 +234,57 @@ The CPU fixture now follows two observed first requests further:
 Both checks matched across the unmodified O0, O1 and O2 recomp
 modules. The 11 updates are not a native release constant: the
 separate rig-backed fixture took 16 VM visits from a supplied
-request. Neither fixture measures elapsed battle time, executes
-Machine Red's paid release, or resolves a landed Sasuke hit.
+request. Neither cue check measures elapsed battle time. The
+transaction checks below continue into allocation, not contact.
 
 ```sh
 python3 -m tools.analyze.retail_program_cues \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_CATALOG" "$GF_SYMBOLS" \
   docs/api-map/gg4e08-standalone-installers.json /tmp/opencode/gf-program-cues.json
+```
+
+### Paid release and pair allocation
+
+The [attack transaction receipts](api-map/gg4e08-attack-transactions.json)
+continue from the installed actor and VM-produced rifle cue. The
+fixture invokes the original release handler with declared stock, a
+null target, and isolated pool lists. It stops at the next world query
+without supplying that query's result.
+
+| Rifle case | Original stock result | Carrier result |
+| --- | --- | --- |
+| Cue, two rounds, both pools available | `2 → 1`, clock `0` | Type 2/key 21 published in bucket 9; its descriptor was popped and linked. |
+| Cue, last round, carrier pool empty | `1 → 0`, clock `300` | Allocation attempted; no carrier or descriptor pop. |
+| Cue, last round, descriptor pool empty | `1 → 0`, clock `300` | Allocation attempted; the offered carrier remains free. |
+| Cue, stock empty | No debit, clock `0` | No allocation attempted. |
+| Cue absent, two rounds | No debit, clock `0` | No allocation attempted. |
+
+Both last-round failures retain the debit. In separate visits to the
+shared refill helper on the same depleted stock state, one inhibited
+visit left the clock alone, then 300 supplied unit steps restored the
+cap of five and set both count mirrors. This is not a live reload time.
+
+With Sasuke's original hit block loaded, the same close-B input leaves
+queue byte `2` in both pool cases. A free class-4 cell is popped and
+published to bucket 49 with physical tag `0x1A`. The record references
+step 2, attack table index 2, and the actor's matrix slot 7; it
+retains the actor/carrier and credit links. An empty pool publishes
+no pair even though the queue byte was written. The fixture does not
+populate that matrix, run the pair callback, or accept a collision.
+
+The allocator's own code writes the headers, tags, and lists; the
+fixture only supplies the free-list capacity. No carrier launch,
+shape activation, collision-registry insertion, contact, or retirement
+is claimed. All seven cases produced identical reports on O0, O1
+and O2. Native behavior is unchanged. To replay, compile
+[`retail_action_input_fixture.cpp`](../tests/host/retail_action_input_fixture.cpp)
+using the [phase fixture](#shared-action-gate) build flags and run:
+
+```sh
+python3 -m tools.analyze.retail_attack_transactions \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-paid-release-fixture "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-attack-transactions.json
 ```
 
 Generate the metadata locally using the qualified AFS as well as the

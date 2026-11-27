@@ -1,6 +1,7 @@
 // Original processed pad packet -> conditioned requests -> action arbiter.
 // The scene, actor flags, and missing services are fixture inlets, not a match.
 #include "retail_recomp_fixture.hpp"
+#include <array>
 #include <cstdint>
 
 namespace {
@@ -9,6 +10,11 @@ constexpr u32 packet=0x803C727C, arbiter=0x800699D8;
 constexpr u32 config=0x81014000, spec=0x81015000, contexts=0x81016000, rows=0x81016100,
               pairs=0x81016200, settings=0x81017000, mode_state=0x81019200, peer=0x8101A000;
 constexpr u32 b=0x200, x=0x400, y=0x800;
+constexpr u32 descriptor_row=0x81030000, descriptor_cell=0x81030100,
+              object_cell=0x81032000, hit_block=0x81036000;
+constexpr u32 free_head=0x803C716C, free_tail=0x803C718C, free_count=0x803C71AC,
+              group_head=0x803C6F6C, group_tail=0x803C706C;
+using HitBlock=std::array<u8,7840>;
 struct Profile {u32 cfg,context,selector;};
 constexpr Profile synthetic{config,contexts,pairs};
 constexpr Profile red{0x8030A130,0x8030A380,0x8030A248}; // Machine Red, p076
@@ -25,6 +31,7 @@ class Check {
         if(va<GC_RAM_BASE||va-GC_RAM_BASE>ram.size()-4)fail("fixture address outside RAM");
         return ram.data()+va-GC_RAM_BASE;
     }
+    u16 half(u32 va){const auto* p=at(va);return u16(u16(p[0])<<8|p[1]);}
     u32 call(u32 entry){
         CPUState cpu{};
         cpu.gpr[3]=actor;
@@ -36,6 +43,26 @@ class Check {
         const auto* p=at(root+2*index);
         const auto relative=std::bit_cast<int16_t>(u16(u16(p[0])<<8|p[1]));
         return root+u32(relative);
+    }
+    void pool(u8 kind,bool object,bool descriptor){
+        // Only the free-list inputs are supplied; original pop/clear/tag
+        // and active-list publication must follow in the guest code.
+        put32(at(0x80436380),descriptor_row);
+        put16(at(descriptor_row+18),descriptor?1:0);
+        put32(at(descriptor_row+12),descriptor?descriptor_cell:0);
+        if(object){
+            at(object_cell)[2]=kind;
+            put32(at(free_head+4*kind),object_cell);
+            put32(at(free_tail+4*kind),object_cell);
+            put16(at(free_count+2*kind),1);
+        }
+    }
+    bool first_bucket_cell(u8 kind,unsigned bucket,u8 tag){
+        const auto* cell=at(object_cell);
+        return be32(at(group_head+4*bucket))==object_cell&&be32(at(group_tail+4*bucket))==object_cell&&
+            !be32(at(free_head+4*kind))&&!be32(at(free_tail+4*kind))&&!half(free_count+2*kind)&&
+            cell[1]==bucket&&cell[2]==kind&&cell[3]==kind&&cell[0x83]==tag&&
+            !be32(cell+4)&&!be32(cell+8);
     }
 public:
     u8* const a;
@@ -117,6 +144,38 @@ public:
         if(be32(at(cursor))!=0x802BE3BA||a[0x744]!=9)
             fail("Sasuke opcode-10 without lane zero did not just advance the cursor");
     }
+    void sasuke_pair(const HitBlock& block,bool free_cell){
+        if(a[0x5DA]!=61||a[0x579]!=3)fail("wrong installed Sasuke pair state");
+        std::memcpy(at(hit_block),block.data(),block.size());
+        put32(a+0x3FC,hit_block);put32(a+0x90,actor);
+        pool(4,free_cell,false);
+        pre_callback();
+        CallObservation observation{0x8008AC80};
+        CPUState cpu{};cpu.gpr[3]=actor;
+        mod.run_observed(cpu,ram,0x80065DFC,observation);
+        if(observation.count!=1||observation.caller!=0x8004C6F0||
+           observation.arguments[0]!=actor||observation.arguments[1]!=2||a[0x744]!=2)
+            fail("Sasuke queue request or post-attempt write mismatch");
+        if(!free_cell){
+            if(be32(at(group_head+49*4))||a[0x86])fail("empty pair pool produced a shape");
+            std::printf("sasuke: %u %u 0 0 0 0 0\n",unsigned(free_cell),a[0x744]);
+            return;
+        }
+        const auto* cell=at(object_cell);
+        if(!first_bucket_cell(4,49,0x1A)||cell[0]!=1||be32(cell+0xC)!=0x8008A65C||
+           be32(cell+0x20)!=actor||be32(cell+0x24)!=actor||
+           be32(cell+0x28)!=hit_block+0xAA0+2*80||be32(cell+0x2C)!=0x802D4160||
+           be32(cell+0x60)!=actor+0x8D4+7*0x30||cell[0x11]!=2||cell[0x12]!=2||cell[0x14]!=2||a[0x86]!=1){
+            std::fprintf(stderr,"pair: head=%08X form=%u bucket=%u class=%u tag=%02X callback=%08X "
+                         "carrier=%08X owner=%08X step=%08X tuning=%08X matrix=%08X indexes=%u/%u/%u active=%u\n",
+                         be32(at(group_head+4*49)),cell[0],cell[1],cell[2],cell[0x83],be32(cell+0xC),
+                         be32(cell+0x20),be32(cell+0x24),be32(cell+0x28),be32(cell+0x2C),be32(cell+0x60),
+                         cell[0x11],cell[0x12],cell[0x14],a[0x86]);
+            fail("original Sasuke class-4 pair publication mismatch");
+        }
+        std::printf("sasuke: %u %u 1 %u %u %u %u\n",unsigned(free_cell),a[0x744],
+                    cell[1],cell[0x83],cell[0x12],cell[0x11]);
+    }
     void machine_red_cue(bool visit_upper){
         if(a[0x5DA]!=61||a[0x5DB]!=0||a[0x579]!=7)fail("wrong Machine Red opening slots");
         pre_callback();
@@ -143,6 +202,67 @@ public:
                 fail("rifle cue or cursor mismatched in the VM-only fixture");
         }else if(visits!=16||a[0x1CEF]||be32(a+0x1CD4)!=0x80309056||be32(a+0x1CF4)==0x80309056)
             fail("advancing only the other lanes must not set the rifle cue");
+    }
+    void machine_red_release(u16 initial,bool has_cue,bool free_cell,bool free_descriptor){
+        if(a[0x540]!=1||a[0x1CEF]!=unsigned(has_cue))fail("rifle consumer has no matching VM inlet");
+        put32(a+0x90,actor);
+        put16(a+0x774,initial);put16(a+0x776,initial);
+        put16(a+0x78E,5);put16(a+0x790,0);put16(a+0x792,300);
+        pool(3,free_cell,free_descriptor);
+        CallObservation allocation{0x80088AA0};
+        CPUState cpu{};cpu.gpr[3]=actor;
+        mod.run_to(cpu,ram,0x80065DFC,{0x8003E0A8},&allocation);
+        const bool paid=has_cue&&initial;
+        const auto after=u16(initial-paid);
+        const auto observed_count=half(actor+0x774);
+        const auto observed_clock=std::bit_cast<float>(be32(a+0x778));
+        if(half(actor+0x774)!=after||half(actor+0x776)!=initial||
+           be32(a+0x778)!=std::bit_cast<u32>(paid&&!after?300.f:0.f)||
+           allocation.count!=unsigned(paid)||a[0x540]!=(has_cue?2:1))
+            fail("rifle debit, phase, or refill clock mismatch");
+        if(paid&&(allocation.caller!=0x800C3C10||allocation.arguments[0]!=actor||
+           allocation.arguments[1]!=3||allocation.arguments[2]!=8||
+           allocation.arguments[3]!=0||allocation.arguments[4]!=1))
+            fail("rifle typed allocation inlet mismatch");
+        const bool created=paid&&free_cell&&free_descriptor;
+        if(!created){
+            if(be32(at(group_head+4*9))||be32(at(group_tail+4*9))||
+               half(descriptor_row+18)!=unsigned(free_descriptor)||
+               half(free_count+2*3)!=unsigned(free_cell))
+                fail("refused rifle transaction changed a pool");
+        }else{
+            const auto* cell=at(object_cell);
+            if(!first_bucket_cell(3,9,0x10)||cell[0]!=1||cell[0x10]!=2||cell[0x11]!=21||
+               be32(cell+0xC)!=0x800C3CDC||be32(cell+0x8C)!=actor||be32(cell+0x90)!=actor||
+               cell[0x99]!=1||be32(cell+0xE0)!=descriptor_cell||half(descriptor_row+18)||
+               be32(at(descriptor_row+8))!=descriptor_cell||be32(at(descriptor_row+12)))
+                fail("original rifle carrier or descriptor publication mismatch");
+        }
+        unsigned restored=0;
+        if(paid&&!after){
+            // Observe refill on the depleted channel without resuming the
+            // world query or claiming scheduler cadence.
+            a[0x597]=1;
+            call(0x8006DCC0);
+            if(be32(a+0x778)!=std::bit_cast<u32>(300.f)||half(actor+0x774))
+                fail("inhibited rifle refill consumed the clock");
+            a[0x597]=0;
+            for(unsigned n=1;n<300;++n){
+                call(0x8006DCC0);
+                if(half(actor+0x774)||half(actor+0x776)!=initial||
+                   be32(a+0x778)!=std::bit_cast<u32>(float(300-n)))
+                    fail("rifle refill restored early or advanced at the wrong rate");
+            }
+            call(0x8006DCC0);
+            if(half(actor+0x774)!=5||half(actor+0x776)!=5||be32(a+0x778))
+                fail("rifle refill did not restore both count mirrors");
+            restored=half(actor+0x774);
+        }
+        const auto* cell=at(object_cell);
+        std::printf("rifle: %u %u %u %u %u %.0f %u %u %u %u %u %u %u\n",initial,unsigned(has_cue),
+                    unsigned(free_cell),unsigned(free_descriptor),observed_count,double(observed_clock),
+                    allocation.count,unsigned(created),created?cell[1]:0,created?cell[0x83]:0,
+                    created?cell[0x10]:0,created?cell[0x11]:0,restored);
     }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
@@ -177,7 +297,8 @@ public:
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: action-input-fixture qualified.dol unmodified-recomp.so");
+    if(argc!=3&&!(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--sasuke-hit-block < block]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     {
@@ -296,6 +417,32 @@ int main(int argc,char** argv){
         c.expect(0,0,"Machine Red opening row");
         c.machine_red_cue(visit_upper);
     }
+    struct RifleCase {u16 initial;bool cue,cell,descriptor;};
+    for(const auto test:{RifleCase{2,true,true,true},RifleCase{1,true,false,true},
+                        RifleCase{1,true,true,false},RifleCase{0,true,true,true},RifleCase{2,false,true,true}}){
+        Check c(mod,original);
+        c.install(0x800C91BC,0x0600,red,0x800C94D4);
+        c.pre_callback();
+        c.input(b,b,b,0,0x60,"Machine Red bounded release");
+        c.expect(0,0,"Machine Red release row");
+        c.machine_red_cue(test.cue);
+        c.machine_red_release(test.initial,test.cue,test.cell,test.descriptor);
+    }
+    if(argc==4){
+        HitBlock block{};
+        if(std::fread(block.data(),1,block.size(),stdin)!=block.size()||std::fgetc(stdin)!=EOF)
+            fail("Sasuke hit-block inlet extent");
+        for(const bool free_cell:{true,false}){
+            constexpr Profile installed_sasuke{0x802D3EE0,0x802D4148,0x802D3FF8};
+            Check c(mod,original);
+            c.install(0x8006F4F8,0x000A,installed_sasuke,0x8006FACC);
+            c.a[0x7D2]=8;
+            c.input(b,b,b,0,0x60,"Sasuke bounded shape allocation");
+            c.expect(1,1,"Sasuke pair row");
+            c.sasuke_pair(block,free_cell);
+        }
+        std::puts("Sasuke: exact queue-2 pair and empty pool passed");
+    }
     for(const bool use_x:{false,true}){
         Check c(mod,original);
         // The real model-gated installer selects p089 for model 062A.
@@ -314,5 +461,5 @@ int main(int argc,char** argv){
                   (reached!=0x80088AA0||cpu.lr!=0x8016CC54||cpu.gpr[4]!=3||cpu.gpr[5]!=8||
                    cpu.gpr[6]!=0||cpu.gpr[7]!=1)))fail("G-Black did not reach its expected pre-request service");
     }
-    std::puts("action input: lookup, request and pre-request boundaries, Sasuke queue 2 and Machine Red cue passed");
+    std::puts("action input: lookup, request, Sasuke queue 2 and Machine Red cue, paid release and refill passed");
 }
