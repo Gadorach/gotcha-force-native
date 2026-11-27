@@ -1,12 +1,14 @@
 // Original direction-row parents: terrain area before periodic type-11 segment.
-#include "retail_recomp_fixture.hpp"
+#include "retail_stationary_contact.hpp"
 #include <array>
 #include <cmath>
 
 namespace {
 using namespace retail_fixture;
+namespace contact=retail_stationary_contact;
 constexpr u32 carrier=0x81030000,first_child=0x81030800,second_child=0x81031000;
 constexpr u32 shape=0x81032000,descriptors=0x81033000,descriptor_row=0x81033800,hit_block=0x81034000;
+constexpr u32 second_shape=shape+0x200,common=0x81048000,attack_count=0x8043B5A0-21328,attack_registry=0x803C477C;
 constexpr u32 stage=0x81050000;
 constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC,active_head=0x803C706C;
 constexpr u32 make_area=0x80085E00,make_segment=0x80139A6C,segment_update=0x80139B80,bind=0x8008AC80;
@@ -21,6 +23,14 @@ constexpr Pilot pilots[]={
 };
 struct Case {bool floor;unsigned objects,extra_descriptors;};
 constexpr Case cases[]={{false,2,2},{true,2,2},{true,1,2},{true,2,0}};
+using CommonBank=std::array<u8,21504>;
+struct Followup {
+    unsigned scenario;
+    const HitBlock& body;
+    const contact::ActorSpec& attacker;
+    const contact::ActorSpec& defender;
+    const CommonBank& bank;
+};
 
 class Check {
     const Module& mod;
@@ -65,7 +75,17 @@ class Check {
         put32(at(free_head+12),carrier);put32(at(free_tail+12),carrier);put16(at(free_count+6),1);
         at(carrier)[2]=3;
     }
-    void offer_children(Case rule){
+    void offer_shapes(unsigned slots){
+        if(slots>2||half(free_count+8)||word(free_head+16))fail("sweep route shape inlet extent");
+        put32(at(free_head+16),slots?shape:0);
+        put32(at(free_tail+16),slots==2?second_shape:slots?shape:0);
+        put16(at(free_count+8),u16(slots));
+        if(slots){
+            at(shape)[2]=4;put32(at(shape+4),slots==2?second_shape:0);
+        }
+        if(slots==2)at(second_shape)[2]=4;
+    }
+    void offer_children(Case rule,unsigned slots){
         if(half(free_count+6)||half(descriptor_row+18)||word(free_head+12))fail("sweep route inlet was not empty");
         put32(at(free_head+12),first_child);
         put32(at(free_tail+12),rule.objects==2?second_child:first_child);
@@ -77,16 +97,109 @@ class Check {
             put32(at(descriptors+0x100),descriptors+0x180);
             put16(at(descriptor_row+18),u16(rule.extra_descriptors));
         }
-        put32(at(free_head+16),shape);put32(at(free_tail+16),shape);put16(at(free_count+8),1);
-        at(shape)[2]=4;
+        offer_shapes(slots);
     }
     void pose(){
         CPUState late{};late.gpr[3]=carrier;
         mod.run(late,ram,0x80047AA4);
     }
+    void publication(){
+        for(u32 entry:{0x80089554u,0x8008A28Cu,0x80089AECu}){
+            CPUState pass{};
+            mod.run(pass,ram,entry,1024);
+        }
+    }
+    void followup(Pilot p,const Followup& inlet,const Point& impact){
+        const bool has_segment=inlet.scenario!=3;
+        const unsigned slots=inlet.scenario==3?1:inlet.scenario;
+        const bool segment_bound=has_segment&&slots;
+        const bool area_bound=slots>unsigned(segment_bound);
+        const auto area_shape=segment_bound?second_shape:shape;
+        const auto area=first_child,segment=second_child;
+        const Point body_center{impact[0],impact[1]+22.f,impact[2]};
+        put32(at(0x803C4E84),actor);
+        for(unsigned i=1;i<6;++i)put32(at(0x803C4E84+4*i),0x8101A000);
+        contact::bind_sasuke(mod,ram,body_center,inlet.body,inlet.attacker,inlet.defender,2000);
+        std::memcpy(at(common),inlet.bank.data(),inlet.bank.size());
+        put32(at(contact::scene+152),common);
+        offer_shapes(slots);
+
+        const auto advance=[&]{
+            CPUState tick{};tick.gpr[3]=8;
+            CallObservation request{make_segment};
+            mod.run_observed(tick,ram,0x80089A94,request,4096);
+            if(request.count!=1||request.caller!=p.segment_site||request.arguments[0]!=carrier||
+               request.arguments[3]!=p.group||half(actor+0x774)!=5)
+                fail("sweep follow-up lost the original bucket's segment request");
+        };
+        advance();
+        if(at(area)[0x10]!=5||at(area)[0x11]!=26||at(area)[0x18]!=(area_bound?1:2)||
+           word(area+0x8C)!=carrier||word(area+0x90)!=actor||point(area+0x20)!=impact||
+           (has_segment?(at(segment)[0x10]!=11||at(segment)[0x11]!=p.group||
+                         at(segment)[0x18]!=(segment_bound?1:2)||word(segment+0x8C)!=carrier||
+                         word(segment+0x90)!=actor||word(carrier+8)!=segment||word(segment+8)!=area)
+                       :(at(segment)[0]||word(carrier+8)!=area))||half(free_count+6)||half(descriptor_row+18)||
+           half(free_count+8)||word(active_head+49*4)!=(area_bound?area_shape:segment_bound?shape:0))
+            fail("sweep follow-up same-pass bind order, resources or credit changed");
+        if(segment_bound&&(word(shape+0x20)!=segment||word(shape+0x24)!=actor||
+                           word(shape+0x2C)!=p.table||word(shape+0x28)!=hit_block+0xAA0+p.descriptor*80))
+            fail("sweep follow-up segment did not bind the first shape and exact owner queue");
+        if(area_bound&&(word(area_shape+0x20)!=area||word(area_shape+0x24)!=actor||
+                        word(area_shape+0x28)!=common+0x400+4*80||word(area_shape+0x2C)!=0x802C4760))
+            fail("sweep follow-up area did not bind the separate common queue");
+
+        const auto near=point(carrier+0x150);
+        publication();
+        const auto opening_count=half(attack_count);
+        const unsigned area_token=area_bound?half(area+0x26C):0,segment_token=segment_bound?half(segment+0x26C):0;
+        const auto initial_radius=area_bound?scalar(area_shape+0x7C):0.f;
+        if(opening_count!=unsigned(segment_bound)||(segment_bound&&(word(attack_registry)!=shape||point(shape+0x64)!=near))||
+           (area_bound&&(initial_radius<3.f||initial_radius>5.f||point(area_shape+0x64)!=impact))||
+           half(contact::receiver_count)!=1||word(contact::receiver_registry)!=contact::body||
+           point(contact::body+0x64)!=body_center||half(contact::receiver+0x20C))
+            fail("sweep follow-up opening attack radius, position or registry mismatch");
+        contact::pair_hp(mod,ram,0,0,false);
+        advance();
+        publication();
+        const auto count=half(attack_count);
+        const auto grown_radius=area_bound?scalar(area_shape+0x7C):0.f;
+        if(count!=unsigned(segment_bound)+unsigned(area_bound)||
+           (area_bound&&(word(attack_registry)!=area_shape||half(area+0x26C)!=area_token||
+                         point(area_shape+0x64)!=impact||grown_radius<=initial_radius))||
+           (segment_bound&&(word(attack_registry+4*unsigned(area_bound))!=shape||half(segment+0x26C)!=segment_token||
+                            point(shape+0x3C)!=near||point(shape+0x30)!=point(carrier+0x15C)))||
+           (segment_bound&&area_bound&&segment_token==area_token))
+            fail("sweep follow-up sibling register order, endpoint or token changed");
+        unsigned area_loss=0,segment_loss=0;
+        if(area_bound){
+            area_loss=contact::pair_hp(mod,ram,area,0x802C4778,true);
+            if(half(contact::receiver+0x1C6)!=180-area_loss||half(contact::receiver+0x1C8)!=180||
+               word(contact::receiver+0x290)!=area||word(area+0x290)!=contact::receiver||
+               word(actor+0x418)!=area_loss||half(contact::receiver+0x20C)!=area_token||
+               (segment_bound&&at(segment)[0x1D9]))
+                fail("sweep follow-up area write reached the wrong HP or token");
+        }
+        if(segment_bound){
+            segment_loss=contact::pair_hp(mod,ram,segment,p.table+p.index*24,true);
+            if(half(contact::receiver+0x1C8)!=180-area_loss||word(contact::receiver+0x290)!=segment||
+               word(segment+0x290)!=contact::receiver||at(segment)[0x1D9]!=16)
+                fail("sweep follow-up segment write did not follow the separate area transaction");
+        }
+        contact::pair_hp(mod,ram,0,0,false);
+        const unsigned hp=half(contact::receiver+0x1C6),total=area_loss+segment_loss;
+        if(hp!=180-total||word(actor+0x418)!=total||word(contact::receiver+0x41C)!=total||
+           at(contact::receiver)[0x26E]!=count||
+           half(contact::receiver+0x20C)!=(area_bound?area_token:segment_token)||
+           half(contact::receiver+0x20E)!=(area_bound?segment_token:0)||
+           word(carrier+0x290)||at(carrier)[0x1D9])
+            fail("sweep follow-up confused sibling damage, ownership or per-token history");
+        std::printf("sweep-followup: %u %u %u %u %u %u %u %u %u %u %u %.5f %.5f\n",p.model,inlet.scenario,
+                    unsigned(segment_bound),unsigned(area_bound),opening_count,count,segment_token,area_token,
+                    segment_loss,area_loss,hp,double(initial_radius),double(grown_radius));
+    }
 public:
     Check(const Module& m,const std::vector<u8>& input):mod(m),ram(input){}
-    void observe(Pilot p,const HitBlock& block,unsigned scenario){
+    void observe(Pilot p,const HitBlock& block,unsigned scenario,const Followup* sibling=nullptr){
         const auto rule=cases[scenario];
         terrain(rule.floor);
         initial_pools();
@@ -109,7 +222,8 @@ public:
         // Empty visual records for parent row zero, and no sound playback.
         constexpr u32 visual=0x8103F000,link=visual+0x40,table=visual+0x80,empty=visual+0x400,audio=0x8103E000;
         put32(at(0x803BB4C0+0x600),visual);put32(at(visual+16),link);put32(at(link),table);
-        for(unsigned id:{1u,2u,3u,4u})put32(at(table+4*id),empty);
+        for(unsigned id:{1u,2u,3u,4u,18u,22u})put32(at(table+4*id),empty);
+        put32(at(0x803BB374),visual);
         put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;at(0x803D0000+15080+852)[0]=1;
         CPUState ctor{};ctor.gpr[3]=actor;
         if(p.ctor==0x801F2BF8)ctor.gpr[5]=p.row;else ctor.gpr[4]=p.row;
@@ -130,7 +244,7 @@ public:
         }while(at(carrier)[0x19]!=2||scalar(carrier+0xD4)>(p.model==0x0E03?1.f:0.f));
         if(at(carrier)[0x89]!=p.socket||!at(carrier)[0x168]||half(descriptor_row+18)||word(active_head+49*4))
             fail("sweep route crossing did not start from original phase and socket");
-        offer_children(rule);
+        offer_children(rule,sibling?0:1);
         const auto before=ram;
         CPUState terrain_call{};terrain_call.gpr[3]=carrier;
         mod.run_to(terrain_call,ram,p.update,{terrain_query});
@@ -151,6 +265,10 @@ public:
         if(rule.floor&&std::abs(impact[1])>0.001f)
             fail("sweep route terrain point was not on the declared triangle");
         std::memcpy(ram.data(),before.data(),ram.size());
+        if(sibling){
+            followup(p,*sibling,impact);
+            return;
+        }
 
         CPUState live{};live.gpr[3]=carrier;
         CallObservation segment_request{make_segment};
@@ -203,12 +321,32 @@ public:
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: sweep-area-routes-fixture qualified.dol unmodified-recomp.so");
+    const bool follow=argc==4&&!std::strcmp(argv[3],"--followup");
+    if(argc!=3&&!follow)fail("usage: sweep-area-routes-fixture qualified.dol unmodified-recomp.so [--followup]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     std::array<HitBlock,std::size(pilots)> hit{};
     for(auto& block:hit)
         if(std::fread(block.data(),1,block.size(),stdin)!=block.size())fail("sweep route hit block extent");
+    if(follow){
+        HitBlock body{};
+        std::array<contact::ActorSpec,std::size(pilots)> attacker{};
+        contact::ActorSpec defender{};
+        CommonBank bank{};
+        if(std::fread(body.data(),1,body.size(),stdin)!=body.size())fail("sweep follow-up body block extent");
+        for(auto& spec:attacker)
+            if(std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())fail("sweep follow-up attacker spec extent");
+        if(std::fread(defender.data(),1,defender.size(),stdin)!=defender.size()||
+           std::fread(bank.data(),1,bank.size(),stdin)!=bank.size()||std::getc(stdin)!=EOF)
+            fail("sweep follow-up common bank or defender extent");
+        for(unsigned p=0;p<hit.size();++p)
+            for(unsigned i=0;i<4;++i){
+                Check test(mod,original);
+                const Followup inlet{i,body,attacker[p],defender,bank};
+                test.observe(pilots[p],hit[p],i==3?2:1,&inlet);
+            }
+        return 0;
+    }
     if(std::getc(stdin)!=EOF)fail("unexpected sweep route payload");
     for(unsigned p=0;p<hit.size();++p)
         for(unsigned i=0;i<std::size(cases);++i){

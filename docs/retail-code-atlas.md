@@ -1299,6 +1299,45 @@ python3 -m tools.analyze.retail_sweep_area_routes \
   /tmp/opencode/gf-sweep-area-routes.json
 ```
 
+### Floor-sweep siblings: shape priority and separate HP
+
+The [follow-up replay](api-map/gg4e08-sweep-area-followup.json)
+continues the saved floor crossing through the original bucket
+visitor. The floor area allocates its carrier first, but the
+segment is inserted before it in the update list. The segment
+therefore attempts its shape first.
+
+| Spare carrier cells | Attacker shape cells | Shapes bound | HP removed on next visit |
+| ---: | ---: | --- | ---: |
+| 2 | 0 | None | 0 |
+| 2 | 1 | Segment only | 26 |
+| 2 | 2 | Segment, then area | 43 |
+| 1 | 1 | Area only | 17 |
+
+The stationary receiver's center is 22 units above the saved
+floor point. The area binds there at radius **3.1**, but does not
+enter the attack registry until it grows to **34.1** on the next
+visit. With both shapes, that registry lists the area first.
+Successive resolutions against it write **17 HP** for the area
+using token 1 and **26 HP** for the segment using token 2.
+Resolving again writes nothing. The area uses common record
+`802C4778`; the segment uses its own credited actor record.
+
+All 12 cases matched across O0, O1, and O2. Each accepted hit
+finishes the original HP writer, then the resolver is entered
+again on the retained registry. This is not a continuous
+pair-pass tail, live hit-reaction schedule, or whole-move
+damage measurement. Native gameplay is unchanged.
+
+Use the same fixture executable as above:
+
+```sh
+python3 -m tools.analyze.retail_sweep_area_followup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/sweep-area "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-sweep-area-followup.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
