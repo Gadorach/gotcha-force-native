@@ -890,8 +890,8 @@ the same token apply damage or request another effect.
 
 All 20 cases matched across O0, O1, and O2. The type-9 source was
 constructed directly, not emitted by a live floor hit. This
-does not qualify gate countdown, effect initialization, live
-reaction timing, drawing, or native gameplay.
+replay does not tick the gate or initialize the new effect. The
+separate clock replay below checks the countdown.
 
 Use the same type-76, type-32, and type-9 fixture executables
 as their earlier replays:
@@ -901,6 +901,43 @@ python3 -m tools.analyze.retail_contact_effect_tail \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type76-paid /tmp/opencode/type32-bind /tmp/opencode/type9-bind \
   "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-tail.json
+```
+
+### Contact-effect countdown: four collision-reset visits
+
+The [clock replay](api-map/gg4e08-contact-gate-clock.json) places
+the reducer at `8002CDA4`, before pair resolution in `8002BB14`.
+An idle collision walk decrements the gate for active actors,
+eligible bucket objects, and the 12 view records. The tested
+unregistered child, child of an inactive seat, and inactive actor
+retain their values. Starting at 4 gives **3 → 2 → 1 → 0**, then
+stays at zero on the fifth visit. The idle test has no published
+pairs and stops at the later `8005A580` call.
+
+A separate paired replay starts with a genuine type-9 hit that
+sets the gate to 4 and removes **17 HP**. It then calls the same
+receiver reset leaf between hits. A second original constructor
+publishes a fresh token after the first shape is unlinked. At
+every delay, the fresh hit removes another **17 HP**; it only
+requests and allocates a visual after **four** reset calls.
+Reopening the gate naturally still does not admit the old token.
+
+The same results held at declared local clock steps 1 and 0.5:
+these count **collision-reset visits**, not elapsed seconds,
+live frames, or hit-stop time. Both sets of ten observations
+matched across O0, O1, and O2. The combined hit fixture does not
+run the entire collision walk with a loaded match or qualify
+effect lifetime, live scheduling, or native gameplay.
+
+Compile [`retail_contact_gate_prelude_fixture.cpp`](../tests/host/retail_contact_gate_prelude_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags and reuse the
+type-9 fixture executable:
+
+```sh
+python3 -m tools.analyze.retail_contact_gate_clock \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json /tmp/opencode/gate-prelude \
+  /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-gate-clock.json
 ```
 
 ### Type-89 exits: cached area key 16

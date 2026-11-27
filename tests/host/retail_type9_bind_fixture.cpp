@@ -15,7 +15,12 @@ constexpr u32 amount_record=amount_table+9*24;
 constexpr u32 bucket_visit=0x80089A94,unbind_shape=0x8008AFF0,actor_bucket=8,carrier_bucket=9;
 constexpr u32 type8_factory=0x800FC208,type8_carrier=declared_parent;
 using CommonBank=std::array<u8,21504>;
-struct ContactInlet {contact::HitBlock hit;contact::ActorSpec owner,defender;int impact_case=-1;};
+struct ContactInlet {
+    contact::HitBlock hit;
+    contact::ActorSpec owner,defender;
+    int impact_case=-1,clock_visits=-1;
+    float clock_step=1.f;
+};
 constexpr contact::Point origin{160,0,400};
 constexpr float offsets[]={0,171,172,173};
 enum class Mode {bind,contact,lifetime};
@@ -54,6 +59,82 @@ void offer_shape(std::vector<u8>& ram){
     put16(contact::at(ram,free_count+8),1);
 }
 
+constexpr u32 gate_reset=0x8002CDA4;
+void impact_clock(const Module& mod,std::vector<u8>& ram,unsigned visits,float step){
+    const auto at=[&](u32 address){return contact::at(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    const auto half=[&](u32 address){return contact::half(ram,address);};
+    constexpr u32 gate=contact::receiver+0x2AF,fx1=0x81062000,fx2=0x81062800;
+    constexpr u32 pending=0x81063000,next=0x81031000;
+    constexpr auto helper=retail_contact_effect_tail::helper;
+    if(visits>4||at(gate)[0]||half(contact::receiver+0x1C6)!=180||half(free_count+4)||
+       half(free_count+6)||half(descriptor_row+18)||word(active_head+31*4)||half(effect+0x26C)!=1)
+        fail("impact countdown needs an unresolved pair and the declared free pools");
+    put_float(at(contact::receiver+0x1DC8),step);
+    put32(at(free_head+8),fx1);put32(at(free_tail+8),fx2);put16(at(free_count+4),2);
+    at(fx1)[2]=2;at(fx2)[2]=2;put32(at(fx1+4),fx2);
+    put32(at(descriptor_row+12),pending);put16(at(descriptor_row+18),3);
+    put32(at(pending),pending+0x80);put32(at(pending+0x80),pending+0x100);
+    CPUState first{};CallObservation first_visual{helper};
+    mod.run_observed(first,ram,contact::pair_pass,first_visual,4096);
+    if(first_visual.count!=1||first_visual.caller!=0x8002F87C||first_visual.arguments[0]!=effect||first_visual.arguments[2]||
+       !at(fx1)[0]||at(gate)[0]!=4||half(contact::receiver+0x1C6)!=163||
+       half(contact::receiver+0x20C)!=1||word(actor+0x418)!=17||word(contact::receiver+0x41C)!=17)
+        fail("impact countdown first hit did not set its original token and gate");
+
+    put_float(at(contact::receiver+0x1DC8),step);
+    for(unsigned i=1;i<=visits;++i){
+        CPUState reset{};reset.gpr[3]=contact::receiver;
+        mod.run(reset,ram,gate_reset);
+        if(at(gate)[0]!=4-i||word(contact::receiver+0x1DC8)!=std::bit_cast<u32>(step)||
+           half(contact::receiver+0x1C6)!=163||half(contact::receiver+0x20C)!=1||
+           at(contact::receiver)[0x26E]!=1)
+            fail("impact countdown changed HP or token history during the original reset");
+    }
+    const unsigned before=at(gate)[0];
+    if(visits==4){
+        CPUState duplicate{};CallObservation old{helper};
+        mod.run_observed(duplicate,ram,contact::pair_pass,old);
+        if(old.count||at(gate)[0]||half(contact::receiver+0x1C6)!=163||half(contact::receiver+0x20C)!=1)
+            fail("impact countdown let the retained pair reuse its token after a natural reopen");
+    }
+    CPUState drop{};drop.gpr[3]=effect;
+    mod.run(drop,ram,unbind_shape);
+    publish(mod,ram);
+    if(half(attack_count)||half(free_count+8)!=1||word(free_head+16)!=shape)
+        fail("impact countdown first shape did not unlink before its replacement");
+
+    put32(at(free_head+12),next);put32(at(free_tail+12),next);put16(at(free_count+6),1);at(next)[2]=3;
+    CPUState create{};create.gpr[3]=actor;create.gpr[4]=point;create.gpr[5]=4;
+    mod.run(create,ram,factory);
+    if(create.gpr[3]!=next||at(next)[0x10]!=9||at(next)[0x11]!=4||word(next+0x90)!=actor)
+        fail("impact countdown did not get a fresh original area source");
+    CPUState init{};init.gpr[3]=next;
+    mod.run(init,ram,update,1024);
+    publish(mod,ram);
+    if(half(attack_count)!=1||word(attack_registry)!=shape||word(shape+0x20)!=next||half(next+0x26C)!=2||
+       at(gate)[0]!=before)
+        fail("impact countdown replacement did not publish an independent fresh token");
+    CPUState second{};CallObservation second_visual{helper};
+    mod.run_observed(second,ram,contact::pair_pass,second_visual,4096);
+    const bool reopened=visits==4;
+    if(second_visual.count!=unsigned(reopened)||(reopened&&(second_visual.caller!=0x8002F87C||
+       second_visual.arguments[0]!=next||second_visual.arguments[2]||word(fx2+0x8C)!=next||
+       word(fx2+0x90)!=actor))||bool(at(fx2)[0])!=reopened||
+       at(gate)[0]!=(reopened?4:before)||half(contact::receiver+0x1C6)!=146||
+       half(contact::receiver+0x20C)!=1||half(contact::receiver+0x20E)!=2||at(contact::receiver)[0x26E]!=2||
+       word(actor+0x418)!=34||word(contact::receiver+0x41C)!=34||
+       half(descriptor_row+18)!=unsigned(!reopened)||half(free_count+4)!=unsigned(!reopened)){
+        std::fprintf(stderr,"impact-clock visits=%u step=%g calls=%u gate=%u hp=%u token=%u/%u ledgers=%u/%u\n",
+                     visits,double(step),second_visual.count,at(gate)[0],half(contact::receiver+0x1C6),
+                     half(contact::receiver+0x20C),half(contact::receiver+0x20E),word(actor+0x418),word(contact::receiver+0x41C));
+        fail("impact countdown fresh hit depended on effect availability or gate state");
+    }
+    std::printf("impact-clock: %u %u %u %u %u %u %u %u\n",visits,step==0.5f?1u:2u,before,
+                at(gate)[0],second_visual.count,half(contact::receiver+0x1C6),half(contact::receiver+0x20C),
+                half(contact::receiver+0x20E));
+}
+
 void pair(const Module& mod,std::vector<u8>& ram,const ContactInlet& inlet,unsigned key,unsigned scenario){
     const auto at=[&](u32 address){return contact::at(ram,address);};
     const auto word=[&](u32 address){return be32(at(address));};
@@ -80,6 +161,10 @@ void pair(const Module& mod,std::vector<u8>& ram,const ContactInlet& inlet,unsig
         fail("type-9 and Sasuke shapes did not publish at the declared test points");
     if(inlet.impact_case>=0){
         retail_contact_effect_tail::observe(mod,ram,9,0x0D03,unsigned(inlet.impact_case),effect,amount_record,0,1,0,17);
+        return;
+    }
+    if(inlet.clock_visits>=0){
+        impact_clock(mod,ram,unsigned(inlet.clock_visits),inlet.clock_step);
         return;
     }
     CPUState writer{};
@@ -329,18 +414,27 @@ int main(int argc,char** argv){
     const bool lifetime_mode=argc==4&&!std::strcmp(argv[3],"--lifetime");
     const bool trail_mode=argc==4&&!std::strcmp(argv[3],"--trail");
     const bool impact_mode=argc==4&&!std::strcmp(argv[3],"--impact");
-    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode)
-        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact]");
+    const bool clock_mode=argc==4&&!std::strcmp(argv[3],"--impact-clock");
+    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode&&!clock_mode)
+        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact|--impact-clock]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     CommonBank bank{};
     if(std::fread(bank.data(),1,bank.size(),stdin)!=bank.size())fail("type-9 common bank payload extent");
-    if(contact_mode||impact_mode){
+    if(contact_mode||impact_mode||clock_mode){
         ContactInlet inlet{};
         if(std::fread(inlet.hit.data(),1,inlet.hit.size(),stdin)!=inlet.hit.size()||
            std::fread(inlet.owner.data(),1,inlet.owner.size(),stdin)!=inlet.owner.size()||
            std::fread(inlet.defender.data(),1,inlet.defender.size(),stdin)!=inlet.defender.size()||std::getc(stdin)!=EOF)
             fail("type-9 contact payload extent");
+        if(clock_mode){
+            for(float step:{1.f,0.5f})
+                for(unsigned n=0;n<=4;++n){
+                    inlet.clock_visits=int(n);inlet.clock_step=step;
+                    observe(mod,original,bank,4,true,Mode::contact,0,&inlet);
+                }
+            return 0;
+        }
         if(impact_mode){
             for(unsigned i=0;i<retail_contact_effect_tail::case_count;++i){
                 inlet.impact_case=int(i);
