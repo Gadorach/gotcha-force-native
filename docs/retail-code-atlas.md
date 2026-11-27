@@ -1120,9 +1120,9 @@ The original resolver reached `802C4838` before the HP writer.
 
 All cases matched across O0, O1, and O2. The contact runs start at
 the effect constructor, not Saucer's terrain callback, and stop
-before the reaction tail. Effect lifetime, live scheduling, and
-native gameplay remain unqualified. The carrier hit and type-5
-contact area still have separate damage paths.
+before the reaction tail. The carrier hit and type-5 contact area
+still have separate damage paths. The lifetime replay below
+checks cleanup without a recipient.
 
 Compile [`retail_type9_bind_fixture.cpp`](../tests/host/retail_type9_bind_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -1133,6 +1133,39 @@ python3 -m tools.analyze.retail_type9_roster \
   docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-type32-roster.json \
   /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type9-roster.json
+```
+
+### Type-9 lifetime: shape returns before the carrier
+
+The [lifetime replay](api-map/gg4e08-type9-lifetime.json)
+advances each of the seven keys in the original actor-relative
+bucket. Visit 1 is the initializer. The late transform and
+registry passes follow each visit.
+
+| Inlet | Published attack visits | Shape returns | Carrier and descriptor return |
+| --- | ---: | ---: | ---: |
+| Owner clock step 1 or 0.5 | 1–30 | 31 | 33 |
+| No spare shape at opening | None | No shape allocated | 3 |
+| Owner set to phase 2 before visit 2 | 1 | 2 | 3 |
+
+In the normal expiry cases, the sphere stayed at radius **150**
+and kept the same token through the last publication. At age 30,
+the active callback requested shape unbind and ended visit 31 in
+phase 2. On visit 32 the effect entered phase 3 while still
+holding the carrier and descriptor. The owner-exit guard uses a
+different unbind site and dispatches phase 2 on the same visit,
+so its first post-exit sample is already phase 3.
+
+All 28 cases (504 bucket visits) matched across O0, O1, and O2.
+These are counts of callback visits at two supplied clock steps,
+not a measurement of match time or pause behavior. No recipient,
+HP, or native gameplay path ran.
+
+```sh
+python3 -m tools.analyze.retail_type9_lifetime \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type9-lifetime.json
 ```
 
 ### Type-32 model-relative segments: copied aim and live gate
