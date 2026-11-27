@@ -45,6 +45,40 @@ other dispatch patterns. The original shares executable code between
 Borgs; referencing a function does not make it exclusive to that Borg or
 establish what action or payload it produces.
 
+## Shared action gate
+
+The [phase-gate map](api-map/gg4e08-action-phase-gate.json) isolates
+`80066838` across **250 direct call sites in 249 functions**. It compares
+horizontal distance against an actor-scaled threshold. The old notes
+reversed its return value: for finite inputs it returns `0` beyond the
+threshold and `1` at or below it. A zero actor counter takes priority and
+returns `-1`; a separate actor flag can force `1`. Callers test four
+different conditions: `> 0` (165), `<= 0` (51), `== 0` (32) and `!= 0` (2).
+These branches cannot all be modeled as one Boolean phase delay.
+
+The original helper passed ten synthetic actor inputs on each of the
+local unmodified O0, O1 and O2 recomp modules, covering equality, scale,
+vertical projection, both early exits, and their precedence. An exploratory live battle run
+loaded the read-only hook but captured no call to this helper, so there
+is no live phase/tick claim. To repeat the bounded helper check:
+
+```sh
+python3 -m tools.analyze.retail_action_phase_gate \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_SYMBOLS" /tmp/opencode/gf-phase-gate.json
+
+c++ -std=c++20 -O2 -Wall -Wextra -Werror \
+  -I "$GF_RECOMP_HEADERS/GXRuntime/include" \
+  -I "$GF_RECOMP_HEADERS/Source/Core/Core/PowerPC/StaticRecomp" \
+  tests/host/retail_action_phase_gate_fixture.cpp -ldl \
+  -o /tmp/opencode/gf-phase-gate-fixture
+/tmp/opencode/gf-phase-gate-fixture "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RECOMP_MODULE"
+```
+
+`GF_RECOMP_HEADERS` points to the local ModernGekko `vendor/dolphin`
+tree; `GF_RECOMP_MODULE` is a trusted local unmodified module. The fixture
+executes one entry with a dispatch limit and rejects external IO, fallback
+and guest exceptions. No retail module is a dependency of the native build.
+
 ## Generate locally
 
 ```sh

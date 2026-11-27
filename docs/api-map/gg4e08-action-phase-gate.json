@@ -1,0 +1,2856 @@
+{
+  "callers": [
+    {
+      "branch": "80070748",
+      "call": "80070740",
+      "fallthrough": "8007074C",
+      "function": "800706E8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80070768",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80070B24",
+      "call": "80070B1C",
+      "fallthrough": "80070B28",
+      "function": "80070AEC",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80070B34",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80070D24",
+      "call": "80070D1C",
+      "fallthrough": "80070D28",
+      "function": "80070CCC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80070D40",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80070F7C",
+      "call": "80070F74",
+      "fallthrough": "80070F80",
+      "function": "80070F18",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80070FBC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80071174",
+      "call": "8007116C",
+      "fallthrough": "80071178",
+      "function": "80071128",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80071198",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80071B70",
+      "call": "80071B68",
+      "fallthrough": "80071B74",
+      "function": "80071B10",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80071B84",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80071EF8",
+      "call": "80071EF0",
+      "fallthrough": "80071EFC",
+      "function": "80071E98",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80071F18",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80077294",
+      "call": "8007728C",
+      "fallthrough": "80077298",
+      "function": "80077214",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800772B0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800773F0",
+      "call": "800773E8",
+      "fallthrough": "800773F4",
+      "function": "80077390",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80077448",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800777D8",
+      "call": "800777D0",
+      "fallthrough": "800777DC",
+      "function": "80077770",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800777F4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800779D0",
+      "call": "800779C8",
+      "fallthrough": "800779D4",
+      "function": "80077970",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80077A00",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80077B44",
+      "call": "80077B3C",
+      "fallthrough": "80077B48",
+      "function": "80077AEC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80077B58",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80077F1C",
+      "call": "80077F14",
+      "fallthrough": "80077F20",
+      "function": "80077EB8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80077F30",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800780F4",
+      "call": "800780EC",
+      "fallthrough": "800780F8",
+      "function": "80078020",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80078100",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800783F0",
+      "call": "800783E8",
+      "fallthrough": "800783F4",
+      "function": "8007836C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80078410",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80078560",
+      "call": "80078558",
+      "fallthrough": "80078564",
+      "function": "8007849C",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8007856C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80078BDC",
+      "call": "80078BD4",
+      "fallthrough": "80078BE0",
+      "function": "80078B5C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80078BFC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007A634",
+      "call": "8007A62C",
+      "fallthrough": "8007A638",
+      "function": "8007A5BC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8007A650",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007A848",
+      "call": "8007A840",
+      "fallthrough": "8007A84C",
+      "function": "8007A790",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8007A87C",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8007AAD4",
+      "call": "8007AACC",
+      "fallthrough": "8007AAD8",
+      "function": "8007AA38",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8007ABB0",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8007ACE8",
+      "call": "8007ACE0",
+      "fallthrough": "8007ACEC",
+      "function": "8007AC7C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8007AD04",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007AF40",
+      "call": "8007AF38",
+      "fallthrough": "8007AF44",
+      "function": "8007AEA0",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8007AF70",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8007AFD0",
+      "call": "8007AFC8",
+      "fallthrough": "8007AFD4",
+      "function": "8007AF84",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8007AFE4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8007B270",
+      "call": "8007B268",
+      "fallthrough": "8007B274",
+      "function": "8007B20C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8007B284",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007B558",
+      "call": "8007B550",
+      "fallthrough": "8007B55C",
+      "function": "8007B388",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8007B5AC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007B72C",
+      "call": "8007B724",
+      "fallthrough": "8007B730",
+      "function": "8007B6C8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8007B740",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007BA14",
+      "call": "8007BA0C",
+      "fallthrough": "8007BA18",
+      "function": "8007B844",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8007BA68",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8007C480",
+      "call": "8007C478",
+      "fallthrough": "8007C484",
+      "function": "8007C414",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8007C4A4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800926F4",
+      "call": "800926EC",
+      "fallthrough": "800926F8",
+      "function": "8009268C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80092710",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8009BA84",
+      "call": "8009BA7C",
+      "fallthrough": "8009BA88",
+      "function": "8009BA1C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8009BA98",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8009C028",
+      "call": "8009C020",
+      "fallthrough": "8009C02C",
+      "function": "8009BFC8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8009C044",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8009C50C",
+      "call": "8009C504",
+      "fallthrough": "8009C510",
+      "function": "8009C354",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8009C5F4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800A46C0",
+      "call": "800A46B8",
+      "fallthrough": "800A46C4",
+      "function": "800A4640",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A46DC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800A481C",
+      "call": "800A4814",
+      "fallthrough": "800A4820",
+      "function": "800A47BC",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "800A4874",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800A4BFC",
+      "call": "800A4BF4",
+      "fallthrough": "800A4C00",
+      "function": "800A4B9C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A4C2C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800A4DD4",
+      "call": "800A4DCC",
+      "fallthrough": "800A4DD8",
+      "function": "800A4D70",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "800A4DE4",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800A4F70",
+      "call": "800A4F68",
+      "fallthrough": "800A4F74",
+      "function": "800A4F18",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A4F84",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800A5348",
+      "call": "800A5340",
+      "fallthrough": "800A534C",
+      "function": "800A52E4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A535C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800A5520",
+      "call": "800A5518",
+      "fallthrough": "800A5524",
+      "function": "800A544C",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "800A552C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800A7BD4",
+      "call": "800A7BCC",
+      "fallthrough": "800A7BD8",
+      "function": "800A7B7C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A7BF0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800A8170",
+      "call": "800A8168",
+      "fallthrough": "800A8174",
+      "function": "800A8118",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A818C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800A842C",
+      "call": "800A8424",
+      "fallthrough": "800A8430",
+      "function": "800A8354",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800A843C",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800A86DC",
+      "call": "800A86D4",
+      "fallthrough": "800A86E0",
+      "function": "800A8684",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800A86F8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800B4254",
+      "call": "800B424C",
+      "fallthrough": "800B4258",
+      "function": "800B41F4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800B4270",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800B4420",
+      "call": "800B4418",
+      "fallthrough": "800B4424",
+      "function": "800B43B0",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "800B4430",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800B520C",
+      "call": "800B5204",
+      "fallthrough": "800B5210",
+      "function": "800B518C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800B5228",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800BC6B4",
+      "call": "800BC6AC",
+      "fallthrough": "800BC6B8",
+      "function": "800BC65C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800BC6D4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800BC880",
+      "call": "800BC878",
+      "fallthrough": "800BC884",
+      "function": "800BC81C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800BC898",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800BCC10",
+      "call": "800BCC08",
+      "fallthrough": "800BCC14",
+      "function": "800BCBB0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800BCC5C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800BCD44",
+      "call": "800BCD3C",
+      "fallthrough": "800BCD48",
+      "function": "800BCCE8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800BCD68",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800C817C",
+      "call": "800C8174",
+      "fallthrough": "800C8180",
+      "function": "800C8124",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800C8198",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800C8344",
+      "call": "800C833C",
+      "fallthrough": "800C8348",
+      "function": "800C82D4",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "800C8374",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800C885C",
+      "call": "800C8854",
+      "fallthrough": "800C8860",
+      "function": "800C87E4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800C8878",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800CA118",
+      "call": "800CA110",
+      "fallthrough": "800CA11C",
+      "function": "800CA0CC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800CA138",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800CA6B4",
+      "call": "800CA6AC",
+      "fallthrough": "800CA6B8",
+      "function": "800CA638",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800CA6D0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800CA888",
+      "call": "800CA880",
+      "fallthrough": "800CA88C",
+      "function": "800CA7FC",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800CA898",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800CD5BC",
+      "call": "800CD5B4",
+      "fallthrough": "800CD5C0",
+      "function": "800CD564",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800CD5D8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800CD7CC",
+      "call": "800CD7C4",
+      "fallthrough": "800CD7D0",
+      "function": "800CD768",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "800CD7F0",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "800CD8D0",
+      "call": "800CD8C8",
+      "fallthrough": "800CD8D4",
+      "function": "800CD89C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800CD8E0",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800CDA38",
+      "call": "800CDA30",
+      "fallthrough": "800CDA3C",
+      "function": "800CD9D8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800CDA54",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800CDCB0",
+      "call": "800CDCA8",
+      "fallthrough": "800CDCB4",
+      "function": "800CDC48",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800CDCD0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800D0DC4",
+      "call": "800D0DBC",
+      "fallthrough": "800D0DC8",
+      "function": "800D0D64",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800D0DE0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800D1218",
+      "call": "800D1210",
+      "fallthrough": "800D121C",
+      "function": "800D11CC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800D1238",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800D75B8",
+      "call": "800D75B0",
+      "fallthrough": "800D75BC",
+      "function": "800D7540",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800D75D4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800E5AC0",
+      "call": "800E5AB8",
+      "fallthrough": "800E5AC4",
+      "function": "800E5A5C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800E5ADC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800EB46C",
+      "call": "800EB464",
+      "fallthrough": "800EB470",
+      "function": "800EB3F0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800EB488",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800EB6FC",
+      "call": "800EB6F4",
+      "fallthrough": "800EB700",
+      "function": "800EB630",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800EB70C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800EB8E4",
+      "call": "800EB8DC",
+      "fallthrough": "800EB8E8",
+      "function": "800EB88C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800EB904",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800EBCCC",
+      "call": "800EBCC4",
+      "fallthrough": "800EBCD0",
+      "function": "800EBC5C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800EBCE8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F2430",
+      "call": "800F2428",
+      "fallthrough": "800F2434",
+      "function": "800F23C4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F2444",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F2810",
+      "call": "800F2808",
+      "fallthrough": "800F2814",
+      "function": "800F27B4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F2844",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F2A80",
+      "call": "800F2A78",
+      "fallthrough": "800F2A84",
+      "function": "800F2A04",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800F2A90",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800F2CE8",
+      "call": "800F2CE0",
+      "fallthrough": "800F2CEC",
+      "function": "800F2C8C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F2D04",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F30D8",
+      "call": "800F30D0",
+      "fallthrough": "800F30DC",
+      "function": "800F3078",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F30F4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F32DC",
+      "call": "800F32D4",
+      "fallthrough": "800F32E0",
+      "function": "800F3230",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800F32EC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800F34A4",
+      "call": "800F349C",
+      "fallthrough": "800F34A8",
+      "function": "800F3444",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F34C0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F3804",
+      "call": "800F37FC",
+      "fallthrough": "800F3808",
+      "function": "800F3788",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F3824",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F3B24",
+      "call": "800F3B1C",
+      "fallthrough": "800F3B28",
+      "function": "800F3974",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F3B48",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F3D88",
+      "call": "800F3D80",
+      "fallthrough": "800F3D8C",
+      "function": "800F3D04",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F3DA8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F3FFC",
+      "call": "800F3FF4",
+      "fallthrough": "800F4000",
+      "function": "800F3F50",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800F4038",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800F4270",
+      "call": "800F4268",
+      "fallthrough": "800F4274",
+      "function": "800F4214",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F428C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F5464",
+      "call": "800F545C",
+      "fallthrough": "800F5468",
+      "function": "800F53EC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800F5480",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800F568C",
+      "call": "800F5684",
+      "fallthrough": "800F5690",
+      "function": "800F55D4",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "800F569C",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "800FA96C",
+      "call": "800FA964",
+      "fallthrough": "800FA970",
+      "function": "800FA90C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800FA988",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "800FEE24",
+      "call": "800FEE1C",
+      "fallthrough": "800FEE28",
+      "function": "800FEDBC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "800FEE44",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80101DBC",
+      "call": "80101DB4",
+      "fallthrough": "80101DC0",
+      "function": "80101D44",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80101DD8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80102204",
+      "call": "801021FC",
+      "fallthrough": "80102208",
+      "function": "8010219C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80102224",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801024A8",
+      "call": "801024A0",
+      "fallthrough": "801024AC",
+      "function": "80102464",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801024BC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80102544",
+      "call": "8010253C",
+      "fallthrough": "80102548",
+      "function": "8010250C",
+      "takes_branch_for": [
+        -1,
+        1
+      ],
+      "target": "80102554",
+      "test_vs_zero": "ne"
+    },
+    {
+      "branch": "8010574C",
+      "call": "80105744",
+      "fallthrough": "80105750",
+      "function": "801056E4",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8010576C",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80105768",
+      "call": "80105760",
+      "fallthrough": "8010576C",
+      "function": "801056E4",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80105784",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80105A3C",
+      "call": "80105A34",
+      "fallthrough": "80105A40",
+      "function": "801059E8",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80105A68",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8010B3BC",
+      "call": "8010B3B4",
+      "fallthrough": "8010B3C0",
+      "function": "8010B344",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010B3D8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8010B598",
+      "call": "8010B590",
+      "fallthrough": "8010B59C",
+      "function": "8010B51C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8010B5E4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8010B85C",
+      "call": "8010B854",
+      "fallthrough": "8010B860",
+      "function": "8010B7FC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010B87C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8010BDCC",
+      "call": "8010BDC4",
+      "fallthrough": "8010BDD0",
+      "function": "8010BD60",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010BDE8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8010C02C",
+      "call": "8010C024",
+      "fallthrough": "8010C030",
+      "function": "8010BFBC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010C03C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8010C2CC",
+      "call": "8010C2C4",
+      "fallthrough": "8010C2D0",
+      "function": "8010C270",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010C300",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8010C4B8",
+      "call": "8010C4B0",
+      "fallthrough": "8010C4BC",
+      "function": "8010C43C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010C4C8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8010C640",
+      "call": "8010C638",
+      "fallthrough": "8010C644",
+      "function": "8010C5E0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8010C65C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801100A0",
+      "call": "80110098",
+      "fallthrough": "801100A4",
+      "function": "80110010",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801100BC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8011028C",
+      "call": "80110284",
+      "fallthrough": "80110290",
+      "function": "801101F0",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80110370",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801107CC",
+      "call": "801107C4",
+      "fallthrough": "801107D0",
+      "function": "8011075C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801107EC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80110B20",
+      "call": "80110B18",
+      "fallthrough": "80110B24",
+      "function": "80110AAC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80110B3C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80111174",
+      "call": "8011116C",
+      "fallthrough": "80111178",
+      "function": "80111108",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80111190",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80111310",
+      "call": "80111308",
+      "fallthrough": "80111314",
+      "function": "80111294",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80111384",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80111C80",
+      "call": "80111C78",
+      "fallthrough": "80111C84",
+      "function": "80111C1C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80111CA0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80115444",
+      "call": "8011543C",
+      "fallthrough": "80115448",
+      "function": "801153C4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80115460",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80115848",
+      "call": "80115840",
+      "fallthrough": "8011584C",
+      "function": "801157E0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80115864",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80115AC4",
+      "call": "80115ABC",
+      "fallthrough": "80115AC8",
+      "function": "80115A60",
+      "takes_branch_for": [
+        -1,
+        1
+      ],
+      "target": "80115AD4",
+      "test_vs_zero": "ne"
+    },
+    {
+      "branch": "80115C34",
+      "call": "80115C2C",
+      "fallthrough": "80115C38",
+      "function": "80115BCC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80115C50",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8011608C",
+      "call": "80116084",
+      "fallthrough": "80116090",
+      "function": "8011602C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801160A8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8011625C",
+      "call": "80116254",
+      "fallthrough": "80116260",
+      "function": "801161E0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8011626C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80116440",
+      "call": "80116438",
+      "fallthrough": "80116444",
+      "function": "801163D8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8011645C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8011710C",
+      "call": "80117104",
+      "fallthrough": "80117110",
+      "function": "801170B4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80117128",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80117334",
+      "call": "8011732C",
+      "fallthrough": "80117338",
+      "function": "801172C4",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80117344",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "801199CC",
+      "call": "801199C4",
+      "fallthrough": "801199D0",
+      "function": "80119974",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801199E8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80119BC4",
+      "call": "80119BBC",
+      "fallthrough": "80119BC8",
+      "function": "80119B30",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80119BD4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80119D44",
+      "call": "80119D3C",
+      "fallthrough": "80119D48",
+      "function": "80119CE4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80119D60",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80122E44",
+      "call": "80122E3C",
+      "fallthrough": "80122E48",
+      "function": "80122DEC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80122E60",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80122F94",
+      "call": "80122F8C",
+      "fallthrough": "80122F98",
+      "function": "80122EA8",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80122FA0",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80123084",
+      "call": "8012307C",
+      "fallthrough": "80123088",
+      "function": "80122FD4",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801230E0",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80123E98",
+      "call": "80123E90",
+      "fallthrough": "80123E9C",
+      "function": "80123E20",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80123EB4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012407C",
+      "call": "80124074",
+      "fallthrough": "80124080",
+      "function": "80123FF4",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8012408C",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80124318",
+      "call": "80124310",
+      "fallthrough": "8012431C",
+      "function": "801242B8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80124334",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012450C",
+      "call": "80124504",
+      "fallthrough": "80124510",
+      "function": "80124484",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8012451C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80124688",
+      "call": "80124680",
+      "fallthrough": "8012468C",
+      "function": "80124630",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801246A4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80124864",
+      "call": "8012485C",
+      "fallthrough": "80124868",
+      "function": "801247F4",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8012487C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80124F50",
+      "call": "80124F48",
+      "fallthrough": "80124F54",
+      "function": "80124EE8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80124F70",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012CF0C",
+      "call": "8012CF04",
+      "fallthrough": "8012CF10",
+      "function": "8012CE94",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8012CF28",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012D120",
+      "call": "8012D118",
+      "fallthrough": "8012D124",
+      "function": "8012D068",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8012D154",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8012D3AC",
+      "call": "8012D3A4",
+      "fallthrough": "8012D3B0",
+      "function": "8012D310",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8012D488",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8012D5C0",
+      "call": "8012D5B8",
+      "fallthrough": "8012D5C4",
+      "function": "8012D554",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8012D5DC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012D818",
+      "call": "8012D810",
+      "fallthrough": "8012D81C",
+      "function": "8012D778",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8012D848",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8012D8A8",
+      "call": "8012D8A0",
+      "fallthrough": "8012D8AC",
+      "function": "8012D85C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8012D8BC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8012DB48",
+      "call": "8012DB40",
+      "fallthrough": "8012DB4C",
+      "function": "8012DAE4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8012DB5C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012DE30",
+      "call": "8012DE28",
+      "fallthrough": "8012DE34",
+      "function": "8012DC60",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8012DE84",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012E004",
+      "call": "8012DFFC",
+      "fallthrough": "8012E008",
+      "function": "8012DFA0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8012E018",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8012E2EC",
+      "call": "8012E2E4",
+      "fallthrough": "8012E2F0",
+      "function": "8012E11C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8012E340",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80134840",
+      "call": "80134838",
+      "fallthrough": "80134844",
+      "function": "801347C0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8013485C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8013D8D8",
+      "call": "8013D8D0",
+      "fallthrough": "8013D8DC",
+      "function": "8013D860",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8013D8F4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8013DA44",
+      "call": "8013DA3C",
+      "fallthrough": "8013DA48",
+      "function": "8013D9E0",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8013DA80",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8013DB04",
+      "call": "8013DAFC",
+      "fallthrough": "8013DB08",
+      "function": "8013DA94",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8013DB14",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8013E2B8",
+      "call": "8013E2B0",
+      "fallthrough": "8013E2BC",
+      "function": "8013E240",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8013E2E8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8013E4AC",
+      "call": "8013E4A4",
+      "fallthrough": "8013E4B0",
+      "function": "8013E43C",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8013E4BC",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8013E630",
+      "call": "8013E628",
+      "fallthrough": "8013E634",
+      "function": "8013E5C8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8013E64C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8013E894",
+      "call": "8013E88C",
+      "fallthrough": "8013E898",
+      "function": "8013E7D8",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8013E8C0",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80143320",
+      "call": "80143318",
+      "fallthrough": "80143324",
+      "function": "801432C0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80143354",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80144140",
+      "call": "80144138",
+      "fallthrough": "80144144",
+      "function": "801440E8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014415C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80144320",
+      "call": "80144318",
+      "fallthrough": "80144324",
+      "function": "801442A4",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80144330",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "801466A0",
+      "call": "80146698",
+      "fallthrough": "801466A4",
+      "function": "80146640",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801466BC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801468D8",
+      "call": "801468D0",
+      "fallthrough": "801468DC",
+      "function": "80146888",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801468E4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80146A2C",
+      "call": "80146A24",
+      "fallthrough": "80146A30",
+      "function": "801469CC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80146A4C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80147534",
+      "call": "8014752C",
+      "fallthrough": "80147538",
+      "function": "801474B4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80147550",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80147EF4",
+      "call": "80147EEC",
+      "fallthrough": "80147EF8",
+      "function": "80147E90",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80147F14",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80148E40",
+      "call": "80148E38",
+      "fallthrough": "80148E44",
+      "function": "80148DC4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80148E5C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80149228",
+      "call": "80149220",
+      "fallthrough": "8014922C",
+      "function": "801491C8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80149248",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801497D8",
+      "call": "801497D0",
+      "fallthrough": "801497DC",
+      "function": "80149758",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801497F4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014A980",
+      "call": "8014A978",
+      "fallthrough": "8014A984",
+      "function": "8014A91C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014A9A0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014AE48",
+      "call": "8014AE40",
+      "fallthrough": "8014AE4C",
+      "function": "8014ADE4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014AE64",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014C404",
+      "call": "8014C3FC",
+      "fallthrough": "8014C408",
+      "function": "8014C394",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014C420",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014E638",
+      "call": "8014E630",
+      "fallthrough": "8014E63C",
+      "function": "8014E5C0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014E654",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014E84C",
+      "call": "8014E844",
+      "fallthrough": "8014E850",
+      "function": "8014E794",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8014E880",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8014EAD8",
+      "call": "8014EAD0",
+      "fallthrough": "8014EADC",
+      "function": "8014EA3C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8014EBB4",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8014ECEC",
+      "call": "8014ECE4",
+      "fallthrough": "8014ECF0",
+      "function": "8014EC80",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014ED08",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014EF44",
+      "call": "8014EF3C",
+      "fallthrough": "8014EF48",
+      "function": "8014EEA4",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8014EF74",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8014EFD4",
+      "call": "8014EFCC",
+      "fallthrough": "8014EFD8",
+      "function": "8014EF88",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8014EFE8",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8014F274",
+      "call": "8014F26C",
+      "fallthrough": "8014F278",
+      "function": "8014F210",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014F288",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014F55C",
+      "call": "8014F554",
+      "fallthrough": "8014F560",
+      "function": "8014F38C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014F5B0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014F730",
+      "call": "8014F728",
+      "fallthrough": "8014F734",
+      "function": "8014F6CC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014F744",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8014FA18",
+      "call": "8014FA10",
+      "fallthrough": "8014FA1C",
+      "function": "8014F848",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8014FA6C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80152834",
+      "call": "8015282C",
+      "fallthrough": "80152838",
+      "function": "801527BC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80152850",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80152A30",
+      "call": "80152A28",
+      "fallthrough": "80152A34",
+      "function": "80152988",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80152A64",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80152CAC",
+      "call": "80152CA4",
+      "fallthrough": "80152CB0",
+      "function": "80152C20",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80152D88",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80152EC0",
+      "call": "80152EB8",
+      "fallthrough": "80152EC4",
+      "function": "80152E54",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80152EDC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80153114",
+      "call": "8015310C",
+      "fallthrough": "80153118",
+      "function": "80153078",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80153144",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "801531A4",
+      "call": "8015319C",
+      "fallthrough": "801531A8",
+      "function": "80153158",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801531B8",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80153444",
+      "call": "8015343C",
+      "fallthrough": "80153448",
+      "function": "801533E0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80153458",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015371C",
+      "call": "80153714",
+      "fallthrough": "80153720",
+      "function": "8015354C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80153760",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801538E0",
+      "call": "801538D8",
+      "fallthrough": "801538E4",
+      "function": "8015387C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801538F4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80153BC4",
+      "call": "80153BBC",
+      "fallthrough": "80153BC8",
+      "function": "801539F4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80153C14",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801576F4",
+      "call": "801576EC",
+      "fallthrough": "801576F8",
+      "function": "8015768C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80157710",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80158174",
+      "call": "8015816C",
+      "fallthrough": "80158178",
+      "function": "80158114",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80158190",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80158388",
+      "call": "80158380",
+      "fallthrough": "8015838C",
+      "function": "80158318",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "801583A0",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8015875C",
+      "call": "80158754",
+      "fallthrough": "80158760",
+      "function": "80158700",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80158778",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015892C",
+      "call": "80158924",
+      "fallthrough": "80158930",
+      "function": "801588BC",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "80158944",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80158B38",
+      "call": "80158B30",
+      "fallthrough": "80158B3C",
+      "function": "80158AE4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80158B5C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015EB1C",
+      "call": "8015EB14",
+      "fallthrough": "8015EB20",
+      "function": "8015EAA4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8015EB38",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015ED30",
+      "call": "8015ED28",
+      "fallthrough": "8015ED34",
+      "function": "8015EC78",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8015ED64",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8015EFBC",
+      "call": "8015EFB4",
+      "fallthrough": "8015EFC0",
+      "function": "8015EF20",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8015F098",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8015F1D0",
+      "call": "8015F1C8",
+      "fallthrough": "8015F1D4",
+      "function": "8015F164",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8015F1EC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015F428",
+      "call": "8015F420",
+      "fallthrough": "8015F42C",
+      "function": "8015F388",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8015F458",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8015F4B8",
+      "call": "8015F4B0",
+      "fallthrough": "8015F4BC",
+      "function": "8015F46C",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8015F4CC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8015F758",
+      "call": "8015F750",
+      "fallthrough": "8015F75C",
+      "function": "8015F6F4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8015F76C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015FA40",
+      "call": "8015FA38",
+      "fallthrough": "8015FA44",
+      "function": "8015F870",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8015FA94",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015FC14",
+      "call": "8015FC0C",
+      "fallthrough": "8015FC18",
+      "function": "8015FBB0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8015FC28",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8015FEFC",
+      "call": "8015FEF4",
+      "fallthrough": "8015FF00",
+      "function": "8015FD2C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8015FF50",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801614C4",
+      "call": "801614BC",
+      "fallthrough": "801614C8",
+      "function": "8016144C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801614E0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8016168C",
+      "call": "80161684",
+      "fallthrough": "80161690",
+      "function": "80161610",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801616D8",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "80161E28",
+      "call": "80161E20",
+      "fallthrough": "80161E2C",
+      "function": "80161DCC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80161E44",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8016207C",
+      "call": "80162074",
+      "fallthrough": "80162080",
+      "function": "80161FF0",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8016208C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "801647F8",
+      "call": "801647F0",
+      "fallthrough": "801647FC",
+      "function": "801647A0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80164814",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801649D8",
+      "call": "801649D0",
+      "fallthrough": "801649DC",
+      "function": "80164968",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "801649F8",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80164C1C",
+      "call": "80164C14",
+      "fallthrough": "80164C20",
+      "function": "80164B9C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80164C38",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801752C8",
+      "call": "801752C0",
+      "fallthrough": "801752CC",
+      "function": "80175270",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801752E8",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801754A0",
+      "call": "80175498",
+      "fallthrough": "801754A4",
+      "function": "80175380",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "801754F4",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80175764",
+      "call": "8017575C",
+      "fallthrough": "80175768",
+      "function": "8017570C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80175780",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80175938",
+      "call": "80175930",
+      "fallthrough": "8017593C",
+      "function": "801758C8",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80175968",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80175AC8",
+      "call": "80175AC0",
+      "fallthrough": "80175ACC",
+      "function": "80175A70",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80175AE4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80175C90",
+      "call": "80175C88",
+      "fallthrough": "80175C94",
+      "function": "80175C20",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "80175CC0",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "80177E94",
+      "call": "80177E8C",
+      "fallthrough": "80177E98",
+      "function": "80177E28",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80177EB4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8017845C",
+      "call": "80178454",
+      "fallthrough": "80178460",
+      "function": "801783E4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8017847C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "80179348",
+      "call": "80179340",
+      "fallthrough": "8017934C",
+      "function": "801792DC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "80179364",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8017961C",
+      "call": "80179614",
+      "fallthrough": "80179620",
+      "function": "80179574",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8017963C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8018D17C",
+      "call": "8018D174",
+      "fallthrough": "8018D180",
+      "function": "8018D120",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8018D198",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8018E338",
+      "call": "8018E330",
+      "fallthrough": "8018E33C",
+      "function": "8018E2EC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8018E358",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8018E8E0",
+      "call": "8018E8D8",
+      "fallthrough": "8018E8E4",
+      "function": "8018E888",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8018E8FC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8019CBF8",
+      "call": "8019CBF0",
+      "fallthrough": "8019CBFC",
+      "function": "8019CBA0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8019CC14",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8019CDC0",
+      "call": "8019CDB8",
+      "fallthrough": "8019CDC4",
+      "function": "8019CD50",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "8019CDF0",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "8019E06C",
+      "call": "8019E064",
+      "fallthrough": "8019E070",
+      "function": "8019E00C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8019E088",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8019FA00",
+      "call": "8019F9F8",
+      "fallthrough": "8019FA04",
+      "function": "8019F9A0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8019FA20",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "8019FDDC",
+      "call": "8019FDD4",
+      "fallthrough": "8019FDE0",
+      "function": "8019FDA4",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "8019FDEC",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "8019FFD0",
+      "call": "8019FFC8",
+      "fallthrough": "8019FFD4",
+      "function": "8019FF84",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "8019FFF4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A077C",
+      "call": "801A0774",
+      "fallthrough": "801A0780",
+      "function": "801A0724",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A0798",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A1D18",
+      "call": "801A1D10",
+      "fallthrough": "801A1D1C",
+      "function": "801A1CA0",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A1D34",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A1F20",
+      "call": "801A1F18",
+      "fallthrough": "801A1F24",
+      "function": "801A1E70",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801A1F54",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801A21A8",
+      "call": "801A21A0",
+      "fallthrough": "801A21AC",
+      "function": "801A2110",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801A2284",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801A23B8",
+      "call": "801A23B0",
+      "fallthrough": "801A23BC",
+      "function": "801A234C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A23D4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A25E0",
+      "call": "801A25D8",
+      "fallthrough": "801A25E4",
+      "function": "801A254C",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "801A2610",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "801A2670",
+      "call": "801A2668",
+      "fallthrough": "801A2674",
+      "function": "801A2624",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801A2684",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801A290C",
+      "call": "801A2904",
+      "fallthrough": "801A2910",
+      "function": "801A28A8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A2920",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A2BE0",
+      "call": "801A2BD8",
+      "fallthrough": "801A2BE4",
+      "function": "801A2A18",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A2C30",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A2DB0",
+      "call": "801A2DA8",
+      "fallthrough": "801A2DB4",
+      "function": "801A2D4C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A2DC4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A3084",
+      "call": "801A307C",
+      "fallthrough": "801A3088",
+      "function": "801A2EBC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801A30D4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801A3AD4",
+      "call": "801A3ACC",
+      "fallthrough": "801A3AD8",
+      "function": "801A3A68",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801A3AF8",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801B5114",
+      "call": "801B510C",
+      "fallthrough": "801B5118",
+      "function": "801B509C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801B5130",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801B5328",
+      "call": "801B5320",
+      "fallthrough": "801B532C",
+      "function": "801B5270",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801B535C",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801B55B4",
+      "call": "801B55AC",
+      "fallthrough": "801B55B8",
+      "function": "801B5518",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801B5690",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801B57C8",
+      "call": "801B57C0",
+      "fallthrough": "801B57CC",
+      "function": "801B575C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801B57E4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801B5A1C",
+      "call": "801B5A14",
+      "fallthrough": "801B5A20",
+      "function": "801B5980",
+      "takes_branch_for": [
+        0
+      ],
+      "target": "801B5A4C",
+      "test_vs_zero": "eq"
+    },
+    {
+      "branch": "801B5AAC",
+      "call": "801B5AA4",
+      "fallthrough": "801B5AB0",
+      "function": "801B5A60",
+      "takes_branch_for": [
+        -1,
+        0
+      ],
+      "target": "801B5AC0",
+      "test_vs_zero": "le"
+    },
+    {
+      "branch": "801B5D4C",
+      "call": "801B5D44",
+      "fallthrough": "801B5D50",
+      "function": "801B5CE8",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801B5D60",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801B6034",
+      "call": "801B602C",
+      "fallthrough": "801B6038",
+      "function": "801B5E64",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801B6088",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801B6208",
+      "call": "801B6200",
+      "fallthrough": "801B620C",
+      "function": "801B61A4",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801B621C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801B64EC",
+      "call": "801B64E4",
+      "fallthrough": "801B64F0",
+      "function": "801B631C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801B653C",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801C90C0",
+      "call": "801C90B8",
+      "fallthrough": "801C90C4",
+      "function": "801C9054",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801C90E0",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801C9D64",
+      "call": "801C9D5C",
+      "fallthrough": "801C9D68",
+      "function": "801C9CEC",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801C9D80",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801D8AAC",
+      "call": "801D8AA4",
+      "fallthrough": "801D8AB0",
+      "function": "801D8A48",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801D8ACC",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801D8FD8",
+      "call": "801D8FD0",
+      "fallthrough": "801D8FDC",
+      "function": "801D8F70",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801D8FF4",
+      "test_vs_zero": "gt"
+    },
+    {
+      "branch": "801D9770",
+      "call": "801D9768",
+      "fallthrough": "801D9774",
+      "function": "801D970C",
+      "takes_branch_for": [
+        1
+      ],
+      "target": "801D9790",
+      "test_vs_zero": "gt"
+    }
+  ],
+  "comparison": "80066898",
+  "contract": {
+    "distance": "norm of X/Z difference between vectors at actor+0x518 and actor+0x20",
+    "priority": [
+      {
+        "if": "actor+0xCC is zero",
+        "result": -1,
+        "site": "800668B0"
+      },
+      {
+        "if": "actor+0x1DD has bit 0x80",
+        "result": 1,
+        "site": "80066868"
+      },
+      {
+        "if": "projected distance exceeds scaled threshold",
+        "result": 0,
+        "site": "800668A8"
+      },
+      {
+        "if": "ordered distance does not exceed scaled threshold",
+        "result": 1,
+        "site": "800668A8"
+      }
+    ],
+    "threshold": "incoming f1 multiplied by actor+0xB4",
+    "validation_scope": "finite inputs, argument and comparison dataflow, no full phase timing"
+  },
+  "counts": {
+    "calls": 250,
+    "functions": 249,
+    "test_vs_zero": {
+      "eq": 32,
+      "gt": 165,
+      "le": 51,
+      "ne": 2
+    }
+  },
+  "entry": "80066838",
+  "kind": "gf-retail-action-phase-gate",
+  "notes": [
+    "Compare and conditional branch are checked in the two words after each entry-reachable call.",
+    "Taken versus fallthrough is not advance versus hold: the destination code determines that meaning.",
+    "This gate is not the receiver reaction timer or the pose-pause clock."
+  ],
+  "return": "800668C8",
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "symbol_metadata_sha256": "fb923b77ac12e40d2831e7831b7b3893517b18cdd4239db1871c3f04db9ea0f1"
+}

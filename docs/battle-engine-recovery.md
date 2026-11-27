@@ -110,17 +110,23 @@ The fields are stable across both variants:
 The native move model currently covers the active volume (melee window) but not
 this windup/active-velocity/recovery machine.
 
-**The phase gate is animation-driven, not a tick counter.** The open helper
-`fn_80066838(actor, threshold)` compares a transformed vector magnitude against
-`threshold * actor[180]` and returns 1 while it exceeds the threshold. The
-`+0x868` values (G-Red 1000/1200/1300, Sasuke 1000/800/1000) are displacement
-thresholds for the class/mode, not phase durations. The phase advances when the
-animated displacement falls below them.
+**The shared gate is not a phase-duration counter.** `80066838` returns
+`-1` when `actor+0xCC` is zero. Otherwise bit `0x80` at `actor+0x1DD`
+forces `1`; the normal path compares the horizontal distance between
+`actor+0x518` and `actor+0x20` with the input threshold times `actor+0xB4`.
+For finite values it returns **`1` at or inside** the threshold and `0`
+outside. This corrects the earlier reversed description. The class/mode
+values loaded from `+0x868` in `80070CCC` and `+0x86C` in `800706E8` are
+distance thresholds, not durations.
 
-So an `action-phase` tick key would **not** be faithful. The native clip and
-duration model stays the approximation until the animation displacement is
-recovered. Exact phase timing needs the retail animation/pose data, not another
-tick table.
+The result is not a universal advance/hold flag. The two entry handlers
+already increment `+0x540` before the call and branch on `> 0` to skip an
+extra reset. The recovery handler `80070F18` can bypass the test after
+another condition or branch on `<= 0` to skip the phase/program update.
+See the [phase-gate caller map](api-map/gg4e08-action-phase-gate.json) and
+[original-execution fixture](retail-code-atlas.md#shared-action-gate).
+Exact phase timing still needs the caller and its motion sources; the
+native clip and duration model remains an approximation.
 
 The scene/actor layers use the same pattern:
 
