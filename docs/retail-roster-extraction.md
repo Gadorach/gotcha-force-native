@@ -2312,9 +2312,12 @@ rounds. Each family below records how it was admitted and what stays authored:
   that never calls the collision API.
 - **Roach bomb pilot** (`0f05`, admitted): its B-shot row (`state 0`,
   `substate 0`, selector 45, callback `801E7F28`) pays `8006DBE0` and
-  creates the type-5 area child at `80085E00` (phase table `802DA544`,
-  six-slot proximity `8008AE60`, shape handoff `8008AFF0`, release
-  `80088E50`). The area row is `record=22, group=3, parameter=4,
+  creates a placed carrier at `801FAD10`. Its later inner phase
+  requests [type-5 area key 26](retail-code-atlas.md#shared-type-5-areas-common-records-and-scoped-ancestors)
+  at `80085E00`, not a direct B area. The six-slot proximity exit is
+  separate. The common area phase table is `802DA544`, with shape
+  handoff `8008AFF0` and release `80088E50`. The area row is
+  `record=22, group=3, parameter=4,
   material=0, cue=12`; the common-collision group 3 is a radius-310
   sphere. The native bomb controller already owns the same exits, so the
   pilot binds the exact row/debit/pose/stock and authors a 30-tick arm,

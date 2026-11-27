@@ -633,6 +633,51 @@ python3 -m tools.analyze.retail_small_projectile_roster \
   /tmp/opencode/gf-small-projectile-roster.json
 ```
 
+### Shared type-5 areas: common records and scoped ancestors
+
+The [type-5 census](api-map/gg4e08-type5-roster.json) inventories all
+27 rows and **45 calls** across two allocation entries. The main
+entry requests a bucket relative to the credited actor. The other
+uses a fixed bucket and a different bind submode, but still copies
+the parent and credited actor. Both request two descriptor cells.
+
+Thirty sites have a literal key in `r5`; 13 read a key from a bounded
+parent table. Two read object byte `+0x17D`, whose producer is not
+qualified here. Key 16 has no resolved site in this census; that is
+not proof it is unused. A literal key does not identify its owner.
+
+The 27 rows select 21 groups in the scene common collision bank.
+Each descriptor is a local-origin sphere with raw radius 310, but
+their common reaction records carry raw power **20, 30, 40 or 100**.
+The growth and cap also vary by key: the six Dragon areas share
+group 60 and raw power 40, but not one common scale curve. These
+are neither measured live radii nor HP amounts.
+
+The census ties scoped predecessors to 14 Borgs without calling
+the downstream area a direct cast. For instance:
+
+- The normal Ninja type-15 selectors use area key 0; the conditional
+  extra Double Ninja bomb remains conditional. The negative selectors
+  on the Powered Gunman charged carriers go to a different child path.
+- Time and Remote Bomber's reviewed B placements create type-41
+  carriers. Their later area keys are 19 and 20. The owner-latch
+  call is restricted to parent row 3; it is not a broadcast.
+- Roach pays for a placed carrier at `801FAD10`. Its later inner
+  phase calls the area factory with **key 26**, not key 0, even
+  though both area rows use common group 3. The separate proximity
+  exit is not assigned this area.
+
+No gameplay is emitted or changed. The census is static. The
+separate bounded replays verify shape registration, recipients,
+or damage only on their declared inputs.
+
+```sh
+python3 -m tools.analyze.retail_type5_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-type5-roster.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original

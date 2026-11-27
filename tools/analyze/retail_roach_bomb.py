@@ -1,8 +1,8 @@
 """Authored Roach B: the placed type-5 area child, reimplemented as a native bomb.
 
-The source release pays one channel-0 unit, creates a second child at
-80085E00, arms it, senses through the six-slot proximity service and
-requests the area/release exits. The native bomb controller already has
+The source release pays one channel-0 unit and creates a placed carrier
+at 801FAD10. A later carrier arm requests type-5 key 26 at 80085E00;
+the six-slot proximity exit is separate. The native bomb controller has
 the same shape: 3D proximity, an arming clock, an expiry/proximity blast,
 a capped stock return and retirement. This module binds the exact source
 row/debit and authors the placement, blast and timing explicitly.
