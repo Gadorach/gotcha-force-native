@@ -1,0 +1,443 @@
+{
+  "bucket": 9,
+  "cases": [
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-charged-sound",
+      "case": "charged-full",
+      "declared_actor_state": 3,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 4,
+      "declared_free_descriptors": 4,
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "list_head_to_tail": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "published_in_request_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "refill_clock": 0,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 0,
+      "stock_after": 1,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-charged-sound",
+      "case": "charged-no-current-stock",
+      "declared_actor_state": 3,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 4,
+      "declared_free_descriptors": 4,
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "list_head_to_tail": [
+        7,
+        6,
+        9,
+        8
+      ],
+      "published_in_request_order": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "refill_clock": 0,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 0,
+      "stock_after": 0,
+      "stock_before": 0
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-charged-sound",
+      "case": "charged-carrier-short",
+      "declared_actor_state": 3,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 2,
+      "declared_free_descriptors": 4,
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "list_head_to_tail": [
+        9,
+        8
+      ],
+      "published_in_request_order": [
+        8,
+        9
+      ],
+      "refill_clock": 0,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 2,
+      "stock_after": 1,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-charged-sound",
+      "case": "charged-descriptor-short",
+      "declared_actor_state": 3,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 4,
+      "declared_free_descriptors": 2,
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "list_head_to_tail": [
+        9,
+        8
+      ],
+      "published_in_request_order": [
+        8,
+        9
+      ],
+      "refill_clock": 0,
+      "remaining_free_carriers": 2,
+      "remaining_free_descriptors": 0,
+      "stock_after": 1,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-charged-sound",
+      "case": "charged-no-carriers",
+      "declared_actor_state": 3,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 0,
+      "declared_free_descriptors": 4,
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "list_head_to_tail": [],
+      "published_in_request_order": [],
+      "refill_clock": 0,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 4,
+      "stock_after": 1,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-charged-sound",
+      "case": "charged-no-descriptors",
+      "declared_actor_state": 3,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 4,
+      "declared_free_descriptors": 0,
+      "factory_requests": [
+        8,
+        9,
+        6,
+        7
+      ],
+      "list_head_to_tail": [],
+      "published_in_request_order": [],
+      "refill_clock": 0,
+      "remaining_free_carriers": 4,
+      "remaining_free_descriptors": 0,
+      "stock_after": 1,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-ordinary-X-request",
+      "case": "ordinary-other-request",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 4,
+      "declared_free_descriptors": 4,
+      "factory_requests": [],
+      "list_head_to_tail": [],
+      "published_in_request_order": [],
+      "refill_clock": 120,
+      "remaining_free_carriers": 4,
+      "remaining_free_descriptors": 4,
+      "stock_after": 0,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0101",
+      "boundary": "before-movement-tail",
+      "case": "ordinary-debit-refused",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 4,
+      "declared_free_descriptors": 4,
+      "factory_requests": [],
+      "list_head_to_tail": [],
+      "published_in_request_order": [],
+      "refill_clock": 0,
+      "remaining_free_carriers": 4,
+      "remaining_free_descriptors": 4,
+      "stock_after": 0,
+      "stock_before": 0
+    },
+    {
+      "borg": "gg4e08:0000",
+      "boundary": "leaf-return",
+      "case": "ninja-paid",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 1,
+      "declared_free_descriptors": 1,
+      "factory_requests": [
+        0
+      ],
+      "list_head_to_tail": [
+        0
+      ],
+      "published_in_request_order": [
+        0
+      ],
+      "refill_clock": 300,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 0,
+      "stock_after": 0,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0000",
+      "boundary": "leaf-return",
+      "case": "ninja-debit-refused",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 1,
+      "declared_free_descriptors": 1,
+      "factory_requests": [],
+      "list_head_to_tail": [],
+      "published_in_request_order": [],
+      "refill_clock": 0,
+      "remaining_free_carriers": 1,
+      "remaining_free_descriptors": 1,
+      "stock_after": 0,
+      "stock_before": 0
+    },
+    {
+      "borg": "gg4e08:0003",
+      "boundary": "leaf-return",
+      "case": "double-extra-clear",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 2,
+      "declared_free_descriptors": 2,
+      "factory_requests": [
+        1
+      ],
+      "list_head_to_tail": [
+        1
+      ],
+      "published_in_request_order": [
+        1
+      ],
+      "refill_clock": 300,
+      "remaining_free_carriers": 1,
+      "remaining_free_descriptors": 1,
+      "stock_after": 0,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0003",
+      "boundary": "leaf-return",
+      "case": "double-extra-short",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 1,
+      "declared_free_carriers": 2,
+      "declared_free_descriptors": 1,
+      "factory_requests": [
+        1,
+        2
+      ],
+      "list_head_to_tail": [
+        1
+      ],
+      "published_in_request_order": [
+        1
+      ],
+      "refill_clock": 300,
+      "remaining_free_carriers": 1,
+      "remaining_free_descriptors": 0,
+      "stock_after": 0,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:0003",
+      "boundary": "leaf-return",
+      "case": "double-extra-full",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 1,
+      "declared_free_carriers": 2,
+      "declared_free_descriptors": 2,
+      "factory_requests": [
+        1,
+        2
+      ],
+      "list_head_to_tail": [
+        2,
+        1
+      ],
+      "published_in_request_order": [
+        1,
+        2
+      ],
+      "refill_clock": 300,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 0,
+      "stock_after": 0,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:000a",
+      "boundary": "leaf-return",
+      "case": "sasuke-no-carrier-last-round",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 0,
+      "declared_free_descriptors": 1,
+      "factory_requests": [
+        3
+      ],
+      "list_head_to_tail": [],
+      "published_in_request_order": [],
+      "refill_clock": 300,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 1,
+      "stock_after": 0,
+      "stock_before": 1
+    },
+    {
+      "borg": "gg4e08:000a",
+      "boundary": "leaf-return",
+      "case": "sasuke-paid",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 1,
+      "declared_free_descriptors": 1,
+      "factory_requests": [
+        3
+      ],
+      "list_head_to_tail": [
+        3
+      ],
+      "published_in_request_order": [
+        3
+      ],
+      "refill_clock": 0,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 0,
+      "stock_after": 1,
+      "stock_before": 2
+    },
+    {
+      "borg": "gg4e08:000c",
+      "boundary": "leaf-return",
+      "case": "alpha-II-paid",
+      "declared_actor_state": 2,
+      "declared_extra_byte": 0,
+      "declared_free_carriers": 1,
+      "declared_free_descriptors": 1,
+      "factory_requests": [
+        5
+      ],
+      "list_head_to_tail": [
+        5
+      ],
+      "published_in_request_order": [
+        5
+      ],
+      "refill_clock": 0,
+      "remaining_free_carriers": 0,
+      "remaining_free_descriptors": 0,
+      "stock_after": 1,
+      "stock_before": 2
+    }
+  ],
+  "class": 3,
+  "entries": {
+    "alpha_II_paid_leaf": "801A0458",
+    "ordinary_ninja_paid_leaf": "800715F8",
+    "powered_gunman_state_split": "8016711C",
+    "stock_debit": "8006DBE0"
+  },
+  "factory": "8007DB5C",
+  "kind": "gf-retail-bomb-release",
+  "notes": [
+    "The Powered Gunman slice begins after the cue and movement producers with state supplied, not a played charged-X action.",
+    "Allocation attempts, prepended list links and exact socket samples come from the original factory on declared free lists and matrices.",
+    "Each successful bomb pops one carrier and one descriptor. Refusal does not retry or undo an earlier debit.",
+    "No active-list callbacks, shape bind, audio playback, bomb impact, descendant effect or battle timing is qualified.",
+    "The ordinary branch debit in this slice does not establish when the separate charged path pays."
+  ],
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836",
+  "stock_operands": [
+    {
+      "borg": "gg4e08:0000",
+      "cap": 5,
+      "channel": 2,
+      "mode": 0,
+      "preset": 300
+    },
+    {
+      "borg": "gg4e08:0003",
+      "cap": 5,
+      "channel": 2,
+      "mode": 0,
+      "preset": 300
+    },
+    {
+      "borg": "gg4e08:000a",
+      "cap": 5,
+      "channel": 2,
+      "mode": 0,
+      "preset": 300
+    },
+    {
+      "borg": "gg4e08:000c",
+      "cap": 5,
+      "channel": 2,
+      "mode": 0,
+      "preset": 300
+    },
+    {
+      "borg": "gg4e08:0101",
+      "cap": 1,
+      "channel": 2,
+      "mode": 0,
+      "preset": 120
+    }
+  ],
+  "wrong_parent": {
+    "declared_parent": "gg4e08:000a",
+    "published": false,
+    "remaining_free_carriers": 1,
+    "remaining_free_descriptors": 1,
+    "requested_key": 8
+  }
+}

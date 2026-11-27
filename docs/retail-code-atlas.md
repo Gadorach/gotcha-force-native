@@ -633,6 +633,46 @@ python3 -m tools.analyze.retail_small_projectile_roster \
   /tmp/opencode/gf-small-projectile-roster.json
 ```
 
+### Type-15 bomb requests under pool pressure
+
+The [bomb release receipt](api-map/gg4e08-bomb-release.json) runs
+Powered Gunman's original state split at `8016711C`, after the
+cue and movement producers. On state 3 it observes **all four**
+factory calls in order **8, 9, 6, 7**, whether current stock is one
+or zero. In state 2 it sees the ordinary debit instead. With stock
+available, that branch reaches `8016D584` and does not request a
+type-15 bomb before the cut.
+
+| State-3 capacity | Factory requests | Published in request order | Active list, head to tail |
+| --- | --- | --- | --- |
+| Four carriers and descriptors | `8, 9, 6, 7` | `8, 9, 6, 7` | `7, 6, 9, 8` |
+| Capacity for two in either pool | `8, 9, 6, 7` | `8, 9` | `9, 8` |
+| Either pool empty | `8, 9, 6, 7` | None | Empty |
+
+The ordinary Ninja and Alpha II paid leaves are separate
+controls. With Double Ninja's extra byte clear, one debit
+requests key 1. With it set, that same debit requests keys 1
+and 2. A one-descriptor pool accepts the first and does not
+refund the round when the second fails. Sasuke likewise keeps a
+last-round debit on empty-carrier refusal. Offering Powered
+Gunman's key 8 to Sasuke directly consumes neither pool.
+
+All 16 transactions and the wrong-parent control matched across
+O0, O1 and O2. The factory reads declared rigid sockets and the
+original lists; the fixture runs no later list visit, shape bind,
+bomb impact, or effect. It does not qualify the upstream charged-X
+cost or cue schedule. No native package changes.
+
+Compile [`retail_bomb_release_fixture.cpp`](../tests/host/retail_bomb_release_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags, then run:
+
+```sh
+python3 -m tools.analyze.retail_bomb_release \
+  "$GF_RETAIL_ROOT/sys/main.dol" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-release.json
+```
+
 ### Worm paid release, refunds and contact follow-up
 
 The [Worm contact receipt](api-map/gg4e08-worm-contact.json)

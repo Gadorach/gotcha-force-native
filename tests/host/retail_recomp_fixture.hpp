@@ -18,6 +18,7 @@ inline constexpr u32 actor=0x81010000, stack=0x81100000, stop=0x81810000;
 struct CallObservation {
     u32 entry,caller=0,arguments[6]{};
     unsigned count=0;
+    u32 second_arguments[8]{};
 };
 
 inline u32 be32(const u8* p){return u32(p[0])<<24|u32(p[1])<<16|u32(p[2])<<8|p[3];}
@@ -64,6 +65,7 @@ class Module {
                 obs->caller=cpu->lr-4;
                 for(unsigned i=0;i<6;++i)obs->arguments[i]=cpu->gpr[3+i];
             }
+            if(obs->count<8)obs->second_arguments[obs->count]=cpu->gpr[4];
             ++obs->count;
         }
         for(const u32 allowed:mark.addresses)if(address==allowed){
