@@ -500,11 +500,13 @@ establish distinct paths despite an audited shared movement prefix.
   pair `(1,1)`. A successful channel-2 debit requests a caster-owned
   type-60 carrier. Its qualified row-5 contact can request a type-33
   effect on the **actual contacted actor**, not on the press-time target
-  hint or caster. **API gap:** a signed cue-to-paid carrier path and a
-  second, contact-driven recipient-owned effect registration. Actual
-  size mutation, refresh, duration and full team eligibility are not
-  qualified; do not use a walk-speed modifier or assume enlargement or
-  shrinkage solely from the move label.
+  hint or caster. The [size replay](retail-code-atlas.md#type-60-size-changes-receiver-mask-scene-consumer-and-expiry)
+  verifies a separate recipient size change and callback expiry on the
+  tested routes; it does not rely on effect allocation. **API gap:** a
+  signed cue-to-paid carrier path, independent size and presentation
+  requests, and a bounded size update. Live timing, refresh and full
+  team eligibility remain unqualified; do not substitute a walk-speed
+  modifier.
 
 Regenerate with keys `kung-fu-master`, `angel-nurse`, and `patra-witch`.
 `--check-borg-moves` validates the phase/outcome shape without applying

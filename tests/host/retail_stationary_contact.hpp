@@ -8,6 +8,8 @@ using namespace retail_fixture;
 using HitBlock=std::array<u8,7840>;
 using ActorSpec=std::array<u8,432>;
 using Point=std::array<float,3>;
+struct StationaryBody {u16 model,hp;u8 step,joint;u32 table;Point offset;};
+inline constexpr StationaryBody sasuke{0x000A,180,9,2,0x802D4160,{0,-14,0}};
 inline constexpr u32 receiver=0x8101C000,body=0x81044000,body_block=0x81045000,scene=0x81018000;
 inline constexpr u32 free_head=0x803C716C,free_tail=0x803C718C,free_count=0x803C71AC,active_head=0x803C706C;
 inline constexpr u32 receiver_count=0x8043B5A0-21330,receiver_registry=0x803C417C;
@@ -26,25 +28,28 @@ inline void place_receiver(std::vector<u8>& ram,const Point& center){
     put_float(joint+12,center[0]);put_float(joint+28,center[1]+14.f);put_float(joint+44,center[2]);
     for(unsigned axis=0;axis<3;++axis)put_float(target+0x20+4*axis,center[axis]);
 }
-inline void bind_sasuke(const Module& mod,std::vector<u8>& ram,const Point& center,const HitBlock& hit,
-                        const ActorSpec& attacker,const ActorSpec& defender,unsigned owner_hp){
+inline void bind_stationary(const Module& mod,std::vector<u8>& ram,const Point& center,const HitBlock& hit,
+                            const ActorSpec& attacker,const ActorSpec& defender,unsigned owner_hp,StationaryBody spec){
     auto* target=at(ram,receiver);
     target[0]=1;target[0x18]=1;target[0x88]=1;target[0x3E4]=1;
     put32(at(ram,0x803C4E84+4),receiver);
     std::memcpy(at(ram,body_block),hit.data(),hit.size());
-    at(ram,body_block)[0]=9;at(ram,body_block)[1]=255;
-    put16(target+0x3E8,0x000A);put32(target+0x3FC,body_block);
-    put32(target+0x27C,0x802D4160);put32(target+0x76C,1u<<2);
+    at(ram,body_block)[0]=spec.step;at(ram,body_block)[1]=255;
+    put16(target+0x3E8,spec.model);put32(target+0x3FC,body_block);
+    put32(target+0x27C,spec.table);put32(target+0x76C,1u<<spec.joint);
     put_float(target+0xC0,1.f);
-    auto* joint=target+0x8D4+2*0x30;
-    for(unsigned axis=0;axis<3;++axis)put_float(joint+20*axis,1.f);
-    place_receiver(ram,center);
+    auto* joint=target+0x8D4+spec.joint*0x30;
+    for(unsigned axis=0;axis<3;++axis){
+        put_float(joint+20*axis,1.f);
+        put_float(joint+12+16*axis,center[axis]-spec.offset[axis]);
+        put_float(target+0x20+4*axis,center[axis]);
+    }
     if(half(ram,free_count+8)||be32(at(ram,free_head+16)))fail("contact needs a distinct body slot");
     at(ram,body)[2]=4;
     put32(at(ram,free_head+16),body);put32(at(ram,free_tail+16),body);put16(at(ram,free_count+8),1);
     CPUState bind_body{};bind_body.gpr[3]=receiver;
     mod.run(bind_body,ram,0x8008AB30);
-    if(be32(at(ram,active_head+50*4))!=body||be32(at(ram,body+0x28))!=body_block+32+9*80||half(ram,free_count+8))
+    if(be32(at(ram,active_head+50*4))!=body||be32(at(ram,body+0x28))!=body_block+32+spec.step*80||half(ram,free_count+8))
         fail("contact body did not bind its selected descriptor");
 
     constexpr u32 owner_spec=0x81015000,target_spec=0x81015400,difficulty=0x81019600;
@@ -53,7 +58,7 @@ inline void bind_sasuke(const Module& mod,std::vector<u8>& ram,const Point& cent
     put32(at(ram,actor+0x4AC),owner_spec);put32(target+0x4AC,target_spec);
     put32(at(ram,0x8043B5A0-31824),difficulty);put32(at(ram,0x8043B5A0-31852),scene);
     for(unsigned team=0;team<2;++team){
-        const auto hp=u16(team?180:owner_hp);
+        const auto hp=u16(team?spec.hp:owner_hp);
         const auto cell=team?receiver:actor;
         auto* fighter=at(ram,cell);
         put32(fighter+0x90,cell);
@@ -63,6 +68,10 @@ inline void bind_sasuke(const Module& mod,std::vector<u8>& ram,const Point& cent
         put32(at(ram,0x803B068C+4*team),100);
         put32(at(ram,scene+team*60+0x114),100);put32(at(ram,scene+team*60+0x118),100);
     }
+}
+inline void bind_sasuke(const Module& mod,std::vector<u8>& ram,const Point& center,const HitBlock& hit,
+                        const ActorSpec& attacker,const ActorSpec& defender,unsigned owner_hp){
+    bind_stationary(mod,ram,center,hit,attacker,defender,owner_hp,sasuke);
 }
 inline unsigned pair_hp(const Module& mod,std::vector<u8>& ram,u32 attack,u32 record,bool expected){
     const auto hp=half(ram,receiver+0x1C6);

@@ -794,7 +794,7 @@ the audited branches, at different points.
 
 | Move | Stock and contact | Recovered recipient behavior |
 | --- | --- | --- |
-| Patra Witch: Big Spell | Group 4 entry 0 emits event pair `(1,1)`. The class consumes the event and attempts one debit before requesting a caster-owned type-60 object. | That object's qualified contact can request a distinct type-33 effect owned by the **contacted actor**, not necessarily the stored target. Scale mutation, duration, refresh and complete team eligibility are unresolved. |
+| Patra Witch: Big Spell | Group 4 entry 0 emits event pair `(1,1)`. The class consumes the event and attempts one debit before requesting a caster-owned type-60 object. | An eligible contact can queue a size change independently of the type-33 effect. Both belong to the **contacted actor**, not necessarily the stored target. Live timing, refresh and complete team eligibility are unresolved. |
 | Angel Nurse: Healing | The class attempts the debit during setup. In the audited fallback pose, a lane-gated program command requests a Nurse-owned contact shape; later visual events are not the contact producer. | The checked same-team ordinary branch adds **200 HP** to the **contacted actor**, capped at its own maximum, and refuses zero current HP. It is not a revival, party-wide heal, or guaranteed hit on the stored target. |
 
 [Wiki leads: Patra Witch](https://gotchaforce.fandom.com/wiki/Patra_Witch?oldid=6420)
@@ -822,8 +822,9 @@ The [type-60 replay](retail-code-atlas.md#type-60-casts-zero-damage-and-a-separa
 joins Patra's Big Spell release to an original carrier shape and its
 separate type-33 request, alongside three related normal routes.
 Patra's tested contacts remove no HP and request the effect for the
-struck actor on both teams. The effect's scale mutation and lifetime
-remain unverified.
+struck actor on both teams. The [size replay](retail-code-atlas.md#type-60-size-changes-receiver-mask-scene-consumer-and-expiry)
+separately joins the recipient delta to the original scene consumer and
+size callback. It does not establish the type-33 effect's lifetime.
 
 The detached support planners reuse the mode-0 stock proposal and keep
 Patra's release event, caster object and recipient effect separate. Nurse's

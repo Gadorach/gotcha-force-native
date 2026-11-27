@@ -1532,7 +1532,8 @@ the retained pair does not request another effect when resources arrive.
 
 All **40 cases** matched across O0/O1/O2. The supplied pose and release
 cue do not qualify live casts, continued flight, complete team eligibility,
-recipient scale mutation, effect lifetime, or native gameplay.
+effect lifetime, or native gameplay. The next replay joins the separate
+size-change path.
 
 Compile [`retail_type60_fixture.cpp`](../tests/host/retail_type60_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -1541,6 +1542,45 @@ with the [phase fixture](#shared-action-gate) flags:
 python3 -m tools.analyze.retail_type60_contact \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type60-contact.json
+```
+
+#### Type-60 size changes: receiver mask, scene consumer and expiry
+
+The [size replay](api-map/gg4e08-type60-scale.json) joins a signed recipient
+delta at `8043612C + slot` to the original scene consumer `800681E4`.
+The pair only queues it; the scene chooses a target scale and starts a
+**900-visit** timer on the receiver. The tested ally, opponent, and
+opponent-without-an-effect-cell cases gave the same size result:
+
+| Normal caster | Signed size steps | Sasuke target scale from 1.0 |
+| --- | ---: | ---: |
+| `0902` | +1 | 1.40 |
+| `0909` | +2 | 1.80 |
+| `0907` | −1 | 0.81 |
+| `090C` | −2 | 0.70 |
+
+The normal actor initializer copies spec `+0xA8` to receiver `+0x59C`.
+Bits `0x04` and `0x08` **exclude** the corresponding size change.
+Both are set on **17 of 206** indexed normal records. In the `0602`
+replay, the overlap spawned a type-15 fallback instead of type 33;
+it queued no size delta and did not change HP.
+
+The size consumer separates the raw index from its clamped lookup.
+For example, the `0909` cast moved Sasuke's raw index from 31 to 33,
+but the lookup stayed at 31. Applied scale does not jump at the
+consumer: `8005BAB8` moves it toward the target in 0.05 steps.
+On visit 900 the temporary offset clears and the return ramp begins
+on that visit. The number refers to isolated callback visits, not
+seconds or verified live frames.
+
+All **20 cases** matched across O0/O1/O2. The scene, pose and initial
+size are bounded inlets. Repeated-contact refresh, live movement,
+type-33 lifetime and rendering, and native gameplay remain unqualified.
+
+```sh
+python3 -m tools.analyze.retail_type60_scale \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type60-scale.json
 ```
 
 ### Contact rates through an original joint sample
