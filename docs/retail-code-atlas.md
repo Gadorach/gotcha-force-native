@@ -979,7 +979,8 @@ collider publishes and no drawing runs.
 Four cases and 65 visits matched across O0, O1, and O2. These
 observations qualify allocation and update visits under declared
 inputs, not retail boot, loaded-match timing, drawing, or native
-gameplay.
+gameplay. The separate preparation replay below supplies joint
+records for both selectors and checks what they enqueue.
 
 Compile [`retail_contact_effect_storage_fixture.cpp`](../tests/host/retail_contact_effect_storage_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -988,6 +989,41 @@ with the [phase fixture](#shared-action-gate) flags:
 python3 -m tools.analyze.retail_contact_effect_storage \
   "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-contact-effect-storage.json
+```
+
+### Dynamic contact visuals: per-view model preparation and draw lists
+
+The [preparation replay](api-map/gg4e08-contact-effect-render-prep.json)
+loads geometry-free joint templates under the original record IDs:
+2 for selector 1 and 53/54 for selector 8. It runs the original
+bucket update, early transform walk `80089554`, effect collection,
+and selected-view callback `80089EB4`, without running a full scene
+frame.
+
+- **Selector 1** writes the active child joints' world translations
+  in the matching view callback and enqueues **one group descriptor**
+  in draw lane 5, even when all 16 children are active.
+- **Selector 8** prepares the active pieces' matrices in the early
+  transform walk. The matching view callback does not rewrite them;
+  it enqueues **one descriptor per active piece** in lane 5, with
+  higher piece indices first. Six descriptors were queued at the peak.
+
+The fixture's effect enters view list 0. With the context byte set
+to 1 instead, neither selector queues a descriptor, although selector 8
+still prepares its matrices. At phase 2 the effect can still be
+collected, but its zero activity mask leaves the draw lane empty.
+Phase 3 excludes it from collection. None of these passes changes
+the tested scene budgets or publishes a collider.
+
+All **66 view observations** matched across O0, O1, and O2.
+The 27 nonempty lists reached the original lane consumer and stopped
+at `8025A210`, before light/fog setup touches GX. No joint submission,
+pixel output, live camera behavior, or native gameplay is qualified.
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_render_prep \
+  "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-contact-effect-render-prep.json
 ```
 
 ### Contact-effect countdown: four collision-reset visits

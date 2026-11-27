@@ -1,5 +1,6 @@
 // Original allocator in declared RAM, followed by bounded contact-visual updates.
 #include "retail_stationary_contact.hpp"
+#include <cmath>
 
 namespace {
 using namespace retail_fixture;
@@ -11,6 +12,7 @@ constexpr u32 arena=0x81600000,arena_end=arena+0x20000,block=arena+32,payload=bl
 constexpr u32 active_head=0x803C706C,scene=contact::scene,attack_count=0x8043B5A0-21328;
 constexpr u32 os_table=0x80436408,os_current=0x80435C60,dispatch=0x803FA748;
 constexpr u32 bucket=31,row=pools+3*28,cell_stride=0x80;
+constexpr u32 render_context=0x81038000,draw_heads=0x803BB150,view_heads=0x803C6F1C;
 constexpr unsigned burst_masks[]{255,255,255,255,255,65535,65535,65535,65535,65535,
                                   65535,65535,65535,65535,65535,65535,65280,0,0,0};
 constexpr unsigned piece_masks[]{3,7,15,31,63,63,57,49,33,1,0,0,0};
@@ -114,8 +116,39 @@ class Check {
         }
         if(cur)fail("original burst joint group exceeded the admitted burst");
     }
+    std::array<u32,16> draw_joints(bool burst,bool retired){
+        std::array<u32,16> result{};
+        if(retired)return result;
+        if(burst){
+            check_burst_joints();
+            auto cur=word(word(cells+12)+16);
+            for(unsigned i=0;i<spec.count;++i){
+                result[i]=cur;cur=word(cur+8);
+            }
+        }else{
+            for(unsigned i=0;i<8;++i)result[i]=word(cells+i*cell_stride+12);
+        }
+        return result;
+    }
+    bool finite(u32 address){return std::isfinite(std::bit_cast<float>(word(address)));}
+    void check_piece_transform(u32 joint,unsigned i,unsigned visit){
+        const auto particle=payload+32*i;
+        if(!joint||joint<block||joint>=arena_end||word(cells+i*cell_stride+20)!=53+unsigned(half(particle+30)))
+            fail("contact piece lost its model-record binding");
+        for(unsigned j=0;j<12;++j)
+            if(!finite(joint+68+4*j))fail("contact piece transform is not finite");
+        if(visit==1&&(half(particle+24)||half(particle+26)||half(particle+28)))
+            fail("contact piece first-visit scale check needs the declared zero-angle sample");
+        for(unsigned axis=0;axis<3;++axis){
+            if(word(effect+0x114+12+16*axis)!=word(origin+4*axis)||
+               word(joint+68+12+16*axis)!=word(origin+4*axis))
+                fail("piece transform did not preserve its world origin");
+            if(visit==1&&word(joint+68+20*axis)!=word(particle+12+4*axis))
+                fail("unrotated contact piece did not apply its local scale");
+        }
+    }
 public:
-    Check(const Module& m,const std::vector<u8>& original,const Case& c):mod(m),spec(c),ram(original){
+    Check(const Module& m,const std::vector<u8>& original,const Case& c,bool render=false):mod(m),spec(c),ram(original){
         init_heap();
         at(parent)[0]=1;at(actor)[0]=1;at(effect)[2]=2;at(shape)[2]=4;
         put32(at(parent+0x90),actor);put_float(at(parent+0xB4),1.f);
@@ -145,15 +178,18 @@ public:
         put16(at(contact::free_count+8),1);
         put32(at(0x803BB374),visual);put32(at(visual+16),link);put32(at(link),table);
         for(auto id:{53u,54u})put32(at(table+4*id),empty);
-        if(spec.selector==1){
+        if(spec.selector==1||render){
             constexpr u32 record=empty+0x20,joint=empty+0x80;
             // Original HSD ID pool and declared single-joint template
             // (no children, animation or geometry).
             call(0x80259644);
-            put32(at(table+4*2),record);
+            if(spec.selector==8){
+                for(auto id:{53u,54u})put32(at(table+4*id),record);
+            }else put32(at(table+4*2),record);
             put32(at(record),joint);
             for(unsigned i=0;i<3;++i)put_float(at(joint+32+4*i),1.f);
         }
+        if(render)put32(at(0x8043B5A0-31856),render_context);
 
         CPUState request{};request.gpr[3]=parent;request.gpr[4]=origin;request.gpr[5]=spec.selector;
         mod.run(request,ram,0x80019550);
@@ -202,13 +238,105 @@ public:
                         at(effect+0x82)[0],half(scene+484),half(scene+486),retired?0:word(block+8));
         }
     }
+
+    void render_prepare(){
+        for(unsigned visit=1;visit<=spec.retire;++visit){
+            call(0x80089A94,bucket);
+            const bool burst=spec.selector==1,retired=visit==spec.retire;
+            const auto mask=burst?word(effect+0x158):unsigned(half(effect+0x1C));
+            if(mask!=(burst?burst_masks[visit-1]:piece_masks[visit-1]))
+                fail("contact visual render records changed the update mask");
+            const auto phase=at(effect+0x18)[0],enabled=at(effect+0x82)[0];
+            if(bool(at(effect)[0])==retired||enabled!=unsigned(visit<spec.retire-1))
+                fail("contact visual render preparation needs the verified update lifecycle");
+            if(!retired)allocation();
+            const auto joints=draw_joints(burst,retired);
+            if(!retired&&word(effect+0x100)!=(burst?0u:0x800197E8))
+                fail("contact visual changed its early transform callback");
+            for(unsigned view:{1u,0u}){
+                at(render_context+52)[0]=u8(view);
+                call(0x80009790);
+                call(0x80089554);
+                call(0x8008A16C);
+                call(0x80089CD0,24);
+                std::array<std::array<u8,48>,16> before{};
+                unsigned prepared=0;
+                for(unsigned i=0;i<joints.size();++i){
+                    if(joints[i])std::memcpy(before[i].data(),at(joints[i]+68),48);
+                    if(!burst&&(mask&(1u<<i))){
+                        check_piece_transform(joints[i],i,visit);
+                        prepared|=1u<<i;
+                    }
+                }
+                const bool collected=visit<spec.retire-1;
+                if(word(view_heads)!=(collected?effect:0)||word(view_heads+4)||word(effect+0x110))
+                    fail("contact visual was collected under the wrong view or after disabling");
+                for(unsigned lane=0;lane<6;++lane)
+                    if(word(draw_heads+4*lane))fail("contact visual transform queued before its view callback");
+                if(!retired&&word(effect+0x10C)!=0x80019824)
+                    fail("contact visual lost its original family draw callback");
+                const auto scene_bursts=half(scene+484),scene_entries=half(scene+486);
+                call(0x80089EB4);
+                for(unsigned i=0;i<joints.size();++i){
+                    if(!joints[i])continue;
+                    if(burst&&!view&&(mask&(1u<<i))){
+                        prepared|=1u<<i;
+                        for(unsigned axis=0;axis<3;++axis)
+                            if(!finite(joints[i]+68+12+axis*16)||
+                               word(joints[i]+68+12+axis*16)!=word(payload+56*i+4*axis))
+                                fail("burst child translation did not follow its active entry position");
+                    }else if(std::memcmp(before[i].data(),at(joints[i]+68),48))
+                        fail("contact visual registration rewrote an unrelated joint matrix");
+                }
+                const unsigned expected=view?0u:burst?unsigned(mask!=0):std::popcount(mask);
+                unsigned queued=0,queued_mask=0,limit=burst?1:8;
+                u32 head=word(draw_heads+5*4);
+                for(u32 cur=head;cur;cur=word(cur+40)){
+                    if(cur<cells||(cur-cells)%cell_stride||(cur-cells)/cell_stride>=(burst?1:8)||++queued>8)
+                        fail("contact visual draw queue escaped the admitted descriptors");
+                    const unsigned i=(cur-cells)/cell_stride,bit=1u<<i;
+                    if(queued_mask&bit||i>=limit||!word(cur+12)||at(cur+16)[0]!=1)
+                        fail("contact visual draw list changed descriptor order or lacked a joint");
+                    limit=i;
+                    queued_mask|=bit;
+                }
+                for(unsigned lane=0;lane<5;++lane)
+                    if(word(draw_heads+4*lane)){
+                        std::fprintf(stderr,"selector=%u visit=%u view=%u lane=%u head=%08X\n",
+                                     spec.selector,visit,view,lane,word(draw_heads+4*lane));
+                        fail("contact visual used an unexpected draw lane");
+                    }
+                if(queued!=expected||queued_mask!=(expected?(burst?1:mask):0)||
+                   at(effect+0x18)[0]!=phase||at(effect+0x82)[0]!=enabled||
+                   half(scene+484)!=scene_bursts||half(scene+486)!=scene_entries||
+                   mask!=(burst?word(effect+0x158):unsigned(half(effect+0x1C))))
+                    fail("contact visual preparation changed the wrong mask or budget");
+                no_collider();
+                if(head){
+                    // The consumer configures light/fog before walking its
+                    // lane. Do not touch the GX FIFO in the host fixture.
+                    CPUState consume{};consume.gpr[3]=5;
+                    mod.run_to(consume,ram,0x80009838,{0x8025A210});
+                    if(consume.lr!=0x80009880||consume.gpr[3]||word(draw_heads+5*4)!=head)
+                        fail("contact visual did not reach the original render-state frontier");
+                }
+                std::printf("effect-render: %u %u %u %u %u %u %u %u\n",spec.selector,visit,view,mask,
+                            prepared,unsigned(collected),queued,queued_mask);
+            }
+        }
+    }
 };
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: contact-effect-storage-fixture qualified.dol unmodified-recomp.so");
+    const bool render=argc==4&&!std::strcmp(argv[3],"--render-prep");
+    if(argc!=3&&!render)fail("usage: contact-effect-storage-fixture qualified.dol unmodified-recomp.so [--render-prep]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(render){
+        for(unsigned i:{0u,2u})Check(mod,original,cases[i],true).render_prepare();
+        return 0;
+    }
     for(unsigned i=0;i<std::size(cases);++i){
         if(cases[i].selector==1)Check(mod,original,cases[i]).burst_frontier(i);
         Check(mod,original,cases[i]).lifetime(i);
