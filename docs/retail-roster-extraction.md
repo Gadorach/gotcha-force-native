@@ -1819,6 +1819,16 @@ Neither had started by tick 240 in the previous sweep. In isolation,
 Sirius also hit at tick 108, where the previous planner covered only
 96 units in 240 ticks without attacking.
 
+The same corner extension is available for a slow CPU's forward
+ground dash when it replaces a long walk. In the targeted fixture,
+Army Robot (`0408`) hit at tick 51; the previous planner started at
+tick 138 and never hit in 240 frames. The narrower rule kept the
+240-tick totals at **191 starts and 182 damaging hitters**, with all
+206 admitted. At tick 120 it had **163 starts and 147 damaging
+hitters**, one fewer start and the same hit count. The broader
+ground-dash rule was not kept because it reduced early and late
+activity.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

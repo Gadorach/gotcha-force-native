@@ -30,6 +30,7 @@ public:
         const auto tick=world.tick();
         if(state.sampled==tick)return state.output;
         const bool previous_boost=state.sampled!=unsampled&&state.output.movement.b;
+        const bool previous_dash=state.sampled!=unsampled&&state.output.movement.l;
         const auto opening=cpu==0?0u:30u-5u*cpu; // spread opening attacks by CPU order
         if(state.sampled==unsampled)state.next_start=opening;
         state.sampled=tick;
@@ -39,14 +40,18 @@ public:
 
         const auto& self=world.actors()[slot];
         const auto& action=world.package_action(slot);
-        if(state.cruise_leg_until>tick&&profile->cruise&&self.package_boosting&&!self.hit_flash&&
-           self.movement_speed>.05f&&self.package_boost_meter.value736>0&&action.move==BorgBattleActionState::none){
-            // Keep the checked stick direction through the minimum latch.
-            // Collision and the real boost meter can still end this plan.
-            pad.stick_x=state.cruise_leg_x;pad.stick_y=state.cruise_leg_y;pad.b=true;
+        const bool boost_leg=state.burst_leg==BurstLeg::Boost;
+        const bool dash_leg=state.burst_leg==BurstLeg::Dash;
+        const bool burst_active=(boost_leg&&profile->cruise&&self.package_boosting&&self.package_boost_meter.value736>0)||
+            (dash_leg&&self.grounded&&self.dash_ticks&&!self.dash_airborne);
+        if(state.burst_leg_until>tick&&burst_active&&!self.hit_flash&&self.movement_speed>.05f&&
+           action.move==BorgBattleActionState::none){
+            // Keep the checked stick direction through the native burst.
+            // Collision, interruption and stock can still end the plan.
+            pad.stick_x=state.burst_leg_x;pad.stick_y=state.burst_leg_y;pad.b=boost_leg;pad.l=dash_leg;
             return state.output;
         }
-        state.cruise_leg_until=0;
+        state.burst_leg=BurstLeg::None;
         const auto preferred=std::any_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
             return move.button==BorgBattleButton::B&&supported(move);
         })?BorgBattleButton::B:BorgBattleButton::X;
@@ -225,14 +230,16 @@ public:
         };
         const auto steer_around_ally=[&](BattlePoint direction,f32 room){
             if(profile->movement!=BorgBattleMovement::Grounded||!self.grounded||
-               self.dash_ticks||self.hit_flash||state.button||action.move!=BorgBattleActionState::none)return;
+               self.dash_ticks||self.hit_flash||state.button||action.move!=BorgBattleActionState::none)return false;
             const auto burst=pad.l?profile->dash*world.config().dash_duration:0.f;
             const auto lookahead=std::min(room,std::max(3*radius,burst));
             if(const auto side=pass_ally(world,slot,start,direction,lookahead,terrain)){
                 pad.l=false;
                 pad.stick_x=s8(std::lround(127*side->x));
                 pad.stick_y=s8(std::lround(127*side->z));
+                return true;
             }
+            return false;
         };
         const auto boost_travel=[&]()->f32{
             if(!profile->cruise||self.grounded||profile->dash<=profile->walk||
@@ -284,13 +291,21 @@ public:
                     // for this burst rather than dashing at the rival.
                     pad.l=dash_fits(step,span,radius);
                     pad.b=boost_toward(*waypoint,radius);
-                    if(!pad.b&&!previous_boost&&!self.package_boosting&&boost_travel()>span&&
-                       cruise_leg_extension_fits(world,slot,*terrain,state.route,state.waypoint,pad)){
-                        state.cruise_leg_x=s8(pad.stick_x);state.cruise_leg_y=s8(pad.stick_y);
-                        state.cruise_leg_until=u64(tick)+profile->cruise->minimum;
-                        pad.b=true;
+                    if(!steer_around_ally({step.x/span,step.z/span},span)&&!pad.l&&!pad.b){
+                        const auto dash_ticks=world.config().dash_duration;
+                        const f32 heading=(self.facing.x*step.x+self.facing.z*step.z)/span;
+                        const bool extend_dash=can_dash&&!previous_dash&&heading>=.8f&&
+                            profile->dash*dash_ticks>span&&span>=4*profile->walk*dash_ticks;
+                        const bool extend_boost=!previous_boost&&!self.package_boosting&&boost_travel()>span;
+                        const auto visits=extend_boost?profile->cruise->minimum:dash_ticks;
+                        if((extend_dash||extend_boost)&&
+                           route_burst_extension_fits(world,slot,*terrain,state.route,state.waypoint,pad,visits,extend_boost)){
+                            state.burst_leg=extend_boost?BurstLeg::Boost:BurstLeg::Dash;
+                            state.burst_leg_x=s8(pad.stick_x);state.burst_leg_y=s8(pad.stick_y);
+                            state.burst_leg_until=u64(tick)+visits;
+                            pad.b=extend_boost;pad.l=extend_dash;
+                        }
                     }
-                    steer_around_ally({step.x/span,step.z/span},span);
                 }
             }
         }else if(!keep_route_probe){state.route_target=255;state.route.count=0;}
@@ -337,11 +352,13 @@ public:
     }
 private:
     static constexpr u32 unsampled=std::numeric_limits<u32>::max();
+    enum class BurstLeg:u8 {None,Dash,Boost};
     struct Slot {
         u32 sampled=unsampled;
-        u64 release_at=0,next_start=0,replan_at=0,cruise_leg_until=0;
+        u64 release_at=0,next_start=0,replan_at=0,burst_leg_until=0;
         u8 button=0,route_target=255;
-        s8 cruise_leg_x=0,cruise_leg_y=0;
+        s8 burst_leg_x=0,burst_leg_y=0;
+        BurstLeg burst_leg=BurstLeg::None;
         bool release_window=false;
         PortableRosterInput output{};
         BattlePoint route_goal{};
@@ -355,17 +372,17 @@ private:
         return (p.x-from.x)*step.x+(p.z-from.z)*step.z>0&&battle_swept_hit(from,step,p,2*radius,fraction);
     }
 
-    static bool cruise_leg_extension_fits(const NativeBattleMvp& world,unsigned owner,const IBattleMvpTerrain& terrain,
-                                           const BattlePartitionRoute& route,unsigned waypoint,const GamePadState& pad){
+    static bool route_burst_extension_fits(const NativeBattleMvp& world,unsigned owner,const IBattleMvpTerrain& terrain,
+                                            const BattlePartitionRoute& route,unsigned waypoint,const GamePadState& pad,
+                                            unsigned visits,bool cruise){
         if(waypoint+1>=route.count||(!pad.stick_x&&!pad.stick_y))return false; // never extend past the goal
         const auto& self=world.actors()[owner];
         const auto& cfg=world.config();
         const auto& profile=*cfg.packages[owner];
-        const auto& spec=*profile.cruise;
         const auto wish=native_borg_move_direction(native_borg_stick_axis(pad.stick_x),native_borg_stick_axis(pad.stick_y),{});
-        if(std::abs(native_borg_aim_delta(self.facing,wish))>std::min(.08f,cfg.turn_per_tick*.5f))return false;
-        const auto direction=native_borg_turn(self.facing,wish,cfg.turn_per_tick);
-        const f32 travel=profile.dash*spec.minimum;
+        if(cruise&&std::abs(native_borg_aim_delta(self.facing,wish))>std::min(.08f,cfg.turn_per_tick*.5f))return false;
+        const auto direction=cruise?native_borg_turn(self.facing,wish,cfg.turn_per_tick):native_borg_direction({},wish);
+        const f32 travel=profile.dash*visits;
         const BattlePoint from{self.position[0],self.position[2]},step{direction.x*travel,direction.z*travel};
         const BattlePoint to{from.x+step.x,from.z+step.z};
         const auto bound=cfg.arena_half-cfg.actor_radius-4.f;
@@ -385,8 +402,8 @@ private:
         }
         // Only preview constant-height runs; unknown support or a height
         // change needs ordinary steering, not a long boost commitment.
-        const f32 support=self.position[1]-spec.height;
-        for(unsigned n=1;n<=spec.minimum;++n){
+        const f32 support=self.position[1]-(cruise?profile.cruise->height:0);
+        for(unsigned n=1;n<=visits;++n){
             const f32 length=n*profile.dash;
             f32 floor=0;
             if(!terrain.height(from.x+direction.x*length,from.z+direction.z*length,self.position[1],&floor)||

@@ -122,6 +122,22 @@ def smoke(binary, opengl):
             hits = set(re.findall(r"borg-api: round=\d+ tick=\d+ actor=2 move=slash event=hit .*recipient=(\d+) ", log))
             assert hits == {recipient}, log[-5000:]
 
+        # A slow grounded CPU can use a full dash into open space past
+        # the short waypoint, instead of walking all the way to it.
+        profile.write_text(profile.read_text().replace("grounded-v1|10|13|15", "grounded-v1|1.43|13|15"))
+        manifest.write_text(text + "spawn=ground-near|615|0|140\nspawn=ground-far|-700|0|200\nspawn=ground-cpu|630|0|-185\n")
+        preset.write_text(
+            "GFROSTER 1\nstage=example:workshop\n"
+            "fighter=0|example:jump-stick|normal|ground-near\n"
+            "fighter=0|example:jump-stick|normal|ground-far\n"
+            "fighter=1|example:flight-stick|normal|ground-cpu\n"
+        )
+        result = run([binary, mode, "--no-audio", "--trace-package-battle", "--frames", "78",
+                      "--battle-roster", preset], cwd=root, capture_output=True, text=True, timeout=45)
+        log = result.stderr
+        assert result.returncode == 0 and "frames=78 actors=3 restarts=0" in log, log[-5000:]
+        assert re.search(r"borg-api: round=0 tick=\d+ actor=2 move=slash event=hit .*recipient=0 ", log), log[-5000:]
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)

@@ -576,10 +576,11 @@ void roster_cpu_detour_dash_cases(){
     }
     check(world.actors()[2].travel_distance>100&&world.actors()[2].position[2]<-6&&world.actors()[2].dash_ticks,
           "engine accelerates the CPU along its original side of the wall");
-    config.spawn={BattlePoint{605,180},BattlePoint{585,360},BattlePoint{605,-100}};
+    config.spawn={BattlePoint{605,180},BattlePoint{585,360},BattlePoint{630,-58}};
     start();
     const auto corner=cpu.input(world,2,&terrain);
-    check(!corner.movement.l&&corner.movement.stick_x>0&&!corner.attack.pressed,"walk the short leg to a nearby corner");
+    check(!corner.movement.l&&corner.movement.stick_x>0&&!corner.attack.pressed,
+          "walk the short leg when extending straight would make the route longer");
     config.spawn={BattlePoint{0,180},BattlePoint{100,300},BattlePoint{0,-280}};
     config.packages[2]=melee(false);start();
     check(!cpu.input(world,2,&terrain).movement.l,"detours preserve a package's disabled dash policy");
@@ -1087,6 +1088,57 @@ void roster_cpu_cruise_cases(){
     check(!near.movement.b&&near.attack.pressed==BorgBattleInputs::x,"in-range cruiser attacks instead of boosting");
 }
 
+void roster_cpu_ground_extension_cases(){
+    struct Terrain final:IBattleMvpTerrain {
+        std::array<StageBodyPartition,1> boxes{{{"wall",-620,-6,620,6,true}}};
+        bool step=false;
+        std::span<const StageBodyPartition> body_partitions()const override{return boxes;}
+        bool height(f32,f32 z,f32,f32* out)const override{if(!out)return false;*out=step&&z>-35?10:0;return true;}
+    } terrain;
+    const auto idle=definition("stationary-v1","health=400\n");
+    const std::string attacks="health=400\nwalk=0:1\nair=0:2\ndash=0:3\n"
+        "move=slash|b|10|grounded|14|0:4\nrange=slash|145\nmelee=slash|4|7|95|24|60|35|19\n";
+    const auto melee=definition("grounded-v1|1.43|13|15",attacks);
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;config.local_aim_cycle=true;
+    config.teams={0,0,1};config.packages={idle,idle,melee};
+    config.spawn={BattlePoint{615,140},BattlePoint{-700,200},BattlePoint{630,-185}};
+    const auto route=battle_partition_route(terrain,config.spawn[2],config.spawn[0],config.arena_half,config.actor_radius);
+    check(route.count>1&&std::hypot(route.points[0].x-630,route.points[0].z+185)<180,
+          "the timer would outlast the first routed leg");
+    NativeBattleMvp world;PortableRosterAi cpu;
+    const auto start=[&](){cpu.reset();check(world.start(config,&terrain),"start ground extension fixture");};
+    start();
+    const auto checked=cpu.input(world,2,&terrain).movement;
+    check(checked.l,"request an ordinary dash for the safe extension");
+    bool hit=false;
+    for(unsigned n=0;n<160&&!hit;++n){
+        const auto ai=cpu.input(world,2,&terrain);
+        if(n<config.dash_duration)
+            check(ai.movement.l&&ai.movement.stick_x==checked.stick_x&&ai.movement.stick_y==checked.stick_y&&!ai.attack.pressed,
+                  "hold the checked ground input only through the normal dash duration");
+        const std::array<u8,1> hints{ai.aim_target};
+        check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+            std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false,&terrain,{},nullptr,nullptr,nullptr,{},
+            {nullptr,0,ai.aim_target==255?std::span<const u8>{}:std::span<const u8>(hints)}),"advance a native ground dash around the corner");
+        if(n==config.dash_duration)
+            check(!world.actors()[2].dash_ticks&&world.actors()[2].dash_cooldown>0,
+                  "extension does not renew the dash or skip its cooldown");
+        for(const auto& e:world.package_events())hit|=e.actor==2&&e.kind==BorgBattleEventKind::Hit&&e.recipient==0;
+    }
+    check(hit,"the short-corner dash reaches a genuine enemy hit");
+    config.packages[2]=definition("grounded-v1|8|13|15",attacks);start();
+    check(!cpu.input(world,2,&terrain).movement.l,"a fast walker doesn't extend the same corner leg");
+    config.packages[2]=melee;
+    terrain.step=true;start();
+    check(!cpu.input(world,2,&terrain).movement.l,"unknown height along the extension leaves the ordinary walk");
+    terrain.step=false;config.spawn[0]={110,140};start();
+    const auto misaligned=cpu.input(world,2,&terrain);
+    check(!misaligned.movement.l&&misaligned.movement.stick_x>0,
+          "walk toward the corner when the extension is not a forward dash");
+    config.spawn[0]={615,140};config.teams[1]=1;config.spawn[1]={690,-45};start();
+    check(!cpu.input(world,2,&terrain).movement.l,"a solid ally beyond the corner prevents the extended dash");
+}
+
 void roster_cpu_cruise_extension_cases(){
     struct Terrain final:IBattleMvpTerrain {
         std::array<StageBodyPartition,1> boxes{{{"wall",-620,-6,620,6,true}}};
@@ -1336,6 +1388,7 @@ int main(int argc,char** argv){
     roster_cpu_follow_charge_cases();
     roster_cpu_field_height_cases();
     roster_cpu_cruise_cases();
+    roster_cpu_ground_extension_cases();
     roster_cpu_cruise_extension_cases();
     one_local_roster_cases();
     coop_roster_cases();

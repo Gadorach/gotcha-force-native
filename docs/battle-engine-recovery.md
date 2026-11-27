@@ -1117,6 +1117,11 @@ get that request. The planner supplies inputs only; floor, other
 bodies and actual dash acceptance remain in the battle engine.
 For a direct close-range approach, the burst must leave room to slow
 down near the rival, and a ready attack takes priority over dashing.
+A slow walker can extend a forward dash straight past a corner
+waypoint when walking that leg would take at least four dash durations.
+The full dash must fit over flat support, clear walls and the current
+bodies, and shorten the remaining route. The planner holds the checked
+stick direction; the mover still owns the dash duration and cooldown.
 If a living ally at body height blocks a grounded CPU's direct approach
 or a leg around a partition, the planner checks two short lateral legs
 and either sidesteps or waits. It doesn't change the target or grant
