@@ -1,0 +1,22 @@
+{
+  "bind_cases": [
+    {"allocation_order":[],"attack_registry_order":[],"later_supplied_shape_cells":4,"overlapping_shapes":null,"receiver":null,"receiver_offset_y":null,"retried_bind":false,"shape_cells_at_first_bind":0},
+    {"allocation_order":[13],"attack_registry_order":[13],"later_supplied_shape_cells":3,"overlapping_shapes":0,"receiver":{"hp_after":180,"hp_loss":0,"same_segment_token_refused_on_repeat":false,"segment_token":null},"receiver_offset_y":210,"retried_bind":false,"shape_cells_at_first_bind":1},
+    {"allocation_order":[13,28],"attack_registry_order":[28,13],"later_supplied_shape_cells":2,"overlapping_shapes":0,"receiver":{"hp_after":180,"hp_loss":0,"same_segment_token_refused_on_repeat":false,"segment_token":null},"receiver_offset_y":210,"retried_bind":false,"shape_cells_at_first_bind":2},
+    {"allocation_order":[13,28,29],"attack_registry_order":[29,28,13],"later_supplied_shape_cells":1,"overlapping_shapes":0,"receiver":{"hp_after":180,"hp_loss":0,"same_segment_token_refused_on_repeat":false,"segment_token":null},"receiver_offset_y":210,"retried_bind":false,"shape_cells_at_first_bind":3},
+    {"allocation_order":[13,28,29,30],"attack_registry_order":[30,29,28,13],"later_supplied_shape_cells":0,"overlapping_shapes":1,"receiver":{"hp_after":176,"hp_loss":4,"same_segment_token_refused_on_repeat":true,"segment_token":1},"receiver_offset_y":210,"retried_bind":false,"shape_cells_at_first_bind":4},
+    {"allocation_order":[13,28],"attack_registry_order":[28,13],"later_supplied_shape_cells":2,"overlapping_shapes":2,"receiver":{"hp_after":176,"hp_loss":4,"same_segment_token_refused_on_repeat":true,"segment_token":1},"receiver_offset_y":60,"retried_bind":false,"shape_cells_at_first_bind":2},
+    {"allocation_order":[13,28,29,30],"attack_registry_order":[30,29,28,13],"later_supplied_shape_cells":0,"overlapping_shapes":2,"receiver":{"hp_after":176,"hp_loss":4,"same_segment_token_refused_on_repeat":true,"segment_token":1},"receiver_offset_y":60,"retried_bind":false,"shape_cells_at_first_bind":4}
+  ],
+  "empty_carrier_windows": [
+    {"first_request_visit":11,"last_request_visit":69,"owner_clock_units_per_visit":1,"phase_two_visit":70,"requests":59,"segments_allocated":0,"spare_segment_cells":0,"warmup_visits":10},
+    {"first_request_visit":11,"last_request_visit":69,"owner_clock_units_per_visit":0.5,"phase_two_visit":70,"requests":59,"segments_allocated":0,"spare_segment_cells":0,"warmup_visits":10}
+  ],
+  "kind": "gf-retail-type55-segment",
+  "notes": ["The carrier factory is called directly. The owner pose is declared and the carrier's late callback stops at the renderer write.","The emission clocks are tested at the original carrier visits with no spare type-11 objects, not a live match schedule.","One type-11 child binds only a prefix of its exact group. It does not retry after more shape cells become available.","The narrow swept spheres share the segment token. In overlap cases the original resolver is rerun with the same registry.","No live action admission, overlapping recipients, whole-move damage, or native gameplay changes are qualified."],
+  "receiver": {"body_step":9,"borg":"gg4e08:000a","flags":2,"kind":0,"level_one_hp":180,"local_center":[0.0,-14.0,0.0],"matrix_selector":2,"radius":22.0},
+  "revision": 1,
+  "source": {"actor_spec_sha256":"cbfe1d88da6fabd0ce7443d948a40253b1789633dd911dc0eacb092fc3442ca5","amount_record":"80351EE8","borg":"gg4e08:0704","factory":"8018EEA4","hit_block_sha256":"b76c87cce315ee196559f525538ecd82b8e5aaf3524bf37ce77d0f9376355bba","key":0,"level_one_hp":300,"queue":[{"descriptor":13,"local_y":30,"radius":30},{"descriptor":28,"local_y":90,"radius":30},{"descriptor":29,"local_y":150,"radius":30},{"descriptor":30,"local_y":210,"radius":30}],"raw_power":10,"reaction_index":26,"segment_key":8,"segment_request":"8018F384"},
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

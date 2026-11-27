@@ -1219,6 +1219,44 @@ python3 -m tools.analyze.retail_type71_contact \
   /tmp/opencode/gf-type71-contact.json
 ```
 
+### Type-55 segment: partial shapes and a shared hit token
+
+The [type-55 replay](api-map/gg4e08-type55-segment.json) starts
+`0704`'s key-0 carrier directly. With no spare segment cell,
+it warms up for **10** callbacks, requests group 8 on visits
+**11–69** (59 requests), then enters phase 2 on visit **70**.
+Owner clock steps 1 and 0.5 produced the same counts in these
+controls. These are callback visits, not game frames.
+
+With a spare segment cell, its four-descriptor group binds in
+order **13, 28, 29, 30** until the shape pool is exhausted.
+The registry lists the admitted shapes in reverse. Additional
+slots supplied before the next segment update do not add the
+missing descriptors or retry an empty bind.
+
+The four radius-30 spheres sweep at vertical offsets **30, 90,
+150, and 210**. The upper receiver is hit only with the fourth
+shape admitted. A receiver between the two lowest spheres
+overlaps both, but the original resolver removes **4 HP** once
+from the group-8 record (raw power 10). Re-resolving the same
+registry refuses the shared segment token without another
+HP or ledger write.
+
+All nine cases matched across O0, O1, and O2. The owner pose is
+declared and the late transform stops at the renderer write.
+The replay does not qualify paid action entry, live hit cadence,
+multiple recipients, whole-move damage, or native gameplay.
+
+Compile [`retail_type55_segment_fixture.cpp`](../tests/host/retail_type55_segment_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type55_segment \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type55-segment "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type55-segment.json
+```
+
 ### Ordinary X: installed program, VM cue, and paid bomb release
 
 The [X-cue replay](api-map/gg4e08-bomb-x-cue.json) starts at the original
