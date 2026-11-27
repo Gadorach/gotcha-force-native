@@ -903,6 +903,47 @@ python3 -m tools.analyze.retail_contact_effect_tail \
   "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-tail.json
 ```
 
+### Dynamic contact visuals: separate storage admission and refusal cleanup
+
+The [initialization replay](api-map/gg4e08-contact-effect-init.json)
+starts selectors **1** and **8** at the original helper, after the
+selector choice already verified in the accepted-pair replay.
+Both allocate in bucket 31, then try to obtain a separate type-3
+visual object before reaching the heap. The battle descriptors
+do not satisfy that later request.
+
+- **Selector 1** stops before advancing the RNG if the scene already
+  holds 32 bursts or 512 entries. With space available, a seeded
+  request for 19 entries splits **10 + 9**; the same seed at 496
+  and 511 entries is trimmed to **8 + 8** and **1 + 0**. Each entry
+  requests 56 bytes. The RNG advances even if visual storage is
+  refused.
+- **Selector 8** requests **256 bytes** regardless of those two
+  scene counters in the tested inlet. It does not advance the RNG at
+  this allocation boundary.
+
+In a separate fork, supplying one type-3 cell reaches the original
+heap entry with the request rounded up to 32 bytes (56 → 64 and
+1,064 → 1,088). That fork stops before allocating. With the
+type-3 pool empty, or when the selector-1 caps refuse the request,
+the effect enters phase 2 on visit 1 and phase 3 on visit 2. Visit
+3 returns its class-2 cell and all original descriptors. These
+paths do not charge the scene counters or publish an attack
+shape, even when a shape cell is available.
+
+All eight cases, including six heap-entry forks, matched across
+O0, O1, and O2. This does not qualify successful emitter
+initialization, drawing, live scheduling, or native gameplay.
+
+Compile [`retail_contact_effect_init_fixture.cpp`](../tests/host/retail_contact_effect_init_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_init \
+  "$GF_RETAIL_ROOT/sys/main.dol" /tmp/opencode/impact-init "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-contact-effect-init.json
+```
+
 ### Contact-effect countdown: four collision-reset visits
 
 The [clock replay](api-map/gg4e08-contact-gate-clock.json) places
