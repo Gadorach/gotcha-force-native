@@ -940,6 +940,46 @@ python3 -m tools.analyze.retail_contact_gate_clock \
   /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-gate-clock.json
 ```
 
+### Contact sound: strict size bands and shared counter bytes
+
+The [sound replay](api-map/gg4e08-contact-sound-replay.json)
+executes the original lookup with playback disabled. Size-indexed
+codes move to the next band **strictly above** 1.5, 2.5 and 3.5;
+the next representable float above each threshold confirms it.
+Code 0 stays on IDs 48/49 regardless of size. Code `0xFF`
+selects nothing and does not arm the sound gate.
+
+Original alternation is partitioned by the receiver's source
+byte `+0x96`, not by receiver object. Two declared receivers in
+the same partition share a counter; a held gate leaves it
+unchanged. The counter wraps from 255 to zero. The isolated
+special-group probe also found an alias: code `0xC8` at band 2
+in partition 0 uses counter byte **22**, as does ordinary `0x88`
+at band 1 in partition 1. The selected IDs were **92** and **67**
+in that sequence.
+
+In the accepted type-9 pair, holding sound `+0x2AE` did not stop
+the visual request, and holding visual `+0x2AF` did not stop the
+sound counter increment. All four gate combinations removed
+**17 HP**. The isolated sound replay observes the selected ID
+left in `r3` by the disabled mixer path, not an audible result.
+
+Five of the 73 scoped actor amount records use special codes
+`0xC0` or `0xC8`. Those probes do not qualify live special
+routes or extend native sound bindings. All 54 cases matched
+across O0, O1, and O2; playback, mixing, live timing, and native
+gameplay remain outside this replay.
+
+Compile [`retail_impact_sound_fixture.cpp`](../tests/host/retail_impact_sound_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_contact_sound_replay \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/impact-sound /tmp/opencode/type9-bind "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-contact-sound-replay.json
+```
+
 ### Type-89 exits: cached area key 16
 
 `8016CC24` creates a type-89 carrier with update `8016CD1C`.

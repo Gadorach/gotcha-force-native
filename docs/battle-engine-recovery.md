@@ -543,6 +543,11 @@ sound volume. `800F088C` reads the even ID and uses the low bit of its
 counter for the odd ID, then dispatches audio at the hit position.
 The fixed helper's size branches all request the same sound, ID 38.
 
+The [bounded sound replay](retail-code-atlas.md#contact-sound-strict-size-bands-and-shared-counter-bytes)
+confirms the size thresholds, shared counter bytes, and separate
+sound and visual gates with playback disabled. It does not change
+the native receiver-local policy below.
+
 In `--contact-audio`, the converter requires normal receiver records
 and agreement across installer size bands (184 qualify). It binds
 168 verified direct moves; two zero-power, two special-status and two

@@ -18,7 +18,7 @@ using CommonBank=std::array<u8,21504>;
 struct ContactInlet {
     contact::HitBlock hit;
     contact::ActorSpec owner,defender;
-    int impact_case=-1,clock_visits=-1;
+    int impact_case=-1,clock_visits=-1,sound_case=-1;
     float clock_step=1.f;
 };
 constexpr contact::Point origin{160,0,400};
@@ -60,6 +60,33 @@ void offer_shape(std::vector<u8>& ram){
 }
 
 constexpr u32 gate_reset=0x8002CDA4;
+void sound_pair(const Module& mod,std::vector<u8>& ram,unsigned scenario){
+    const auto at=[&](u32 address){return contact::at(ram,address);};
+    const auto half=[&](u32 address){return contact::half(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    constexpr u32 counters=0x803D3AE8,body=contact::receiver;
+    const bool sound_held=scenario&1,visual_held=scenario&2;
+    if(scenario>=4||at(body+0x96)[0]||at(body+0x2AE)[0]||at(body+0x2AF)[0]||
+       half(body+0x1C6)!=180||half(body+0x20C)||half(free_count+4)||word(active_head+31*4))
+        fail("impact sound pair inlet changed");
+    at(body+0x2AE)[0]=sound_held?4:0;
+    at(body+0x2AF)[0]=visual_held?4:0;
+    std::array<u8,26> before{};
+    std::memcpy(before.data(),at(counters),before.size());
+    CPUState hit{};
+    CallObservation visual{retail_contact_effect_tail::helper};
+    mod.run_observed(hit,ram,contact::pair_pass,visual,4096);
+    if(visual.count!=unsigned(!visual_held)||(!visual_held&&(visual.caller!=0x8002F87C||visual.arguments[2]))||
+       half(body+0x1C6)!=163||half(body+0x20C)!=1||word(actor+0x418)!=17||word(body+0x41C)!=17||
+       at(body+0x2AE)[0]!=4||at(body+0x2AF)[0]!=4||half(free_count+4)||word(active_head+31*4))
+        fail("impact sound pair changed HP, visual allocation or independent gates");
+    const auto delta=unsigned(u8(at(counters)[0]-before[0]));
+    if(delta!=unsigned(!sound_held)||std::memcmp(at(counters+1),before.data()+1,before.size()-1))
+        fail("impact sound pair did not increment only the unheld sound lane");
+    std::printf("impact-sound-pair: %u %u %u %u %u %u %u\n",scenario,delta,visual.count,
+                at(body+0x2AE)[0],at(body+0x2AF)[0],half(body+0x1C6),half(body+0x20C));
+}
+
 void impact_clock(const Module& mod,std::vector<u8>& ram,unsigned visits,float step){
     const auto at=[&](u32 address){return contact::at(ram,address);};
     const auto word=[&](u32 address){return be32(at(address));};
@@ -165,6 +192,10 @@ void pair(const Module& mod,std::vector<u8>& ram,const ContactInlet& inlet,unsig
     }
     if(inlet.clock_visits>=0){
         impact_clock(mod,ram,unsigned(inlet.clock_visits),inlet.clock_step);
+        return;
+    }
+    if(inlet.sound_case>=0){
+        sound_pair(mod,ram,unsigned(inlet.sound_case));
         return;
     }
     CPUState writer{};
@@ -415,18 +446,26 @@ int main(int argc,char** argv){
     const bool trail_mode=argc==4&&!std::strcmp(argv[3],"--trail");
     const bool impact_mode=argc==4&&!std::strcmp(argv[3],"--impact");
     const bool clock_mode=argc==4&&!std::strcmp(argv[3],"--impact-clock");
-    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode&&!clock_mode)
-        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact|--impact-clock]");
+    const bool sound_mode=argc==4&&!std::strcmp(argv[3],"--impact-sound");
+    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode&&!clock_mode&&!sound_mode)
+        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact|--impact-clock|--impact-sound]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     CommonBank bank{};
     if(std::fread(bank.data(),1,bank.size(),stdin)!=bank.size())fail("type-9 common bank payload extent");
-    if(contact_mode||impact_mode||clock_mode){
+    if(contact_mode||impact_mode||clock_mode||sound_mode){
         ContactInlet inlet{};
         if(std::fread(inlet.hit.data(),1,inlet.hit.size(),stdin)!=inlet.hit.size()||
            std::fread(inlet.owner.data(),1,inlet.owner.size(),stdin)!=inlet.owner.size()||
            std::fread(inlet.defender.data(),1,inlet.defender.size(),stdin)!=inlet.defender.size()||std::getc(stdin)!=EOF)
             fail("type-9 contact payload extent");
+        if(sound_mode){
+            for(unsigned i=0;i<4;++i){
+                inlet.sound_case=int(i);
+                observe(mod,original,bank,4,true,Mode::contact,0,&inlet);
+            }
+            return 0;
+        }
         if(clock_mode){
             for(float step:{1.f,0.5f})
                 for(unsigned n=0;n<=4;++n){
