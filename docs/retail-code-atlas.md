@@ -891,7 +891,8 @@ the same token apply damage or request another effect.
 All 20 cases matched across O0, O1, and O2. The type-9 source was
 constructed directly, not emitted by a live floor hit. This
 replay does not tick the gate or initialize the new effect. The
-separate clock replay below checks the countdown.
+separate clock replay below checks the countdown. The joined
+replay continues the effect allocated by the accepted hit.
 
 Use the same type-76, type-32, and type-9 fixture executables
 as their earlier replays:
@@ -1100,6 +1101,43 @@ Native gameplay is unchanged.
 python3 -m tools.analyze.retail_contact_effect_source_lifetime \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/impact-storage "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-source-lifetime.json
+```
+
+### Accepted hits through original model preparation
+
+The [joined replay](api-map/gg4e08-contact-effect-join.json)
+advances the effect actually allocated by the original pair
+call. There is no second helper request or reset between the
+accepted hit and its visual update. The fixture stages the
+qualified common archive and SDK state after the hit, and
+overwrites the shared collision scratch as a control. The
+allocated effect still uses the saved hit point.
+
+| Accepted attack | HP lost | Selector | First update models with storage available |
+| --- | ---: | ---: | --- |
+| Red Attacker B / Orange Fighter X (type 76) | 35 each | 1 | Record 2 |
+| Flying Saucer carrier (type 32) | 26 | 8 | Records 53 and 54 |
+| Standalone type-9 key 4 | 17 | 0 | Record 21 |
+
+When the later type-3 pool is empty, selectors 1 and 8 queue
+no model. Offering a cell after that first refusal does not
+restart them; their class-2 cell and descriptors return on
+visit 3. Selector 0 still queues record 21 without a type-3
+cell. HP, ledgers, token history, gate and shape counts stay
+unchanged across these updates. The selector-1 inlet leaves
+one scene entry available, so it loads one real child joint.
+
+All 16 cases matched across O0, O1, and O2, including the
+single and split common archives. The type-9 attack remains
+a standalone inlet, not a live floor follow-up. The replay
+stops at draw-list preparation and does not qualify full
+frame scheduling, GX drawing, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_contact_effect_join \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type76-paid /tmp/opencode/type32-bind /tmp/opencode/type9-bind \
+  "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-effect-join.json
 ```
 
 ### Contact-effect countdown: four collision-reset visits

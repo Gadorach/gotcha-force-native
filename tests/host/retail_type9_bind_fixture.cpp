@@ -1,5 +1,5 @@
 // Original type-9 shape admission, contact, lifetime and type-8 predecessor.
-#include "retail_contact_effect_tail.hpp"
+#include "retail_contact_effect_join.hpp"
 #include <array>
 
 namespace {
@@ -20,6 +20,8 @@ struct ContactInlet {
     contact::ActorSpec owner,defender;
     int impact_case=-1,clock_visits=-1,sound_case=-1;
     float clock_step=1.f;
+    const retail_contact_effect_archive::Source* source_art=nullptr;
+    bool type3=false;
 };
 constexpr contact::Point origin{160,0,400};
 constexpr float offsets[]={0,171,172,173};
@@ -188,6 +190,11 @@ void pair(const Module& mod,std::vector<u8>& ram,const ContactInlet& inlet,unsig
         fail("type-9 and Sasuke shapes did not publish at the declared test points");
     if(inlet.impact_case>=0){
         retail_contact_effect_tail::observe(mod,ram,9,0x0D03,unsigned(inlet.impact_case),effect,amount_record,0,1,0,17);
+        return;
+    }
+    if(inlet.source_art){
+        retail_contact_effect_join::observe(mod,ram,*inlet.source_art,inlet.type3,9,0x0D03,effect,
+                                            amount_record,0,1,0,17);
         return;
     }
     if(inlet.clock_visits>=0){
@@ -447,18 +454,28 @@ int main(int argc,char** argv){
     const bool impact_mode=argc==4&&!std::strcmp(argv[3],"--impact");
     const bool clock_mode=argc==4&&!std::strcmp(argv[3],"--impact-clock");
     const bool sound_mode=argc==4&&!std::strcmp(argv[3],"--impact-sound");
-    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode&&!clock_mode&&!sound_mode)
-        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact|--impact-clock|--impact-sound]");
+    const bool art_mode=argc==4&&!std::strcmp(argv[3],"--impact-art");
+    if(argc!=3&&!contact_mode&&!lifetime_mode&&!trail_mode&&!impact_mode&&!clock_mode&&!sound_mode&&!art_mode)
+        fail("usage: type9-bind-fixture qualified.dol unmodified-recomp.so [--contact|--lifetime|--trail|--impact|--impact-clock|--impact-sound|--impact-art]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    const auto source=art_mode?retail_contact_effect_archive::read_source():retail_contact_effect_archive::Source{};
     CommonBank bank{};
     if(std::fread(bank.data(),1,bank.size(),stdin)!=bank.size())fail("type-9 common bank payload extent");
-    if(contact_mode||impact_mode||clock_mode||sound_mode){
+    if(contact_mode||impact_mode||clock_mode||sound_mode||art_mode){
         ContactInlet inlet{};
         if(std::fread(inlet.hit.data(),1,inlet.hit.size(),stdin)!=inlet.hit.size()||
            std::fread(inlet.owner.data(),1,inlet.owner.size(),stdin)!=inlet.owner.size()||
            std::fread(inlet.defender.data(),1,inlet.defender.size(),stdin)!=inlet.defender.size()||std::getc(stdin)!=EOF)
             fail("type-9 contact payload extent");
+        if(art_mode){
+            inlet.source_art=&source;
+            for(bool type3:{true,false}){
+                inlet.type3=type3;
+                observe(mod,original,bank,4,true,Mode::contact,0,&inlet);
+            }
+            return 0;
+        }
         if(sound_mode){
             for(unsigned i=0;i<4;++i){
                 inlet.sound_case=int(i);

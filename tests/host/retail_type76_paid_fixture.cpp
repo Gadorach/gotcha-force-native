@@ -1,11 +1,12 @@
 // Execute the two exact normal type-76 request leaves and optional opening contact.
-#include "retail_contact_effect_tail.hpp"
+#include "retail_contact_effect_join.hpp"
 #include <algorithm>
 
 namespace {
 using namespace retail_fixture;
 namespace contact=retail_stationary_contact;
 namespace impact=retail_contact_effect_tail;
+namespace impact_art=retail_contact_effect_archive;
 struct Route {unsigned model,key,channel,cursor,markers,group,first_step,high_index;u32 pre,entry,debit_site,table;};
 constexpr Route routes[]={
     {0x0D01,0,0,0x148,0x146,2,3,2,0x80188A64,0x80188EC4,0x80188F4C,0x803628F0},
@@ -25,6 +26,8 @@ struct Opening {
     const contact::ActorSpec& defender;
     const CommonBank* incoming=nullptr;
     int impact_case=-1;
+    const impact_art::Source* source_art=nullptr;
+    bool type3=false;
 };
 struct ShapeCase {unsigned slots;float z;int exit_cells=-1;};
 constexpr ShapeCase shape_cases[]={{0,25},{1,25},{2,25,1},{2,-40},{2,-80},{2,25,0}};
@@ -219,6 +222,11 @@ void opening_contact(const Module& mod,std::vector<u8>& ram,Route r,u32 carrier,
         impact::observe(mod,ram,76,r.model,unsigned(inlet.impact_case),carrier,r.table+24*r.high_index,1,1,1,35);
         return;
     }
+    if(inlet.source_art){
+        retail_contact_effect_join::observe(mod,ram,*inlet.source_art,inlet.type3,76,r.model,carrier,
+                                            r.table+24*r.high_index,1,1,1,35);
+        return;
+    }
     CPUState writer{};
     CallObservation amount{contact::amount_entry};
     const auto cut=mod.run_to_or_return(writer,ram,contact::pair_pass,{contact::hp_write},&amount);
@@ -351,11 +359,13 @@ int main(int argc,char** argv){
     const bool opening_mode=argc==4&&!std::strcmp(argv[3],"--opening");
     const bool incoming_mode=argc==4&&!std::strcmp(argv[3],"--incoming");
     const bool impact_mode=argc==4&&!std::strcmp(argv[3],"--impact");
-    if(argc!=3&&!opening_mode&&!incoming_mode&&!impact_mode)
-        fail("usage: type76-paid-fixture qualified.dol unmodified-recomp.so [--opening|--incoming|--impact]");
+    const bool art_mode=argc==4&&!std::strcmp(argv[3],"--impact-art");
+    if(argc!=3&&!opening_mode&&!incoming_mode&&!impact_mode&&!art_mode)
+        fail("usage: type76-paid-fixture qualified.dol unmodified-recomp.so [--opening|--incoming|--impact|--impact-art]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(opening_mode||incoming_mode||impact_mode){
+    if(opening_mode||incoming_mode||impact_mode||art_mode){
+        const auto source=art_mode?impact_art::read_source():impact_art::Source{};
         contact::HitBlock body{};
         contact::ActorSpec defender{};
         const auto read=[](auto& row){
@@ -368,6 +378,13 @@ int main(int argc,char** argv){
             contact::HitBlock attack{};
             contact::ActorSpec attacker{};
             read(attack);read(attacker);
+            if(art_mode){
+                for(bool type3:{true,false}){
+                    const Opening inlet{0,2,attack,body,attacker,defender,nullptr,-1,&source,type3};
+                    replay(mod,original,route,0,&inlet);
+                }
+                continue;
+            }
             if(impact_mode){
                 for(unsigned i=0;i<impact::case_count;++i){
                     const Opening inlet{0,i==impact::miss_case?4u:2u,attack,body,attacker,defender,nullptr,int(i)};
