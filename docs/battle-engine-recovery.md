@@ -1093,6 +1093,12 @@ contact calculation; do not use that value as HP damage.
 [`damage-contact-power.json`](api-map/damage-contact-power.json) records
 the distinction for representative projectile and melee routes.
 
+The [actor-tail replay](retail-code-atlas.md#actor-tail-attack-admission-and-the-next-list-rebuild)
+keeps list admission separate from this calculation. With the same
+melee shapes and amount record, setting only the attacker's phase
+byte to 1 reproduced the lower active-phase amounts for Tau and
+G-Red. Neither result is a replacement for the raw base operand.
+
 `--contact-power-test` populates `contact-power` from that first halfword
 only if all qualified steps and siblings agree on one positive value.
 The current roster yields 81 projectile and 89 melee overrides. Two

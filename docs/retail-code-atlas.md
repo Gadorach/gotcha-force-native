@@ -1252,6 +1252,9 @@ in the control case, but only step 5 reached amount calculation
 in that placement. Isolating either step still produced one
 41-HP hit and the same two timers. This does not qualify general
 shape order or attribution between steps with different amounts.
+These direct-pair amounts use attacker phase byte 0. The
+[frame-tail replay](#actor-tail-attack-admission-and-the-next-list-rebuild)
+separately checks the active-phase amount.
 
 The nine-row reviewed melee map statically references ten
 distinct amount records: two with seed 0, seven with seed 4,
@@ -1340,6 +1343,42 @@ this replay.
 python3 -m tools.analyze.retail_contact_frame_prefix \
   "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
   /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-frame-prefix.json
+```
+
+### Actor tail: attack admission and the next list rebuild
+
+The [frame-tail replay](api-map/gg4e08-actor-frame-admission.json)
+runs the complete `80055568` actor wrapper with Tau's and G-Red's
+original installed callbacks, neutral lanes, and a declared stage.
+It begins with their original melee shapes already published.
+The fixture sets bit `0x20000000` in actor `+0x5E0`, then clears it
+on the next visit. The original late helper `80055EE4` rewrites
+`+0x276` to **1** and then **0**, despite the deliberately stale byte
+at each inlet.
+
+The wrapper does **not** retroactively edit the attack list. The
+next original list rebuild omits the attack shapes while closed;
+Sasuke's receiving shape is still present. No amount call, HP
+write or body timer follows. After reopening, the next rebuild
+re-admits the **same cells and token**, and one hit resolves. This
+qualifies original attack-list admission, not a live guard or the
+source of the status bit.
+
+Separate forks changed **only** attacker phase `+0x18` before
+the original pair. Tau went from **20 to 17 HP**, and G-Red from
+**41 to 35 HP**, when the byte changed from 0 to 1. The active
+phase amounts match the reopened hits; the change is not an
+effect of toggling the admission byte.
+
+All four actor visits and four phase-only controls matched across
+O0, O1, and O2. The other explicit `+0x276` accesses, complete
+scene scheduling, live input, and native gameplay remain outside
+this replay.
+
+```sh
+python3 -m tools.analyze.retail_actor_frame_admission \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-actor-frame-admission.json
 ```
 
 ### Contact rates through an original joint sample

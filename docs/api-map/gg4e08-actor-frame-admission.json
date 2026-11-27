@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {"amount_record":"80377AD8","borg":"gg4e08:0807","phase_only_controls":[{"declared_actor_phase":0,"hp_lost":20,"receiver_hp_after":160},{"declared_actor_phase":1,"hp_lost":17,"receiver_hp_after":163}],"retained_queue_sequence":[{"admission_byte_after_frame":1,"admission_byte_before":0,"amount_calls":0,"attack_count_after_frame_before_list_rebuild":1,"attack_count_after_list_rebuild":0,"body_timers_after_pair":[0,0],"case":"closed","hp_lost":0,"receiver_hp_after":180,"receiver_shapes_after_list_rebuild":1,"retained_melee_cells":1,"source_bit_set":true,"unchanged_owner_token":1},{"admission_byte_after_frame":0,"admission_byte_before":1,"amount_calls":1,"attack_count_after_frame_before_list_rebuild":0,"attack_count_after_list_rebuild":1,"body_timers_after_pair":[4,4],"case":"reopened","hp_lost":17,"receiver_hp_after":163,"receiver_shapes_after_list_rebuild":1,"retained_melee_cells":1,"source_bit_set":false,"unchanged_owner_token":1}]},
+    {"amount_record":"8031B008","borg":"gg4e08:0001","phase_only_controls":[{"declared_actor_phase":0,"hp_lost":41,"receiver_hp_after":139},{"declared_actor_phase":1,"hp_lost":35,"receiver_hp_after":145}],"retained_queue_sequence":[{"admission_byte_after_frame":1,"admission_byte_before":0,"amount_calls":0,"attack_count_after_frame_before_list_rebuild":2,"attack_count_after_list_rebuild":0,"body_timers_after_pair":[0,0],"case":"closed","hp_lost":0,"receiver_hp_after":180,"receiver_shapes_after_list_rebuild":1,"retained_melee_cells":2,"source_bit_set":true,"unchanged_owner_token":1},{"admission_byte_after_frame":0,"admission_byte_before":1,"amount_calls":1,"attack_count_after_frame_before_list_rebuild":0,"attack_count_after_list_rebuild":2,"body_timers_after_pair":[8,8],"case":"reopened","hp_lost":35,"receiver_hp_after":145,"receiver_shapes_after_list_rebuild":1,"retained_melee_cells":2,"source_bit_set":false,"unchanged_owner_token":1}]}
+  ],
+  "code_atlas_sha256": "1bfb0ac7d8885156336b7de2e40e0019daca170b25b4afd762bf172662f36eae",
+  "contact_frame_prefix_sha256": "1e1f95f75fe1c24f47286fdc645446c71cedceb6591bd7b52ec87a5a63738e0a",
+  "entries": {"actor_wrapper":"80055568","amount_actor_phase_read":"8003CE2C","late_flag_project":"80055EE4","pair":"8002DB58","shape_publish":"8008A2BC"},
+  "explicit_eligibility_byte_accesses": [
+    {"function":"8003CC24","scope":"separate store, not replayed","site":"8003CC88"},
+    {"function":"80055EE4","scope":"late close","site":"80055F64"},
+    {"function":"80055EE4","scope":"late reopen","site":"80055F70"},
+    {"function":"8008A2BC","scope":"ordinary attack-list admission","site":"8008A454"},
+    {"function":"8008A2BC","scope":"other list, not replayed","site":"8008A5A4"}
+  ],
+  "fields": {"attack_admission_byte":"276","closure_bit":"20000000","source_flags":"5E0"},
+  "kind": "gf-retail-actor-frame-admission",
+  "melee_pose_clock_sha256": "7bb38ad95e772e1d0e3e3527a647d88319e757ef2695ce430694c1c7576af682",
+  "notes": ["The complete original actor wrapper runs with exact Tau and G-Red class callbacks, declared neutral lanes and a scoped stage.","A stale byte is deliberately opposite the source bit. The actor tail rewrites the byte but does not retroactively remove entries from the already published list.","The next original list rebuild omits the attack shapes while closed and re-admits the same cells and owner token after reopening.","The actor phase is held at one during the retained sequence. Separate phase-only forks reproduce the different HP amounts without changing admission.","The explicit displacement census is not proof about indirect aliases or other collision roles.","Neither the origin of the status bit in a live match nor a full scene frame, animation pose, guard semantics or native gameplay is qualified."],
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

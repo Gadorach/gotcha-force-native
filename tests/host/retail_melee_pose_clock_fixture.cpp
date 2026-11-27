@@ -2,6 +2,7 @@
 #include "retail_contact_pose_clock.hpp"
 #include "retail_contact_clock_consumers.hpp"
 #include "retail_contact_frame_prefix.hpp"
+#include "retail_actor_frame_admission.hpp"
 
 namespace {
 using namespace retail_contact_pose_clock;
@@ -18,7 +19,7 @@ constexpr u32 commands=0x81034000,hit_block=0x81035000,cells=0x81039000,stride=0
 constexpr u32 attack_count=0x8043B5A0-21328,attack_registry=0x803C477C,body=contact::receiver;
 constexpr u32 amount=contact::amount_entry,script=0x8004C6B4,allocator=0x8008AC80;
 constexpr contact::Point center{200.f,150.f,325.f};
-enum class Mode {timers,consumers,frame_prefix};
+enum class Mode {timers,consumers,frame_prefix,frame_admission};
 
 void observe(const Module& mod,std::vector<u8> ram,const Route& r,const contact::HitBlock& receiver_hit,
              const contact::ActorSpec& defender,const contact::HitBlock& attacker_hit,
@@ -105,6 +106,11 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& r,const contact:
     constexpr u32 audio=0x8103E000;
     put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;
     at(0x803D0000+15080+852)[0]=1;
+    if(mode==Mode::frame_admission){
+        retail_actor_frame_admission::observe(mod,ram,r.model,{cells,cells+stride},r.count,r.table,record,
+                                               r.seed,r.damage,float(r.frame));
+        return;
+    }
     for(const auto object:{actor,body}){
         factors(ram,object);tick(mod,ram,object);
         check_clocks(ram,object,0,unit,unit,neutral_secondary);
@@ -177,8 +183,9 @@ void observe(const Module& mod,std::vector<u8> ram,const Route& r,const contact:
 int main(int argc,char** argv){
     const bool consumers=argc==4&&!std::strcmp(argv[3],"--consumers");
     const bool frame=argc==4&&!std::strcmp(argv[3],"--frame-prefix");
-    if(argc!=3&&!consumers&&!frame)
-        fail("usage: melee-pose-clock-fixture qualified.dol unmodified-recomp.so [--consumers|--frame-prefix]");
+    const bool admission=argc==4&&!std::strcmp(argv[3],"--frame-admission");
+    if(argc!=3&&!consumers&&!frame&&!admission)
+        fail("usage: melee-pose-clock-fixture qualified.dol unmodified-recomp.so [--consumers|--frame-prefix|--frame-admission]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
     const auto read=[](auto& value){
@@ -189,6 +196,10 @@ int main(int argc,char** argv){
     for(const auto& route:routes){
         contact::HitBlock hit{};contact::ActorSpec attacker{};
         read(hit);read(attacker);
+        if(admission){
+            observe(mod,original,route,body_hit,defender,hit,attacker,2,Mode::frame_admission);
+            continue;
+        }
         if(consumers||frame){
             const auto mode=consumers?Mode::consumers:Mode::frame_prefix;
             for(unsigned scenario:{1u,2u})observe(mod,original,route,body_hit,defender,hit,attacker,scenario,mode);
