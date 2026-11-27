@@ -1122,6 +1122,10 @@ or a leg around a partition, the planner checks two short lateral legs
 and either sidesteps or waits. It doesn't change the target or grant
 passage through the ally; native contact still resolves actual
 movement against all solid fighters.
+A planted roster CPU can turn at the normal angular rate when its
+stick requests movement but a solid peer prevents translation. The
+turn uses the stick direction, not the aim target. It does not move
+either body, apply during a hit reaction, or alter local controls.
 Short-range continuous-cruise CPUs also route around full-height
 partitions. They only request a new boost when aligned on a clear leg
 with room and meter for the authored minimum. The normal movement

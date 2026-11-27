@@ -709,6 +709,55 @@ void roster_cpu_corner_melee_cases(){
     visit(true);
 }
 
+void roster_cpu_body_turn_cases(){
+    const auto idle=definition("stationary-v1","health=400\n");
+    const std::string slash="health=400\nwalk=0:1\nair=0:2\ndash=0:3\n"
+        "move=slash|b|10|grounded|14|0:4\nrange=slash|145\nmelee=slash|4|7|95|24|60|35|19\n";
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;config.teams={0,0,1};
+    config.packages={definition("grounded-v1|8|13|14",slash),idle,definition("grounded-v1|2.5|13|15",slash)};
+    config.spawn={BattlePoint{0,1520},BattlePoint{800,1500},BattlePoint{0,1690}};
+    const auto visit=[&](bool explicit_roster,bool local=false){
+        auto round=config;
+        round.local_aim_cycle=explicit_roster;
+        const unsigned actor=local?0:2,rival=local?2:0;
+        if(local){
+            std::swap(round.packages[actor],round.packages[rival]);
+            std::swap(round.spawn[actor],round.spawn[rival]);
+        }
+        NativeBattleMvp world;PortableRosterAi cpu;
+        check(world.start(round),"start blocked turn fixture");
+        std::array<GamePadState,3> pads{};
+        std::array<BorgBattleInputs,3> inputs{};
+        pads[actor].stick_y=127;
+        for(unsigned n=0;n<32;++n)check(world.step_roster(pads,inputs,false),"move the CPU away until it faces the boundary");
+        pads[actor]={};pads[rival].stick_y=127;
+        for(unsigned n=0;n<36;++n)check(world.step_roster(pads,inputs,false),"rival closes against the CPU's back");
+        const auto gap=[&](){return world.actors()[actor].position[2]-world.actors()[rival].position[2];};
+        check(world.target_of(actor)==rival&&world.actors()[actor].facing.z>.95f&&
+              std::abs(gap()-2*config.actor_radius)<.01f,"seed the blocked turn with real movement and solid body contact");
+        const auto pinned=world.actors()[actor].position;
+        pads={};
+        bool hit=false;
+        for(unsigned n=0;n<45&&!hit;++n){
+            auto ai=local?PortableRosterInput{}:cpu.input(world,actor);
+            if(local)ai.movement.stick_y=-45;
+            if(!n)check(ai.movement.stick_y<0&&!ai.attack.pressed,"a CPU facing away requests movement toward the rival");
+            pads[actor]=ai.movement;inputs[actor]=ai.attack;
+            const auto before=world.actors()[actor].facing;
+            check(world.step_roster(pads,inputs,false),"advance CPU turn with the native mover");
+            const auto facing=world.actors()[actor].facing;
+            check(gap()>=2*config.actor_radius-.01f&&std::abs(world.actors()[actor].position[2]-pinned[2])<.01f&&
+                  std::abs(native_borg_aim_delta(before,facing))<=config.turn_per_tick+.001f&&(!local||facing==before),
+                  "turn remains rate limited and the bodies remain solid");
+            for(const auto& e:world.package_events())if(e.kind==BorgBattleEventKind::Hit&&e.actor==actor){
+                check(e.recipient==rival,"melee contacts the actual rival");hit=true;
+            }
+        }
+        return hit;
+    };
+    check(!visit(false)&&visit(true)&&!visit(true,true),"the roster CPU turns and strikes without changing local controls");
+}
+
 void roster_cpu_direct_dash_cases(){
     const auto idle=definition("stationary-v1","health=400\n");
     const auto melee=[](bool dash,bool fallback=false){
@@ -1216,6 +1265,7 @@ int main(int argc,char** argv){
     roster_cpu_detour_dash_cases();
     roster_cpu_route_cost_cases();
     roster_cpu_corner_melee_cases();
+    roster_cpu_body_turn_cases();
     roster_cpu_direct_dash_cases();
     roster_cpu_ally_pass_cases();
     roster_cpu_detour_ally_cases();

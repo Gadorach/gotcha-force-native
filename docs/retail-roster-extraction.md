@@ -1802,6 +1802,14 @@ hitters** by tick 120 and **183 starts and 175 damaging hitters** by
 tick 240, with all 206 admitted. A broader comparison that reduced
 activity in the full sweep was not kept.
 
+Allowing a planted roster CPU to turn toward its movement input when
+a solid peer blocks translation kept the 120-tick results unchanged.
+At 240 ticks, starts rose from **183 to 188** and damaging hitters
+from **175 to 180**, with 14 still-fighting quiet subjects instead
+of 19. All 206 still passed. A controlled contact test stalled with
+the old mover, then landed a strike with the new rule without moving
+through the rival. The same fixture kept local facing unchanged.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

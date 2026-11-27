@@ -1949,7 +1949,15 @@ public:
             if(has_input&&!was_dashing&&actor.grounded&&previously_grounded[i]&&!actor.landing_ticks&&!package_interrupted[i])
                 walk_distance[i]=actor.movement_speed;
             const bool strafe=config_.package_strafe&&actor.grounded&&(pads[i].r||pads[i].trigger_r_pressed);
-            if(moving&&has_input&&!was_dashing&&!strafe)actor.facing=native_borg_turn(actor.facing,actor.velocity,config_.turn_per_tick);
+            if(has_input&&!was_dashing&&!strafe){
+                if(moving)actor.facing=native_borg_turn(actor.facing,actor.velocity,config_.turn_per_tick);
+                // A grounded roster CPU can steer even if a solid peer
+                // canceled translation. Use its stick direction, not its
+                // aim target, and keep the normal angular limit.
+                else if(config_.local_aim_cycle&&i>=local_count&&actor.grounded&&previously_grounded[i]&&
+                        !actor.landing_ticks&&!package_interrupted[i]&&!pulled[i]&&contact.body_hit&&!contact.terrain_blocked)
+                    actor.facing=native_borg_turn(actor.facing,direction,config_.turn_per_tick);
+            }
             if(solo)actor.aim_facing=actor.facing;
             else{
                 const u8 aim_slot=actor_target(i);
