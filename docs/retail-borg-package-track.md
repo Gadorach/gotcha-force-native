@@ -394,6 +394,13 @@ paths, not observed live linkage, time in ticks, or proof that the
 contacted object is always an allied fighter. The review leaves X
 stock timing, damage and connectivity unresolved.
 
+The [bounded return replay](retail-code-atlas.md#stock-returns-owner-gates-and-thunder-wire-exits)
+now executes the paid release and distinguishes carrier or descriptor
+refusal, opening-shape refusal, and the active stage-bounds exit.
+Each returns one to the caster. Invalid owner phase or model instead
+retires the carrier without a stock return. These observations do
+not establish live linkage or justify a native refund on every exit.
+
 **API gap:** `anchor-fence` and `fence-recoil` are authored fixed-point
 operations. The observed source branch needs an owner-held link with a
 contact-qualified endpoint identity, current pose samples at both ends,

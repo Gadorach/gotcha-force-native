@@ -1,10 +1,11 @@
 // Real normal installer, size initializer and level-stock writes up to the resource frontier.
-#include "retail_recomp_fixture.hpp"
+#include "retail_stationary_contact.hpp"
 #include <array>
 #include <cstdint>
 
 namespace {
 using namespace retail_fixture;
+namespace contact=retail_stationary_contact;
 constexpr u32 role0=0x81014000,scene=0x81018000,resources=0x803C4D94;
 constexpr unsigned records=8,record_bytes=432,roster=206,levels=10;
 constexpr u32 start=0x8005614C,equipment=0x8013BD80,material=0x80006238;
@@ -130,7 +131,162 @@ void timeline(const Module& mod,std::vector<u8>& ram,u8* obj,unsigned model){
         }
     }
 }
-void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer,unsigned extent,bool lifecycle){
+constexpr u32 return_stock=0x8006DE10;
+bool return_model(unsigned model){return model==0x0200||model==0x020A||model==0x020F||model==0x0403||model==0x0404;}
+
+void owner_returns(const Module& mod,std::vector<u8>& ram,u8* obj,unsigned model){
+    const bool pre=model==0x0403;
+    const u32 entry=pre?0x800DFDA4:0x80073D0C,site=pre?0x800DFE04:0x80073D68;
+    const unsigned channel=pre?0:2,other=2-channel;
+    if(channel_state(obj,channel)!=Channel{1,1,0}||half(obj+0x78C+channel*8+4)!=3)
+        fail("owner stock-return needs the exact initialized mode-3 channel");
+    ActorImage initial{};
+    std::memcpy(initial.data(),obj,initial.size());
+    for(unsigned i=0;i<(pre?4u:3u);++i){
+        std::memcpy(obj,initial.data(),initial.size());
+        if(i&&!stock_debit(mod,ram,channel,true))fail("owner stock-return debit");
+        obj[0x144]=u8(i==1);
+        obj[0x145]=u8(i==3);
+        put_float(obj+0x778+8*channel,17.f);
+        const auto sibling=channel_state(obj,other);
+        unsigned calls=0;
+        for(unsigned n=0;n<2;++n){
+            CPUState cpu{};cpu.gpr[3]=actor;
+            CallObservation result{return_stock};
+            mod.run_observed(cpu,ram,entry,result);
+            const bool expected=i==2&&n==0;
+            if(result.count!=unsigned(expected)||(expected&&(result.caller!=site||result.arguments[0]!=actor||
+               result.arguments[1]!=channel))||channel_state(obj,other)!=sibling)
+                fail("owner stock-return selected the wrong actor or callback gate");
+            calls+=result.count;
+        }
+        const auto after=channel_state(obj,channel);
+        if(after!=Channel{i==0||i==2?1:0,1,std::bit_cast<u32>(17.f)})
+            fail("owner stock-return changed its count or clock incorrectly");
+        std::printf("stock-owner-return: %04X %u %u %u %u",model,i,channel,calls,
+                    unsigned(pre?obj[0x58E]&2:obj[0x582]));
+        print_channel(after);std::putchar('\n');
+    }
+}
+
+void wire_returns(const Module& mod,std::vector<u8>& ram,u8* obj,const contact::HitBlock& hit){
+    constexpr u32 carrier=0x81030000,shape=0x81032000,descriptors=0x81033000,pool=0x81033800,block=0x81035000;
+    constexpr u32 target=0x8101A000,stage=0x81048000,audio=0x8103E000,wire=0x800DA0CC,wire_factory=0x800D9FBC;
+    constexpr u32 attack_count=0x8043B5A0-21328;
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto get16=[&](u32 a){return contact::half(ram,a);};
+    if(channel_state(obj,2)!=Channel{1,1,0}||half(obj+0x7A0)!=3||word(actor+0x27C)!=0x80310CA8)
+        fail("Thunder Wire needs the exact normal installer and level-1 stock");
+    const auto other=channel_state(obj,0);
+    obj[0]=1;obj[0x18]=1;
+    put16(obj+0x94,0x0404);put16(obj+0x1C4,350);put16(obj+0x1C6,350);
+    put32(obj+0x90,actor);put32(obj+0xCC,target);put32(obj+0x3FC,block);
+    put_float(obj+0xC0,1.f);put_float(obj+0xC4,1.f);
+    std::memcpy(at(block),hit.data(),hit.size());
+    const u32 joint=actor+0x8D4+13*48;
+    for(unsigned i=0;i<3;++i){
+        put_float(at(joint+20*i),1.f);
+        put_float(at(joint+12+16*i),200.f);
+    }
+    for(unsigned i=0;i<6;++i)put32(at(0x803C4E84+4*i),i?target:actor);
+    put16(at(target+0x784),9);
+    put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;
+    // Supply an already-held request for the original active-loop sound.
+    // 800F0104 then refreshes the request without entering playback.
+    put32(at(0x803D0000+15080+32+88),word(0x8031B694+7*4));
+    put32(at(0x8043B5A0-21316),stage);
+    for(unsigned i=0;i<5;++i)put_float(at(stage+52+4*i),(i==2||i==4)?-3000.f:3000.f);
+    put32(at(0x80436380),pool);
+    const auto offer=[&](unsigned kind,u32 cell,bool on){
+        at(cell)[2]=kind;
+        put32(at(contact::free_head+4*kind),on?cell:0);put32(at(contact::free_tail+4*kind),on?cell:0);
+        put16(at(contact::free_count+2*kind),u16(on));
+    };
+    const auto rebuild=[&](){actor_call(mod,ram,0x8008A28C);actor_call(mod,ram,0x80089AEC);};
+    const auto witness=[&](u32 entry,u32 owner,u32 observed){
+        CPUState cpu{};cpu.gpr[3]=owner;
+        CallObservation seen{observed};
+        mod.run_observed(cpu,ram,entry,seen,4096);
+        return seen;
+    };
+    const auto write_check=[&](const CallObservation& seen,u32 site){
+        if(seen.count!=unsigned(site!=0)||(site&&(seen.caller!=site||seen.arguments[0]!=actor||seen.arguments[1]!=2)))
+            fail("Thunder Wire return did not name the exact paying actor and channel");
+    };
+    const auto seed=ram;
+    for(unsigned i=0;i<8;++i){
+        std::memcpy(ram.data(),seed.data(),seed.size());
+        const bool cell=i!=2,descriptor=i!=3,sh=i>=5,paid=i>=2,made=i>=4;
+        if(i==1)put16(at(actor+0x784),0);
+        at(actor+0x1CEF)[0]=u8(i!=0);
+        offer(3,carrier,cell);offer(4,shape,sh);
+        put32(at(pool+12),descriptor?descriptors:0);put16(at(pool+18),u16(descriptor));
+        auto branch=ram;
+        const auto requested=witness(0x800D8470,actor,wire_factory);
+        if(requested.count!=unsigned(paid)||(paid&&(requested.caller!=0x800D84C8||requested.arguments[0]!=actor))||
+           at(actor+0x1CEF)[0]||bool(at(carrier)[0])!=made||
+           (made&&(at(carrier+0x10)[0]!=43||word(carrier+0xC)!=wire||word(carrier+0x8C)!=actor||
+                   word(carrier+0x90)!=actor||word(carrier+0xCC)!=target)))
+            fail("Thunder Wire cue or carrier ownership changed");
+        std::memcpy(ram.data(),branch.data(),branch.size());
+        u32 return_site=i==2||i==3?0x800DA0AC:0;
+        CPUState debit_cpu{};debit_cpu.gpr[3]=actor;
+        CallObservation debit{0x8006DBE0};
+        const auto cut=mod.run_to_or_return(debit_cpu,ram,0x800D8470,{return_stock},&debit,4096);
+        if(cut!=(return_site?return_stock:0)||debit.count!=unsigned(i!=0)||
+           (debit.count&&(debit.caller!=0x800D84B8||debit.arguments[0]!=actor||debit.arguments[1]!=2||
+                         debit.arguments[2]!=1||debit.arguments[3]!=1))||
+           (return_site&&(debit_cpu.lr!=return_site+4||get16(actor+0x784))))
+            fail("Thunder Wire did not debit before the factory return");
+        std::memcpy(ram.data(),branch.data(),branch.size());
+        write_check(witness(0x800D8470,actor,return_stock),return_site);
+        const auto after_release=get16(actor+0x784);
+        unsigned phase=0,shape_published=0,returned_cell=0,shape_return_visits=0;
+        if(made){
+            return_site=i==4?0x800DA274:0;
+            write_check(witness(wire,carrier,return_stock),return_site);
+            if(at(carrier+0x18)[0]!=(sh?1:2)||
+               (sh&&(word(shape+0x20)!=carrier||word(shape+0x24)!=actor||word(shape+0x28)!=block+0xAA0+24*80||
+                    word(shape+0x2C)!=0x80310CA8||at(shape+0x14)[0]!=8)))
+                fail("Thunder Wire opening queue or phase changed");
+            if(sh){
+                CPUState pose{};pose.gpr[3]=carrier;
+                mod.run(pose,ram,0x80047AA4);
+                rebuild();
+                if(get16(attack_count)!=1||word(0x803C477C)!=shape||!get16(carrier+0x26C)||get16(actor+0x784))
+                    fail("Thunder Wire admitted shape spent or returned the wrong stock");
+                shape_published=1;
+                if(i==5){
+                    put_float(at(carrier+0x20),9000.f);
+                    return_site=0x800DA4CC;
+                }else if(i==6)at(actor+0x18)[0]=2;
+                else put16(at(actor+0x3E8),0x0403);
+                write_check(witness(wire,carrier,return_stock),return_site);
+            }
+            phase=at(carrier+0x18)[0];
+            if(sh){
+                do{rebuild();++shape_return_visits;}while(at(shape)[0]&&shape_return_visits<2);
+                if(at(shape)[0]||get16(attack_count)||get16(contact::free_count+8)!=1)
+                    fail("Thunder Wire did not return its admitted shape cell");
+            }
+            for(unsigned visits=0;at(carrier)[0]&&visits<2;++visits)
+                write_check(witness(wire,carrier,return_stock),0);
+            returned_cell=!at(carrier)[0]&&get16(contact::free_count+6)==1&&get16(pool+18)==1;
+            if(!returned_cell)fail("Thunder Wire retirement did not release its carrier and descriptor");
+        }
+        const auto after=channel_state(at(actor),2);
+        if(channel_state(at(actor),0)!=other||get16(target+0x784)!=9||get16(actor+0x1C6)!=350||after.clock||
+           after.current!=int(i!=1&&i<6))
+            fail("Thunder Wire return changed unrelated stock, time or HP");
+        std::printf("stock-wire-return: %u %u %u %u %u %08X %u %u %u",i,unsigned(paid),unsigned(made),after_release,
+                    shape_published,return_site,phase,returned_cell,shape_return_visits);
+        print_channel(after);std::putchar('\n');
+    }
+}
+
+void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer,unsigned extent,bool lifecycle,
+             const contact::HitBlock* wire_hit){
     const auto at=[&](u32 a){return ram.data()+a-GC_RAM_BASE;};
     auto* obj=at(actor);
     put32(at(resources),role0);
@@ -157,6 +313,11 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
         for(unsigned i=0;i<8;++i)
             if(obj[0x77C+i]!=u8(0xA0+i)||obj[0x794+i]!=u8(0xB0+i))
                 fail("normal level stock overwrote stock channel 1");
+        if(wire_hit){
+            if(model==0x0404)wire_returns(mod,ram,obj,*wire_hit);
+            else owner_returns(mod,ram,obj,model);
+            return;
+        }
         if(lifecycle){
             cycle(mod,ram,obj,model,level+1);
             if(!level)timeline(mod,ram,obj,model);
@@ -178,9 +339,12 @@ void inspect(const Module& mod,std::vector<u8>& ram,unsigned model,u32 installer
 
 int main(int argc,char** argv){
     const bool lifecycle=argc==4&&!std::strcmp(argv[3],"--lifecycle");
-    if(argc!=3&&!lifecycle)fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle] < qualified-plan");
+    const bool returns=argc==4&&!std::strcmp(argv[3],"--returns");
+    if(argc!=3&&!lifecycle&&!returns)fail("usage: stock-startup-fixture qualified.dol unmodified-recomp.so [--lifecycle|--returns] < qualified-plan");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    contact::HitBlock wire_hit{};
+    if(returns&&std::fread(wire_hit.data(),1,wire_hit.size(),stdin)!=wire_hit.size())fail("Thunder Wire hit block extent");
     int previous=-1;
     for(unsigned i=0;i<roster;++i){
         std::array<u8,8> header{};
@@ -194,7 +358,7 @@ int main(int argc,char** argv){
         auto ram=original;
         const unsigned bytes=count*record_bytes;
         if(std::fread(ram.data()+role0-GC_RAM_BASE,1,bytes,stdin)!=bytes)fail("stock-startup records extent");
-        inspect(mod,ram,model,entry,bytes,lifecycle);
+        if(!returns||return_model(model))inspect(mod,ram,model,entry,bytes,lifecycle,returns?&wire_hit:nullptr);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stock-startup rows");
 }

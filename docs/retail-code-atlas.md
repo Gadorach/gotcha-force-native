@@ -1716,6 +1716,46 @@ python3 -m tools.analyze.retail_stock_lifecycle \
   /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" /tmp/opencode/gf-stock-lifecycle.json
 ```
 
+### Stock returns: owner gates and Thunder Wire exits
+
+The [return receipt](api-map/gg4e08-stock-returns.json) indexes **54**
+direct calls to `8006DE10`: 17 pass literal channel 0, 36 pass
+literal channel 2, and one receives a signed selector via `800E0E68`.
+For the four indexed type-41 factory keys, table keys 0 and 1
+supply `−1` (no return), while keys 2 and 3 supply channel 0.
+The initializer keeps that selector for the separate retirement
+leaf. This type-41 route is static, not a replay of its exits.
+
+The original post callbacks for `0200`, `020A`, and `020F` restore
+depleted channel 2 when their tested owner gate is open, without a
+carrier. The `0403` pre callback instead restores channel 0 and
+checks both of its owner bytes. Filling the stock prevents another
+grant on the next tested visit; the seeded clock stays unchanged.
+
+Exact normal Thunder Robot `0404` starts with one channel-2 stock.
+The bounded X release spends that unit before the type-43 request.
+
+| Boundary | Observed return |
+| --- | --- |
+| Missing cue or empty stock | No carrier and no return |
+| No carrier cell or descriptor | Factory returns one before a carrier exists (`800DA0AC`) |
+| Carrier exists but opening shape is refused | Initializer returns one and starts retirement (`800DA274`) |
+| Admitted carrier leaves stage bounds | Active callback returns one (`800DA4CC`) |
+| Owner phase invalid or model changes | Carrier and shape retire, but stock is not returned |
+
+Returns name the paying actor, not the stored target. Shape, carrier,
+and descriptor resources are released at their own boundaries, with
+no repeat stock write on cleanup. All **21 cases** matched on
+O0/O1/O2. The cue, pose, and stage controls are declared; linked
+Thunder Wire contact, live scheduling, and native gameplay remain
+unqualified.
+
+```sh
+python3 -m tools.analyze.retail_stock_returns \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" /tmp/opencode/gf-stock-returns.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
