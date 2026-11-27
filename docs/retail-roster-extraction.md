@@ -1843,6 +1843,13 @@ With only the full-width probes, it stood still for the entire
 cutoffs, with all 206 admitted and 191 starts and 182 damaging
 hitters by tick 240.
 
+In a separate three-fighter pursuit fixture, Normal Samurai (`0700`)
+switched from the faster Proto Panther to a reachable parked enemy,
+started at tick 31 and hit at tick 40. The previous planner kept
+following the runner and never attacked in 160 frames. This fallback
+did not change either Workshop sweep cutoff or resolve the original
+six-fighter Normal Samurai case, which was still quiet at tick 480.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.

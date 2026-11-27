@@ -1155,6 +1155,11 @@ covers another enemy keeps its original aim. Briefly airborne targets
 and ranged fallbacks do not trigger the height-based switch. The
 choice is a validated one-tick hint, not an override of the nearest
 body, contact, guard or credit.
+A ground melee-only CPU can also switch off a faster, grounded runner
+if another rival has a substantially easier clear approach. The
+planner uses a short estimate from accepted movement, checks the
+runner's projected runway, and keeps a ready strike ahead of the
+switch. This is native pursuit behavior, not a retail AI claim.
 The two locals can cycle their attack aim among living enemies. This is
 a native Battle Test control, not retail lock-on recovery. It feeds
 move range, aim and direct launches, but not body heading, recipient

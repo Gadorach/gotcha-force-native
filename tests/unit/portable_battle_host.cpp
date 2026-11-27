@@ -759,6 +759,59 @@ void roster_cpu_body_turn_cases(){
     check(!visit(false)&&visit(true)&&!visit(true,true),"the roster CPU turns and strikes without changing local controls");
 }
 
+void roster_cpu_running_rival_cases(){
+    struct Terrain final:IBattleMvpTerrain {
+        std::array<StageBodyPartition,1> boxes{{{"remote",900,-30,1000,30,true}}};
+        std::span<const StageBodyPartition> body_partitions()const override{return boxes;}
+        bool height(f32,f32,f32,f32* out)const override{if(!out)return false;*out=0;return true;}
+    } terrain;
+    const auto idle=definition("stationary-v1","health=400\n");
+    const std::string slash="health=400\nwalk=0:1\nair=0:2\ndash=0:3\n"
+        "move=slash|b|10|grounded|14|0:4\nrange=slash|145\nmelee=slash|4|7|95|24|60|35|19\n";
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;
+    config.teams={0,0,1};config.local_aim_cycle=true;
+    config.packages={definition("grounded-v1|8|13|15",slash),idle,definition("grounded-v1|3|13|15",slash)};
+    config.spawn={BattlePoint{0,0},BattlePoint{225,-130},BattlePoint{0,-180}};
+    NativeBattleMvp world;PortableRosterAi cpu;
+    const auto prepare=[&](){
+        cpu.reset();
+        check(world.start(config,&terrain),"start running-rival fixture");
+        std::array<GamePadState,3> pads{};pads[0].stick_y=pads[2].stick_y=127;
+        for(unsigned tick=0;tick<10;++tick)
+            check(world.step_roster(pads,std::array<BorgBattleInputs,3>{},false,&terrain),"establish real accepted walking speeds");
+        check(world.target_of(2)==0&&world.actors()[0].velocity.z>world.config().packages[2]->walk,
+              "the closer rival really is moving away faster");
+    };
+    prepare();
+    bool hit=false;
+    for(unsigned n=0;n<70&&!hit;++n){
+        const auto ai=cpu.input(world,2,&terrain);
+        if(!n)check(ai.aim_target==1&&ai.movement.stick_x>0&&!ai.attack.pressed,
+                    "pursue the clearer opportunity rather than trailing the faster rival");
+        std::array<GamePadState,3> pads{};pads[0].stick_y=127;pads[2]=ai.movement;
+        const std::array<u8,1> hints{ai.aim_target};
+        check(world.step_roster(pads,std::array<BorgBattleInputs,3>{{{},{},ai.attack}},false,&terrain,
+            {},nullptr,nullptr,nullptr,{}, {nullptr,0,ai.aim_target==255?std::span<const u8>{}:std::span<const u8>(hints)}),
+            "continue the ordinary input-driven pursuit");
+        if(!n)check(world.target_of(2)==0&&world.aim_target_of(2)==1,"hint does not change the nearest body");
+        for(const auto& e:world.package_events())if(e.kind==BorgBattleEventKind::Hit&&e.actor==2){
+            check(e.recipient==1,"contact reaches the alternative enemy");hit=true;
+        }
+    }
+    check(hit,"the easier clear approach lands a real strike");
+    config.local_aim_cycle=false;prepare();
+    check(cpu.input(world,2,&terrain).aim_target==255,"modes without native roster hints do not retarget");
+    config.local_aim_cycle=true;
+    terrain.boxes[0]={"blocked-alternate",100,-300,110,300,true};prepare();
+    check(cpu.input(world,2,&terrain).aim_target==255,"do not chase an alternative through a partition");
+    terrain.boxes[0]={"runner-stop",-900,200,900,206,true};prepare();
+    check(cpu.input(world,2,&terrain).aim_target==255,"don't assume the runner can maintain speed into a wall");
+    terrain.boxes[0]={"remote",900,-30,1000,30,true};
+    config.spawn[0]={0,-60};prepare();
+    const auto ready=cpu.input(world,2,&terrain);
+    check(ready.aim_target==255&&ready.attack.pressed==BorgBattleInputs::b,"a ready melee strike takes priority over a pursuit switch");
+}
+
 void roster_cpu_direct_dash_cases(){
     const auto idle=definition("stationary-v1","health=400\n");
     const auto melee=[](bool dash,bool fallback=false){
@@ -1399,6 +1452,7 @@ int main(int argc,char** argv){
     roster_cpu_route_cost_cases();
     roster_cpu_corner_melee_cases();
     roster_cpu_body_turn_cases();
+    roster_cpu_running_rival_cases();
     roster_cpu_direct_dash_cases();
     roster_cpu_ally_pass_cases();
     roster_cpu_detour_ally_cases();

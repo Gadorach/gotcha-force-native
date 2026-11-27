@@ -210,6 +210,55 @@ public:
                 }
             }
         }
+        // A short-range fighter can get stuck tailing the nearest runner.
+        // Only native stage rosters can supply the one-tick rival hint.
+        if(!detour&&target==nearest&&short_range&&self.grounded&&profile->movement==BorgBattleMovement::Grounded&&
+           world.config().local_aim_cycle&&terrain&&!terrain->body_partitions().empty()&&
+           std::none_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
+               return supported(move)&&!borg_battle_direct_melee(move);
+           })){
+            const auto alternate=[&](unsigned i){
+                const auto& other=world.actors()[i];
+                return i!=nearest&&other.health&&other.team!=self.team&&other.grounded&&
+                    std::hypot(other.velocity.x,other.velocity.z)<=profile->walk*.5f&&
+                    battle_partition_route_clear(*terrain,start,point(i),radius)&&
+                    std::any_of(profile->moves.begin(),profile->moves.end(),[&](const auto& move){
+                        return supported(move)&&borg_battle_direct_melee(move)&&fits_context(move)&&
+                            height_overlaps(*move.melee,other.position[1]);
+                    });
+            };
+            const bool busy=state.button||self.hit_flash||self.dash_ticks||action.move!=BorgBattleActionState::none;
+            const bool can_switch=!busy&&!ready_attack(nearest,false);
+            if((busy||can_switch)&&state.chase_target<world.actor_count()&&
+               (busy||tick<state.chase_until)&&alternate(state.chase_target)){
+                aim=target=state.chase_target;
+            }else{
+                state.chase_target=255;
+                if(can_switch){
+                    const auto& rival=world.actors()[nearest];
+                    const auto p=point(nearest),toward=native_borg_direction(start,p,self.facing);
+                    const f32 away=toward.x*rival.velocity.x+toward.z*rival.velocity.z;
+                    const auto horizon=std::min(30u,world.config().dash_cooldown);
+                    const BattlePoint projected{p.x+horizon*rival.velocity.x,p.z+horizon*rival.velocity.z};
+                    const auto bound=world.config().arena_half-radius;
+                    if(rival.grounded&&!rival.hit_flash&&!rival.dash_ticks&&away>profile->walk+.5f&&
+                       std::hypot(p.x-start.x,p.z-start.z)>reach&&std::abs(projected.x)<=bound&&std::abs(projected.z)<=bound&&
+                       battle_partition_route_clear(*terrain,p,projected,radius)){
+                        f32 best=std::hypot(projected.x-start.x,projected.z-start.z)-radius;
+                        for(u8 i=0;i<world.actor_count();++i)if(alternate(i)){
+                            const auto q=point(i);
+                            const auto& other=world.actors()[i];
+                            const f32 cost=std::hypot(q.x-start.x,q.z-start.z)+horizon*std::hypot(other.velocity.x,other.velocity.z);
+                            if(cost<best){best=cost;target=i;}
+                        }
+                        if(target!=nearest){
+                            aim=state.chase_target=target;
+                            state.chase_until=u64(tick)+horizon;
+                        }
+                    }
+                }
+            }
+        }else state.chase_target=255;
         const auto goal=point(target);
         const BattlePoint delta{goal.x-start.x,goal.z-start.z};
         const f32 distance=std::hypot(delta.x,delta.z);
@@ -355,8 +404,8 @@ private:
     enum class BurstLeg:u8 {None,Dash,Boost};
     struct Slot {
         u32 sampled=unsampled;
-        u64 release_at=0,next_start=0,replan_at=0,burst_leg_until=0;
-        u8 button=0,route_target=255;
+        u64 release_at=0,next_start=0,replan_at=0,burst_leg_until=0,chase_until=0;
+        u8 button=0,route_target=255,chase_target=255;
         s8 burst_leg_x=0,burst_leg_y=0;
         BurstLeg burst_leg=BurstLeg::None;
         bool release_window=false;
