@@ -591,6 +591,48 @@ python3 -m tools.analyze.retail_type0_contact \
   /tmp/opencode/gf-type0-contact.json
 ```
 
+### Five additional projectile factories and their action arms
+
+The [small-carrier census](api-map/gg4e08-small-projectile-roster.json)
+checks the selected profiles for all 206 Borgs and keeps call sites
+without a qualified action association in the inventory.
+
+| Family | Rows inspected | Direct sites → action candidates |
+| --- | ---: | ---: |
+| Type 14 throw | 5 | 8 → 6 |
+| Type 15 bomb | 10 | 10 → 10 |
+| Type 47 Dragon | 6 | 1 → 1 |
+| Type 49 Worm | 2, reviewed prefix | 2 → 2 |
+| Type 94 Worm | 3, reviewed prefix | 4 → 2 |
+
+One site can select different keys. For the Dragons, the single
+model-gated call selects six distinct rows. The static opening
+records have raw power 80 for three models and 40 for the other
+three. These are not the power of later area or descendant hits.
+The Worm entries cover stationary B only. Type 49's zero-power
+opening stays separate from its group-7 follow-up below.
+
+The type-15 review resolves a previously unindexed action branch.
+Powered Gunman (`0101`) uses keys **8, 9, 6, 7** in that order on
+**charged X, state 3**. State 2, ordinary X, takes a different branch.
+The debit at `80167138` belongs to that state-2 arm, so no debit is
+assigned to the four-call arm. This does not establish the earlier
+charge or stock schedule. Double Ninja's optional second bomb
+requires a nonzero actor byte at `+0x7C8`; its queue is withheld
+rather than borrowed from the normal actor.
+
+Together with the type-0 and type-2 maps, these receipts inventory
+267 direct call sites and associate 137 with static action candidates
+on 75 Borgs. The other calls and other carrier families are not
+assigned by analogy. No gameplay is emitted or changed.
+
+```sh
+python3 -m tools.analyze.retail_small_projectile_roster \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/gf-small-projectile-roster.json
+```
+
 ### Worm paid release, refunds and contact follow-up
 
 The [Worm contact receipt](api-map/gg4e08-worm-contact.json)

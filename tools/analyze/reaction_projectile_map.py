@@ -30,23 +30,25 @@ def word(image, address, kind="text"):
     return struct.unpack(">I", image.read(address, 4, kind))[0]
 
 
+def selector_code(image, family):
+    offset, read_site, call_site, dispatch = reaction_emit.SELECTORS[family]
+    base, stride, count = reaction_emit.FACTORY_ROWS[family]
+    load = word(image, read_site)
+    call = word(image, call_site)
+    initializer = word(image, dispatch, "data")
+    if (load & 0xFFE0FFFF != (0x88800000 | offset) or
+            call & 0xFC000003 != 0x48000001 or direct_branch(call_site, call) != 0x8008AC80 or
+            not initializer <= read_site < call_site <= initializer + 0x400):
+        raise ValueError(f"{family}: projectile queue selector proof changed")
+    return {"factory_table": f"{base:08X}", "stride": stride, "reviewed_key_count": count,
+            "selector_offset": offset, "initializer": f"{initializer:08X}",
+            "dispatch": f"{dispatch:08X}", "read_site": f"{read_site:08X}", "allocator_call": f"{call_site:08X}"}
+
+
 def recover(image, archive):
     if image.sha256 != SOURCE_SHA256:
         raise ValueError("unqualified source revision")
-    selectors = {}
-    for family, (offset, read_site, call_site, dispatch) in reaction_emit.SELECTORS.items():
-        base, stride, count = reaction_emit.FACTORY_ROWS[family]
-        load = word(image, read_site)
-        call = word(image, call_site)
-        initializer = word(image, dispatch, "data")
-        if (load & 0xFFE0FFFF != (0x88800000 | offset) or
-                call & 0xFC000003 != 0x48000001 or direct_branch(call_site, call) != 0x8008AC80 or
-                not initializer <= read_site < call_site <= initializer + 0x400):
-            raise ValueError(f"{family}: projectile queue selector proof changed")
-        selectors[family] = {"factory_table": f"{base:08X}", "stride": stride, "reviewed_key_count": count,
-                             "selector_offset": offset, "initializer": f"{initializer:08X}",
-                             "dispatch": f"{dispatch:08X}",
-                             "read_site": f"{read_site:08X}", "allocator_call": f"{call_site:08X}"}
+    selectors = {family: selector_code(image, family) for family in reaction_emit.SELECTORS}
     models = {}
     for model, (family, key, site, factory) in PILOTS.items():
         call = word(image, site)

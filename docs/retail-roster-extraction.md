@@ -1623,6 +1623,11 @@ parent-model restrictions, without interpreting that check as an input
 or setting a release policy. No row is assigned by similar names or models.
 The offline origin extractor does not run original code and emits no
 executable weapon rules.
+The separate [small-carrier census](retail-code-atlas.md#five-additional-projectile-factories-and-their-action-arms)
+uses selected installer profiles and checks the action arms behind
+the ordinary type-15 calls, including Powered Gunman's charged-X
+four-call sequence. It does not change what the extractor admits
+to the authored Battle Test.
 
 ### Export a dry sound sample
 
