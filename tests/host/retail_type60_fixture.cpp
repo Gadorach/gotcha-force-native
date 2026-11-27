@@ -1,5 +1,6 @@
 // Original type-60 release, shape bind and recipient-effect dispatch.
 #include "retail_stationary_contact.hpp"
+#include <cmath>
 #include <cstdint>
 
 namespace {
@@ -33,7 +34,10 @@ constexpr Case cases[]{
 };
 constexpr contact::Point origin{200.f,150.f,325.f};
 constexpr contact::StationaryBody large_body{0x0602,1050,9,2,0x8030C570,{0,-40,20}};
+constexpr contact::StationaryBody dragon_body{0x0502,500,1,23,0x8033B870,{0,-10,30}};
 constexpr u32 delta_bank=0x8043612C,scope_case_count=5;
+constexpr u32 coarse_attack=0x8103D000,coarse_receive=0x8103D040;
+constexpr unsigned coarse_bytes=40;
 struct CastCells {u32 owner,object,shape,hit;};
 constexpr CastCells primary{actor,carrier,shape,hit_block},next{0x8102B000,0x81031000,0x81032200,0x81038000};
 
@@ -111,7 +115,82 @@ void initialize_cast(const Module& mod,std::vector<u8>& ram,Route r,CastCells c,
     }
 }
 
-void scale_scope(const Module& mod,std::vector<u8>& ram,Route r,unsigned mode,bool have_fx,unsigned hp){
+void size_consumers(const Module& mod,std::vector<u8>& ram,Route r,contact::StationaryBody body,unsigned stage){
+    constexpr u32 recipient=contact::receiver,cell=contact::body;
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto fp=[&](u32 a){return std::bit_cast<float>(word(a));};
+    const float applied=fp(recipient+0xB4),base_radius=body.model==0x000A?22.f:40.f;
+    // The supplied joint remains rigid. The callback publishes the size
+    // change through the actor's scalar, not a fitted joint pose.
+    rebuild(mod,ram);
+    const float radius=fp(cell+0x7C);
+    if(contact::half(ram,contact::receiver_count)!=1||word(contact::receiver_registry)!=cell||
+       fp(coarse_attack+36)!=50.f||radius!=base_radius*applied||fp(recipient+0xC0)!=applied){
+        std::fprintf(stderr,"size-consumer geometry: %04X/%04X stage=%u lists=%u/%u body=%08X radius=%g/%g c0=%g attack=%g\n",
+                     r.model,body.model,stage,contact::half(ram,attack_count),contact::half(ram,contact::receiver_count),
+                     word(contact::receiver_registry),double(radius),double(base_radius*applied),double(fp(recipient+0xC0)),
+                     double(fp(coarse_attack+36)));
+        fail("size consumer did not publish the applied sphere scalar");
+    }
+    for(unsigned i=0;i<3;++i)
+        if(fp(cell+0x64+4*i)!=origin[i]||fp(coarse_attack+12+4*i)!=origin[i])
+            fail("size consumer moved a declared stationary center");
+
+    // The ordinary pair uses this coarse sphere helper before hit history
+    // and the exact geometry dispatcher. Do not replay a retained HP hit.
+    std::memcpy(at(coarse_receive),at(cell+0x58),coarse_bytes);
+    const unsigned low=unsigned(50.f+radius);
+    unsigned pass=0;
+    for(unsigned i=0;i<2;++i){
+        put_float(at(coarse_receive+12),origin[0]+float(low+i));
+        CPUState query{};query.gpr[3]=coarse_attack;query.gpr[4]=coarse_receive;
+        mod.run(query,ram,0x80039F6C);
+        pass|=unsigned(query.gpr[3]!=0)<<i;
+    }
+    if(pass!=1)fail("size consumer coarse sphere threshold changed");
+
+    auto fork=ram;
+    const auto out=[&](u32 a){return contact::at(fork,a);};
+    const auto observed=[&](u32 a){return be32(out(a));};
+    // Keep the exact hit timer from the scene in the fork. The isolated
+    // clock visits expire it without advancing the independent size timer.
+    const unsigned hold=out(recipient+0x71C)[0];
+    if(hold>4)fail("size consumer hit timer bound");
+    put_float(out(recipient+0x1DCC),1.f);
+    const auto clock=[&](){
+        CPUState tick{};tick.gpr[3]=recipient;
+        mod.run(tick,fork,0x8005A378);
+    };
+    clock();
+    const auto first_primary=observed(recipient+0x5F4),first_secondary=observed(recipient+0x1DC8);
+    for(unsigned n=1;n<hold;++n)clock();
+    const auto primary_rate=observed(recipient+0x5F4),secondary_rate=observed(recipient+0x1DC8);
+    if(first_primary!=std::bit_cast<u32>(hold>1?0.03f:1.f)||
+       first_secondary!=(hold>1?std::bit_cast<u32>(0.03f):word(recipient+0x1DD0))||
+       primary_rate!=std::bit_cast<u32>(1.f)||secondary_rate!=word(recipient+0x1DD0)||
+       out(recipient+0x71C)[0]||contact::half(fork,recipient+0x750)!=contact::half(ram,recipient+0x750))
+        fail("size consumer clock did not distinguish size rate from the hit hold");
+    put_float(out(recipient+0x20),0.f);
+    put_float(out(recipient+0x38),1.f);put_float(out(recipient+0x3C),0.f);put_float(out(recipient+0x40),0.f);
+    put_float(out(recipient+0x44),10.f);put_float(out(recipient+0x4C),0.f);
+    CPUState movement{};movement.gpr[3]=recipient;
+    mod.run(movement,fork,0x80067610);
+    const u32 travelled=observed(recipient+0x20);
+    const auto expected=std::bit_cast<u32>(std::bit_cast<float>(0x3F7FFFFFu)*(10.f*fp(recipient+0x5F8)));
+    if(travelled!=expected||contact::half(fork,recipient+0x1C6)!=body.hp){
+        std::fprintf(stderr,"size-consumer movement: %04X/%04X stage=%u actual=%08X expected=%08X hp=%u\n",
+                     r.model,body.model,stage,travelled,expected,contact::half(fork,recipient+0x1C6));
+        fail("size consumer movement did not apply the separate distance operand");
+    }
+    std::printf("size-consumer: %u %u %u %u %u %u %08X %08X %08X %08X %08X %08X %08X %08X\n",
+                r.model,body.model,stage,hold,low,contact::half(ram,recipient+0x750),
+                word(recipient+0xB4),word(recipient+0xB8),word(cell+0x7C),first_primary,first_secondary,
+                primary_rate,secondary_rate,travelled);
+}
+
+void scale_scope(const Module& mod,std::vector<u8>& ram,Route r,unsigned mode,bool have_fx,contact::StationaryBody body,
+                 bool consumers=false){
     constexpr u32 recipient=contact::receiver,slot_delta=delta_bank+1;
     constexpr u32 prelude=0x8002BB14,reaction=0x8005C290,frontier=0x8005A580,apply=0x800681E4,step=0x8005BAB8;
     const auto at=[&](u32 a){return contact::at(ram,a);};
@@ -120,8 +199,13 @@ void scale_scope(const Module& mod,std::vector<u8>& ram,Route r,unsigned mode,bo
     const auto signed_byte=[](u8 byte){return int(std::bit_cast<std::int8_t>(byte));};
     constexpr u32 rank=recipient+0x74A,clamp=rank+1,stored=rank+4,timer=rank+6;
     const int expected_delta=mode==2?0:(r.key%2?-1:1)*(r.key>=2?2:1);
+    const unsigned hp=body.hp;
     const unsigned start_level=at(rank)[0];
     const auto start=word(recipient+0xB4);
+    if(consumers){
+        std::memcpy(at(coarse_attack),at(shape+0x58),coarse_bytes);
+        size_consumers(mod,ram,r,body,0);
+    }
 
     // Fork at the same published lists: first observe the pair-only writes,
     // then run the original scene prelude from before those writes.
@@ -164,6 +248,7 @@ void scale_scope(const Module& mod,std::vector<u8>& ram,Route r,unsigned mode,bo
     const u32 after=word(recipient+0xB4),target=word(recipient+0xB8),motion=word(recipient+0x1DD0),derived=word(recipient+0x5F8);
     if(after!=start||offset!=expected_delta||visits!=(expected_delta?900u:0u))
         fail("type-60 scene changed applied scale before the scale callback");
+    if(consumers)size_consumers(mod,ram,r,body,1);
 
     u32 first=after,settled=after,expired=after,restored=after;
     unsigned before_expiry=0;
@@ -174,6 +259,8 @@ void scale_scope(const Module& mod,std::vector<u8>& ram,Route r,unsigned mode,bo
             if(n==1)first=word(recipient+0xB4);
             if(n==visits-1){before_expiry=half(timer);settled=word(recipient+0xB4);}
             if(n==visits)expired=word(recipient+0xB4);
+            if(consumers&&(n==1||n==visits-1||n==visits||n==visits+40))
+                size_consumers(mod,ram,r,body,n==1?2:n==visits-1?3:n==visits?4:5);
         }
         restored=word(recipient+0xB4);
         if(before_expiry!=1||settled!=target||restored!=start||at(stored)[0]||half(timer)||at(rank)[0]!=start_level||
@@ -181,6 +268,7 @@ void scale_scope(const Module& mod,std::vector<u8>& ram,Route r,unsigned mode,bo
            half(recipient+0x1C6)!=hp||bool(at(effect)[0])!=have_fx)
             fail("type-60 scale expiry or ramp changed");
     }
+    if(consumers)return;
     std::printf("type60-scale: %u %u %u %u %d %u %d %d %d %u %08X %08X %08X %08X %08X %08X %08X %08X\n",
                 r.model,mode,hp,expected_fx,expected_delta,consume.count,level,effective,offset,visits,
                 start,target,motion,derived,first,settled,expired,restored);
@@ -301,7 +389,8 @@ void refresh_scope(const Module& mod,std::vector<u8> ram,unsigned id,const conta
 
 void check(const Module& mod,std::vector<u8> ram,Route r,unsigned id,
            const contact::HitBlock& hurt,const contact::ActorSpec& receiver_spec,
-           const contact::HitBlock& hit,const contact::ActorSpec& actor_spec,int mode=-1){
+           const contact::HitBlock& hit,const contact::ActorSpec& actor_spec,int mode=-1,
+           const contact::StationaryBody* consumer=nullptr){
     const Case c=cases[id];
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
@@ -310,7 +399,7 @@ void check(const Module& mod,std::vector<u8> ram,Route r,unsigned id,
     const auto point=[&](u32 a){return contact::Point{scalar(a),scalar(a+4),scalar(a+8)};};
     descriptor_offer(ram,descriptors,c.descriptors);
     auto target=origin;if(!c.overlap)target[0]+=300.f;
-    const auto body=mode==2?large_body:contact::sasuke;
+    const auto body=consumer?*consumer:mode==2?large_body:contact::sasuke;
     contact::bind_stationary(mod,ram,target,hurt,actor_spec,receiver_spec,r.hp,body);
     if(mode>=0){
         put16(at(contact::receiver+0x59C),u16(u16(receiver_spec[0xA8])<<8|receiver_spec[0xA9]));
@@ -344,7 +433,7 @@ void check(const Module& mod,std::vector<u8> ram,Route r,unsigned id,
         put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;
         at(0x803D0000+15080+852)[0]=1;
         if(mode>=0){
-            scale_scope(mod,ram,r,unsigned(mode),c.fx,body.hp);
+            scale_scope(mod,ram,r,unsigned(mode),c.fx,body,consumer!=nullptr);
             return;
         }
         auto audit=ram;
@@ -397,7 +486,8 @@ void check(const Module& mod,std::vector<u8> ram,Route r,unsigned id,
 int main(int argc,char** argv){
     const bool scale=argc==4&&!std::strcmp(argv[3],"--scale");
     const bool refresh=argc==4&&!std::strcmp(argv[3],"--refresh");
-    if(argc!=3&&!scale&&!refresh)fail("usage: type60-fixture qualified.dol unmodified-recomp.so [--scale|--refresh]");
+    const bool consumers=argc==4&&!std::strcmp(argv[3],"--consumers");
+    if(argc!=3&&!scale&&!refresh&&!consumers)fail("usage: type60-fixture qualified.dol unmodified-recomp.so [--scale|--refresh|--consumers]");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& row){
         if(std::fread(row.data(),1,row.size(),stdin)!=row.size())fail("type-60 input extent");
@@ -405,14 +495,17 @@ int main(int argc,char** argv){
     contact::HitBlock hurt{},hit{};contact::ActorSpec receiver{},owner{};
     contact::HitBlock large_hurt{};contact::ActorSpec large_spec{};
     read(hurt);read(receiver);
-    if(scale){read(large_hurt);read(large_spec);}
+    if(scale||consumers){read(large_hurt);read(large_spec);}
     if(refresh){
         std::array<CastSource,std::size(routes)> sources{};
         for(auto& s:sources){read(s.hit);read(s.spec);}
         for(unsigned i=0;i<std::size(refreshes);++i)refresh_scope(mod,original,i,hurt,receiver,sources);
     }else for(const auto r:routes){
         read(hit);read(owner);
-        if(scale){
+        if(consumers){
+            check(mod,original,r,3,hurt,receiver,hit,owner,0,&contact::sasuke);
+            check(mod,original,r,3,large_hurt,large_spec,hit,owner,0,&dragon_body);
+        }else if(scale){
             for(unsigned i=0;i<scope_case_count;++i)
                 check(mod,original,r,i==1?3:0,i==2?large_hurt:hurt,i==2?large_spec:receiver,hit,owner,int(i));
         }else{

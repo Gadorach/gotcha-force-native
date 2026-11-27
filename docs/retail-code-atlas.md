@@ -1613,6 +1613,42 @@ python3 -m tools.analyze.retail_type60_refresh \
   /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-type60-refresh.json
 ```
 
+#### Size tables: collision radius, movement and secondary clock
+
+The [size-consumer replay](api-map/gg4e08-size-consumers.json) audits all
+206 indexed normal specs. **186** use size table `802DD5A0` and
+**20** use `802DD720`; the specs contain **15** table/minimum/maximum
+combinations. The same signed index change need not select the same
+scale. The `0909` cast's `+2` targets **1.80×** on Sasuke (`000A`)
+and **1.40×** on `0502`.
+
+The original sphere publication uses applied scale `+0xC0`, not the
+target `+0xB8`. The size write alone leaves the hurt radius unchanged.
+After the ramp settles, detached queries against the same radius-50
+cast sphere pass at axis distance **89** and fail at **90** for Sasuke
+(neutral: 72/73). For `0502` they pass at **106** and fail at **107**
+(neutral: 90/91). These are coarse sphere checks, not second hits.
+
+In separate forks, the original body clock honors the contact hold
+before using the target row's secondary-rate operand `+0x1DD0`.
+After that hold, primary rate is **1.0** and secondary rate is **0.96**
+for the tested `+2` case. An isolated movement visit with a declared
+axial direction and speed 10 consumes the independent `+0x5F8`
+operand and travels about **17.46** or **13.58** units respectively.
+The rate and distance operands switch with the target row, before
+the applied radius finishes ramping; they also reset first on expiry.
+
+All **48 observations** matched across O0/O1/O2. Each clock test
+forks from the retained hit timer; isolated size ticks do not advance
+it. This does not qualify elapsed live frames, exact moving-body
+contact, full poses, input scheduling, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_size_consumers \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-size-consumers.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
