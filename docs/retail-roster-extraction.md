@@ -1158,6 +1158,30 @@ above to verify mixed samples, muted playback and malformed-sample refusal.
 Offscreen OpenGL with an SDL dummy audio device verified submission,
 not audible playback.
 
+#### Machine Red projectile continuation test
+
+Add `--projectile-continuation-test` to a fresh `--basic-shot-test`
+extraction. This binds `actor-contact=shot|continue-once-per-actor`
+only to Machine Red's exact normal key-21 B shot. The extractor
+checks the original paid release, the exact normal member, and the
+[two-receiver receipt](api-map/gg4e08-rifle-next-receiver.json).
+It records the evidence hash in the local source index. Other
+type-2 keys, variants, and alternate releases do not inherit it.
+
+```sh
+python3 -m tools.extract.retail_borg_roster "$GF_CATALOG" \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  local/machine-red-continuation --role-clips --source-pace --action-clips \
+  --basic-shot-test --projectile-continuation-test
+```
+
+This changes only actor-contact continuation. The demo still uses
+its authored pose, timing, speed, collision sweep, and damage
+inputs. No default gameplay or retail admission changes. In the
+[generated-profile smoke](../tests/host/retail_projectile_continuation_smoke.py),
+the same paid shot hits both stationary Workshop receivers once
+on separate updates; the default preparation hits only the first.
+
 ### Try the opt-in close-B melee Battle Test
 
 Add `--basic-melee-test --source-pace --role-clips --action-clips` to the

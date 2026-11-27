@@ -439,7 +439,9 @@ dispatch, live timing, or a rule for other carrier keys. Native
 direct shots still retire on a body hit by default. The authored
 [continuation option](borg-gameplay-api.md#travelling-shots-that-continue-after-contact)
 uses per-recipient history instead of globally ignoring the next
-contact. No retail package selects it.
+contact. Only the explicit
+[Machine Red Workshop extraction test](retail-roster-extraction.md#machine-red-projectile-continuation-test)
+selects it for a retail-derived profile.
 
 ```sh
 python3 -m tools.analyze.retail_rifle_next_receiver \

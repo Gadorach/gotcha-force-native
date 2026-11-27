@@ -69,6 +69,7 @@ from tools.analyze.retail_shot_readiness import shot_readiness
 from tools.analyze.retail_movement_operands import ACTOR_BYTES, movement_operand_profile, movement_operand_schema
 from tools.analyze.retail_ground_pace import cruise_pace_candidate, ground_pace_candidate
 from tools.analyze.retail_projectile_origins import origin_candidates, origin_tables, preview_origin_markers, release_index
+from tools.analyze import retail_projectile_continuation as projectile_continuation
 
 from tools.extract.pzz import PzzArchive
 from tools.extract.borg_movement_sfx import BANK as COMMON_MOVEMENT_BANK
@@ -879,7 +880,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
              launch_pcm=None, projectile_sounds=None, tone_banks=None, dragon_carrier=None, dragon_impact_art=None,
             dragon_impact_pcm=None, worm_source=None, basic_melee=False, action_pcm=None, contact_roles=None,
             contact_power_test=False,contact_ladders=None,contact_tiers=None,contact_tier_reset_test=False,
-            contact_audio=None,contact_visuals=None,contact_indices=None,contact_floor=None,contact_pause=False):
+             contact_audio=None,contact_visuals=None,contact_indices=None,contact_floor=None,contact_pause=False,
+             continuation_source=None):
     cruise_pilot = basic_shot and cruise_lab and (row.model==VIOLET_SHOT["model"] or any(row.model in cohort for cohort in (
         STATIC_CRUISE_SHOTS, STATIC_CRUISE_PHASE_SHOTS, CRUISE_CHARGE_SHOTS, ANIMATED_CRUISE_SHOTS)))
     clocked_pilot = basic_shot and row.model in CLOCKED_GROUND_SHOTS
@@ -1233,6 +1235,8 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         if battle_receipt.get("reaction_releases"):
             hit_block,_=member.read(2,reaction_emit.HIT_BYTES)
             gameplay=reaction_emit.append_bindings(dol,hit_block,row.model,gameplay,battle_receipt)
+        if continuation_source is not None:
+            gameplay=projectile_continuation.bind(row.model,member_digest,gameplay,battle_receipt,continuation_source)
         files.update({"gameplay.txt":gameplay,"visual/body.pose":pose})
         for cue in battle_receipt.get("authored_launch_sounds",()):
             if "path" in cue:
@@ -1524,7 +1528,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
              cruise_lab=False, movement_operands=False, source_pace=False, basic_shot=False, shot_audio_decoder=None,
              dragon_impact_audio=False,basic_melee=False,contact_scale_test=False,contact_power_test=False,
              contact_ladder_test=False,contact_tier_test=False,contact_tier_reset_test=False,contact_audio_decoder=None,
-             contact_art_test=False,contact_index_test=False,contact_floor_test=False,contact_pause_test=False):
+              contact_art_test=False,contact_index_test=False,contact_floor_test=False,contact_pause_test=False,
+              projectile_continuation_test=False):
     output = Path(output)
     repo = Path(__file__).resolve().parents[2]
     destination = output.resolve()
@@ -1538,6 +1543,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         raise ValueError("--source-pace requires --role-clips")
     if basic_shot and not (source_pace and action_clips):
         raise ValueError("--basic-shot-test requires --source-pace and --action-clips")
+    if projectile_continuation_test and not basic_shot:
+        raise ValueError("--projectile-continuation-test requires --basic-shot-test")
     if basic_melee and not (source_pace and action_clips):
         raise ValueError("--basic-melee-test requires --source-pace and --action-clips")
     if shot_audio_decoder is not None and not basic_shot:
@@ -1585,6 +1592,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
     contact_indices = damage_contact_indices.recover(dol) if contact_index_test else None
     contact_floor = damage_amount_model.recover_finalizer(dol) if contact_floor_test else None
     contact_pause = contact_pose_pause.recover(dol) if contact_pause_test else None
+    continuation_source=projectile_continuation.qualify(dol) if projectile_continuation_test else None
     contact_roles = None
     if contact_scale_test:
         with open_regular(DAMAGE_SELECTORS) as stream:
@@ -1596,6 +1604,9 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             raise ValueError("incorrect contact selector artifact")
         contact_roles = damage_contact_roles.recover(dol), selectors
     with open_regular(afs_path) as stream:
+        if continuation_source is not None:
+            from tools.analyze.retail_action_input import verify_archive
+            verify_archive(stream)
         archive = RetailArchive(stream)
         shared_files, shared_index = archive.shared_assets()
         if contact_power_test:
@@ -1617,6 +1628,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             shared_index["contact_floor_test"] = contact_floor["native_scope"]
         if contact_pause is not None:
             shared_index["contact_pause_test"] = contact_pause["native"]
+        if continuation_source is not None:
+            shared_index["projectile_continuation_test"]={**continuation_source,"borg":"gg4e08:0600"}
         pcm=None
         if landing_decoder is not None:
             pcm=decode_lab_landing_pcm(landing_decoder,shared_files,shared_index)
@@ -1785,7 +1798,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
                                            contact_tiers=contact_tiers,contact_tier_reset_test=contact_tier_reset_test,
                                             contact_audio=contact_audio,contact_visuals=contact_visuals,
                                             contact_indices=contact_indices,contact_floor=contact_floor,
-                                            contact_pause=contact_pause is not None)
+                                             contact_pause=contact_pause is not None,
+                                             continuation_source=continuation_source)
             if "dragon_carrier_collision" in summary:
                 dragon_carriers["borgs"][row.id]["collision"]=summary["dragon_carrier_collision"]
                 dragon_carriers["borgs"][row.id]["visuals"]=summary["dragon_carrier_visuals"]
@@ -1975,6 +1989,8 @@ def main():
                         help="declare opt-in source-relative native ground pace; requires --role-clips")
     parser.add_argument("--basic-shot-test", action="store_true",
                          help="add a normal-only authored B-shot Battle Test to the qualified cohort")
+    parser.add_argument("--projectile-continuation-test", action="store_true",
+                        help="opt Machine Red's authored ordinary B shot into receiver continuation; requires --basic-shot-test")
     parser.add_argument("--basic-melee-test", action="store_true",
                          help="add a normal-only authored close-B Battle Test to the qualified melee cohort")
     parser.add_argument("--contact-scale-test", action="store_true",
@@ -2014,7 +2030,8 @@ def main():
                                         contact_tier_test=args.contact_tier_test,
                                          contact_tier_reset_test=args.contact_tier_reset_test,contact_audio_decoder=args.contact_audio,
                                           contact_art_test=args.contact_art_test,contact_index_test=args.contact_index_test,
-                                          contact_floor_test=args.contact_floor_test,contact_pause_test=args.contact_pause_test)
+                                           contact_floor_test=args.contact_floor_test,contact_pause_test=args.contact_pause_test,
+                                           projectile_continuation_test=args.projectile_continuation_test)
     except (ValueError, OSError) as exc:
         parser.exit(1, f"retail roster extraction: {exc}\n")
     print(f"GG4E08: {normal} normal asset packages, {previews} preview declarations (not runtime-validated)")

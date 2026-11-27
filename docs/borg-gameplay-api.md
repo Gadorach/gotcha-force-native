@@ -1013,9 +1013,11 @@ direct move may opt in. Guided, landing, sustained, child, and detached
 shots, release sequences, stock returns, and other actor-retirement
 effects are refused in combination. Move-owned contact presentation
 can still run on each accepted hit. This is an authored native rule
-informed by the [bounded rifle comparison](retail-code-atlas.md#machine-red-one-carrier-two-receivers);
-it is not assigned to any retail package and does not replace the
-native sweep with the original collision scheduler. The
+informed by the [bounded rifle comparison](retail-code-atlas.md#machine-red-one-carrier-two-receivers).
+No default retail package selects it. The
+[Machine Red Workshop test](retail-roster-extraction.md#machine-red-projectile-continuation-test)
+can opt into this one policy; it still uses the native sweep rather
+than the original collision scheduler. The
 [authored roster smoke](../tests/host/projectile_continuation_smoke.py)
 compares both policies without retail assets.
 
