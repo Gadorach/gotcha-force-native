@@ -201,6 +201,8 @@ If using indexed damage, supply one rank per actor in the same slot order.
 An optional third group in `--package-damage-indices` supplies one damage
 table bank (`0` or `1`) per actor in that order:
 `--package-damage-indices 7,7:0,0,0:0,0,1`. It does not change teams.
+In a preset, `damage-indices=7,7:0,0,0:0,0,1` stores the same selection
+for both direct and browser launches. Supply one source, not both.
 Explicit rosters do not combine with the mirrored `--demo-roster-battle`,
 battle picker, or borrowed source-motion actors.
 

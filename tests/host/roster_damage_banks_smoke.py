@@ -39,30 +39,77 @@ def smoke(executable, opengl):
             rows("damage-receive-rank", 8, 0, ("1.15", "1.15"))
         )
         preset = root / "damage.roster"
-        preset.write_text(
+        base_preset = (
             "GFROSTER 1\nlocals=2\nstage=example:workshop\n"
             "fighter=0|example:jump-stick|normal|damage-shooter\n"
             "fighter=1|example:flight-stick|normal|damage-target\n"
             "fighter=1|example:flight-stick|normal|damage-idle\n"
         )
+        preset.write_text(base_preset)
 
-        def play(selection, short=False):
-            args = [executable, "--battle-roster", preset, "--no-audio", "--package-damage-indices", selection]
+        def host(*args):
+            return run([executable, *args], cwd=root, capture_output=True, text=True, timeout=45)
+
+        def play(selection=None, short=False):
+            args = ["--battle-roster", preset, "--no-audio"]
+            if selection is not None:
+                args.extend(("--package-damage-indices", selection))
             if short:
                 args += ["--headless", "--frames", "1"]
             else:
                 args += ["--demo-package-battle", "--trace-package-battle", "--frames", "78"]
                 if not opengl:
                     args.append("--headless")
-            return run(args, cwd=root, capture_output=True, text=True, timeout=45)
+            return host(*args)
+
+        def hit(result, expected):
+            hits = re.findall(r"actor=0 move=slash event=hit .*recipient=(\d+) value=(\d+)", result.stderr)
+            assert result.returncode == 0 and hits == [("1", str(expected))], result.stderr[-4500:]
 
         for selection, expected in (("7,7:0,0,0", 40), ("7,7:0,0,0:0,0,1", 35), ("7,7:0,0,0:0,1,1", 40)):
-            result = play(selection)
-            hits = re.findall(r"actor=0 move=slash event=hit .*recipient=(\d+) value=(\d+)", result.stderr)
-            assert result.returncode == 0 and hits == [("1", str(expected))], (selection, result.stderr[-4500:])
+            hit(play(selection), expected)
         for malformed in ("7,7:0,0,0:", "7,7:0,0,0:0,1", "7,7:0,0,0:0,2,1",
                           "7,7:0,0,0:0,1,1,", "7,7:0,0,0:0,1,1:0", "7,7:0,0:0,1"):
             assert play(malformed, short=True).returncode != 0, malformed
+        selection = "7,7:0,0,0:0,0,1"
+        preset.write_text(base_preset + f"damage-indices={selection}\n")
+        hit(play(), 35)
+        admitted = host("--check-battle-roster", preset)
+        assert admitted.returncode == 0 and "Roster admission passed:" in admitted.stdout, admitted.stderr
+        conflict = play(selection, short=True)
+        assert conflict.returncode != 0 and "damage indices supplied by both" in conflict.stderr
+
+        # The browser has no match override flags. Use a CPU attacker so
+        # the headless match proves that the stored bank reaches real hits.
+        library = root / "presets"
+        library.mkdir()
+        browser_file = library / "damage-cpu.roster"
+        browser_file.write_text(
+            "GFROSTER 1\nlocals=1\nstage=example:workshop\ndamage-indices=7,7:0,0,0:1,0,0\n"
+            "fighter=0|example:flight-stick|normal|damage-target\n"
+            "fighter=0|example:flight-stick|normal|damage-idle\n"
+            "fighter=1|example:jump-stick|normal|damage-shooter\n"
+        )
+        browser = ["--browse-battle-rosters", library, "--frames", "65", "--no-audio",
+                   "--demo-roster-select", browser_file.name, "--trace-package-battle"]
+        if not opengl:
+            browser.append("--headless")
+        browsed = host(*browser)
+        assert browsed.returncode == 0 and f"selected {browser_file.name}" in browsed.stderr, browsed.stderr[-4500:]
+        if not opengl:
+            hits = re.findall(r"actor=2 move=slash event=hit .*recipient=(\d+) value=(\d+)", browsed.stderr)
+            assert hits and all(hit == ("0", "40") for hit in hits), browsed.stderr[-4500:]
+
+        plain = library / "damage-default.roster"
+        plain.write_text(browser_file.read_text().replace("damage-indices=7,7:0,0,0:1,0,0\n", ""))
+        switched = host(*browser, "--demo-roster-next", plain.name)
+        assert switched.returncode == 0 and f"selected {plain.name}" in switched.stderr, switched.stderr[-4500:]
+        if not opengl:
+            later = switched.stderr.split(f"returned {browser_file.name}", 1)[-1]
+            hits = re.findall(r"actor=2 move=slash event=hit .*recipient=(\d+) value=(\d+)", later)
+            assert hits and all(hit == ("0", "35") for hit in hits), switched.stderr[-4500:]
+
+        preset.write_text(base_preset)
         with preset.open("a") as extra:
             for marker, team in (("a", 0), ("b", 0), ("c", 1)):
                 extra.write(f"fighter={team}|example:flight-stick|normal|damage-extra-{marker}\n")
@@ -74,6 +121,11 @@ def smoke(executable, opengl):
                                       if not line.startswith(("damage-receive-setting=", "damage-receive-rank="))) + "\n")
         stale = play(six_actors, short=True)
         assert stale.returncode != 0 and "indexed damage selection requires matching complete package tables" in stale.stderr
+        missing_tables = host("--check-battle-roster", browser_file)
+        assert missing_tables.returncode != 0 and "indexed damage selection requires matching complete package tables" in missing_tables.stderr
+        refused = host(*browser)
+        assert refused.returncode == 2 and f"refused {browser_file.name}:" in refused.stderr
+        assert "indexed damage selection requires matching complete package tables" in refused.stderr
 
 
 if __name__ == "__main__":
@@ -82,4 +134,4 @@ if __name__ == "__main__":
     parser.add_argument("--opengl", action="store_true")
     args = parser.parse_args()
     smoke(args.executable, args.opengl)
-    print(f"Roster damage banks: same recipient 40 -> 35 -> 40 ({'OpenGL' if args.opengl else 'headless'})")
+    print(f"Roster damage banks: CLI, stored indices, preflight and browser ({'OpenGL' if args.opengl else 'headless'})")

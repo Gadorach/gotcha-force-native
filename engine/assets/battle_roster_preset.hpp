@@ -1,12 +1,14 @@
 #pragma once
 
 #include <charconv>
+#include <optional>
+#include "engine/assets/battle_damage_indices.hpp"
 #include "engine/assets/borg_catalog_profile.hpp"
 
 namespace gf {
 
 inline constexpr std::size_t kBattleRosterPresetBytes=4096;
-inline constexpr unsigned kBattleRosterPresetMaxActors=6;
+inline constexpr unsigned kBattleRosterPresetMaxActors=kPackageBattleActorCapacity;
 inline constexpr u8 kBattleRosterSeriesMaxWins=5;
 inline constexpr u16 kBattleRosterMaxRoundSeconds=600;
 
@@ -22,6 +24,7 @@ struct BattleRosterPreset {
     u8 locals=2;
     u8 rounds_to_win=0; // omitted keeps the ordinary single round
     u16 round_seconds=0; // omitted leaves rounds untimed
+    std::optional<BattleMvpDamageIndices> damage_indices{};
     bool operator==(const BattleRosterPreset&)const=default;
 };
 
@@ -60,6 +63,11 @@ inline bool battle_roster_read_preset(std::string_view text,BattleRosterPreset* 
             const auto [end,err]=std::from_chars(value.data(),value.data()+value.size(),seconds);
             if(err!=std::errc{}||end!=value.data()+value.size()||!seconds||seconds>kBattleRosterMaxRoundSeconds)return bad_row();
             next.round_seconds=seconds;
+        }else if(row.starts_with("damage-indices=")){
+            BattleMvpDamageIndices indices;
+            const auto value=row.substr(std::string_view("damage-indices=").size());
+            if(next.damage_indices||!battle_read_damage_indices(value,&indices))return bad_row();
+            next.damage_indices=indices;
         }else if(row.starts_with("fighter=")){
             std::array<std::string_view,4> fields{};
             if(next.fighters.size()>=kBattleRosterPresetMaxActors||
@@ -76,6 +84,8 @@ inline bool battle_roster_read_preset(std::string_view text,BattleRosterPreset* 
     }
     if(next.stage.empty()||next.fighters.size()<3)return fail("stage and three to six fighters required");
     if(!teams[0]||!teams[1])return fail("both teams need at least one fighter");
+    if(next.damage_indices&&!next.damage_indices->valid(unsigned(next.fighters.size())))
+        return fail("damage indices must cover every fighter slot");
     *out=std::move(next);if(error)error->clear();return true;
 }
 

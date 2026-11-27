@@ -3,6 +3,7 @@
 #include "engine/assets/borg_reflection_policy.hpp"
 #include "engine/assets/character_preview_mount.hpp"
 #include "engine/assets/borg_cruise_boost.hpp"
+#include "engine/assets/battle_damage_indices.hpp"
 #include <optional>
 #include "engine/assets/borg_catalog_profile.hpp"
 #include <cmath>
@@ -260,7 +261,6 @@ template<unsigned Cells> struct BorgDamageTeamRows {
 };
 using BorgDamageRoleRows=BorgDamageTeamRows<2>;
 using BorgDamageLadderRows=BorgDamageTeamRows<kBorgDamageLadderCells>;
-inline constexpr unsigned kBorgDamageSettings=32,kBorgDamageRanks=8;
 struct BorgDamageIndexedRole {
     BorgDamageTeamRows<kBorgDamageSettings> setting;
     BorgDamageTeamRows<kBorgDamageRanks> rank;

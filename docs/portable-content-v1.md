@@ -135,9 +135,9 @@ For a duel, omit the `--roster-borg` arguments and use `--stage-spawns west east
 
 ### Reusable Battle Test rosters
 
-`--battle-roster FILE` loads a `GFROSTER 1` preset on Linux. The preset
-contains only a stage ID and ordered `fighter=TEAM|BORG_ID|VARIANT|SPAWN`
-rows. For example:
+`--battle-roster FILE` loads a `GFROSTER 1` preset on Linux. It
+declares a stage ID, ordered `fighter=TEAM|BORG_ID|VARIANT|SPAWN`
+rows and optional match rules. For example:
 
 ```text
 GFROSTER 1
@@ -203,6 +203,17 @@ its starting team HP remaining wins; equal fractions give a draw.
 Defeated fighters still count toward their team's starting HP. Q or
 N starts the next round with a fresh clock. The CLI `--seconds` flag
 still just closes the host after a wall-clock duration.
+
+For packages with indexed contact damage, a preset can add
+`damage-indices=7,7:0,0,0:0,0,1`. The first group is two team
+settings (`0..31`), the second is one rank (`0..7`) per fighter,
+and the optional third is one table bank (`0` or `1`) per fighter.
+Both fighter lists use the order of the `fighter=` rows. Omitting
+the bank list keeps team-keyed lookup; omitting the entire row keeps
+the package's fixed damage rules. The browser and
+`--check-battle-roster` validate the same selection as a direct
+launch. Do not supply `--package-damage-indices` as well as the
+preset row. Explicit banks are not inferred from controller seats.
 
 The host reads one regular file, at most 4 KiB, without following links
 or accepting `..` in the path.

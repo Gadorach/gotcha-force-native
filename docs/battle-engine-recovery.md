@@ -825,7 +825,13 @@ teams and settings fixed and measures 35 versus 40 when only the
 receiver's controller-source byte changes. The native indexed opt-in
 now accepts a caller-supplied bank per actor; older two-group selections
 remain team-keyed. This does not infer the retail controller source
-or assign difficulty at runtime. The per-slot settings byte is
+or assign difficulty at runtime. The ordinary constructor's
+`8005438C` branch tests the mode input mask against the actor's slot
+bit `+0x3E5` before writing `+0x3E6`; two other constructor paths
+write zero while also writing input mode 2 (`+0x488`). These static
+stores do not establish the live mode or slot mask, so neither the
+native team nor its CPU seat automatically supplies a source bank.
+The per-slot settings byte is
 written by `80006ABC`: state 1 sets slot 0 = `d` and slot 1 = `31 - d` (with
 `d` from `*80433934 + 0x46`), masking both cells to five bits and leaving
 slots 2 and 3 untouched. State 2 sets slots 0..3 to 7. The observed

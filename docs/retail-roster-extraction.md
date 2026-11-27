@@ -1040,6 +1040,11 @@ example, `--package-damage-indices 7,7:0,0:0,0` uses bank 0 for both
 fighters without changing their teams. Settings still follow the
 team and ranks follow actor slots. Omit the bank group for the
 existing team-keyed selection.
+The same value can be stored as `damage-indices=...` in a
+`GFROSTER 1` file. This makes the indexed comparison reproducible
+from the browser and lets `--check-battle-roster` validate the
+package tables before a match. A preset with the row refuses a
+simultaneous CLI selection.
 
 For the indexed smoke, include `--contact-power-test` but leave the
 HP/force ladder option off:

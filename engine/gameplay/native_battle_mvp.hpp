@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/assets/battle_damage_indices.hpp"
 #include "engine/assets/borg_ground_pace.hpp"
 //Explicit native MVP rules, NOT source battle-callback authority. Two initialized
 //gameplay actors own movement, health and attacks. Presentation binds their normal
@@ -192,24 +193,9 @@ struct BattleMvpEmitter {
     u32 id=0;BattleMvpVec position{};
     u16 remaining=0;u8 deployment_move=BorgBattleActionState::none;
 };
-constexpr unsigned kBattleMvpMaxActors=6;
+constexpr unsigned kBattleMvpMaxActors=kPackageBattleActorCapacity;
 struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
 struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
-struct BattleMvpDamageIndices {
-    std::array<u8,2> settings{};
-    std::array<u8,kBattleMvpMaxActors> ranks{};
-    u8 rank_count=0;
-    std::array<u8,kBattleMvpMaxActors> banks{}; // optional role-table bank per actor
-    u8 bank_count=0; // omitted keeps the authored team-keyed policy
-    bool valid(unsigned count)const{
-        return rank_count==count&&count<=ranks.size()&&
-            std::all_of(settings.begin(),settings.end(),[](u8 i){return i<kBorgDamageSettings;})&&
-            std::all_of(ranks.begin(),ranks.begin()+count,[](u8 i){return i<kBorgDamageRanks;})&&
-            (!bank_count||(bank_count==count&&
-             std::all_of(banks.begin(),banks.begin()+count,[](u8 i){return i<2;})));
-    }
-    u8 bank(unsigned slot,u8 team)const{return bank_count?banks[slot]:team;}
-};
 struct BattleMvpConfig {
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
     unsigned health=100;

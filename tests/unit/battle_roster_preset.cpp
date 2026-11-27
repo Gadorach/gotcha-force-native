@@ -17,7 +17,8 @@ int main(){
     std::string error;
     check(battle_roster_read_preset(text,&parsed,&error),"valid three-fighter CRLF preset");
     check(parsed.stage=="example:workshop"&&parsed.fighters.size()==3&&
-          parsed.fighters[1].variant=="clear"&&parsed.fighters[2]==BattleRosterPresetFighter{1,"example:jump-stick","normal","east-rear"},
+           !parsed.damage_indices&&parsed.fighters[1].variant=="clear"&&
+           parsed.fighters[2]==BattleRosterPresetFighter{1,"example:jump-stick","normal","east-rear"},
           "ordered slots retain explicit variants and markers; admissibility is separate");
     const auto previous=parsed;
     const auto bad=[&](std::string invalid){
@@ -40,6 +41,12 @@ int main(){
     bad(text+"\nround-seconds=1\nround-seconds=2");
     for(const auto* value:{"0","3","01","one",""})bad(text+"\nlocals="+value);
     bad(text+"\nlocals=1\nlocals=2");
+    for(const auto* value:{"","7,7","7,7:0","7,7:0,0","7,7:0,0,0,0",
+                           "32,7:0,0,0","7:0,0,0","7,7:0,0,8","7,7:0,0,0:",
+                           "7,7:0,0,0:0,1","7,7:0,0,0:0,1,2","7,7:0,0,0:0,1,1,",
+                           "7,7:0,0,0:0,1,1:0","7,7:+0,0,0","7,7:0,,0,0"})
+        bad(text+"\ndamage-indices="+value);
+    bad(text+"\ndamage-indices=7,7:0,0,0\ndamage-indices=7,7:0,0,0:0,0,1");
     bad(text+"\n# invalid \xc0\xaf");
     bad(text+std::string(kBattleRosterPresetBytes,'\n'));
     auto swapped=text;
@@ -58,6 +65,8 @@ int main(){
     bad(full+"\nfighter=0|example:flight-stick|normal|west-far");
     check(battle_roster_read_preset(full,&parsed,&error)&&parsed.fighters.size()==6&&error.empty(),
           "exact capacity of three fighters per team accepted");
+    check(battle_roster_read_preset(full+"\ndamage-indices=31,31:7,7,7,7,7,7:1,1,1,1,1,1",&parsed,&error)&&
+          parsed.damage_indices&&parsed.damage_indices->valid(6),"full damage row fits the six-actor preset");
     check(battle_roster_read_preset(coop,&parsed,&error)&&!parsed.rounds_to_win&&parsed.fighters[0].team==0&&parsed.fighters[1].team==0&&
           parsed.fighters[2].team==1,"co-op preserves the first two local slots and requires an opposing CPU");
     check(battle_roster_read_preset(coop+"\nrounds-to-win=2",&parsed,&error)&&parsed.rounds_to_win==2,
@@ -68,5 +77,20 @@ int main(){
           parsed.round_seconds==600&&parsed.rounds_to_win==2,"timer and series are independent options");
     check(parsed.locals==2&&battle_roster_read_preset(coop+"\nlocals=1",&parsed,&error)&&parsed.locals==1&&
           parsed.fighters[1].team==0&&parsed.fighters[2].team==1,
-          "one-local preset preserves the ordered ally and opponent slots; omitted locals still means two");
+           "one-local preset preserves the ordered ally and opponent slots; omitted locals still means two");
+    check(battle_roster_read_preset(coop+"\ndamage-indices=0,31:1,2,7",&parsed,&error)&&
+          parsed.damage_indices&&parsed.damage_indices->settings==std::array<u8,2>{0,31}&&
+          parsed.damage_indices->ranks[1]==2&&parsed.damage_indices->rank_count==3&&
+          parsed.damage_indices->bank_count==0,"preset can use indexed roles without overriding team banks");
+    const auto team_keyed=parsed;
+    check(battle_roster_read_preset(coop+"\ndamage-indices=0,31:1,2,7:0,1,0",&parsed,&error)&&
+          parsed.damage_indices&&parsed.damage_indices->bank_count==3&&parsed.damage_indices->banks[1]==1&&
+          parsed.damage_indices->banks[2]==0&&parsed.fighters==team_keyed.fighters&&parsed!=team_keyed,
+          "bank-only edits preserve slot order but change the preset's identity");
+    BattleMvpDamageIndices direct;
+    check(battle_read_damage_indices("7,7:0,0:0,1",&direct)&&direct.valid(2),
+          "shared parser also admits an indexed duel for the CLI");
+    const auto admitted=direct;
+    check(!battle_read_damage_indices("7,7:0,0:0",&direct)&&direct==admitted,
+          "failed bank parse must not publish a partial row");
 }

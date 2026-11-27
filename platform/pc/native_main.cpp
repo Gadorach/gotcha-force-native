@@ -256,8 +256,12 @@ struct Options {
     unsigned capture_frame = 0;
 };
 
-void apply_battle_roster_preset(Options& options,gf::BattleRosterPreset preset){
+bool apply_battle_roster_preset(Options& options,gf::BattleRosterPreset preset){
     static_assert(gf::kBattleRosterPresetMaxActors<=gf::kBattleMvpMaxActors);
+    if(preset.damage_indices){
+        if(options.package_damage_indices)return false;
+        options.package_damage_indices=preset.damage_indices;
+    }
     options.battle_stage=std::move(preset.stage);
     options.roster_local_players=preset.locals;
     options.roster_rounds_to_win=preset.rounds_to_win;
@@ -270,6 +274,7 @@ void apply_battle_roster_preset(Options& options,gf::BattleRosterPreset preset){
         else if(i==1){options.against_borg=std::move(fighter.borg);options.against_variant=std::move(fighter.variant);}
         else options.roster_borgs.push_back({fighter.team,std::move(fighter.borg),std::move(fighter.variant)});
     }
+    return true;
 }
 
 bool parse(int argc, char** argv, Options* options) {
@@ -427,36 +432,8 @@ bool parse(int argc, char** argv, Options* options) {
         }
         else if(arg=="--package-damage-indices"){
             if(++i>=argc||options->package_damage_indices)return false;
-            const std::string_view encoded=argv[i];
-            const auto divider=encoded.find(':');
-            // Two settings, then up to six single-digit ranks and banks.
-            constexpr auto max_length=5+4*gf::kBattleMvpMaxActors;
-            if(divider==encoded.npos||encoded.size()>max_length)return false;
-            const auto bank_divider=encoded.find(':',divider+1);
-            const auto ranks=encoded.substr(divider+1,bank_divider==encoded.npos?encoded.npos:bank_divider-divider-1);
-            const auto row=[](std::string_view value,std::span<gf::u8> out,unsigned limit)->unsigned{
-                unsigned n=0;
-                while(!value.empty()){
-                    const auto comma=value.find(',');
-                    const auto cell=value.substr(0,comma);
-                    if(cell.empty()||n==out.size())return 0;
-                    unsigned index=0;const auto end=cell.data()+cell.size();
-                    const auto parsed=std::from_chars(cell.data(),end,index);
-                    if(parsed.ec!=std::errc{}||parsed.ptr!=end||index>=limit)return 0;
-                    out[n++]=gf::u8(index);
-                    if(comma==value.npos)return n;
-                    value.remove_prefix(comma+1);
-                }
-                return 0;
-            };
             gf::BattleMvpDamageIndices indices;
-            if(row(encoded.substr(0,divider),indices.settings,gf::kBorgDamageSettings)!=indices.settings.size())return false;
-            indices.rank_count=gf::u8(row(ranks,indices.ranks,gf::kBorgDamageRanks));
-            if(indices.rank_count<2)return false;
-            if(bank_divider!=encoded.npos){
-                indices.bank_count=gf::u8(row(encoded.substr(bank_divider+1),indices.banks,2));
-                if(indices.bank_count!=indices.rank_count)return false;
-            }
+            if(!gf::battle_read_damage_indices(argv[i],&indices))return false;
             options->package_damage_indices=indices;
         }
         else if (arg == "--list-borgs") options->list_borgs = true;
@@ -937,7 +914,10 @@ bool parse(int argc, char** argv, Options* options) {
         if(!gf::pc::load_battle_roster_preset(options->battle_roster_file,&preset,&error)){
             std::fprintf(stderr,"Borg Battle Test preset: %s\n",error.c_str());return false;
         }
-        apply_battle_roster_preset(*options,std::move(preset));
+        if(!apply_battle_roster_preset(*options,std::move(preset))){
+            std::fputs("Borg Battle Test preset: damage indices supplied by both the preset and the command line\n",stderr);
+            return false;
+        }
     }
     if(!options->story_map.empty()&&(!story_map_flags_only||options->width<112||options->height<112||
        options->width>4096||options->height>4096||(options->headless&&!options->screenshot.empty())))return false;
@@ -2569,6 +2549,7 @@ int run_roster_browser(gf::Context& context,gf::RenderEngine& render,const Optio
         auto summary=std::to_string(preset.fighters.size())+" slots "+std::to_string(preset.locals)+" local";
         if(preset.rounds_to_win)summary+=" first-to-"+std::to_string(preset.rounds_to_win);
         if(preset.round_seconds)summary+=" "+std::to_string(preset.round_seconds)+"s";
+        if(preset.damage_indices)summary+=preset.damage_indices->bank_count?" damage banks":" indexed damage";
         rows.push_back({entry.filename,preset.stage,std::move(summary)});
     }
     const auto row_for=[&](std::string_view name)->std::optional<std::size_t>{
@@ -2674,10 +2655,10 @@ int run_roster_browser(gf::Context& context,gf::RenderEngine& render,const Optio
             next.width=width;next.height=height;
             if(next.frames)next.frames-=elapsed();
             PackageBattleFiles files;
-            if(ok){
-                apply_battle_roster_preset(next,std::move(selected));
-                ok=load_package_battle_files(next,catalog,files,error)&&probe_browser_roster(next,files,error);
+            if(ok&&!apply_battle_roster_preset(next,std::move(selected))){
+                ok=false;error="damage indices supplied by both the preset and the caller";
             }
+            if(ok)ok=load_package_battle_files(next,catalog,files,error)&&probe_browser_roster(next,files,error);
             if(ok){
                 next.demo_roster_cancel=followup&&matches==0;
                 next.roster_browser_match=true;
