@@ -848,6 +848,11 @@ setup, Mode input mask 0 coexists with Scene active mask `0x0F`.
 The selected-slot rank-3 branch updates the active mask, not the
 input mask. A separate port helper can add input bits. These are
 bounded setup paths, not a live rank or controller scheduler.
+The [processed-pad join](retail-code-atlas.md#processed-pad-to-menu-enrollment)
+also qualifies how one source menu update invokes that port helper.
+Given declared packets, newly selected ports change the Mode input
+mask and therefore the ordinary actor bank, independently of team.
+It does not cover the production of those packets or a running match.
 
 `tools/analyze/damage_content_row.py` turns the tables and the public selector
 artifact into native content rows. A battle can pass up to 16 defender models

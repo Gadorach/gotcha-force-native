@@ -456,6 +456,49 @@ python3 -m tools.analyze.retail_scene_damage_inputs \
   /tmp/opencode/gf-scene-damage-inputs.json
 ```
 
+### Processed pad to menu enrollment
+
+The [menu-input receipt](api-map/gg4e08-menu-port-input.json)
+joins the processed-pad buffer at `803C727C` (four 32-byte
+records) to the original menu update `80190038`. The update calls
+`8016E694` to transform the packet's button word, gate it by the
+status byte at `+21`, and write button edges against the previous
+menu-held word. The battle input consumer reads the same buffer;
+it does not use these per-menu edge records.
+
+- In menu branch 2, the update clears the current port's edge
+  word and collects the other ports' edges. A held `0x100` does
+  not produce a fresh `0x100` edge. Status zero clears the held
+  word; both `1` and `255` took the nonzero branch in the fixture.
+- Of the tested menu edge bits, `0x200` takes precedence over
+  `0x100`, which takes precedence over `0x80`. The `0x200` path
+  records a separate port without enrolling it. The other two
+  paths call `8019052C` with their respective bits; the first
+  matching port in scan order wins.
+- Menu branch 1 reads only the current port. The same `0x100`
+  and `0x80` edges advance the menu step without updating the
+  input mask. The branch selector is not battle Mode state.
+- With prior mask `0x01`, enrolling port 1 produces mask `0x03`,
+  count 2, and banks `[0, 0, 1, 1]` for four declared ordinary
+  actors on teams `[0, 1, 0, 1]`. Re-selecting a port whose bit
+  was already set does not increase the count.
+
+All 13 cases matched across O0, O1 and O2. They start from
+declared processed packets and menu history and stop before
+audio/transition work, or return without it. No hardware polling,
+full menu transition, actual actor scheduling, or native runtime
+assignment is qualified by this test.
+
+Compile [`retail_menu_port_input_fixture.cpp`](../tests/host/retail_menu_port_input_fixture.cpp)
+with the [phase fixture](#shared-action-gate) build flags, then run:
+
+```sh
+python3 -m tools.analyze.retail_menu_port_input \
+  "$GF_RETAIL_ROOT/sys/main.dol" \
+  /tmp/opencode/gf-menu-port-input "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-menu-port-input.json
+```
+
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the
 command below; it takes the same DOL and recomp-module arguments.

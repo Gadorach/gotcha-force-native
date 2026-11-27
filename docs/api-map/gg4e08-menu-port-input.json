@@ -1,0 +1,681 @@
+{
+  "cases": [
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "first-match",
+      "current_port_after": 1,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 1,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        256,
+        256,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 3,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "held-ignored",
+      "current_port_after": 2,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 256,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 2,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        0,
+        256,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 5,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "status-zero",
+      "current_port_after": 2,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 0,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 2,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        0,
+        256,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 5,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "status-nonzero",
+      "current_port_after": 1,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 255,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 1,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        256,
+        256,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 3,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "menu-return",
+      "branch_0x200_port": null,
+      "case": "current-excluded",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": null,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        8
+      ],
+      "mode_input_mask": 1,
+      "mode_input_port_count": 1,
+      "ordinary_banks": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "menu-return",
+      "branch_0x200_port": null,
+      "case": "held-no-edge",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 256,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": null,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        8
+      ],
+      "mode_input_mask": 1,
+      "mode_input_port_count": 1,
+      "ordinary_banks": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-transition-80190258",
+      "branch_0x200_port": null,
+      "case": "alternate-bit",
+      "current_port_after": 2,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 4096
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 2,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        0,
+        128,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        10
+      ],
+      "mode_input_mask": 5,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "edge-priority",
+      "current_port_after": 2,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 4096
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 2,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        128,
+        256,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 5,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-80190184",
+      "branch_0x200_port": 2,
+      "case": "upper-bit-priority",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 512
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 4096
+        }
+      ],
+      "enrolled_port": null,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        0,
+        256,
+        512,
+        128
+      ],
+      "menu_state_after": [
+        5,
+        0
+      ],
+      "mode_input_mask": 1,
+      "mode_input_port_count": 1,
+      "ordinary_banks": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "single-port",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": null,
+      "menu_branch": 1,
+      "menu_edge_words_after": [
+        256,
+        64,
+        64,
+        64
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 1,
+      "mode_input_port_count": 1,
+      "ordinary_banks": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-transition-80190258",
+      "branch_0x200_port": null,
+      "case": "single-port-alternate",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 4096
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": null,
+      "menu_branch": 1,
+      "menu_edge_words_after": [
+        128,
+        64,
+        64,
+        64
+      ],
+      "menu_state_after": [
+        4,
+        10
+      ],
+      "mode_input_mask": 1,
+      "mode_input_port_count": 1,
+      "ordinary_banks": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "prior_current_port": 0,
+      "prior_mode_input_mask": 1
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "nonzero-current",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 0,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        256,
+        256,
+        0,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 5,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "prior_current_port": 2,
+      "prior_mode_input_mask": 4
+    },
+    {
+      "boundary": "before-audio-801901F0",
+      "branch_0x200_port": null,
+      "case": "already-enrolled",
+      "current_port_after": 0,
+      "declared_processed_pads": [
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 256
+        },
+        {
+          "prior_menu_held": 0,
+          "status": 1,
+          "word": 0
+        }
+      ],
+      "enrolled_port": 0,
+      "menu_branch": 2,
+      "menu_edge_words_after": [
+        256,
+        256,
+        0,
+        0
+      ],
+      "menu_state_after": [
+        4,
+        9
+      ],
+      "mode_input_mask": 5,
+      "mode_input_port_count": 2,
+      "ordinary_banks": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "prior_current_port": 2,
+      "prior_mode_input_mask": 5
+    }
+  ],
+  "declared_actor_teams": [
+    0,
+    1,
+    0,
+    1
+  ],
+  "declared_mode_state": 2,
+  "enrollment": "8019052C",
+  "kind": "gf-retail-menu-port-input",
+  "menu_update": "80190038",
+  "notes": [
+    "Replay starts at the processed-pad buffer with declared prior menu-held values, not raw polling.",
+    "Original menu code calls the enrollment helper. Execution stops before audio or transition calls, or returns without them.",
+    "Menu branch selector +23 and battle Mode state +50 are distinct fields.",
+    "The bank readback uses the resulting Mode input mask with declared ordinary actor slots, not an entire Scene or match.",
+    "No native defaults or runtime controller assignment changed."
+  ],
+  "ordinary_bank_slice": "8005438C",
+  "per_port_reader": "8016E694",
+  "processed_pad_base": "803C727C",
+  "processed_pad_stride": 32,
+  "reviewed_enrollment_calls": {
+    "801901E0": 256,
+    "80190250": 128
+  },
+  "revision": 1,
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
