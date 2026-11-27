@@ -12,6 +12,7 @@ LEVEL_TABLE = 0x802F2988
 NORMAL_LEVEL_START = 0x804339E8
 DEBIT = 0x8006DBE0
 REFILL = 0x8006DCC0
+LEVEL_CHANNELS = (0, 2)
 TEXT = (
     (0x800563D8,0x1C0,"74e88eb712ed82b757a8b10426bf0843086fd42d7ed859c78bae5ec4da6635ec"),
     (DEBIT,0xE0,"0b2e322f452d317b5f515e0ebd95f821a10cdbee5db9cdbd07678c8d251eed31"),
@@ -46,7 +47,8 @@ def stock_schema(dol):
     if start+10>20:
         raise ValueError("normal stock row extent")
     return {"source_level_table":f"{LEVEL_TABLE:08X}","normal_row_base":start,
-            "normal_row_base_source":f"{NORMAL_LEVEL_START:08X}","row_bytes":18,"channel_offsets":[2,10],
+             "normal_row_base_source":f"{NORMAL_LEVEL_START:08X}","row_bytes":18,"channel_offsets":[2,10],
+             "level_row_channels":list(LEVEL_CHANNELS),"untouched_by_level_initializer":[1],
             "halfword_fields":["initial","limit","mode","preset"],
             "initializer_reads":"80056464","initialized_channels":2,
             "debit_helper":f"{DEBIT:08X}","refill_helper":f"{REFILL:08X}","refill_channels_visited":3,
@@ -58,7 +60,7 @@ def stock_rows(levels):
     if len(levels)!=10 or any(len(row)!=9 for row in levels):
         raise ValueError("normal stock level row extent")
     channels = []
-    for channel,start in enumerate((1,5)):
+    for channel,start in zip(LEVEL_CHANNELS,(1,5),strict=True):
         rows = []
         for level,row in enumerate(levels,1):
             initial,limit,mode,preset = row[start:start+4]
@@ -92,7 +94,7 @@ def attach_release_stock(releases, linker):
             continue
         release["stock_candidate"] = {"channel":channel,"cost":count,"debit_site":f"{debit:08X}",
                                       "commit":True,"failure_branch":f"{debit+8:08X}",
-                                      "normal_level_operand_channel":channel if channel<2 else None,
+                                       "normal_level_operand_channel":channel if channel in LEVEL_CHANNELS else None,
                                       "scope":"shared debit call; not per-child accounting"}
 
 
@@ -199,7 +201,7 @@ class StockGuardIndex:
                 result.setdefault(site,[]).append({"entry":f"{entry:08X}","debit_site":f"{debit:08X}",
                     "success_branch":f"{success:08X}","failure_branch":f"{failure:08X}",
                     "channel":channel,"cost":cost,"commit":True,"same_input_actor":True,
-                    "normal_level_operand_channel":channel if channel<2 else None})
+                    "normal_level_operand_channel":channel if channel in LEVEL_CHANNELS else None})
         return result
 
     def attach(self, releases):

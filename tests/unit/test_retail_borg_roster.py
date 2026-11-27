@@ -1730,12 +1730,17 @@ class RosterFormatTests(unittest.TestCase):
         fixture.altered=0
         words[n(1)]=0x6C608000 # xoris writes r0, not r31
         self.assertIn(release,StockGuardIndex(fixture).handler_guards(entry))
+        for channel, expected in ((1,None),(2,2)):
+            words[n(2)]=0x38800000|channel
+            (guard,)=StockGuardIndex(fixture).handler_guards(entry)[release]
+            self.assertEqual(guard["normal_level_operand_channel"],expected)
         fixture.altered=0; fixture.boundary=1
         self.assertEqual(StockGuardIndex(fixture).handler_guards(entry),{})
 
     def test_stock_rows_keep_zero_and_over_limit_initial_values(self):
         rows=[(100,0,1,0,600,4,4,1,300)]*9+[(150,23,22,0,60,4,4,3,300)]
         a,b=stock_rows(rows)
+        self.assertEqual((a["channel"],b["channel"]),(0,2))
         self.assertEqual(a["levels"][0],{"level":1,"initial":0,"limit":1,"mode":0,"preset":600})
         self.assertTrue(a["levels"][9]["initial_exceeds_limit"])
         self.assertEqual((a["levels"][9]["initial"],a["levels"][9]["limit"]),(23,22))
@@ -1766,6 +1771,10 @@ class RosterFormatTests(unittest.TestCase):
         words[debit-12]=0x38800002
         attach_release_stock([record],Linker())
         self.assertEqual(record["stock_candidate"]["channel"],2)
+        self.assertEqual(record.pop("stock_candidate")["normal_level_operand_channel"],2)
+        words[debit-12]=0x38800001
+        attach_release_stock([record],Linker())
+        self.assertEqual(record["stock_candidate"]["channel"],1)
         self.assertIsNone(record["stock_candidate"]["normal_level_operand_channel"])
         record.pop("stock_candidate")
         words[debit-4]=0x38C00000

@@ -1649,6 +1649,36 @@ python3 -m tools.analyze.retail_size_consumers \
   /tmp/opencode/type60 "$GF_RECOMP_MODULE" /tmp/opencode/gf-size-consumers.json
 ```
 
+### Normal startup: stock channels and size defaults
+
+The [startup replay](api-map/gg4e08-stock-startup.json) runs each original
+normal installer and then `8005614C` at each of its ten levels, with
+the exact role-0 actor records from the archive. It stops at the first
+equipment request or the later material initializer. All **2,060**
+visits matched on O0/O1/O2.
+
+The level row writes **channels 0 and 2**. Sentinels for channel 1's
+stock and definition fields stay untouched. Channel 0's level-10
+`0C06` row retains current 23 and limit 22. The startup previous-count
+field receives the limit, not a second copy of current count.
+Of 4,120 stock rows, 250 start with nonzero clocks; these are empty
+mode-0 or mode-1 rows with nonzero presets. This is not a refill replay.
+
+The original size initializer also selects raw and clamped index
+16 and neutral 1.0 scale for every checked normal visit. The original
+stock-side prefix copies both recipient masks from the selected actor
+record. Neither result qualifies variants, fusion, or a complete actor
+constructor. The extraction fix changes evidence links, not native moves.
+
+Compile [`retail_stock_startup_fixture.cpp`](../tests/host/retail_stock_startup_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_stock_startup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stock-startup "$GF_RECOMP_MODULE" /tmp/opencode/gf-stock-startup.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches

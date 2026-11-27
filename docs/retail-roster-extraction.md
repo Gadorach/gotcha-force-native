@@ -654,6 +654,11 @@ It covers **4,120 channel-level records** across **206 Borgs**, preserving
 the original values even when initial stock is zero or exceeds the limit.
 For example, `0c06` level 10 channel 0 is `23/22`, not `22/22`.
 
+The [original startup replay](retail-code-atlas.md#normal-startup-stock-channels-and-size-defaults)
+verified that the two level-row records initialize runtime channels
+**0 and 2**, not 0 and 1. The exporter and release joins now use those
+channel IDs. Channel 1 is not written by this initializer.
+
 The schema records the original initializer and shared debit/refill
 helpers. For the reviewed helpers, mode 0 arms a preset on empty and mode
 1 adds the preset to the running clock. Modes 2 and 3 are retained as raw
@@ -674,11 +679,11 @@ another register. This also exposes guards for `061b` and `0620`.
 
 `080c` has two linked children behind one channel-0 debit site, and
 Machine Red's ordinary rifle route links key `21` to a separate
-channel-0 debit. `0628`'s X/B-charge pair instead uses channel 2; the
-normal level initializer only supplies channels 0 and 1, so no level-row
-stock is assigned to channel 2. A local proof does not establish live
-release, successful allocation, refill scheduling, or one debit per
-spawned child. It does not change executable moves.
+channel-0 debit. `0628`'s X/B-charge pair instead uses channel 2, whose
+normal level 1 row supplies initial/limit `3/3`, mode 0 and preset 300.
+A local proof does not establish live release, successful allocation,
+refill scheduling, or one debit per spawned child. It does not change
+executable moves.
 
 ### Inspect a mapped action-entry clip
 
