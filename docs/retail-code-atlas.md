@@ -704,10 +704,9 @@ requests type 4/key 0 at the root. An out-of-bounds terminal
 control closes with neither request.
 
 The separate stage-probe branches use `+0x20` on all four parents
-in the static census. The bounds control is not a replay of those
-terrain branches. All 36 cases matched across O0, O1, and O2.
-This replay stops at allocation; the follow-up below separately
-checks area growth and HP.
+in the static census. This bounds control is not a terrain probe;
+the stage replay below exercises that branch separately. All 36
+cases matched across O0, O1, and O2. This replay stops at allocation.
 
 Compile [`retail_type5_sibling_exit_fixture.cpp`](../tests/host/retail_type5_sibling_exit_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags:
@@ -748,6 +747,44 @@ python3 -m tools.analyze.retail_type5_sibling_followup \
   docs/api-map/gg4e08-type5-roster.json \
   /tmp/opencode/area-exit "$GF_RECOMP_MODULE" \
   /tmp/opencode/gf-type5-sibling-followup.json
+```
+
+### Type-5 sibling stage exits: wall effect before area
+
+The [stage replay](api-map/gg4e08-type5-sibling-stage.json) advances
+the six scoped parents from `z=900` toward `z=1100` in one
+declared active visit. The clear control keeps `z=1100`. With a
+wall triangle at `z=1000`, the original intersection moves the
+root to `z=1000`, and the area requests that corrected point.
+Clipping the probe endpoint to `z=950` instead misses the wall;
+the carrier still moves to `z=1100` on that visit.
+
+The wall branch requests a separate **class-2 effect in fixed
+bucket 31** before the type-5 area. It takes one descriptor,
+the area takes two, and their carrier cells are separate:
+
+| Spare descriptors | Class-2 cell supplied | Wall effect | Area |
+| ---: | --- | --- | --- |
+| 3 | Yes | Allocates first | Allocates second |
+| 2 | Yes | Allocates | Refuses |
+| 2 | No | Refuses | Allocates |
+| 1 | No | Refuses | Refuses |
+
+Even when both allocations refuse, the root correction and stop
+remain in effect. A supplied contact latch bypasses the probe
+and uses the previously verified contact origin instead. The
+wall helper is not the separate type-4 expiry effect.
+
+All 42 cases matched across O0, O1, and O2. The wall was a
+synthetic triangle, and the children were observed only through
+allocation. No terrain mesh equivalence, live scheduling, child
+damage, or native gameplay was tested.
+
+```sh
+python3 -m tools.analyze.retail_type5_sibling_stage \
+  "$GF_RETAIL_ROOT/sys/main.dol" docs/api-map/gg4e08-type5-roster.json \
+  /tmp/opencode/area-exit "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type5-sibling-stage.json
 ```
 
 ### Type-89 exits: cached area key 16

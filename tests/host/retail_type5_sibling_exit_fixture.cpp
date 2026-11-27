@@ -1,18 +1,18 @@
-// Original sibling area/type-4 exits and the allocated area's follow-up.
+// Original sibling area/type-4 exits, stage probes and area follow-up.
 #include "retail_stationary_contact.hpp"
 #include <algorithm>
 
 namespace {
 using namespace retail_fixture;
 namespace scratch=retail_stationary_contact;
-struct Pilot {u16 model;u8 type,row,ordinal,area_key;u32 factory,update,contact_site,zero_hp,expiry;};
+struct Pilot {u16 model;u8 type,row,ordinal,area_key;u32 factory,update,contact_site,zero_hp,expiry,stage_site;};
 constexpr Pilot pilots[]={
-    {0x0106,33,2,2,19,0x800FE668,0x800FE780,0x800FEB34,0x800FEB78,0x800FEBB8},
-    {0x0601,52,0,0,11,0x80128DF8,0x80128F54,0x80129354,0x80129398,0x801293D8},
-    {0x0617,52,1,2,11,0x80128DF8,0x80128F54,0x80129354,0x80129398,0x801293D8},
-    {0x0D00,74,0,0,6,0x800F9400,0x800F9518,0x800F97F4,0x800F9838,0x800F9878},
-    {0x0D01,77,0,0,7,0x800FB220,0x800FB330,0x800FB5DC,0x800FB620,0x800FB648},
-    {0x0D05,77,1,0,7,0x800FB220,0x800FB330,0x800FB5DC,0x800FB620,0x800FB648},
+    {0x0106,33,2,2,19,0x800FE668,0x800FE780,0x800FEB34,0x800FEB78,0x800FEBB8,0x800FEC8C},
+    {0x0601,52,0,0,11,0x80128DF8,0x80128F54,0x80129354,0x80129398,0x801293D8,0x801294B0},
+    {0x0617,52,1,2,11,0x80128DF8,0x80128F54,0x80129354,0x80129398,0x801293D8,0x801294B0},
+    {0x0D00,74,0,0,6,0x800F9400,0x800F9518,0x800F97F4,0x800F9838,0x800F9878,0x800F9948},
+    {0x0D01,77,0,0,7,0x800FB220,0x800FB330,0x800FB5DC,0x800FB620,0x800FB648,0x800FB750},
+    {0x0D05,77,1,0,7,0x800FB220,0x800FB330,0x800FB5DC,0x800FB620,0x800FB648,0x800FB750},
 };
 struct Scenario {bool contact,zero_hp,expired,outside;unsigned descriptors;};
 constexpr Scenario cases[]={
@@ -123,17 +123,11 @@ void follow_area(const Module& mod,std::vector<u8>& ram,Pilot p,Group group,cons
                 parent_retired,unlinked,retired,double(opening_radius),double(first_radius),double(hit_radius),double(peak_radius));
 }
 
-void observe(const Module& mod,std::vector<u8> ram,Pilot p,unsigned scenario,const Followup* follow=nullptr,
-             const Group* group=nullptr){
+void prepare(const Module& mod,std::vector<u8>& ram,Pilot p,unsigned spare_descriptors){
+    if(spare_descriptors>3)fail("area sibling descriptor inlet is unbounded");
     const auto at=[&](u32 address){return scratch::at(ram,address);};
     const auto word=[&](u32 address){return be32(at(address));};
     const auto half=[&](u32 address){return scratch::half(ram,address);};
-    const auto real=[&](u32 address){return std::bit_cast<float>(word(address));};
-    const auto xyz=[&](u32 address){return scratch::Point{real(address),real(address+4),real(address+8)};};
-    const auto place=[&](u32 address,const scratch::Point& pos){
-        for(unsigned i=0;i<3;++i)put_float(at(address+4*i),pos[i]);
-    };
-    const auto s=cases[scenario];
     auto* owner=at(actor);
     owner[0]=1;owner[0x18]=1;
     put16(owner+0x3E8,p.model);put16(owner+0x94,p.model);put32(owner+0x90,actor);put16(owner+0x1C6,150);
@@ -145,8 +139,8 @@ void observe(const Module& mod,std::vector<u8> ram,Pilot p,unsigned scenario,con
     put32(at(0x8043B5A0-31856),audio);at(audio+12)[0]=1;at(0x803D0000+15080+852)[0]=1;
 
     put32(at(0x80436380),descriptor_row);
-    put32(at(descriptor_row+12),descriptors);put16(at(descriptor_row+18),u16(s.descriptors+1));
-    for(unsigned i=0;i<s.descriptors;++i)put32(at(descriptors+0x80*i),descriptors+0x80*(i+1));
+    put32(at(descriptor_row+12),descriptors);put16(at(descriptor_row+18),u16(spare_descriptors+1));
+    for(unsigned i=0;i<spare_descriptors;++i)put32(at(descriptors+0x80*i),descriptors+0x80*(i+1));
     put32(at(free_head+12),parent);put32(at(free_tail+12),area_cell);put16(at(free_count+6),2);
     at(parent)[2]=3;at(area_cell)[2]=3;put32(at(parent+4),area_cell);
     put32(at(free_head+8),effect_cell);put32(at(free_tail+8),effect_cell);put16(at(free_count+4),1);at(effect_cell)[2]=2;
@@ -157,9 +151,23 @@ void observe(const Module& mod,std::vector<u8> ram,Pilot p,unsigned scenario,con
     mod.run(make,ram,p.factory,1024);
     if(!at(parent)[0]||at(parent)[0x10]!=p.type||at(parent)[0x11]!=p.row||at(parent)[0x13]!=p.ordinal||at(parent)[0x18]||
        word(parent+0x0C)!=p.update||word(parent+0x90)!=actor||word(parent+0x8C)!=actor||
-       half(free_count+6)!=1||half(free_count+4)!=1||half(descriptor_row+18)!=s.descriptors||
+       half(free_count+6)!=1||half(free_count+4)!=1||half(descriptor_row+18)!=spare_descriptors||
        word(active_head+9*4)!=parent||word(active_head+49*4))
         fail("area sibling constructor lost its row, ordinal or owner");
+}
+
+void observe(const Module& mod,std::vector<u8> ram,Pilot p,unsigned scenario,const Followup* follow=nullptr,
+             const Group* group=nullptr){
+    const auto at=[&](u32 address){return scratch::at(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    const auto half=[&](u32 address){return scratch::half(ram,address);};
+    const auto real=[&](u32 address){return std::bit_cast<float>(word(address));};
+    const auto xyz=[&](u32 address){return scratch::Point{real(address),real(address+4),real(address+8)};};
+    const auto place=[&](u32 address,const scratch::Point& pos){
+        for(unsigned i=0;i<3;++i)put_float(at(address+4*i),pos[i]);
+    };
+    const auto s=cases[scenario];
+    prepare(mod,ram,p,s.descriptors);
 
     // Deliberately declared active inlet. No opening bind or contact is simulated.
     const scratch::Point root{s.outside?8000.f:200.f,100.f,500.f},hit{260.f,120.f,580.f};
@@ -212,13 +220,126 @@ void observe(const Module& mod,std::vector<u8> ram,Pilot p,unsigned scenario,con
     std::printf("area-exit: %u %u %u %u %u %u %u %u %u %u %u\n",p.model,scenario,p.type,p.row,p.ordinal,type,key,
                 unsigned(area_made||effect_made),half(descriptor_row+18),at(parent)[0x18],position_offset);
 }
+
+struct StageCase {bool wall,latched,clipped,effect_free;unsigned descriptors;};
+constexpr StageCase stage_cases[]={{false,false,false,true,2},{true,false,false,true,3},{true,false,false,true,2},
+                                   {true,true,false,true,2},{true,false,true,true,2},
+                                   {true,false,false,false,2},{true,false,false,false,1}};
+void stage_observe(const Module& mod,std::vector<u8> ram,Pilot p,unsigned scenario){
+    const auto at=[&](u32 address){return scratch::at(ram,address);};
+    const auto word=[&](u32 address){return be32(at(address));};
+    const auto half=[&](u32 address){return scratch::half(ram,address);};
+    const auto real=[&](u32 address){return std::bit_cast<float>(word(address));};
+    const auto xyz=[&](u32 address){return scratch::Point{real(address),real(address+4),real(address+8)};};
+    const auto place=[&](u32 address,const scratch::Point& pos){
+        for(unsigned i=0;i<3;++i)put_float(at(address+4*i),pos[i]);
+    };
+    const auto s=stage_cases[scenario];
+    prepare(mod,ram,p,s.descriptors);
+    if(!s.effect_free){
+        put32(at(free_head+8),0);put32(at(free_tail+8),0);put16(at(free_count+4),0);
+    }
+    constexpr u32 grid=stage+0x100,empty_grid=stage+0x140,refs=stage+0x200,side=8;
+    constexpr u32 empty_refs=refs+side*side*4,list=empty_refs+side*side*4,tri=list+8,empty=tri+0x80;
+    put32(at(stage+28),grid);put32(at(stage+32),empty_grid);put32(at(stage+36),empty_grid);
+    if(s.clipped)put_float(at(stage+64),950.f);
+    for(u32 g:{grid,empty_grid}){
+        put32(at(g),500);put32(at(g+4),500);put32(at(g+8),side);put32(at(g+12),side);
+        put32(at(g+16),u32(-1000));put32(at(g+20),u32(-1000));
+        put32(at(g+24),g==grid?refs:empty_refs);put32(at(g+28),tri);
+    }
+    put32(at(empty),0xFFFFFFFFu);put32(at(list),tri);put32(at(list+4),0xFFFFFFFFu);
+    for(unsigned i=0;i<side*side;++i){
+        put32(at(refs+4*i),s.wall?list:empty);
+        put32(at(empty_refs+4*i),empty);
+    }
+    place(tri+4,{-500.f,-500.f,1000.f});place(tri+16,{-500.f,3500.f,1000.f});place(tri+28,{3500.f,-500.f,1000.f});
+    put_float(at(tri+48),-1.f);put_float(at(tri+52),1000.f);
+    constexpr scratch::Point root{200.f,100.f,900.f},saved_hit{260.f,120.f,880.f};
+    constexpr scratch::Point projected{200.f,100.f,1100.f},impact{200.f,100.f,1000.f};
+    place(parent+0x20,root);place(parent+0x2C,root);place(parent+0x2A0,saved_hit);
+    place(parent+0x38,{0.f,0.f,p.type==77?200.f:1.f});
+    put_float(at(parent+0x44),200.f);put_float(at(parent+0x144),200.f);
+    at(parent)[0x18]=1;at(parent)[0x1D9]=s.latched?16:0;
+    put16(at(parent+0x1C),5);put16(at(parent+0x1C6),10);
+    constexpr u32 terrain_kernel=0x8003E978,wall_effect=0x80019550;
+    const bool crossed=s.wall&&!s.clipped&&!s.latched,asked=crossed||s.latched;
+    const bool effect_made=crossed&&s.effect_free,area_made=asked&&s.descriptors>=2+unsigned(effect_made);
+    const auto area_point=s.latched?p.type==77?root:saved_hit:impact;
+    const auto root_after=s.latched?root:crossed?impact:projected;
+    const auto saved=ram;
+    CPUState probe{};probe.gpr[3]=parent;
+    CallObservation query{terrain_kernel};
+    const auto cut=mod.run_to_or_return(probe,ram,p.update,{terrain_kernel},&query);
+    if(cut!=(s.latched?0:terrain_kernel)||query.count!=unsigned(!s.latched))
+        fail("area stage replay took the wrong branch before the original stage kernel");
+    unsigned probe_far=0;
+    if(cut){
+        const auto near=xyz(query.arguments[0]),far=xyz(query.arguments[1]);
+        auto expected=projected;if(s.clipped)expected[2]=950.f;
+        if(query.caller!=0x800841DC||near!=root||far!=expected||xyz(parent+0x20)!=projected)
+            fail("area stage replay confused the probe clip and moved carrier root");
+        probe_far=unsigned(far[2]);
+        // Independently evaluate the observed endpoints, without feeding the
+        // result to the parent's callback or using its stopped stack.
+        constexpr u32 sample=0x81050000;
+        place(sample,near);place(sample+12,far);
+        CPUState reader{};reader.gpr[3]=sample;reader.gpr[4]=sample+12;reader.gpr[5]=sample+24;
+        mod.run(reader,ram,terrain_kernel,1024);
+        if(reader.gpr[3]!=unsigned(crossed)||(crossed&&xyz(sample+24)!=impact))
+            fail("area stage replay did not verify the observed segment's terrain result");
+    }
+    std::memcpy(ram.data(),saved.data(),ram.size());
+    CPUState attempt{};attempt.gpr[3]=parent;
+    CallObservation request{area};
+    const auto frontier=mod.run_to_or_return(attempt,ram,p.update,{area},&request);
+    const unsigned offset=s.latched&&p.type!=77?0x2A0u:0x20u;
+    if(frontier!=(asked?area:0)||request.count!=unsigned(asked)||
+       (asked&&(request.caller!=(s.latched?p.contact_site:p.stage_site)||request.arguments[0]!=parent||
+                request.arguments[1]!=parent+offset||request.arguments[2]!=p.area_key||xyz(request.arguments[1])!=area_point||
+                at(parent)[0x18]!=2||!at(parent)[0x1D8]||bool(at(effect_cell)[0])!=effect_made||
+                half(descriptor_row+18)!=s.descriptors-unsigned(effect_made)||at(area_cell)[0])))
+        fail("area stage request did not follow the wall effect allocation and parent stop");
+    std::memcpy(ram.data(),saved.data(),ram.size());
+
+    CPUState close{};close.gpr[3]=parent;
+    CallObservation child{wall_effect};
+    mod.run_observed(close,ram,p.update,child,2048);
+    if(child.count!=unsigned(crossed)||(crossed&&(child.caller!=0x8008420C||child.arguments[0]!=parent||
+       child.arguments[1]!=parent+0x20||child.arguments[2]))||xyz(parent+0x20)!=root_after||
+       at(parent)[0x18]!=(asked?2:1)||at(parent)[0x1D8]!=unsigned(asked)||half(actor+0x1C6)!=150||
+       half(parent+0x1C)!=(s.latched?5:4)||xyz(parent+0x2A0)!=saved_hit||
+       half(free_count+4)!=unsigned(s.effect_free)-unsigned(effect_made)||half(free_count+6)!=1-unsigned(area_made)||
+       half(descriptor_row+18)!=s.descriptors-unsigned(effect_made)-2*unsigned(area_made)||word(active_head+49*4)||
+       bool(at(effect_cell)[0])!=effect_made||bool(at(area_cell)[0])!=area_made)
+        fail("area stage replay changed the geometry, latch or resource order");
+    if(effect_made&&(at(effect_cell)[0x10]||at(effect_cell)[0x11]||at(effect_cell)[0x18]||
+       word(effect_cell+0x0C)!=0x800196D0||word(active_head+31*4)!=effect_cell||
+       word(effect_cell+0x8C)!=parent||word(effect_cell+0x90)!=actor||xyz(effect_cell+0x20)!=impact))
+        fail("area stage wall effect lost its fixed bucket, source point or ownership");
+    if(area_made&&(at(area_cell)[0x10]!=5||at(area_cell)[0x11]!=p.area_key||at(area_cell)[0x18]||
+       word(area_cell+0x8C)!=parent||word(area_cell+0x90)!=actor||xyz(area_cell+0x20)!=area_point))
+        fail("area stage allocation did not preserve its own corrected or latched point");
+    std::printf("area-stage: %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                p.model,scenario,p.type,p.row,probe_far,unsigned(crossed),unsigned(root_after[2]),
+                child.count,unsigned(effect_made),request.count,unsigned(area_made),asked?unsigned(area_point[2]):0,
+                half(descriptor_row+18));
+}
 }
 
 int main(int argc,char** argv){
     const bool follow_mode=argc==4&&!std::strcmp(argv[3],"--follow");
-    if(argc!=3&&!follow_mode)fail("usage: type5-sibling-exit-fixture qualified.dol unmodified-recomp.so [--follow]");
+    const bool stage_mode=argc==4&&!std::strcmp(argv[3],"--stage");
+    if(argc!=3&&!follow_mode&&!stage_mode)
+        fail("usage: type5-sibling-exit-fixture qualified.dol unmodified-recomp.so [--follow|--stage]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(stage_mode){
+        for(const auto& p:pilots)
+            for(unsigned i=0;i<std::size(stage_cases);++i)
+                stage_observe(mod,original,p,i);
+        return 0;
+    }
     if(follow_mode){
         CommonBank bank{};
         scratch::HitBlock body{};
