@@ -1,0 +1,302 @@
+{
+  "area": {
+    "hp_writer": "8003D344",
+    "key": 0,
+    "pair_loop": "8002DB58",
+    "raw_power": 20,
+    "type": 5
+  },
+  "common_collision": {
+    "block": 0,
+    "center": [
+      0,
+      0,
+      0
+    ],
+    "context_assignment": "80040FC0",
+    "descriptor": 4,
+    "group": 3,
+    "member": 696,
+    "raw_radius": 310,
+    "sha256": "e6a41d20e919e0fcf77898af7800f2beaffc459e2267bf4c227879d38a40c0a1"
+  },
+  "damage_inlets": {
+    "actor_banks": [
+      0,
+      0
+    ],
+    "team_force_caps": [
+      100,
+      100
+    ],
+    "team_settings_rows": [
+      0,
+      0
+    ],
+    "teams": [
+      0,
+      1
+    ]
+  },
+  "kind": "gf-retail-bomb-floor-contact",
+  "notes": [
+    "The original paid release and triangle crossing are replayed without a receiver; its pose is declared at the corrected point plus the named X offset.",
+    "The receiver participates in the original pair loop first with the still-registered parent on the impact visit, then with any area on growth visits.",
+    "Only the original HP writer returns; the caller stopped at that boundary is not resumed.",
+    "The amount, token history, recipient and credit ledgers are from the child. No parent hit was counted.",
+    "These are bounded passes on one floor triangle and one receiver, not live scheduling, moving-body sweeps, or native gameplay."
+  ],
+  "pilots": [
+    {
+      "borg": "gg4e08:0000",
+      "cases": [
+        {
+          "credited_and_received_damage": 0,
+          "duplicate_checks_without_hp_write": 0,
+          "first_hp_write_visit": null,
+          "growth_visits": [
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 180,
+              "registered_area_radius": null,
+              "visit": 36
+            },
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 180,
+              "registered_area_radius": null,
+              "visit": 37
+            }
+          ],
+          "impact": {
+            "opening_attack_hit": false,
+            "opening_attack_registered": true,
+            "receiver_hit_tokens": [],
+            "receiver_hp": 180,
+            "visit": 35
+          },
+          "receiver_center_offset_x": 56,
+          "receiver_hit_tokens_after_area": [],
+          "shape_cells_free_at_area_bind": 0,
+          "stock_after": 1
+        },
+        {
+          "credited_and_received_damage": 17,
+          "duplicate_checks_without_hp_write": 2,
+          "first_hp_write_visit": 36,
+          "growth_visits": [
+            {
+              "amount_record": "802C4778",
+              "damage": 17,
+              "hp_written": true,
+              "receiver_hp": 163,
+              "registered_area_radius": 34.1,
+              "visit": 36
+            },
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 163,
+              "registered_area_radius": 65.1,
+              "visit": 37
+            }
+          ],
+          "impact": {
+            "opening_attack_hit": false,
+            "opening_attack_registered": true,
+            "receiver_hit_tokens": [],
+            "receiver_hp": 180,
+            "visit": 35
+          },
+          "receiver_center_offset_x": 56,
+          "receiver_hit_tokens_after_area": [
+            2
+          ],
+          "shape_cells_free_at_area_bind": 1,
+          "stock_after": 1
+        },
+        {
+          "credited_and_received_damage": 17,
+          "duplicate_checks_without_hp_write": 1,
+          "first_hp_write_visit": 37,
+          "growth_visits": [
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 180,
+              "registered_area_radius": 34.1,
+              "visit": 36
+            },
+            {
+              "amount_record": "802C4778",
+              "damage": 17,
+              "hp_written": true,
+              "receiver_hp": 163,
+              "registered_area_radius": 65.1,
+              "visit": 37
+            }
+          ],
+          "impact": {
+            "opening_attack_hit": false,
+            "opening_attack_registered": true,
+            "receiver_hit_tokens": [],
+            "receiver_hp": 180,
+            "visit": 35
+          },
+          "receiver_center_offset_x": 57,
+          "receiver_hit_tokens_after_area": [
+            2
+          ],
+          "shape_cells_free_at_area_bind": 1,
+          "stock_after": 1
+        }
+      ],
+      "source": {
+        "actor_level_one_hp": 150,
+        "actor_spec_sha256": "bd5c6a7611df76737868e6d34580ff4e8dc464e288d23340c753e3f45cfec6c5",
+        "borg": "gg4e08:0000",
+        "group": 1,
+        "key": 0,
+        "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+        "release_site": "80071678"
+      }
+    },
+    {
+      "borg": "gg4e08:000a",
+      "cases": [
+        {
+          "credited_and_received_damage": 0,
+          "duplicate_checks_without_hp_write": 0,
+          "first_hp_write_visit": null,
+          "growth_visits": [
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 180,
+              "registered_area_radius": null,
+              "visit": 36
+            },
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 180,
+              "registered_area_radius": null,
+              "visit": 37
+            }
+          ],
+          "impact": {
+            "opening_attack_hit": false,
+            "opening_attack_registered": true,
+            "receiver_hit_tokens": [],
+            "receiver_hp": 180,
+            "visit": 35
+          },
+          "receiver_center_offset_x": 56,
+          "receiver_hit_tokens_after_area": [],
+          "shape_cells_free_at_area_bind": 0,
+          "stock_after": 1
+        },
+        {
+          "credited_and_received_damage": 17,
+          "duplicate_checks_without_hp_write": 2,
+          "first_hp_write_visit": 36,
+          "growth_visits": [
+            {
+              "amount_record": "802C4778",
+              "damage": 17,
+              "hp_written": true,
+              "receiver_hp": 163,
+              "registered_area_radius": 34.1,
+              "visit": 36
+            },
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 163,
+              "registered_area_radius": 65.1,
+              "visit": 37
+            }
+          ],
+          "impact": {
+            "opening_attack_hit": false,
+            "opening_attack_registered": true,
+            "receiver_hit_tokens": [],
+            "receiver_hp": 180,
+            "visit": 35
+          },
+          "receiver_center_offset_x": 56,
+          "receiver_hit_tokens_after_area": [
+            2
+          ],
+          "shape_cells_free_at_area_bind": 1,
+          "stock_after": 1
+        },
+        {
+          "credited_and_received_damage": 17,
+          "duplicate_checks_without_hp_write": 1,
+          "first_hp_write_visit": 37,
+          "growth_visits": [
+            {
+              "amount_record": null,
+              "damage": 0,
+              "hp_written": false,
+              "receiver_hp": 180,
+              "registered_area_radius": 34.1,
+              "visit": 36
+            },
+            {
+              "amount_record": "802C4778",
+              "damage": 17,
+              "hp_written": true,
+              "receiver_hp": 163,
+              "registered_area_radius": 65.1,
+              "visit": 37
+            }
+          ],
+          "impact": {
+            "opening_attack_hit": false,
+            "opening_attack_registered": true,
+            "receiver_hit_tokens": [],
+            "receiver_hp": 180,
+            "visit": 35
+          },
+          "receiver_center_offset_x": 57,
+          "receiver_hit_tokens_after_area": [
+            2
+          ],
+          "shape_cells_free_at_area_bind": 1,
+          "stock_after": 1
+        }
+      ],
+      "source": {
+        "actor_level_one_hp": 180,
+        "actor_spec_sha256": "bd5c6a7611df76737868e6d34580ff4e8dc464e288d23340c753e3f45cfec6c5",
+        "borg": "gg4e08:000a",
+        "group": 1,
+        "key": 3,
+        "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+        "release_site": "800716C0"
+      }
+    }
+  ],
+  "receiver": {
+    "body_step": 9,
+    "borg": "gg4e08:000a",
+    "initial_hp": 180,
+    "normal_actor_spec_sha256": "bd5c6a7611df76737868e6d34580ff4e8dc464e288d23340c753e3f45cfec6c5",
+    "normal_hit_block_sha256": "8d90bfdd7a4d598b4c0869fff93364b785d4cc98c876d56c99ce44fc86579414",
+    "radius": 22
+  },
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}

@@ -820,6 +820,39 @@ python3 -m tools.analyze.retail_bomb_floor \
   /tmp/opencode/gf-bomb-floor.json
 ```
 
+### Ordinary Ninja floor blasts: growth timing and HP
+
+The [floor-contact replay](api-map/gg4e08-bomb-floor-contact.json)
+follows both verified floor crossings through area damage. A
+normal Sasuke body sphere (radius 22, 180 HP) is placed at a fixed
+horizontal offset from the corrected crossing after the flight
+has ended. The still-registered opening bomb misses that body
+in all six cases.
+
+| Shape pool and offset | HP after visit 36 | HP after visit 37 |
+| --- | ---: | ---: |
+| No spare shape, 56 units | 180 | 180 |
+| Spare shape, 56 units | 163 | 163 |
+| Spare shape, 57 units | 180 | 163 |
+
+With a spare cell, the registered area radius is **34.1** on visit
+36 and **65.1** on visit 37. The first radius plus the receiver's
+22-unit radius separates the 56- and 57-unit cases. Both owners
+use the common amount record `802C4778`: the area takes 17 HP
+once, writes token 2 without a prior parent hit, and credits the
+original caster. Duplicate checks leave HP and stock unchanged.
+
+The six cases matched across O0, O1 and O2. They verify the
+floor branch through HP on this fixture, not moving receivers,
+multi-recipient order, live Stage scheduling or native timing.
+
+```sh
+python3 -m tools.analyze.retail_bomb_floor_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/gf-bomb-release "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-bomb-floor-contact.json
+```
+
 ### Worm paid release, refunds and contact follow-up
 
 The [Worm contact receipt](api-map/gg4e08-worm-contact.json)

@@ -30,6 +30,14 @@ struct Case {
 using HitBlock=std::array<u8,7840>;
 using ActorSpec=std::array<u8,432>;
 using CommonCollision=std::array<u8,21504>;
+using Point=std::array<float,3>;
+struct FloorReceiver {
+    const HitBlock& block;
+    const ActorSpec& attacker;
+    const ActorSpec& defender;
+    unsigned offset_x;
+    u16 attacker_hp;
+};
 enum class Contact {miss,duplicate,impact,child_cell_empty,child_descriptor_short};
 enum class Terrain {empty,floor,offset_floor,child_cell_empty,bounds_exit,area_no_spare,area_spare};
 constexpr std::array cases{
@@ -201,8 +209,7 @@ class Check {
             mod.run(pass,ram,entry,1024);
         }
     }
-    void receiver_inlet(const HitBlock& block,unsigned distance,const ActorSpec& attacker,
-                        const ActorSpec& defender,u16 hp){
+    void bind_receiver(const HitBlock& block,const Point& center){
         std::memcpy(at(body_block),block.data(),block.size());
         // Narrow the runtime list, not the exact body descriptor.
         at(body_block)[0]=9;at(body_block)[1]=255;
@@ -214,9 +221,9 @@ class Check {
         put_float(target+0xC0,1.f);
         auto* joint=target+0x8D4+2*0x30;
         for(unsigned axis=0;axis<3;++axis)put_float(joint+20*axis,1.f);
-        put_float(joint+12,fp(shapes+0x64)+float(distance));
-        put_float(joint+28,fp(shapes+0x68)+14.f);
-        put_float(joint+44,fp(shapes+0x6C));
+        put_float(joint+12,center[0]);
+        put_float(joint+28,center[1]+14.f);
+        put_float(joint+44,center[2]);
         if(half(free_count+8))fail("receiver assumes an exhausted class-4 pool");
         at(body)[2]=4;put32(at(free_head+16),body);put32(at(free_tail+16),body);
         put16(at(free_count+8),1);
@@ -225,16 +232,16 @@ class Check {
         if(be32(at(active_head+50*4))!=body||be32(at(body+0x28))!=body_block+32+9*80)
             fail("bomb fixture did not bind original singleton body");
         class4_passes();
-        if(half(attack_count)!=1||half(receiver_count)!=1||be32(at(attack_registry))!=shapes||
-           be32(at(receiver_registry))!=body||fp(body+0x7C)!=22.f||
-           std::abs(fp(body+0x64)-fp(shapes+0x64)-float(distance))>0.001f||
-           std::abs(fp(body+0x68)-fp(shapes+0x68))>0.001f||fp(body+0x6C)!=fp(shapes+0x6C))
+        if(half(receiver_count)!=1||be32(at(receiver_registry))!=body||fp(body+0x7C)!=22.f||
+           std::abs(fp(body+0x64)-center[0])>0.001f||
+           std::abs(fp(body+0x68)-center[1])>0.001f||fp(body+0x6C)!=center[2])
             fail("bomb fixture body or registry geometry mismatch");
-
+    }
+    void damage_inlet(const ActorSpec& attacker,const ActorSpec& defender,u16 hp){
         constexpr u32 receiver_spec=0x81015400,difficulty=0x81019600;
         std::memcpy(at(spec),attacker.data(),attacker.size());
         std::memcpy(at(receiver_spec),defender.data(),defender.size());
-        put32(target+0x4AC,receiver_spec);
+        put32(at(receiver+0x4AC),receiver_spec);
         put32(at(0x8043B5A0-31824),difficulty);
         for(unsigned team=0;team<2;++team){
             const auto max_hp=team?u16(180):hp;
@@ -246,6 +253,13 @@ class Check {
             put32(at(0x803B068C+4*team),100);
             put32(at(scene+team*60+0x114),100);put32(at(scene+team*60+0x118),100);
         }
+    }
+    void receiver_inlet(const HitBlock& block,unsigned distance,const ActorSpec& attacker,
+                        const ActorSpec& defender,u16 hp){
+        bind_receiver(block,{fp(shapes+0x64)+float(distance),fp(shapes+0x68),fp(shapes+0x6C)});
+        if(half(attack_count)!=1||be32(at(attack_registry))!=shapes)
+            fail("bomb fixture opening attack registry mismatch");
+        damage_inlet(attacker,defender,hp);
     }
     unsigned contact_write(u32 obj,u32 record,u16 hp,bool should_hit){
         const auto before=ram;
@@ -281,7 +295,47 @@ class Check {
         put32(at(resource_table+4*18),empty_visual);
         put32(at(resource_table+4*23),empty_visual);
     }
-    void floor_area_visit(u16 model,unsigned n,bool spare,float crossing_z,const std::vector<u8>& before){
+    void floor_area_contact(u16 model,unsigned impact,bool spare,unsigned offset){
+        const u32 obj=cell(0),child=cell(1),shape=shapes+shape_stride;
+        // The first growth visit is already complete. Keep the same
+        // receiver pose and tokens while advancing to the second.
+        unsigned hits=0,first_amount_visit=0,duplicates=0,last_token=0;
+        std::array<unsigned,2> hp{};
+        for(unsigned i=0;i<hp.size();++i){
+            if(i)visit_areas();
+            const bool hit=spare&&!hits&&(i==1||offset==56);
+            if(half(attack_count)!=unsigned(spare)||half(receiver_count)!=1||
+               (spare&&(be32(at(attack_registry))!=shape||half(child+0x26C)!=2||
+                        std::abs(fp(body+0x64)-fp(shape+0x64)-float(offset))>0.001f||
+                        fp(body+0x68)!=fp(shape+0x68)||fp(body+0x6C)!=fp(shape+0x6C)||
+                        std::abs(fp(shape+0x7C)-(i?65.1f:34.1f))>0.001f))||
+               (i&&(at(obj)[0]||bool(at(child)[0])!=spare)))
+                fail("bomb floor-contact next-visit publication or retirement mismatch");
+            const auto before_hp=half(receiver+0x1C6);
+            const auto amount=contact_write(child,area_amount,before_hp,hit);
+            if(hit){
+                ++hits;
+                first_amount_visit=impact+i+1;
+                if(amount!=17||half(receiver+0x1C8)!=before_hp)
+                    fail("floor area used the wrong damage or previous HP");
+                contact_write(child,area_amount,u16(before_hp-amount),false);
+                ++duplicates;
+            }else if(hits){
+                ++duplicates;
+            }
+            last_token=half(receiver+0x20C);
+            hp[i]=half(receiver+0x1C6);
+            if(last_token!=2*hits||half(receiver+0x20E)||at(receiver)[0x26E]!=hits||
+               hp[i]!=180-17*hits||half(actor+0x784)!=1||be32(at(actor+0x418))!=17*hits||
+               be32(at(receiver+0x41C))!=17*hits||be32(at(receiver+0x290))!=(hits?child:0))
+                fail("floor area changed the wrong HP, recipient, credit or stock");
+        }
+        std::printf("bomb-floor-contact: %u %u %u %u %u %u %u %u %u %u\n",
+                    model,unsigned(spare),offset,impact,first_amount_visit,hp[0],hp[1],
+                    last_token,duplicates,half(actor+0x784));
+    }
+    void floor_area_visit(u16 model,unsigned n,bool spare,float crossing_z,const std::vector<u8>& before,
+                          const FloorReceiver* target){
         // Repeat the original owner-list pass from before impact, this
         // time letting the appended child initialize at its real position.
         std::memcpy(ram.data(),before.data(),ram.size());
@@ -299,6 +353,18 @@ class Check {
            be32(at(active_head+49*4))!=(spare?child_shape:shapes)||half(free_count+8)||
            at(child)[0x86]!=unsigned(spare)||half(child+0x26C)!=(spare?2:0))
             fail("floor area shape result did not preserve the parent's first-visit publication");
+        if(target){
+            // No actor is present during flight. Place one at a fixed
+            // offset from the committed point for every later pair pass.
+            bind_receiver(target->block,{165.f+float(target->offset_x),25.f,crossing_z});
+            damage_inlet(target->attacker,target->defender,target->attacker_hp);
+            if(half(attack_count)!=1||be32(at(attack_registry))!=shapes)
+                fail("floor impact pair did not begin with only the opening shape");
+            contact_write(obj,0x802D4178,180,false);
+            if(at(obj)[0x1D9]||be32(at(obj+0x290))||half(receiver+0x20C)||at(receiver)[0x26E]||
+               be32(at(actor+0x418))||be32(at(receiver+0x41C)))
+                fail("opening bomb made contact in the floor area test");
+        }
         CPUState next{};next.gpr[3]=9;
         CallObservation retry{0x8008AE3C};
         mod.run_observed(next,ram,visit,retry);
@@ -310,9 +376,10 @@ class Check {
                    be32(at(child_shape+0x24))!=actor||fp(child_shape+0x68)!=25.f||
                    fp(child_shape+0x6C)!=crossing_z||std::abs(fp(child_shape+0x7C)-34.1f)>0.001f)))
             fail("next floor visit rebound a refusal or lost the grown area");
-        std::printf("bomb-floor-area: %u %u %u %u %u %u %u %u %u\n",
-                    model,unsigned(spare),n,unsigned(cut!=0),unsigned(spare),at(child)[0x18],
-                    half(attack_count),half(free_count+8),half(actor+0x784));
+        if(target)floor_area_contact(model,n,spare,target->offset_x);
+        else std::printf("bomb-floor-area: %u %u %u %u %u %u %u %u %u\n",
+                         model,unsigned(spare),n,unsigned(cut!=0),unsigned(spare),at(child)[0x18],
+                         half(attack_count),half(free_count+8),half(actor+0x784));
     }
 public:
     Check(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
@@ -613,7 +680,8 @@ public:
                     double(grown_radius),double(peak_radius),after_growth,duplicate_passes,half(receiver+0x1C6),
                     unlink_visit,retired,half(actor+0x784));
     }
-    void floor_impact(u16 model,const HitBlock& block,const CommonCollision& common,Terrain terrain){
+    void floor_impact(u16 model,const HitBlock& block,const CommonCollision& common,Terrain terrain,
+                      const FloorReceiver* target=nullptr){
         const bool replay_area=terrain==Terrain::area_no_spare||terrain==Terrain::area_spare;
         const bool spawn=terrain==Terrain::floor||replay_area,bounds=terrain==Terrain::bounds_exit;
         const bool floor=spawn||terrain==Terrain::child_cell_empty;
@@ -624,7 +692,6 @@ public:
         if(replay_area)area_inlets(common);
         const auto obj=cell(0);
         const auto* carrier=at(obj);
-        using Point=std::array<float,3>;
         const auto pos=[&](u32 a){return Point{fp(a+0x20),fp(a+0x24),fp(a+0x28)};};
         auto previous=pos(obj);
         const auto launch=previous;
@@ -697,7 +764,7 @@ public:
                 if(!floor&&!bounds)fail("clear terrain unexpectedly terminated the bomb");
                 if(replay_area){
                     if(before.empty()||!child)fail("missing floor area replay boundary");
-                    floor_area_visit(model,n,shape_capacity==2,current[2],before);
+                    floor_area_visit(model,n,shape_capacity==2,current[2],before,target);
                     return;
                 }
                 for(const bool retire:{false,true}){
@@ -747,18 +814,37 @@ int main(int argc,char** argv){
     const bool contact=argc==4&&!std::strcmp(argv[3],"--contact");
     const bool area=argc==4&&!std::strcmp(argv[3],"--sasuke-area");
     const bool floor=argc==4&&!std::strcmp(argv[3],"--floor");
-    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&std::strcmp(argv[3],"--first-bind"))))
-        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so [--first-bind|--contact|--sasuke-area|--floor]");
+    const bool floor_contact=argc==4&&!std::strcmp(argv[3],"--floor-contact");
+    if(argc!=3&&(argc!=4||(!contact&&!area&&!floor&&!floor_contact&&std::strcmp(argv[3],"--first-bind"))))
+        fail("usage: bomb-release-fixture qualified.dol unmodified-recomp.so "
+             "[--first-bind|--contact|--sasuke-area|--floor|--floor-contact]");
     const auto original=load_ram(argv[1]);
     const Module module(argv[2],original);
-    if(floor){
+    if(floor||floor_contact){
         constexpr std::array<u16,2> models{0,0x000A};
         std::array<HitBlock,models.size()> blocks{};
         for(auto& block:blocks)
             if(std::fread(block.data(),1,block.size(),stdin)!=block.size())fail("bomb floor hit block extent");
         CommonCollision common{};
-        if(std::fread(common.data(),1,common.size(),stdin)!=common.size()||std::getc(stdin)!=EOF)
+        if(std::fread(common.data(),1,common.size(),stdin)!=common.size())
             fail("bomb floor common collision extent");
+        if(floor_contact){
+            std::array<ActorSpec,models.size()> specs{};
+            for(auto& spec:specs)
+                if(std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())fail("bomb floor-contact actor spec extent");
+            if(std::getc(stdin)!=EOF)fail("bomb floor-contact trailing input");
+            for(unsigned i=0;i<models.size();++i){
+                for(unsigned scenario:{0u,1u,2u}){
+                    const FloorReceiver target{blocks[1],specs[i],specs[1],scenario==2?57u:56u,
+                                               u16(i?180:150)};
+                    Check test(module,original);
+                    test.floor_impact(models[i],blocks[i],common,scenario?Terrain::area_spare:Terrain::area_no_spare,
+                                      &target);
+                }
+            }
+            return 0;
+        }
+        if(std::getc(stdin)!=EOF)fail("bomb floor trailing input");
         for(unsigned i=0;i<models.size();++i){
             for(auto terrain:{Terrain::empty,Terrain::floor,Terrain::offset_floor,Terrain::child_cell_empty,
                               Terrain::bounds_exit,Terrain::area_no_spare,Terrain::area_spare}){
