@@ -787,6 +787,48 @@ python3 -m tools.analyze.retail_type5_sibling_stage \
   /tmp/opencode/gf-type5-sibling-stage.json
 ```
 
+### Wall-effect census: wrapper arguments are not effect selectors
+
+The [wall-effect census](api-map/gg4e08-wall-effect-census.json)
+accounts for **55 direct stage-wrapper calls** and **11 direct
+effect-helper calls**. The wrapper's callers pass `0`, `1`, `8`,
+or `255` in `r4`, but it overwrites that argument before the
+probe. On a hit it supplies effect selector **0** in `r5`.
+Ten helper calls resolve to selector 0. The contact resolver's
+other call reads a descriptor byte at `+9`; its values remain
+unqualified.
+
+Ten constructor-to-callback chains trace **72 scoped static
+routes across 35 Borgs**. Type 14 calls the effect helper from
+a different terrain kernel; the other nine traced parent types
+use the shared stage wrapper. This does not qualify live terrain
+admission for those routes.
+
+In the selector-0 [lifetime replay](api-map/gg4e08-wall-effect-census.json),
+the helper allocates one class-2 cell in fixed bucket **31** and
+one descriptor. The original initializer chooses visual record
+**21**. With initialization counted as visit 1, the scale samples
+are **1**, **2**, and **3** on visits **1**, **5**, and **21**.
+Both cells return on visit **23**; no collision shape publishes.
+Missing either cell refuses allocation. Owner clock step `0.5`
+and an inactive parent with retained storage did not move the
+retirement visit.
+
+All six cases matched across O0, O1, and O2. The replay supplies
+the effect request directly and uses empty render records. It
+does not bind the dynamic contact selector or qualify retail
+drawing, damage, live scheduling, or native gameplay.
+
+Compile [`retail_wall_effect_fixture.cpp`](../tests/host/retail_wall_effect_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_wall_effect_census \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  docs/api-map/gg4e08-code-atlas.json docs/api-map/gg4e08-standalone-installers.json \
+  /tmp/opencode/wall "$GF_RECOMP_MODULE" /tmp/opencode/gf-wall-effect-census.json
+```
+
 ### Type-89 exits: cached area key 16
 
 `8016CC24` creates a type-89 carrier with update `8016CD1C`.
