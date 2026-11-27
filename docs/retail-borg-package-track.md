@@ -3380,6 +3380,12 @@ input or admission.
 
 #### Machine Red key-2 reset/sample/transform — owner gate
 
+The [scoped joint-clock replay](retail-code-atlas.md#contact-rates-through-an-original-joint-sample)
+now verifies original attachment, sampling, and local translation/quaternion
+publication for this exact track on an independently constructed key-2
+instance. It clears the copied descriptor's child and sibling links; it
+does not complete the retained full-rig boot path audited below.
+
 No runnable continuation was prepared. V3 remains valid for
 the pointer publication on the scoped JObj. It does not
 establish the initialization history needed to extend that

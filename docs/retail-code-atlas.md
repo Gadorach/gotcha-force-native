@@ -1308,6 +1308,42 @@ python3 -m tools.analyze.retail_contact_clock_consumers \
   /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-contact-clock-consumers.json
 ```
 
+### Contact rates through an original joint sample
+
+The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
+Machine Red's exact clip **0:9**, logical joint **2**, to an
+isolated instance. Original HSD code relocates the model and
+motion archives, constructs the joint, and allocates the AObj
+and its three rotation tracks. Only the copied joint descriptor's
+child and sibling links are cleared. This does not load the
+whole actor hierarchy or qualify its boot.
+
+The original rate writer does not advance the track. The first
+sample uses the requested frame; later samples advance by the
+current secondary rate. Both clocks give identical Euler
+angles and a local quaternion on the first explicit-frame
+sample at **2.5**. The second sample diverges at **2.875** and
+about **2.53**, respectively. The relative requests instead
+differ from the first sample: **6.375** and about **6.03**.
+After expiry, the rate returns to **0.375** and advances from
+the held track's current frame, without jumping ahead.
+
+Original `8004B76C` copies the local translation and publishes
+the quaternion via `8025ACFC`. All **16 samples** matched across
+O0, O1, and O2. The timer seed and lane frame are declared, and
+the indexed clip request is a probe, not Machine Red's live
+controller choice. No world pose, skinning, rendering, full
+frame scheduling, or native gameplay is qualified.
+
+Compile [`retail_joint_clock_sample_fixture.cpp`](../tests/host/retail_joint_clock_sample_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_joint_clock_sample \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/joint-clock-sample "$GF_RECOMP_MODULE" /tmp/opencode/gf-joint-clock-sample.json
+```
+
 ### Contact sound: strict size bands and shared counter bytes
 
 The [sound replay](api-map/gg4e08-contact-sound-replay.json)
