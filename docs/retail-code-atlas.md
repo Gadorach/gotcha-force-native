@@ -192,10 +192,56 @@ the first observed boundaries for the declared actor state:
 | G-Black (`062A`), charged X | Call `800677F0` to world-query entry `8003E0A8` before a program request. No world-query result is supplied. |
 
 The program addresses are checked by following the original local-bank
-tables with the observed arguments. The fixture stops before
+tables with the observed arguments. This first-request check stops before
 `8004BEB8` runs; it does not claim the engine accepted that mask or began
 executing the program. All four boundaries matched across O0, O1 and O2.
-Timing, cue execution and the connection to a real accepted hit remain open.
+
+### First cues in the original VM
+
+The [program-cue index](api-map/gg4e08-program-cues.json) follows the
+observed standalone profiles of all **206** Borgs into **114** nonzero
+local or common banks and **3,798** distinct program addresses. It
+preserves aliases and records only the first reviewed cue of each kind
+in a decoded prefix:
+
+| Cue candidate | Programs | Before the first wait |
+| --- | ---: | ---: |
+| Positive upper-lane marker (opcode 2) | 969 | 241 |
+| Positive direct melee queue (opcode 10) | 765 | 657 |
+| Class event, callback not qualified | 378 | 45 |
+
+These are static program choices, not moves proven to select or fire.
+One group's choice table is refused without losing its bank's other
+groups, and 19 programs stop at an unsupported opcode. A missing cue
+past one of those boundaries does not mean the original has none.
+
+The CPU fixture now follows two observed first requests further:
+
+- **Sasuke:** The same installed close-B path runs `3:1` and reaches
+  `8008AC80` from `8004C6F0` with queue **2** before any wait. It stops
+  before allocation or the actor's queue-byte write. With only lane
+  bit `0x02`, a separate original-opcode check advances the cursor
+  but leaves the queue byte alone.
+- **Machine Red:** The joined ranged-B path runs `2:0`, clears an
+  old marker and installs the upper wait at `80309056` before a
+  world query. The fixture stops the action there without supplying
+  a query result. It then advances only the resident VM on the
+  scratch actor with a declared step of `1`. That reaches positive
+  marker `8030906A` on VM-only visit **11**; driving the other two
+  active lanes alone did not set the marker in 16 visits, even
+  though their interpreter state advanced.
+
+Both checks matched across the unmodified O0, O1 and O2 recomp
+modules. The 11 updates are not a native release constant: the
+separate rig-backed fixture took 16 VM visits from a supplied
+request. Neither fixture measures elapsed battle time, executes
+Machine Red's paid release, or resolves a landed Sasuke hit.
+
+```sh
+python3 -m tools.analyze.retail_program_cues \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_CATALOG" "$GF_SYMBOLS" \
+  docs/api-map/gg4e08-standalone-installers.json /tmp/opencode/gf-program-cues.json
+```
 
 Generate the metadata locally using the qualified AFS as well as the
 atlas inputs. Compile the fixture in place of the phase fixture in the

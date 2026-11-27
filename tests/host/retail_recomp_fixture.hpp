@@ -15,6 +15,11 @@
 namespace retail_fixture {
 inline constexpr u32 actor=0x81010000, stack=0x81100000, stop=0x81810000;
 
+struct CallObservation {
+    u32 entry,caller=0,arguments[6]{};
+    unsigned count=0;
+};
+
 inline u32 be32(const u8* p){return u32(p[0])<<24|u32(p[1])<<16|u32(p[2])<<8|p[3];}
 inline void put16(u8* p,u16 v){p[0]=u8(v>>8);p[1]=u8(v);}
 inline void put32(u8* p,u32 v){p[0]=u8(v>>24);p[1]=u8(v>>16);p[2]=u8(v>>8);p[3]=u8(v);}
@@ -51,9 +56,16 @@ inline std::vector<u8> load_ram(const char* path){
 class Module {
     void* library=nullptr;
     const StaticRecompModuleDesc* mod=nullptr;
-    struct Boundary {std::initializer_list<u32> addresses;u32 reached=0;};
+    struct Boundary {std::initializer_list<u32> addresses;CallObservation* observe;u32 reached=0;};
     static bool cut(CPUState* cpu,u32 address){
         auto& mark=*static_cast<Boundary*>(cpu->external_user_data);
+        if(auto* obs=mark.observe;obs&&address==obs->entry){
+            if(!obs->count){
+                obs->caller=cpu->lr-4;
+                for(unsigned i=0;i<6;++i)obs->arguments[i]=cpu->gpr[3+i];
+            }
+            ++obs->count;
+        }
         for(const u32 allowed:mark.addresses)if(address==allowed){
             mark.reached=address;
             cpu->pc=stop; // Unwind native dispatch; do not return a guest result.
@@ -67,14 +79,17 @@ class Module {
         cpu.msr=PPC_MSR_FP;cpu.hid2=PPC_HID2_PSE|PPC_HID2_LSQE;
         cpu.external_read=read_external;cpu.external_write=write_external;cpu.instruction_fallback=fallback;
         if(mod->on_state_loaded)mod->on_state_loaded(&cpu);
-        for(unsigned n=0;n<64&&cpu.pc!=stop;++n){
+        for(unsigned n=0;n<256&&cpu.pc!=stop;++n){
             cpu.downcount=256;
             if(!mod->dispatch(&cpu,cpu.pc)||cpu.exception){
                 std::fprintf(stderr,"entry=%08X pc=%08X exception=%08X\n",entry,cpu.pc,cpu.exception);
                 fail("fixture dispatch or exception");
             }
         }
-        if(cpu.pc!=stop||(full_return&&cpu.gpr[1]!=stack))fail("fixture did not reach its boundary");
+        if(cpu.pc!=stop||(full_return&&cpu.gpr[1]!=stack)){
+            std::fprintf(stderr,"entry=%08X stopped pc=%08X sp=%08X lr=%08X\n",entry,cpu.pc,cpu.gpr[1],cpu.lr);
+            fail("fixture did not reach its boundary");
+        }
     }
 public:
     explicit Module(const char* path,const std::vector<u8>& pristine){
@@ -105,8 +120,9 @@ public:
     void run(CPUState& cpu,std::vector<u8>& ram,u32 entry)const{
         dispatch(cpu,ram,entry,true);
     }
-    u32 run_to(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets)const{
-        Boundary mark{targets};
+    u32 run_to(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets,
+               CallObservation* observation=nullptr)const{
+        Boundary mark{targets,observation};
         cpu.host_call=cut;cpu.external_user_data=&mark;
         dispatch(cpu,ram,entry,false);
         cpu.host_call=nullptr;cpu.external_user_data=nullptr;

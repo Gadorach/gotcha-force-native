@@ -21,7 +21,10 @@ constexpr Profile black[]{
 class Check {
     const Module& mod;
     std::vector<u8> ram;
-    u8* at(u32 va){return ram.data()+va-GC_RAM_BASE;}
+    u8* at(u32 va){
+        if(va<GC_RAM_BASE||va-GC_RAM_BASE>ram.size()-4)fail("fixture address outside RAM");
+        return ram.data()+va-GC_RAM_BASE;
+    }
     u32 call(u32 entry){
         CPUState cpu{};
         cpu.gpr[3]=actor;
@@ -88,6 +91,58 @@ public:
         // giving the cut-off original request a result or executing cues.
         const auto local=relative_table(be32(a+0x1D80),cpu.gpr[5]);
         if(relative_table(local,cpu.gpr[6])!=program)fail("first request's local program address mismatch");
+    }
+    void sasuke_opening_contact(){
+        if(a[0x5DA]!=61||a[0x5DB]!=0||a[0x579]!=3)fail("wrong Sasuke handler or lane seed");
+        pre_callback();
+        CPUState cpu{};
+        cpu.gpr[3]=actor;
+        CallObservation request_entry{0x8004BEB8};
+        mod.run_to(cpu,ram,0x80065DFC,{0x8008AC80},&request_entry);
+        const auto& args=request_entry.arguments;
+        if(request_entry.count!=1||request_entry.caller!=0x800FEEA4||args[0]!=actor||
+           args[1]!=15||args[2]!=3||args[3]!=1||args[4]!=u32(-1)||args[5]!=u32(-1))
+            fail("Sasuke contact witness used the wrong program request");
+        if(cpu.lr!=0x8004C6F4||cpu.gpr[3]!=actor||cpu.gpr[4]!=2||
+           be32(at(cpu.gpr[5]))!=0x802BE3BA||a[0x744])
+            fail("Sasuke opening opcode did not request queue 2 before the queue-byte write");
+    }
+    void sasuke_without_upper_lane(){
+        const u32 cursor=rows+0x100;
+        put32(at(cursor),0x802BE3B6);
+        a[0x744]=9;
+        CPUState cpu{};
+        cpu.gpr[3]=actor;cpu.gpr[4]=2;cpu.gpr[5]=cursor;
+        mod.run(cpu,ram,0x8004C6B4);
+        if(be32(at(cursor))!=0x802BE3BA||a[0x744]!=9)
+            fail("Sasuke opcode-10 without lane zero did not just advance the cursor");
+    }
+    void machine_red_cue(bool visit_upper){
+        if(a[0x5DA]!=61||a[0x5DB]!=0||a[0x579]!=7)fail("wrong Machine Red opening slots");
+        pre_callback();
+        a[0x1CEF]=0x7E; // Nonzero old value to distinguish the real opening clear.
+        CPUState cpu{};
+        cpu.gpr[3]=actor;
+        CallObservation observation{0x8004BEB8};
+        const auto boundary=mod.run_to(cpu,ram,0x80065DFC,{0x8003E0A8},&observation);
+        if(boundary!=0x8003E0A8||observation.count!=1||observation.caller!=0x800C9634||
+           observation.arguments[3]!=0||a[0x1CEF]||be32(a+0x1CD4)!=0x80309056)
+            fail("Machine Red opening did not reach the first wait before the world query");
+        put_float(a+0x1DC8,1.f);
+        // Continue only the VM on the scratch actor. Do not fabricate
+        // the stopped world-query result or resume the action tick.
+        unsigned visits=0;
+        for(;visits<16&&!a[0x1CEF];++visits){
+            CPUState step{};
+            step.gpr[3]=actor;
+            step.gpr[4]=visit_upper?15:6;
+            mod.run(step,ram,0x8004CD24);
+        }
+        if(visit_upper){
+            if(visits!=11||a[0x1CEF]!=1||be32(a+0x1CD4)!=0x8030907E)
+                fail("rifle cue or cursor mismatched in the VM-only fixture");
+        }else if(visits!=16||a[0x1CEF]||be32(a+0x1CD4)!=0x80309056||be32(a+0x1CF4)==0x80309056)
+            fail("advancing only the other lanes must not set the rifle cue");
     }
     void charge(unsigned channel,float limit=2.f){
         if(be32(a+0x4B0)==config)at(config)[0xBB+channel]=0;
@@ -223,6 +278,24 @@ int main(int argc,char** argv){
         c.expect(1,1,"installed Sasuke close row");
         c.request(0x800FEEA4,3,1,3,0x802BE3B6);
     }
+    {
+        constexpr Profile installed_sasuke{0x802D3EE0,0x802D4148,0x802D3FF8};
+        Check c(mod,original);
+        c.install(0x8006F4F8,0x000A,installed_sasuke,0x8006FACC);
+        c.a[0x7D2]=8;
+        c.input(b,b,b,0,0x60,"Sasuke through opening melee opcode");
+        c.expect(1,1,"Sasuke contact row");
+        c.sasuke_opening_contact();
+        c.sasuke_without_upper_lane();
+    }
+    for(const bool visit_upper:{true,false}){
+        Check c(mod,original);
+        c.install(0x800C91BC,0x0600,red,0x800C94D4);
+        c.pre_callback();
+        c.input(b,b,b,0,0x60,"Machine Red through first program wait");
+        c.expect(0,0,"Machine Red opening row");
+        c.machine_red_cue(visit_upper);
+    }
     for(const bool use_x:{false,true}){
         Check c(mod,original);
         // The real model-gated installer selects p089 for model 062A.
@@ -241,5 +314,5 @@ int main(int argc,char** argv){
                   (reached!=0x80088AA0||cpu.lr!=0x8016CC54||cpu.gpr[4]!=3||cpu.gpr[5]!=8||
                    cpu.gpr[6]!=0||cpu.gpr[7]!=1)))fail("G-Black did not reach its expected pre-request service");
     }
-    std::puts("action input: 12 scoped sequences, 2 program requests and 2 pre-request boundaries passed");
+    std::puts("action input: lookup, request and pre-request boundaries, Sasuke queue 2 and Machine Red cue passed");
 }

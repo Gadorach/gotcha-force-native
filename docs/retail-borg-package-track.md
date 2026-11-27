@@ -1807,7 +1807,15 @@ then held wait `8030907E`, descriptor `2:6`, exact local clip `3:11`
 at cursor 1. All 18 lookups resolved without fallback. This is an
 original VM receipt for a supplied request, not a frame count from B.
 
-The single run stopped before the class cue consumer and made no
+The later [input-to-VM fixture](retail-code-atlas.md#first-cues-in-the-original-vm)
+uses the actual installed ranged-B row. The original request clears the
+marker and installs its first wait before the action's world query.
+Advancing only that resident VM with a supplied step, without a loaded
+rig or world-query result, reaches the same cue at visit 11. This is a
+separate clock comparison, not a replacement for the rig-backed count
+or evidence of a tick-11 live release.
+
+The rig-backed run stopped before the class cue consumer and made no
 weapon debit, refill, allocation, or recipient claim. The exclusive
 local checkpoint is `retail-0600-rifle-vm-prefix-v1.json` under
 `build/borg-ordered-audit/` (SHA-256
