@@ -1381,6 +1381,47 @@ python3 -m tools.analyze.retail_actor_frame_admission \
   /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-actor-frame-admission.json
 ```
 
+### Collision reset and the alternate contact lists
+
+The [alternate-contact replay](api-map/gg4e08-alternate-contact.json)
+checks the other `+0x276` store and load. On the declared slot-0
+and slot-5 reset probes, `8003CC24` rebinds the slot's hit bank,
+clears all 48 token-history entries, clears `+0x276`, and writes
+**`0xEF`** to the separate role-exclusion mask `+0x272`. HP, the
+body timer and the visual gate stay unchanged. These resets run
+before shapes exist; they do not qualify any of the three outer
+reset callers or resetting an active pair.
+
+Across **206** normal hit blocks, the static census found **60**
+queue-referenced role-`0x80` descriptors on **55** Borgs. Of these,
+**46** are the same group-26 step-44 shape bytes; groups 3 and 4
+account for the other 14. Sharing those bytes does not establish
+the same damage record or a controller route.
+
+The original direct binder loads that exact group-26 shape on
+Machine Red and Drill Robot. Setting either its role-`0x80`
+exclusion bit or the late outgoing byte withholds it from the
+alternate attack list without returning the cell. Independently,
+the receiver's role-`0x02` mask removes Sasuke from the receiving
+lists while the attack stays published. After both roles reopen,
+the ordinary pair pass still does nothing. The alternate pass
+`8002DF08` accepts the retained attack once: **26 HP** for Machine
+Red and **7 HP** for Drill Robot. Both local body timers arm in
+each accepted case.
+
+All **12 observations** matched across O0, O1, and O2. The replay
+does not identify a live group-26 trigger, guard behavior, or
+whole-scene scheduling. Native gameplay is unchanged.
+
+Compile [`retail_alternate_contact_fixture.cpp`](../tests/host/retail_alternate_contact_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_alternate_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/alternate-contact "$GF_RECOMP_MODULE" /tmp/opencode/gf-alternate-contact.json
+```
+
 ### Contact rates through an original joint sample
 
 The [joint replay](api-map/gg4e08-joint-clock-sample.json) attaches
