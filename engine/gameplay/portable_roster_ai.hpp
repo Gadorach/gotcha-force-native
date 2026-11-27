@@ -52,6 +52,25 @@ public:
             return state.output;
         }
         state.burst_leg=BurstLeg::None;
+        if(world.config().local_aim_cycle&&self.grounded&&profile->movement==BorgBattleMovement::Grounded){
+            const auto* active=action.move<profile->moves.size()?&profile->moves[action.move]:nullptr;
+            if(self.hit_flash&&active&&borg_battle_direct_melee(*active)&&action.frame<active->melee->first){
+                for(const auto& e:world.package_events()){
+                    if(e.kind!=BorgBattleEventKind::Hit||e.recipient!=slot||!e.object)continue;
+                    if(hostile_damage_field(world,slot,e.object)){state.evade_field=e.object;break;}
+                }
+            }
+            if(const auto* field=hostile_damage_field(world,slot,state.evade_field)){
+                if(const auto escape=field_escape(world,slot,nearest,*field,terrain)){
+                    pad.stick_x=s8(std::lround(127*escape->x));pad.stick_y=s8(std::lround(127*escape->z));
+                    if(state.button){
+                        attack.released=std::exchange(state.button,u8(0));
+                        state.next_start=std::min(state.next_start,u64(tick)+12);
+                    }
+                    return state.output;
+                }
+            }else state.evade_field=0;
+        }else state.evade_field=0;
         const auto preferred=std::any_of(profile->moves.begin(),profile->moves.end(),[](const auto& move){
             return move.button==BorgBattleButton::B&&supported(move);
         })?BorgBattleButton::B:BorgBattleButton::X;
@@ -436,6 +455,7 @@ private:
     struct Slot {
         u32 sampled=unsampled;
         u64 release_at=0,next_start=0,replan_at=0,burst_leg_until=0,chase_until=0;
+        u32 evade_field=0;
         u8 button=0,route_target=255,chase_target=255;
         s8 burst_leg_x=0,burst_leg_y=0;
         BurstLeg burst_leg=BurstLeg::None;
@@ -450,6 +470,61 @@ private:
     static bool body_blocks_leg(BattlePoint from,BattlePoint step,const BattleMvpActor& body,f32 radius,f32* fraction){
         const BattlePoint p{body.position[0],body.position[2]};
         return (p.x-from.x)*step.x+(p.z-from.z)*step.z>0&&battle_swept_hit(from,step,p,2*radius,fraction);
+    }
+
+    static const BattleMvpField* hostile_damage_field(const NativeBattleMvp& world,unsigned slot,u32 object){
+        if(!object)return nullptr;
+        const auto& actors=world.actors();
+        for(const auto& f:world.fields())if(f.id==object&&f.active()&&f.spec.core_damage&&
+            f.owner<world.actor_count()&&actors[f.owner].team!=actors[slot].team){
+            const auto scope=f.spec.core_damage->scope;
+            if(scope==BorgFieldScope::Enemies||scope==BorgFieldScope::All)return &f;
+        }
+        return nullptr;
+    }
+
+    // Input-only response to a field that actually interrupted a windup.
+    // No direction means that ordinary planning is needed; a zero vector
+    // holds just outside a field that still lies across the approach.
+    static std::optional<BattlePoint> field_escape(const NativeBattleMvp& world,unsigned owner,unsigned rival,
+                                                   const BattleMvpField& field,const IBattleMvpTerrain* terrain){
+        const auto& cfg=world.config();
+        const auto& actors=world.actors();
+        const auto& self=actors[owner];
+        const auto& goal=actors[rival].position;
+        const BattlePoint centre{field.centre[0],field.centre[2]},start{self.position[0],self.position[2]};
+        const f32 dy=field.centre[1]-self.position[1]-cfg.actor_height*.5f,r=field.spec.core_damage->radius;
+        const f32 planar=r*r-dy*dy;
+        if(planar<=0)return {};
+        const auto buffer=std::sqrt(planar)+cfg.actor_radius*.5f;
+        if(std::hypot(start.x-centre.x,start.z-centre.z)>=buffer){
+            f32 fraction=0;
+            if(battle_swept_hit(start,{goal[0]-start.x,goal[2]-start.z},centre,buffer,&fraction))return BattlePoint{};
+            return {};
+        }
+        const auto away=native_borg_direction(centre,start,{-self.facing.x,-self.facing.z});
+        const BattlePoint side{-away.z,away.x};
+        const f32 span=std::max(2.f,4*cfg.packages[owner]->walk);
+        for(const auto direction:{away,BattlePoint{(away.x+side.x)*.70710678f,(away.z+side.z)*.70710678f},
+                                       BattlePoint{(away.x-side.x)*.70710678f,(away.z-side.z)*.70710678f}}){
+            const BattlePoint step{direction.x*span,direction.z*span},end{start.x+step.x,start.z+step.z};
+            const auto bound=cfg.arena_half-cfg.actor_radius;
+            if(std::abs(end.x)>bound||std::abs(end.z)>bound)continue;
+            if(terrain){
+                f32 support=0;
+                if(!battle_partition_route_clear(*terrain,start,end,cfg.actor_radius)||
+                   !terrain->height(end.x,end.z,self.position[1],&support)||support!=self.position[1])continue;
+            }
+            bool occupied=false;
+            for(unsigned i=0;i<world.actor_count();++i){
+                const auto& peer=actors[i];
+                f32 fraction=0;
+                if(i!=owner&&peer.health&&std::abs(peer.position[1]-self.position[1])<cfg.actor_height&&
+                   body_blocks_leg(start,step,peer,cfg.actor_radius,&fraction)){occupied=true;break;}
+            }
+            if(!occupied)return direction;
+        }
+        return {};
     }
 
     static bool route_burst_extension_fits(const NativeBattleMvp& world,unsigned owner,const IBattleMvpTerrain& terrain,

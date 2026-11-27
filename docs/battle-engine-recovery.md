@@ -1052,6 +1052,11 @@ held/released samples for charge windows. Read-only stock checks cover
 entry gates, the first projectile release cost and attacks whose only
 payload is a paid field. The field marker still owns its debit, and an
 empty field pool does not suppress another payload on the same move.
+A grounded roster CPU can step out when a confirmed hostile field hit
+interrupts its melee windup before the window arms. It uses ordinary
+walking, releases the interrupted input, and avoids returning through
+that same active field. Damage, interruption, field lifetime, and
+movement acceptance still belong to the native simulation.
 Simple slow ground drops with an opponent-only expiry blast use the
 declared blast radius for a finite flat-floor approach. The planner
 discounts body-centre height and does not count launch offset or

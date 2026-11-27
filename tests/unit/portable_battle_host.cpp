@@ -1103,6 +1103,46 @@ void roster_cpu_follow_charge_cases(){
     check(!cpu.input(world,2).attack.pressed,"projected travel cannot pass through a solid ally");
 }
 
+void roster_cpu_field_escape_cases(){
+    const auto idle=definition("stationary-v1","health=500\n");
+    const std::string clips="health=500\nwalk=0:1\nair=0:2\ndash=0:3\n";
+    const auto caster=definition("grounded-v1|8|13|15",clips+
+        "move=pulse|b|10|grounded|16|0:4\nfield=pulse|1|sphere|190|190|190|60|0|50|90|150|250|150\n"
+        "field-core-damage=pulse|enemies|190|10|6\n");
+    const auto melee=definition("grounded-v1|8|13|15",clips+
+        "move=slash|b|10|grounded|24|0:4\nrange=slash|175\nmelee=slash|9|14|115|25|52|44|19\n");
+    BattleMvpConfig config;config.declared_actors=3;config.teams_declared=true;
+    config.teams={0,0,1};config.packages={caster,idle,melee};
+    config.spawn={BattlePoint{0,150},BattlePoint{600,400},BattlePoint{0,0}};
+    struct Result {unsigned pulses=0;bool interrupted=false,resumed_hit=false;};
+    const auto visit=[&](bool explicit_roster){
+        config.local_aim_cycle=explicit_roster;
+        NativeBattleMvp world;PortableRosterAi cpu;
+        check(world.start(config),"start resident field escape fixture");
+        Result seen;
+        for(unsigned n=0;n<130;++n){
+            const auto ai=cpu.input(world,2);
+            if(!n)check(ai.attack.pressed==BorgBattleInputs::b,"melee windup starts before the field first pulses");
+            if(explicit_roster&&seen.pulses==1&&!seen.interrupted){
+                check(ai.movement.stick_y<0&&!ai.movement.l&&!ai.attack.pressed&&ai.attack.released==BorgBattleInputs::b,
+                      "step away using ordinary walking and release the interrupted attack input");
+            }
+            const BorgBattleInputs initial=n?BorgBattleInputs{}:BorgBattleInputs{BorgBattleInputs::b,BorgBattleInputs::b,0};
+            check(world.step_roster(std::array<GamePadState,3>{{{},{},ai.movement}},
+                                   std::array<BorgBattleInputs,3>{{initial,{},ai.attack}},false),"advance native field and melee");
+            for(const auto& e:world.package_events()){
+                if(e.kind==BorgBattleEventKind::Hit&&e.actor==0&&e.recipient==2)++seen.pulses;
+                if(e.kind==BorgBattleEventKind::Interrupted&&e.actor==2&&e.frame<9)seen.interrupted=true;
+                if(e.kind==BorgBattleEventKind::Hit&&e.actor==2&&e.recipient==0&&e.tick>62)seen.resumed_hit=true;
+            }
+        }
+        return seen;
+    };
+    const auto control=visit(false),evaded=visit(true);
+    check(control.interrupted&&evaded.interrupted&&evaded.pulses>0&&evaded.pulses<control.pulses&&evaded.resumed_hit,
+          "escaping the real field reduces hits and opens a later ordinary strike");
+}
+
 void roster_cpu_field_height_cases(){
     struct Terrain final:IBattleMvpTerrain {
         std::array<StageBodyPartition,1> boxes{{{"remote-wall",1000,-6,1200,6,true}}};
@@ -1542,6 +1582,7 @@ int main(int argc,char** argv){
     roster_cpu_ally_pass_cases();
     roster_cpu_detour_ally_cases();
     roster_cpu_follow_charge_cases();
+    roster_cpu_field_escape_cases();
     roster_cpu_field_height_cases();
     roster_cpu_cruise_cases();
     roster_cpu_ground_extension_cases();

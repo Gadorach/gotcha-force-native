@@ -1891,6 +1891,13 @@ starts and 183 damaging hitters by tick 240. Both ICBM variants kept
 their previous openings. The change is to CPU approach and timing,
 not to landing, blast reach, or stock rules.
 
+In a controlled resident-field fixture, Star Hero (`0804`) took five
+field hits instead of nine after its melee windup was interrupted.
+It resumed melee after the field expired and hit at tick 117, versus
+tick 99 without the retreat. The Workshop sweep kept its totals at
+both cutoffs, with all 206 admitted. The five interrupted melee
+subjects still deployed no payload by tick 240 in that mixed sweep.
+
 ## Baseline check
 
 Two independent full extractions from the local inputs were byte-identical.
