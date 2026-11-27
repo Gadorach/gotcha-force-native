@@ -1222,9 +1222,9 @@ for active-form ownership and hit queues.
 | Orange Fighter `0d04`, X | 2 | 8, 10 | 1 |
 
 Both normal queues contain raw powers **40 and 10**. The ordinal
-selects a socket, not a different queue. No landed-step attribution
-is made. The exit selector is also separate: after the contact-latch
-or stage-probe stop branch, rows 0 and 2 request type 8/key 0;
+selects a socket, not a different queue. The census alone does not
+assign landed steps. The exit selector is also separate: after the
+contact-latch or stage-probe stop branch, rows 0 and 2 request type 8/key 0;
 rows 1, 3, 4, and 5 request type 9/key 1. The zero-HP and expiry
 branches call a different helper, not this selector.
 
@@ -1255,6 +1255,41 @@ python3 -m tools.analyze.retail_type76_paid \
 
 Compile [`retail_type76_paid_fixture.cpp`](../tests/host/retail_type76_paid_fixture.cpp)
 with the [phase fixture](#shared-action-gate) flags.
+
+### Type-76 opening: attack and receiver shapes are separate
+
+The [opening replay](api-map/gg4e08-type76-opening.json) carries
+both paid routes through the original initializer for both ordinals.
+Distinct declared socket translations verify the lookup. With one
+shape slot, the **40-power** descriptor publishes a radius-30 attack
+sphere, 25 units ahead of the carrier origin. With two slots, the
+**10-power** descriptor publishes a radius-55 sphere at the origin
+in the **receiver registry**, not the attack registry.
+
+Stationary Sasuke at the attack sphere's center lost **35 HP** with
+either one or two slots. Only the 40-power record reached the amount
+routine; a duplicate token did not write again. A position inside
+only the carrier's receiver sphere did not reach the amount routine.
+This assigns the bounded outgoing hit, not any reaction to an
+incoming attack on the carrier.
+
+The real contact latch drove the next callback: it stopped the
+carrier and requested **type 8/key 0** at the carrier origin.
+The request still occurred without a free carrier cell, and both
+type-76 shape cells returned in either case. The type-8 child did
+not initialize in this replay.
+
+All 24 cases matched across O0, O1, and O2. Socket poses, phase
+entry, pool pressure and recipient position are declared. No terrain
+exit, incoming carrier damage, live scheduling, alternate form,
+whole-move damage, or native gameplay is qualified.
+
+```sh
+python3 -m tools.analyze.retail_type76_opening \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type76-paid "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type76-opening.json
+```
 
 ### Type-32 model-relative segments: copied aim and live gate
 
