@@ -2312,6 +2312,45 @@ python3 -m tools.analyze.retail_scene_bomb_reaction \
   /tmp/opencode/gf-scene-bomb-reaction.json
 ```
 
+### World callbacks: the old area destroys the next Time Bomber bomb
+
+The [cascade replay](api-map/gg4e08-scene-bomb-cascade.json) keeps the
+first area hit and forks before a second B on visit **186**. The old
+area (token **2**) removes the second bomb's only **1 HP** with a
+**4-HP request**. On **187**, the second bomb still has **180**
+lifetime units, but the original zero-HP branch `800E0B18` requests
+another key-**19** area. Its shape returns on **187**, its stock on
+**188**, and its carrier on **189**, in all three capacity cases.
+
+| Extra cells offered | Second area's outcome |
+| --- | --- |
+| None | The request cannot allocate a carrier. |
+| Carrier only | The carrier initializes while both older shapes still occupy their cells; it binds no shape, never publishes, and returns on **189**. |
+| Carrier and shape | The shape binds on **187**, publishes on **188**, returns on **204**, and the carrier returns on **237**. |
+
+With both extra cells, the new area keeps Time Bomber's credit and the
+same common damage record as the old area, but it owns a separate
+shape and token **4**. It removes **4 HP** from Time Bomber on **188**,
+then **17 HP** from Sasuke on **190** or **191**, depending on the
+startup schedule used in the replay. The old area is still published
+on both hit visits. Both recipients retain tokens **2** and **4**.
+Time Bomber ends with **34** opponent-damage credit and **0** ally
+credit; combined received totals are **34** for Sasuke and **8**
+for Time Bomber. The stored parent pointer equals a reused carrier
+address, so it is not proof of a unique parent lifetime.
+
+Both startup schedules and all three capacity cases matched across
+O0/O1/O2: **370** shared-prefix and **288** forked coordinator visits.
+This qualifies the zero-HP path for this empty-grid setup, not other
+arena geometry, further placements, hardware, or native behavior.
+
+```sh
+python3 -m tools.analyze.retail_scene_bomb_cascade \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/dual-scene-entry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-bomb-cascade.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

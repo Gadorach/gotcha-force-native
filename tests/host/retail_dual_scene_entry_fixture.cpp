@@ -15,6 +15,7 @@ constexpr u32 attack_count=0x8043B5A0-21328,attack_list=0x803C477C;
 constexpr u32 bomb=0x8107B000,bomb_shape=0x8107A000,bomb_bucket=0x803C706C+10*4;
 constexpr u32 factory=0x800E058C,area_factory=0x80085E00;
 constexpr u32 child=0x8107B800,child_shape=0x8107A200,common_hits=0x8107D000;
+constexpr u32 next_area=0x8107C000,next_shape=0x8107A400;
 constexpr u32 common_view_owner=0x81064040;
 constexpr std::array<u16,2> models{0x000A,0x0106},members{495,504},hp{180,220};
 constexpr std::array<size_t,2> motion_sizes{368160,435104},view_sizes{241128,171236};
@@ -24,6 +25,7 @@ struct Assets {
     std::vector<u8> motion,view;
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
+enum class Run {entry,bomb,area,reaction,cascade};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
 constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
@@ -460,9 +462,154 @@ class Replay {
                             byte(body+0x71A),byte(body+0x71C),word(body+0x5F4),word(body+0x1DC8),word(body+0x1DCC));
         }
     }
-    void world_area(unsigned delay,bool reaction){
+    void check_cascade_amount(unsigned visit,u32 source,u32 receiver){
+        auto fork=ram;
+        CPUState cpu{};CallObservation amounts{contact::amount_entry};
+        amounts.sample=sample_tier;
+        mod.run_observed(cpu,fork,scheduler::dispatch,amounts,65536);
+        if(amounts.count!=1||amounts.caller!=0x8002F108||amounts.arguments[0]!=child_amount||
+           amounts.arguments[1]!=source||amounts.arguments[2]!=receiver||amounts.samples[0]!=(visit==186?255u:0u))
+            fail("cascade contact did not use its exact carrier, amount record and receiver");
+    }
+    void check_cascade_world(unsigned capacity,unsigned visit,unsigned opponent_visit){
+        const bool admitted=capacity==2,live_bomb=visit<=188,live_old=visit<=230;
+        const bool live_next=visit>=187&&((admitted&&visit<=236)||(capacity==1&&visit<=188));
+        const bool bound_next=admitted&&visit>=187&&visit<=203;
+        const bool published_next=bound_next&&visit>=188;
+        const bool bound_old=visit<=197,bound_bomb=visit==186;
+        const unsigned next_phase=!capacity||visit==186?0:!admitted?(visit==187?2:3):visit<=234?1:visit==235?2:3;
+        const bool opponent_hit=admitted&&visit>=opponent_visit,self_hit=admitted&&visit>=188;
+        const unsigned opponent=opponent_hit?34:17,self=self_hit?8:4;
+        if(byte(bomb)!=unsigned(live_bomb)||byte(bomb+0x18)!=(visit==186?1u:visit==187?2u:3u)||
+           byte(child)!=unsigned(live_old)||byte(child+0x18)!=(visit<=228?1u:visit==229?2u:3u)||
+           byte(next_area)!=unsigned(live_next)||byte(next_area+0x18)!=next_phase||
+           byte(bomb_shape)!=unsigned(bound_bomb)||byte(child_shape)!=unsigned(bound_old)||
+           byte(next_shape)!=unsigned(bound_next)||half(attack_count)!=bound_bomb+bound_old+published_next||
+           half(contact::receiver_count)!=18+unsigned(bound_bomb)||half(fighter(1)+0x774)!=(visit<=187?9:10)||
+           half(fighter(0)+0x774)!=10||word(fighter(1)+0x418)!=opponent||word(fighter(0)+0x41C)!=opponent||
+           word(fighter(1)+0x41C)!=self||word(fighter(1)+0x42C)||word(fighter(0)+0x418)||
+           half(fighter(0)+0x1C6)!=180-opponent||half(fighter(1)+0x1C6)!=220-self||
+           half(fighter(0)+0x20C)!=2||half(fighter(1)+0x20C)!=2||
+           half(fighter(0)+0x20E)!=(opponent_hit?4:0)||half(fighter(1)+0x20E)!=(self_hit?4:0)||
+           half(contact::free_count+6)!=2+unsigned(capacity!=0)-live_bomb-live_old-live_next||
+           half(contact::free_count+8)!=2+unsigned(admitted)-bound_bomb-bound_old-bound_next||
+           half(pools+18)!=18-2*live_old-2*live_next-live_bomb)
+            fail("cascade ownership, shape publication, HP, ledgers or stock changed");
+        for(unsigned i=0;i<2;++i)
+            if(f(i,0x18)!=1||word(fighter(i)+0x420)||word(fighter(i)+0x424))
+                fail("cascade unexpectedly affected a fighter's phase or knockout ledgers");
+        if(live_bomb&&(half(bomb+0x1C6)||half(bomb+0x26C)!=3||word(bomb+0x90)!=fighter(1)))
+            fail("cascade did not retain the second paid parent with zero HP");
+        if(bound_bomb&&(half(bomb+0x20C)!=2||word(bomb_shape+0x20)!=bomb||word(attack_list)!=bomb_shape))
+            fail("cascade did not record the old area's token against the second bomb");
+        const auto area_identity=[&](u32 carrier,u32 cell,unsigned token,bool live,bool bound){
+            if(live&&(byte(carrier+0x10)!=5||byte(carrier+0x11)!=19||word(carrier+0x8C)!=bomb||
+               word(carrier+0x90)!=fighter(1)||half(carrier+0x26C)!=token))
+                fail("cascade area lost its own token, type, key or actor credit");
+            if(bound&&(word(cell+0x20)!=carrier||word(cell+0x24)!=fighter(1)||
+               word(cell+0x28)!=common_hits+0x400+246*80||word(cell+0x2C)!=0x802C4760||
+               byte(cell+0x11)!=26||byte(cell+0x14)!=179))
+                fail("cascade bound the wrong shared area descriptor");
+        };
+        area_identity(child,child_shape,2,live_old,bound_old);
+        area_identity(next_area,next_shape,admitted?4:0,live_next,bound_next);
+        if(bound_next&&visit==187&&(word(word(next_area+0xE0)+20)!=22||
+           word(next_area+0x20)!=word(bomb+0x20)||word(next_area+0x24)!=word(bomb+0x24)||
+           word(next_area+0x28)!=word(bomb+0x28)))
+            fail("cascade initializer did not keep its source origin and opening view");
+        unsigned old_entries=0,next_entries=0;
+        for(unsigned j=0;j<half(attack_count);++j){
+            old_entries+=word(attack_list+j*4)==child_shape;
+            next_entries+=word(attack_list+j*4)==next_shape;
+        }
+        if(old_entries!=unsigned(bound_old)||next_entries!=unsigned(published_next))
+            fail("cascade did not publish each distinct shape exactly once");
+        if(!live_old&&!live_next&&(half(pools+18)!=18||half(pools+28+18)||word(archive::source_globals)!=common_view_owner))
+            fail("cascade leaked view cells or retired the common archive");
+    }
+    void probe_cascade(unsigned delay){
+        const auto saved=ram;
+        for(unsigned capacity=0;capacity<3;++capacity){
+            std::memcpy(ram.data(),saved.data(),ram.size());
+            if(half(contact::free_count+6)!=1||word(contact::free_head+12)!=bomb||
+               word(contact::free_tail+12)!=bomb||word(bomb+4)||byte(bomb)||
+               half(contact::free_count+8)!=1||word(contact::free_head+16)!=bomb_shape||
+               word(contact::free_tail+16)!=bomb_shape||word(bomb_shape+4)||byte(bomb_shape)||
+               !byte(child)||!byte(child_shape)||half(child+0x26C)!=2||half(fighter(1)+0x774)!=10)
+                fail("cascade fork must start from the retained first-area hit");
+            if(capacity>=1){
+                at(next_area+2)[0]=3;
+                store(bomb+4,next_area);store(contact::free_tail+12,next_area);
+                store16(contact::free_count+6,2);
+            }
+            if(capacity==2){
+                at(next_shape+2)[0]=4;
+                store(bomb_shape+4,next_shape);store(contact::free_tail+16,next_shape);
+                store16(contact::free_count+8,2);
+            }
+            store(pad+32,0x200);
+            check_payment(delay,capacity,false);
+            const unsigned opponent_visit=190+unsigned(delay!=0);
+            for(unsigned visit=186;visit<=(capacity==2?237u:231u);++visit){
+                if(visit==187){
+                    auto fork=ram;
+                    CPUState request{};
+                    const auto inlet=mod.run_to_or_return(request,fork,scheduler::dispatch,{area_factory},nullptr,65536);
+                    if(inlet!=area_factory||request.lr!=0x800E0B1C||request.gpr[3]!=bomb||
+                       request.gpr[4]!=bomb+0x20||request.gpr[5]!=19||contact::half(fork,bomb+0x1C6)||
+                       contact::half(fork,bomb+0x152)!=180||contact::half(fork,contact::free_count+6)!=unsigned(capacity!=0))
+                        fail("cascade fork did not follow the zero-HP terminal request");
+                    std::printf("cascade-request: %u %u %u %08X %u %u %u\n",delay,capacity,visit,request.lr-4,
+                                request.gpr[5],contact::half(fork,bomb+0x152),contact::half(fork,contact::free_count+6));
+                    if(capacity){
+                        std::memcpy(fork.data(),ram.data(),ram.size());
+                        CPUState init{};
+                        const auto cut=mod.run_to_or_return(init,fork,scheduler::dispatch,{0x80086084},nullptr,65536);
+                        if(cut!=0x80086084||init.gpr[3]!=next_area||!contact::at(fork,bomb_shape)[0]||
+                           !contact::at(fork,child_shape)[0]||!contact::at(fork,bomb+0x1D8)[0]||
+                           contact::half(fork,contact::free_count+8)!=unsigned(capacity==2)||
+                           be32(contact::at(fork,contact::free_head+16))!=(capacity==2?next_shape:0))
+                            fail("cascade initializer did not run while both earlier shapes were active");
+                        std::printf("cascade-init: %u %u %u %u\n",delay,capacity,visit,
+                                    contact::half(fork,contact::free_count+8));
+                    }
+                }
+                const auto receiver=visit==186?bomb:capacity==2&&visit==188?fighter(1):
+                                    capacity==2&&visit==opponent_visit?fighter(0):0;
+                if(receiver)check_cascade_amount(visit,visit==186?child:next_area,receiver);
+                const auto before=word(scene+176),turn_before=word(scene+168),combat_before=word(scene+172);
+                CPUState cpu{};CallObservation hits{contact::hp_write};
+                hits.sample=sample_hp;
+                const auto cut=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{0x80264290},&hits,1u<<20);
+                if(cut||word(scene+176)!=before+1||word(scene+168)!=turn_before+1||
+                   word(scene+172)!=combat_before+1||hits.count!=unsigned(receiver!=0)||
+                   (receiver&&(hits.caller!=0x8002F1D8||hits.first_arguments[0]!=receiver||
+                              hits.second_arguments[0]!=(receiver==fighter(0)?17:4)||
+                              hits.samples[0]!=(receiver==bomb?1:receiver==fighter(0)?163:216))))
+                    fail("cascade did not complete its original world call");
+                check_cascade_world(capacity,visit,opponent_visit);
+                if(visit<=189||visit==198||visit==231||(capacity==2&&(visit==opponent_visit||
+                   visit==204||visit>=235))){
+                    std::printf("cascade: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                                delay,capacity,visit,half(fighter(1)+0x774),byte(bomb),byte(bomb+0x18),byte(child),
+                                byte(child+0x18),byte(next_area),byte(next_area+0x18),byte(next_shape),
+                                half(next_area+0x26C),half(attack_count),half(contact::receiver_count),
+                                half(fighter(0)+0x1C6),half(fighter(1)+0x1C6),word(fighter(1)+0x418),
+                                half(fighter(0)+0x20E),half(fighter(1)+0x20E),half(contact::free_count+6),
+                                half(contact::free_count+8),half(pools+18));
+                }
+                if(receiver)
+                    std::printf("cascade-hp: %u %u %u %08X %u %u\n",delay,capacity,visit,
+                                hits.first_arguments[0],hits.second_arguments[0],hits.samples[0]);
+                store(pad+32,0);
+            }
+        }
+    }
+    void world_area(unsigned delay,Run mode){
+        const bool reaction=mode==Run::reaction,cascade=mode==Run::cascade;
         const auto saved=ram;
         for(unsigned shapes:{1u,2u}){
+            if(cascade&&shapes!=2)continue;
             std::memcpy(ram.data(),saved.data(),ram.size());
             at(stage)[0]=1;at(stage+8)[0]=1;
             if(half(contact::free_count+6)||word(contact::free_head+12)||half(contact::free_count+8)||
@@ -477,10 +624,11 @@ class Replay {
             store(contact::free_head+16,bomb_shape);store(contact::free_tail+16,shapes==2?child_shape:bomb_shape);
             store16(contact::free_count+8,u16(shapes));
             store(pad+32,0x200);
-            check_payment(delay,shapes,!reaction);
+            check_payment(delay,shapes,!reaction&&!cascade);
             unsigned previous_phase=0,previous_shape=0;
             for(unsigned visit=1;visit<=(reaction?235u:240u);++visit){
-                if(visit==181)check_area_timeout(delay,shapes,!reaction);
+                if(cascade&&visit==186){probe_cascade(delay);break;}
+                if(visit==181)check_area_timeout(delay,shapes,!reaction&&!cascade);
                 if(visit==185&&shapes==2)check_area_amount();
                 if(reaction&&visit>=184)probe_reaction_b(delay,shapes,visit);
                 const auto before=word(scene+176);
@@ -499,7 +647,7 @@ class Replay {
                 const bool child_published=attack&&word(attack+0x20)==child;
                 check_area_world(shapes,visit,hits,child_published);
                 if(reaction&&visit>=183)report_reaction(delay,shapes,visit);
-                if(!reaction&&(visit<=2||visit==180||visit==181||visit==182||visit==183||hits.count||
+                if(!reaction&&!cascade&&(visit<=2||visit==180||visit==181||visit==182||visit==183||hits.count||
                    phase!=previous_phase||child_published!=bool(previous_shape)||(visit>181&&!byte(child))||visit==240))
                     std::printf("dual-area: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %08X\n",
                                 delay,shapes,visit,half(fighter(1)+0x774),byte(bomb),byte(bomb+0x18),byte(child),
@@ -508,7 +656,7 @@ class Replay {
                                 word(fighter(1)+0x418),word(fighter(1)+0x42C),word(fighter(0)+0x41C),
                                 word(fighter(1)+0x41C),half(fighter(0)+0x20C),half(fighter(1)+0x20C),
                                 child_published?word(attack+0x7C):0);
-                for(unsigned j=0;!reaction&&j<hits.count;++j)
+                for(unsigned j=0;!reaction&&!cascade&&j<hits.count;++j)
                     std::printf("dual-area-hp: %u %u %u %u %08X %u\n",
                                 delay,shapes,visit,j,hits.first_arguments[j],hits.second_arguments[j]);
                 previous_phase=phase;previous_shape=unsigned(child_published);
@@ -522,7 +670,8 @@ public:
         mod(m),ram(original){
         setup(assets,area);
     }
-    void observe(bool world,bool area,bool reaction){
+    void observe(Run mode){
+        const bool world=mode!=Run::entry;
         const auto start=ram;
         for(unsigned delay:{0u,10u}){
             std::memcpy(ram.data(),start.data(),ram.size());
@@ -532,7 +681,7 @@ public:
                 at(scene+0xD2)[0]=u8(visit>=2&&visit<2+delay?2:0);
                 const unsigned before=f(0,0x743)+2*f(1,0x743);
                 if(world&&visit==opens+1){
-                    if(area)world_area(delay,reaction);else world_bomb(delay);
+                    if(mode==Run::bomb)world_bomb(delay);else world_area(delay,mode);
                     break;
                 }
                 if(!world&&visit>=opens)pulse(delay,visit,visit>opens);
@@ -585,10 +734,14 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    const bool reaction=argc==4&&!std::strcmp(argv[3],"--world-reaction");
-    const bool area=reaction||(argc==4&&!std::strcmp(argv[3],"--world-area"));
-    const bool world=area||(argc==4&&!std::strcmp(argv[3],"--world-bomb"));
-    if(argc!=3&&!world)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction] < qualified-roles");
+    Run mode=Run::entry;
+    if(argc==4&&!std::strcmp(argv[3],"--world-bomb"))mode=Run::bomb;
+    if(argc==4&&!std::strcmp(argv[3],"--world-area"))mode=Run::area;
+    if(argc==4&&!std::strcmp(argv[3],"--world-reaction"))mode=Run::reaction;
+    if(argc==4&&!std::strcmp(argv[3],"--world-cascade"))mode=Run::cascade;
+    if(argc!=3&&mode==Run::entry)
+        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade] < qualified-roles");
+    const bool area=mode==Run::area||mode==Run::reaction||mode==Run::cascade;
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
@@ -601,5 +754,5 @@ int main(int argc,char** argv){
     if(area){read(common.collision);common.view=archive::read_source();}
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets,area?&common:nullptr).observe(world,area,reaction);
+    Replay(mod,original,assets,area?&common:nullptr).observe(mode);
 }
