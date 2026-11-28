@@ -131,16 +131,131 @@ class Probe {
         call(0x8006F4F8,actor_body);
         call(0x8008AB30,actor_body);
     }
+    void publish_shapes(){
+        call(0x8008A28C);call(0x80089AEC);
+    }
+    void bucket_visit(CallObservation* marker=nullptr){
+        call(0x80089A94,40,marker);
+        call(0x80089554);
+        publish_shapes();
+    }
+    void collision(CallObservation* marker=nullptr){
+        CPUState walk{};init_cpu(walk);
+        const auto cut=mod.run_to_or_return(walk,ram,0x8002BB14,{0x8005A580,0x80264290,contact::hp_write},marker,65536);
+        if(cut!=0x8005A580||walk.lr!=0x8002C870||walk.gpr[3]!=actor_body||half(actor_body+0x1C6)!=180)
+            fail("original stage prop collision escaped the presentation frontier");
+    }
+    unsigned cell_index(u32 cell){
+        if(!cell)return 255;
+        if(cell<shapes||cell>=shapes+4*shape_step||(cell-shapes)%shape_step)
+            fail("stage prop recovery escaped the original collision-cell pool");
+        return (cell-shapes)/shape_step;
+    }
+    void record_recovery(unsigned visit){
+        const auto p=half(plane_count)?word(plane_list):0;
+        if(half(plane_count)>1||(p&&(word(p+0x20)!=prop||word(p+0x28)!=collision_bank+0x400+237*80))||
+           word(stage_objects)!=prop||!at(prop)[0]||half(contact::receiver_count)<1)
+            fail("stage prop original recovery changed collision or owner identities");
+        std::printf("stage-prop-recovery: %u %u %u %u %u %u %u %u %u %u %08X %08X %08X %08X %08X %u %u %u\n",
+                    visit,at(prop+0x18)[0],at(prop+0x19)[0],half(prop+0x1C6),half(prop+0x1C),
+                    half(contact::free_count+8),half(contact::receiver_count),half(plane_count),cell_index(p),at(prop+0x281)[0],
+                    word(prop+0x24),word(prop+0x180),word(prop+0x184),p?word(p+0x68):0,
+                    word(0x803B2908+4*4),at(actor_body+0x1DB)[0],at(actor_body+0x1DE)[0],
+                    cell_index(word(actor_body+0x1E0)));
+    }
+    void rising_carry(u32 retired_plane){
+        const auto rebinding=ram;
+        const auto plane=word(plane_list);
+        if(half(plane_count)!=1||plane==retired_plane||word(retired_plane+0x28)!=collision_bank+0x400+236*80||
+           word(retired_plane+0x20)!=prop||at(actor_body+0x1DB)[0]||word(actor_body+0x1E0)!=retired_plane)
+            fail("the original rebuild did not distinguish plane rebind from stale cell reuse");
+        // Fresh declared actor pose on the *rebound* plane. Settle the
+        // registered matrices without running another prop visit.
+        const contact::Point start{scalar(plane+0x64),scalar(plane+0x68)+144.f,scalar(plane+0x6C)};
+        point(actor_body+0x20,start);rig(actor_body+0x1AA4,start);
+        auto joint=start;joint[0]+=12;
+        rig(actor_body+0x8D4+6*0x30,joint);
+        publish_shapes();publish_shapes();
+        CallObservation narrow{0x80035698};collision(&narrow);
+        if(narrow.count!=1||at(actor_body+0x1DB)[0]!=1||word(actor_body+0x1E0)!=plane||
+           word(actor_body+0x1E4)!=prop||word(plane_list)!=plane)
+            fail("rising prop fork did not acquire the rebound plane through original contact");
+        const auto old_prop=word(prop+0x24),old_plane=word(plane+0x68),old_actor=word(actor_body+0x24);
+        const auto old_anchor=word(actor_body+0x1FC);
+        bucket_visit();
+        const auto new_prop=word(prop+0x24),new_plane=word(plane+0x68);
+        if(word(prop+0x30)!=old_prop||new_prop==old_prop||word(plane_list)!=plane)
+            fail("original rise did not advance its world and saved owner pose");
+        constexpr u32 normal=banks+0x2400;
+        CPUState height{};init_cpu(height);
+        height.gpr[3]=actor_body;height.gpr[4]=actor_body+0x20;height.gpr[5]=normal;
+        mod.run(height,ram,0x8003E0A8,4096);
+        const auto queried=std::bit_cast<u32>(float(height.fpr[1]));
+        CPUState carry{};init_cpu(carry);carry.gpr[3]=actor_body;
+        const auto cut=mod.run_to_or_return(carry,ram,0x80059068,{0x80059E58,0x80264290},nullptr,4096);
+        if(cut!=0x80059E58||carry.lr!=0x800590B0||carry.gpr[3]!=actor_body||
+           word(actor_body+0x1E0)!=plane||word(actor_body+0x1E4)!=prop||at(actor_body+0x1DB)[0]!=1||
+           word(actor_body+0x1FC)!=old_anchor||!(word(actor_body+0x5E0)&0x100000)||
+           scalar(actor_body+0x20)!=start[0]||scalar(actor_body+0x28)!=start[2]||half(actor_body+0x1C6)!=180)
+            fail("rising prop did not carry its original support receiver");
+        std::printf("stage-prop-rise-carry: %u %u %08X %08X %08X %08X %08X %08X %08X %08X\n",
+                    cell_index(retired_plane),cell_index(plane),old_prop,new_prop,old_plane,new_plane,
+                    old_anchor,old_actor,queried,word(actor_body+0x24));
+        ram=rebinding;
+    }
+    void recovery(){
+        const auto original_plane=word(plane_list);
+        if(at(actor_body+0x1DB)[0]!=1||word(actor_body+0x1E0)!=original_plane||word(actor_body+0x1E4)!=prop)
+            fail("stage prop recovery needs its original support acquisition");
+        record_recovery(0);
+        // Causal inlet only: the original bucket callback owns all later
+        // destruction, collision release, timing, rebinding and motion.
+        put16(at(prop+0x1C6),0);
+        constexpr u32 muted_audio=0x8106B000;
+        store(0x8043B5A0-31856,muted_audio);at(muted_audio+12)[0]=255;
+        at(0x803D3AE8+852)[0]=1;
+        CallObservation sound{0x800F0468};
+        bucket_visit(&sound);
+        if(sound.count!=1||sound.caller!=0x80081F48||sound.arguments[0]!=prop||sound.arguments[1]!=115)
+            fail("stage prop original destruction did not request its positional cue");
+        if(half(plane_count)||half(contact::free_count+8)!=2||at(shapes)[0]||at(shapes+shape_step)[0]||
+           !at(shapes+2*shape_step)[0]||!at(shapes+3*shape_step)[0])
+            fail("stage prop destruction did not return both original prop cells separately from the actor's cells");
+        record_recovery(1);
+        collision();
+        if(at(actor_body+0x1DB)[0]||at(actor_body+0x1DE)[0]!=1||word(actor_body+0x1E0)!=original_plane)
+            fail("stage prop break did not clear active support independently of its retained address");
+        record_recovery(2);
+        float local_y=0;
+        for(unsigned n=1;n<=664;++n){
+            bucket_visit();
+            if(n<600){
+                if(half(prop+0x1C6)||half(prop+0x1C)!=600-n||at(prop+0x19)[0]!=1||half(plane_count)||
+                   half(contact::free_count+8)!=2||scalar(prop+0x24)!=10.f)
+                    fail("stage prop recovery wait advanced before its original timer edge");
+            }else{
+                if(half(prop+0x1C6)!=100||half(prop+0x1C)||at(prop+0x19)[0]||half(plane_count)!=1||
+                   half(contact::free_count+8))
+                    fail("stage prop recovery did not retain the rebound collision and HP");
+                if(n==600)local_y=-869.572509765625f;
+                else local_y=std::min(0.f,local_y+14.492875099182129f);
+                if(scalar(prop+0x180)!=local_y||scalar(prop+0x24)!=10.f+local_y)
+                    fail("stage prop original rise changed its per-update offset or world result");
+            }
+            if(n==1||n==599||n==600||n==601||n==602||n==630||n>=658)record_recovery(n+2);
+            if(n==600)rising_carry(original_plane);
+        }
+    }
 public:
     Probe(const Module& m,const std::vector<u8>& pristine):mod(m),ram(pristine){}
-    void run(unsigned id,const contact::HitBlock& hit,const contact::ActorSpec& spec,const Side& side,const Common& common){
+    void run(unsigned id,const contact::HitBlock& hit,const contact::ActorSpec& spec,const Side& side,const Common& common,
+             bool recover=false){
         const auto test=cases[id];
         prepare(side,common);
         construct();
         const float x=scalar(prop+0x20),z=scalar(prop+0x28);
         bind_receiver(hit,spec,{x+(test.far?600.f:0.f),784,z});
-        call(0x8008A28C);call(0x80089AEC);
-        call(0x8008A28C);call(0x80089AEC);
+        publish_shapes();publish_shapes();
         constexpr u32 plane=shapes+shape_step,capsule=shapes+3*shape_step;
         if(half(plane_count)!=1||word(plane_list)!=plane||half(contact::free_count+8)||
            word(plane+0x58)!=4||scalar(plane+0x68)!=640.f||scalar(plane+0xA0)!=140.f||
@@ -150,13 +265,12 @@ public:
                          word(plane+0x68),word(plane+0xA0),word(plane+0xA4),word(plane+0x88),word(plane+0x8C),word(plane+0x90));
             fail("original stage prop did not publish the role-20 plane");
         }
-        CPUState walk{};init_cpu(walk);CallObservation narrow{0x80035698};
-        const auto cut=mod.run_to_or_return(walk,ram,0x8002BB14,{0x8005A580,0x80264290,contact::hp_write},&narrow,65536);
+        CallObservation narrow{0x80035698};collision(&narrow);
         const bool held=at(actor_body+0x1DB)[0]!=0;
-        if(cut!=0x8005A580||walk.lr!=0x8002C870||walk.gpr[3]!=actor_body||half(actor_body+0x1C6)!=180||
-           held==test.far||narrow.count!=unsigned(held)||(held&&(word(actor_body+0x1E0)!=plane||
+        if(held==test.far||narrow.count!=unsigned(held)||(held&&(word(actor_body+0x1E0)!=plane||
            word(actor_body+0x1E4)!=prop||scalar(actor_body+0x24)!=780.f)))
             fail("original actor did not acquire the exact stage prop support");
+        if(recover){recovery();return;}
         const auto local=vector(actor_body+0x1F8),root=vector(actor_body+0x20),center=vector(capsule+0x64);
         const auto old_prop=contact::Point{x,10,z};
         point(prop+0x2C,old_prop);
@@ -223,10 +337,11 @@ template<class A> void source(A& data,u64 digest=0){
 } // namespace
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: stage-prop-support-fixture qualified.dol unmodified-recomp.so < qualified-inputs");
+    const bool recovery=argc==4&&!std::strcmp(argv[3],"--recovery");
+    if(argc!=3&&!recovery)fail("usage: stage-prop-support-fixture qualified.dol unmodified-recomp.so [--recovery] < qualified-inputs");
     Side side{};Common common{};contact::HitBlock hit{};contact::ActorSpec spec{};
     source(side,0x214D5B801F3BD659ULL);source(common,0x4F4B1EB5F77B5BB4ULL);source(hit);source(spec);
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("stage prop input suffix");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    for(unsigned i=0;i<std::size(cases);++i)Probe(mod,original).run(i,hit,spec,side,common);
+    for(unsigned i=0;i<(recovery?1u:std::size(cases));++i)Probe(mod,original).run(i,hit,spec,side,common,recovery);
 }

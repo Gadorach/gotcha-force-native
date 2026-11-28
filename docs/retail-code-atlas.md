@@ -3347,6 +3347,44 @@ python3 -m tools.analyze.retail_stage_prop_support \
   /tmp/opencode/gf-stage-prop-support.json
 ```
 
+### Original stage prop recovery: rebind, rise, and carry
+
+The [prop recovery replay](api-map/gg4e08-stage-prop-recovery.json)
+starts from the original stage-side prop and Sasuke’s verified
+support contact. It supplies **zero HP** to trigger the break;
+the original callbacks own everything afterward.
+
+- The break visit returns both prop collision cells. Sasuke’s
+  support stays latched until the next collision pass clears it.
+  The stored address remains, but on rebind it now names the
+  capsule, not the plane. The new plane uses the other cell.
+- On the **600th** bucket visit after the break, the original
+  handler restores **100 HP**, rebinds the shapes, and starts
+  the prop below its original height. The world rises on the
+  first step even though the allocated plane center holds
+  until the next visit. After **60** rise steps a small
+  single-precision offset remains; step **61** settles at **Y=10**.
+- In a separate fork, Sasuke starts at a declared pose and
+  acquires the **new** plane through original collision. The
+  next original rise carries him upward about **14.493**
+  units. The supported height query agrees with his new Y
+  even while the plane’s allocated center has not moved.
+
+The **664 post-break updates** and the carry fork matched across
+O0/O1/O2, and the earlier prop-support replay reproduced
+byte-for-byte. This verifies the original recovery motion, not
+the attack that breaks the prop, autonomous actor movement, a
+full arena tick, audible playback, hardware, or native gameplay.
+
+Use the same fixture as for [stage prop support](#original-stage-prop-construction-support-and-masked-carry):
+
+```sh
+python3 -m tools.analyze.retail_stage_prop_recovery \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-prop-support "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-stage-prop-recovery.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
