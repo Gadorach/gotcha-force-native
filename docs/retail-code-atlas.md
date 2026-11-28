@@ -2556,6 +2556,41 @@ python3 -m tools.analyze.retail_replacement_heal_effect \
   /tmp/opencode/gf-replacement-heal-effect.json
 ```
 
+### Replacement heal effect: original defeat clears the owner bit
+
+The [defeat follow-up](api-map/gg4e08-replacement-heal-exit.json)
+retains the admitted effect from a heal on **138**. On **139**,
+the original guard expires and the effect loads common model 77.
+Separate forks offer Tau’s exact ordinary group-1 contact with a
+declared caster and pose. One keeps the healed **160 HP**; the
+other declares a **7 HP** inlet. Neither changes the effect bit.
+
+| HP before hit | Requested / removed | Original post-HP route |
+| --- | ---: | --- |
+| 160 | 16 / 16 | Nonlethal reaction `8005C290`; `+0x8C4` stays at **2**. |
+| 7 | 15 / 7 | Defeat `8005BBC0`; actor enters phase **2** and the store at `8005BC24` clears `+0x8C4`. |
+
+Both routes still have the effect bit set at their post-HP handler
+entry. The lethal route applies mask `0x443`, which removes both
+receiver lists on the next rebuild. The effect is **still active**
+at the post-defeat presentation cut. It enters drain phase **2**
+on the first subsequent bucket visit, phase **3** on **19**, and
+returns its exact heap payload and pool cells on **20**. The
+replacement and common archive owners remain loaded. The
+nonlethal effect stays active through the four observed visits.
+
+All four cases and **48** follow-up actor/bucket visits matched
+across O0/O1/O2. This identifies one original bit-clear path under
+a declared contact setup; other bit writers, later actor removal,
+GX drawing, original hardware and native gameplay remain unqualified.
+
+```sh
+python3 -m tools.analyze.retail_replacement_heal_exit \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-replacement-heal-exit.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

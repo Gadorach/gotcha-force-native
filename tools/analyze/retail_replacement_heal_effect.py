@@ -84,6 +84,14 @@ def verify_source(image):
         raise ValueError("normal replacement heal effect phase table or model operands changed")
 
 
+def payload(image, afs):
+    s.read_metadata(s.MAPS / "gg4e08-replacement-heal-tail.json", TAIL_SHA256)
+    s.read_metadata(s.MAPS / "gg4e08-contact-effect-source-art.json", ART_SHA256)
+    base, _ = tail.contact.source_inputs(image, afs)
+    view = next(raw for slot, raw in art.source_blocks(afs) if slot == 1)
+    return base + view
+
+
 def export(dol, afs, fixture, module, output):
     output = Path(output)
     if output.exists() or output.is_symlink():
@@ -91,11 +99,7 @@ def export(dol, afs, fixture, module, output):
     dol = Path(dol).resolve(strict=True)
     image = s.DolImage(s.read_bounded(dol, 8 << 20), s.SOURCE_SHA256)
     verify_source(image)
-    s.read_metadata(s.MAPS / "gg4e08-replacement-heal-tail.json", TAIL_SHA256)
-    s.read_metadata(s.MAPS / "gg4e08-contact-effect-source-art.json", ART_SHA256)
-    base, _ = tail.contact.source_inputs(image, afs)
-    view = next(raw for slot, raw in art.source_blocks(afs) if slot == 1)
-    cases = decode(s.fixture_report(fixture, dol, module, ("--replacement-heal-effect",), base + view))
+    cases = decode(s.fixture_report(fixture, dol, module, ("--replacement-heal-effect",), payload(image, afs)))
     raw = s.encode({
         "kind": "gf-retail-replacement-heal-effect", "revision": 1, "source_dol_sha256": s.SOURCE_SHA256,
         "source_afs_sha256": s.AFS_SHA256, "replacement_heal_tail_sha256": TAIL_SHA256,

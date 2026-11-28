@@ -38,6 +38,79 @@ inline unsigned receiving(std::vector<u8>& ram,u32 count,u32 list,u32 first,u32 
     return mask;
 }
 
+inline void require_heal_returned(std::vector<u8>& ram,u32 payload,u32 view){
+    const auto word=[&](u32 a){return be32(contact::at(ram,a));};
+    constexpr u32 arena=0x81600000,limit=0x81700000,storage_pool=view_pool+3*28;
+    auto cur=word(arena+8);
+    for(unsigned i=0;cur;++i){
+        if(i>=(limit-arena)/32||cur<arena+32||cur>=limit||(cur&31))
+            fail("heal effect allocation list escaped its declared heap");
+        if(cur==payload-32)fail("heal effect heap block remained live after retirement");
+        cur=word(cur+4);
+    }
+    bool returned=false;
+    cur=word(arena+4);
+    for(unsigned i=0;cur;++i){
+        if(i>=(limit-arena)/32||cur<arena+32||cur>=limit||(cur&31))
+            fail("heal effect free list escaped its declared heap");
+        const auto size=word(cur+8);
+        if(size>limit-cur)fail("heal effect free block escaped its declared heap");
+        if(cur<=payload-32&&cur+size>=payload+32*92){returned=true;break;}
+        cur=word(cur+4);
+    }
+    if(word(heal_storage+12)||word(storage_pool+12)!=heal_storage||word(view_pool+12)!=view||
+       word(contact::free_head+8)!=heal_effect_cell||word(contact::free_tail+8)!=heal_effect_cell||!returned)
+        fail("heal effect did not return its exact original storage, view and carrier cells");
+}
+
+inline void bind_attack(const Module& mod,std::vector<u8>& ram,const Attack& raw,const Route& r,
+                        unsigned relation,u32 target_shape,u32 caster,u32 cell=attack_cell){
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto half=[&](u32 a){return contact::half(ram,a);};
+    const auto scalar=[&](u32 a){return std::bit_cast<float>(word(a));};
+    std::memset(at(caster),0,0x1E00);
+    put32(at(0x803C4E84),caster);
+    at(caster)[0]=1;at(caster+0x18)[0]=1;at(caster+0x88)[0]=relation?0:at(body+0x88)[0];
+    put16(at(caster+0x3E8),r.model);
+    put16(at(caster+0x1C4),r.hp);put16(at(caster+0x1C6),r.hp);
+    put32(at(caster+0x90),caster);
+    put32(at(caster+0x27C),r.table);
+    put32(at(caster+0x3FC),attack_bank);
+    put32(at(caster+0x4AC),attack_spec);
+    std::memcpy(at(attack_bank),raw.hit.data(),raw.hit.size());
+    std::memcpy(at(attack_spec),raw.spec.data(),raw.spec.size());
+    for(u32 field:{0xB4u,0xB8u,0xC0u,0xC4u})put_float(at(caster+field),1.f);
+    put_float(at(caster+0x1CDC),float(r.frame));
+    put32(at(caster+0x76C),1u<<r.joint);
+    put16(at(0x803B069C),r.hp);
+    const u32 d=attack_bank+0xAA0+80*r.step,matrix=caster+0x8D4+48*r.joint;
+    if(at(r.command)[0]!=10||at(r.command+1)[0]!=r.group||at(d)[0]||at(d+1)[0]!=r.joint||
+       half(d+2)!=r.role||half(d+4)!=r.index||half(d+6)!=r.frame)
+        fail("entry contact lost the indexed queue command or descriptor");
+    for(unsigned i=0;i<3;++i){
+        put_float(at(matrix+20*i),1.f);
+        put_float(at(matrix+12+16*i),scalar(target_shape+0x64+4*i)-scalar(d+12+4*i));
+        put_float(at(caster+0x20+4*i),scalar(target_shape+0x64+4*i));
+    }
+    auto available=half(contact::free_count+8);
+    const auto offered=word(contact::free_head+16);
+    if(offered!=cell){
+        at(cell+2)[0]=4;put32(at(cell+4),offered);
+        put32(at(contact::free_head+16),cell);
+        if(!offered)put32(at(contact::free_tail+16),cell);
+        put16(at(contact::free_count+8),++available);
+    }
+    put32(at(vm_cursor),r.command);
+    CPUState script{};script.gpr[3]=caster;script.gpr[4]=15;script.gpr[5]=vm_cursor;
+    CallObservation bind{0x8008AC80};
+    mod.run_observed(script,ram,0x8004C6B4,bind,4096);
+    if(!available||bind.count!=1||bind.caller!=0x8004C6F0||bind.arguments[0]!=caster||
+       bind.arguments[1]!=r.group||word(vm_cursor)!=r.command+4||half(contact::free_count+8)!=available-1||
+       word(cell+0x20)!=caster||word(cell+0x24)!=caster||word(cell+0x28)!=d)
+        fail("entry contact VM did not bind the original attack cell");
+}
+
 inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,unsigned route_id,
                     unsigned initial_caster,unsigned visit,unsigned relation,u32 first,u32 stride,bool report=true,
                     bool effect_admitted=false){
@@ -45,7 +118,6 @@ inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,uns
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
-    const auto scalar=[&](u32 a){return std::bit_cast<float>(word(a));};
     const auto call=[&](u32 entry,u32 arg=0){
         CPUState cpu{};cpu.gpr[3]=arg;mod.run(cpu,ram,entry,4096);
     };
@@ -65,45 +137,9 @@ inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,uns
         fail("entry contact lost a known replacement body shape");
     // Declared caster and pose; only target HP/mirror (not guard or mask)
     // is set for a nonlethal damage and visible healing observation.
-    std::memset(at(actor),0,0x1E00);
-    put32(at(0x803C4E84),actor);
-    at(actor)[0]=1;at(actor+0x18)[0]=1;at(actor+0x88)[0]=relation?0:at(body+0x88)[0];
-    put16(at(actor+0x3E8),r.model);
-    put16(at(actor+0x1C4),r.hp);put16(at(actor+0x1C6),r.hp);
-    put32(at(actor+0x90),actor);
-    put32(at(actor+0x27C),r.table);
-    put32(at(actor+0x3FC),attack_bank);
-    put32(at(actor+0x4AC),attack_spec);
-    std::memcpy(at(attack_bank),raw.hit.data(),raw.hit.size());
-    std::memcpy(at(attack_spec),raw.spec.data(),raw.spec.size());
-    for(u32 field:{0xB4u,0xB8u,0xC0u,0xC4u})put_float(at(actor+field),1.f);
-    put_float(at(actor+0x1CDC),float(r.frame));
-    put32(at(actor+0x76C),1u<<r.joint);
     put16(at(body+0x1C6),110);
-    put16(at(0x803B069E),110);put16(at(0x803B069C),r.hp);
-    const u32 d=attack_bank+0xAA0+80*r.step,matrix=actor+0x8D4+48*r.joint;
-    if(at(r.command)[0]!=10||at(r.command+1)[0]!=r.group||at(d)[0]||at(d+1)[0]!=r.joint||
-       half(d+2)!=r.role||half(d+4)!=r.index||half(d+6)!=r.frame)
-        fail("entry contact lost the indexed queue command or descriptor");
-    for(unsigned i=0;i<3;++i){
-        put_float(at(matrix+20*i),1.f);
-        put_float(at(matrix+12+16*i),scalar(target_shape+0x64+4*i)-scalar(d+12+4*i));
-        put_float(at(actor+0x20+4*i),scalar(target_shape+0x64+4*i));
-    }
-    const auto available=half(contact::free_count+8);
-    const auto offered=word(contact::free_head+16);
-    at(attack_cell+2)[0]=4;put32(at(attack_cell+4),offered);
-    put32(at(contact::free_head+16),attack_cell);
-    if(!offered)put32(at(contact::free_tail+16),attack_cell);
-    put16(at(contact::free_count+8),u16(available+1));
-    put32(at(vm_cursor),r.command);
-    CPUState script{};script.gpr[3]=actor;script.gpr[4]=15;script.gpr[5]=vm_cursor;
-    CallObservation bind{0x8008AC80};
-    mod.run_observed(script,ram,0x8004C6B4,bind,4096);
-    if(bind.count!=1||bind.caller!=0x8004C6F0||bind.arguments[0]!=actor||
-       bind.arguments[1]!=r.group||word(vm_cursor)!=r.command+4||half(contact::free_count+8)!=available||
-       word(attack_cell+0x20)!=actor||word(attack_cell+0x24)!=actor||word(attack_cell+0x28)!=d)
-        fail("entry contact VM did not bind the original attack cell");
+    put16(at(0x803B069E),110);
+    bind_attack(mod,ram,raw,r,relation,target_shape,actor);
     rebuild();
     const bool alt=r.role==128;
     const auto ordinary=receiving(ram,contact::receiver_count,contact::receiver_registry,first,stride);
@@ -162,8 +198,105 @@ inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,uns
                 half(body+0x272),next_ordinary,next_alternate);
 }
 
+inline void defeat_effect(const Module& mod,std::vector<u8> ram,const Attack& tau,unsigned initial_caster,u32 first,u32 stride){
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto half=[&](u32 a){return contact::half(ram,a);};
+    const auto call=[&](u32 entry,u32 arg=0){
+        CPUState cpu{};cpu.gpr[3]=arg;mod.run(cpu,ram,entry,4096);
+    };
+    const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
+    constexpr u32 caster=0x81052000,cell=0x8105E600;
+    constexpr u32 walk=0x8002BB14,begin=0x8005BBC0,presentation=0x8005A580,knock_reaction=0x8005C290;
+    constexpr u32 wrap=0x80054070;
+    if(half(body+0x1C6)!=160||half(body+0x20C)!=3||word(body+0x8C4)!=2||word(body+0x720)||half(body+0x272)||
+       at(heal_effect_cell+0x18)[0]!=1||word(heal_effect_cell+0xDC)!=heal_storage||
+       half(contact::receiver_count)!=9||half(alternate_receive_count)!=9)
+        fail("heal exit needs the admitted effect and expired original guard");
+    const auto previous_actor=word(0x803C4E84);
+    const auto payload=word(heal_storage+12),view=word(heal_effect_cell+0xE0);
+    const auto saved=ram;
+    for(unsigned lethal:{0u,1u}){
+        std::memcpy(ram.data(),saved.data(),ram.size());
+        const unsigned initial_hp=lethal?7:160;
+        put16(at(body+0x1C6),u16(initial_hp));
+        bind_attack(mod,ram,tau,routes[0],1,first+9*stride,caster,cell);
+        rebuild();
+        if(half(ordinary_count)!=1||word(ordinary_attack_list)!=cell||half(alternate_count)||
+           half(caster+0x26C)!=4)
+            fail("heal exit did not publish one fresh ordinary attack token");
+        put32(at(0x803C4E84),previous_actor); // Only the loaded receiver runs its actor callbacks.
+        auto fork=ram;
+        CPUState writer{};CallObservation amount{contact::amount_entry};
+        const auto inlet=mod.run_to_or_return(writer,fork,walk,{contact::hp_write},&amount,65536);
+        if(inlet!=contact::hp_write||writer.lr!=0x8002F1DC||writer.gpr[3]!=body||
+           amount.count!=1||amount.arguments[0]!=0x80377AD8||amount.arguments[1]!=caster||amount.arguments[2]!=body||
+           contact::half(fork,body+0x1C6)!=initial_hp||be32(contact::at(fork,body+0x8C4))!=2)
+            fail("heal exit reached the wrong original amount or HP inlet");
+        const auto requested=writer.gpr[4];
+        const unsigned expected_request=lethal?15:16,remaining_hp=lethal?0:144;
+        if(requested!=expected_request||amount.caller!=0x8002F108)
+            fail("heal exit did not reach its exact low or normal HP amount route");
+        std::memcpy(fork.data(),ram.data(),ram.size());
+        CPUState phase{};CallObservation starts{begin};
+        const auto frontier=mod.run_to_or_return(phase,fork,walk,{begin,presentation,knock_reaction,0x80264290},&starts,65536);
+        if(frontier!=(lethal?begin:knock_reaction)||phase.lr!=(lethal?0x8002C6E0u:0x8002C6C4u)||
+           phase.gpr[3]!=body||starts.count!=lethal||contact::half(fork,body+0x1C6)!=remaining_hp||
+           be32(contact::at(fork,body+0x8C4))!=2||contact::at(fork,body+0x18)[0]!=1)
+            fail("heal exit did not retain the effect bit until the post-HP defeat helper");
+        std::printf("heal-exit-inlet: %u %u %u %u %08X %08X %u %u %u\n",initial_caster,lethal,initial_hp,
+                    requested,frontier,phase.lr,starts.count,contact::half(fork,body+0x1C6),
+                    be32(contact::at(fork,body+0x8C4)));
+        CPUState state{};CallObservation began{begin};
+        const auto cut=mod.run_to_or_return(state,ram,walk,{presentation,0x80264290},&began,65536);
+        const unsigned phase_after=lethal?2:1,owner_after=lethal?0:2,role_after=lethal?0x443:0;
+        if(cut!=presentation||state.lr!=0x8002C870||state.gpr[3]!=body||began.count!=lethal||
+           (lethal&&(began.caller!=0x8002C6DC||began.arguments[0]!=body))||
+           half(body+0x1C6)!=remaining_hp||at(body+0x18)[0]!=phase_after||word(body+0x8C4)!=owner_after||
+           half(body+0x272)!=role_after||word(body+0x41C)!=16+requested||word(caster+0x418)!=requested||
+           half(body+0x20C)!=3||half(body+0x20E)!=4||at(heal_effect_cell)[0]!=1||at(heal_effect_cell+0x18)[0]!=1||
+           word(heal_effect_cell+0xDC)!=heal_storage||word(heal_storage+12)!=payload)
+            fail("heal exit defeat helper changed the wrong role, credit, or resource boundary");
+        std::printf("heal-exit-contact: %u %u %08X %08X %u %u %u %u %u %04X %u %u %u\n",
+                    initial_caster,lethal,cut,state.lr,began.count,half(body+0x1C6),at(body+0x18)[0],word(body+0x8C4),
+                    at(heal_effect_cell+0x18)[0],half(body+0x272),word(body+0x41C),half(body+0x20E),word(caster+0x418));
+        call(0x8008AFF0,caster);
+        rebuild();
+        const auto receive=[&](){
+            const auto ordinary=receiving(ram,contact::receiver_count,contact::receiver_registry,first,stride);
+            const auto alternate=receiving(ram,alternate_receive_count,alternate_receive_list,first,stride);
+            if(ordinary!=(lethal?0u:0x3EF0u)||alternate!=ordinary||half(ordinary_count)||half(alternate_count))
+                fail("heal exit mixed body registry closure with effect lifetime");
+        };
+        receive();
+        for(unsigned n=1;n<=(lethal?20u:4u);++n){
+            CPUState actor_update{};actor_update.gpr[3]=body;
+            const auto actor_cut=mod.run_to_or_return(actor_update,ram,wrap,{presentation,0x80264290},nullptr,65536);
+            if(actor_cut!=presentation||actor_update.lr!=0x80054144)
+                fail("heal exit next visit did not reach its original actor prefix");
+            call(0x80089A94,heal_effect_bucket);
+            rebuild();
+            receive();
+            const bool retired=lethal&&n==20;
+            const unsigned effect_phase=!lethal?1:n<19?2:3;
+            if(at(body+0x18)[0]!=phase_after||half(body+0x1C6)!=remaining_hp||word(body+0x8C4)!=owner_after||
+               word(body+0x41C)!=16+requested||half(body+0x20C)!=3||half(body+0x20E)!=4||
+               at(heal_effect_cell)[0]!=unsigned(!retired)||at(heal_effect_cell+0x18)[0]!=effect_phase||
+               word(heal_effect_cell+0xDC)!=(retired?0:heal_storage)||half(contact::free_count+4)!=unsigned(retired)||
+               half(view_pool+18)!=unsigned(retired)||half(view_pool+3*28+18)!=unsigned(retired)||
+               word(0x803BB374)!=common_owner||word(0x803BB4C0+3120+0x600)!=0x81064000)
+                fail("heal exit lost its original effect retirement or body accounting");
+            if(retired)require_heal_returned(ram,payload,view);
+            if(n<=2||n==4||n>=18)
+                std::printf("heal-exit-tail: %u %u %u %u %u %u %u %u %u %u %u\n",initial_caster,lethal,n,
+                            at(body+0x18)[0],word(body+0x8C4),at(heal_effect_cell)[0],at(heal_effect_cell+0x18)[0],
+                            half(contact::free_count+4),half(view_pool+18),half(contact::receiver_count),half(alternate_receive_count));
+        }
+    }
+}
+
 inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,unsigned initial_caster,
-                         unsigned initial_visit,u32 first,u32 stride,bool effect_admitted=false){
+                         unsigned initial_visit,u32 first,u32 stride,bool effect_admitted=false,const Attack* exit_toward=nullptr){
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
@@ -292,30 +425,12 @@ inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,
                    payload<0x81600040||payload>=0x81700000||((payload-32)&31)||
                    joint<0x81600040||joint>=0x81700000||word(payload-24)!=32*92+32))
                     fail("heal effect did not retain its exact heap block and original loaded model");
-                if(retired){
-                    auto cur=word(0x81600008);
-                    for(unsigned i=0;cur;++i){
-                        if(i>=0x100000/32||cur<0x81600020||cur>=0x81700000||(cur&31))
-                            fail("heal effect allocation list escaped its declared heap");
-                        if(cur==payload-32)
-                            fail("heal effect heap block remained live after retirement");
-                        cur=word(cur+4);
-                    }
-                    bool returned=false;
-                    cur=word(0x81600004);
-                    for(unsigned i=0;cur;++i){
-                        if(i>=0x100000/32||cur<0x81600020||cur>=0x81700000||(cur&31))
-                            fail("heal effect free list escaped its declared heap");
-                        const auto size=word(cur+8);
-                        if(size>0x81700000-cur)fail("heal effect free block escaped its declared heap");
-                        if(cur<=payload-32&&cur+size>=payload+32*92){returned=true;break;}
-                        cur=word(cur+4);
-                    }
-                    if(word(heal_storage+12)||word(storage_pool+12)!=heal_storage||word(view_pool+12)!=view||
-                       word(contact::free_head+8)!=heal_effect_cell||word(contact::free_tail+8)!=heal_effect_cell||!returned)
-                        fail("heal effect did not return its exact original storage, view and carrier cells");
+                if(retired)require_heal_returned(ram,payload,view);
+                if(exit_toward&&n==1){
+                    defeat_effect(mod,ram,*exit_toward,initial_caster,first,stride);
+                    return;
                 }
-                if(n<=1||n==15||n==16||n==17||n==31||n==32||n==33||n==57||n==58||n==64)
+                if(!exit_toward&&(n<=1||n==15||n==16||n==17||n==31||n==32||n==33||n==57||n==58||n==64))
                     std::printf("heal-effect: %u %u %u %u %04X %08X %u %u %u %u %u %u %u %04X %04X %u\n",
                                 initial_caster,initial_visit,rule,n,roles,word(body+0x720),at(body+0x71C)[0],at(heal_effect_cell)[0],phase,
                                 word(body+0x8C4),half(contact::free_count+4),half(view_pool+18),word(heal_effect_cell+0xDC)!=0,
