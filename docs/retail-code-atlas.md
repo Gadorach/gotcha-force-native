@@ -3262,6 +3262,51 @@ python3 -m tools.analyze.retail_support_anchor \
   /tmp/opencode/gf-support-anchor.json
 ```
 
+### Support-owner carry: the actor update uses two root transforms
+
+The [support-carry replay](api-map/gg4e08-support-carry.json)
+retains the owner and plane from an original support contact.
+The original actor update calls `80067A70` at `800590A4`;
+the replay stops before the following `80059E58` call.
+This is separate from the [support height query](#saved-support-anchor-the-height-follows-the-plane-matrix).
+
+- The carry helper transforms the actor out of the owner’s
+  **previous root frame** and into its **current root frame**.
+  In the declared pose, translating the owner by **(+32, +12,
+  −20)** moves Sasuke by the same vector. Translating the
+  plane joint alone does not move him through this helper.
+- A quarter-turn moves Sasuke from **(130, 124, 0)** to
+  **(100, 124, −10)** around the owner’s pivot. His yaw adds
+  the owner’s yaw delta with 16-bit wrap. Holding a nonzero
+  owner yaw produces no turn. Allocated capsule centers
+  remain unchanged during this prefix.
+- A nonzero scene mask must include the **support owner’s**
+  seat bit. A mask that only includes Sasuke blocks carry,
+  as do inactive or non-running owners and previous support
+  without current support.
+
+The fixture captures **GQR5 = `0x00070007`** from the original
+boot prefix before arena/OS initialization. This matters: the
+angle helper loads a signed 16-bit value through GQR5. A control
+with the register left at zero produced only a tiny positional
+turn despite adding the same raw yaw delta. That control is
+not retail behavior.
+
+All **12 initialized cases and one harness control** matched
+across O0/O1/O2. Both preceding support receipts reproduced
+byte-for-byte. This qualifies the tested actor-owner prefix,
+not moving prop classes, a live platform driver, a complete
+actor tick, hardware, or native gameplay.
+
+Use the same fixture as for [foreign plane order](#foreign-plane-order-can-change-wall-admission):
+
+```sh
+python3 -m tools.analyze.retail_support_carry \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/plane-reference "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-support-carry.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

@@ -22,6 +22,19 @@ constexpr Case cases[]{
     {Plane::absent,Plane::absent,160,true},{Plane::near,Plane::far,159,false,true},
 };
 constexpr unsigned anchor_cases=8;
+struct CarryCase {
+    bool translate=false,turn=false,joint_only=false,inactive=false,phase2=false,reset=false,wrap=false;
+    unsigned scene_mask=0;
+    u16 previous_yaw=0;
+    bool zero_gqr_control=false;
+};
+constexpr CarryCase carry_cases[]{
+    {},{.joint_only=true},{.translate=true},{.turn=true},{.translate=true,.turn=true},
+    {.translate=true,.turn=true,.scene_mask=2},{.translate=true,.turn=true,.scene_mask=1},
+    {.translate=true,.turn=true,.phase2=true},{.translate=true,.turn=true,.inactive=true},
+    {.translate=true,.turn=true,.reset=true},{.turn=true,.wrap=true},
+    {.turn=true,.previous_yaw=0x4000},{.turn=true,.zero_gqr_control=true},
+};
 struct BroadOperands {std::array<u8,180> sphere,plane;};
 struct BroadCapture {std::array<BroadOperands,2> calls{};unsigned count=0;};
 thread_local BroadCapture* capture=nullptr;
@@ -84,18 +97,22 @@ class Probe {
         if(p<shape_base||p>shape_base+4*shape_stride||(p-shape_base)%shape_stride)fail("support cell escaped original pool");
         return (p-shape_base)/shape_stride;
     }
+    void install_sasuke(const contact::ActorSpec& spec){
+        constexpr u32 cfg=0x81054000;
+        std::memcpy(at(cfg),spec.data(),spec.size());store(0x803C4D94,cfg);
+        call(0x8006F4F8,fighter);
+        if(word(fighter+0x4B0)!=0x802D3EE0||word(fighter+0x4AC)!=cfg)
+            fail("support response lost the exact Sasuke configuration");
+    }
     void support_anchor(unsigned id,const contact::ActorSpec& spec){
-        constexpr u32 cfg=0x81054000,position=0x81054300,normal_out=position+0x10;
+        constexpr u32 position=0x81054300,normal_out=position+0x10;
         constexpr u32 plane_cell=capsule+shape_stride,owner=fighter+stride;
         const auto saved=vector(fighter+0x1F8),saved_normal=vector(fighter+0x1EC);
         const auto joint=word(plane_cell+0x60);
         if(!at(fighter+0x1DB)[0]||word(fighter+0x1E0)!=plane_cell||joint!=owner+0x8D4+12*0x30||
            word(fighter+0x24)!=std::bit_cast<u32>(124.f)||word(plane_cell+0x20)!=owner)
             fail("support anchor did not come from the original foreign plane contact");
-        std::memcpy(at(cfg),spec.data(),spec.size());store(0x803C4D94,cfg);
-        call(0x8006F4F8,fighter);
-        if(word(fighter+0x4B0)!=0x802D3EE0||word(fighter+0x4AC)!=cfg||saved!=vector(fighter+0x1F8))
-            fail("support anchor lost the exact Sasuke landing configuration");
+        install_sasuke(spec);
         const auto jt=[&](unsigned axis){return std::bit_cast<float>(word(joint+12+16*axis));};
         if(id==1||id==5)put(joint+28,jt(1)+12.f);
         if(id==2){put(joint+12,jt(0)+32.f);put(joint+44,jt(2)-20.f);}
@@ -153,10 +170,79 @@ class Probe {
         emit(normal);emit(root_before);emit(after.root);emit(capsule_center);emit(allocated_normal);emit(rebuilt_normal);
         std::printf(" %u %u\n",step.gpr[3],half(fighter+0x1C6));
     }
+    void support_carry(unsigned id,const contact::ActorSpec& spec){
+        constexpr u32 plane_cell=capsule+shape_stride,owner=fighter+stride;
+        constexpr u32 attach=0x80067A70,actor_update=0x80059068,after_attach=0x80059E58;
+        constexpr u32 owner_carry_flag=0x00100000;
+        const auto anchor=vector(fighter+0x1F8);
+        const auto joint=word(plane_cell+0x60);
+        if(!at(fighter+0x1DB)[0]||word(fighter+0x1E0)!=plane_cell||word(fighter+0x1E4)!=owner||
+           word(plane_cell+0x20)!=owner||joint!=owner+0x8D4+12*0x30)
+            fail("support carry did not acquire its original plane and owner");
+        install_sasuke(spec);
+        const auto rule=carry_cases[id];
+        constexpr contact::Point previous{110,119,10};
+        const auto current=rule.translate?contact::Point{142,131,-10}:previous;
+        for(unsigned axis=0;axis<3;++axis){
+            put(owner+0x2C+4*axis,previous[axis]);
+            put(owner+0x20+4*axis,current[axis]);
+        }
+        put16(at(owner+0x78),rule.previous_yaw);
+        put16(at(owner+0x72),rule.turn?0x4000:0);
+        put16(at(fighter+0x72),rule.wrap?0x7000:0x1000);
+        if(rule.joint_only){
+            put(joint+12,162.f);put(joint+44,-20.f);
+        }
+        at(contact::scene+235)[0]=u8(rule.scene_mask);
+        if(rule.phase2)at(owner+0x18)[0]=2;
+        if(rule.inactive)at(owner)[0]=0;
+        if(rule.reset)call(0x8002CDA4,fighter);
+        // Keep scale normalization and animation outside the probe.
+        put(fighter+0xB4,1.f);put(fighter+0xB8,1.f);
+        store(fighter+0x5E0,owner_carry_flag|0x40);at(fighter+0x598)[0]=0x5A;
+        const auto geometry=vector(capsule+0x64);
+        const auto offset=vector(fighter+0x1CC);
+        const auto plane_center=vector(plane_cell+0x64);
+        const auto inlet=ram;
+        // Read the original quantization setup, stopping before arena/OS
+        // initialization. The angle helpers use single S16 loads through GQR5.
+        auto startup=inlet;
+        CPUState boot{};
+        const auto boot_cut=mod.run_to_or_return(boot,startup,0x8002A3E4,{0x8002A51C,0x80200318},nullptr,4096);
+        if((boot_cut!=0x8002A51C&&boot_cut!=0x80200318)||boot.gqr[5]!=0x00070007)
+            fail("support carry did not capture the original angle quantization setup");
+        const auto apply_gqr=[&](CPUState& cpu){
+            if(!rule.zero_gqr_control)
+                for(unsigned i=0;i<8;++i)cpu.gqr[i]=boot.gqr[i];
+        };
+        const auto result=[&]{
+            return std::array{word(fighter+0x20),word(fighter+0x24),word(fighter+0x28),
+                              u32(half(fighter+0x72)),word(fighter+0x5E0),u32(at(fighter+0x598)[0])};
+        };
+        CPUState isolated_cpu{};isolated_cpu.gpr[3]=fighter;apply_gqr(isolated_cpu);
+        mod.run(isolated_cpu,ram,attach,4096);
+        const auto isolated=result();
+        ram=inlet;
+        CPUState update{};update.gpr[3]=fighter;CallObservation visit{attach};
+        apply_gqr(update);
+        const auto cut=mod.run_to_or_return(update,ram,actor_update,{after_attach,0x80264290},&visit,4096);
+        if(cut!=after_attach||update.lr!=0x800590B0||update.gpr[3]!=fighter||visit.count!=1||
+           visit.caller!=0x800590A4||visit.arguments[0]!=fighter||result()!=isolated||
+           vector(capsule+0x64)!=geometry||vector(fighter+0x1CC)!=offset||
+           vector(plane_cell+0x64)!=plane_center||vector(fighter+0x1F8)!=anchor||
+           word(fighter+0x1E0)!=plane_cell||word(fighter+0x1E4)!=owner||
+           half(fighter+0x1C6)!=180||half(owner+0x1C6)!=180)
+            fail("support carry did not match the original actor update frontier");
+        std::printf("support-carry: %u %u %u %08X %u",id,at(fighter+0x1DB)[0],at(fighter+0x1DE)[0],update.gqr[5],
+                    at(owner+0x3E5)[0]);
+        for(auto value:isolated)std::printf(" %08X",value);
+        for(auto value:geometry)std::printf(" %08X",value);
+        std::printf(" %u\n",half(fighter+0x1C6));
+    }
 
 public:
     Probe(const Module& m,const std::vector<u8>& original):mod(m),ram(original){}
-    void run(unsigned id,const contact::HitBlock& hit,const contact::ActorSpec* anchor=nullptr){
+    void run(unsigned id,const contact::HitBlock& hit,const contact::ActorSpec* anchor=nullptr,bool carry=false){
         const auto spec=cases[anchor?1:id];
         const auto foreign=unsigned(spec.first!=Plane::absent)+unsigned(spec.second!=Plane::absent);
         const auto planes=foreign+unsigned(spec.self),capacity=3+planes;
@@ -266,7 +352,11 @@ public:
             if(word(reference+4*seat)!=std::bit_cast<u32>(ref)||vector(fighter+seat*stride+0x1CC)!=std::array{0u,0u,0u})
                 fail("sphere/plane support changed a foreign owner's reference or vector");
         }
-        if(anchor){support_anchor(id,*anchor);return;}
+        if(anchor){
+            if(carry)support_carry(id,*anchor);
+            else support_anchor(id,*anchor);
+            return;
+        }
 
         const auto final=state();
         std::printf("plane-reference: %u %u %u %08X %08X %08X %u %u %u %u %u %u %08X %08X %08X %08X %u %u\n",
@@ -283,13 +373,15 @@ public:
 
 int main(int argc,char** argv){
     const bool anchor=argc==4&&!std::strcmp(argv[3],"--support-anchor");
-    if(argc!=3&&!anchor)
-        fail("usage: plane-reference-fixture qualified.dol unmodified-recomp.so [--support-anchor] < qualified-inputs");
+    const bool carry=argc==4&&!std::strcmp(argv[3],"--support-carry");
+    if(argc!=3&&!anchor&&!carry)
+        fail("usage: plane-reference-fixture qualified.dol unmodified-recomp.so [--support-anchor|--support-carry] < qualified-inputs");
     contact::HitBlock hit{};
     contact::ActorSpec spec{};
     if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size()||
-       (anchor&&std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())||std::getc(stdin)!=EOF||std::ferror(stdin))
+       ((anchor||carry)&&std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())||std::getc(stdin)!=EOF||std::ferror(stdin))
         fail("plane reference input extent");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    for(unsigned i=0;i<(anchor?anchor_cases:std::size(cases));++i)Probe(mod,original).run(i,hit,anchor?&spec:nullptr);
+    for(unsigned i=0;i<(carry?std::size(carry_cases):anchor?anchor_cases:std::size(cases));++i)
+        Probe(mod,original).run(i,hit,(anchor||carry)?&spec:nullptr,carry);
 }
