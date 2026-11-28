@@ -36,8 +36,8 @@ inline unsigned receiving(std::vector<u8>& ram,u32 count,u32 list,u32 first,u32 
     return mask;
 }
 
-inline void observe(const Module& mod,std::vector<u8> ram,const Attack& raw,unsigned route_id,
-                    unsigned initial_caster,unsigned visit,unsigned relation,u32 first,u32 stride){
+inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,unsigned route_id,
+                    unsigned initial_caster,unsigned visit,unsigned relation,u32 first,u32 stride,bool report=true){
     const auto& r=routes[route_id];
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
@@ -121,6 +121,15 @@ inline void observe(const Module& mod,std::vector<u8> ram,const Attack& raw,unsi
         amount.arguments[0]!=r.table+24*r.index||amount.arguments[1]!=actor||amount.arguments[2]!=body)))
         fail("entry contact changed the amount or HP target inlet");
     const auto requested=writer?std::bit_cast<std::int32_t>(pair.gpr[4]):0;
+    if(!report){
+        std::memcpy(fork.data(),ram.data(),ram.size());
+        CPUState effect{};
+        const auto inlet=mod.run_to_or_return(effect,fork,pair_entry,{0x8010E158},nullptr,4096);
+        if(inlet!=0x8010E158||effect.lr!=0x8002F6E0||effect.gpr[3]!=body||effect.gpr[4]!=1||
+           contact::half(fork,body+0x1C6)!=160||contact::half(fork,body+0x272)!=role_mask||
+           contact::half(fork,contact::free_count+4))
+            fail("replacement heal tail changed its post-HP effect request or capacity inlet");
+    }
     CPUState full{};CallObservation writes{contact::hp_write};
     mod.run_observed(full,ram,pair_entry,writes,4096);
     if(writes.count!=unsigned(writer)||(writer&&(writes.caller!=0x8002F1D8||writes.first_arguments[0]!=body||
@@ -144,9 +153,91 @@ inline void observe(const Module& mod,std::vector<u8> ram,const Attack& raw,unsi
     }
     const auto next_ordinary=receiving(ram,contact::receiver_count,contact::receiver_registry,first,stride);
     const auto next_alternate=receiving(ram,alternate_receive_count,alternate_receive_list,first,stride);
-    std::printf("entry-contact: %u %u %04X %u %04X %08X %04X %04X %u %u %d %u %u %u %u %u %04X %04X %04X\n",
+    if(report)std::printf("entry-contact: %u %u %04X %u %04X %08X %04X %04X %u %u %d %u %u %u %u %u %04X %04X %04X\n",
                 initial_caster,visit,r.model,relation,role_mask,guard,ordinary,alternate,amount.count,
                 writes.count,requested,hp_after,token,word(actor+0x418),word(actor+0x42C),word(body+0x41C),
                 half(body+0x272),next_ordinary,next_alternate);
+}
+
+inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,unsigned initial_caster,
+                        unsigned initial_visit,u32 first,u32 stride){
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto half=[&](u32 a){return contact::half(ram,a);};
+    const auto call=[&](u32 entry,u32 arg=0){
+        CPUState cpu{};cpu.gpr[3]=arg;mod.run(cpu,ram,entry,4096);
+    };
+    const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
+    const auto previous_actor=word(0x803C4E84);
+    observe(mod,ram,raw,1,initial_caster,initial_visit,1,first,stride,false);
+    if(half(body+0x272)!=0x43||half(body+0x1C6)!=160||half(body+0x20C)!=3||
+       half(contact::receiver_count)||half(alternate_receive_count)||half(contact::free_count+4)||word(body+0x8C4))
+        fail("replacement heal tail did not retain its accepted HP and closed role mask");
+    call(0x8008AFF0,actor);
+    rebuild();
+    put32(at(0x803C4E84),previous_actor);
+    if(at(attack_cell)[0]||half(ordinary_count)||half(alternate_count))
+        fail("replacement heal tail did not close its disposable attacking shape");
+    const auto saved=ram;
+    constexpr u32 wrap=0x80054070,presentation=0x8005A580,pad=0x803C727C+32,bomb=0x800E058C;
+    for(unsigned rule=0;rule<2;++rule){
+        if(rule&&initial_visit==138)break;
+        std::memcpy(ram.data(),saved.data(),ram.size());
+        const unsigned initial_guard=rule?unsigned(initial_visit==139):139-initial_visit;
+        if(rule)put_float(at(body+0x720),float(initial_guard));
+        if(word(body+0x720)!=std::bit_cast<u32>(float(initial_guard)))
+            fail("replacement heal tail did not begin at the retained original guard");
+        // A discarded fresh input fork measures the exact debit boundary,
+        // not an added bomb in the retained neutral follow-up.
+        auto input=ram;
+        put32(contact::at(input,pad),0x200);
+        CPUState b{};b.gpr[3]=body;
+        CallObservation poll_b{0x80056900};
+        const auto cut=mod.run_to_or_return(b,input,wrap,{bomb,presentation,0x80264290},&poll_b,65536);
+        const auto roles_at_factory=contact::half(input,body+0x272);
+        if(cut!=bomb||b.lr!=0x80130584||b.gpr[3]!=body||b.gpr[4]!=2||b.gpr[5]!=10||
+           poll_b.count!=1||poll_b.caller!=0x80054CD0||poll_b.arguments[0]!=body||
+           contact::half(input,body+0x774)!=9||roles_at_factory!=(initial_guard==1?0:0x43)||
+           be32(contact::at(input,body+0x5BC))!=0x200)
+            fail("replacement heal tail changed fresh B admission or debit");
+        std::printf("heal-tail-b: %u %u %u %u %04X %u\n",initial_caster,initial_visit,rule,poll_b.count,
+                    roles_at_factory,contact::half(input,body+0x774));
+        for(unsigned n=0;n<=64;++n){
+            unsigned polled=0;
+            if(n){
+                CPUState frame{};frame.gpr[3]=body;
+                CallObservation poll{0x80056900};
+                const auto cut=mod.run_to_or_return(frame,ram,wrap,{presentation,0x80264290},&poll,65536);
+                if(cut!=presentation||frame.lr!=0x80054144||frame.gpr[3]!=body||poll.count!=1||
+                   poll.caller!=0x80054CD0||poll.arguments[0]!=body)
+                    fail("replacement heal tail did not finish the original active actor prefix");
+                polled=poll.count;
+                rebuild();
+            }
+            if(half(body+0x1C6)!=160||half(body+0x20C)!=3||word(body+0x41C)!=16||half(body+0x774)!=10||
+               half(body+0x784)!=3||at(body+0x18)[0]!=1||at(body+0x19)[0]!=2||word(pad)||word(body+0x8C4))
+                fail("replacement heal tail changed HP, took stock or left active input");
+            const auto roles=half(body+0x272);
+            const auto guard=n<initial_guard?initial_guard-n:0,pose=n<15?15-n:0;
+            const auto open=initial_guard&&n>=initial_guard;
+            const auto ordinary=receiving(ram,contact::receiver_count,contact::receiver_registry,first,stride);
+            const auto alternate=receiving(ram,alternate_receive_count,alternate_receive_list,first,stride);
+            if(roles!=(open?0:0x43)||word(body+0x720)!=std::bit_cast<u32>(float(guard))||
+               at(body+0x71C)[0]!=pose||word(body+0x1DCC)!=0x3F800000||
+               word(body+0x1DC8)!=(n&&pose?0x3CF5C28F:0x3F800000)||
+               ordinary!=(open?0x3EF0u:0)||alternate!=ordinary)
+                fail("replacement heal tail changed its guard expiry, role closure or separate pose clock");
+            for(unsigned i=0;i<16;++i){
+                const auto cell=first+i*stride;
+                if(!at(cell)[0]||word(cell+0x20)!=body||word(cell+0x28)!=word(body+0x3FC)+32+80*i)
+                    fail("replacement heal tail lost or rebound an original body cell");
+            }
+            if(n<=1||n==14||n==15||n==57||n==58||n==64)
+                std::printf("heal-tail: %u %u %u %u %04X %08X %u %08X %08X %04X %04X %u\n",
+                            initial_caster,initial_visit,rule,n,roles,word(body+0x720),at(body+0x71C)[0],
+                            word(body+0x1DCC),word(body+0x1DC8),
+                            ordinary,alternate,polled);
+        }
+    }
 }
 } // namespace retail_body_entry_contact

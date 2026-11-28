@@ -23,7 +23,7 @@ struct Replacement {
     std::array<u8,435104> motion{};
     std::array<u8,171236> view{};
 };
-enum class ReplacementProbe {constructor, entry, scene, contact};
+enum class ReplacementProbe {constructor, entry, scene, contact, heal_tail};
 struct Delivery {
     const Replacement& assets;
     const contact::ActorSpec& spec;
@@ -137,7 +137,8 @@ class Probe {
         constexpr u32 pad=0x803C727C+32*seat,poll_input=0x80056900,bomb_request=0x800E058C;
         constexpr unsigned body_steps=0x3EF0;
         const auto start=ram;
-        const bool contacts=delivery->probe==ReplacementProbe::contact;
+        const bool tail=delivery->probe==ReplacementProbe::heal_tail;
+        const bool contacts=delivery->probe==ReplacementProbe::contact||tail;
         if(contacts&&!delivery->contact_inputs)fail("missing exact replacement contact inputs");
         const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
         const auto registry=[&](std::vector<u8>& snapshot,unsigned expected){
@@ -218,10 +219,14 @@ class Probe {
                     if(incoming::receiving(ram,incoming::alternate_receive_count,incoming::alternate_receive_list,
                                            fresh_shape,stride)!=(n>=81?body_steps:0))
                         fail("original replacement alternate receiver chronology changed");
-                    if(n==80||n==81||n==82||n==138||n==139)
+                    if(tail&&(n==81||n==138||n==139))
+                        incoming::follow_heal(mod,ram,(*delivery->contact_inputs)[1],caster,n,fresh_shape,stride);
+                    if(!tail&&(n==80||n==81||n==82||n==138||n==139))
                         for(unsigned r=0;r<incoming::routes.size();++r)
-                            for(unsigned relation:{0u,1u})
-                                incoming::observe(mod,ram,(*delivery->contact_inputs)[r],r,caster,n,relation,fresh_shape,stride);
+                            for(unsigned relation:{0u,1u}){
+                                auto fork=ram;
+                                incoming::observe(mod,fork,(*delivery->contact_inputs)[r],r,caster,n,relation,fresh_shape,stride);
+                            }
                     continue;
                 }
                 const unsigned key=body(0x19)*256+body(0x1A),mask=half(victim+0x272),count=half(contact::receiver_count);
@@ -418,7 +423,8 @@ class Probe {
             const auto mask=half(victim+0x272);
             if(mask!=0xEF||count||word(side+0x118)||word(victim+0x41C)!=16||half(contact::free_count+8))
                 fail("replacement changed the initial receive mask, force, ledger or allocator boundary");
-            if(delivery->probe==ReplacementProbe::entry||delivery->probe==ReplacementProbe::contact){
+            if(delivery->probe==ReplacementProbe::entry||delivery->probe==ReplacementProbe::contact||
+               delivery->probe==ReplacementProbe::heal_tail){
                 entry_gates(caster,shape,stride);
                 return;
             }

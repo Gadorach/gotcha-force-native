@@ -2481,6 +2481,46 @@ python3 -m tools.analyze.retail_replacement_contact \
   /tmp/opencode/gf-replacement-contact.json
 ```
 
+### Replacement heal tail: positive-to-zero expiry reopens both lists
+
+The [heal-tail replay](api-map/gg4e08-replacement-heal-tail.json)
+retains Nurse’s opponent heal and then runs the Time Bomber actor
+prefix and list rebuild for 64 neutral visits. The HP caller
+requests a type-21 effect before setting mask `0x43`, but this
+inlet supplies no kind-2 cell for that effect.
+
+| Heal and follow-up inlet | First receiving publication after the heal |
+| --- | --- |
+| Visit 81, original guard 58 | After **58** actor visits |
+| Visit 138, original guard 1 | On the **next** actor visit |
+| Visit 139, original guard already zero | Neither list reopened in **64** neutral visits |
+| Visit 81, control sets guard directly to zero | Neither list reopened in **64** neutral visits |
+| Visit 139, control declares guard 1 | On the **next** actor visit |
+
+The original prepass subtracts raw `+0x1DCC` from a positive guard.
+When the result reaches zero it clears `+0x272` and both lists can
+publish again. Merely starting with zero does **not** run that clear.
+The independent 15-visit pose timer slows the secondary rate;
+with a one-unit guard, both lists reopen while the timer still
+reads **14** and the secondary rate reads **0.03**. The same nine
+bound cells return to each list.
+
+The `0x43` receiving closure did not prevent the fresh B factory
+fork: Time Bomber spends one stock before the original key-2,
+pose-10 allocation boundary. No such B is retained in the neutral
+follow-up.
+
+All **10** follow-ups, covering **640** actor prefixes, matched
+across O0/O1/O2. This does not establish indefinite closure,
+effect-admitted behavior, hardware timing, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_replacement_heal_tail \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-replacement-heal-tail.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
