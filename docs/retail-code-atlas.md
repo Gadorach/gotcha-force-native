@@ -3143,6 +3143,44 @@ python3 -m tools.analyze.retail_roster_wall \
   /tmp/opencode/gf-roster-wall.json
 ```
 
+### Roster wall reference: role `0x10` produces the height gate
+
+The [reference replay](api-map/gg4e08-wall-reference.json) runs the
+enclosing original collision walk for all **206** normal Borgs,
+one at a time in each of the **six** physical seats. It does not
+supply the reference used for contact. The walk replaces a stale
+active-slot value with **−10,000** at `8002BD28`; `8002CF80`
+then writes the published role-`0x10` sphere’s **center Y minus
+radius** at `8002CFE0`, before the role-`0x08` wall walk.
+
+At the declared pose, the producer yields **123** for 198 Borgs and
+**63** for `0F00`. Seven have no role-`0x10` entry and retain the reset
+value. The inactive seats retain their distinct stale values.
+
+- Masking role `0x10` leaves the role-`0x08` registry intact but
+  restores the wall solver from **217 to 369 sphere visits** per
+  roster pass at one seat. This changes the correction for **46**
+  Borgs. For `0D06` and `0D07`, the produced reference prevents
+  wall correction altogether in this pose.
+- Masking role `0x08` stops the wall walk without blocking the
+  reference write. Neither mask closes the ordinary receiving list.
+
+All **3,708 prefixes** matched across O0/O1/O2. The prior body
+registry and roster wall receipts reproduced byte-for-byte on O1.
+This verifies a per-seat value produced by the original walk, not
+a live floor height. Foreign plane candidates, simultaneous actors,
+retail arena motion, presentation, hardware and native gameplay
+are outside the replay.
+
+Use the [body registry fixture](../tests/host/retail_body_registry_fixture.cpp):
+
+```sh
+python3 -m tools.analyze.retail_wall_reference \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/body-registry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-wall-reference.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

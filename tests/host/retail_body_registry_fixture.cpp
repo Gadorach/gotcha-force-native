@@ -10,14 +10,26 @@ namespace contact=retail_stationary_contact;
 constexpr unsigned models=206,seats=6,slots=32,views=6;
 constexpr u32 fighters=0x81020000,stride=0x1E00,bank=0x81050000,cells=0x81060000,cell_stride=0x200;
 constexpr u32 actors=0x803C4E84,count_base=0x8043B5A0-21328;
-constexpr u32 wall_stage=0x81070000;
+constexpr u32 wall_stage=0x81070000,reference_table=0x803B0708,wall_bounds=0x8003FB00;
 constexpr std::array<u32,10> lists{0x803C477C,0x803C417C,0x803C3B7C,0x803C357C,0x803C2F7C,
                                   0x803C297C,0x803C237C,0x803C1D7C,0x803C177C,0x803C117C};
 constexpr unsigned descriptor_size=80;
 using Registry=std::array<u32,lists.size()>;
+struct WallVisits {
+    std::array<u32,2> packed{};
+    unsigned count=0;
+    bool operator==(const WallVisits&)const=default;
+};
+struct ReferenceView {
+    u32 ref_list{},stage_list{},receiver_list{},reference{},correction{};
+    unsigned wall_flag{},owner_flag{};
+    WallVisits visits{};
+    bool operator==(const ReferenceView&)const=default;
+};
 struct Report {
     unsigned bound,special;
     std::array<Registry,views> visits;
+    std::array<ReferenceView,3> reference_views;
     bool operator==(const Report&)const=default;
 };
 struct GeometryView {
@@ -33,7 +45,36 @@ constexpr std::array<GeometryView,11> geometry_views{{
     {{1,1,std::bit_cast<float>(0x3C23D70Bu)},1,0},
 }};
 constexpr std::array<float,3> translation{256,128,-64};
-enum class Mode {registry,spheres,capsules,wall};
+enum class Mode {registry,spheres,capsules,wall,wall_reference};
+
+u32 wall_visit(const CPUState& c){
+    if(c.lr!=0x80035ECC)return 0xFFFFFFFF;
+    const auto word=[&](u32 addr){return be32(c.ram+(addr-GC_RAM_BASE));};
+    const auto shape=word(0x803B04D4);
+    if(shape<cells||shape>=cells+slots*cell_stride||(shape-cells)%cell_stride)
+        fail("roster wall bounds sample lost its shape");
+    const auto fighter=word(shape+0x20);
+    if(fighter<fighters||fighter>=fighters+seats*stride||(fighter-fighters)%stride||
+       word(actors+4*((fighter-fighters)/stride))!=fighter)
+        fail("roster wall bounds sample lost its seat owner");
+    const auto prior=std::bit_cast<float>(word(fighter+0x1CC));
+    if(!(prior>=0.f&&prior<=980.f&&float(u32(prior))==prior))
+        fail("roster wall bounds sample exceeded its integer correction scope");
+    return ((shape-cells)/cell_stride+1)*0x10000+u32(prior);
+}
+
+WallVisits wall_visits(const CallObservation& trace){
+    // Capture only the first bounds call in each solver visit. The solver
+    // can query bounds later on other paths.
+    WallVisits result{};
+    if(trace.count>std::size(trace.samples))fail("roster wall exhausted its bounds capture");
+    for(unsigned i=0;i<trace.count;++i){
+        if(trace.samples[i]==0xFFFFFFFF)continue;
+        if(result.count>=result.packed.size())fail("roster wall exceeded its source sphere count");
+        result.packed[result.count++]=trace.samples[i];
+    }
+    return result;
+}
 
 class Probe {
     const Module& mod;
@@ -118,7 +159,7 @@ class Probe {
     }
     void wall(u16 model,u32 fighter,unsigned bound){
         constexpr float z=-64.f;
-        constexpr u32 stage_pass=0x8002E1C8,bounds=0x8003FB00,centers=0x8002CE44;
+        constexpr u32 stage_pass=0x8002E1C8,centers=0x8002CE44;
         const auto scalar=[&](u32 addr){return std::bit_cast<float>(word(addr));};
         float tangent=0;
         u32 stage_bits=0,sphere_bits=0,receive_bits=0;
@@ -151,7 +192,7 @@ class Probe {
             put_float(at(fighter+0x20),x);put_float(at(fighter+0x24),y);put_float(at(fighter+0x28),z);
             put_float(at(fighter+0xC0),1.f);store16(fighter+0x1C6,180);
             store16(fighter+0x272,variant==1?8:0);
-            put_float(at(0x803B0708),lower_reference);
+            put_float(at(reference_table),lower_reference);
             if(variant==2){
                 // Same relocated stage, but omit the first reference of each
                 // secondary list in this guest-only empty-grid fork.
@@ -178,31 +219,13 @@ class Probe {
                     if(scalar(cell+0x68)-scalar(cell+0x88)>=lower_reference)admitted|=1u<<i;
                 }
             }
-            CPUState cpu{};CallObservation trace{bounds};
-            trace.sample=[](const CPUState& c)->u32{
-                if(c.lr!=0x80035ECC)return 0xFFFFFFFF;
-                const auto shape=be32(c.ram+(0x803B04D4-GC_RAM_BASE));
-                const auto prior=std::bit_cast<float>(be32(c.ram+(fighters+0x1CC-GC_RAM_BASE)));
-                if(shape<cells||shape>=cells+slots*cell_stride||(shape-cells)%cell_stride||
-                   be32(c.ram+(shape+0x20-GC_RAM_BASE))!=fighters||
-                   !(prior>=0.f&&prior<=980.f&&float(u32(prior))==prior))
-                    fail("roster wall bounds sample lost its shape or integer correction");
-                return ((shape-cells)/cell_stride+1)*0x10000+u32(prior);
-            };
+            CPUState cpu{};CallObservation trace{wall_bounds};
+            trace.sample=wall_visit;
             mod.run_observed(cpu,ram,stage_pass,trace,4096);
-            // Capture only the first bounds call in each solver visit. The
-            // solver can also query bounds later on another path.
-            std::array<u32,2> visits{};
-            unsigned entries=0;
-            if(trace.count>std::size(trace.samples))fail("roster wall exhausted its bounds capture");
-            for(unsigned i=0;i<trace.count;++i){
-                if(trace.samples[i]==0xFFFFFFFF)continue;
-                if(entries>=visits.size())fail("roster wall exceeded its source sphere count");
-                visits[entries++]=trace.samples[i];
-            }
-            if(entries!=unsigned(std::popcount(admitted))){
+            const auto visits=wall_visits(trace);
+            if(visits.count!=unsigned(std::popcount(admitted))){
                 std::fprintf(stderr,"roster wall %04X variant=%u bounds=%u first=%08X entries=%u spheres=%08X\n",
-                             model,variant,trace.count,trace.caller,entries,sphere_bits);
+                             model,variant,trace.count,trace.caller,visits.count,sphere_bits);
                 fail("roster wall solver count did not match the original kind-0 filter");
             }
             call(centers);
@@ -221,9 +244,70 @@ class Probe {
                 moved+=unsigned(word(cell+0x64)!=before[i][0]);
             }
             std::printf("roster-wall: %04X %u %u %08X %08X %08X %08X %u %08X %08X %08X %08X %08X %u %u %u\n",
-                        model,variant,bound,lists[3],sphere_bits,admitted,lists[1],entries,visits[0],visits[1],
+                        model,variant,bound,lists[3],sphere_bits,admitted,lists[1],visits.count,visits.packed[0],visits.packed[1],
                         std::bit_cast<u32>(x),word(fighter+0x20),word(fighter+0x1CC),
                         at(fighter+0x1DD)[0],at(fighter+0x274)[0],moved);
+        }
+    }
+    void wall_reference(u32 fighter,unsigned seat,unsigned bound,std::array<ReferenceView,3>& result){
+        constexpr float x=130.f,y=128.f,z=-64.f;
+        constexpr std::array<u16,3> masks{0,0x10,0x08};
+        constexpr u32 collision=0x8002BB14,presentation=0x8005A580;
+        const auto scalar=[&](u32 addr){return std::bit_cast<float>(word(addr));};
+        u32 ref_mask=0,stage_mask=0,receive_mask=0;
+        for(unsigned i=0;i<bound;++i){
+            const auto d=word(cells+i*cell_stride+0x28);
+            const auto role=half(d+2);
+            if(role&0x10)ref_mask|=1u<<i;
+            if(role&0x08)stage_mask|=1u<<i;
+            if(role&0x02)receive_mask|=1u<<i;
+        }
+        if(std::popcount(ref_mask)>1)fail("roster wall reference producer count changed");
+        const auto bound_state=ram;
+        for(unsigned variant=0;variant<masks.size();++variant){
+            std::memcpy(ram.data(),bound_state.data(),ram.size());
+            const auto matrix=[&](u32 m){
+                put_float(at(m+12),x);put_float(at(m+28),y);put_float(at(m+44),z);
+            };
+            matrix(fighter+0x1AA4);
+            for(unsigned k=0;k<32;++k)matrix(fighter+0x8D4+0x30*k);
+            put_float(at(fighter+0x20),x);put_float(at(fighter+0x24),y);put_float(at(fighter+0x28),z);
+            put_float(at(fighter+0xC0),1.f);
+            store16(fighter+0x1C4,180);store16(fighter+0x1C6,180);store16(fighter+0x272,masks[variant]);
+            store(fighter+0x90,fighter);at(fighter+0x3E5)[0]=u8(1u<<seat);
+            // Unrelated per-seat history cannot supply the active reference.
+            // The high value in the active slot must be reset, even if role 10 is closed.
+            const auto stale=[](unsigned i){return 5000.f+float(i);};
+            for(unsigned i=0;i<seats;++i)put_float(at(reference_table+4*i),stale(i));
+            rebuild();
+            const auto opened=registry(fighter,bound);
+            if(opened[5]!=(variant==1?0u:ref_mask)||opened[3]!=(variant==2?0u:stage_mask)||
+               opened[1]!=receive_mask||opened[9]!=receive_mask||opened[0]||opened[8])
+                fail("roster wall reference mask changed unrelated publication");
+            float expected=-10000.f;
+            if(opened[5]){
+                const auto source=word(lists[5]);
+                if(word(source+0x58)||scalar(source+0x88)!=5.f)fail("roster wall reference is not its original sphere");
+                expected=scalar(source+0x68)-scalar(source+0x88);
+            }
+            CPUState cpu{};CallObservation observed{wall_bounds};
+            observed.sample=wall_visit;
+            const auto stop=mod.run_to_or_return(cpu,ram,collision,{presentation,0x80264290,contact::hp_write},
+                                                &observed,65536);
+            if(stop!=presentation||cpu.lr!=0x8002C870||cpu.gpr[3]!=fighter||word(fighter+0x1D0)||
+               word(fighter+0x1D4)||scalar(fighter+0x24)!=y||scalar(fighter+0x28)!=z||
+               scalar(fighter+0x20)!=x+scalar(fighter+0x1CC)||half(fighter+0x1C6)!=180||registry(fighter,bound)!=opened){
+                std::fprintf(stderr,"roster wall reference %04X seat=%u view=%u stop=%08X/%08X owner=%08X "
+                             "root=%08X/%08X/%08X vector=%08X/%08X/%08X hp=%u\n",half(fighter+0x3E8),seat,variant,
+                             stop,cpu.lr,cpu.gpr[3],word(fighter+0x20),word(fighter+0x24),word(fighter+0x28),
+                             word(fighter+0x1CC),word(fighter+0x1D0),word(fighter+0x1D4),half(fighter+0x1C6));
+                fail("roster wall reference walk escaped the original staged wall prefix");
+            }
+            for(unsigned i=0;i<seats;++i)
+                if(scalar(reference_table+4*i)!=(i==seat?expected:stale(i)))
+                    fail("roster wall reference did not use only the current seat's published sphere");
+            result[variant]={opened[5],opened[3],opened[1],word(reference_table+4*seat),word(fighter+0x1CC),
+                             at(fighter+0x274)[0],at(fighter+0x1DD)[0],wall_visits(observed)};
         }
     }
 public:
@@ -290,6 +374,7 @@ public:
            at(fighter+0x501)[0]!=out.special)
             fail("normal body bind and secondary index disagreed with available capacity");
         if(mode==Mode::wall)wall(model,fighter,out.bound);
+        else if(mode==Mode::wall_reference)wall_reference(fighter,seat,out.bound,out.reference_views);
         else if(mode!=Mode::registry)geometry(model,fighter,out.bound,mode);
         for(unsigned view=0;mode==Mode::registry&&view<views;++view){
             if(view==1)store16(fighter+0x272,0xC3);
@@ -327,10 +412,12 @@ int main(int argc,char** argv){
     if(argc==4&&!std::strcmp(argv[3],"--geometry"))mode=Mode::spheres;
     if(argc==4&&!std::strcmp(argv[3],"--capsules"))mode=Mode::capsules;
     if(argc==4&&!std::strcmp(argv[3],"--wall"))mode=Mode::wall;
+    if(argc==4&&!std::strcmp(argv[3],"--wall-reference"))mode=Mode::wall_reference;
     if(argc!=3&&mode==Mode::registry)
-        fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so [--geometry|--capsules|--wall] < qualified-normal-queues");
+        fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so [--geometry|--capsules|--wall|--wall-reference] < qualified-normal-queues");
     auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    if(mode==Mode::wall)retail_declared_stage_grid::bind(mod,original,wall_stage,true,100.f,2000.f);
+    if(mode==Mode::wall||mode==Mode::wall_reference)
+        retail_declared_stage_grid::bind(mod,original,wall_stage,true,100.f,2000.f);
     Probe probe(mod,original);
     unsigned prior=0;
     for(unsigned i=0;i<models;++i){
@@ -347,6 +434,19 @@ int main(int argc,char** argv){
             if(hit[n]>=33||hit[d]>5||(hit[d+1]>=32&&hit[d+1]!=0x80)||
                (hit[d+3]&0x81)||hit[d+6]||hit[d+7]||hit[d+8]!=255||hit[d+9]!=255)
                 fail("normal body descriptor outside verified kind, role or phase bounds");
+        }
+        if(mode==Mode::wall_reference){
+            const auto row=probe.run(u16(model),hit,0,32,mode);
+            for(unsigned seat=1;seat<seats;++seat)
+                if(probe.run(u16(model),hit,seat,32,mode)!=row)
+                    fail("roster wall reference differed between physical seats");
+            for(unsigned i=0;i<row.reference_views.size();++i){
+                const auto& v=row.reference_views[i];
+                std::printf("roster-wall-reference: %04X %u %u %08X %08X %08X %08X %08X %u %u %u %08X %08X\n",
+                            model,i,row.bound,v.ref_list,v.stage_list,v.receiver_list,v.reference,v.correction,v.wall_flag,
+                            v.owner_flag,v.visits.count,v.visits.packed[0],v.visits.packed[1]);
+            }
+            continue;
         }
         if(mode!=Mode::registry){probe.run(u16(model),hit,0,32,mode);continue;}
         for(unsigned capacity:{32u,1u,0u}){
