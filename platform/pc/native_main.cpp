@@ -123,6 +123,7 @@ struct Options {
     bool list_stages=false,explicit_battle_mvp_assets=false;
     unsigned package_battle_distance=0;
     std::optional<gf::BattleMvpDamageIndices> package_damage_indices;
+    std::optional<gf::BattleKoForcePools> package_ko_force;
     bool practice_from_picker=false;
     std::string selected_save_root,retail_force_catalogue;
     gf::u64 selected_account=0,selected_save=0,recovery_notice=0,inspect_force=0,owned_instance=0,placement_force=0,placement_slot=0;
@@ -304,7 +305,8 @@ bool parse(int argc, char** argv, Options* options) {
         roster_file_flags_only=roster_file_flags_only&&
             (arg=="--battle-roster"||arg=="--check-battle-roster"||arg=="--headless"||arg=="--no-audio"||arg=="--frames"||
              arg=="--seconds"||arg=="--size"||arg=="--screenshot"||arg=="--capture-frame"||
-             arg=="--demo-package-battle"||arg=="--trace-package-battle"||arg=="--package-damage-indices");
+             arg=="--demo-package-battle"||arg=="--trace-package-battle"||arg=="--package-damage-indices"||
+             arg=="--package-ko-force");
         roster_browser_flags_only=roster_browser_flags_only&&
             (arg=="--browse-battle-rosters"||arg=="--demo-roster-select"||arg=="--demo-roster-next"||arg=="--headless"||
              arg=="--demo-roster-pad"||arg=="--no-audio"||arg=="--frames"||arg=="--size"||arg=="--trace-package-battle");
@@ -435,6 +437,11 @@ bool parse(int argc, char** argv, Options* options) {
             gf::BattleMvpDamageIndices indices;
             if(!gf::battle_read_damage_indices(argv[i],&indices))return false;
             options->package_damage_indices=indices;
+        }
+        else if(arg=="--package-ko-force"){
+            gf::BattleKoForcePools pools{};
+            if(++i>=argc||options->package_ko_force||!gf::battle_read_ko_force_pools(argv[i],&pools))return false;
+            options->package_ko_force=pools;
         }
         else if (arg == "--list-borgs") options->list_borgs = true;
         else if(arg=="--practice-start"){
@@ -878,7 +885,8 @@ bool parse(int argc, char** argv, Options* options) {
                            "       gf_native --list-battle-rosters DIRECTORY\n"
                            "       gf_native --browse-battle-rosters DIRECTORY [--size W H] [--no-audio]\n"
                            "       gf_native --check-battle-roster FILE (validate and draw tick zero headless)\n"
-                            "       [--package-damage-indices TEAM0,TEAM1:R0,R1[,R2...][:B0,B1[,B2...]]]\n"
+                             "       [--package-damage-indices TEAM0,TEAM1:R0,R1[,R2...][:B0,B1[,B2...]]]\n"
+                             "       [--package-ko-force TEAM0,TEAM1 (standalone KO accounting only)]\n"
                            "       gf_native --list-stages\n"
                            "       gf_native --list-challenges\n"
                            "       gf_native --run-challenge NAMESPACE:ID ENCOUNTER SAVE_ROOT ACCOUNT SAVE FORCE [--retail-catalog FILE]\n"
@@ -950,7 +958,9 @@ bool parse(int argc, char** argv, Options* options) {
        options->battle_picker||options->exercise_gred_touchdown))return false;
     const unsigned battle_actor_count=options->demo_roster_battle?4u:2u+unsigned(options->roster_borgs.size());
     if(options->package_damage_indices&&(options->battle_borg.empty()||options->battle_picker||
-       !options->package_damage_indices->valid(battle_actor_count)))return false;
+        !options->package_damage_indices->valid(battle_actor_count)))return false;
+    if(options->package_ko_force&&(options->battle_borg.empty()||options->battle_picker||
+        options->portable_story||options->portable_challenge||options->demo_roster_battle))return false;
     if(options->exercise_battle_mobility&&!options->demo_package_battle)return false;
     if(options->exercise_gred_touchdown&&(!options->demo_package_battle||!options->frames||options->frames>240))return false;
     if(options->battle_picker&&(options->battle_borg.empty()||options->demo_package_battle||
@@ -1758,6 +1768,13 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
         error="package actor count outside the native roster capacity";
         return fail("roster actor admission refused");
     }
+    if(options.package_ko_force){
+        config.ko_force_pools=options.package_ko_force;
+        if(hosted||selection||!battle_mvp_ko_force_valid(config,config.declared_actors)){
+            error="KO Force accounting requires standalone normal packages with a KO cost on every fighter";
+            return fail("KO Force accounting refused");
+        }
+    }
     config.package_strafe=selection||options.exercise_battle_mobility||explicit_roster;
     if(!hosted&&!explicit_roster&&options.package_battle_distance){
         const auto scale=f32(options.package_battle_distance)/std::hypot(config.spawn[0].x-config.spawn[1].x,config.spawn[0].z-config.spawn[1].z);
@@ -2307,6 +2324,12 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                     log_info(context,"borg-roster-ko","round=%u tick=%u actor=%u",restarts,world.tick(),i);
                 previous_roster_alive=alive;
             }
+            if(options.trace_package_battle&&config.ko_force_pools)
+                for(unsigned i=0;i<world.actor_count();++i)
+                    if(const auto& debit=world.ko_force_debits()[i];debit&&debit->tick==world.tick())
+                        log_info(context,"borg-ko-force","round=%u tick=%u receiver=%u source=%u team=%u cost=%u debit=%u before=%u after=%u exhausted=%u",
+                            restarts,debit->tick,i,unsigned(debit->source),unsigned(debit->team),unsigned(debit->cost),
+                            unsigned(debit->debited()),unsigned(debit->before),unsigned(debit->after),unsigned(debit->exhausted()));
             if(series.observe(world)){
                 const char* outcome=series.outcome()==BattleMvpResult::Draw?"draw":
                     series.outcome()==BattleMvpResult::GRedWins?"team0":"team1";
@@ -2477,6 +2500,10 @@ int run_package_battle(gf::Context& context,gf::RenderEngine& render,const Optio
                      restarts,world.tick(),i,unsigned(actor.health),double(actor.position[0]),double(actor.position[1]),
                      double(actor.position[2]),actor.travel_distance,unsigned(world.target_of(i)),unsigned(world.aim_target_of(i)));
         }
+    }
+    if(options.trace_package_battle)if(const auto& force=world.ko_force_remaining();force){
+        log_info(context,"borg-ko-force","round=%u tick=%u remaining=%u,%u",restarts,world.tick(),
+                 unsigned((*force)[0]),unsigned((*force)[1]));
     }
     if(options.trace_package_battle&&world.actor_count()>2)for(unsigned i=0;i<world.actor_count();++i){
         const auto& actor=world.actors()[i];const auto& history=actor.hit_history;

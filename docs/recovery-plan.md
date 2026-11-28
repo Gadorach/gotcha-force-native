@@ -183,11 +183,16 @@ not a dependency of an ordinary combat/movement checkpoint.
   rounding, then separates ally damage credit, opponent KO credit, victim
   Force debit and result selection. An allied KO can exhaust the attacker's
   own team even while the attacker remains alive.
-- **Next:** design a bounded opt-in for KO-cost accounting separately from
-  hit admission. Use a portable per-actor cost with a nonlethal, lethal and
-  insufficient-Force test on one exact normal route. Keep HP-removed,
-  HP-request credit, Force result, and queued replacement distinct.
-  Do not change authored defaults or bind the Worm tail.
+- **Landed:** [opt-in KO Force accounting](ko-force-accounting-checkpoint.md)
+  uses a normal fighter's declared cost, debits only on actual KO, and
+  separates exhaustion from the authored result. Exact normal Tau can
+  supply 90 via extraction. No damage, admission, or replacement policy
+  changes.
+- **Next:** specify the portable result boundary for a Force-backed
+  roster. Compare an exhausted team with a living teammate against an
+  eliminated team with unspent Force. Expose exhaustion separately until
+  the caller explicitly selects a result rule and can refuse unsupported
+  continuation (no fallback or undeclared replacement).
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

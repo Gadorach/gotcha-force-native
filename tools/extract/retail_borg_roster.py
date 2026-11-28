@@ -73,6 +73,7 @@ from tools.analyze import retail_projectile_continuation as projectile_continuat
 from tools.analyze import retail_projectile_contact_tail as projectile_contact_tail
 from tools.analyze import retail_sasuke_air_point_policy as sasuke_air_point_policy
 from tools.analyze import retail_blue_striker_boost as blue_striker_boost
+from tools.analyze import retail_ko_force_cost as ko_force_cost
 from tools.analyze import retail_projectile_speed_ramp as projectile_speed_ramp
 from tools.analyze import retail_ninja_bomb_test as ninja_bomb
 
@@ -905,7 +906,7 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
             contact_power_test=False,contact_ladders=None,contact_tiers=None,contact_tier_reset_test=False,
              contact_audio=None,contact_visuals=None,contact_indices=None,contact_floor=None,contact_pause=False,
                continuation_source=None,speed_ramp_source=None,ninja_bomb_source=None,contact_tail_source=None,
-                sasuke_air_source=None,blue_striker_boost_source=None):
+                 sasuke_air_source=None,blue_striker_boost_source=None,ko_force_source=None):
     cruise_pilot = basic_shot and cruise_lab and (row.model==VIOLET_SHOT["model"] or any(row.model in cohort for cohort in (
         STATIC_CRUISE_SHOTS, STATIC_CRUISE_PHASE_SHOTS, CRUISE_CHARGE_SHOTS, ANIMATED_CRUISE_SHOTS)))
     clocked_pilot = basic_shot and row.model in CLOCKED_GROUND_SHOTS
@@ -1549,6 +1550,9 @@ def package(archive, dol, row, *, preview_extras=False, role_clips=False, source
         summary["nu_field_source"]=battle_receipt
     if staged_source is not None:
         summary["staged_field_source"]=battle_receipt
+    if ko_force_source is not None and row.model==ko_force_cost.MODEL:
+        files["gameplay.txt"]=ko_force_cost.bind(row.model,member_index,member_digest,files.get("gameplay.txt",b""),
+                                                 battle_receipt,ko_force_source)
     files["source-index.json"] = json_line(summary)
     files["borg.manifest"] = manifest.encode("ascii")  # publish last
     return files, summary
@@ -1573,7 +1577,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
              contact_ladder_test=False,contact_tier_test=False,contact_tier_reset_test=False,contact_audio_decoder=None,
               contact_art_test=False,contact_index_test=False,contact_floor_test=False,contact_pause_test=False,
                projectile_continuation_test=False,projectile_speed_ramp_test=False,ninja_bomb_test=False,
-                projectile_contact_tail_test=False,sasuke_air_points_test=False,blue_striker_boost_test=False):
+                 projectile_contact_tail_test=False,sasuke_air_points_test=False,blue_striker_boost_test=False,
+                 ko_force_cost_test=False):
     output = Path(output)
     repo = Path(__file__).resolve().parents[2]
     destination = output.resolve()
@@ -1601,6 +1606,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
         raise ValueError("--ninja-bomb-test requires --basic-shot-test")
     if basic_melee and not (source_pace and action_clips):
         raise ValueError("--basic-melee-test requires --source-pace and --action-clips")
+    if ko_force_cost_test and not basic_melee:
+        raise ValueError("--ko-force-cost-test requires --basic-melee-test")
     if shot_audio_decoder is not None and not basic_shot:
         raise ValueError("--basic-shot-audio requires --basic-shot-test")
     if dragon_impact_audio and shot_audio_decoder is None:
@@ -1651,6 +1658,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
     contact_tail_source=projectile_contact_tail.qualify(dol) if projectile_contact_tail_test else None
     sasuke_air_source=sasuke_air_point_policy.qualify(dol) if sasuke_air_points_test else None
     blue_striker_boost_source=blue_striker_boost.qualify(dol) if blue_striker_boost_test else None
+    ko_force_source=ko_force_cost.qualify(dol) if ko_force_cost_test else None
     ninja_bomb_source=ninja_bomb.qualify(dol) if ninja_bomb_test else None
     contact_roles = None
     if contact_scale_test:
@@ -1659,7 +1667,7 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
     with open_regular(afs_path) as stream:
         if any(source is not None for source in (
                 continuation_source,speed_ramp_source,contact_tail_source,ninja_bomb_source,
-                sasuke_air_source,blue_striker_boost_source)):
+                sasuke_air_source,blue_striker_boost_source,ko_force_source)):
             from tools.analyze.retail_action_input import verify_archive
             verify_archive(stream)
         archive = RetailArchive(stream)
@@ -1696,6 +1704,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
             shared_index["sasuke_air_points_test"]={**sasuke_air_source,"borg":"gg4e08:000a"}
         if blue_striker_boost_source is not None:
             shared_index["blue_striker_boost_test"]={**blue_striker_boost_source,"borg":"gg4e08:0d00"}
+        if ko_force_source is not None:
+            shared_index["ko_force_cost_test"]={**ko_force_source,"borg":"gg4e08:0807"}
         pcm=None
         if landing_decoder is not None:
             pcm=decode_lab_landing_pcm(landing_decoder,shared_files,shared_index)
@@ -1871,7 +1881,8 @@ def convert(catalog, dol_path, afs_path, output, *, preview_extras=False, role_c
                                              continuation_source=continuation_source,speed_ramp_source=speed_ramp_source,
                                               ninja_bomb_source=ninja_bomb_source,contact_tail_source=contact_tail_source,
                                                sasuke_air_source=sasuke_air_source,
-                                               blue_striker_boost_source=blue_striker_boost_source)
+                                                blue_striker_boost_source=blue_striker_boost_source,
+                                                ko_force_source=ko_force_source)
             if contact_tail_source is not None and row.model in contact_tail_source and (
                     "projectile_contact_tail_test" not in summary.get("basic_shot_battle_test", {})):
                 raise ValueError(f"type-0 contact-tail route did not enter its authored shot package: {row.id}")
@@ -2078,6 +2089,8 @@ def main():
                          help="append an authored grounded X bomb for normal Normal Ninja and Sasuke; requires --basic-shot-test")
     parser.add_argument("--basic-melee-test", action="store_true",
                          help="add a normal-only authored close-B Battle Test to the qualified melee cohort")
+    parser.add_argument("--ko-force-cost-test", action="store_true",
+                         help="declare normal Tau's verified KO cost; requires --basic-melee-test")
     parser.add_argument("--contact-scale-test", action="store_true",
                          help="use the authored paired settings-7/rank-0 damage snapshot in Battle Test packages")
     parser.add_argument("--contact-index-test", action="store_true",
@@ -2121,7 +2134,8 @@ def main():
                                              ninja_bomb_test=args.ninja_bomb_test,
                                               projectile_contact_tail_test=args.projectile_contact_tail_test,
                                                sasuke_air_points_test=args.sasuke_air_points_test,
-                                               blue_striker_boost_test=args.blue_striker_boost_test)
+                                                blue_striker_boost_test=args.blue_striker_boost_test,
+                                                ko_force_cost_test=args.ko_force_cost_test)
     except (ValueError, OSError) as exc:
         parser.exit(1, f"retail roster extraction: {exc}\n")
     print(f"GG4E08: {normal} normal asset packages, {previews} preview declarations (not runtime-validated)")

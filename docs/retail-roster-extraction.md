@@ -1259,6 +1259,15 @@ python3 -B -m tools.extract.retail_borg_roster "$GF_CATALOG" \
   --basic-shot-test --cruise-lab --blue-striker-boost-test
 ```
 
+#### Normal Tau KO Force cost
+
+Add `--ko-force-cost-test` to a fresh `--basic-melee-test` extraction.
+It appends only `ko-force-cost=90` to the exact normal Tau (`0807/0`)
+gameplay profile. The extractor checks the normal member, cost lookup,
+and loaded KO receipt. This declaration has no effect unless a
+standalone session explicitly supplies both team pools; no attack or
+round rule changes. See [the opt-in Battle Test](ko-force-accounting-checkpoint.md).
+
 #### Machine Red projectile speed ramp test
 
 Add `--projectile-speed-ramp-test` to a fresh `--basic-shot-test`

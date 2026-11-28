@@ -210,6 +210,13 @@ constexpr unsigned kBattleMvpMaxActors=kPackageBattleActorCapacity;
 static_assert(kBattleMvpMaxActors<=8, "projectile recipient history width");
 struct BattleMvpForcePolicy {bool enabled=false;u8 mode=0;};
 struct BattleMvpTeamLedgerFlags {bool flag108=false,flag109=false,flag_f6=false;u8 counter10a=0;};
+struct BattleMvpKoForceDebit {
+    u32 tick=0;
+    u16 cost=0,before=0,after=0;
+    u8 source=255,team=0;
+    u16 debited()const{return before-after;}
+    bool exhausted()const{return before&&!after;}
+};
 struct BattleMvpConfig {
     static constexpr u8 max_impact_shape_slots=32;
     f32 arena_half=1800,actor_radius=42,actor_height=100,move_speed=5,jump_speed=13,gravity=.55f,step_height=45;
@@ -220,6 +227,7 @@ struct BattleMvpConfig {
     f32 damage_scalar=1; // battle/team scalar from the recovered settings ladder
     std::optional<BattleMvpDamageIndices> damage_indices{}; // caller-selected at round start; no scheduler
     std::array<unsigned,2> team_force{}; // recovered ledger pool; zero = untracked
+    std::optional<BattleKoForcePools> ko_force_pools; // accounting only, never a round result
     // Opt-in recovery of the 8002F8DC force gate. Disabled keeps the simple
     // always-decrement pool used by the duel.
     std::array<BattleMvpForcePolicy,2> force_policy{};
@@ -250,6 +258,27 @@ struct BattleMvpConfig {
     u8 impact_shape_slots=max_impact_shape_slots; // opt-in carriers and impact areas only
     bool solo()const{return solo_model!=0||provisional_walk;}
 };
+inline bool battle_mvp_ko_force_valid(const BattleMvpConfig& config,unsigned count){
+    const auto& pools=config.ko_force_pools;
+    if(!pools)return true;
+    if(count<2||count>kBattleMvpMaxActors||config.solo()||config.force_global1f||
+       !battle_ko_force_value_valid((*pools)[0])||!battle_ko_force_value_valid((*pools)[1]))return false;
+    for(unsigned team=0;team<2;++team){
+        const auto& flags=config.team_ledger[team];
+        if(config.team_force[team]||config.force_policy[team].enabled||flags.flag108||flags.flag109||
+           flags.flag_f6||flags.counter10a)return false;
+    }
+    unsigned teams=0;
+    for(unsigned i=0;i<count;++i){
+        const auto& profile=config.packages[i];
+        const auto team=config.teams_declared?config.teams[i]:u8(i%2);
+        if(team>1||!profile||!profile->ko_force_cost||!battle_ko_force_value_valid(*profile->ko_force_cost)||
+           profile->variant!="normal"||profile->damage_kind||profile->movement==BorgBattleMovement::NormalGRed||
+           config.actor_flag1ea[i]||config.actor_flag3e6[i])return false;
+        teams|=1u<<team;
+    }
+    return teams==3;
+}
 struct BattleMvpLocalRosterInput {
     const NativeBorgMovementFrame* peer_frame=nullptr;
     u8 cycle_aim=0; // one press edge per local slot, bits 0 and 1
@@ -518,7 +547,7 @@ public:
            !config.impact_shape_slots||config.impact_shape_slots>BattleMvpConfig::max_impact_shape_slots)return false;
         const bool package=bool(config.packages[0]);
         const unsigned count=config.solo()?1u:config.declared_actors;
-        if(!battle_mvp_damage_indices_valid(config,count))return false;
+        if(!battle_mvp_damage_indices_valid(config,count)||!battle_mvp_ko_force_valid(config,count))return false;
         for(unsigned i=0;i<count;++i)if(bool(config.packages[i])!=package)return false;
         for(unsigned i=count;i<kBattleMvpMaxActors;++i)if(config.packages[i])return false;
         if((config.roster_local_players!=1&&config.roster_local_players!=2)||
@@ -544,6 +573,7 @@ public:
                 for(unsigned i=1;i<count;++i)if(config.packages[i]->movement!=BorgBattleMovement::Stationary)return false;
         }
         NativeBattleMvp next;next.config_=config;next.team_force_=config.team_force;
+        next.ko_force_remaining_=config.ko_force_pools;
         next.force_global1f_=config.force_global1f;
         for(unsigned team=0;team<2;++team)next.force_counter10a_[team]=config.team_ledger[team].counter10a;
         if(package)for(unsigned i=0;i<count;++i){
@@ -2193,6 +2223,8 @@ public:
         return actor<actor_count()&&actors_[actor].health?package_aim_target(actor):u8(255);
     }
     const auto& team_force()const{return team_force_;}const auto& team_tally()const{return team_tally_;}
+    const auto& ko_force_remaining()const{return ko_force_remaining_;}
+    const auto& ko_force_debits()const{return ko_force_debits_;} // indexed by the defeated seat
     const auto& force_counter10a()const{return force_counter10a_;}
     u8 last_attacker()const{return last_attacker_;}u8 last_receiver()const{return last_receiver_;}
     const auto& impact_records()const{return impact_records_;}
@@ -2791,7 +2823,7 @@ private:
                 auto& attacker=actors_[owner];++attacker.hits_dealt;attacker.damage_credited+=amount;
                 if(attacker.damage_kind==0)team_tally_[attacker.team]+=100u;
             }
-            ledger_force(owner,recipient,amount);
+            if(!ko_force_remaining_)ledger_force(owner,recipient,amount);
             // Each admitted body owns a ring until restart, even if defeated.
             // It never observes its own hit.
             for(unsigned p=0;p<actor_count();++p){
@@ -4157,7 +4189,18 @@ private:
     void damage(unsigned target,unsigned amount,unsigned attacker,u8 move=BorgBattleActionState::none,
                 const NativeBattleReactionContact& contact={}){
         auto& actor=actors_[target];
+        const auto before=actor.health;
         actor.health-=std::min(actor.health,amount);actor.hit_flash=8;
+        if(ko_force_remaining_&&before&&!actor.health){
+            // HP owns the defeat edge; the victim owns the cost. This
+            // ledger cannot alter damage, hit admission or round outcome.
+            auto& pool=(*ko_force_remaining_)[actor.team];
+            const auto cost=*config_.packages[target]->ko_force_cost;
+            const u16 remaining=pool-std::min(pool,cost);
+            ko_force_debits_[target]=BattleMvpKoForceDebit{
+                tick_,cost,pool,remaining,attacker<actor_count()?u8(attacker):u8(255),actor.team};
+            pool=remaining;
+        }
         if(!actor.health){actor.damage_tier={};actor.contact_pose_hold_ticks=0;}
         actor.package_damage_serial=++hits_;actor.package_last_hit_tick=tick_;
         // Mode 0 is a real mode, not a sentinel for missing or self credit.
@@ -4217,6 +4260,8 @@ private:
     std::array<u8,kBattleMvpMaxActors-1> cpu_aim_{255,255,255,255,255};
     std::array<unsigned,2> team_force_{};std::array<u32,2> team_tally_{};
     std::array<u8,2> force_counter10a_{};bool force_global1f_=false;u8 last_attacker_=255,last_receiver_=255;
+    std::optional<BattleKoForcePools> ko_force_remaining_;
+    std::array<std::optional<BattleMvpKoForceDebit>,kBattleMvpMaxActors> ko_force_debits_{};
     std::array<BattleMvpImpact,16> impacts_{};std::array<GamePadState,kBattleMvpMaxActors> previous_{};unsigned impact_cursor_=0;u32 tick_=0,next_id_=0,shots_=0,hits_=0;
     std::array<BattleMvpImpactRecord,16> impact_records_{};
     std::array<ImpactPattern<BorgImpactTrail>,8> impact_trails_{};

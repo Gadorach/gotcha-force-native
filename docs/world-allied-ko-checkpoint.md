@@ -47,6 +47,10 @@ overlapping ally at 1 HP. In its opposing KO case it removes and credits
 No allied admission, original ending sequence, save behavior, or whole-game
 equivalence is claimed.
 
+The later [native accounting opt-in](ko-force-accounting-checkpoint.md)
+binds Tau's cost only. It leaves the authored round result and hit admission
+unchanged.
+
 All 76 original observations matched across O0/O1/O2, and six prior
 receipts reproduced byte-for-byte. The native team-pair, body-exit and
 roster-series tests passed under sanitizers.

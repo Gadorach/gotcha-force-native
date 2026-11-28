@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/assets/battle_ko_force.hpp"
 #include "engine/assets/borg_trailing_chain.hpp"
 #include "engine/assets/borg_reflection_policy.hpp"
 #include "engine/assets/character_preview_mount.hpp"
@@ -394,6 +395,7 @@ struct BorgGameplayProfile {
     bool static_grounded_body=false;
     bool dash_disabled=false;
     u16 health=0;f32 walk=0,jump=0,dash=0;
+    std::optional<u16> ko_force_cost; // dormant unless a Battle Test supplies KO Force pools
     u16 beam_recovery=0;
     u8 air_jump_points=0;
     u8 air_action_budget=0; // combined jump + air-dash budget; zero keeps the jump-only rule
@@ -708,6 +710,8 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
         for(unsigned j=0;j<i;++j)if(p.damage_matchup_from[j].attacking_group==row.attacking_group)return false;
     }
     if(!borg_gameplay_detail::id(p.variant)||!p.health||p.health>10000||p.beam_recovery>120||unsigned(p.movement)>2||
+       (p.ko_force_cost&&(!battle_ko_force_value_valid(*p.ko_force_cost)||p.variant!="normal"||p.damage_kind||
+                         p.movement==BorgBattleMovement::NormalGRed))||
        !borg_damage_roles_valid(p)||(p.contact_sound_band&&*p.contact_sound_band>=kBorgContactSoundBands)||
        (p.contact_pose_hold_receive&&p.movement==BorgBattleMovement::NormalGRed)||
        p.moves.size()>kBorgBattleMoves||p.stocks.size()>kBorgBattleStocks||p.projectiles.size()>kBorgBattleAttacks||
@@ -1428,6 +1432,10 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             next.trailing_chain=spec;
         }else if(key=="health"){
             if(next.health||!number(value,1,10000,&next.health))return fail("invalid or duplicate health");
+        }else if(key=="ko-force-cost"){
+            u16 cost=0;
+            if(next.ko_force_cost||!number(value,1,kBattleKoForceLimit,&cost))return fail("invalid or duplicate KO Force cost");
+            next.ko_force_cost=cost;
         }else if(key=="beam-recovery"){
             if(next.beam_recovery||!number(value,1,120,&next.beam_recovery))return fail("invalid or duplicate beam recovery");
         }else if(key=="powered-flight"){

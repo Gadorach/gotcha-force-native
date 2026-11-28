@@ -201,6 +201,23 @@ If using indexed damage, supply one rank per actor in the same slot order.
 An optional third group in `--package-damage-indices` supplies one damage
 table bank (`0` or `1`) per actor in that order:
 `--package-damage-indices 7,7:0,0,0:0,0,1`. It does not change teams.
+
+### Optional KO Force accounting
+
+`ko-force-cost=N` declares a **1–32767** cost for an ordinary normal
+package fighter. It is not a catalog/formation cost, HP damage, or a
+default battle rule. Native package Battle Tests can opt in with
+`--package-ko-force TEAM0,TEAM1`, supplying two nonzero budgets in
+the same range. All participants must declare a valid cost. Source
+G-Red motion, nonordinary damage kinds, and legacy Force/reserve
+accounting are not admitted in this mode.
+
+An actual positive-to-zero HP transition debits the receiving fighter's
+team by at most its available pool, once per seat per round. A zero
+crossing is reported separately from the native elimination or timeout
+result. The KO pools are not inputs to the damage ladders. This does not
+admit new contacts or perform replacement, and it is not a Story,
+Challenge, or save capability. See [the normal Tau trial](ko-force-accounting-checkpoint.md).
 In a preset, `damage-indices=7,7:0,0,0:0,0,1` stores the same selection
 for both direct and browser launches. Supply one source, not both.
 Explicit rosters do not combine with the mirrored `--demo-roster-battle`,
