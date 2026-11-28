@@ -1,0 +1,171 @@
+// Exact type-25 carriers under a bounded, declared contact pose.
+#include "retail_stationary_contact.hpp"
+
+namespace {
+using namespace retail_fixture;
+namespace contact=retail_stationary_contact;
+constexpr u32 target=contact::receiver,carrier=0x81030000,shot=0x81032000,bank=0x81034000;
+constexpr u32 view_pool=0x81037000,view=0x81037200,view2=view+32;
+constexpr u32 stage=0x81050000,grid=stage+0x100,refs=stage+0x200,empty=refs+64*4;
+constexpr u32 callback=0x800C4838;
+constexpr u32 attack_count=0x8043B5A0-21328,attack_list=0x803C477C,slots=0x803C4E84;
+
+class Probe {
+    const Module& mod;
+    std::vector<u8> ram;
+    u8* at(u32 a){return contact::at(ram,a);}
+    u32 word(u32 a){return be32(at(a));}
+    u16 half(u32 a){return contact::half(ram,a);}
+    void store(u32 a,u32 x){put32(at(a),x);}
+    void put(u32 a,float x){put_float(at(a),x);}
+    u32 call(u32 entry,u32 arg=0){
+        CPUState cpu{};cpu.gpr[3]=arg;mod.run(cpu,ram,entry,4096);return cpu.gpr[3];
+    }
+    void rebuild(){call(0x8008A28C);call(0x80089AEC);}
+    void rigid(u32 matrix,const contact::Point& point){
+        for(unsigned axis=0;axis<3;++axis){
+            put(matrix+20*axis,1.f);put(matrix+12+16*axis,point[axis]);
+        }
+    }
+    contact::Point point(u32 a){
+        return {std::bit_cast<float>(word(a)),std::bit_cast<float>(word(a+4)),std::bit_cast<float>(word(a+8))};
+    }
+    void stage_inlet(){
+        store(0x8043B5A0-21316,stage);
+        for(unsigned i=0;i<3;++i)store(stage+28+4*i,grid);
+        constexpr std::array<u32,6> fields{500,500,8,8,u32(-1000),u32(-1000)};
+        for(unsigned i=0;i<fields.size();++i)store(grid+i*4,fields[i]);
+        for(unsigned i=0;i<64;++i)store(refs+i*4,empty);
+        store(grid+24,refs);store(empty,0xFFFFFFFF);
+        for(unsigned i=0;i<5;++i)put(stage+52+4*i,i==2||i==4?-1000.f:3000.f);
+    }
+    void visual_and_sound_inlet(){
+        constexpr u32 visual=0x8103F000,link=visual+0x40,table=visual+0x80,audio=0x8103E000;
+        store(0x803BB4C0+0x600,visual);store(visual+16,link);store(link,table);
+        for(unsigned index:{1u,5u,7u})store(table+4*index,visual+0x400);
+        store(0x8043B5A0-31856,audio);at(audio+12)[0]=1;at(0x803D3AE8+852)[0]=1;
+        // Supply the same already-requested loop to avoid entering audio playback.
+        store(0x803D3AE8+7*16+88,word(0x8031B694+27*4));
+    }
+    void dump(unsigned scenario,unsigned stage_no){
+        std::printf("type25-link: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                    scenario,stage_no,at(carrier+0x18)[0],at(carrier+0x19)[0],half(carrier+0x1C),
+                    at(actor+0x144)[0],at(actor+0x71E)[0],at(target+0x71E)[0],
+                    at(actor+0x71F)[0],at(target+0x71F)[0],at(target+0x719)[0],
+                    unsigned(word(carrier+0x15C)==target),half(attack_count),half(contact::free_count+8),
+                    half(target+0x1C6),half(target+0x20C),at(actor+0x731)[0],at(target+0x731)[0],
+                    bool(at(carrier)[0]));
+    }
+public:
+    Probe(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
+    void run(unsigned scenario,const contact::HitBlock& attack,const contact::ActorSpec& owner,
+             const contact::HitBlock& body,const contact::ActorSpec& defender){
+        stage_inlet();visual_and_sound_inlet();
+        const bool key1=scenario>=3;
+        const unsigned control=scenario%3;
+        const u16 model=key1?0x0809:0x0201;
+        const u16 hp=key1?50:250;
+        for(unsigned i=0;i<6;++i)store(slots+4*i,i?target+0x1E00*(i-1):actor);
+        at(actor)[0]=at(actor+0x18)[0]=1;
+        at(actor+0x3E5)[0]=1;at(target+0x3E5)[0]=2;at(target+0x3E7)[0]=1;
+        put16(at(actor+0x94),model);put16(at(actor+0x3E8),model);
+        std::memcpy(at(0x81015000),owner.data(),owner.size());
+        store(0x803C4D94,0x81015000);call(key1?0x8015613C:0x800C8560,actor);
+        if(word(actor+0x4B0)!=(key1?0x80342708:0x80309CA8)||word(actor+0x4AC)!=0x81015000)
+            fail("type25 normal installer");
+        std::memcpy(at(bank),attack.data(),attack.size());
+        store(actor+0x3FC,bank);store(actor+0x90,actor);
+        constexpr contact::Point origin{200,100,200};
+        rigid(actor+0x8D4,origin);rigid(actor+0x8D4+(key1?12:11)*0x30,origin);
+        for(unsigned axis=0;axis<3;++axis)put(actor+0x20+4*axis,origin[axis]);
+        for(u32 offset:{0xB4u,0xB8u,0xC0u,0xC4u})put(actor+offset,1.f);
+        put16(at(actor+0x1C4),hp);put16(at(actor+0x1C6),hp);
+        store(actor+0xCC,target);
+        at(actor+0x144)[0]=1; // Declared pending byte from the calling phase.
+        at(carrier+2)[0]=3;store(contact::free_head+12,carrier);store(contact::free_tail+12,carrier);
+        put16(at(contact::free_count+6),1);
+        store(0x80436380,view_pool);store(view_pool+12,view);store(view,view2);
+        put16(at(view_pool+18),2);
+        CPUState create{};create.gpr[3]=actor;create.gpr[4]=unsigned(key1);create.gpr[5]=actor+0x144;
+        mod.run(create,ram,0x800C4704,4096);
+        if(create.gpr[3]!=1||word(contact::active_head+9*4)!=carrier||word(carrier+0xC)!=callback||
+           at(carrier+0x10)[0]!=25||at(carrier+0x11)[0]!=unsigned(key1)||word(carrier+0x184)!=actor+0x144||
+           word(carrier+0x8C)!=actor||word(carrier+0x90)!=actor){
+            std::fprintf(stderr,"type25 allocate result=%u bucket=%u update=%08X views=%u\n",
+                         create.gpr[3],at(carrier+1)[0],word(carrier+0xC),half(view_pool+18));
+            fail("type25 source factory or payer/lifetime changed");
+        }
+        at(shot+2)[0]=4;store(contact::free_head+16,shot);store(contact::free_tail+16,shot);
+        put16(at(contact::free_count+8),1);
+        CPUState open{};open.gpr[3]=carrier;CallObservation bind{0x8008AC80};
+        mod.run_observed(open,ram,callback,bind,4096);
+        if(bind.count!=1||bind.caller!=0x800C4A64||bind.arguments[0]!=carrier||bind.arguments[1]!=0)
+            fail("type25 original group request");
+        if(at(carrier+0x18)[0]!=1||at(carrier+0x89)[0]!=(key1?12:11)||
+           word(shot+0x20)!=carrier||word(shot+0x24)!=actor||word(shot+0x28)!=bank+0xAA0+(key1?0:25)*80)
+            fail("type25 opening did not bind its original shape and source socket");
+        call(0x80047AA4,carrier);
+        rebuild();
+        auto center=point(shot+0x64);
+        if(control==0)center[0]+=400;
+        contact::bind_sasuke(mod,ram,center,body,owner,defender,hp);
+        at(target+0x71A)[0]=2;
+        rigid(target+0x8D4+2*0x30,{center[0],center[1]+14,center[2]});
+        rebuild();
+        if(half(attack_count)!=1||word(attack_list)!=shot||half(contact::receiver_count)!=1||
+           word(contact::receiver_registry)!=contact::body||half(carrier+0x26C)!=1||
+           at(actor+0x71E)[0]||at(target+0x71E)[0]||at(actor+0x71F)[0]||at(target+0x71F)[0])
+            fail("type25 pair did not publish its exact attack and body");
+
+        CPUState amount{};CallObservation record{contact::amount_entry};
+        const auto cut=mod.run_to_or_return(amount,ram,contact::pair_pass,{contact::hp_write},&record,4096);
+        unsigned damage=0;
+        if(cut==contact::hp_write){
+            if(amount.gpr[3]!=target||amount.lr!=0x8002F1DC||record.count!=1||
+               record.arguments[1]!=carrier||record.arguments[2]!=target)
+                fail("type25 HP writer or amount ownership changed");
+            damage=amount.gpr[4];mod.finish_stopped_leaf(amount,contact::hp_write,164);
+        }
+        if(half(actor+0x1C6)!=hp||word(actor+0x418)||word(target+0x41C)||
+           word(shot+0x2C)!=word(actor+0x27C)||record.count!=unsigned(cut==contact::hp_write))
+            fail("type25 pair changed its exact damage bank, payer or ledgers");
+        std::printf("type25-pair: %u %u %08X %u %u %u %u %u %u %u\n",scenario,
+                    unsigned((word(shot+0x28)-bank-0xAA0)/80),record.arguments[0],record.count,damage,
+                    at(carrier+0x1D9)[0],half(target+0x1C6),half(target+0x20C),
+                    unsigned(word(carrier+0x290)==target),half(carrier+0x26C));
+        dump(scenario,0);
+        if(control==2)at(target+0x83)[0]=1; // Change eligibility after the original overlap.
+        call(callback,carrier);
+        rebuild();
+        dump(scenario,1);
+        if(control!=1)return;
+        call(callback,carrier);
+        dump(scenario,2);
+        // Declare a stretched pose after observing one unstretched visit.
+        // No link bytes, motion request fields or tether lengths are seeded.
+        auto stretched=center;stretched[0]+=600;
+        contact::place_receiver(ram,stretched);
+        put(actor+0x204,100.f);put(target+0x204,100.f);
+        call(callback,carrier);
+        dump(scenario,3);
+        put16(at(carrier+0x1C),1);
+        call(callback,carrier);
+        dump(scenario,4);
+    }
+};
+}
+
+int main(int argc,char** argv){
+    if(argc!=3)fail("usage: type25-link-fixture qualified.dol unmodified-recomp.so < qualified-roles");
+    std::array<contact::HitBlock,2> attack{};
+    std::array<contact::ActorSpec,2> owner{};
+    contact::HitBlock body{};
+    contact::ActorSpec defender{};
+    const auto read=[](auto& x){if(std::fread(x.data(),1,x.size(),stdin)!=x.size())fail("type25 link fixture input extent");};
+    for(unsigned i=0;i<2;++i){read(attack[i]);read(owner[i]);}
+    read(body);read(defender);
+    if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra type25 link input");
+    const auto original=load_ram(argv[1]);
+    const Module mod(argv[2],original);
+    for(unsigned i=0;i<6;++i)Probe(mod,original).run(i,attack[i/3],owner[i/3],body,defender);
+}

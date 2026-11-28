@@ -2937,6 +2937,49 @@ python3 -m tools.analyze.retail_linked_correction \
   /tmp/opencode/gf-linked-correction.json
 ```
 
+### Type-25 tether: contact, reciprocal masks, and expiry
+
+The [type-25 link replay](api-map/gg4e08-type25-link.json) starts at
+the original carrier factory with a declared pending request. The
+model callers are pinned separately; the replay does not run the
+upstream input, charge cue or debit.
+
+| Borg | Key | Launch socket | Opening group / attack descriptor |
+| --- | --- | --- | --- |
+| Chainsaw Knight (`0201`) | 0 | 11 | `0 / 25` |
+| Walking Bomb (`0809`) | 1 | 12 | `0 / 0` |
+
+Both original attacks record **token 1** and reach the HP writer
+with a **0 HP** request. Neither link mask is set during the pair.
+On the next carrier callback the attack closes, the receiver is
+retained, the timer becomes **600**, and reciprocal `+0x71E` bits
+appear. An unchanged pose leaves `+0x71F` clear. Moving the declared
+target pose **600 units** farther along X causes the next callback
+to request motion on both fighters and set reciprocal `+0x71F`
+alongside `+0x71E`. Those are the masks consumed by the prior
+collision-walk test; the motion requests are not integrated here.
+
+A miss leaves the attack published without linking. Setting the
+target’s non-fighter flag **after** a successful overlap makes the
+callback retract without linking. Starting the active callback with
+timer **1** clears both mask pairs and starts retraction without
+retiring the carrier.
+
+All **6 cases and 18 checkpoints** matched across O0/O1/O2.
+This qualifies the tested mask lifecycle, not a full-duration tether,
+stock return, type-80 contact, a wall transfer during a live tether,
+graphics, audio playback, or native gameplay.
+
+Compile [`retail_type25_link_fixture.cpp`](../tests/host/retail_type25_link_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_type25_link \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type25-link "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type25-link.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
