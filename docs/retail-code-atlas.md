@@ -2712,6 +2712,45 @@ python3 -m tools.analyze.retail_capsule_pair \
   /tmp/opencode/gf-capsule-pair.json
 ```
 
+### Moving sphere attacks: a swept capsule on the changed rebuild
+
+The [sphere sweep replay](api-map/gg4e08-sphere-sweep.json) binds the
+same exact Tau sphere once, then changes its declared pose between
+rebuilds. Sasuke is stationary with either a singleton sphere or
+capsule. Each rebuild's pair test runs in a separate copy, so an HP
+write cannot consume the token in the retained geometry sequence.
+
+- A move of **0.25** or **0.5** keeps effective shape 0 and adds
+  the full travel to its broad field. A move of **0.75** selects
+  effective capsule shape 2, centered on the old-to-new segment.
+  Its radius stays **70** and its broad field adds **half** the
+  travel. The original descriptor and token do not change.
+- A **240-unit** crossing removes **17 HP** from either receiver
+  even though both endpoint spheres miss. The unchanged next
+  rebuild returns to a sphere at the new endpoint. The swept
+  side probes at **92** (sphere receiver) and **77** (capsule
+  receiver) reach HP; **93** and **78** miss. These are sampled
+  sweep outcomes, not the strict tangency rule from the earlier
+  stationary sphere-against-capsule. The reverse sphere/capsule
+  case uses the same kernel with operands swapped.
+- Masking only the crossing rebuild, using either role bit `0x01`
+  or late admission byte `+0x276`, keeps the geometry update but
+  suppresses its attack publication. The same cell republishes
+  at the stationary endpoint without replaying the withheld sweep.
+  Both gates are declared controls, not recovered input routes.
+
+All **42** rebuilds and **16** HP-writing pair forks matched across
+O0/O1/O2. This verifies consecutive matrix samples against stationary
+targets, not live animation scheduling, a moving receiver, original
+hardware, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_sphere_sweep \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/capsule-pair "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-sphere-sweep.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
