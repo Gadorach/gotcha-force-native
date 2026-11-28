@@ -2059,6 +2059,48 @@ python3 -m tools.analyze.retail_body_replacement \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-replacement.json
 ```
 
+### Replacement entry: input and ordinary receiving open separately
+
+The [entry replay](api-map/gg4e08-replacement-entry.json) starts
+from the loaded Time Bomber replacement and runs original actor
+dispatch prefixes, each cut before presentation. Scene byte
+`+0x45` is declared; the enclosing scene scheduler does not run.
+With state **4** from the start, the role mask changes from
+`0x00EF` to `0x00C3` on visit **20**. The original wait starts at
+60 and reaches zero on visit **80**. Visit **81** clears the
+role mask but does not read the processed pad or publish a receiver:
+the separate guard at actor `+0x720` is still **58**.
+
+| Boundary after the replacement constructor | State 4 from the start | State 5 until state 4 is declared before visit 161 |
+| --- | ---: | ---: |
+| Role mask clears | 81 | 161 |
+| First processed-pad read and accepted fresh B test | 82 | 162 |
+| Nine ordinary receiving shapes first publish | 139 | 161 |
+
+Only the guard field was zeroed in a disposable visit-81 control;
+that was enough to publish all nine already-bound receiving shapes.
+The late switch opens the role mask with the guard already zero.
+That reverses the order of input and receiving publication in this
+branch and does not establish a fixed respawn protection period.
+
+An accepted processed B packet maps to the original Time Bomber
+key-2/pose-10 request and spends one stock (**10 → 9**). The replay
+cuts at the factory entry: no bomb is placed. Setting scene
+`+0x1829` in an otherwise eligible input fork keeps the pad reader
+call but suppresses the B sample and the debit. The neutral timelines
+do not spend stock.
+
+All **four** cases matched across O0/O1/O2. Visit counts are not
+match frames or hardware timings. Physical pad polling, the source
+scene-state setter, other Borgs' entry branches, complete battle
+scheduling and native gameplay remain outside this replay.
+
+```sh
+python3 -m tools.analyze.retail_replacement_entry \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-replacement-entry.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

@@ -855,10 +855,11 @@ int main(int argc,char** argv){
     const bool tiers=argc==4&&!std::strcmp(argv[3],"--tiers");
     const bool knockout=argc==4&&!std::strcmp(argv[3],"--knockout");
     const bool body_exit=argc==4&&!std::strcmp(argv[3],"--body-exit");
-    const bool replacement=argc==4&&!std::strcmp(argv[3],"--replacement");
+    const bool replacement_entry=argc==4&&!std::strcmp(argv[3],"--replacement-entry");
+    const bool replacement=replacement_entry||(argc==4&&!std::strcmp(argv[3],"--replacement"));
     const bool cleanup=replacement||(argc==4&&!std::strcmp(argv[3],"--body-cleanup"));
     if(argc!=3&&!area_hp&&!parent&&!tiers&&!knockout&&!body_exit&&!cleanup)
-        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit|--body-cleanup|--replacement] < qualified-payload");
+        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit|--body-cleanup|--replacement|--replacement-entry] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -870,7 +871,7 @@ int main(int argc,char** argv){
         contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
         cleanup_probe::Replacement assets{};
         if(replacement){read(assets.motion);read(assets.view);}
-        const cleanup_probe::Delivery delivery{assets,specs[0],hit};
+        const cleanup_probe::Delivery delivery{assets,specs[0],hit,replacement_entry};
         for(unsigned m=6;m<=7;++m)
             for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):
                                  knockout?std::size(knockout_cases):body_exit?exit_knockout_case.size():

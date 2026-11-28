@@ -25,6 +25,7 @@ struct Delivery {
     const Replacement& assets;
     const contact::ActorSpec& spec;
     const contact::HitBlock& hits;
+    bool entry_probe=false;
 };
 
 class Probe {
@@ -128,6 +129,109 @@ class Probe {
         std::printf("body-cleanup-ready: %u %u %04X %u %u\n",caster,body(0x18),half(victim+0x3E8),
                     body(0x3F0)-generation,half(victim+0x1C6));
     }
+    void entry_gates(unsigned caster,u32 fresh_shape,u32 stride){
+        constexpr u32 pad=0x803C727C+32*seat,poll_input=0x80056900,bomb_request=0x800E058C;
+        constexpr unsigned body_steps=0x3EF0;
+        const auto start=ram;
+        const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
+        const auto registry=[&](std::vector<u8>& snapshot,unsigned expected){
+            const auto pos=[&](u32 p){return be32(contact::at(snapshot,p));};
+            const auto n=contact::half(snapshot,contact::receiver_count);
+            if(n!=(expected?9:0))fail("replacement entry published the wrong receiving count");
+            unsigned mask=0;
+            for(unsigned i=0;i<n;++i){
+                const auto cell=pos(contact::receiver_registry+4*i);
+                if(cell<fresh_shape||cell>=fresh_shape+16*stride||(cell-fresh_shape)%stride||
+                   pos(cell+0x20)!=victim)
+                    fail("replacement entry published a foreign receiving cell");
+                const auto step=(cell-fresh_shape)/stride;
+                if((mask&(1u<<step))||pos(cell+0x28)!=pos(victim+0x3FC)+32+step*80)
+                    fail("replacement entry changed a bound receiving descriptor");
+                mask|=1u<<step;
+            }
+            if(mask!=expected)fail("replacement entry receiving steps changed");
+        };
+        const auto step=[&](unsigned phase,unsigned visit,bool expects_poll){
+            CPUState cpu{};cpu.gpr[3]=victim;
+            CallObservation poll{poll_input};
+            const auto cut=mod.run_to_or_return(cpu,ram,wrapper,{presentation,0x80264290},&poll,65536);
+            if(cut==0x80264290)
+                std::fprintf(stderr,"entry assert caster=%u scene=%u visit=%u caller=%08X line=%u\n",
+                             caster,phase,visit,cpu.lr-4,cpu.gpr[4]);
+            if(cut!=presentation||cpu.lr!=0x80054144||cpu.gpr[3]!=victim||half(victim+0x1C6)!=220||
+               half(victim+0x774)!=10||half(victim+0x784)!=3||half(victim+0x20C)||
+               word(victim+0x41C)!=16||word(side+0x118)||body(0x18)!=1||
+               poll.count!=unsigned(expects_poll)||(poll.count&&(poll.caller!=0x80054CD0||poll.arguments[0]!=victim)))
+                fail("normal replacement entry changed the original actor, input, or resource frontier");
+            return poll.count;
+        };
+        const auto pulse=[&](unsigned phase,unsigned visit,bool blocked){
+            auto fork=ram;
+            put32(contact::at(fork,pad),0x200);
+            if(blocked)contact::at(fork,scene+0x1829)[0]=1;
+            CPUState cpu{};cpu.gpr[3]=victim;
+            CallObservation poll{poll_input};
+            const auto cut=mod.run_to_or_return(cpu,fork,wrapper,{bomb_request,presentation,0x80264290},&poll,65536);
+            const auto b=[&](u32 off){return be32(contact::at(fork,victim+off));};
+            const auto stock=contact::half(fork,victim+0x774);
+            const bool paid=cut==bomb_request;
+            const bool polls=(phase==4&&visit==82)||(phase==5&&visit==162);
+            if(paid!=(polls&&!blocked)||poll.count!=unsigned(polls)||cut!=(paid?bomb_request:presentation)||
+               (paid&&(cpu.lr!=0x80130584||cpu.gpr[3]!=victim||cpu.gpr[4]!=2||cpu.gpr[5]!=10))||
+               stock!=10-unsigned(paid)||b(0x5B4)!=(paid?0x200u:0)||b(0x5BC)!=(paid?0x200u:0)||
+               b(0x5D4)!=(paid?0x60u:0))
+                fail("original entry B press reached the wrong paid source request");
+            std::printf("replacement-pulse: %u %u %u %u %u %08X %08X %08X %u %u %04X %08X\n",
+                        caster,phase,visit,unsigned(blocked),poll.count,b(0x5B4),b(0x5BC),b(0x5D4),unsigned(paid),
+                        stock,contact::half(fork,victim+0x272),cpu.lr);
+        };
+        for(unsigned phase:{4u,5u}){
+            std::memcpy(ram.data(),start.data(),ram.size());
+            set(scene+69,phase);
+            set(scene+0x1829,0);
+            store(pad,0);
+            const auto observe=[&](unsigned visit,unsigned poll){
+                std::printf("replacement-entry: %u %u %u %u %u %u %u %04X %08X %08X %u %u %u %u\n",
+                            caster,phase,visit,body(0x18),body(0x19),body(0x1A),half(victim+0x1C),
+                            half(victim+0x272),word(victim+0xD4),word(victim+0x720),poll,
+                            half(contact::receiver_count),body(0x741),body(0x742));
+            };
+            observe(0,0);
+            unsigned previous=body(0x19)*256+body(0x1A),previous_mask=half(victim+0x272),previous_count=0;
+            for(unsigned n=1;n<=160;++n){
+                if(n==21||n==80||n==81||n==82){
+                    pulse(phase,n,false);
+                    if(n==82&&phase==4)pulse(phase,n,true);
+                }
+                const auto polled=step(phase,n,phase==4&&n>=82);
+                rebuild();
+                registry(ram,phase==4&&n>=139?body_steps:0);
+                const unsigned key=body(0x19)*256+body(0x1A),mask=half(victim+0x272),count=half(contact::receiver_count);
+                if(n<=2||n==21||n==79||n==82||n==138||n==139||key!=previous||mask!=previous_mask||count!=previous_count||n==160)
+                    observe(n,polled);
+                previous=key;previous_mask=mask;previous_count=count;
+                if(n==81&&phase==4){
+                    auto control=ram;
+                    put32(contact::at(control,victim+0x720),0);
+                    for(u32 entry:{0x8008A28Cu,0x80089AECu}){
+                        CPUState list{};
+                        mod.run(list,control,entry,4096);
+                    }
+                    registry(control,body_steps);
+                    std::printf("replacement-guard: %u %u %u %u\n",caster,phase,count,
+                                contact::half(control,contact::receiver_count));
+                }
+            }
+            if(phase==5){
+                set(scene+69,4);
+                const auto polled=step(phase,161,false);
+                rebuild();
+                registry(ram,body_steps);
+                observe(161,polled);
+                pulse(phase,162,false);
+            }
+        }
+    }
     void reentry_from_archive(unsigned caster){
         constexpr u32 ready=0x800412C4,dest=0x803B07AC+56;
         constexpr u32 role0=0x812C9400,role2=0x81765C00,role3=0x81547C00,role4=0x81323C00;
@@ -183,6 +287,7 @@ class Probe {
         const auto start=ram;
         constexpr u32 shape=0x81070000,stride=0x200;
         for(const unsigned offered:{0u,16u}){
+            if(delivery->entry_probe&&!offered)continue;
             std::memcpy(ram.data(),start.data(),ram.size());
             // Hold the retired cells aside; each constructor gets only
             // the fresh, declared capacity of this fork.
@@ -232,6 +337,10 @@ class Probe {
             const auto mask=half(victim+0x272);
             if(mask!=0xEF||count||word(side+0x118)||word(victim+0x41C)!=16||half(contact::free_count+8))
                 fail("replacement changed the initial receive mask, force, ledger or allocator boundary");
+            if(delivery->entry_probe){
+                entry_gates(caster,shape,stride);
+                return;
+            }
             // Calculator-style negative control: remove only the receiving
             // role mask in this discarded state, not in the original actor visit.
             short_store(victim+0x272,mask&~2u);
