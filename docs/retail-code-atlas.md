@@ -2230,6 +2230,46 @@ python3 -m tools.analyze.retail_scene_bomb_world \
   /tmp/opencode/gf-scene-bomb-world.json
 ```
 
+### World callbacks: Time Bomber's terminal area and self-hit
+
+The [terminal area replay](api-map/gg4e08-scene-bomb-area.json) uses
+the same two loaded actors and initialized empty grid, with two carrier
+slots and either one or two shape slots. It adds the exact common
+collision bank and relocates the normal common effect archive in a
+third owner. The original parent timer elapses without being reseeded.
+
+- **Visit 181** (placement is visit 1): Time Bomber's parent takes the
+  natural key-**19** timeout branch. At child initialization the parent
+  shape is still active and marked for close. With one shape slot the
+  child carrier allocates but cannot bind a shape. The parent slot is
+  returned later on that visit; the refused child does not retry.
+- **Visit 182:** With two slots, the shape bound on 181 publishes as
+  attack-only on 182. The 18 ordinary receivers are the two fighters'
+  shapes. In both cases stock returns on 182 and the parent carrier
+  returns on 183. The refused child also returns on 183.
+- **Visit 185:** The admitted child still credits Time Bomber. Both
+  receivers accept child token **2** (different from parent token
+  **1**). The original HP writer visits Sasuke first (**17 HP**),
+  then Time Bomber (**4 HP**). Both requests use common amount record
+  `802C49D0`, raw power **20**. The owner gets **17** opponent-damage
+  credit and **0** ally-damage credit; the self-hit adds **4** only
+  to his received-damage ledger. Neither HP write repeats.
+- **Visits 198 and 231:** The admitted child returns its shape on
+  198 and its carrier on 231. The common archive owner stays loaded.
+
+The four cases cover **828** complete coordinator calls and match
+across O0/O1/O2. The observed recipient order is for these two seats
+and this collision setup, not a general ordering rule. This replay
+does not qualify a constructed arena, original hardware, rendering,
+audible playback, or native behavior.
+
+```sh
+python3 -m tools.analyze.retail_scene_bomb_area \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/dual-scene-entry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-bomb-area.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

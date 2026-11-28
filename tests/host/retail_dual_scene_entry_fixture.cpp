@@ -14,6 +14,8 @@ constexpr u32 body_pass_end=0x80087CF0,present_body=0x8005A580;
 constexpr u32 attack_count=0x8043B5A0-21328,attack_list=0x803C477C;
 constexpr u32 bomb=0x8107B000,bomb_shape=0x8107A000,bomb_bucket=0x803C706C+10*4;
 constexpr u32 factory=0x800E058C,area_factory=0x80085E00;
+constexpr u32 child=0x8107B800,child_shape=0x8107A200,common_hits=0x8107D000;
+constexpr u32 common_view_owner=0x81064040;
 constexpr std::array<u16,2> models{0x000A,0x0106},members{495,504},hp{180,220};
 constexpr std::array<size_t,2> motion_sizes{368160,435104},view_sizes{241128,171236};
 struct Assets {
@@ -21,6 +23,7 @@ struct Assets {
     contact::HitBlock hit;
     std::vector<u8> motion,view;
 };
+struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 
 class Replay {
@@ -47,9 +50,9 @@ class Replay {
         for(unsigned i=0;i<64;++i)store(refs+4*i,empty);
         for(unsigned i=0;i<5;++i)put_float(at(stage+52+4*i),i==2||i==4?-3000.f:3000.f);
     }
-    void offer_pools(){
+    void offer_pools(bool area){
         constexpr u32 bases[]{0x81066000,0x81064000,0x81069000};
-        constexpr unsigned bytes[]{44*64,32*2,16*32};
+        const unsigned bytes[]{44*64,32*(area?3u:2u),16*32};
         archive::Setup sdk(mod,ram);
         sdk.init_heap(archive::arena+0x100000);
         store(0x8043B5A0-21352,basis);store(0x8043B5A0-21024,pools);
@@ -94,7 +97,25 @@ class Replay {
             fail("dual scene completion crossed actor resource boundaries");
         }
     }
-    void setup(const std::array<Assets,2>& assets){
+    void common_area_archive(const AreaAssets& area){
+        constexpr u32 globals=archive::source_globals,bank=archive::source_bank,owner=common_view_owner;
+        if(area.view.slot!=1||byte(mode+41)||word(globals))fail("world area needs the exact normal common archive");
+        store(archive::source_bank_basis,bank-archive::source_bank_delta);
+        CPUState open{};
+        mod.run_to(open,ram,0x80042878,{0x8000B07C});
+        if(open.lr!=0x80042904||open.gpr[3]!=697||open.gpr[4]!=0x803B0760||
+           word(0x803B0764)!=bank||word(globals+4)!=bank)
+            fail("world area selected the wrong normal common archive");
+        store(archive::source_bank_basis,basis); // Preserve the two cold actor owners and their pool.
+        std::memcpy(at(bank),area.view.bytes.data(),area.view.bytes.size());
+        call(0x80042954);
+        if(word(globals)!=owner||byte(owner+8)!=1||byte(owner+9)!=1||byte(owner+10)!=1||
+           half(owner+26)!=157||word(owner+20)!=bank||half(pools+28+18))
+            fail("world area did not retain a separate relocated effect archive");
+        std::memcpy(at(common_hits),area.collision.data(),area.collision.size());
+        store(scene+152,common_hits);
+    }
+    void setup(const std::array<Assets,2>& assets,const AreaAssets* area){
         store(0x8043B5A0-31852,scene);store(scheduler::mode_ptr,mode);
         store(0x8043B5A0-31824,0x81079000);
         at(mode+2)[0]=3;at(mode+12)[0]=1;
@@ -116,8 +137,9 @@ class Replay {
                 put_float(at(fighter(i)+0x28),300.f);
             }
         }
-        stage_grid();offer_pools();
+        stage_grid();offer_pools(area!=nullptr);
         for(unsigned i=0;i<2;++i)deliver(i,assets[i]);
+        if(area)common_area_archive(*area);
         call(0x80254288);
         scheduler::prepare(ram);
     }
@@ -280,11 +302,135 @@ class Replay {
             }
         }
     }
-public:
-    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets):mod(m),ram(original){
-        setup(assets);
+    void check_area_timeout(unsigned delay,unsigned shapes){
+        auto fork=ram;
+        CPUState terminal{};
+        const auto cut=mod.run_to_or_return(terminal,fork,scheduler::dispatch,{area_factory},nullptr,65536);
+        if(cut!=area_factory||terminal.lr!=0x800E0B50||terminal.gpr[3]!=bomb||
+           terminal.gpr[4]!=bomb+0x20||terminal.gpr[5]!=19||contact::half(fork,bomb+0x152))
+            fail("world area did not follow the natural Time Bomber timeout");
+        std::memcpy(fork.data(),ram.data(),ram.size());
+        CPUState bind{};
+        const auto inlet=mod.run_to_or_return(bind,fork,scheduler::dispatch,{0x80086084},nullptr,65536);
+        if(inlet!=0x80086084||bind.gpr[3]!=child||!contact::at(fork,bomb_shape)[0]||
+           !contact::at(fork,bomb+0x1D8)[0]||contact::half(fork,contact::free_count+8)!=shapes-1||
+           be32(contact::at(fork,contact::free_head+16))!=(shapes==2?child_shape:0))
+            fail("world area initializer did not see the old marked shape still occupying its cell");
+        std::printf("dual-area-bind: %u %u %u %u %u\n",delay,shapes,181u,shapes-1,1u);
     }
-    void observe(bool world){
+    void check_area_amount(){
+        auto fork=ram;
+        CPUState cpu{};CallObservation amounts{contact::amount_entry};
+        mod.run_observed(cpu,fork,scheduler::dispatch,amounts,65536);
+        if(amounts.count!=2||amounts.caller!=0x8002F108||amounts.arguments[2]!=fighter(0))
+            fail("world area did not reach both receiving amount inlets in source order");
+        for(unsigned j=0;j<2;++j)
+            if(amounts.first_arguments[j]!=0x802C49D0||amounts.second_arguments[j]!=child)
+                fail("world area HP requests did not use one exact child amount row");
+    }
+    void check_area_world(unsigned shapes,unsigned visit,const CallObservation& hits,bool published){
+        const bool live_parent=visit<=182;
+        const bool admitted=shapes==2;
+        const bool live_child=visit>=181&&visit<=(admitted?230u:182u);
+        const bool landed=admitted&&visit>=185;
+        const bool wants_shape=admitted&&visit>=182&&visit<=197;
+        const bool bound=admitted&&visit>=181&&visit<=197;
+        const unsigned parent_phase=visit<=180?1:visit==181?2:3;
+        const unsigned expected_phase=visit<181?0:!admitted?(visit==181?2:3):visit<=228?1:visit==229?2:3;
+        if(byte(bomb)!=unsigned(live_parent)||byte(bomb+0x18)!=parent_phase||
+           byte(child)!=unsigned(live_child)||byte(child+0x18)!=expected_phase||
+           published!=wants_shape||half(fighter(1)+0x774)!=(visit<182?9:10)||half(fighter(0)+0x774)!=10||
+           half(attack_count)!=unsigned(visit<181||wants_shape)||half(contact::receiver_count)!=(visit<181?19:18)||
+           byte(bomb_shape)!=unsigned(visit<181)||byte(child_shape)!=unsigned(bound)||
+           half(contact::free_count+8)!=shapes-unsigned(visit<181)-unsigned(bound)||
+           half(fighter(0)+0x1C6)!=(landed?163:180)||half(fighter(1)+0x1C6)!=(landed?216:220)||
+           word(fighter(1)+0x418)!=(landed?17:0)||word(fighter(1)+0x42C)||word(fighter(0)+0x418)||
+           word(fighter(0)+0x41C)!=(landed?17:0)||word(fighter(1)+0x41C)!=(landed?4:0))
+            fail("world area allocation, retirement, HP or self-credit boundary changed");
+        for(unsigned i=0;i<2;++i){
+            if(half(fighter(i)+0x20C)!=(landed?2:0)||half(fighter(i)+0x20E)||
+               f(i,0x26E)!=unsigned(landed)||f(i,0x18)!=1||word(fighter(i)+0x420)||word(fighter(i)+0x424))
+                fail("world area changed actor phase or did not preserve a distinct receiving token");
+        }
+        if(visit<181&&(word(attack_list)!=bomb_shape||half(bomb+0x26C)!=1||half(bomb+0x152)!=181-visit))
+            fail("world area changed the original parent's attack or lifetime");
+        if(hits.count!=(admitted&&visit==185?2u:0u)||(hits.count&&(hits.caller!=0x8002F1D8||
+           hits.first_arguments[0]!=fighter(0)||hits.first_arguments[1]!=fighter(1)||
+           hits.second_arguments[0]!=17||hits.second_arguments[1]!=4)))
+            fail("world area changed the two HP writer sites or recipient order");
+        if(live_child&&(byte(child+0x10)!=5||byte(child+0x11)!=19||word(child+0x8C)!=bomb||
+           word(child+0x90)!=fighter(1)||half(child+0x26C)!=(admitted?2:0)||
+           (admitted&&visit==181&&word(word(child+0xE0)+20)!=22)))
+            fail("world area did not preserve original child identity, credit or opening view");
+        if(bound&&(word(child_shape+0x20)!=child||word(child_shape+0x24)!=fighter(1)||
+           word(child_shape+0x28)!=common_hits+0x400+246*80||word(child_shape+0x2C)!=0x802C4760||
+           byte(child_shape+0x11)!=26||byte(child_shape+0x14)!=179||(published&&word(attack_list)!=child_shape)))
+            fail("world area bound or published the wrong common collision descriptor");
+        if(visit>=183&&!live_child&&(half(contact::free_count+6)!=2||half(contact::free_count+8)!=shapes||
+           half(pools+18)!=18||half(pools+28+18)||word(archive::source_globals)!=common_view_owner))
+            fail("world area leaked a carrier, shape, view cell or shared archive");
+    }
+    void world_area(unsigned delay){
+        const auto saved=ram;
+        for(unsigned shapes:{1u,2u}){
+            std::memcpy(ram.data(),saved.data(),ram.size());
+            at(stage)[0]=1;at(stage+8)[0]=1;
+            if(half(contact::free_count+6)||word(contact::free_head+12)||half(contact::free_count+8)||
+               word(contact::free_head+16)||word(bomb_bucket)||half(fighter(1)+0x774)!=10)
+                fail("dual world area requires an unconsumed active input and empty carrier pools");
+            at(bomb+2)[0]=at(child+2)[0]=3;
+            store(bomb+4,child);
+            store(contact::free_head+12,bomb);store(contact::free_tail+12,child);
+            store16(contact::free_count+6,2);
+            at(bomb_shape+2)[0]=at(child_shape+2)[0]=4;
+            store(bomb_shape+4,shapes==2?child_shape:0);
+            store(contact::free_head+16,bomb_shape);store(contact::free_tail+16,shapes==2?child_shape:bomb_shape);
+            store16(contact::free_count+8,u16(shapes));
+            store(pad+32,0x200);
+            check_payment(delay,shapes);
+            unsigned previous_phase=0,previous_shape=0;
+            for(unsigned visit=1;visit<=240;++visit){
+                if(visit==181)check_area_timeout(delay,shapes);
+                if(visit==185&&shapes==2)check_area_amount();
+                const auto before=word(scene+176);
+                const auto turn_before=word(scene+168),combat_before=word(scene+172);
+                CPUState cpu{};CallObservation hits{contact::hp_write};
+                const auto cut=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{0x80264290},&hits,1u<<20);
+                if(cut)
+                    std::fprintf(stderr,"world area SDK assertion shapes=%u visit=%u from=%08X line=%u\n",
+                                 shapes,visit,cpu.lr-4,cpu.gpr[4]);
+                if(cut||word(scene+176)!=before+1||word(scene+168)!=turn_before+1||
+                   word(scene+172)!=combat_before+1||hits.count>2||word(fighter(0)+0x5BC)||
+                   word(fighter(1)+0x5BC)!=(visit==1?0x200u:0))
+                    fail("world area did not finish its original coordinator call");
+                const unsigned phase=byte(child+0x18);
+                const auto attack=half(attack_count)?word(attack_list):0;
+                const bool child_published=attack&&word(attack+0x20)==child;
+                check_area_world(shapes,visit,hits,child_published);
+                if(visit<=2||visit==180||visit==181||visit==182||visit==183||hits.count||
+                   phase!=previous_phase||child_published!=bool(previous_shape)||(visit>181&&!byte(child))||visit==240)
+                    std::printf("dual-area: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %08X\n",
+                                delay,shapes,visit,half(fighter(1)+0x774),byte(bomb),byte(bomb+0x18),byte(child),
+                                phase,unsigned(child_published),half(attack_count),half(contact::receiver_count),
+                                half(child+0x26C),half(fighter(0)+0x1C6),half(fighter(1)+0x1C6),hits.count,
+                                word(fighter(1)+0x418),word(fighter(1)+0x42C),word(fighter(0)+0x41C),
+                                word(fighter(1)+0x41C),half(fighter(0)+0x20C),half(fighter(1)+0x20C),
+                                child_published?word(attack+0x7C):0);
+                for(unsigned j=0;j<hits.count;++j)
+                    std::printf("dual-area-hp: %u %u %u %u %08X %u\n",
+                                delay,shapes,visit,j,hits.first_arguments[j],hits.second_arguments[j]);
+                previous_phase=phase;previous_shape=unsigned(child_published);
+                store(pad+32,0);
+                if(visit>181&&!byte(bomb)&&!byte(child))break;
+            }
+        }
+    }
+public:
+    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area):
+        mod(m),ram(original){
+        setup(assets,area);
+    }
+    void observe(bool world,bool area){
         const auto start=ram;
         for(unsigned delay:{0u,10u}){
             std::memcpy(ram.data(),start.data(),ram.size());
@@ -293,7 +439,10 @@ public:
             for(unsigned visit=1;visit<=opens+1;++visit){
                 at(scene+0xD2)[0]=u8(visit>=2&&visit<2+delay?2:0);
                 const unsigned before=f(0,0x743)+2*f(1,0x743);
-                if(world&&visit==opens+1){world_bomb(delay);break;}
+                if(world&&visit==opens+1){
+                    if(area)world_area(delay);else world_bomb(delay);
+                    break;
+                }
                 if(!world&&visit>=opens)pulse(delay,visit,visit>opens);
                 CPUState cpu{};CallObservation actors_called{present_body};
                 const auto stop=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{body_pass_end,0x80264290},&actors_called,1u<<20);
@@ -344,8 +493,9 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    const bool world=argc==4&&!std::strcmp(argv[3],"--world-bomb");
-    if(argc!=3&&!world)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb] < qualified-roles");
+    const bool area=argc==4&&!std::strcmp(argv[3],"--world-area");
+    const bool world=area||(argc==4&&!std::strcmp(argv[3],"--world-bomb"));
+    if(argc!=3&&!world)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area] < qualified-roles");
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
@@ -354,7 +504,9 @@ int main(int argc,char** argv){
         auto& a=assets[i];a.motion.resize(motion_sizes[i]);a.view.resize(view_sizes[i]);
         read(a.spec);read(a.hit);read(a.motion);read(a.view);
     }
+    AreaAssets common{};
+    if(area){read(common.collision);common.view=archive::read_source();}
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets).observe(world);
+    Replay(mod,original,assets,area?&common:nullptr).observe(world,area);
 }
