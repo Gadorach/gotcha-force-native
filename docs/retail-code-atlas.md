@@ -3100,6 +3100,49 @@ python3 -m tools.analyze.retail_st42_wall \
   /tmp/opencode/gf-st42-wall.json
 ```
 
+### Roster wall pass: publication, height gate, and accumulated correction
+
+The [roster wall replay](api-map/gg4e08-roster-wall.json)
+binds the complete normal body queues of all **206** Borgs. Every
+root and joint uses a declared rigid translation. A single declared
+wall at **X=100** isolates the shared solver from other surfaces.
+
+- The full queues publish **392** role-`0x08` entries. The original
+  stage walk dispatches **369** kind-0 spheres. The **23** kind-1
+  entries publish but do not enter that solver; `0E04` has only
+  kind-1 entries in this registry.
+- With the raised pose, **205** Borgs correct by **20–950** units.
+  Spheres visit in reverse queue order and see the accumulated
+  actor vector. Five models increase it twice: `0504`, for example,
+  enters its second visit with **+570** and finishes at **+610**,
+  not the sum of two independent pushes.
+- At the same low pose, a declared reference height of **0**
+  excludes **37** sphere visits whose bottoms are below it.
+  `0D06`, `0E01`, and `0E02` consequently stop correcting.
+  Restoring the coordinator’s **−10,000** reset value in that
+  same pose restores the visits. The fixture supplies the
+  per-seat reference; it does not recover a live floor height.
+- Masking role `0x08` removes the stage entries without closing
+  the receiving lists. The empty secondary grid retains visits
+  without producing a correction. Exact tangent sets the flags
+  with zero displacement; one float step outward misses.
+
+The original center pass applies the final vector to all bound
+centers without changing HP, registry membership, or allocated
+endpoint fields. All **1,442 probes** matched across O0/O1/O2.
+The earlier body registry, declared wall, and `st42` receipts
+reproduced byte-for-byte on O1. This is not a full battle tick,
+a roster replay in a retail arena, or a native mapping.
+
+Use the [body registry fixture](../tests/host/retail_body_registry_fixture.cpp):
+
+```sh
+python3 -m tools.analyze.retail_roster_wall \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/body-registry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-roster-wall.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

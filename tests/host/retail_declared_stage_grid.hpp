@@ -5,7 +5,7 @@
 namespace retail_declared_stage_grid {
 using namespace retail_fixture;
 
-inline void bind(const Module& mod,std::vector<u8>& ram,u32 stage,bool wall,float plane_x){
+inline void bind(const Module& mod,std::vector<u8>& ram,u32 stage,bool wall,float plane_x,float face_extent=200.f){
     const auto at=[&](u32 address){return retail_stationary_contact::at(ram,address);};
     const auto store=[&](u32 address,u32 value){put32(at(address),value);};
     const u32 files=stage+0x800,grids=stage+0x1000;
@@ -27,7 +27,8 @@ inline void bind(const Module& mod,std::vector<u8>& ram,u32 stage,bool wall,floa
             if(has_wall)store(ref+4,0xFFFFFFFF);
         }
         if(has_wall){
-            const std::array<float,13> raw{plane_x,-200,-200,plane_x,600,-200,plane_x,-200,600,1,0,0,-plane_x};
+            const std::array<float,13> raw{plane_x,-face_extent,-face_extent,plane_x,3*face_extent,-face_extent,
+                                           plane_x,-face_extent,3*face_extent,1,0,0,-plane_x};
             for(unsigned i=0;i<raw.size();++i)put_float(at(triangle+4+4*i),raw[i]);
         }
         store(files+4*role,file);

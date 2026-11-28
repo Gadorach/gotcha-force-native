@@ -1,6 +1,8 @@
 // All normal body queues through the original binder and list rebuild, not a pose or hit replay.
 #include "retail_stationary_contact.hpp"
+#include "retail_declared_stage_grid.hpp"
 #include <algorithm>
+#include <cmath>
 
 namespace {
 using namespace retail_fixture;
@@ -8,6 +10,7 @@ namespace contact=retail_stationary_contact;
 constexpr unsigned models=206,seats=6,slots=32,views=6;
 constexpr u32 fighters=0x81020000,stride=0x1E00,bank=0x81050000,cells=0x81060000,cell_stride=0x200;
 constexpr u32 actors=0x803C4E84,count_base=0x8043B5A0-21328;
+constexpr u32 wall_stage=0x81070000;
 constexpr std::array<u32,10> lists{0x803C477C,0x803C417C,0x803C3B7C,0x803C357C,0x803C2F7C,
                                   0x803C297C,0x803C237C,0x803C1D7C,0x803C177C,0x803C117C};
 constexpr unsigned descriptor_size=80;
@@ -30,7 +33,7 @@ constexpr std::array<GeometryView,11> geometry_views{{
     {{1,1,std::bit_cast<float>(0x3C23D70Bu)},1,0},
 }};
 constexpr std::array<float,3> translation{256,128,-64};
-enum class Mode {registry,spheres,capsules};
+enum class Mode {registry,spheres,capsules,wall};
 
 class Probe {
     const Module& mod;
@@ -113,6 +116,116 @@ class Probe {
             }
         }
     }
+    void wall(u16 model,u32 fighter,unsigned bound){
+        constexpr float z=-64.f;
+        constexpr u32 stage_pass=0x8002E1C8,bounds=0x8003FB00,centers=0x8002CE44;
+        const auto scalar=[&](u32 addr){return std::bit_cast<float>(word(addr));};
+        float tangent=0;
+        u32 stage_bits=0,sphere_bits=0,receive_bits=0;
+        for(unsigned i=0;i<bound;++i){
+            const auto d=word(cells+i*cell_stride+0x28);
+            const auto roles=half(d+2);
+            if(roles&2)receive_bits|=1u<<i;
+            if(!(roles&8))continue;
+            stage_bits|=1u<<i;
+            if(at(d)[0]==1)continue;
+            if(at(d)[0]!=0)fail("roster wall stage kind outside declared census");
+            const float radius=scalar(d+24),local_x=scalar(d+12);
+            if(!(radius>=40.f&&radius<=980.f&&(local_x==0.f||local_x==-10.f)))
+                fail("roster wall sphere outside reviewed radius/offset domain");
+            sphere_bits|=1u<<i;
+            tangent=std::max(tangent,100.f+radius-local_x);
+        }
+        if(!stage_bits||std::popcount(sphere_bits)>2)fail("roster wall shape-count budget");
+        const auto bound_state=ram;
+        for(unsigned variant=0;variant<7;++variant){
+            std::memcpy(ram.data(),bound_state.data(),ram.size());
+            const float y=variant>=5?128.f:1280.f;
+            const float lower_reference=variant==6?-10000.f:0.f;
+            const auto x=variant==3&&tangent?tangent:variant==4&&tangent?std::nextafter(tangent,3000.f):130.f;
+            const auto matrix=[&](u32 pointer){
+                put_float(at(pointer+12),x);put_float(at(pointer+28),y);put_float(at(pointer+44),z);
+            };
+            matrix(fighter+0x1AA4);
+            for(unsigned i=0;i<32;++i)matrix(fighter+0x8D4+0x30*i);
+            put_float(at(fighter+0x20),x);put_float(at(fighter+0x24),y);put_float(at(fighter+0x28),z);
+            put_float(at(fighter+0xC0),1.f);store16(fighter+0x1C6,180);
+            store16(fighter+0x272,variant==1?8:0);
+            put_float(at(0x803B0708),lower_reference);
+            if(variant==2){
+                // Same relocated stage, but omit the first reference of each
+                // secondary list in this guest-only empty-grid fork.
+                const auto table=word(word(wall_stage+32)+24);
+                for(unsigned i=0;i<64;++i)store(word(table+4*i),0xFFFFFFFF);
+            }
+            rebuild();
+            const auto lists=registry(fighter,bound);
+            if(lists[3]!=(variant==1?0u:stage_bits)||lists[1]!=receive_bits||lists[9]!=receive_bits||
+               lists[0]||lists[8]||word(fighter+0x1CC)||word(fighter+0x1D0)||word(fighter+0x1D4))
+                fail("roster wall did not publish its exact open or masked queue");
+            std::array<std::array<u32,3>,slots> before{};
+            std::array<std::array<u32,6>,slots> ends{};
+            u32 admitted=0;
+            for(unsigned i=0;i<bound;++i){
+                const auto cell=cells+i*cell_stride,d=word(cell+0x28);
+                for(unsigned k=0;k<3;++k)before[i][k]=word(cell+0x64+4*k);
+                for(unsigned k=0;k<6;++k)ends[i][k]=word(cell+0x8C+4*k);
+                if((sphere_bits&(1u<<i))&&variant!=1){
+                    if(word(cell+0x58)||scalar(cell+0x88)!=scalar(d+24)||
+                       scalar(cell+0x64)!=x+scalar(d+12)||scalar(cell+0x68)!=y+scalar(d+16)||
+                       scalar(cell+0x6C)!=z+scalar(d+20))
+                        fail("roster wall source sphere did not use its exact rigid center and radius");
+                    if(scalar(cell+0x68)-scalar(cell+0x88)>=lower_reference)admitted|=1u<<i;
+                }
+            }
+            CPUState cpu{};CallObservation trace{bounds};
+            trace.sample=[](const CPUState& c)->u32{
+                if(c.lr!=0x80035ECC)return 0xFFFFFFFF;
+                const auto shape=be32(c.ram+(0x803B04D4-GC_RAM_BASE));
+                const auto prior=std::bit_cast<float>(be32(c.ram+(fighters+0x1CC-GC_RAM_BASE)));
+                if(shape<cells||shape>=cells+slots*cell_stride||(shape-cells)%cell_stride||
+                   be32(c.ram+(shape+0x20-GC_RAM_BASE))!=fighters||
+                   !(prior>=0.f&&prior<=980.f&&float(u32(prior))==prior))
+                    fail("roster wall bounds sample lost its shape or integer correction");
+                return ((shape-cells)/cell_stride+1)*0x10000+u32(prior);
+            };
+            mod.run_observed(cpu,ram,stage_pass,trace,4096);
+            // Capture only the first bounds call in each solver visit. The
+            // solver can also query bounds later on another path.
+            std::array<u32,2> visits{};
+            unsigned entries=0;
+            if(trace.count>std::size(trace.samples))fail("roster wall exhausted its bounds capture");
+            for(unsigned i=0;i<trace.count;++i){
+                if(trace.samples[i]==0xFFFFFFFF)continue;
+                if(entries>=visits.size())fail("roster wall exceeded its source sphere count");
+                visits[entries++]=trace.samples[i];
+            }
+            if(entries!=unsigned(std::popcount(admitted))){
+                std::fprintf(stderr,"roster wall %04X variant=%u bounds=%u first=%08X entries=%u spheres=%08X\n",
+                             model,variant,trace.count,trace.caller,entries,sphere_bits);
+                fail("roster wall solver count did not match the original kind-0 filter");
+            }
+            call(centers);
+            const auto shift=scalar(fighter+0x1CC);
+            if(word(fighter+0x1D0)||word(fighter+0x1D4)||scalar(fighter+0x24)!=y||scalar(fighter+0x28)!=z||
+               scalar(fighter+0x20)!=x+shift||half(fighter+0x1C6)!=180||registry(fighter,bound)!=lists)
+                fail("roster wall changed an unrelated axis, HP or publication");
+            unsigned moved=0;
+            for(unsigned i=0;i<bound;++i){
+                const auto cell=cells+cell_stride*i;
+                if(scalar(cell+0x64)!=std::bit_cast<float>(before[i][0])+shift||
+                   word(cell+0x68)!=before[i][1]||word(cell+0x6C)!=before[i][2])
+                    fail("roster wall broad centers did not consume the exact actor vector");
+                for(unsigned k=0;k<6;++k)if(word(cell+0x8C+4*k)!=ends[i][k])
+                    fail("roster wall changed allocated geometry beyond the broad center");
+                moved+=unsigned(word(cell+0x64)!=before[i][0]);
+            }
+            std::printf("roster-wall: %04X %u %u %08X %08X %08X %08X %u %08X %08X %08X %08X %08X %u %u %u\n",
+                        model,variant,bound,lists[3],sphere_bits,admitted,lists[1],entries,visits[0],visits[1],
+                        std::bit_cast<u32>(x),word(fighter+0x20),word(fighter+0x1CC),
+                        at(fighter+0x1DD)[0],at(fighter+0x274)[0],moved);
+        }
+    }
 public:
     Probe(const Module& mod,const std::vector<u8>& initial):mod(mod),initial(initial),ram(initial){}
     Report run(u16 model,const contact::HitBlock& hit,unsigned seat,unsigned capacity,Mode mode=Mode::registry){
@@ -176,7 +289,8 @@ public:
         if(out.bound!=std::min(queued,capacity)||half(contact::free_count+8)!=capacity-out.bound||
            at(fighter+0x501)[0]!=out.special)
             fail("normal body bind and secondary index disagreed with available capacity");
-        if(mode!=Mode::registry)geometry(model,fighter,out.bound,mode);
+        if(mode==Mode::wall)wall(model,fighter,out.bound);
+        else if(mode!=Mode::registry)geometry(model,fighter,out.bound,mode);
         for(unsigned view=0;mode==Mode::registry&&view<views;++view){
             if(view==1)store16(fighter+0x272,0xC3);
             if(view==2)store16(fighter+0x272,0);
@@ -212,9 +326,11 @@ int main(int argc,char** argv){
     auto mode=Mode::registry;
     if(argc==4&&!std::strcmp(argv[3],"--geometry"))mode=Mode::spheres;
     if(argc==4&&!std::strcmp(argv[3],"--capsules"))mode=Mode::capsules;
+    if(argc==4&&!std::strcmp(argv[3],"--wall"))mode=Mode::wall;
     if(argc!=3&&mode==Mode::registry)
-        fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so [--geometry|--capsules] < qualified-normal-queues");
-    const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
+        fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so [--geometry|--capsules|--wall] < qualified-normal-queues");
+    auto original=load_ram(argv[1]);const Module mod(argv[2],original);
+    if(mode==Mode::wall)retail_declared_stage_grid::bind(mod,original,wall_stage,true,100.f,2000.f);
     Probe probe(mod,original);
     unsigned prior=0;
     for(unsigned i=0;i<models;++i){
