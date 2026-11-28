@@ -1983,6 +1983,41 @@ python3 -m tools.analyze.retail_body_phase_exit \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-phase-exit.json
 ```
 
+### Normal body phase 3: queue, old archive owner, and next body gate
+
+The [phase-3 replay](api-map/gg4e08-body-phase-cleanup.json) continues
+from the real phase-3 inlet with the same normal Sasuke body and both
+area keys. It declares a two-row scene roster and independently checks
+the ordinary next row, roster exhaustion, and the mode-1 fallback.
+The first phase-3 visit arms **60**. Here `scene+0x1F` is an allow mask
+when nonzero: `1` holds the receiving player-1 body for the two tested
+visits, `2` lets it take the next step, and `0` lets it continue.
+These are actor-local visits, not match frames.
+
+| Declared branch | Before any file read | On allowed wait visit 60 |
+| --- | --- | --- |
+| Ordinary queue has a next row | Selects Time Bomber `0106` / AFS member **504**, marks the new and old rows, wraps cursor **1 → 0** | Same actor cell stays active and returns to phase 0 |
+| Ordinary roster exhausted | No file request or archive-owner release | Actor becomes inactive, scene mask **3 → 1**, count **2 → 1**; the old archive owner stays bound |
+| Mode-1 fallback | Requests literal `0F07` / member **693**, with no queue advance or row marks | Cell stays active and returns to phase 0 |
+
+The two loader paths return an original pool-owned **empty** archive
+context before the disc-entry cut. The post-cut wait is a separately
+invoked series of actor visits, not a resumed or completed load. The
+ordinary phase-0 control refuses a missing resource owner. Declaring
+one present reaches class setup with model `0106`, a generation increase
+of one and HP still zero; class setup and the replacement spawn do not run.
+
+All **six cases** matched across O0/O1/O2. This separates an inactive
+actor cell, empty resource-owner release, and a replacement request.
+It does not yet qualify loaded-rig teardown, allocation of an inactive
+seat, a completed respawn, scene transitions, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_body_phase_cleanup \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-phase-cleanup.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
