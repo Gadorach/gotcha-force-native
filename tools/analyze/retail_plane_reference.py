@@ -42,14 +42,14 @@ def verify_source(image):
         raise ValueError("sphere/plane type-pair dispatcher changed")
 
 
-def source_inputs(afs):
+def source_inputs(afs, include_actor=False):
     melee = stage.walk.stage.melee
     with body.open_regular(afs) as stream:
         stamp = body.archive_stamp(stream)
         body.verify_archive(stream)
         archive = body.RetailArchive(stream)
         model = melee.opening.RECEIVER
-        hit, _ = melee.opening.read_normal(archive, model, melee.opening.RECEIVER_BLOCK_SHA256, melee.ACTOR_SHA256[model])
+        hit, actor = melee.opening.read_normal(archive, model, melee.opening.RECEIVER_BLOCK_SHA256, melee.ACTOR_SHA256[model])
         if body.archive_stamp(stream) != stamp:
             raise ValueError("plane reference source archive changed")
     queue = body.body_queue(hit)
@@ -62,7 +62,7 @@ def source_inputs(afs):
         if (body.Shape(d, kind, matrix, roles) not in queue
                 or struct.unpack_from(f">{len(expected)}f", hit, 44+80*d) != expected):
             raise ValueError(f"plane reference lost exact normal descriptor: {d}")
-    return hit
+    return hit + actor if include_actor else hit
 
 
 def decode(report):

@@ -3221,6 +3221,47 @@ python3 -m tools.analyze.retail_plane_reference \
   /tmp/opencode/gf-plane-reference.json
 ```
 
+### Saved support anchor: the height follows the plane matrix
+
+The [support-anchor replay](api-map/gg4e08-support-anchor.json)
+starts with the original near-plane contact. It retains the
+same allocated plane and the local anchor saved by original
+code at actor `+0x1F8`; it does not seed a support flag or
+point. Each case then declares a change to that plane’s joint
+matrix before invoking the original height queries.
+
+- Both queries transform the saved point through the plane’s
+  current matrix and return its **Y**. Raising it by **12**
+  makes the original landing helper move Sasuke from **124
+  to 136**. A horizontal plane translation does not carry him
+  sideways through this helper. Lowering the plane gives a
+  height of **112**; the helper returns without lowering Sasuke.
+- At the same matrix translation **Y=150**, the upright
+  pose returns **187.2** and the tilted pose returns **150**.
+  The surface query still returns the saved upward normal
+  even after an original geometry rebuild publishes the
+  tilted plane’s **−X** normal. The landing helper does not
+  republish the allocated receiving capsule.
+- The original reset copies active support to the previous
+  flag and clears active support. The saved pointer and
+  anchor remain, but both queries use the declared empty
+  floor fallback instead.
+
+All **eight cases** matched across O0/O1/O2, and the plane
+reference replay reproduced byte-for-byte. This qualifies
+the queried height and landing helper, not a moving-platform
+driver, sideways carrying elsewhere, a full actor tick,
+a live arena, or native gameplay.
+
+Use the same fixture as for [foreign plane order](#foreign-plane-order-can-change-wall-admission):
+
+```sh
+python3 -m tools.analyze.retail_support_anchor \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/plane-reference "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-support-anchor.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

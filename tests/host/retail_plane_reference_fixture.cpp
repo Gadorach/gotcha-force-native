@@ -21,6 +21,7 @@ constexpr Case cases[]{
     {Plane::near,Plane::far},{Plane::far,Plane::near},{Plane::near,Plane::far,159},
     {Plane::absent,Plane::absent,160,true},{Plane::near,Plane::far,159,false,true},
 };
+constexpr unsigned anchor_cases=8;
 struct BroadOperands {std::array<u8,180> sphere,plane;};
 struct BroadCapture {std::array<BroadOperands,2> calls{};unsigned count=0;};
 thread_local BroadCapture* capture=nullptr;
@@ -83,11 +84,80 @@ class Probe {
         if(p<shape_base||p>shape_base+4*shape_stride||(p-shape_base)%shape_stride)fail("support cell escaped original pool");
         return (p-shape_base)/shape_stride;
     }
+    void support_anchor(unsigned id,const contact::ActorSpec& spec){
+        constexpr u32 cfg=0x81054000,position=0x81054300,normal_out=position+0x10;
+        constexpr u32 plane_cell=capsule+shape_stride,owner=fighter+stride;
+        const auto saved=vector(fighter+0x1F8),saved_normal=vector(fighter+0x1EC);
+        const auto joint=word(plane_cell+0x60);
+        if(!at(fighter+0x1DB)[0]||word(fighter+0x1E0)!=plane_cell||joint!=owner+0x8D4+12*0x30||
+           word(fighter+0x24)!=std::bit_cast<u32>(124.f)||word(plane_cell+0x20)!=owner)
+            fail("support anchor did not come from the original foreign plane contact");
+        std::memcpy(at(cfg),spec.data(),spec.size());store(0x803C4D94,cfg);
+        call(0x8006F4F8,fighter);
+        if(word(fighter+0x4B0)!=0x802D3EE0||word(fighter+0x4AC)!=cfg||saved!=vector(fighter+0x1F8))
+            fail("support anchor lost the exact Sasuke landing configuration");
+        const auto jt=[&](unsigned axis){return std::bit_cast<float>(word(joint+12+16*axis));};
+        if(id==1||id==5)put(joint+28,jt(1)+12.f);
+        if(id==2){put(joint+12,jt(0)+32.f);put(joint+44,jt(2)-20.f);}
+        if(id==3)put(joint+28,jt(1)-12.f);
+        if(id==4||id==7){
+            // A declared 90-degree rotation about Z and a raised translation.
+            put(joint,0.f);put(joint+4,-1.f);put(joint+16,1.f);put(joint+20,0.f);
+            put(joint+28,150.f);
+        }
+        if(id==6)put(joint+28,150.f); // Same translation as the tilted controls, no rotation.
+        if(id==7){call(0x8008A28C);call(0x80089AEC);}
+        if(id==5)call(0x8002CDA4,fighter);
+        const auto allocated_center=vector(plane_cell+0x64),allocated_normal=vector(plane_cell+0x88);
+        const auto capsule_center=vector(capsule+0x64);
+        if(word(plane_cell+0x60)!=joint||word(plane_cell+0x20)!=owner||word(fighter+0x1E0)!=plane_cell||
+           saved!=vector(fighter+0x1F8)||saved_normal!=vector(fighter+0x1EC))
+            fail("support pose inlet lost its original saved anchor or plane lease");
+        // Declared empty-grid fallback height; no floor was constructed.
+        put(stage+104,-9000.f);
+        const auto root_before=vector(fighter+0x20);
+        for(unsigned k=0;k<3;++k)store(position+4*k,root_before[k]);
+        CPUState ground{},surface{};
+        ground.gpr[3]=surface.gpr[3]=fighter;ground.gpr[4]=surface.gpr[4]=position;
+        surface.gpr[5]=normal_out;
+        mod.run(ground,ram,0x8003D6E4,4096);
+        mod.run(surface,ram,0x8003E0A8,4096);
+        const auto ground_y=std::bit_cast<u32>(float(ground.fpr[1]));
+        const auto surface_y=std::bit_cast<u32>(float(surface.fpr[1]));
+        const auto normal=vector(normal_out);
+        if(vector(fighter+0x20)!=root_before||vector(fighter+0x1F8)!=saved||
+           vector(fighter+0x1EC)!=saved_normal||word(fighter+0x1E0)!=plane_cell)
+            fail("original support query changed the anchor or actor root");
+        const auto land=state();
+        CPUState step{};step.gpr[3]=fighter;CallObservation query{0x8003E0A8};
+        mod.run_observed(step,ram,0x800677B0,query,4096);
+        const auto after=state();
+        if(query.count!=1||query.caller!=0x800677F0||query.arguments[0]!=fighter||
+           query.arguments[1]!=fighter+0x20||step.gpr[3]>1||after.root[0]!=root_before[0]||
+           after.root[2]!=root_before[2]||after.offset!=land.offset||vector(capsule+0x64)!=capsule_center||
+           vector(plane_cell+0x64)!=allocated_center||vector(plane_cell+0x88)!=allocated_normal||
+           vector(fighter+0x1F8)!=saved||vector(fighter+0x1EC)!=saved_normal||
+           word(fighter+0x1E0)!=plane_cell||half(fighter+0x1C6)!=180)
+            fail("support height path changed an unrelated axis, shape, anchor, or HP");
+        std::array<u32,3> rebuilt_normal=allocated_normal;
+        if(id==4){
+            call(0x8008A28C);call(0x80089AEC);
+            rebuilt_normal=vector(plane_cell+0x88);
+            if(word(plane_cell+0x60)!=joint||word(plane_cell+0x20)!=owner)
+                fail("tilted support control rebound a different plane");
+        }
+        std::printf("support-anchor: %u %u %u",id,land.support_flag,at(fighter+0x1DE)[0]);
+        const auto emit=[](const auto& xyz){for(auto word:xyz)std::printf(" %08X",word);};
+        emit(saved);emit(saved_normal);
+        std::printf(" %08X %08X",ground_y,surface_y);
+        emit(normal);emit(root_before);emit(after.root);emit(capsule_center);emit(allocated_normal);emit(rebuilt_normal);
+        std::printf(" %u %u\n",step.gpr[3],half(fighter+0x1C6));
+    }
 
 public:
     Probe(const Module& m,const std::vector<u8>& original):mod(m),ram(original){}
-    void run(unsigned id,const contact::HitBlock& hit){
-        const auto spec=cases[id];
+    void run(unsigned id,const contact::HitBlock& hit,const contact::ActorSpec* anchor=nullptr){
+        const auto spec=cases[anchor?1:id];
         const auto foreign=unsigned(spec.first!=Plane::absent)+unsigned(spec.second!=Plane::absent);
         const auto planes=foreign+unsigned(spec.self),capacity=3+planes;
         retail_declared_stage_grid::bind(mod,ram,stage,true,100.f);
@@ -196,6 +266,7 @@ public:
             if(word(reference+4*seat)!=std::bit_cast<u32>(ref)||vector(fighter+seat*stride+0x1CC)!=std::array{0u,0u,0u})
                 fail("sphere/plane support changed a foreign owner's reference or vector");
         }
+        if(anchor){support_anchor(id,*anchor);return;}
 
         const auto final=state();
         std::printf("plane-reference: %u %u %u %08X %08X %08X %u %u %u %u %u %u %08X %08X %08X %08X %u %u\n",
@@ -211,10 +282,14 @@ public:
 }
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: plane-reference-fixture qualified.dol unmodified-recomp.so < sasuke-hit-block");
+    const bool anchor=argc==4&&!std::strcmp(argv[3],"--support-anchor");
+    if(argc!=3&&!anchor)
+        fail("usage: plane-reference-fixture qualified.dol unmodified-recomp.so [--support-anchor] < qualified-inputs");
     contact::HitBlock hit{};
-    if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size()||std::getc(stdin)!=EOF||std::ferror(stdin))
+    contact::ActorSpec spec{};
+    if(std::fread(hit.data(),1,hit.size(),stdin)!=hit.size()||
+       (anchor&&std::fread(spec.data(),1,spec.size(),stdin)!=spec.size())||std::getc(stdin)!=EOF||std::ferror(stdin))
         fail("plane reference input extent");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    for(unsigned i=0;i<std::size(cases);++i)Probe(mod,original).run(i,hit);
+    for(unsigned i=0;i<(anchor?anchor_cases:std::size(cases));++i)Probe(mod,original).run(i,hit,anchor?&spec:nullptr);
 }
