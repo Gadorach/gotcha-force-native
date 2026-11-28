@@ -65,11 +65,15 @@ Neither a roster entry nor a delivered resource header is a ready actor.
   The same actor dispatch clears the mask without reading the pad.
   The processed-pad decision and separate fresh B request arrive on
   visit 174.
-- **Still missing:** Other loaded actors and simultaneous entry timing,
-  completion of the scene and pose passes, physical pad polling, and
-  complete first-play timing. The late state-5-to-4 test in the separate
-  entry replay is an injected control, not a proved departure from the
-  original ending state.
+- **Joined for two normal cold starts:** The [loaded Sasuke and Time
+  Bomber replay](retail-code-atlas.md#dual-scene-entry-two-loaded-actors-share-the-readiness-barrier)
+  runs the original actor pass for both seats. Holding Time Bomber's slot
+  for ten visits delays the scene release by ten, without delaying
+  Sasuke's own ready write.
+- **Still missing:** Other loaded combinations and natural hold timing,
+  the full world tail, physical pad polling, and complete first-play
+  timing. The late state-5-to-4 test in the separate entry replay is an
+  injected control, not a proved departure from the original ending state.
 - **Controller comparison priority:** Normal Sasuke is the next useful
   contrast to normal G-Red. Recover his walk/turn/stop, dash, takeoff,
   ascent and landing as connected source paths. Keep his three-point

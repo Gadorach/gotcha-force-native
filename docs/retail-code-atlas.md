@@ -2145,6 +2145,51 @@ python3 -m tools.analyze.retail_scene_entry \
   /tmp/opencode/gf-scene-entry.json
 ```
 
+### Dual scene entry: two loaded actors share the readiness barrier
+
+The [dual replay](api-map/gg4e08-dual-scene-entry.json) uses the
+original six-seat initializer to activate **Sasuke in seat 0** and
+**Time Bomber in seat 1**, leaving four seats inactive. The host
+supplies exact normal archive roles to the original cold-load
+destinations and invokes the original delivery callback for each
+seat. Each actor gets its own archive owner. Their constructors
+finish on visit 1, binding **32** body descriptors and **46** SDK
+view wrappers across the two bodies.
+
+| Boundary | Neither seated actor held | Only seat 1 held on visits 2–11 |
+| --- | ---: | ---: |
+| Sasuke writes ready | 81 | 81 |
+| Time Bomber writes ready | 81 | 91 |
+| Coordinator first sees both ready | 82 | 92 |
+| Scene writes status 4; each actor publishes nine ordinary receivers on the rebuild | 174 | 184 |
+| Both actors first read their processed pads | 175 | 185 |
+
+The hold uses the original scene actor-mask bit. Seat 1 still
+participates in the actor pass but skips its phase dispatch while
+held. Sasuke is ready first in that control, yet the scene stays
+closed until Time Bomber is ready. Both runs execute the original
+pass in seat order **0, 1**, cut before the common world tail, and
+invoke the receiving rebuild separately.
+
+A fresh B packet on the opening visit is not read. On the next
+visit, both pad readers run in order. A B packet on Time Bomber's
+port leaves Sasuke neutral and spends only Time Bomber's stock,
+**10 → 9**, on the key-2/pose-10 request. The fork cuts at the
+factory; it does not place a bomb.
+
+Both cases matched across O0/O1/O2. Visit counts are scoped to
+these two actors and the declared hold, not full match frames or
+hardware timing. Disc delivery, the world tail, moving-body
+combat, other roster combinations and native gameplay are
+unqualified.
+
+```sh
+python3 -m tools.analyze.retail_dual_scene_entry \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/dual-scene-entry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-dual-scene-entry.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
