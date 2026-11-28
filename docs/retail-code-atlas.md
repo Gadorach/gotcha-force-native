@@ -3537,6 +3537,45 @@ python3 -m tools.analyze.retail_stage_side_support \
   /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-support.json
 ```
 
+### Original side carry on the first two recovery steps
+
+The [rising support replay](api-map/gg4e08-stage-side-rise-support.json)
+joins the side lifecycle and support replays. At the **600th**
+post-break update, Sasuke is posed above each rebound surface
+in a separate fork. Original collision acquires the exact
+new cell and owner for **84 planes and 88 boxes**. This
+fixture has spare collision cells, so all the rebound addresses
+differ from the retired ones. The eight terminal owners have
+no rebound surface.
+
+- The first rise moves the owner root and matrix before the
+  allocated support center updates. The second rise catches
+  that center up. Sasuke’s original carry prefix follows both
+  steps without moving his allocated receiving capsule.
+- A nonzero scene mask blocks carry for each unsponsored
+  prop. In a separate masked fork, the supported height
+  query and landing still follow the raised matrix.
+- On initial contact with the rebound planes, the actor root
+  is **2⁻¹⁶ units** above the anchor query; the boxes match
+  exactly. Carry matches the query on both rise steps for
+  both kinds. One yawed box produces a small X rounding
+  delta (about **−0.000061** units) without changing actor yaw.
+
+The **344 unmasked steps** and **172 masked first-step
+controls** matched across O0/O1/O2; the three earlier side
+receipts reproduced byte-for-byte. The breaks use declared
+zero HP, and no collision pass or full actor update runs
+between the two rise steps. This does not qualify full arena
+scheduling, rendered movement, hardware, or native gameplay.
+
+Use the same fixture as for the [side census](#original-side-placement-census-all-61-archives):
+
+```sh
+python3 -m tools.analyze.retail_stage_side_rise_support \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-rise-support.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
