@@ -3462,6 +3462,46 @@ python3 -m tools.analyze.retail_stage_side_census \
   /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-census.json
 ```
 
+### Original side recovery and terminal retirement
+
+The [side lifecycle replay](api-map/gg4e08-stage-side-recovery.json)
+breaks all **180** collision owners in their original archive
+groups. Zero HP is the declared trigger. The original break
+visit releases all **265** collision cells and requests cue
+**115** for each owner; no audible playback is tested.
+
+- **172** owners (types **0–7**) restore 100 HP and rebind
+  **256** collision cells on the **600th** visit after the
+  break. **64** settle in **60** rise steps; **108** need
+  **61** because the source accumulates the offset in single
+  precision. The model-only companion reads its matching mask
+  before the collision owner updates it, so its enable flag
+  changes one visit after break or settlement.
+- The **8** owners in `set0904.arc` (types **8–11**) enter
+  phase 2 on break, advance to phase 3 on the first later visit,
+  and retire on the second. The original handler unlinks them
+  from the bucket and world callback lists and returns all
+  **16** model descriptors. No collision rebind or companion
+  re-enable occurs through visit **664**.
+- A separate `set0202.arc` fork breaks only row 0. Its
+  companion’s enable flag clears on the next visit, but the
+  same-type owner on a different bit stays at 100 HP and its
+  companion stays enabled.
+
+O0/O1/O2 matched across **40,504 post-break archive visits**;
+the initial side census reproduced byte-for-byte. This covers
+original side callbacks and pool ownership, not damage admission
+for each prop, on-screen visibility, support on other variants,
+full battle scheduling, hardware, or native gameplay.
+
+Use the same fixture as for the [side census](#original-side-placement-census-all-61-archives):
+
+```sh
+python3 -m tools.analyze.retail_stage_side_recovery \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-recovery.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

@@ -21,6 +21,7 @@ class Census {
     u8* at(u32 a){return contact::at(ram,a);}
     u32 word(u32 a){return be32(at(a));}
     u16 half(u32 a){return contact::half(ram,a);}
+    float scalar(u32 a){return std::bit_cast<float>(word(a));}
     void store(u32 a,u32 v){put32(at(a),v);}
     void call(u32 fn,u32 arg=0,CallObservation* observation=nullptr){
         CPUState cpu{};cpu.gpr[3]=arg;std::copy(gqr.begin(),gqr.end(),std::begin(cpu.gqr));
@@ -47,9 +48,195 @@ class Census {
         store(contact::free_head+4*type,cells[0]);store(contact::free_tail+4*type,cells[count-1]);
         put16(at(contact::free_count+2*type),u16(count));
     }
+    void mute(){
+        constexpr u32 audio=0x8106B000;
+        store(0x8043B5A0-31856,audio);at(audio+12)[0]=255;
+        at(0x803D3AE8+852)[0]=1;
+    }
+    void side_visit(CallObservation* observation=nullptr){
+        call(0x80089A94,40,observation);call(0x80089554);
+        call(0x8008A28C);call(0x80089AEC);
+    }
+    void isolation(){
+        // An independent fork of set0202: break row 0, not same-type row 1.
+        const auto initial=ram;
+        put16(at(owners+0x1C6),0);
+        mute();
+        for(unsigned visit=0;visit<2;++visit){
+            side_visit();
+            const auto target=at(owners+2*owner_step+0x82)[0],peer=at(owners+3*owner_step+0x82)[0];
+            if(target!=1-visit||peer!=1||word(flags+4*4)!=1||half(contact::receiver_count)!=4||
+               half(common_role_count)!=3||half(owners+owner_step+0x1C6)!=100||!at(shapes+2*shape_step)[0]||
+               !at(shapes+3*shape_step)[0]||at(shapes)[0]||at(shapes+shape_step)[0])
+                fail("side recovery single-break mask or same-type peer changed");
+            std::printf("side-isolation: %u %u %u %u %u %u\n",visit,word(flags+4*4),target,peer,
+                        half(owners+owner_step+0x1C6),half(contact::receiver_count));
+        }
+        ram=initial;
+    }
+    void recovery(unsigned member,const std::vector<u8>& side,unsigned n,unsigned n3,unsigned allocated,
+                  const std::array<u8,21504>& collision){
+        struct Life {
+            unsigned companion=owner_limit,shape_count=0,hide=0,show=0,settle=0;
+            float offset=0,rate=0;
+            std::array<u32,2> models{};
+        };
+        std::array<Life,owner_limit> life{};
+        std::array<u32,16> masks{};
+        unsigned persistent=0,ordinary=0,common_n=0;
+        const auto row=[&](unsigned i){return side.data()+2052+28*i;};
+        const auto owner=[](unsigned i){return owners+i*owner_step;};
+        for(unsigned i=0;i<n;++i){
+            const auto* src=row(i);
+            if(src[2])continue;
+            auto& l=life[i];
+            const auto o=owner(i),t=src[0]+0u;
+            if(src[1]>=32||masks[t]&(1u<<src[1]))fail("side recovery mask aliases distinct collision owners");
+            masks[t]|=1u<<src[1];
+            for(unsigned j=i+1;j<n;++j){
+                const auto* other=row(j);
+                if(other[2]&&other[0]==t&&other[1]==src[1]){
+                    if(l.companion!=owner_limit)fail("side recovery duplicate mask companion");
+                    l.companion=j;
+                }
+            }
+            if(l.companion==owner_limit)fail("side recovery no later source companion for placement mask");
+            l.models={word(o+0xE0),word(o+0xE4)};
+            const auto key=4*at(o+0x1B)[0];
+            for(unsigned j=0;j<4&&collision[key+j]!=255;++j){
+                ++l.shape_count;
+                if(t<8)common_n+=bool(be32(collision.data()+0x400+80*collision[key+j])&0x20);
+            }
+            if(t<8)ordinary+=l.shape_count;
+            else ++persistent;
+            put16(at(o+0x1C6),0); // Only the lethal inlet is declared.
+        }
+        mute();
+        for(unsigned visit=0;visit<=664;++visit){
+            CallObservation sound{0x800F0468};
+            side_visit(visit==0?&sound:nullptr);
+            if(visit==0){
+                if(sound.count!=n3||sound.caller!=0x80081F48||half(contact::free_count+8)!=shape_limit||word(group48))
+                    fail("side recovery break did not release the full collision roster");
+                unsigned index=0;
+                for(unsigned i=n;i--;){
+                    if(row(i)[2])continue;
+                    if(sound.first_arguments[index]!=owner(i)||sound.second_arguments[index++]!=115)
+                        fail("side recovery positional cue lost its owner");
+                }
+                for(unsigned i=0;i<allocated;++i)
+                    if(at(shapes+i*shape_step)[0])fail("side recovery retained a released shape cell");
+            }
+            if(half(contact::receiver_count)!=(visit<600?0:ordinary)||
+               half(common_role_count)!=(visit<600?0:common_n)||
+               half(contact::free_count+8)!=shape_limit-(visit<600?0:ordinary)||
+               half(contact::free_count+6)!=(visit<2?0:persistent)||half(pools+18)!=(visit<2?0:2*persistent))
+                fail("side recovery allocation/registry counts changed");
+            std::array<u32,16> expected_masks{};
+            for(unsigned i=0;i<n;++i){
+                const auto* src=row(i);
+                if(src[2])continue;
+                auto& l=life[i];
+                const auto o=owner(i),c=owner(l.companion),t=src[0]+0u;
+                const bool timed=t<8,restored=timed&&visit>=600,retired=!timed&&visit>=2;
+                const auto expected_phase=timed?1u:visit==0?2u:3u;
+                const auto expected_timer=timed?(visit<600?600-visit:0):65535;
+                if(bool(at(o)[0])==retired||at(o+0x18)[0]!=expected_phase||at(o+0x19)[0]!=unsigned(!restored)||
+                   half(o+0x1C6)!=(restored?100:0)||half(o+0x1C)!=expected_timer||
+                   at(o+0x82)[0]!=unsigned(restored)||bool(word(l.models[0]+12))==retired||
+                   bool(word(l.models[1]+12))==retired||!at(c)[0]||at(c+0x18)[0]!=1)
+                    fail("side recovery owner/companion phase or model lifetime changed");
+                if(restored){
+                    if(visit==600){
+                        l.offset=-(100.f+scalar(type_table+20*t+8));
+                        l.rate=-l.offset/60.f;
+                    }else{
+                        l.offset=std::min(0.f,l.offset+l.rate);
+                        if(!l.offset&&!l.settle)l.settle=visit;
+                    }
+                    if(scalar(o+0x180)!=l.offset||scalar(o+0x184)!=(l.offset?l.rate:0.f))
+                        fail("side recovery source rise recurrence changed");
+                }
+                if(l.settle&&std::memcmp(at(o+0x20),src+4,12))
+                    fail("side recovery settled away from its authored position");
+                const bool mask=word(flags+4*t)&(1u<<src[1]);
+                const bool expected_mask=!l.settle;
+                if(expected_mask)expected_masks[t]|=1u<<src[1];
+                const bool show=visit==0||(l.settle&&visit>l.settle);
+                if(mask!=expected_mask||bool(at(c+0x82)[0])!=show)
+                    fail("side recovery mask or one-visit companion observation changed");
+                if(!show&&!l.hide)l.hide=visit;
+                if(show&&visit&&!l.show)l.show=visit;
+            }
+            for(unsigned i=0;i<16;++i)
+                if(word(flags+4*i)!=expected_masks[i])fail("side recovery wrote outside the qualified mask bits");
+            if(visit==2||visit==600||visit==664){
+                // Retirement is an unlink, not merely a cleared active byte.
+                auto c=word(group40);
+                for(unsigned i=n;i--;){
+                    if(visit>=2&&!row(i)[2]&&row(i)[0]>=8)continue;
+                    if(c!=owner(i))fail("side recovery bucket lost live or retained retired owner");
+                    c=word(c+8);
+                }
+                if(c)fail("side recovery bucket suffix");
+                c=word(0x8043B5A0-21264+4);
+                for(unsigned i=0;i<n;++i){
+                    if(row(i)[2]||row(i)[0]>=8)continue;
+                    if(c!=owner(i))fail("side recovery world list lost an owner or retained a retired one");
+                    c=word(c+0x108);
+                }
+                if(c)fail("side recovery world list suffix");
+                if(persistent){
+                    auto o=word(contact::free_head+12), d=word(pools+12);
+                    for(unsigned i=n;i--;){
+                        if(row(i)[2]||row(i)[0]<8)continue;
+                        if(o!=owner(i))fail("side recovery class-3 free list changed return identity");
+                        o=word(o+4);
+                    }
+                    for(unsigned i=0;i<n;++i){
+                        if(row(i)[2]||row(i)[0]<8)continue;
+                        for(unsigned j=2;j--;){
+                            if(d!=life[i].models[j])fail("side recovery model free list changed return identity");
+                            d=word(d);
+                        }
+                    }
+                    if(o||d)fail("side recovery retired-cell free list suffix");
+                }
+            }
+            if(visit==600||visit==664){
+                std::array<unsigned,owner_limit> seen{};
+                u32 c=word(group48);
+                for(unsigned i=0;i<ordinary;++i){
+                    if(c<shapes||c>=shapes+shape_limit*shape_step||(c-shapes)%shape_step||!at(c)[0])
+                        fail("side recovery rebound shape escaped original registry");
+                    const auto o=word(c+0x20);
+                    if(o<owners||o>=owners+n*owner_step||(o-owners)%owner_step||word(c+0x24)!=o||word(c+0x60)!=o+0x114)
+                        fail("side recovery rebound shape escaped original owner");
+                    const auto index=(o-owners)/owner_step;
+                    auto& ordinal=seen[index];
+                    const auto count=life[index].shape_count;
+                    if(row(index)[0]>=8||ordinal>=count)fail("side recovery rebound wrong shape owner");
+                    const auto key=collision[4*at(o+0x1B)[0]+count-1-ordinal++];
+                    if(word(c+0x28)!=common+0x400+80*key)fail("side recovery rebound wrong descriptor");
+                    c=word(c+8);
+                }
+                if(c)fail("side recovery rebound shape suffix");
+                for(unsigned i=0;i<n;++i)
+                    if(row(i)[0]<8&&seen[i]!=life[i].shape_count)fail("side recovery lost a repeated descriptor cell");
+            }
+        }
+        std::printf("side-recovery: %u %u %u %u %u\n",member,n3-persistent,persistent,ordinary,common_n);
+        for(unsigned i=0;i<n;++i){
+            if(row(i)[2])continue;
+            const auto& l=life[i];
+            const bool timed=row(i)[0]<8;
+            std::printf("side-life: %u %u %u %u %u %u %u %u %08X %u\n",member,i,l.companion,l.shape_count,
+                        timed?600:0,l.settle,l.hide,l.show,std::bit_cast<u32>(l.rate),timed?0:2);
+        }
+    }
 public:
     Census(const Module& m,const std::vector<u8>& pristine):mod(m),ram(pristine){}
-    void run(unsigned member,const std::vector<u8>& side,const std::array<u8,21504>& collision){
+    void run(unsigned member,const std::vector<u8>& side,const std::array<u8,21504>& collision,bool recover){
         CPUState boot{};
         const auto boot_cut=mod.run_to_or_return(boot,ram,0x8002A3E4,{0x8002A51C,0x80200318},nullptr,4096);
         if(!boot_cut||boot.gqr[5]!=0x00070007)fail("side census source boot GQR");
@@ -205,12 +392,17 @@ public:
             std::printf("\n");
         }
         if(next!=allocated)fail("side census left allocated collision cells unclaimed");
+        if(recover){
+            if(member==2429)isolation();
+            recovery(member,side,n,n3,allocated,collision);
+        }
     }
 };
 } // namespace
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: side-census qualified.dol unmodified-recomp.so < qualified-inputs");
+    const bool recovery=argc==4&&!std::strcmp(argv[3],"--recovery");
+    if(argc!=3&&!recovery)fail("usage: side-census qualified.dol unmodified-recomp.so [--recovery] < qualified-inputs");
     std::array<u8,21504> collision{};
     if(std::fread(collision.data(),1,collision.size(),stdin)!=collision.size())fail("side census common collision input extent");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
@@ -222,7 +414,7 @@ int main(int argc,char** argv){
         if(size<6144||size>(1u<<18))fail("side census archive input size");
         std::vector<u8> side(size);
         if(std::fread(side.data(),1,size,stdin)!=size)fail("side census archive input extent");
-        Census(mod,original).run(n,side,collision);
+        Census(mod,original).run(n,side,collision,recovery);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("side census unexpected input suffix");
 }
