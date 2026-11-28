@@ -2004,6 +2004,12 @@ python3 -m tools.analyze.retail_body_phase_exit \
 
 ### Normal body phase 3: queue, old archive owner, and next body gate
 
+The later [loaded Tau comparison](world-ko-handoff-checkpoint.md) proves
+release of a loaded owner and its active wrappers for the exact Tau → Time
+Bomber queue, rather than only the empty-owner release below. It also
+follows the same seat through a real owner-absent wait, declared archive
+delivery, generation advance, pad input and receiver publication.
+
 The [phase-3 replay](api-map/gg4e08-body-phase-cleanup.json) continues
 from the real phase-3 inlet with the same normal Sasuke body and both
 area keys. It declares a two-row scene roster and independently checks

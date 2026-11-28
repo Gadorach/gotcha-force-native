@@ -157,17 +157,22 @@ not a dependency of an ordinary combat/movement checkpoint.
   joins original actor motion, current shape publication and a returning world
   visit. One moving arm hits and the other reaches the narrow kernel and
   misses. The authored native control already uses the current receiver.
-- **Next:** use one ordinary KO to join the accepted HP write to unlink and
-  archive handoff in the loaded scene (step 3). Check replacement readiness
-  or a match-end return against a surviving-hit control, without creating a
-  reserve actor or assuming slot reuse from the KO alone.
+- **Landed:** the [loaded Tau KO handoff](world-ko-handoff-checkpoint.md)
+  joins the HP write, list suppression, body unlink, release of a loaded
+  archive owner and wrappers, and exact queued Time Bomber readiness after
+  declared delivery. A surviving hit does not retire the receiver. The
+  authored native round still ends without a replacement.
+- **Next:** compare the no-reserve terminal branch with the queued branch.
+  Follow an ordinary loaded KO with an exhausted queue through the
+  scene result and match-end return, or record the first missing owner.
+  Keep inactive-slot state, archive release, and any result/save write separate.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);
   type-25/type-80 accepted-contact retraction; Worm tether/poison tails;
   type-52 socket coverage; Thunder Wire linked contact; mixed-power hits,
   mixed receiver audio bands and unjoined effects; the three outer
-  collision-reset callers; loaded rig teardown and inactive-seat reuse.
+  collision-reset callers; teardown on other rigs and inactive-seat reuse.
   Promote one of these when it blocks a shared feature and there is a
   discriminating witness. Keep the negative result and refusal otherwise.
 
