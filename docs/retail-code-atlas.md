@@ -3307,6 +3307,46 @@ python3 -m tools.analyze.retail_support_carry \
   /tmp/opencode/gf-support-carry.json
 ```
 
+### Original stage prop: construction, support, and masked carry
+
+The [stage-prop replay](api-map/gg4e08-stage-prop-support.json)
+loads both original side banks from the retained `set0202.arc`
+payload (AFS member **2429**). Its first original placement
+row constructs one kind-**22** owner in bucket **40**, with
+two model roots and common collision selector **171**.
+Descriptor **237** supplies the original role-`0x20` support
+plane. The original bucket update and registered world callback
+resolve its initial authored position.
+
+Sasuke acquires that exact owner and plane through original
+collision; the horizontally separated control does not. A
+declared local offset of **(+32, +12, −20)** passes through
+the prop’s original world callback, then the original actor
+prefix carries Sasuke by the same offset. The already allocated
+capsule center does not move during carry.
+
+With a nonzero scene mask, the tested prop has no actor sponsor
+and carry is blocked. In a **separate** probe, both the supported
+height query and the landing helper still follow the plane
+matrix upward from **780 to 792**. Blocking carry does not
+clear the support latch in this test.
+
+All **four cases** matched across O0/O1/O2. This qualifies one
+original prop constructor, collision owner and carry path. The
+prop motion is declared, not an autonomous stage driver; the
+absent-support floor query, full arena, graphics, hardware,
+and native gameplay are outside the replay.
+
+Compile [`retail_stage_prop_support_fixture.cpp`](../tests/host/retail_stage_prop_support_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_stage_prop_support \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-prop-support "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-stage-prop-support.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
