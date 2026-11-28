@@ -2190,6 +2190,46 @@ python3 -m tools.analyze.retail_dual_scene_entry \
   /tmp/opencode/gf-dual-scene-entry.json
 ```
 
+### World callbacks: Time Bomber's first B through natural expiry
+
+The [world replay](api-map/gg4e08-scene-bomb-world.json) retains the
+first active B inlet from the two-loaded-actor startup. This time
+the original coordinator calls return after the actor pass, bucket
+updates, collision walk and world tail. The stage inlet is an
+initialized empty collision grid whose original stage dispatcher
+selects the no-op handler. Audio is muted.
+
+| First fresh B capacity | Visit 1 | Follow-up |
+| --- | --- | --- |
+| No carrier cell | The factory-entry fork sees stock **9**; the completed call has already restored **10** | No carrier or shape |
+| Carrier cell, no shape cell | Type-41 parent enters phase 2; stock stays **9** | Stock returns on **2**; carrier retires on **3** |
+| Carrier and shape cells | Original key **2** / pose **10** claims the parent, clones owner view record **3**, and publishes the same shape in both lists | Lifetime starts at **180**, then decrements on subsequent visits |
+
+The successful parent keeps Time Bomber's seat-1 credit and uses
+normal group **15**, token **1**. Its first completed visit has
+**one attack shape** and **19 ordinary receivers** (the fighters'
+18 plus the parent). No case removes HP or writes a damage ledger.
+
+The successful branch reaches expiry on visit **181**, counting
+the placement visit as 1. No position or lifetime was overwritten
+after placement.
+The parent retires its shape and requests area key **19** at the
+original timeout site. There is no second carrier cell, so the
+request cannot allocate a child. Stock returns on **182** and the
+parent carrier and view allocation return on **183**.
+
+All **eight** cases, covering **384** complete coordinator calls
+from the staged active inlets, matched across O0/O1/O2. This is not
+a full preceding match, a real arena simulation, a successful
+terminal area allocation, a damage comparison, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_scene_bomb_world \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/dual-scene-entry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-bomb-world.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

@@ -11,6 +11,9 @@ constexpr u32 actors=0x81020000,actor_stride=0x1E00,scene=scheduler::scene,mode=
 constexpr u32 stage=0x81048000,pools=0x81063000,basis=0x81060000;
 constexpr u32 shape=0x81070000,shape_stride=0x200,pad=0x803C727C;
 constexpr u32 body_pass_end=0x80087CF0,present_body=0x8005A580;
+constexpr u32 attack_count=0x8043B5A0-21328,attack_list=0x803C477C;
+constexpr u32 bomb=0x8107B000,bomb_shape=0x8107A000,bomb_bucket=0x803C706C+10*4;
+constexpr u32 factory=0x800E058C,area_factory=0x80085E00;
 constexpr std::array<u16,2> models{0x000A,0x0106},members{495,504},hp{180,220};
 constexpr std::array<size_t,2> motion_sizes{368160,435104},view_sizes{241128,171236};
 struct Assets {
@@ -173,11 +176,115 @@ class Replay {
             fail("dual scene did not bind separate SDK view ownership and all the body descriptors");
         std::printf("dual-cold: %u %u %u %u %u\n",delay,roots[0],roots[1],64-half(pools+18),32u);
     }
+    void check_payment(unsigned delay,unsigned kind){
+        auto fork=ram;
+        CPUState cpu{};
+        const auto cut=mod.run_to_or_return(cpu,fork,scheduler::dispatch,{factory},nullptr,65536);
+        const auto stock=contact::half(fork,fighter(1)+0x774);
+        if(cut!=factory||cpu.lr!=0x80130584||cpu.gpr[3]!=fighter(1)||cpu.gpr[4]!=2||cpu.gpr[5]!=10||stock!=9||
+           contact::at(fork,bomb)[0]||contact::half(fork,fighter(0)+0x774)!=10)
+            fail("world bomb did not pay before the original allocation");
+        std::printf("dual-world-pay: %u %u %u\n",delay,kind,stock);
+    }
+    void check_bomb_world(unsigned kind,unsigned visit){
+        const bool carrier=kind>=2&&visit<(kind==2?3u:183u);
+        const bool published=kind==3&&visit<=180;
+        const unsigned phase=kind<2?0:kind==2?(visit==1?2:3):published?1:visit==181?2:3;
+        const unsigned expected_stock=(kind==2&&visit==1)||(kind==3&&visit<=181)?9:10;
+        if(half(fighter(1)+0x774)!=expected_stock||byte(bomb)!=unsigned(carrier)||byte(bomb+0x18)!=phase||
+           byte(bomb_shape)!=unsigned(published)||half(attack_count)!=unsigned(published)||
+           half(contact::receiver_count)!=18+unsigned(published)||
+           word(bomb_bucket)!=(carrier?bomb:0)||half(contact::free_count+6)!=unsigned(kind>=2&&!carrier)||
+           half(contact::free_count+8)!=unsigned(kind==3&&!published)||half(pools+18)!=(carrier?17:18))
+            fail("world bomb admission or returned resources changed");
+        if(carrier){
+            const auto visual=word(bomb+0xE0);
+            if(byte(bomb+0x10)!=41||byte(bomb+0x11)!=2||byte(bomb+0x13)!=10||word(bomb+0xC)!=0x800E06C4||
+               word(bomb+0x8C)!=fighter(1)||word(bomb+0x90)!=fighter(1)||half(bomb+0x1C6)!=1||
+               visual<0x81066000||visual>=0x81066000+44*64||word(visual+20)!=3||!word(visual+12))
+                fail("world bomb did not keep its exact Time Bomber credit and view ownership");
+        }
+        if(published){
+            const auto descriptor=word(fighter(1)+0x3FC)+0xAA0+8*80;
+            unsigned receiving=0;
+            for(unsigned j=0;j<19;++j)receiving+=word(contact::receiver_registry+4*j)==bomb_shape;
+            if(half(bomb+0x26C)!=1||word(attack_list)!=bomb_shape||receiving!=1||
+               word(bomb_shape+0x20)!=bomb||word(bomb_shape+0x24)!=fighter(1)||
+               word(bomb_shape+0x28)!=descriptor||(half(descriptor+2)&3)!=3||
+               half(bomb+0x152)!=181-visit)
+                fail("world bomb did not keep its exact two-role descriptor or natural lifetime");
+        }
+        for(unsigned i=0;i<2;++i){
+            const auto body=fighter(i);
+            if(f(i,0x18)!=1||half(body+0x1C6)!=hp[i]||word(body+0x418)||word(body+0x41C)||half(body+0x20C))
+                fail("world bomb control changed a body HP, ledger or contact token");
+        }
+    }
+    void world_bomb(unsigned delay){
+        const auto saved=ram;
+        for(unsigned i=0;i<4;++i){
+            std::memcpy(ram.data(),saved.data(),ram.size());
+            // The provided empty collision grid is an already initialized
+            // stage inlet; original stage state 1 dispatches a no-op.
+            at(stage)[0]=1;at(stage+8)[0]=1;
+            const bool press=i!=0,offer_carrier=i>=2,offer_shape=i==3;
+            if(half(contact::free_count+6)||word(contact::free_head+12)||half(contact::free_count+8)||
+               word(contact::free_head+16)||word(bomb_bucket)||half(fighter(1)+0x774)!=10)
+                fail("dual world bomb requires an unconsumed active input and empty carrier pools");
+            if(offer_carrier){
+                at(bomb+2)[0]=3;
+                store(contact::free_head+12,bomb);store(contact::free_tail+12,bomb);
+                store16(contact::free_count+6,1);
+            }
+            if(offer_shape){
+                at(bomb_shape+2)[0]=4;
+                store(contact::free_head+16,bomb_shape);store(contact::free_tail+16,bomb_shape);
+                store16(contact::free_count+8,1);
+            }
+            store(pad+32,press?0x200:0);
+            if(press)check_payment(delay,i);
+            unsigned last_phase=0;
+            for(unsigned visit=1;visit<=(offer_shape?184u:3u);++visit){
+                const auto scene_before=word(scene+176);
+                const auto turn_before=word(scene+168),combat_before=word(scene+172);
+                CPUState cpu{};
+                CallObservation seen{visit==1?factory:area_factory};
+                const auto cut=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{0x80264290},&seen,1u<<20);
+                if(cut==0x80264290)
+                    std::fprintf(stderr,"dual world SDK assertion case=%u visit=%u from=%08X line=%u\n",
+                                 i,visit,cpu.lr-4,cpu.gpr[4]);
+                if(cut||(visit==1&&(seen.count!=unsigned(press)||(seen.count&&
+                     (seen.caller!=0x80130580||seen.arguments[0]!=fighter(1)||seen.arguments[1]!=2||seen.arguments[2]!=10))))||
+                   word(scene+176)!=scene_before+1||word(scene+168)!=turn_before+1||word(scene+172)!=combat_before+1||
+                   half(fighter(0)+0x774)!=10||word(fighter(0)+0x5BC)||
+                   word(fighter(1)+0x5BC)!=(press&&visit==1?0x200u:0))
+                    fail("dual world did not finish the original actor, bucket and collision sequence");
+                const bool terminal=offer_shape&&visit==181;
+                if(visit>1&&(seen.count!=unsigned(terminal)||(terminal&&(seen.caller!=0x800E0B4C||
+                   seen.arguments[0]!=bomb||seen.arguments[1]!=bomb+0x20||seen.arguments[2]!=19))))
+                    fail("world bomb scheduled its natural terminal request at the wrong boundary");
+                if(terminal)
+                    std::printf("dual-world-terminal: %u %u %u %u %08X %u %u\n",delay,i,visit,seen.count,
+                                seen.caller,seen.arguments[2],unsigned(seen.arguments[0]==bomb));
+                check_bomb_world(i,visit);
+                const unsigned phase=byte(bomb+0x18);
+                if(visit<=3||visit>=178||phase!=last_phase||!byte(bomb))
+                    std::printf("dual-world-bomb: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %08X %08X %08X\n",
+                            delay,i,visit,seen.count,half(fighter(1)+0x774),byte(bomb),byte(bomb+0x18),
+                            byte(bomb_shape),half(attack_count),half(contact::receiver_count),
+                            half(bomb+0x26C),half(fighter(0)+0x1C6),half(fighter(1)+0x1C6),half(bomb+0x152),
+                            word(bomb+0x20),word(bomb+0x24),word(bomb+0x28));
+                store(pad+32,0);
+                last_phase=phase;
+                if(offer_shape&&!byte(bomb))break;
+            }
+        }
+    }
 public:
     Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets):mod(m),ram(original){
         setup(assets);
     }
-    void observe(){
+    void observe(bool world){
         const auto start=ram;
         for(unsigned delay:{0u,10u}){
             std::memcpy(ram.data(),start.data(),ram.size());
@@ -186,7 +293,8 @@ public:
             for(unsigned visit=1;visit<=opens+1;++visit){
                 at(scene+0xD2)[0]=u8(visit>=2&&visit<2+delay?2:0);
                 const unsigned before=f(0,0x743)+2*f(1,0x743);
-                if(visit>=opens)pulse(delay,visit,visit>opens);
+                if(world&&visit==opens+1){world_bomb(delay);break;}
+                if(!world&&visit>=opens)pulse(delay,visit,visit>opens);
                 CPUState cpu{};CallObservation actors_called{present_body};
                 const auto stop=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{body_pass_end,0x80264290},&actors_called,1u<<20);
                 if(stop==0x80264290)
@@ -213,7 +321,7 @@ public:
                        word(fighter(i)+0x720)||(i&&visit<=11&&delay&&word(fighter(i)+0xD4)))
                         fail("dual scene original actor left its exact normal neutral setup");
                 }
-                if(visit==1)check_constructor(delay);
+                if(visit==1&&!world)check_constructor(delay);
                 const auto steps=rebuild();
                 const unsigned status=byte(scene+69),stage=byte(scene+1),ready=f(0,0x743)+2*f(1,0x743);
                 const unsigned mask=(steps[0]?1u:0u)+(steps[1]?2u:0u);
@@ -221,8 +329,8 @@ public:
                 if(before!=unsigned(visit>81)+2*unsigned(visit>81+delay)||stage!=expected_stage||
                    status!=(visit<opens?3u:4u)||steps[0]!=(visit<opens?0u:0x3EF0)||steps[1]!=steps[0])
                     fail("dual readiness, scene release and receiving publication did not remain separate");
-                if(visit<=2||visit==11||visit==12||visit==21||(delay&&visit==31)||
-                   stage!=prior_stage||ready!=prior_ready||mask!=prior_mask||visit==opens+1){
+                if(!world&&(visit<=2||visit==11||visit==12||visit==21||(delay&&visit==31)||
+                   stage!=prior_stage||ready!=prior_ready||mask!=prior_mask||visit==opens+1)){
                     std::printf("dual-scene: %u %u %u %u %u %u %u %u %u %u %04X %04X %04X %04X\n",
                                 delay,visit,before,ready,status,stage,half(scene+8),f(0,0x19),f(1,0x19),
                                 unsigned(actors_called.first_arguments[0]==fighter(1)),
@@ -236,7 +344,8 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so < qualified-roles");
+    const bool world=argc==4&&!std::strcmp(argv[3],"--world-bomb");
+    if(argc!=3&&!world)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb] < qualified-roles");
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
@@ -247,5 +356,5 @@ int main(int argc,char** argv){
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets).observe();
+    Replay(mod,original,assets).observe(world);
 }
