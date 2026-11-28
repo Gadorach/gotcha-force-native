@@ -1,6 +1,7 @@
 // Continue the original phase-3 dispatcher without calling the disc backend.
 #pragma once
 #include "retail_contact_effect_archive.hpp"
+#include "retail_scene_entry.hpp"
 
 namespace retail_body_phase_cleanup {
 using namespace retail_fixture;
@@ -21,11 +22,12 @@ struct Replacement {
     std::array<u8,435104> motion{};
     std::array<u8,171236> view{};
 };
+enum class ReplacementProbe {constructor, entry, scene};
 struct Delivery {
     const Replacement& assets;
     const contact::ActorSpec& spec;
     const contact::HitBlock& hits;
-    bool entry_probe=false;
+    ReplacementProbe probe=ReplacementProbe::constructor;
 };
 
 class Probe {
@@ -232,6 +234,69 @@ class Probe {
             }
         }
     }
+    void scene_gates(unsigned caster,u32 fresh_shape,u32 stride){
+        constexpr u32 pad=0x803C727C+32*seat,bomb=0x800E058C;
+        namespace scheduler=retail_scene_entry;
+        scheduler::prepare(ram);
+        set(scene+0x1828,2); // No voiced-event allocation for this seat.
+        set(scene+0x1829,0);
+        store(pad,0);
+        for(unsigned n=1;n<=174;++n){
+            const auto marker=body(0x743);
+            const auto before=byte(scene+1);
+            if(before>=scheduler::handlers.size())fail("replacement scene substep left the tested startup");
+            if(n==172||n==173||n==174){
+                auto fork=ram;
+                put32(contact::at(fork,pad),0x200);
+                CPUState input{};
+                const auto cut=mod.run_to_or_return(input,fork,scheduler::dispatch,{bomb,presentation,0x80264290},nullptr,65536);
+                const bool fired=cut==bomb;
+                const auto stock=contact::half(fork,victim+0x774);
+                if(cut!=(fired?bomb:presentation)||fired!=(n==174)||(fired&&(input.lr!=0x80130584||
+                   input.gpr[4]!=2||input.gpr[5]!=10))||(!fired&&input.lr!=0x80054144)||
+                   input.gpr[3]!=victim||stock!=(fired?9:10))
+                    fail("normal scene opening changed the actor's first paid B request");
+                std::printf("scene-bridge-b: %u %u %u %u %04X %08X\n",caster,n,fired,stock,
+                            contact::half(fork,victim+0x272),input.lr);
+            }
+            CPUState body_visit{};
+            CallObservation pad_visit{0x80056900};
+            const auto stop=mod.run_to_or_return(body_visit,ram,scheduler::dispatch,{presentation,0x80264290},&pad_visit,65536);
+            if(stop==0x80264290)
+                std::fprintf(stderr,"scene-actor assertion visit=%u caller=%08X line=%u\n",n,body_visit.lr-4,body_visit.gpr[4]);
+            if(stop!=presentation||body_visit.lr!=0x80054144||body_visit.gpr[3]!=victim||
+               half(victim+0x1C6)!=220||half(victim+0x774)!=10||word(victim+0x41C)!=16||
+               half(victim+0x784)!=3||word(side+0x118)||half(victim+0x20C)||body(0x18)!=1||
+               marker!=unsigned(n>80)||body(0x743)!=unsigned(n>=80)||
+               byte(scene+1)!=(n<81?0u:n==81?1u:n<172?2u:3u)||byte(scene+69)!=(n<173?3u:4u)||
+               body(0x19)!=(n<80?0u:n<173?1u:2u)||half(victim+0x272)!=(n<20?0xEF:n<173?0xC3:0)||
+               word(victim+0x720)||pad_visit.count!=unsigned(n==174)||
+               (pad_visit.count&&(pad_visit.caller!=0x80054CD0||pad_visit.arguments[0]!=victim)))
+                fail("normal scene opening actor slice left its scoped path");
+            call(0x8008A28C);call(0x80089AEC);
+            if(half(contact::receiver_count)!=(n>=173?9:0))
+                fail("normal scene opening changed the receiving shape publication");
+            if(n>=173){
+                unsigned steps=0;
+                for(unsigned i=0;i<9;++i){
+                    const auto cell=word(contact::receiver_registry+4*i);
+                    if(cell<fresh_shape||cell>=fresh_shape+16*stride||(cell-fresh_shape)%stride||word(cell+0x20)!=victim)
+                        fail("normal scene opening published a foreign receiving shape");
+                    const auto index=(cell-fresh_shape)/stride;
+                    if((steps&(1u<<index))||word(cell+0x28)!=word(victim+0x3FC)+32+80*index)
+                        fail("normal scene opening changed a bound receiving descriptor");
+                    steps|=1u<<index;
+                }
+                if(steps!=0x3EF0)fail("normal scene opening published different receiving steps");
+            }
+            if(n==1||n==20||n==79||(n>=80&&n<=83)||n>=171)
+                std::printf("scene-bridge: %u %u %u %u %08X %u %u %d %u %04X %08X %u %u\n",
+                            caster,n,marker,body(0x743),scheduler::handlers[before],byte(scene+69),byte(scene+1),
+                            std::bit_cast<std::int16_t>(half(scene+8)),
+                            body(0x19),half(victim+0x272),word(victim+0x720),pad_visit.count,
+                            half(contact::receiver_count));
+        }
+    }
     void reentry_from_archive(unsigned caster){
         constexpr u32 ready=0x800412C4,dest=0x803B07AC+56;
         constexpr u32 role0=0x812C9400,role2=0x81765C00,role3=0x81547C00,role4=0x81323C00;
@@ -287,7 +352,7 @@ class Probe {
         const auto start=ram;
         constexpr u32 shape=0x81070000,stride=0x200;
         for(const unsigned offered:{0u,16u}){
-            if(delivery->entry_probe&&!offered)continue;
+            if(delivery->probe!=ReplacementProbe::constructor&&!offered)continue;
             std::memcpy(ram.data(),start.data(),ram.size());
             // Hold the retired cells aside; each constructor gets only
             // the fresh, declared capacity of this fork.
@@ -337,8 +402,12 @@ class Probe {
             const auto mask=half(victim+0x272);
             if(mask!=0xEF||count||word(side+0x118)||word(victim+0x41C)!=16||half(contact::free_count+8))
                 fail("replacement changed the initial receive mask, force, ledger or allocator boundary");
-            if(delivery->entry_probe){
+            if(delivery->probe==ReplacementProbe::entry){
                 entry_gates(caster,shape,stride);
+                return;
+            }
+            if(delivery->probe==ReplacementProbe::scene){
+                scene_gates(caster,shape,stride);
                 return;
             }
             // Calculator-style negative control: remove only the receiving

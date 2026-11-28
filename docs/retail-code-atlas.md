@@ -2101,6 +2101,50 @@ python3 -m tools.analyze.retail_replacement_entry \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-replacement-entry.json
 ```
 
+### Scene entry: readiness, countdown, and actor dispatch
+
+The [scene replay](api-map/gg4e08-scene-entry.json) follows the
+original scene coordinator to its actor pass. An active unready
+body blocks the scan in **each of the six physical seats**; marking
+that seat inactive lets it advance even while its ready byte is
+clear. The other ready records have zero HP in these controls:
+the scan checks activity and readiness, not HP.
+
+With the scan already clear on visit 1, the short countdown writes
+scene status **4** on visit **93**, the extended countdown on
+**212**, and the skip-delay branch on **2**. The final countdown
+visit selects the next handler but does not write 4. The following
+handler, `80029408`, writes it **before** the original body dispatch
+and clears HUD byte `+13`. A separate ending inlet reaches the
+actor pass with status **5** from `800289FC`. No ending-to-active
+transition is implied.
+
+The linked replay runs from the real coordinator through the loaded
+replacement's actor update, cut before presentation. The registry
+rebuild runs separately:
+
+| Visit | Observed boundary |
+| ---: | --- |
+| 80 | The readiness scan still blocks; Time Bomber marks ready later in the same prefix. |
+| 81 | The scan sees readiness and selects the first delay handler. |
+| 172 | The scene timer reaches zero; status is still 3. |
+| 173 | The coordinator writes 4. The actor clears its mask; nine receiving shapes publish, with the guard at zero and no pad read yet. |
+| 174 | The actor reads the processed pad. A separate fresh B fork spends one stock and reaches key 2 / pose 10 without placing a bomb. |
+
+All six seat controls, three countdowns, the ending control and both
+replacement handoffs matched across O0/O1/O2. The extended and
+skip-delay clocks use declared actor records rather than the loaded
+replacement. These are bounded visits, not full match frames. Other
+loaded entry paths, disc or controller hardware, presentation and
+native gameplay remain outside scope.
+
+```sh
+python3 -m tools.analyze.retail_scene_entry \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/scene-entry /tmp/opencode/type41 "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-entry.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

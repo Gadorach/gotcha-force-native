@@ -1,9 +1,10 @@
 # Original battle startup: readiness and first input
 
-Static review of the qualified `GG4E08` DOL. This describes the original
-game's shared decisions, not a new native implementation or a completed
-startup replay. It starts at the battle coordinator; intro archive delivery
-and presentation are outside this cut.
+The table below documents static review of the qualified `GG4E08` DOL.
+The [bounded scene replay](retail-code-atlas.md#scene-entry-readiness-countdown-and-actor-dispatch)
+now verifies the normal coordinator through its actor handoff. This is
+not a native implementation or a complete startup; intro archive
+delivery and presentation are outside the cut.
 
 ## Scene gate
 
@@ -58,11 +59,17 @@ Neither a roster entry nor a delivered resource header is a ready actor.
   boundaries. G-Red's ordinary movement replay ran the prepass on a
   loaded actor after input ingest. The restart replay published poses
   with phase dispatch masked.
-- **Still missing:** One continuous original actor/scene trace showing
-  a blocking readiness scan, the source ready write, ordered scene
-  advance, and the first ordinary neutral pad decision with its current
-  pose. Record the actual dispatcher visits; do not treat a status
-  write or pose alone as proof that input ran.
+- **Joined for the loaded Time Bomber replacement:** The real coordinator
+  runs before the actor on each prefix. The actor sets readiness on visit
+  80; the scan sees it on visit 81; the scene assigns status 4 on visit 173.
+  The same actor dispatch clears the mask without reading the pad.
+  The processed-pad decision and separate fresh B request arrive on
+  visit 174.
+- **Still missing:** Other loaded actors and simultaneous entry timing,
+  completion of the scene and pose passes, physical pad polling, and
+  complete first-play timing. The late state-5-to-4 test in the separate
+  entry replay is an injected control, not a proved departure from the
+  original ending state.
 - **Controller comparison priority:** Normal Sasuke is the next useful
   contrast to normal G-Red. Recover his walk/turn/stop, dash, takeoff,
   ascent and landing as connected source paths. Keep his three-point
@@ -70,5 +77,6 @@ Neither a roster entry nor a delivered resource header is a ready actor.
   G-Red's meter policy. The solo demo still uses Sasuke's provisional
   controller; this review does not change it.
 
-Validation: verified the original DOL hash, eight dispatch-table entries,
-13 call edges, and 25 state stores. No guest replay or runtime change.
+Static validation verified the original DOL hash, eight dispatch-table
+entries, 13 call edges, and 25 state stores. The bounded guest replay
+does not change native gameplay.
