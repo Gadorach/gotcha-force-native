@@ -19,13 +19,15 @@ constexpr u32 next_area=0x8107C000,next_shape=0x8107A400;
 constexpr u32 common_view_owner=0x81064040;
 constexpr std::array<u16,2> models{0x000A,0x0106},members{495,504},hp{180,220};
 constexpr std::array<size_t,2> motion_sizes{368160,435104},view_sizes{241128,171236};
+constexpr std::array<u16,2> melee_models{0x0807,0x0807},melee_members{626,626};
+constexpr std::array<size_t,2> melee_motion_sizes{192512,192512},melee_view_sizes{60072,60072};
 struct Assets {
     contact::ActorSpec spec;
     contact::HitBlock hit;
     std::vector<u8> motion,view;
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
-enum class Run {entry,bomb,area,reaction,cascade,terminal};
+enum class Run {entry,bomb,area,reaction,cascade,terminal,melee};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
 constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
@@ -47,6 +49,7 @@ u32 sample_tier(const CPUState& cpu){
 class Replay {
     const Module& mod;
     std::vector<u8> ram;
+    bool melee=false;
     u8* at(u32 a){return contact::at(ram,a);}
     u32 word(u32 a){return be32(at(a));}
     u16 half(u32 a){return contact::half(ram,a);}
@@ -80,13 +83,14 @@ class Replay {
             std::memcpy(at(row+16),at(0x8036F5B8+28*kind+16),12);
             call(0x80197950,kind);
         }
-        for(unsigned i=0;i<32;++i){
+        const unsigned cells=melee?48:32;
+        for(unsigned i=0;i<cells;++i){
             const auto cell=shape+shape_stride*i;
             at(cell+2)[0]=4;
-            store(cell+4,i==31?0:cell+shape_stride);
+            store(cell+4,i+1==cells?0:cell+shape_stride);
         }
-        store(contact::free_head+16,shape);store(contact::free_tail+16,shape+31*shape_stride);
-        store16(contact::free_count+8,32);
+        store(contact::free_head+16,shape);store(contact::free_tail+16,shape+(cells-1)*shape_stride);
+        store16(contact::free_count+8,u16(cells));
     }
     void deliver(unsigned seat,const Assets& a){
         const auto outputs=0x803B07AC+56*seat,view_owner=0x803BB4C0+3120*seat+0x600;
@@ -96,7 +100,7 @@ class Replay {
         const auto view=basis+0x270000+0x58000*seat-0x4400;
         CPUState request{};request.gpr[3]=seat;
         mod.run_to(request,ram,0x800410BC,{0x8000B07C});
-        if(request.lr!=0x8004124C||request.gpr[3]!=members[seat]||request.gpr[4]!=outputs||
+        if(request.lr!=0x8004124C||request.gpr[3]!=(melee?melee_members[seat]:members[seat])||request.gpr[4]!=outputs||
            word(outputs)!=data||word(outputs+4)!=0xF0000000||word(outputs+8)!=hit||
            word(outputs+12)!=motion||word(outputs+16)!=view||word(outputs+20)!=0xF0000000||
            word(view_owner))
@@ -139,7 +143,7 @@ class Replay {
         at(mode+2)[0]=3;at(mode+12)[0]=1;
         at(0x803D3AE8+852)[0]=1;
         at(scene+0x1828)[0]=3;at(scene+5593)[0]=3;at(scene+5594)[0]=2;
-        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?models[i]:0xFFFF);
+        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?(melee?melee_models[i]:models[i]):0xFFFF);
         for(unsigned i=0;i<2;++i){
             at(scene+203+i)[0]=i;
             store(scene+60*i+0x114,300);store(scene+60*i+0x118,300);
@@ -150,7 +154,7 @@ class Replay {
                f(i,0x3E4)!=i||f(i,0x3E5)!=(1u<<i)||f(i,0x3E7)!=i||f(i,0x743))
                 fail("original physical actor initialization changed");
             if(i<2){
-                put_float(at(fighter(i)+0x20),i?450.f:150.f);
+                put_float(at(fighter(i)+0x20),i?(melee?226.f:450.f):150.f);
                 put_float(at(fighter(i)+0x24),100.f);
                 put_float(at(fighter(i)+0x28),300.f);
             }
@@ -165,7 +169,7 @@ class Replay {
         call(0x8008A28C);call(0x80089AEC);
         std::array<unsigned,2> out{};
         const auto count=half(contact::receiver_count);
-        if(count>18)fail("dual scene receiver list extent");
+        if(count>(melee?32u:18u))fail("dual scene receiver list extent");
         for(unsigned i=0;i<count;++i){
             const auto ptr=word(contact::receiver_registry+4*i);
             const auto owner=word(ptr+0x20);
@@ -782,12 +786,115 @@ class Replay {
             }
         }
     }
+    void melee_visit(){
+        CPUState cpu{};
+        const auto cut=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{body_pass_end,0x80264290},nullptr,1u<<20);
+        if(cut!=body_pass_end||cpu.lr!=0x80029490){
+            std::fprintf(stderr,"melee actor cutoff=%08X lr=%08X info=%08X\n",cut,cpu.lr,cpu.gpr[4]);
+            fail("melee original actor dispatch left the supported prefix");
+        }
+        rebuild();
+    }
+    void observe_melee(){
+        unsigned opening=0;
+        for(unsigned n=1;n<=224;++n){
+            melee_visit();
+            if(byte(scene+69)==4){opening=n;break;}
+        }
+        if(!opening||half(fighter(0)+0x1C6)!=60||half(fighter(1)+0x1C6)!=60)
+            fail("melee original actors did not reach the normal opening");
+        std::printf("melee-start: %u %u %u\n",opening,half(contact::receiver_count),half(contact::free_count+8));
+        const auto opened=ram;
+        for(unsigned scenario:{0u,1u}){
+            ram=opened;
+            std::array<unsigned,2> first_cells{255,255};
+            for(unsigned i=1;i<=40;++i){
+                store(pad,i==8?0x200:0);
+                store(pad+32,scenario&&i==1?0x200:0);
+                melee_visit();
+                std::array<unsigned,2> attacks{},allocated{255,255};
+                const auto owns_strike=[&](u32 cell,u32 owner){
+                    return word(cell+0x28)==word(owner+0x3FC)+0xAA0+2*80;
+                };
+                if(half(attack_count)>16)fail("melee attack list extent");
+                for(unsigned j=0;j<half(attack_count);++j){
+                    const auto c=word(attack_list+4*j),o=word(c+0x20);
+                    if((o!=fighter(0)&&o!=fighter(1))||word(c+0x24)!=o||!owns_strike(c,o))
+                        fail("melee publication crossed the exact group-1 owners");
+                    ++attacks[o==fighter(1)];
+                }
+                for(unsigned j=0;j<48;++j){
+                    const auto c=shape+shape_stride*j;
+                    if(!byte(c))continue;
+                    const auto o=word(c+0x20);
+                    if((o!=fighter(0)&&o!=fighter(1))||!owns_strike(c,o))continue;
+                    auto& slot=allocated[o==fighter(1)];
+                    if(slot!=255||word(c+0x24)!=o){
+                        std::fprintf(stderr,"melee cell scenario=%u visit=%u slot=%u earlier=%u owner=%08X sponsor=%08X token=%u\n",
+                                     scenario,i,j,slot,o,word(c+0x24),half(o+0x26C));
+                        fail("duplicate or ownerless group-1 strike");
+                    }
+                    slot=j;
+                }
+                for(unsigned seat=0;seat<2;++seat)
+                    if(attacks[seat]>1||(attacks[seat]&&allocated[seat]==255))
+                        fail("published group-1 strike had no unique allocated cell");
+                std::array<unsigned,2> returned{};
+                for(unsigned seat=0;seat<2;++seat){
+                    auto& first=first_cells[seat];
+                    if(allocated[seat]!=255){
+                        if(first==255)first=allocated[seat];
+                        else if(first!=allocated[seat])fail("retained group-1 strike changed its cell");
+                    }else if(first!=255){
+                        const u32 released=shape+first*shape_stride;
+                        auto free=word(contact::free_head+16);
+                        for(unsigned hops=0;free;++hops){
+                            if(hops>=48||free<shape||free>=shape+48*shape_stride||(free-shape)%shape_stride)
+                                fail("group-1 return list crossed the original pool");
+                            if(free==released){
+                                if(byte(free))fail("returned melee cell still active");
+                                returned[seat]=1;break;
+                            }
+                            free=word(free+4);
+                        }
+                        if(!returned[seat])fail("closed melee cell did not return to its pool");
+                    }
+                }
+                const auto pose=word(fighter(0)+0x1CDC),lower=f(0,0x5DA);
+                const bool hit=i==(scenario?19:27);
+                if(hit){
+                    auto fork=ram;
+                    CPUState pair{};
+                    CallObservation amount{contact::amount_entry};
+                    const auto cut=mod.run_to_or_return(pair,fork,0x8002BB14,{contact::hp_write,0x80264290},&amount,65536);
+                    if(cut!=contact::hp_write||pair.lr!=0x8002F1DC||pair.gpr[3]!=fighter(!scenario)||pair.gpr[4]!=17||
+                       amount.count!=1||amount.caller!=0x8002F108||amount.arguments[0]!=0x80377AD8||
+                       amount.arguments[1]!=fighter(scenario)||amount.arguments[2]!=fighter(!scenario)||
+                       contact::half(fork,fighter(!scenario)+0x1C6)!=60)
+                        fail("melee incoming amount and HP writer lost their exact original inputs");
+                }
+                CPUState collision{};
+                CallObservation writer{contact::hp_write};
+                const auto cut=mod.run_to_or_return(collision,ram,0x8002BB14,{present_body,0x80264290},&writer,65536);
+                if(cut!=present_body||collision.lr!=0x8002C870||collision.gpr[3]!=fighter(0)||
+                   writer.count!=unsigned(hit)||(hit&&(writer.caller!=0x8002F1D8||writer.arguments[0]!=fighter(!scenario)||
+                   writer.arguments[1]!=17))||half(fighter(0)+0x1C6)!=(scenario&&i>=19?43:60)||
+                   half(fighter(1)+0x1C6)!=(!scenario&&i>=27?43:60))
+                    fail("melee original collision escaped the first actor presentation cut");
+                std::printf("melee-visit: %u %u %u %u %u %u %u %u %u %08X %08X %u %u %u %u %u %u\n",
+                            scenario,i,allocated[0],allocated[1],attacks[0],attacks[1],
+                            half(fighter(0)+0x26C),half(fighter(1)+0x26C),writer.count,pose,word(fighter(0)+0x1CDC),
+                            half(fighter(0)+0x1C6),half(fighter(1)+0x1C6),lower,f(0,0x5DA),returned[0],returned[1]);
+            }
+        }
+    }
 public:
-    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area):
-        mod(m),ram(original){
+    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,bool melee_mode=false):
+        mod(m),ram(original),melee(melee_mode){
         setup(assets,area);
     }
     void observe(Run mode){
+        if(melee){observe_melee();return;}
         const bool world=mode!=Run::entry;
         const auto start=ram;
         for(unsigned delay:{0u,10u}){
@@ -857,20 +964,22 @@ int main(int argc,char** argv){
     if(argc==4&&!std::strcmp(argv[3],"--world-reaction"))mode=Run::reaction;
     if(argc==4&&!std::strcmp(argv[3],"--world-cascade"))mode=Run::cascade;
     if(argc==4&&!std::strcmp(argv[3],"--world-terminal"))mode=Run::terminal;
+    if(argc==4&&!std::strcmp(argv[3],"--melee-interrupt"))mode=Run::melee;
     if(argc!=3&&mode==Run::entry)
-        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal] < qualified-roles");
-    const bool area=mode!=Run::entry&&mode!=Run::bomb;
+        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt] < qualified-roles");
+    const bool melee=mode==Run::melee;
+    const bool area=mode!=Run::entry&&mode!=Run::bomb&&!melee;
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
     };
     for(unsigned i=0;i<2;++i){
-        auto& a=assets[i];a.motion.resize(motion_sizes[i]);a.view.resize(view_sizes[i]);
+        auto& a=assets[i];a.motion.resize(melee?melee_motion_sizes[i]:motion_sizes[i]);a.view.resize(melee?melee_view_sizes[i]:view_sizes[i]);
         read(a.spec);read(a.hit);read(a.motion);read(a.view);
     }
     AreaAssets common{};
     if(area){read(common.collision);common.view=archive::read_source();}
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets,area?&common:nullptr).observe(mode);
+    Replay(mod,original,assets,area?&common:nullptr,melee).observe(mode);
 }

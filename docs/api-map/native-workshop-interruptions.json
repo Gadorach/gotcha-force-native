@@ -1,0 +1,190 @@
+{
+  "cases": [
+    {
+      "authored_melee_first_frame": 9,
+      "borg": "gg4e08:0306",
+      "classification": "authored-hit-before-melee-window",
+      "first_payload_update": null,
+      "frame_at_interrupt": 3,
+      "group_subjects": [
+        "gg4e08:0305",
+        "gg4e08:0306",
+        "gg4e08:0307",
+        "gg4e08:0308",
+        "gg4e08:0309"
+      ],
+      "interrupt_update": 106,
+      "move": "opening-slash",
+      "payloads_before_interrupt": [],
+      "preceding_accepted_hits": [
+        {
+          "actor_slot": 4,
+          "hp_removed": 10,
+          "kind": "hit",
+          "move": "charge-hit",
+          "update": 105
+        }
+      ],
+      "seat": 2,
+      "start_update": 102
+    },
+    {
+      "authored_melee_first_frame": 9,
+      "borg": "gg4e08:0804",
+      "classification": "authored-hit-before-melee-window",
+      "first_payload_update": null,
+      "frame_at_interrupt": 1,
+      "group_subjects": [
+        "gg4e08:0802",
+        "gg4e08:0804",
+        "gg4e08:0805",
+        "gg4e08:0806",
+        "gg4e08:0807"
+      ],
+      "interrupt_update": 78,
+      "move": "opening-slash",
+      "payloads_before_interrupt": [],
+      "preceding_accepted_hits": [
+        {
+          "actor_slot": 4,
+          "hp_removed": 10,
+          "kind": "hit",
+          "move": "charge-hit",
+          "update": 77
+        }
+      ],
+      "seat": 2,
+      "start_update": 76
+    },
+    {
+      "authored_melee_first_frame": 9,
+      "borg": "gg4e08:0808",
+      "classification": "authored-hit-before-melee-window",
+      "first_payload_update": null,
+      "frame_at_interrupt": 6,
+      "group_subjects": [
+        "gg4e08:0808",
+        "gg4e08:0809",
+        "gg4e08:080a",
+        "gg4e08:080c",
+        "gg4e08:080d"
+      ],
+      "interrupt_update": 86,
+      "move": "opening-slash",
+      "payloads_before_interrupt": [],
+      "preceding_accepted_hits": [
+        {
+          "actor_slot": 3,
+          "hp_removed": 10,
+          "kind": "hit",
+          "move": "charge-hit",
+          "update": 85
+        }
+      ],
+      "seat": 1,
+      "start_update": 79
+    },
+    {
+      "authored_melee_first_frame": 9,
+      "borg": "gg4e08:080d",
+      "classification": "authored-hit-before-melee-window",
+      "first_payload_update": null,
+      "frame_at_interrupt": 3,
+      "group_subjects": [
+        "gg4e08:0808",
+        "gg4e08:0809",
+        "gg4e08:080a",
+        "gg4e08:080c",
+        "gg4e08:080d"
+      ],
+      "interrupt_update": 176,
+      "move": "opening-slash",
+      "payloads_before_interrupt": [],
+      "preceding_accepted_hits": [
+        {
+          "actor_slot": 3,
+          "hp_removed": 10,
+          "kind": "hit",
+          "move": "charge-hit",
+          "update": 175
+        }
+      ],
+      "seat": 5,
+      "start_update": 172
+    },
+    {
+      "authored_melee_first_frame": null,
+      "borg": "gg4e08:0f05",
+      "classification": "authored-hit-after-payload",
+      "first_payload_update": 230,
+      "frame_at_interrupt": 13,
+      "group_subjects": [
+        "gg4e08:0f01",
+        "gg4e08:0f02",
+        "gg4e08:0f03",
+        "gg4e08:0f04",
+        "gg4e08:0f05"
+      ],
+      "interrupt_update": 232,
+      "move": "mine",
+      "payloads_before_interrupt": [
+        {
+          "kind": "emit",
+          "update": 230
+        }
+      ],
+      "preceding_accepted_hits": [
+        {
+          "actor_slot": 1,
+          "hp_removed": 8,
+          "kind": "hit",
+          "move": "basic-shot",
+          "update": 231
+        }
+      ],
+      "seat": 5,
+      "start_update": 218
+    }
+  ],
+  "checkpoints": [
+    {
+      "cpu_enemy_hit": 148,
+      "cpu_move_started": 163,
+      "cpu_payload_seen": 158,
+      "groups_ended": 0,
+      "quiet_defeated": 0,
+      "quiet_fighting": 43,
+      "quiet_round_ended": 0,
+      "started_no_hit_interrupted": 7,
+      "started_no_hit_no_payload": 5,
+      "started_no_hit_stage_impact": 0,
+      "started_no_hit_with_payload": 10,
+      "subjects_with_round_at_tick": 206,
+      "tick": 120
+    },
+    {
+      "cpu_enemy_hit": 183,
+      "cpu_move_started": 191,
+      "cpu_payload_seen": 187,
+      "groups_ended": 1,
+      "quiet_defeated": 4,
+      "quiet_fighting": 11,
+      "quiet_round_ended": 0,
+      "started_no_hit_interrupted": 5,
+      "started_no_hit_no_payload": 4,
+      "started_no_hit_stage_impact": 0,
+      "started_no_hit_with_payload": 4,
+      "subjects_with_round_at_tick": 205,
+      "tick": 240
+    }
+  ],
+  "classifications": {
+    "authored-hit-after-payload": 1,
+    "authored-hit-before-melee-window": 4
+  },
+  "kind": "gf-native-workshop-interruptions",
+  "revision": 1,
+  "scope": "authored native Workshop, not original behavior",
+  "subjects": 206,
+  "updates": 240
+}

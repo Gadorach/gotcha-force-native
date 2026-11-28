@@ -1381,6 +1381,25 @@ python3 -m tools.analyze.retail_actor_frame_admission \
   /tmp/opencode/melee-pose-clock "$GF_RECOMP_MODULE" /tmp/opencode/gf-actor-frame-admission.json
 ```
 
+### Tau close B: interruption before publication
+
+The [melee interruption replay](api-map/gg4e08-melee-interruption.json)
+uses two independently loaded normal Tau bodies and the original processed-B
+input path. In both cases, seat 0 starts close B on visit **8** and allocates
+its group-1 cell immediately. Without pressure it first publishes and assigns
+the outgoing token on visit **27** (pose **10**), writes **17 HP** of damage,
+then returns that cell on visit **32**.
+
+When seat 1 presses B seven visits earlier, its hit reaches seat 0 at
+pose **5** (visit **19**). The original collision walk clears the subject's
+lower-lane selector before presentation. Its exact cell returns on visit
+**20**, without entering the attack list or assigning a token. An allocated
+strike is not yet a pending hit.
+
+The replay keeps the original actor, rebuild and collision boundaries
+separate. It does not qualify the subject's subsequent original recovery
+or fresh re-entry. See the [native comparison and Workshop audit](melee-interruption-checkpoint.md).
+
 ### Collision reset and the alternate contact lists
 
 The [alternate-contact replay](api-map/gg4e08-alternate-contact.json)

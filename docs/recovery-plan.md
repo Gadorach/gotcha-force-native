@@ -125,12 +125,16 @@ not a dependency of an ordinary combat/movement checkpoint.
   defaults, checks the rifle continuation and absent-emission controls, and
   binds the new opt-in only on the three reviewed normal type-0 B routes.
   This does not close the retail geometry, amount or release-timing gaps.
-- **Next:** compare an uninterrupted ordinary melee route against one
-  interruption before payload. Classify the five interrupted Workshop
-  subjects as expected authored interruption, native regression, or missing
-  evidence. Match the same inputs before changing an attack or the CPU.
-  Start the first non-G-Red movement comparison with Sasuke's jump-point
-  spend, air dash and grounded reset.
+- **Landed:** the [Tau interruption comparison](melee-interruption-checkpoint.md)
+  shows original allocation before publication: a pre-publication hit
+  cancels the attack and its exact cell returns. Native authored melee also
+  cancels before payload, but it never allocated a window at entry. The
+  refreshed Workshop audit ran all 206 on authored movement and found four
+  pre-payload melee interruptions and one after Roach's emission.
+- **Next:** start with Sasuke's jump-point spend, air dash and grounded reset.
+  Compare accepted, refused and refill visits with native movement before
+  adjusting the package. Keep air-dash admission, jump points, and landing
+  distinct. Then take the next shared movement family from step 2.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

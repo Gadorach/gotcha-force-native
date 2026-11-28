@@ -52,3 +52,9 @@ full extraction from `GF_CATALOG`.
 The native contact-tail test passed both ordinary and sanitizer builds; the
 existing Borg gameplay suite passed. The Python suite ran with the local
 retail inputs: **1,059 passed, 129 skipped**.
+
+The pending launcher-install audit later ran **201** subjects on each
+host with the same aggregate counters. Both refused the group containing
+borrowed-controller G-Red, so it was not a completed 206-subject regression
+comparison. A [separate current-host audit](melee-interruption-checkpoint.md#workshop-triage)
+staged an explicitly authored normal G-Red package and admitted all 206.
