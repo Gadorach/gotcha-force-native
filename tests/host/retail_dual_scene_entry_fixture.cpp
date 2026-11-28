@@ -25,6 +25,22 @@ struct Assets {
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
+constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
+constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
+const u8* sampled(const CPUState& cpu,u32 receiver,u32 offset){
+    if(receiver!=fighter(0)&&receiver!=fighter(1)&&receiver!=bomb)
+        fail("unexpected receiver in the second-placement fork");
+    return cpu.ram+(receiver-GC_RAM_BASE)+offset;
+}
+u32 sample_hp(const CPUState& cpu){
+    const auto p=sampled(cpu,cpu.gpr[3],0x1C6);
+    return u32(p[0])*256+p[1];
+}
+u32 sample_tier(const CPUState& cpu){
+    const auto receiver=cpu.gpr[5];
+    const auto p=sampled(cpu,receiver,0x6CA);
+    return receiver==bomb?255:*p;
+}
 
 class Replay {
     const Module& mod;
@@ -198,7 +214,7 @@ class Replay {
             fail("dual scene did not bind separate SDK view ownership and all the body descriptors");
         std::printf("dual-cold: %u %u %u %u %u\n",delay,roots[0],roots[1],64-half(pools+18),32u);
     }
-    void check_payment(unsigned delay,unsigned kind){
+    void check_payment(unsigned delay,unsigned kind,bool report=true){
         auto fork=ram;
         CPUState cpu{};
         const auto cut=mod.run_to_or_return(cpu,fork,scheduler::dispatch,{factory},nullptr,65536);
@@ -206,7 +222,7 @@ class Replay {
         if(cut!=factory||cpu.lr!=0x80130584||cpu.gpr[3]!=fighter(1)||cpu.gpr[4]!=2||cpu.gpr[5]!=10||stock!=9||
            contact::at(fork,bomb)[0]||contact::half(fork,fighter(0)+0x774)!=10)
             fail("world bomb did not pay before the original allocation");
-        std::printf("dual-world-pay: %u %u %u\n",delay,kind,stock);
+        if(report)std::printf("dual-world-pay: %u %u %u\n",delay,kind,stock);
     }
     void check_bomb_world(unsigned kind,unsigned visit){
         const bool carrier=kind>=2&&visit<(kind==2?3u:183u);
@@ -302,7 +318,7 @@ class Replay {
             }
         }
     }
-    void check_area_timeout(unsigned delay,unsigned shapes){
+    void check_area_timeout(unsigned delay,unsigned shapes,bool report=true){
         auto fork=ram;
         CPUState terminal{};
         const auto cut=mod.run_to_or_return(terminal,fork,scheduler::dispatch,{area_factory},nullptr,65536);
@@ -316,7 +332,7 @@ class Replay {
            !contact::at(fork,bomb+0x1D8)[0]||contact::half(fork,contact::free_count+8)!=shapes-1||
            be32(contact::at(fork,contact::free_head+16))!=(shapes==2?child_shape:0))
             fail("world area initializer did not see the old marked shape still occupying its cell");
-        std::printf("dual-area-bind: %u %u %u %u %u\n",delay,shapes,181u,shapes-1,1u);
+        if(report)std::printf("dual-area-bind: %u %u %u %u %u\n",delay,shapes,181u,shapes-1,1u);
     }
     void check_area_amount(){
         auto fork=ram;
@@ -370,7 +386,81 @@ class Replay {
            half(pools+18)!=18||half(pools+28+18)||word(archive::source_globals)!=common_view_owner))
             fail("world area leaked a carrier, shape, view cell or shared archive");
     }
-    void world_area(unsigned delay){
+    void probe_reaction_b(unsigned delay,unsigned shapes,unsigned visit){
+        auto fork=ram;
+        put32(contact::at(fork,pad+32),0x200);
+        CPUState cpu{};CallObservation poll{0x80056900};
+        const auto cut=mod.run_to_or_return(cpu,fork,scheduler::dispatch,{factory,body_pass_end,0x80264290},&poll,65536);
+        const auto body=fighter(1);
+        const auto w=[&](u32 offset){return be32(contact::at(fork,body+offset));};
+        const auto at=[&](u32 offset){return contact::at(fork,body+offset)[0];};
+        const bool reacted=shapes==2&&visit>185;
+        if(cut!=factory||cpu.lr!=0x80130584||cpu.gpr[3]!=body||cpu.gpr[4]!=2||cpu.gpr[5]!=10||
+           poll.count!=2||poll.caller!=0x80054CD0||poll.first_arguments[0]!=fighter(0)||poll.first_arguments[1]!=body||
+           w(0x5BC)!=0x200||contact::half(fork,body+0x774)!=9||w(0x5D4)!=0x60||
+           at(0x71A)!=(reacted?10u:0u)||at(0x71C)||w(0x5A0)||w(0x5F4)!=one||
+           w(0x1DC8)!=(reacted?negative_rate:one)||contact::at(fork,bomb)[0])
+            fail("original pad ingest or second-B debit after the area changed");
+        if(visit==184||visit==185||visit==186||visit==189||visit==198||visit==235)
+            std::printf("area-reaction-b: %u %u %u %u %u %u %08X\n",delay,shapes,visit,
+                        poll.count,w(0x5BC),contact::half(fork,body+0x774),w(0x1DC8));
+        if(visit==185||visit==186){
+            std::memcpy(fork.data(),ram.data(),ram.size());
+            put32(contact::at(fork,pad+32),0x200);
+            CPUState full{};CallObservation seen{contact::hp_write};
+            seen.sample=sample_hp;
+            const auto stop=mod.run_to_or_return(full,fork,scheduler::dispatch,{0x80264290},&seen,1u<<20);
+            const auto read=[&](u32 address){return be32(contact::at(fork,address));};
+            const bool area=shapes==2;
+            const auto h=[&](u32 address){return contact::half(fork,address);};
+            if(stop||seen.count>4||(seen.count&&seen.caller!=0x8002F1D8)||
+               read(scene+176)!=word(scene+176)+1||h(body+0x774)!=9||!contact::at(fork,bomb)[0]||
+               h(bomb+0x26C)!=(area?3:2)||read(bomb+0x90)!=body||read(bomb+0x8C)!=body||
+               read(attack_list)!=bomb_shape||read(bomb_shape+0x20)!=bomb||read(bomb_shape+0x24)!=body||
+               h(attack_count)!=(area?2:1)||h(contact::receiver_count)!=19||
+               (area&&(read(attack_list+4)!=child_shape||read(child_shape+0x20)!=child||
+                       read(child_shape+0x24)!=body||h(child+0x26C)!=2))||
+               read(body+0x42C)||read(bomb+0x41C)||read(body+0x420)||read(body+0x424))
+                fail("second-B fork did not publish the two exact shapes or preserve separate credits");
+            std::printf("area-reaction-placement: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",delay,shapes,visit,
+                        seen.count,h(bomb+0x26C),h(bomb+0x1C6),h(attack_count),
+                        contact::half(fork,fighter(0)+0x1C6),contact::half(fork,body+0x1C6),
+                        h(fighter(0)+0x20C),h(fighter(0)+0x20E),
+                        read(body+0x418),read(fighter(0)+0x41C),read(body+0x41C),contact::at(fork,fighter(0)+0x6CA)[0]);
+            std::memcpy(fork.data(),ram.data(),ram.size());
+            put32(contact::at(fork,pad+32),0x200);
+            CPUState amount_cpu{};CallObservation amounts{contact::amount_entry};
+            amounts.sample=sample_tier;
+            mod.run_observed(amount_cpu,fork,scheduler::dispatch,amounts,65536);
+            if(amounts.count!=seen.count||(amounts.count&&amounts.caller!=0x8002F108))
+                fail("second-B amount and HP writers diverged");
+            for(unsigned i=0;i<seen.count;++i){
+                const auto record=amounts.first_arguments[i],attack=amounts.second_arguments[i];
+                if(amounts.third_arguments[i]!=seen.first_arguments[i]||
+                   !((record==parent_amount&&attack==bomb)||(record==child_amount&&attack==child)))
+                    fail("second-B HP writer did not use its exact amount and receiver");
+                std::printf("area-reaction-contact: %u %u %u %u %08X %08X %u %u %u\n",delay,shapes,visit,i,
+                            record,seen.first_arguments[i],seen.second_arguments[i],seen.samples[i],amounts.samples[i]);
+            }
+        }
+    }
+    void report_reaction(unsigned delay,unsigned shapes,unsigned visit){
+        for(unsigned i=0;i<2;++i){
+            const auto body=fighter(i);
+            const bool reacted=shapes==2&&visit>=185;
+            const unsigned gate=reacted&&visit<189?189-visit:0;
+            if(byte(body+0x19)!=2||byte(body+0x2AE)!=gate||byte(body+0x2AF)!=gate||
+               byte(body+0x71A)!=(reacted?10u:0u)||byte(body+0x71C)||word(body+0x5A0)||
+               word(body+0x5F4)!=one||word(body+0x1DC8)!=(reacted&&visit>185?negative_rate:one)||
+               word(body+0x1DCC)!=(reacted?negative_rate:one)||word(body+0x1DD0)!=one)
+                fail("area reaction changed the source input phase, contact gates or rates");
+            if(visit<=189||visit==198||visit==231||visit==235)
+                std::printf("area-reaction-body: %u %u %u %u %u %u %u %u %u %08X %08X %08X\n",
+                            delay,shapes,visit,i,byte(body+0x19),byte(body+0x2AE),byte(body+0x2AF),
+                            byte(body+0x71A),byte(body+0x71C),word(body+0x5F4),word(body+0x1DC8),word(body+0x1DCC));
+        }
+    }
+    void world_area(unsigned delay,bool reaction){
         const auto saved=ram;
         for(unsigned shapes:{1u,2u}){
             std::memcpy(ram.data(),saved.data(),ram.size());
@@ -387,11 +477,12 @@ class Replay {
             store(contact::free_head+16,bomb_shape);store(contact::free_tail+16,shapes==2?child_shape:bomb_shape);
             store16(contact::free_count+8,u16(shapes));
             store(pad+32,0x200);
-            check_payment(delay,shapes);
+            check_payment(delay,shapes,!reaction);
             unsigned previous_phase=0,previous_shape=0;
-            for(unsigned visit=1;visit<=240;++visit){
-                if(visit==181)check_area_timeout(delay,shapes);
+            for(unsigned visit=1;visit<=(reaction?235u:240u);++visit){
+                if(visit==181)check_area_timeout(delay,shapes,!reaction);
                 if(visit==185&&shapes==2)check_area_amount();
+                if(reaction&&visit>=184)probe_reaction_b(delay,shapes,visit);
                 const auto before=word(scene+176);
                 const auto turn_before=word(scene+168),combat_before=word(scene+172);
                 CPUState cpu{};CallObservation hits{contact::hp_write};
@@ -407,8 +498,9 @@ class Replay {
                 const auto attack=half(attack_count)?word(attack_list):0;
                 const bool child_published=attack&&word(attack+0x20)==child;
                 check_area_world(shapes,visit,hits,child_published);
-                if(visit<=2||visit==180||visit==181||visit==182||visit==183||hits.count||
-                   phase!=previous_phase||child_published!=bool(previous_shape)||(visit>181&&!byte(child))||visit==240)
+                if(reaction&&visit>=183)report_reaction(delay,shapes,visit);
+                if(!reaction&&(visit<=2||visit==180||visit==181||visit==182||visit==183||hits.count||
+                   phase!=previous_phase||child_published!=bool(previous_shape)||(visit>181&&!byte(child))||visit==240))
                     std::printf("dual-area: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %08X\n",
                                 delay,shapes,visit,half(fighter(1)+0x774),byte(bomb),byte(bomb+0x18),byte(child),
                                 phase,unsigned(child_published),half(attack_count),half(contact::receiver_count),
@@ -416,12 +508,12 @@ class Replay {
                                 word(fighter(1)+0x418),word(fighter(1)+0x42C),word(fighter(0)+0x41C),
                                 word(fighter(1)+0x41C),half(fighter(0)+0x20C),half(fighter(1)+0x20C),
                                 child_published?word(attack+0x7C):0);
-                for(unsigned j=0;j<hits.count;++j)
+                for(unsigned j=0;!reaction&&j<hits.count;++j)
                     std::printf("dual-area-hp: %u %u %u %u %08X %u\n",
                                 delay,shapes,visit,j,hits.first_arguments[j],hits.second_arguments[j]);
                 previous_phase=phase;previous_shape=unsigned(child_published);
                 store(pad+32,0);
-                if(visit>181&&!byte(bomb)&&!byte(child))break;
+                if(!reaction&&visit>181&&!byte(bomb)&&!byte(child))break;
             }
         }
     }
@@ -430,7 +522,7 @@ public:
         mod(m),ram(original){
         setup(assets,area);
     }
-    void observe(bool world,bool area){
+    void observe(bool world,bool area,bool reaction){
         const auto start=ram;
         for(unsigned delay:{0u,10u}){
             std::memcpy(ram.data(),start.data(),ram.size());
@@ -440,7 +532,7 @@ public:
                 at(scene+0xD2)[0]=u8(visit>=2&&visit<2+delay?2:0);
                 const unsigned before=f(0,0x743)+2*f(1,0x743);
                 if(world&&visit==opens+1){
-                    if(area)world_area(delay);else world_bomb(delay);
+                    if(area)world_area(delay,reaction);else world_bomb(delay);
                     break;
                 }
                 if(!world&&visit>=opens)pulse(delay,visit,visit>opens);
@@ -493,9 +585,10 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    const bool area=argc==4&&!std::strcmp(argv[3],"--world-area");
+    const bool reaction=argc==4&&!std::strcmp(argv[3],"--world-reaction");
+    const bool area=reaction||(argc==4&&!std::strcmp(argv[3],"--world-area"));
     const bool world=area||(argc==4&&!std::strcmp(argv[3],"--world-bomb"));
-    if(argc!=3&&!world)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area] < qualified-roles");
+    if(argc!=3&&!world)fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction] < qualified-roles");
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
@@ -508,5 +601,5 @@ int main(int argc,char** argv){
     if(area){read(common.collision);common.view=archive::read_source();}
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets,area?&common:nullptr).observe(world,area);
+    Replay(mod,original,assets,area?&common:nullptr).observe(world,area,reaction);
 }

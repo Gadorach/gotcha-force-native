@@ -20,6 +20,9 @@ struct CallObservation {
     unsigned count=0;
     u32 second_arguments[8]{};
     u32 first_arguments[8]{};
+    u32 third_arguments[8]{};
+    u32 samples[8]{};
+    u32 (*sample)(const CPUState&)=nullptr;
 };
 
 inline u32 be32(const u8* p){return u32(p[0])<<24|u32(p[1])<<16|u32(p[2])<<8|p[3];}
@@ -69,6 +72,8 @@ class Module {
             if(obs->count<8){
                 obs->first_arguments[obs->count]=cpu->gpr[3];
                 obs->second_arguments[obs->count]=cpu->gpr[4];
+                obs->third_arguments[obs->count]=cpu->gpr[5];
+                if(obs->sample)obs->samples[obs->count]=obs->sample(*cpu);
             }
             ++obs->count;
         }

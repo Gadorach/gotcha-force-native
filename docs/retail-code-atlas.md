@@ -2270,6 +2270,48 @@ python3 -m tools.analyze.retail_scene_bomb_area \
   /tmp/opencode/gf-scene-bomb-area.json
 ```
 
+### World callbacks: reaction clocks and a second Time Bomber placement
+
+The [reaction and second-press replay](api-map/gg4e08-scene-bomb-reaction.json)
+extends the same initialized empty-grid setup. The retained stream
+adds no input after the first paid B. Each extra press is an
+independent fork of the processed-pad boundary.
+
+- The accepted area on visit **185** writes reaction class **10**,
+  two impact gate bytes at **4**, and `+0x1DCC = −0.05` on both
+  actors. The consumed secondary rate `+0x1DC8` stays **1** on
+  that visit and becomes **−0.05** on **186**. Both gates reach 0 on
+  **189**, while the secondary rate is still negative on **235**.
+  Primary rates remain **1** and the separate `+0x71C` hit-stop
+  timers stay **0**. This is not a four-visit freeze.
+- Every fresh B fork from **184** through **235** reaches the second
+  key-**2**, pose-**10** factory with one stock already spent.
+  Completing the calls for **185** and **186** publishes the new
+  bomb immediately. The old area can hit the new carrier in the
+  same visit, requesting **4** but removing its only **1 HP**
+  without adding an actor damage credit.
+- In the **10-visit startup-hold** case with a new B on **185**,
+  Sasuke receives the new bomb first (**26 HP**, tier **0**, token
+  **3**), followed by the old area (**14 HP**, tier **1**, token
+  **2**). Both hits remain in his history and add **40** opponent
+  damage credit. The old area then hits the new carrier and Time
+  Bomber, whose **4 HP** self-hit adds no ally credit. At the same
+  press timing in the **zero-hold** case the new bomb did not hit
+  Sasuke; the old area used tier **0** and removed **17 HP**.
+
+All four cases match across O0/O1/O2: **940** retained coordinator
+calls, **208** factory forks, and **8** completed second placements.
+This qualifies the sampled ordering and input path, not general
+guard rules, a constructed arena, the replacement bomb's next
+terminal callback, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_scene_bomb_reaction \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/dual-scene-entry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-bomb-reaction.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
