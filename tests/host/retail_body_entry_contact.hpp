@@ -63,8 +63,8 @@ inline void require_heal_returned(std::vector<u8>& ram,u32 payload,u32 view){
         fail("heal effect did not return its exact original storage, view and carrier cells");
 }
 
-inline void bind_attack(const Module& mod,std::vector<u8>& ram,const Attack& raw,const Route& r,
-                        unsigned relation,u32 target_shape,u32 caster,u32 cell=attack_cell){
+inline void bind_attack_at(const Module& mod,std::vector<u8>& ram,const Attack& raw,const Route& r,
+                           unsigned relation,const contact::Point& point,u32 caster,u32 cell=attack_cell){
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
@@ -90,8 +90,8 @@ inline void bind_attack(const Module& mod,std::vector<u8>& ram,const Attack& raw
         fail("entry contact lost the indexed queue command or descriptor");
     for(unsigned i=0;i<3;++i){
         put_float(at(matrix+20*i),1.f);
-        put_float(at(matrix+12+16*i),scalar(target_shape+0x64+4*i)-scalar(d+12+4*i));
-        put_float(at(caster+0x20+4*i),scalar(target_shape+0x64+4*i));
+        put_float(at(matrix+12+16*i),point[i]-scalar(d+12+4*i));
+        put_float(at(caster+0x20+4*i),point[i]);
     }
     auto available=half(contact::free_count+8);
     const auto offered=word(contact::free_head+16);
@@ -109,6 +109,13 @@ inline void bind_attack(const Module& mod,std::vector<u8>& ram,const Attack& raw
        bind.arguments[1]!=r.group||word(vm_cursor)!=r.command+4||half(contact::free_count+8)!=available-1||
        word(cell+0x20)!=caster||word(cell+0x24)!=caster||word(cell+0x28)!=d)
         fail("entry contact VM did not bind the original attack cell");
+}
+
+inline void bind_attack(const Module& mod,std::vector<u8>& ram,const Attack& raw,const Route& r,
+                        unsigned relation,u32 target_shape,u32 caster,u32 cell=attack_cell){
+    contact::Point point{};
+    for(unsigned i=0;i<3;++i)point[i]=std::bit_cast<float>(be32(contact::at(ram,target_shape+0x64+4*i)));
+    bind_attack_at(mod,ram,raw,r,relation,point,caster,cell);
 }
 
 inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,unsigned route_id,

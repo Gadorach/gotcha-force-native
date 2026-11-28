@@ -2672,6 +2672,46 @@ python3 -m tools.analyze.retail_body_capsules \
   /tmp/opencode/gf-body-capsules.json
 ```
 
+### Ordinary sphere/capsule pairs: raw broad field, strict narrow test
+
+The [pair replay](api-map/gg4e08-capsule-pair.json) sends Tau’s exact
+radius-**70** sphere through the ordinary list against three
+singleton, unedited receiver descriptors. Only the body queue is
+narrowed; the source descriptors, amount records, and HP writer run
+unchanged with declared stationary matrices.
+
+For Sasuke’s radius-**7**, half-length-**15** capsule, the broad
+field is **22** at initialization and **484** on the unchanged
+update. The original broad helper adds the raw field to the
+attack’s 70: the updated pair passes broad phase at **554** units
+and fails at **555**. It does not take a square root of 484.
+The enlarged candidate region does **not** make the hit larger.
+
+| Declared separation | Broad phase | Sphere/capsule narrow test |
+| --- | --- | --- |
+| Side 76 | Accepts | Accepts; **17 HP** removed |
+| Side 77 (exact tangency) | Accepts | Refuses |
+| End cap 91 | Accepts | Accepts; **17 HP** removed |
+| End cap 92 (exact tangency) | Accepts | Refuses |
+| 554 after the unchanged update | Accepts | Refuses |
+
+The same-model controls distinguish `0506`’s zero-extent descriptor
+**6** from its ordinary descriptor **2**. Both publish, but the
+zero bound fails the broad helper’s positive-field check even at
+coincident centers. Descriptor 2 reaches the writer and removes
+**16 HP** in that centered probe. No accepted token writes twice.
+
+All **24** cases matched across O0/O1/O2. This does not transfer the
+strict tangency rule to other shape pairs or qualify alternate
+contacts, moving sweeps, hardware, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_capsule_pair \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/capsule-pair "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-capsule-pair.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
