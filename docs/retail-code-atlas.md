@@ -2787,6 +2787,41 @@ python3 -m tools.analyze.retail_moving_receiver \
   /tmp/opencode/gf-moving-receiver.json
 ```
 
+### Receiver correction: root, broad center, and scratch endpoints
+
+The [receiver-correction replay](api-map/gg4e08-receiver-correction.json)
+passes declared displacements to the original writer `80035CA4`.
+The writer moves Sasuke’s root and accumulates the same vector in
+`+0x1CC`; two writes of **−10** and **−14** leave **−24**, not a
+double application of the first displacement.
+
+The targeted `8002CE90` pass then moves the **broad center** in
+bucket **50**. It leaves the allocated capsule endpoints and broad
+field unchanged. If broad phase admits the pair, `8003A260` applies
+the vector to the capsule’s **scratch endpoints**; the pair does
+not write them back to the allocated cell. The sphere’s narrow
+preparation has no corresponding endpoint correction.
+
+| Declared lateral case | Without center pass | With center pass |
+| --- | --- | --- |
+| Capsule separation 78, correction −2 | Old center passes broad; corrected endpoints hit | Corrected center and endpoints hit |
+| Capsule separation 76, correction +2 | Broad passes; corrected endpoints miss | Broad passes; corrected endpoints miss |
+| Capsule separation 100, correction −24 | Old center fails broad before scratch setup | Corrected center opens broad; corrected endpoints hit |
+| Sphere separation 91, correction +2 | Old center still hits | Corrected center fails broad |
+
+The accepted cases remove **17 HP** each. All **12** cases
+matched across O0/O1/O2. This qualifies the original writer and
+consumers under declared vectors, not how stage or body collision
+generates those vectors, linked-actor propagation, hardware, or
+native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_receiver_correction \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/capsule-pair "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-receiver-correction.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

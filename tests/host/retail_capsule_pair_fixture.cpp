@@ -56,12 +56,14 @@ Outcome resolve(const Module& mod,std::vector<u8>& ram,unsigned initial_hp,u32 k
         if(verify_current_receiver){
             const auto scratch=swap?pair.gpr[3]:pair.gpr[4];
             for(unsigned axis=0;axis<3;++axis){
-                if(word(target+0x1CC+4*axis))
-                    fail("receiver motion needs the unshifted original narrow-phase inlet");
                 for(u32 p:{0x64u,0x8Cu,0x98u}){
                     if(p!=0x64&&word(receive+0x58)!=2)continue;
-                    if(be32(contact::at(fork,scratch+p-0x58+4*axis))!=word(receive+p+4*axis))
-                        fail("receiver motion narrow kernel did not receive the current body geometry");
+                    const auto original=word(receive+p+4*axis);
+                    const auto shift=word(target+0x1CC+4*axis);
+                    const auto expected=p==0x64||!shift?original:std::bit_cast<u32>(
+                        std::bit_cast<float>(original)+std::bit_cast<float>(shift));
+                    if(be32(contact::at(fork,scratch+p-0x58+4*axis))!=expected)
+                        fail("narrow kernel did not receive the required current geometry and capsule correction");
                 }
             }
         }
@@ -221,6 +223,9 @@ void moving_receiver(const Module& mod,std::vector<u8> ram,const entry::Attack& 
            word(attack+0x28)!=entry::attack_bank+0xAA0+80*2||word(attack+0x20)!=actor||
            word(receive+0x28)!=contact::body_block+32+80*body.step||word(receive+0x20)!=contact::receiver)
             fail("moving receiver changed its distinct body kind, descriptor or ownership");
+        for(unsigned axis=0;axis<3;++axis)
+            if(word(contact::receiver+0x1CC+4*axis))
+                fail("receiver motion needs an unshifted original narrow-phase inlet");
         const auto kernel=kind==2?(capsule?capsule_capsule:sphere_capsule):(capsule?sphere_capsule:sphere_sphere);
         auto fork=ram;
         const auto out=resolve(mod,fork,body.hp,kernel,kind==2&&!capsule,true);
@@ -234,13 +239,75 @@ void moving_receiver(const Module& mod,std::vector<u8> ram,const entry::Attack& 
                     out.requested,out.hp,out.token);
     }
 }
+
+struct Correction {bool capsule;int separation,first,second;};
+constexpr Correction corrections[]{
+    {true,78,0,0}, {true,78,-2,0}, {true,76,2,0}, {true,100,-10,-14},
+    {false,91,2,0}, {false,93,-2,0},
+};
+
+void correction(const Module& mod,std::vector<u8> ram,const entry::Attack& tau,const entry::Attack& sasuke,
+                unsigned id,bool publish_center){
+    const auto p=corrections[id];
+    const auto body=p.capsule?receivers[0]:contact::sasuke;
+    constexpr contact::Point anchor{200,150,325};
+    const contact::Point center{200,150+float(p.separation),325};
+    bind(mod,ram,tau,sasuke,body,center,anchor);
+    rebuild(mod,ram);
+    constexpr u32 target=contact::receiver,receive=contact::body,arena_slots=0x803C4E84,vector=0x8105E700;
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto bits=[](float f){return std::bit_cast<u32>(f);};
+    const auto call=[&](u32 fn,u32 a=0,u32 b=0){
+        CPUState cpu{};cpu.gpr[3]=a;cpu.gpr[4]=b;mod.run(cpu,ram,fn,4096);
+    };
+    const auto endpoints=[&](){
+        return std::array{word(receive+0x8C),word(receive+0x90),word(receive+0x94),
+                          word(receive+0x98),word(receive+0x9C),word(receive+0xA0)};
+    };
+    const auto allocated=endpoints();
+    if(word(target+0x1D0)||at(target+0x1DC)[0]||at(target+0x1DD)[0]||
+       word(target+0x24)!=bits(center[1])||word(receive+0x68)!=bits(center[1]))
+        fail("receiver correction did not start from a clean original body");
+    // The original writer iterates a contiguous six-seat actor array. The
+    // original receiver stays in its physical seat; only the scratch caster
+    // is kept out of this separate correction callback.
+    const auto first_actor=word(arena_slots);
+    put32(at(arena_slots),target-0x1E00);
+    int displacement=0;
+    for(int step:{p.first,p.second}){
+        if(!step)continue;
+        put_float(at(vector+4),float(step));
+        call(0x80035CA4,target,vector);
+        displacement+=step;
+        if(word(target+0x24)!=bits(center[1]+float(displacement))||
+           word(target+0x1D0)!=bits(float(displacement))||!(at(target+0x1DD)[0]&1))
+            fail("original actor correction did not accumulate its supplied displacement");
+    }
+    put32(at(arena_slots),first_actor);
+    if(publish_center)call(0x8002CE90,50);
+    if(word(receive+0x68)!=bits(center[1]+(publish_center?float(displacement):0.f))||
+       word(receive+0x7C)!=bits(22.f)||word(receive+0x58)!=(p.capsule?2u:0u)||
+       (p.capsule&&endpoints()!=allocated))
+        fail("original receiver center pass touched endpoints, radius, or kind");
+    const unsigned kernel=p.capsule?sphere_capsule:sphere_sphere;
+    const auto out=resolve(mod,ram,body.hp,kernel,false,true);
+    if((p.capsule&&endpoints()!=allocated)||
+       word(target+0x24)!=bits(center[1]+float(displacement))||word(target+0x1D0)!=bits(float(displacement)))
+        fail("ordinary pair wrote its temporary correction back to the body");
+    std::printf("correction-pair: %u %u %u %d %d %u %08X %08X %08X %08X %u %u %u %u %u %u\n",
+                id,unsigned(publish_center),unsigned(p.capsule),p.separation,displacement,
+                at(target+0x1DD)[0]&1u,word(target+0x24),word(target+0x1D0),word(receive+0x68),
+                word(receive+0x7C),out.coarse,out.narrow,out.amount,out.requested,out.hp,out.token);
+}
 }
 
 int main(int argc,char** argv){
     const bool moving=argc==4&&!std::strcmp(argv[3],"--moving-sphere");
     const bool receiver=argc==4&&!std::strcmp(argv[3],"--moving-receiver");
-    if(argc!=3&&!moving&&!receiver)
-        fail("usage: capsule-pair-fixture qualified.dol unmodified-recomp.so [--moving-sphere|--moving-receiver] < qualified-roles");
+    const bool offset=argc==4&&!std::strcmp(argv[3],"--receiver-correction");
+    if(argc!=3&&!moving&&!receiver&&!offset)
+        fail("usage: capsule-pair-fixture qualified.dol unmodified-recomp.so [--moving-sphere|--moving-receiver|--receiver-correction] < qualified-roles");
     entry::Attack tau{},sasuke{},large{};
     for(auto* a:{&tau,&sasuke,&large}){
         if(std::fread(a->hit.data(),1,a->hit.size(),stdin)!=a->hit.size()||
@@ -254,6 +321,9 @@ int main(int argc,char** argv){
     else if(receiver)
         for(bool capsule:{false,true})
             for(unsigned i=0;i<std::size(paths);++i)moving_receiver(mod,original,tau,sasuke,i,capsule);
+    else if(offset)
+        for(unsigned i=0;i<std::size(corrections);++i)
+            for(bool update:{false,true})correction(mod,original,tau,sasuke,i,update);
     else
         for(unsigned i=0;i<std::size(cases);++i)
             for(bool updated:{false,true})probe(mod,original,tau,cases[i].body?large:sasuke,i,updated);
