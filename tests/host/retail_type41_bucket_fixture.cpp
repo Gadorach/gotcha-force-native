@@ -31,7 +31,7 @@ constexpr AreaCase area_cases[]{
     {22,false,false,false},{22,true,false,false},{70,true,false,false},{409,true,false,false},
     {409.5f,true,false,false},{410,true,false,false},{22,true,true,false},{22,true,false,true},
 };
-enum class AreaMode {hp,tiers,knockout};
+enum class AreaMode {hp,tiers,knockout,body_exit};
 struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;AreaMode mode;};
 struct TierCase {u8 meter,tier,flags;u16 gauge;bool hp_held;};
 constexpr TierCase tier_cases[]{
@@ -45,6 +45,7 @@ constexpr KnockoutCase knockout_cases[]{
     {7,200,false,true,false,false,false,2}, {7,140,true,true,true,true,false,2},
     {3,200,true,false,false,false,true,0}, {7,150,true,true,true,false,false,0},
 };
+constexpr std::array<unsigned,5> exit_knockout_case{2,2,5,2,2};
 struct ParentCase {float offset;bool incoming,ally,command;};
 constexpr ParentCase parent_cases[]{
     {30,false,false,false},{42,false,false,false},{43,false,false,false},{30,false,true,false},
@@ -83,6 +84,14 @@ class Check {
     void rebuild(){for(u32 entry:{0x8008A28C,0x80089AEC})call(entry,0);}
     void place(u32 pc,float x){
         put_float(at(pc),x);put_float(at(pc+4),100.f);put_float(at(pc+8),300.f);
+    }
+    void empty_stage_grid(){
+        constexpr u32 grid=stage+0x100,refs=stage+0x200,no_triangles=refs+64*4;
+        for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
+        constexpr std::array<u32,6> grid_fields{500,500,8,8,u32(-1000),u32(-1000)};
+        for(unsigned i=0;i<grid_fields.size();++i)put32(at(grid+4*i),grid_fields[i]);
+        put32(at(grid+24),refs);put32(at(no_triangles),0xFFFFFFFF);
+        for(unsigned i=0;i<64;++i)put32(at(refs+4*i),no_triangles);
     }
     void placement(unsigned i,Options c){
         put32(at(actor+0x5BC),0x200);
@@ -192,9 +201,116 @@ class Check {
         std::printf("tier-contact: %u %u %u %u %u %u %u %u\n",
                     c.model,probe.index,request,hp,post_gauge,post_meter,post_tier,post_flags);
     }
+    void follow_body_exit(Options c,unsigned index,unsigned capacity,const std::vector<u8>& before_pair){
+        constexpr u32 victim=contact::receiver,s=contact::scene,seat=victim-0x1E00,actor_array=0x803C4E84;
+        constexpr u32 walk=0x8002BB14,body_update=0x80054070,presentation=0x8005A580;
+        constexpr u32 begin=0x8005BBC0,reaction=0x8005C290,exit_lane=0x80065E44;
+        constexpr unsigned mask=2;
+        const bool retained=index==3,held=index==2,excluded=index==1,entered=index<2;
+        if(!retained)std::memcpy(ram.data(),before_pair.data(),ram.size());
+        for(unsigned i=0;i<6;++i)put32(at(actor_array+4*i),seat+i*0x1E00);
+        put32(at(0x803C4D94+4),word(victim+0x4AC));
+        at(victim+0x3E7)[0]=1;at(victim+0x3E5)[0]=mask;
+        call(0x8006F4F8,victim);
+        if(word(victim+0x4AC)!=0x81015400||word(victim+0x4B0)!=0x802D3EE0||word(victim+0x4F0)!=0x802D3FF8||
+           word(victim+0x4CC)!=0x8006F954||half(victim+0x1C6)!=(retained?0:7)||at(s+31)[0]!=unsigned(held))
+            fail("body exit requires the bound Sasuke class and unchanged HP at the walk inlet");
+        if(!retained)put16(at(victim+0x1C6),index==4?180:1);
+        constexpr unsigned force_limit=200;
+        put32(at(s+60+0x114),force_limit);
+        at(s+0xEA)[0]=3;at(s+0xD2)[0]=excluded?mask:0;
+        at(s+69)[0]=5; // Declared no-voice resource phase; it is not physical playback.
+        at(s+0x1829)[0]=1; // No separate pad accumulation in the later body update.
+        put_float(at(victim+0xB8),1.f);
+        for(unsigned axis=0;axis<3;++axis)
+            put32(at(victim+0x2C+4*axis),word(victim+0x20+4*axis));
+        if(!retained){
+            auto fork=ram;
+            CPUState amount{};amount.gpr[3]=0;
+            mod.run_to(amount,fork,walk,{contact::amount_entry});
+            const auto entry=amount.gpr[3];
+            if(entry!=(c.model==6?0x802C49D0u:0x802C49E8u)||amount.gpr[4]!=blast||
+               amount.gpr[5]!=victim||amount.lr!=0x8002F10C)
+                fail("body exit reached the wrong original amount route");
+            constexpr u32 hp_mirror=0x803B069E,force_mirror=0x803B0690;
+            const auto hp=contact::half(fork,hp_mirror);
+            const auto force=be32(contact::at(fork,force_mirror));
+            if(hp!=(index==4?180:1)||force!=140||force>force_limit)
+                fail("body exit collision walk did not refresh the declared receiving mirrors");
+            std::printf("body-exit-amount: %u %u %u %u",c.model,index,hp,force);
+            for(unsigned n=0;n<4;++n){
+                put16(contact::at(fork,hp_mirror),u16(n&1?180:hp));
+                put32(contact::at(fork,force_mirror),n&2?force_limit:force);
+                CPUState isolated{};isolated.gpr[3]=entry;isolated.gpr[4]=blast;isolated.gpr[5]=victim;
+                mod.run(isolated,fork,contact::amount_entry);
+                if(isolated.gpr[3]>20)fail("body exit calculator exceeded its scoped area amount");
+                std::printf(" %u",isolated.gpr[3]);
+            }
+            std::putchar('\n');
+        }
+        CPUState cpu{};CallObservation init{begin};
+        const auto cut=mod.run_to(cpu,ram,walk,{presentation,reaction},&init);
+        const auto root=word(victim+0x20);
+        std::printf("body-exit: %u %u %u %u %u %u %u %u %u %u %u %u %08X %08X %u %u\n",
+                    c.model,index,init.count,at(victim+0x18)[0],half(victim+0x1C6),word(victim+0x41C),
+                    half(victim+0x20C),at(victim+0x1DA)[0],at(s+0xEA)[0],at(victim+0x5DB)[0],
+                    at(victim+0x540)[0],at(victim+0x543)[0],word(victim+0x558),cpu.lr,
+                    at(victim+0x435)[0],word(s+60+0x118));
+        if(cpu.gpr[3]!=victim||init.count!=unsigned(entered)||(entered&&(init.caller!=0x8002C6DC||
+           init.arguments[0]!=victim||cut!=presentation||cpu.lr!=0x8002C870||
+           at(victim+0x18)[0]!=2||at(victim+0x5DB)[0]!=63||half(victim+0x272)!=0x443||
+           word(s+0xB4)!=actor||word(s+0xB8)!=victim))||
+           (!entered&&at(victim+0x18)[0]!=1)||half(actor+0x774)!=capacity)
+            fail("original collision walk changed the body exit boundary");
+        if(!entered)return;
+        {
+            auto fork=ram;
+            for(auto entry:{0x8008A28Cu,0x80089AECu}){
+                CPUState lists{};
+                mod.run(lists,fork,entry,4096);
+            }
+            std::printf("body-exit-list: %u %u %u %u\n",c.model,index,
+                        contact::half(fork,contact::receiver_count),contact::at(fork,contact::body)[0]);
+        }
+        empty_stage_grid();
+        const auto force=word(s+60+0x118),damage=word(victim+0x41C);
+        if(excluded){
+            for(unsigned visit=1;visit<=2;++visit){
+                CPUState masked{};masked.gpr[3]=victim;
+                CallObservation lane{exit_lane};
+                mod.run_to(masked,ram,body_update,{presentation},&lane);
+                if(masked.lr!=0x80054144||masked.gpr[3]!=victim||lane.count||
+                   at(victim+0x18)[0]!=2||at(victim+0x540)[0]||at(victim+0x543)[0]||word(victim+0x558)!=0x41F00000||
+                   half(victim+0x1C6)||word(victim+0x41C)!=damage||word(s+60+0x118)!=force)
+                    fail("declared scene mask advanced the phase-2 lane");
+            }
+            at(s+0xD2)[0]=0;
+        }
+        unsigned prior=at(victim+0x540)[0];
+        for(unsigned visit=1;visit<=96;++visit){
+            CPUState frame{};frame.gpr[3]=victim;
+            const bool effect=prior==1;
+            CallObservation lane{effect?0x800C1F70u:exit_lane};
+            const auto boundary=mod.run_to(frame,ram,body_update,{presentation},&lane);
+            const unsigned now=at(victim+0x540)[0],phase=at(victim+0x18)[0];
+            if(visit<=2||prior!=now||phase==3)
+                std::printf("body-exit-visit: %u %u %u %u %u %u %u %08X %u %u %u\n",c.model,index,visit,prior,now,phase,
+                            lane.count,word(victim+0x558),at(victim+0x1D8)[0],at(victim)[0],unsigned(effect));
+            if(boundary!=presentation||frame.lr!=0x80054144||frame.gpr[3]!=victim||
+               lane.count!=1||lane.caller!=(effect?0x8005BF00:0x800555F0)||lane.arguments[0]!=victim||
+               (effect&&(lane.arguments[1]||half(contact::free_count+4)))||
+               half(victim+0x1C6)||word(victim+0x41C)!=damage||word(s+60+0x118)!=force||
+               at(victim+0x435)[0]!=1||half(victim+0x20C)!=2||word(victim+0x20)!=root||half(actor+0x774)!=capacity||
+               word(s+0xB4)!=actor||word(s+0xB8)!=victim)
+                fail("isolated actor visit crossed knockout accounting or world frontier");
+            if(phase==3)return;
+            prior=now;
+        }
+        fail("normal knockout body did not reach phase 3 within the visit budget");
+    }
     void knockout_contact(Options c,const AreaProbe& probe,unsigned capacity,u32 parent){
         isolate_area(capacity,parent);
-        const auto rule=knockout_cases[probe.index];
+        const auto rule=knockout_cases[probe.mode==AreaMode::body_exit?exit_knockout_case[probe.index]:probe.index];
         constexpr u32 victim=contact::receiver,s=contact::scene,observer=actor+0x1E00;
         constexpr u32 requests=0x81050000,request_count=requests+0x2D18,request_slot=requests+0x1518;
         constexpr u32 mode=0x8043B5A0-31856;
@@ -283,6 +399,10 @@ class Check {
         }
         if(observe(contact::pair_pass,0,contact::hp_write).count||!check())
             fail("knockout retained token wrote again");
+        if(probe.mode==AreaMode::body_exit){
+            follow_body_exit(c,probe.index,capacity,snapshot);
+            return;
+        }
         std::printf("body-knockout: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
                     c.model,probe.index,expected_request,half(victim+0x1C6),word(victim+0x41C),word(force),at(reserves)[0],
                     unsigned(word(s+0xB8)!=0),at(victim+0x435)[0],word(victim+0x424),at(actor+0x434)[0],word(actor+0x420),
@@ -390,12 +510,7 @@ class Check {
         call(0x80047AA4,parent);
         if(rule.incoming){
             constexpr u32 point=0x8103D000,make=0x800FC6A0,init=0x800FC7C0;
-            constexpr u32 grid=stage+0x100,refs=stage+0x200,no_triangles=refs+64*4;
-            for(unsigned i=0;i<3;++i)put32(at(stage+28+4*i),grid);
-            constexpr std::array<u32,6> grid_fields{500,500,8,8,u32(-1000),u32(-1000)};
-            for(unsigned i=0;i<grid_fields.size();++i)put32(at(grid+4*i),grid_fields[i]);
-            put32(at(grid+24),refs);put32(at(no_triangles),0xFFFFFFFF);
-            for(unsigned i=0;i<64;++i)put32(at(refs+4*i),no_triangles);
+            empty_stage_grid();
             place(point,200.f+rule.offset);
             put16(at(receiver+0x94),0x000A);
             put32(at(visual_rows+4*68),empty);
@@ -675,7 +790,8 @@ public:
                 fail("type-41 area allocation changed credit or parent");
             if(probe){
                 if(probe->mode==AreaMode::tiers)tier_contact(c,*probe,capacity,first);
-                else if(probe->mode==AreaMode::knockout)knockout_contact(c,*probe,capacity,first);
+                else if(probe->mode==AreaMode::knockout||probe->mode==AreaMode::body_exit)
+                    knockout_contact(c,*probe,capacity,first);
                 else follow_area(c,*probe,capacity,first);
                 return;
             }
@@ -720,8 +836,9 @@ int main(int argc,char** argv){
     const bool parent=argc==4&&!std::strcmp(argv[3],"--parent-contact");
     const bool tiers=argc==4&&!std::strcmp(argv[3],"--tiers");
     const bool knockout=argc==4&&!std::strcmp(argv[3],"--knockout");
-    if(argc!=3&&!area_hp&&!parent&&!tiers&&!knockout)
-        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout] < qualified-payload");
+    const bool body_exit=argc==4&&!std::strcmp(argv[3],"--body-exit");
+    if(argc!=3&&!area_hp&&!parent&&!tiers&&!knockout&&!body_exit)
+        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -729,11 +846,11 @@ int main(int argc,char** argv){
     Common bank{};contact::HitBlock hit{};std::array<contact::ActorSpec,2> specs{};
     read(bank);read(hit);
     for(auto& spec:specs)read(spec);
-    if(area_hp||parent||tiers||knockout){
+    if(area_hp||parent||tiers||knockout||body_exit){
         contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
         for(unsigned m=6;m<=7;++m)
             for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):
-                                 knockout?std::size(knockout_cases):std::size(area_cases));++i){
+                                 knockout?std::size(knockout_cases):body_exit?exit_knockout_case.size():std::size(area_cases));++i){
                 if(parent){
                     const ParentProbe probe{i,hurt,defender};
                     const bool incoming=parent_cases[i].incoming;
@@ -741,8 +858,9 @@ int main(int argc,char** argv){
                     Check(mod,original,opts,specs[m-6],hit,bank,0,nullptr,&probe);
                     continue;
                 }
-                const AreaProbe probe{i,hurt,defender,tiers?AreaMode::tiers:knockout?AreaMode::knockout:AreaMode::hp};
-                const Options opts{u8(m),u8(1+unsigned(tiers||knockout||area_cases[i].shape)),1,3,u8(m==6?2:3),false};
+                const auto mode=tiers?AreaMode::tiers:knockout?AreaMode::knockout:body_exit?AreaMode::body_exit:AreaMode::hp;
+                const AreaProbe probe{i,hurt,defender,mode};
+                const Options opts{u8(m),u8(1+unsigned(mode!=AreaMode::hp||area_cases[i].shape)),1,3,u8(m==6?2:3),false};
                 Check(mod,original,opts,specs[m-6],hit,bank,0,&probe);
             }
     }else{

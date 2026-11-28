@@ -1941,6 +1941,48 @@ python3 -m tools.analyze.retail_body_knockout \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-knockout.json
 ```
 
+### Normal body exit: from the collision walk to phase 3
+
+The [body exit replay](api-map/gg4e08-body-phase-exit.json) starts
+`8002BB14` on the same published area-key 19 and 20 shapes, with
+the installed Sasuke receiver in the contiguous actor scan.
+The walk refreshes the receiving HP and Force mirrors. At 1 HP
+and 140 of 200 Force the amount helper requests **16 HP**.
+Restoring either mirror independently to full in a disposable
+calculator fork makes the request **17**. The actual walk uses
+the refreshed values and removes **1 HP**.
+
+The walk calls `8005BBC0` after the accepted lethal pair. It does
+not call it for a nonlethal hit, a scene-held HP write, or a retained
+zero-HP recipient without a fresh receive latch. The initializer
+sets **phase 2** and mask `0x0443`. The next original list rebuild
+omits the receiver without freeing its shape.
+
+With the scene actor mask clear, the walk takes the first countdown
+step itself, leaving **29**. When the mask is set it leaves **30**;
+two masked actor visits in the replay do not advance the clock.
+After clearing the bit, the real phase-2 dispatch selects upper
+slot 63 from Sasuke's installed mapping. The follow-up counts below
+are **unmasked visits after the collision walk**, not match frames:
+
+| Boundary | Initially unmasked | Initially masked |
+| --- | ---: | ---: |
+| First exit timer reaches zero | 29 | 30 |
+| Type-13/key-0 effect requested; no cell available | 30 | 31 |
+| Remove flag set, actor still in phase 2 | 46 | 47 |
+| Actor enters phase 3, cell still active | 47 | 48 |
+
+All **10 cases** and **24 clock samples** matched across O0/O1/O2.
+The actor visits stop before presentation. The phase-3 handler,
+resource teardown, actual cell reuse, respawn, and scene transition
+remain unqualified. Native gameplay is unchanged.
+
+```sh
+python3 -m tools.analyze.retail_body_phase_exit \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-phase-exit.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
