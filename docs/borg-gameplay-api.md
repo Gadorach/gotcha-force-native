@@ -295,9 +295,9 @@ release=arc-twin|6|arc-stock|1|arc
   ordinary jumping. Cruise uses walk speed, travelling forward when there
   is no steering input; a fresh jump-button press starts boost at dash
   speed while meter is available. Release or depletion exits after the
-  minimum boost visits. At zero meter an unfinished latch stays active
-  but grants no boost speed; held input doesn't automatically start a
-  new boost. Refill uses the previous boost state, not floor contact:
+  minimum boost visits, counting entry itself. At zero meter an unfinished
+  latch stays active but grants no boost speed. Held input doesn't
+  automatically start a new boost. Refill uses the previous boost state, not floor contact:
   delay-to-zero does not also refill. The pilot maintains the declared
   offset from accepted floor support and never publishes a landing.
    Ordinary locomotion uses `air`/`dash` clips for cruise/boost; the entry

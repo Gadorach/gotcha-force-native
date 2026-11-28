@@ -1242,6 +1242,23 @@ python3 -B -m tools.extract.retail_borg_roster "$GF_CATALOG" \
   --basic-shot-test --sasuke-air-points-test
 ```
 
+#### Blue Striker boost test
+
+Add `--blue-striker-boost-test` to a fresh `--basic-shot-test --cruise-lab`
+extraction. It replaces only the meter and minimum-visit operands of the
+exact normal Blue Striker (`0D00/0`) authored cruise row. The existing
+native controller counts boost entry as a visit, so the verified source
+clock seed `30` requires a native minimum of `31`. Orange Fighter and all
+other entries keep their default rows. The authored fixed height and move
+bindings are unchanged. See the [scoped comparison](blue-striker-boost-checkpoint.md).
+
+```sh
+python3 -B -m tools.extract.retail_borg_roster "$GF_CATALOG" \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  local/blue-striker-boost --role-clips --source-pace --action-clips \
+  --basic-shot-test --cruise-lab --blue-striker-boost-test
+```
+
 #### Machine Red projectile speed ramp test
 
 Add `--projectile-speed-ramp-test` to a fresh `--basic-shot-test`

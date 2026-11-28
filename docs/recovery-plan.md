@@ -139,11 +139,15 @@ not a dependency of an ordinary combat/movement checkpoint.
   matches lift and air-dash debits, zero-meter relaunch refusal and refill
   after committed landing entry on the existing native offer path. No
   new binding; the deliberate Battle Test landing-entry barrier stays.
-- **Next:** compare [normal Blue Striker](borg-controller-audit.md#normal-blue-striker-cruise-boost-and-hud)
-  with the authored perpetual-flight pilot. Start with release before and
-  after the boost-exit latch, held depletion and the first nonboost refill.
-  Establish whether an exact clock/latch policy needs a portable opt-in.
-  Keep floor contact and fixed-altitude assumptions out of that decision.
+- **Landed:** the [normal Blue Striker comparison](blue-striker-boost-checkpoint.md)
+  matches scoped unit-rate boost entry, latch-gated release, held depletion
+  and delayed refill. The exact package can opt into these meter operands
+  using the existing cruise row; its terrain and flight trajectory stay authored.
+- **Next:** qualify [normal Galactic Emperor](borg-controller-audit.md#normal-galactic-emperor-class-pin-and-placement)
+  as a fixed-airborne representative. Compare shared placement with the
+  class pin before and after ordinary updates, including a refused steering
+  control. Do not treat a world-space pin as floor support or import Beam
+  Satellite's separate steering and placement behavior.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

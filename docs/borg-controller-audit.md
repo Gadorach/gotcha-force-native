@@ -415,6 +415,9 @@ handoff, or how a gauge is drawn.
 This follow-up is scoped to `GG4E08:0D00/0`, AFS member 672. Source movement
 type 3 and policy 1 are distinct observations: sharing policy 1 with G-Red
 does not imply the same refill gate. [Wiki lead: Blue Striker](https://gotchaforce.fandom.com/wiki/Blue_Striker?oldid=6731).
+The later [boost checkpoint](blue-striker-boost-checkpoint.md) compares three
+bounded prefix sequences to the running native cruise path and binds only
+the unit-rate meter and exit threshold.
 
 | Event | Ordinary source branch |
 | --- | --- |
