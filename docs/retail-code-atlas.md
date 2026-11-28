@@ -2980,6 +2980,45 @@ python3 -m tools.analyze.retail_type25_link \
   /tmp/opencode/gf-type25-link.json
 ```
 
+### Type-80 tether: Carrier Helicopter’s link and busy flag
+
+The [type-80 replay](api-map/gg4e08-type80-link.json) enters
+Carrier Helicopter’s (`0D02`) original request handler directly.
+It allocates key **0**, uses launch socket **1**, and binds
+group **2** / descriptor **2**. A second request while busy takes
+the owner’s wait branch rather than allocating again.
+
+- Pool refusal is distinct from contact. Without a carrier or
+  view the request clears owner `+0x14A` without consuming the
+  other resource. Shape refusal clears `+0x14A` too, but the
+  original bucket visits return the allocated carrier and view
+  on the **second** visit.
+- Accepted contact records **token 1** and writes **0 damage**.
+  The next callback closes the attack, publishes reciprocal
+  `+0x71E`, and puts the receiver in both the carrier’s target
+  field and owner `+0x144`. An excluded receiver can be recorded
+  on the carrier without publishing the owner’s target or link.
+- As with type 25, the unchanged pose leaves `+0x71F` clear,
+  while the declared stretch requests motion on both actors and
+  sets both masks. The declared expiry edge clears the masks,
+  but the busy flag and both target pointers persist through
+  **four** more bucket visits. The owner still takes the wait
+  branch. This does not establish how full retraction finishes.
+
+All **6 cases and 18 checkpoints** matched across O0/O1/O2, and
+the type-25 receipt reproduced byte-for-byte. This does not run
+charged-X selection, integrate actor motion, or qualify a live
+rescue, arena, audiovisual output, hardware, or native gameplay.
+
+Use the same fixture as for type 25:
+
+```sh
+python3 -m tools.analyze.retail_type80_link \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type25-link "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-type80-link.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
