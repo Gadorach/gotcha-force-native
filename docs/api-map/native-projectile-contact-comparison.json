@@ -1,0 +1,158 @@
+{
+  "kind": "gf-native-projectile-contact-comparison",
+  "native_authored_cases": [
+    {
+      "allocations": 1,
+      "case": "ordinary-default",
+      "debits": 1,
+      "final_hp_by_actor": [
+        180,
+        163,
+        180
+      ],
+      "hp_removed": [
+        17
+      ],
+      "native_contact_updates_from_emission": [
+        0
+      ],
+      "native_slot_return_update_from_emission": 0,
+      "native_slot_return_updates_after_last_hit": 0,
+      "one_object_identity": true,
+      "opt_in_contact_closed_events": 0,
+      "recipients_in_order": [
+        1
+      ]
+    },
+    {
+      "allocations": 1,
+      "case": "ordinary-held-slot",
+      "debits": 1,
+      "final_hp_by_actor": [
+        180,
+        163,
+        180
+      ],
+      "hp_removed": [
+        17
+      ],
+      "native_contact_updates_from_emission": [
+        0
+      ],
+      "native_slot_return_update_from_emission": 3,
+      "native_slot_return_updates_after_last_hit": 3,
+      "one_object_identity": true,
+      "opt_in_contact_closed_events": 1,
+      "recipients_in_order": [
+        1
+      ]
+    },
+    {
+      "allocations": 1,
+      "case": "ordinary-miss",
+      "debits": 1,
+      "final_hp_by_actor": [
+        180,
+        180,
+        180
+      ],
+      "hp_removed": [],
+      "native_contact_updates_from_emission": [],
+      "native_slot_return_update_from_emission": 23,
+      "native_slot_return_updates_after_last_hit": null,
+      "one_object_identity": true,
+      "opt_in_contact_closed_events": 0,
+      "recipients_in_order": []
+    },
+    {
+      "allocations": 1,
+      "case": "rifle-continuation",
+      "debits": 1,
+      "final_hp_by_actor": [
+        180,
+        172,
+        172
+      ],
+      "hp_removed": [
+        8,
+        8
+      ],
+      "native_contact_updates_from_emission": [
+        0,
+        4
+      ],
+      "native_slot_return_update_from_emission": 23,
+      "native_slot_return_updates_after_last_hit": 19,
+      "one_object_identity": true,
+      "opt_in_contact_closed_events": 0,
+      "recipients_in_order": [
+        1,
+        2
+      ]
+    },
+    {
+      "allocations": 1,
+      "case": "rifle-second-miss",
+      "debits": 1,
+      "final_hp_by_actor": [
+        180,
+        172,
+        180
+      ],
+      "hp_removed": [
+        8
+      ],
+      "native_contact_updates_from_emission": [
+        0
+      ],
+      "native_slot_return_update_from_emission": 23,
+      "native_slot_return_updates_after_last_hit": 23,
+      "one_object_identity": true,
+      "opt_in_contact_closed_events": 0,
+      "recipients_in_order": [
+        1
+      ]
+    }
+  ],
+  "notes": [
+    "Native Workshop fixtures explicitly use the two observed damage numbers. This isolates recipient and carrier custody, not the retail amount evaluator or the exact rigs and launch poses.",
+    "Native default returns the carrier on the hit update. The new opt-in stops native contact immediately but delays slot return for three subsequent updates. The original attack-cell unlink and carrier descriptor return are separate; the native proxy has no claim to that original registry schedule.",
+    "The rifle retains an allocation across later contacts and does not spend again. Exact retail package selection is checked separately; no launch timing, exact shape test, pose, hardware or complete moveset is inferred."
+  ],
+  "original_rifle": {
+    "hp_removed_per_fresh_recipient": [
+      8,
+      8
+    ],
+    "miss_and_seeded_second_receiver_duplicate_do_not_write_hp": true,
+    "route": {
+      "amount_record": "8030A398",
+      "borg": "gg4e08:0600",
+      "carrier_key": 21
+    },
+    "same_token_first_receiver_repeat_refused": true
+  },
+  "original_rifle_next_receiver_sha256": "6ebd399d481675d5f367d719dda04a3aea3c401a96f655c6845072c7ef5f35de",
+  "original_type0": {
+    "attack_unlinks_on_next_visit": true,
+    "carrier_and_descriptor_return_visit": 3,
+    "miss_and_seeded_duplicate_do_not_write_hp": true,
+    "requested_damage_at_declared_inputs": 17,
+    "routes": [
+      {
+        "borg": "gg4e08:0800",
+        "key": 12
+      },
+      {
+        "borg": "gg4e08:0801",
+        "key": 125
+      },
+      {
+        "borg": "gg4e08:0802",
+        "key": 45
+      }
+    ]
+  },
+  "original_type0_sha256": "062a675dcf556775f610789cade7069fd0a355a9eab7828891c5fec0e0d3d337",
+  "revision": 1
+}

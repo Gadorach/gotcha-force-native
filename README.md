@@ -59,10 +59,13 @@ scripts, presentation, and fonts.
   entry projection; rising entries and relaunch landings remain refused.
 - **No original-battle or full-game compatibility claim.**
 
-The immediate priority is a [playable native G-Red/Sasuke MVP](docs/native-battle-mvp.md),
-using provisional gameplay rules and the shared model/animation/renderer systems.
-The detailed [source-reconstruction progress](docs/battle-scene-mvp.md) is retained
-for later accuracy work, not as a prerequisite for that prototype.
+The [recovery and delivery plan](docs/recovery-plan.md) records the current
+baseline, evidence standards, and remaining work. The
+[native G-Red/Sasuke MVP](docs/native-battle-mvp.md) is a playable baseline;
+the next priority is bringing verified shared mechanics into the portable
+roster without changing authored defaults. The detailed
+[source-reconstruction notes](docs/battle-scene-mvp.md) remain a reference,
+not a prerequisite for playable releases.
 Current controller recovery and the source-dash lab are documented in
 [G-Red's animation-controller layout](docs/g-red-animation-controller.md).
 

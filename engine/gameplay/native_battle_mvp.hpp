@@ -165,6 +165,8 @@ struct BattleMvpProjectile {
     bool package_ramp_deflected=false; // a shot-pull field owns subsequent velocity
     bool package_impact_shape=false;
     BattleMvpBallisticFlight ballistic{};
+    u8 package_contact_return_left=0;
+    bool slot_free()const{return !active&&!package_contact_return_left;}
 };
 struct BorgProjectileVisualSample {f32 scale=1,angle=0;};
 inline BorgProjectileVisualSample borg_projectile_visual_sample(const BattleMvpProjectile& shot,u32 tick){
@@ -2080,7 +2082,12 @@ public:
         if(package)step_package_fences(before);
         if(package){step_package_walk_pulses(walk_distance);step_package_field_cores();}
         if(package)for(unsigned i=0;i<actor_count();++i)step_package_detonation(i,terrain);
-        for(auto& shot:projectiles_)if(shot.active){
+        for(auto& shot:projectiles_)if(!shot.slot_free()){
+            if(shot.package_contact_return_left){
+                if(!--shot.package_contact_return_left)
+                    record_package(BorgBattleEventKind::Retired,shot.owner,shot.package_move,0,shot.id,u16(PackageRetirement::Actor));
+                continue;
+            }
             shot.previous=shot.position;
             if(shot.from_package){
                 if(shot.sustained){
@@ -2213,7 +2220,7 @@ public:
         const auto& actor=actors_[0];
            if(unsigned(policy)>unsigned(NativeBorgMotionPolicy::GroundWalkExpirySameFacePush)||!observe_motion(&observed)||actor.source_ground_motion||!actor.grounded||actor.vertical_speed||
            actor.attack_ticks||actor.hit_flash||actor.dash_ticks||actor.upper_body_yaw)return {};
-        for(const auto& shot:projectiles_)if(shot.active)return {};
+        for(const auto& shot:projectiles_)if(!shot.slot_free())return {};
         return std::shared_ptr<const NativeBorgMotionProducer>(new NativeBorgMotionProducer(motion_scope_,policy));
     }
     std::weak_ptr<const NativeBorgMotionScope> presentation_scope()const{
@@ -3294,7 +3301,7 @@ private:
                                 const BattleMvpVec& muzzle,BattlePoint aim,u8 return_stock,u32 emitter=0,
                                  const BattleMvpAnchorPath* rewind_path=nullptr,f32 additional_rise=0,
                                  bool radial=false,bool direct_release=false){
-        unsigned free=0;for(const auto& shot:projectiles_)free+=!shot.active;
+        unsigned free=0;for(const auto& shot:projectiles_)free+=shot.slot_free();
         if(!definition.count||free<definition.count||next_id_>std::numeric_limits<u32>::max()-definition.count)return 0;
         const u8 target=direct_release?package_aim_target(owner):actor_target(owner);
         const auto& observed=actors_[target==255?owner:target];
@@ -3303,7 +3310,7 @@ private:
         u16 damage=definition.damage;
         const auto& moves=config_.packages[owner]->moves;
         if(direct_release&&move<moves.size()&&moves[move].contact_power)damage=moves[move].contact_power;
-        for(auto& shot:projectiles_)if(!shot.active){
+        for(auto& shot:projectiles_)if(shot.slot_free()){
             const f32 angle=radial?f32(n)*6.28318530718f/definition.count:
                 (f32(n)-f32(definition.count-1)*.5f)*definition.spread;
             const f32 c=std::cos(angle),s=std::sin(angle);
@@ -3944,6 +3951,16 @@ private:
             // Resume on the next visit from the accepted contact point,
             // not from the untested remainder of this step.
             if(continuing)shot.package_hit_recipients|=u8(1u<<recipient);
+            else if(shot.package_direct_release&&definition.actor_contact_return_visits){
+                // Stop collision and presentation now. Only custody of the
+                // slot survives, so fields, rendering and contact cannot
+                // act on it, and new releases cannot reallocate it early.
+                shot.active=false;
+                shot.package_contact_return_left=definition.actor_contact_return_visits;
+                record_package(BorgBattleEventKind::ProjectileContactClosed,shot.owner,shot.package_move,0,shot.id,
+                               shot.package_contact_return_left,recipient);
+                return;
+            }
             else retire=PackageRetirement::Actor;
         }else if(retire==PackageRetirement::Stage){
             record_package(BorgBattleEventKind::StageImpact,shot.owner,shot.package_move,0,shot.id,stage_layer);
@@ -4107,7 +4124,7 @@ private:
     void fire(unsigned owner,bool secondary,const std::optional<BattleMvpVec>* muzzle_override){
         const u8 target_slot=actor_target(owner);if(target_slot==255)return;
         const auto weapon=owner?(secondary?BattleMvpWeapon::Bullet:BattleMvpWeapon::Shuriken):(secondary?BattleMvpWeapon::Bomb:BattleMvpWeapon::EnergyBeam);
-        const unsigned count=weapon==BattleMvpWeapon::Shuriken?3:1;unsigned free=0;for(const auto& shot:projectiles_)free+=!shot.active;
+        const unsigned count=weapon==BattleMvpWeapon::Shuriken?3:1;unsigned free=0;for(const auto& shot:projectiles_)free+=shot.slot_free();
         if(free<count||next_id_>std::numeric_limits<u32>::max()-count)return;
         auto& actor=actors_[owner];const auto aim=actor.aim_facing;BattleMvpVec muzzle{actor.position[0]+aim.x*(config_.actor_radius+12),actor.position[1]+config_.actor_height*.6f,actor.position[2]+aim.z*(config_.actor_radius+12)};
         if(muzzle_override)muzzle=**muzzle_override;
@@ -4115,7 +4132,7 @@ private:
         const f32 speed=weapon==BattleMvpWeapon::EnergyBeam?60:weapon==BattleMvpWeapon::Bullet?34:weapon==BattleMvpWeapon::Shuriken?24:10;
         const f32 pitch=weapon==BattleMvpWeapon::Bomb?10:std::clamp(speed*dy/std::max(horizontal,1.f),-speed,speed);
         for(unsigned n=0;n<count;++n){const f32 spread=count==3?(f32(n)-1)*.11f:0;const f32 c=std::cos(spread),s=std::sin(spread);
-            for(auto& shot:projectiles_)if(!shot.active){shot={true,++next_id_,u8(owner),weapon,muzzle,muzzle,{speed*(aim.x*c-aim.z*s),pitch,speed*(aim.z*c+aim.x*s)},weapon==BattleMvpWeapon::Bomb?70u:120u,false};++shots_;break;}}
+            for(auto& shot:projectiles_)if(shot.slot_free()){shot={true,++next_id_,u8(owner),weapon,muzzle,muzzle,{speed*(aim.x*c-aim.z*s),pitch,speed*(aim.z*c+aim.x*s)},weapon==BattleMvpWeapon::Bomb?70u:120u,false};++shots_;break;}}
         actor.cooldown[secondary?1:0]=weapon==BattleMvpWeapon::Bomb?120:weapon==BattleMvpWeapon::EnergyBeam?18:24;actor.attack_ticks=10;
     }
     const BorgBattleMove* reaction_definition(unsigned attacker,u8 move,bool body_contact)const{

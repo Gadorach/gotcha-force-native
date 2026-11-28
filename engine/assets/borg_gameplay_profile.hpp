@@ -133,12 +133,19 @@ struct BorgBattleProjectileDefinition {
     bool launch_body_heading=false;
     std::string launch_sound;
     bool continue_after_actor_hit=false; // one accepted contact per round actor slot
+    u8 actor_contact_return_visits=0; // closed to contact while its carrier slot is still occupied
     std::optional<BorgProjectileSpeedRamp> speed_ramp;
     std::optional<BorgProjectileBallisticAim> ballistic_aim;
 };
-inline bool borg_hit_continuation_valid(const BorgBattleProjectileDefinition& a){
-    // A non-terminal actor hit must not silently skip a retirement effect.
+inline constexpr u8 kBorgActorContactReturnLimit=8;
+inline bool borg_has_scoped_actor_contact(const BorgBattleProjectileDefinition& a){
+    return a.continue_after_actor_hit||a.actor_contact_return_visits;
+}
+inline bool borg_scoped_actor_contact_valid(const BorgBattleProjectileDefinition& a){
+    // Neither opt-in silently skips an authored actor retirement effect.
     return a.count==1&&a.damage&&!a.ignore_actors&&!a.sustained&&!a.guidance&&!a.blast&&
+           a.actor_contact_return_visits<=kBorgActorContactReturnLimit&&
+           !(a.continue_after_actor_hit&&a.actor_contact_return_visits)&&
            a.floor!=BorgProjectileFloor::Land&&a.stock_return==BorgProjectileReturn::None&&
            !a.walk_ticks&&!a.pull_units&&!a.rewind_hit&&a.plant_on_stage==255&&
            !a.flight_children&&!a.impact_children&&!a.impact_trail&&!a.impact_hazard&&!a.impact_area&&
@@ -749,7 +756,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
     for(const auto& c:p.locomotion)if(!clip(c))return false;
     for(const auto& s:p.stocks)if(!s.capacity||s.capacity>kBorgStockCapacity||s.refill_ticks>3600||(s.add_on_debit&&!s.refill_ticks))return false;
     for(const auto& a:p.projectiles){
-        if(a.continue_after_actor_hit&&!borg_hit_continuation_valid(a))return false;
+        if(borg_has_scoped_actor_contact(a)&&!borg_scoped_actor_contact_valid(a))return false;
         if(const auto& ramp=a.speed_ramp;ramp&&(
            a.sustained||a.guidance||a.rise||a.gravity||a.floor==BorgProjectileFloor::Land||
            !finite(ramp->gain,.01f,20.f)||!finite(ramp->cap,1.f,140.f)||ramp->cap<=a.speed))
@@ -840,7 +847,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
                              p.projectiles[a.rewind_hit->fallback].sustained||p.projectiles[a.rewind_hit->fallback].rewind_hit||
                              p.projectiles[a.rewind_hit->fallback].ballistic_aim||
                             p.projectiles[a.rewind_hit->fallback].plant_on_stage!=255||
-                            p.projectiles[a.rewind_hit->fallback].continue_after_actor_hit||
+                             borg_has_scoped_actor_contact(p.projectiles[a.rewind_hit->fallback])||
                             p.projectiles[a.rewind_hit->fallback].stock_return!=BorgProjectileReturn::None))))||
            (a.plant_on_stage!=255&&(a.plant_on_stage>=p.anchor_sets.size()||a.floor!=BorgProjectileFloor::StageRetire||
                                    a.rewind_hit||a.count!=1))||
@@ -853,7 +860,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
               return !(child.blast_children!=255||child.flight_children||child.impact_children||child.impact_hazard||child.impact_area||child.blast||child.smoke||
                  child.sustained||child.socket||child.guidance||child.proximity||child.ballistic_aim||
                child.rewind_hit||child.plant_on_stage!=255||child.stock_return!=BorgProjectileReturn::None||
-                child.ignore_actors||!child.damage||child.launch_body_heading||child.continue_after_actor_hit);
+                child.ignore_actors||!child.damage||child.launch_body_heading||borg_has_scoped_actor_contact(child));
         };
         if(a.blast_children!=255){
             const auto& child=p.projectiles[a.blast_children];
@@ -871,7 +878,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
            p.projectiles[e.projectile].stock_return!=BorgProjectileReturn::None||
            p.projectiles[e.projectile].rewind_hit||p.projectiles[e.projectile].plant_on_stage!=255||p.projectiles[e.projectile].socket||
            p.projectiles[e.projectile].impact_area||p.projectiles[e.projectile].ballistic_aim||
-           p.projectiles[e.projectile].launch_body_heading||p.projectiles[e.projectile].continue_after_actor_hit||
+           p.projectiles[e.projectile].launch_body_heading||borg_has_scoped_actor_contact(p.projectiles[e.projectile])||
            !finite(e.side,-120,120)||!finite(e.height,0,240)||!finite(e.behind,0,180)||!e.lifetime||e.lifetime>600)
             return false;
     }
@@ -922,7 +929,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
         if(!used)return false;
     }
     unsigned release_sound_count=0;
-    std::array<bool,kBorgBattleAttacks> hit_continuation_released{};
+    std::array<bool,kBorgBattleAttacks> scoped_contact_released{};
     for(const auto& m:p.moves){
         if(!borg_battle_reaction_scope_valid(p,m)||!borg_battle_pose_followup_valid(p,m)||
            !borg_battle_contact_damage_valid(p,m)||!borg_battle_contact_sound_valid(p,m)||
@@ -995,7 +1002,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
                m.activation!=BorgBattleActivation::Press||m.hold_cycles||
                !h.warmup||h.warmup>600||!h.fast_interval||h.fast_interval>h.slow_interval||h.slow_interval>600||
                h.cooldown>600||!borg_battle_emission_valid(p,h.stock,h.cost,h.projectile)||p.projectiles[h.projectile].sustained||
-               p.projectiles[h.projectile].continue_after_actor_hit)return false;
+                borg_has_scoped_actor_contact(p.projectiles[h.projectile]))return false;
         }
         if(multi){
             auto& other=gestures[unsigned(m.button)];
@@ -1099,9 +1106,9 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
         unsigned prior=0;
         for(const auto& r:m.releases){
             if(r.frame<=prior||r.frame>=m.duration||!borg_battle_release_valid(p,r))return false;
-            if(p.projectiles[r.projectile].continue_after_actor_hit){
+            if(borg_has_scoped_actor_contact(p.projectiles[r.projectile])){
                 if(r.count||r.return_pair||m.releases.size()!=1||m.hold_cycles||!borg_battle_direct_releases(p,m))return false;
-                hit_continuation_released[r.projectile]=true;
+                scoped_contact_released[r.projectile]=true;
             }
             if(!r.debit_sound.empty()&&(!r.cost||++release_sound_count>kBorgReleaseSounds||
                                        !borg_package_asset_path_valid(r.debit_sound)))return false;
@@ -1111,7 +1118,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
             for(unsigned i=0;i<r.count;++i){
                 const auto extra=r.followups[i];
                 if(!borg_battle_emission_valid(p,255,0,extra)||p.projectiles[extra].rewind_hit||p.projectiles[extra].sustained||
-                   p.projectiles[extra].continue_after_actor_hit)
+                   borg_has_scoped_actor_contact(p.projectiles[extra]))
                     return false;
             }
             if(m.aim_lock&&p.projectiles[r.projectile].guidance)return false;
@@ -1121,7 +1128,7 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
         }
     }
     for(unsigned i=0;i<p.projectiles.size();++i)
-        if(p.projectiles[i].continue_after_actor_hit&&!hit_continuation_released[i])return false;
+        if(borg_has_scoped_actor_contact(p.projectiles[i])&&!scoped_contact_released[i])return false;
     for(const auto& m:p.moves)
         if(gestures[unsigned(m.button)]&&m.activation!=BorgBattleActivation::Tap&&m.activation!=BorgBattleActivation::DoubleTap)
             return false;
@@ -1151,7 +1158,7 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     struct RangeRef {unsigned line;std::string move;f32 distance;};
     struct HeldFireRef {unsigned line;std::string move,stock,projectile;BorgBattleHeldFire spec;};
     struct BlastRef {unsigned line;std::string projectile;BorgBattleBlast spec;};
-    struct ActorContactRef {unsigned line;std::string projectile;bool continuing;};
+    struct ActorContactRef {unsigned line;std::string projectile;bool continuing;u8 return_visits;};
     struct DetonationRef {unsigned line;std::string move,projectile;u16 frame=0;bool landed_only=false;};
     struct ReturnRef {unsigned line;std::string projectile;BorgProjectileReturn reason;};
     struct GuardRef {unsigned line;std::string move;BorgBattleGuard spec;};
@@ -1910,10 +1917,16 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             gravity_refits.push_back({line,std::string(a[0]),spec});
         }else if(key=="actor-contact"){
             std::array<std::string_view,2> a;
-            if(passes.size()>=kBorgBattleAttacks||!split_fields(value,&a)||!id(a[0])||
-               (a[1]!="ignore"&&a[1]!="continue-once-per-actor"))
-                return fail("unsupported actor-contact policy");
-            passes.push_back({line,std::string(a[0]),a[1]=="continue-once-per-actor"});
+            if(passes.size()>=kBorgBattleAttacks)return fail("too many actor-contact policies");
+            if(split_fields(value,&a)&&id(a[0])&&(a[1]=="ignore"||a[1]=="continue-once-per-actor"))
+                passes.push_back({line,std::string(a[0]),a[1]=="continue-once-per-actor",0});
+            else{
+                std::array<std::string_view,3> hold;u16 visits=0;
+                if(!split_fields(value,&hold)||!id(hold[0])||hold[1]!="stop-and-hold-slot"||
+                   !number(hold[2],1,kBorgActorContactReturnLimit,&visits))
+                    return fail("unsupported actor-contact policy");
+                passes.push_back({line,std::string(hold[0]),false,u8(visits)});
+            }
         }else if(key=="action-sound"){
             std::array<std::string_view,2> a;
             if(!split_fields(value,&a)||!id(a[0])||!borg_package_asset_path_valid(a[1]))
@@ -2378,10 +2391,11 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
     }
     for(const auto& r:passes){
         line=r.line;const auto pi=index(next.projectiles,r.projectile);
-        if(pi==next.projectiles.size()||next.projectiles[pi].ignore_actors||next.projectiles[pi].continue_after_actor_hit)
+        if(pi==next.projectiles.size()||next.projectiles[pi].ignore_actors||borg_has_scoped_actor_contact(next.projectiles[pi]))
             return fail("unknown projectile or duplicate actor-contact");
         auto& a=next.projectiles[pi];
-        if(r.continuing)a.continue_after_actor_hit=true;
+        if(r.return_visits)a.actor_contact_return_visits=r.return_visits;
+        else if(r.continuing)a.continue_after_actor_hit=true;
         else{
             if(a.damage||a.pull_units||a.walk_ticks)return fail("ignoring actor contact cannot also apply direct-hit effects");
             a.ignore_actors=true;

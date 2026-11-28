@@ -1201,6 +1201,31 @@ inputs. No default gameplay or retail admission changes. In the
 the same paid shot hits both stationary Workshop receivers once
 on separate updates; the default preparation hits only the first.
 
+#### Type-0 ordinary B contact-tail test
+
+Add `--projectile-contact-tail-test` to a fresh `--basic-shot-test` extraction.
+It adds `actor-contact=shot|stop-and-hold-slot|3` only to the exact normal B
+routes for **Kung-Fu Master** (`0800`, key 12), **Tao Master** (`0801`, key 125),
+and **Gold Hero** (`0802`, key 45). The extractor verifies each original member
+and release/debit sites against the pinned
+[type-0 contact receipt](api-map/gg4e08-type0-contact.json). Gold Hero's other
+form and unreviewed type-0 keys do not inherit it. The local source index records
+the scoped evidence; the packages remain authored Battle Tests.
+
+```sh
+python3 -B -m tools.extract.retail_borg_roster "$GF_CATALOG" \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  local/type0-contact-tail --role-clips --source-pace --action-clips \
+  --basic-shot-test --projectile-contact-tail-test
+```
+
+The same inputs without the final opt-in flag give the baseline. The
+[extracted-package smoke](../tests/host/retail_projectile_contact_tail_smoke.py)
+takes the native binary and both extraction roots. It checks that the original
+authored hit and debit stay unchanged and that only native slot return moves
+from update 0 to update 3. Authored time, damage, sockets and collision proxies
+are not replaced by this binding.
+
 #### Machine Red projectile speed ramp test
 
 Add `--projectile-speed-ramp-test` to a fresh `--basic-shot-test`

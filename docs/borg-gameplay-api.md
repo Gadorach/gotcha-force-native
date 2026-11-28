@@ -1021,6 +1021,26 @@ than the original collision scheduler. The
 [authored roster smoke](../tests/host/projectile_continuation_smoke.py)
 compares both policies without retail assets.
 
+### Stop on contact, return the slot later
+
+```text
+actor-contact=shot|stop-and-hold-slot|3
+```
+
+A direct projectile stops contacting and drawing on its accepted actor hit,
+but its slot remains occupied for the declared **1–8 subsequent** projectile
+updates. It cannot move, hit another body, or be allocated to an intervening
+release. The opt-in reports `projectile-contact-closed` at the hit and `retire`
+when the slot is free. A round restart discards the old pool. Without the row,
+an ordinary projectile still returns its slot on the hit update.
+
+This opts in only a single damaging travelling shot on a direct release. It
+cannot be combined with recipient continuation, indirect emission, stock
+returns, or actor-retirement effects that would otherwise run on contact.
+Guard, terrain and expiry keep their existing exit policies. The rule does not
+recreate the original attack-shape list or qualify an original callback visit
+as a native tick.
+
 ### Travelling projectile speed ramp
 
 `projectile-speed-ramp=projectile|gain|cap` optionally increases
