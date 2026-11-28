@@ -6,6 +6,7 @@
 namespace {
 using namespace retail_fixture;
 namespace contact=retail_stationary_contact;
+namespace cleanup_probe=retail_body_phase_cleanup;
 using Common=std::array<u8,21504>;
 constexpr u32 profile=0x801301F8,owner_hook=0x801304B8,make_bomb=0x800E058C,bomb=0x800E06C4;
 constexpr u32 area=0x80085E00,return_stock=0x8006DE10,tail=0x803C706C,head=0x803C6F6C;
@@ -33,7 +34,13 @@ constexpr AreaCase area_cases[]{
     {409.5f,true,false,false},{410,true,false,false},{22,true,true,false},{22,true,false,true},
 };
 enum class AreaMode {hp,tiers,knockout,body_exit,body_cleanup};
-struct AreaProbe {unsigned index;const contact::HitBlock& hurt;const contact::ActorSpec& spec;AreaMode mode;};
+struct AreaProbe {
+    unsigned index;
+    const contact::HitBlock& hurt;
+    const contact::ActorSpec& spec;
+    AreaMode mode;
+    const cleanup_probe::Delivery* delivery=nullptr;
+};
 struct TierCase {u8 meter,tier,flags;u16 gauge;bool hp_held;};
 constexpr TierCase tier_cases[]{
     {0,0,0,500,false},{49,1,0,500,false},{50,1,0,500,false},{99,2,0,150,false},
@@ -202,7 +209,8 @@ class Check {
         std::printf("tier-contact: %u %u %u %u %u %u %u %u\n",
                     c.model,probe.index,request,hp,post_gauge,post_meter,post_tier,post_flags);
     }
-    void follow_body_exit(Options c,unsigned index,unsigned capacity,const std::vector<u8>& before_pair,bool cleanup){
+    void follow_body_exit(Options c,unsigned index,unsigned capacity,const std::vector<u8>& before_pair,bool cleanup,
+                          const cleanup_probe::Delivery* delivery){
         constexpr u32 victim=contact::receiver,s=contact::scene,seat=victim-0x1E00,actor_array=0x803C4E84;
         constexpr u32 walk=0x8002BB14,body_update=0x80054070,presentation=0x8005A580;
         constexpr u32 begin=0x8005BBC0,reaction=0x8005C290,exit_lane=0x80065E44;
@@ -308,8 +316,8 @@ class Check {
             if(phase==3){
                 if(cleanup){
                     if(visit!=47||!at(victim+0x1D8)[0])fail("cleanup changed the qualified phase-3 inlet");
-                    for(unsigned kind=0;kind<3;++kind)
-                        retail_body_phase_cleanup::Probe(mod,ram,c.model,kind);
+                    for(unsigned kind=0;kind<(delivery?1u:3u);++kind)
+                        cleanup_probe::Probe(mod,ram,c.model,kind,delivery);
                 }
                 return;
             }
@@ -410,7 +418,7 @@ class Check {
         if(observe(contact::pair_pass,0,contact::hp_write).count||!check())
             fail("knockout retained token wrote again");
         if(probe.mode==AreaMode::body_exit||probe.mode==AreaMode::body_cleanup){
-            follow_body_exit(c,probe.index,capacity,snapshot,probe.mode==AreaMode::body_cleanup);
+            follow_body_exit(c,probe.index,capacity,snapshot,probe.mode==AreaMode::body_cleanup,probe.delivery);
             return;
         }
         std::printf("body-knockout: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u\n",
@@ -847,9 +855,10 @@ int main(int argc,char** argv){
     const bool tiers=argc==4&&!std::strcmp(argv[3],"--tiers");
     const bool knockout=argc==4&&!std::strcmp(argv[3],"--knockout");
     const bool body_exit=argc==4&&!std::strcmp(argv[3],"--body-exit");
-    const bool cleanup=argc==4&&!std::strcmp(argv[3],"--body-cleanup");
+    const bool replacement=argc==4&&!std::strcmp(argv[3],"--replacement");
+    const bool cleanup=replacement||(argc==4&&!std::strcmp(argv[3],"--body-cleanup"));
     if(argc!=3&&!area_hp&&!parent&&!tiers&&!knockout&&!body_exit&&!cleanup)
-        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit|--body-cleanup] < qualified-payload");
+        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit|--body-cleanup|--replacement] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -859,6 +868,9 @@ int main(int argc,char** argv){
     for(auto& spec:specs)read(spec);
     if(area_hp||parent||tiers||knockout||body_exit||cleanup){
         contact::HitBlock hurt{};contact::ActorSpec defender{};read(hurt);read(defender);
+        cleanup_probe::Replacement assets{};
+        if(replacement){read(assets.motion);read(assets.view);}
+        const cleanup_probe::Delivery delivery{assets,specs[0],hit};
         for(unsigned m=6;m<=7;++m)
             for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):
                                  knockout?std::size(knockout_cases):body_exit?exit_knockout_case.size():
@@ -872,7 +884,7 @@ int main(int argc,char** argv){
                 }
                 const auto mode=tiers?AreaMode::tiers:knockout?AreaMode::knockout:body_exit?AreaMode::body_exit:
                     cleanup?AreaMode::body_cleanup:AreaMode::hp;
-                const AreaProbe probe{i,hurt,defender,mode};
+                const AreaProbe probe{i,hurt,defender,mode,replacement?&delivery:nullptr};
                 const Options opts{u8(m),u8(1+unsigned(mode!=AreaMode::hp||area_cases[i].shape)),1,3,u8(m==6?2:3),false};
                 Check(mod,original,opts,specs[m-6],hit,bank,0,&probe);
             }

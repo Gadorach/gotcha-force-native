@@ -57,21 +57,22 @@ public:
             fail("contact visual crossed an unsupported assertion boundary");
         }
     }
-    void init_heap(){
+    void init_heap(u32 limit=arena_end){
+        if(limit<arena_end||limit>arena+0x100000||(limit&31))fail("original HSD arena extent");
         constexpr u32 os_table=0x80436408,os_current=0x80435C60,dispatch=0x803FA748;
         put32(at(0x80000028),GC_MAIN_RAM_SIZE);
-        CPUState init{};init.gpr[3]=arena;init.gpr[4]=arena_end;init.gpr[5]=2;
+        CPUState init{};init.gpr[3]=arena;init.gpr[4]=limit;init.gpr[5]=2;
         mod.run(init,ram,0x801FFEC0);
         if(init.gpr[3]!=block||word(os_table)!=arena||word(os_table+4)!=2||word(arena)!=0xFFFFFFFF)
             fail("original OS table initialization did not use the declared arena");
-        call(0x80200320,arena_end);
+        call(0x80200320,limit);
         call(0x80200328,block);
         call(0x80253DF0);
         constexpr u32 dispatch_entries[]{0x80253F94,0x80253FF4,0x8025404C,0x80254028,0x802540B0};
         for(unsigned i=0;i<std::size(dispatch_entries);++i)
             if(word(dispatch+4*i)!=dispatch_entries[i])fail("original HSD heap dispatch registration changed");
-        if(word(os_current)||word(0x80435F40)||word(arena)!=arena_end-block||
-           word(arena+4)!=block||word(arena+8)||word(block)||word(block+4)||word(block+8)!=arena_end-block)
+        if(word(os_current)||word(0x80435F40)||word(arena)!=limit-block||
+           word(arena+4)!=block||word(arena+8)||word(block)||word(block+4)||word(block+8)!=limit-block)
             fail("original HSD heap did not start with one free block and no owner");
     }
     void init_visual_header(u32 pools,u32 header){

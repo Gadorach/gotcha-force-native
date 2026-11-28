@@ -2018,6 +2018,47 @@ python3 -m tools.analyze.retail_body_phase_cleanup \
   /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-phase-cleanup.json
 ```
 
+### Normal replacement: archive delivery, startup, and collision mask
+
+The [replacement replay](api-map/gg4e08-body-replacement.json) continues
+the ordinary phase-3 queue for both area keys. Before reentry, the
+actual collision list walk returns Sasuke's old marked receiving
+shape. The host supplies only the exact decompressed roles **0, 2,
+3 and 4** of member **504** to the original request destinations.
+An explicitly invoked original completion callback (`800412C4`)
+publishes these data for seat 1. A pool-exhaustion control proves
+that publishing raw data without an archive owner does not open the
+phase-zero gate.
+
+With the archive owner and SDK pools available, the original actor
+wrapper installs normal Time Bomber and returns. It builds **four**
+source view records with **eight** view wrappers and advances the same
+seat's generation by one. Level-1 HP and stock initialize to **220 HP**
+and **10 / 3** on channels 0 and 2. The collision reset clears **48**
+history entries; the old **16-point** damage ledger and zero Force
+snapshot remain.
+
+| Offered collision cells | New body descriptors bound | Ordinary receivers published |
+| ---: | ---: | ---: |
+| 0 | 0 | 0 |
+| 16 | 16 | 0 |
+
+The normal initializer leaves mask `0x00EF`. Clearing only bit `0x02`
+in a disposable fork publishes the nine receiving descriptors **4–7
+and 9–13**. That control does not establish when the live game opens
+the mask or whether input is already accepted.
+
+All **four** cases matched across O0/O1/O2. This qualifies the bounded
+archive-to-body startup, not disc I/O, asynchronous scheduling,
+loaded Sasuke rig teardown, GX drawing, the first playable frame,
+or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_body_replacement \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" /tmp/opencode/gf-body-replacement.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

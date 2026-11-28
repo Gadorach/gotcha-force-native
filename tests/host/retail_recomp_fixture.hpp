@@ -81,7 +81,9 @@ class Module {
     }
     void dispatch(CPUState& cpu,std::vector<u8>& ram,u32 entry,bool full_return,Boundary* mark=nullptr,
                   unsigned budget=256)const{
-        if(!budget||budget>4096)fail("fixture dispatch budget");
+        // Full archive-to-body initialization opts into a larger bounded
+        // dispatch count; ordinary fixtures keep their smaller budgets.
+        if(!budget||budget>(1u<<20))fail("fixture dispatch budget");
         cpu.pc=entry;cpu.lr=stop;cpu.ram=ram.data();cpu.ram_size=GC_MAIN_RAM_SIZE;
         cpu.gpr[1]=stack;cpu.gpr[2]=0x8043EA20;cpu.gpr[13]=0x8043B5A0;
         cpu.msr=PPC_MSR_FP;cpu.hid2=PPC_HID2_PSE|PPC_HID2_LSQE;

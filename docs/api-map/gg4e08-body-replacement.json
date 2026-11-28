@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {"actor_phase":1,"area_key":19,"body_shapes_bound":0,"collision_history_cleared_entries":48,"generation_delta":1,"hp":220,"initial_attacker":"gg4e08:0106","initial_role_mask":"00EF","old_damage_ledger":16,"old_receiving_shape_returned_before_reentry":true,"ordinary_receiving_shapes_published":0,"receiving_force":0,"receiving_steps_with_only_bit_02_cleared":[],"replaced_borg":"gg4e08:000a","replacement_borg":"gg4e08:0106","seat":1,"shape_cells_offered":0,"source_view_records":4,"stock_channels":{"0":10,"2":3},"unallocated_archive_owner_refused":true,"view_wrappers":8},
+    {"actor_phase":1,"area_key":19,"body_shapes_bound":16,"collision_history_cleared_entries":48,"generation_delta":1,"hp":220,"initial_attacker":"gg4e08:0106","initial_role_mask":"00EF","old_damage_ledger":16,"old_receiving_shape_returned_before_reentry":true,"ordinary_receiving_shapes_published":0,"receiving_force":0,"receiving_steps_with_only_bit_02_cleared":[4,5,6,7,9,10,11,12,13],"replaced_borg":"gg4e08:000a","replacement_borg":"gg4e08:0106","seat":1,"shape_cells_offered":16,"source_view_records":4,"stock_channels":{"0":10,"2":3},"unallocated_archive_owner_refused":true,"view_wrappers":8},
+    {"actor_phase":1,"area_key":20,"body_shapes_bound":0,"collision_history_cleared_entries":48,"generation_delta":1,"hp":220,"initial_attacker":"gg4e08:0107","initial_role_mask":"00EF","old_damage_ledger":16,"old_receiving_shape_returned_before_reentry":true,"ordinary_receiving_shapes_published":0,"receiving_force":0,"receiving_steps_with_only_bit_02_cleared":[],"replaced_borg":"gg4e08:000a","replacement_borg":"gg4e08:0106","seat":1,"shape_cells_offered":0,"source_view_records":4,"stock_channels":{"0":10,"2":3},"unallocated_archive_owner_refused":true,"view_wrappers":8},
+    {"actor_phase":1,"area_key":20,"body_shapes_bound":16,"collision_history_cleared_entries":48,"generation_delta":1,"hp":220,"initial_attacker":"gg4e08:0107","initial_role_mask":"00EF","old_damage_ledger":16,"old_receiving_shape_returned_before_reentry":true,"ordinary_receiving_shapes_published":0,"receiving_force":0,"receiving_steps_with_only_bit_02_cleared":[4,5,6,7,9,10,11,12,13],"replaced_borg":"gg4e08:000a","replacement_borg":"gg4e08:0106","seat":1,"shape_cells_offered":16,"source_view_records":4,"stock_channels":{"0":10,"2":3},"unallocated_archive_owner_refused":true,"view_wrappers":8}
+  ],
+  "delivered_roles": [
+    {"bytes":432,"role":0,"sha256":"69919a580073d32e8db9bdbccaed60fa81687a5fc7c58af87fda3ea6bb0ae26f"},
+    {"bytes":7840,"role":2,"sha256":"8aa36502a67ebb5a77d0f6812470b8d0bb244dd0592198805bb126e0b2cc3e8d"},
+    {"bytes":435104,"role":3,"sha256":"aaa8e47ff59c992dc9681e98ad310709e3340c64c2621435b7e8d2ca8568565d"},
+    {"bytes":171236,"role":4,"sha256":"c75e27aeb31b33ba55777b2de181443b2ec84ac8e78390fd043bd6323830951b"}
+  ],
+  "entries": {"body_shapes":"8008AB30","body_update":"80054070","body_view_bind":"800419EC","collision_reset":"8003CC24","delivery_callback":"800412C4","loader_disc_cut":"8000B07C","normal_installer":"801301F8","phase_zero":"800541AC"},
+  "kind": "gf-retail-body-replacement",
+  "member_sha256": "115a623e6f06c7edb5b9e03004247e3f6abc43af2f44b66742c01f4fff80caab",
+  "notes": ["The old normal body reaches the established phase-3 queue path. The collision list walk returns its marked receiving shape before replacement startup.","The host supplies only exact read-only decompressed role bytes at the original request destinations. The original completion callback is invoked with its declared seat and color; no disc I/O, asynchronous completion or actual callback scheduling is replayed.","Exact raw roles without an allocated archive owner leave phase zero refused. A source-allocated owner, view pools and initialized SDK heap let the original normal actor wrapper return.","The constructor builds the view records, writes level-1 HP and stock, and resets collision history. Neither the old 16-point damage ledger nor the zero Force snapshot is reset by this scoped visit.","With 16 offered cells all body descriptors bind, but the initial role mask suppresses ordinary receiving publication. Changing only bit 02 in a discarded fork exposes the exact receiving shapes; this does not qualify when the game opens that mask.","No subsequent input or match frame, loaded original Sasuke rig teardown, GX drawing, scene transition or native gameplay is qualified."],
+  "phase_cleanup_sha256": "f8a1ecf077357ae98927c55ea99066ce445aa4ac54e25eb900ebed078dc01310",
+  "replacement_member": 504,
+  "revision": 1,
+  "source_afs_sha256": "a9fc30d91c74ec232ad9602eb7783af54f7a3aa7baa19736471b9e0b15d76ce5",
+  "source_dol_sha256": "21454a8880c6254616662710d6ec626e43d853999da2cdfad700030960a94836"
+}
