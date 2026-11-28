@@ -1,17 +1,20 @@
 // One original set0202 side row through construction, support and the carry prefix.
 #include "retail_contact_effect_archive.hpp"
 #include "retail_declared_stage_grid.hpp"
+#include "retail_body_entry_contact.hpp"
 
 namespace {
 using namespace retail_fixture;
 namespace contact=retail_stationary_contact;
 namespace art=retail_contact_effect_archive;
+namespace entry=retail_body_entry_contact;
 constexpr u32 actor_body=0x81020000,step=0x1E00,prop=0x81030000,stage=0x81070000;
 constexpr u32 banks=0x81054000,resources=0x81240000,collision_bank=0x81268000;
 constexpr u32 pools=0x81069000,model_cells=0x81069800,archive_cells=0x81069900;
 constexpr u32 shapes=0x81060000,shape_step=0x200;
 constexpr u32 common_shapes=0x803C706C+48*4,stage_objects=0x803C706C+40*4;
 constexpr u32 plane_list=0x803C237C,plane_count=0x8043B5A0-21340;
+constexpr u32 caster=actor_body+step,attack_count=0x8043B5A0-21328;
 using Side=std::array<u8,122880>;
 using Common=std::array<u8,21504>;
 struct Case {bool far=false,translate=false,masked=false;};
@@ -139,6 +142,11 @@ class Probe {
         call(0x80089554);
         publish_shapes();
     }
+    void mute(){
+        constexpr u32 audio=0x8106B000;
+        store(0x8043B5A0-31856,audio);at(audio+12)[0]=255;
+        at(0x803D3AE8+852)[0]=1;
+    }
     void collision(CallObservation* marker=nullptr){
         CPUState walk{};init_cpu(walk);
         const auto cut=mod.run_to_or_return(walk,ram,0x8002BB14,{0x8005A580,0x80264290,contact::hp_write},marker,65536);
@@ -203,17 +211,19 @@ class Probe {
                     old_anchor,old_actor,queried,word(actor_body+0x24));
         ram=rebinding;
     }
-    void recovery(){
+    void recovery(bool from_contact=false){
         const auto original_plane=word(plane_list);
         if(at(actor_body+0x1DB)[0]!=1||word(actor_body+0x1E0)!=original_plane||word(actor_body+0x1E4)!=prop)
             fail("stage prop recovery needs its original support acquisition");
-        record_recovery(0);
-        // Causal inlet only: the original bucket callback owns all later
-        // destruction, collision release, timing, rebinding and motion.
-        put16(at(prop+0x1C6),0);
-        constexpr u32 muted_audio=0x8106B000;
-        store(0x8043B5A0-31856,muted_audio);at(muted_audio+12)[0]=255;
-        at(0x803D3AE8+852)[0]=1;
+        if(from_contact){
+            if(half(prop+0x1C6)||half(prop+0x1C)||at(prop+0x19)[0])
+                fail("original HP writer did not leave the prop ready for its later break");
+        }else{
+            record_recovery(0);
+            // Declared inlet for the independent recovery replay only.
+            put16(at(prop+0x1C6),0);
+        }
+        mute();
         CallObservation sound{0x800F0468};
         bucket_visit(&sound);
         if(sound.count!=1||sound.caller!=0x80081F48||sound.arguments[0]!=prop||sound.arguments[1]!=115)
@@ -246,11 +256,98 @@ class Probe {
             if(n==600)rising_carry(original_plane);
         }
     }
+    void attack_overlap(const entry::Attack& tau,unsigned scenario){
+        constexpr u32 amount=contact::amount_entry,writer=contact::hp_write,pair=contact::pair_pass;
+        const auto x=scalar(prop+0x20),z=scalar(prop+0x28);
+        const int y=scenario==2?520:275;
+        mute();
+        store(0x8043B5A0-31824,0x8106B400);
+        for(unsigned i=0;i<2;++i){
+            store(contact::scene+60*i+0x114,100);store(contact::scene+60*i+0x118,100);
+            store(0x803B068C+4*i,100);
+        }
+        put16(at(0x803B069C),180);
+        const auto open_attack=[&](unsigned token){
+            entry::bind_attack_at(mod,ram,tau,entry::routes[0],1,{x+(scenario==0?600.f:0.f),float(y),z},caster,
+                                  entry::attack_cell,1);
+            publish_shapes();
+            if(half(attack_count)!=1||word(entry::ordinary_attack_list)!=entry::attack_cell||
+               half(caster+0x26C)!=token||half(contact::receiver_count)!=3||half(contact::free_count+8))
+                fail("stage prop damage inlet lost its original Tau or prop shapes");
+        };
+        const auto close_attack=[&]{
+            call(0x8008AFF0,caster);
+            publish_shapes();
+            if(half(attack_count)||at(entry::attack_cell)[0]||half(contact::free_count+8)!=1||
+               word(contact::free_head+16)!=entry::attack_cell||word(contact::free_tail+16)!=entry::attack_cell)
+                fail("original Tau close did not return only the attack cell");
+        };
+        const auto offer=[&](unsigned visit){
+            const auto before=half(prop+0x1C6);
+            const auto token=half(caster+0x26C);
+            CPUState t{};init_cpu(t);CallObservation record{amount};
+            auto fork=ram;
+            const auto cut=mod.run_to_or_return(t,fork,pair,{writer,0x80264290},&record,4096);
+            CPUState actual{};init_cpu(actual);CallObservation hp{writer};
+            if(mod.run_to_or_return(actual,ram,pair,{0x80264290},&hp,4096))
+                fail("stage prop contact escaped original ordinary pair boundaries");
+            const auto target=hp.count?t.gpr[21]:0;
+            if(cut!=(hp.count?writer:0)||hp.count>1||hp.count!=record.count||
+               (hp.count&&(hp.arguments[0]!=prop||t.gpr[3]!=prop||t.gpr[4]!=hp.arguments[1]||
+                          target!=shapes+(scenario==2?shape_step:0)||record.caller!=0x8002F108||record.arguments[1]!=caster||
+                          record.arguments[2]!=prop))||
+               half(actor_body+0x1C6)!=180||half(caster+0x1C6)!=60||half(plane_count)!=1||
+               word(plane_list)!=shapes+shape_step||half(contact::receiver_count)!=3||half(prop+0x1C)||
+               at(prop+0x19)[0]||word(caster+0x42C)){
+                std::fprintf(stderr,"stage prop hit %u/%u cut=%08X calls=%u/%u target=%08X amount=%u hp=%u\n",
+                             scenario,visit,cut,hp.count,record.count,target,hp.arguments[1],half(prop+0x1C6));
+                fail("stage prop overlap changed source credit or HP owner");
+            }
+            const auto cursor=at(prop+0x26E)[0];
+            if(cursor>6)fail("stage prop token history escaped the replay bound");
+            for(unsigned i=0;i<6;++i)
+                if(half(prop+0x20C+2*i)!=(i<cursor?i+1:0))
+                    fail("stage prop did not retain the distinct original attack tokens");
+            std::printf("stage-prop-hit: %u %u %u %u %u %08X %08X %u %u %u %u %u %u %u %u %u %u %u\n",
+                        scenario,visit,token,before,hp.count,record.arguments[0],hp.caller,hp.arguments[1],
+                        half(prop+0x1C6),half(prop+0x1C8),half(prop+0x20C),cursor,
+                        word(caster+0x418),at(prop+0x1DA)[0],cell_index(target),half(plane_count),
+                        at(actor_body+0x1DB)[0],word(prop+0x41C));
+        };
+        if(half(prop+0x1C6)!=100)fail("stage prop damage did not start at full HP");
+        open_attack(1);
+        offer(0);offer(1);
+        close_attack();
+        if(scenario==2){
+            for(unsigned token=2;token<=6;++token){
+                open_attack(token);
+                offer(token);
+                if(token<6)close_attack();
+            }
+            // The caster is not advanced during the prop-only recovery. Keep
+            // this last allocation live, rather than editing the free list.
+            recovery(true);
+            if(half(attack_count)!=1||word(entry::ordinary_attack_list)!=entry::attack_cell||half(caster+0x26C)!=6)
+                fail("prop recovery retired or replaced the retained attack");
+            close_attack();
+            std::printf("stage-prop-attack-return: %u %u %u %u\n",half(caster+0x26C),half(attack_count),
+                        half(contact::free_count+8),half(prop+0x1C6));
+        }else{
+            const auto hp=half(prop+0x1C6);
+            CallObservation sound{0x800F0468};
+            bucket_visit(&sound);
+            if(sound.count||half(prop+0x1C6)!=hp||at(prop+0x19)[0]||half(prop+0x1C)||half(plane_count)!=1||
+               half(contact::free_count+8)!=1||word(plane_list)!=shapes+shape_step)
+                fail("stage prop positive-HP control unexpectedly entered break");
+            std::printf("stage-prop-hold: %u %u %u %u %u %u\n",scenario,hp,at(prop+0x19)[0],
+                        half(prop+0x1C),half(plane_count),sound.count);
+        }
+    }
 public:
     Probe(const Module& m,const std::vector<u8>& pristine):mod(m),ram(pristine){}
     void run(unsigned id,const contact::HitBlock& hit,const contact::ActorSpec& spec,const Side& side,const Common& common,
-             bool recover=false){
-        const auto test=cases[id];
+             bool recover=false,const entry::Attack* tau=nullptr){
+        const auto test=cases[tau?0:id];
         prepare(side,common);
         construct();
         const float x=scalar(prop+0x20),z=scalar(prop+0x28);
@@ -270,6 +367,7 @@ public:
         if(held==test.far||narrow.count!=unsigned(held)||(held&&(word(actor_body+0x1E0)!=plane||
            word(actor_body+0x1E4)!=prop||scalar(actor_body+0x24)!=780.f)))
             fail("original actor did not acquire the exact stage prop support");
+        if(tau){attack_overlap(*tau,id);return;}
         if(recover){recovery();return;}
         const auto local=vector(actor_body+0x1F8),root=vector(actor_body+0x20),center=vector(capsule+0x64);
         const auto old_prop=contact::Point{x,10,z};
@@ -338,10 +436,15 @@ template<class A> void source(A& data,u64 digest=0){
 
 int main(int argc,char** argv){
     const bool recovery=argc==4&&!std::strcmp(argv[3],"--recovery");
-    if(argc!=3&&!recovery)fail("usage: stage-prop-support-fixture qualified.dol unmodified-recomp.so [--recovery] < qualified-inputs");
+    const bool hit_prop=argc==4&&!std::strcmp(argv[3],"--break-contact");
+    if(argc!=3&&!recovery&&!hit_prop)
+        fail("usage: stage-prop-support-fixture qualified.dol unmodified-recomp.so [--recovery|--break-contact] < qualified-inputs");
     Side side{};Common common{};contact::HitBlock hit{};contact::ActorSpec spec{};
     source(side,0x214D5B801F3BD659ULL);source(common,0x4F4B1EB5F77B5BB4ULL);source(hit);source(spec);
+    entry::Attack tau{};
+    if(hit_prop){source(tau.hit);source(tau.spec);}
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("stage prop input suffix");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    for(unsigned i=0;i<(recovery?1u:std::size(cases));++i)Probe(mod,original).run(i,hit,spec,side,common,recovery);
+    for(unsigned i=0;i<(recovery?1u:hit_prop?3u:std::size(cases));++i)
+        Probe(mod,original).run(i,hit,spec,side,common,recovery,hit_prop?&tau:nullptr);
 }

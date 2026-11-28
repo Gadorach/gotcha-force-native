@@ -3385,6 +3385,43 @@ python3 -m tools.analyze.retail_stage_prop_recovery \
   /tmp/opencode/gf-stage-prop-recovery.json
 ```
 
+### Original stage prop break from Tau contact
+
+The [attack-to-break replay](api-map/gg4e08-stage-prop-break-contact.json)
+joins the constructed kind-22 prop to Tau’s original opcode-10
+command at `80377E40`. At declared poses, its attack misses
+when offset 600 units horizontally, hits descriptor **236**
+at **Y=275**, and hits the support plane (**237**) at **Y=520**.
+Reoffering the same token does not write HP again. A separate
+bucket visit at **83 HP** leaves the prop and plane intact.
+
+Six original command binds against the plane publish six distinct
+tokens. The amount record (`80377AD8`, raw power **20**)
+requests **17 damage** each time: **100 → 83 → 66 → 49 → 32
+→ 15 → 0 HP**. The last write removes **15 HP**, not 17.
+The observed actor damage-credit fields do not change.
+The attack cell is reused only after the original close returns
+it; reusing that address does not reuse the attack token.
+
+The lethal write does not itself close the plane or clear support.
+The next original prop visit requests cue **115** and returns
+the two prop cells; the separate collision walk clears current
+support. The next **664** prop updates reproduce the timed rebind,
+rise, and supported-carry fork above without setting the prop’s HP.
+The final attack is held while those prop-only updates run and
+returns separately afterward.
+
+O0/O1/O2 matched. This is one attack and one prop, with declared
+poses and no full actor or scene scheduling, audible playback,
+hardware, or native gameplay qualified. Use the same fixture:
+
+```sh
+python3 -m tools.analyze.retail_stage_prop_break_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-prop-support "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-stage-prop-break-contact.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

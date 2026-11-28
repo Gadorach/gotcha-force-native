@@ -38,9 +38,10 @@ def verify_source(image):
         raise ValueError("stage prop original rise operands changed")
 
 
-def decode(report):
+def decode(report, *, from_contact=False):
     lines = report.splitlines()
-    if len(report) > 4096 or len(lines) != len(MARKS)+1:
+    marks = MARKS[1:] if from_contact else MARKS
+    if len(report) > 4096 or len(lines) != len(marks)+1:
         raise ValueError("stage prop recovery report extent")
     bits = stage.walk.stage.pair.capsule.geometry.bits
     offset0 = -stage.f32(100+stage.scalar("444064A4"))
@@ -51,7 +52,7 @@ def decode(report):
     snapshots = []
     pos = 0
     carry = None
-    for label, mark in MARKS:
+    for label, mark in marks:
         dead = 1 <= mark < 602
         delay = max(0, mark-2)
         step = max(0, delay-600)
