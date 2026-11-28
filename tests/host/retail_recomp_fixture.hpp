@@ -85,14 +85,14 @@ class Module {
         return false;
     }
     void dispatch(CPUState& cpu,std::vector<u8>& ram,u32 entry,bool full_return,Boundary* mark=nullptr,
-                  unsigned budget=256)const{
+                  unsigned budget=256,PPCExternalRead external_read=read_external)const{
         // Full archive-to-body initialization opts into a larger bounded
         // dispatch count; ordinary fixtures keep their smaller budgets.
         if(!budget||budget>(1u<<20))fail("fixture dispatch budget");
         cpu.pc=entry;cpu.lr=stop;cpu.ram=ram.data();cpu.ram_size=GC_MAIN_RAM_SIZE;
         cpu.gpr[1]=stack;cpu.gpr[2]=0x8043EA20;cpu.gpr[13]=0x8043B5A0;
         cpu.msr=PPC_MSR_FP;cpu.hid2=PPC_HID2_PSE|PPC_HID2_LSQE;
-        cpu.external_read=read_external;cpu.external_write=write_external;cpu.instruction_fallback=fallback;
+        cpu.external_read=external_read;cpu.external_write=write_external;cpu.instruction_fallback=fallback;
         if(mod->on_state_loaded)mod->on_state_loaded(&cpu);
         for(unsigned n=0;n<budget&&cpu.pc!=stop;++n){
             // Some translated indirect branches yield to the outer
@@ -143,10 +143,11 @@ public:
         dispatch(cpu,ram,entry,true,nullptr,budget);
     }
     u32 run_to_or_return(CPUState& cpu,std::vector<u8>& ram,u32 entry,std::initializer_list<u32> targets,
-                          CallObservation* observation=nullptr,unsigned budget=256)const{
+                          CallObservation* observation=nullptr,unsigned budget=256,
+                          PPCExternalRead external_read=read_external)const{
         Boundary mark{targets,observation};
         cpu.host_call=cut;cpu.external_user_data=&mark;
-        dispatch(cpu,ram,entry,false,&mark,budget);
+        dispatch(cpu,ram,entry,false,&mark,budget,external_read);
         cpu.host_call=nullptr;cpu.external_user_data=nullptr;
         return mark.reached;
     }

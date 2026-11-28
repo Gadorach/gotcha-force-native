@@ -51,6 +51,10 @@ declared queue, not physical I/O, asynchronous timing, arbitrary rig teardown,
 inactive-seat reuse, campaign progression, or the no-reserve match-end route.
 Visit counts are not display frames.
 
+The [one-row queue contrast](world-match-end-checkpoint.md) separately follows
+Force exhaustion through result selection and records the first missing owner
+on the ending path.
+
 **No gameplay change.** The authored native control ends the round immediately
 on its lethal hit and does not reload or advance the seat. Native damage
 credit in that control is the **1 HP removed**, not the original request.

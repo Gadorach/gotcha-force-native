@@ -162,10 +162,17 @@ not a dependency of an ordinary combat/movement checkpoint.
   archive owner and wrappers, and exact queued Time Bomber readiness after
   declared delivery. A surviving hit does not retire the receiver. The
   authored native round still ends without a replacement.
-- **Next:** compare the no-reserve terminal branch with the queued branch.
-  Follow an ordinary loaded KO with an exhausted queue through the
-  scene result and match-end return, or record the first missing owner.
-  Keep inactive-slot state, archive release, and any result/save write separate.
+- **Landed:** the [one-row Tau KO comparison](world-match-end-checkpoint.md)
+  separates Force exhaustion and result selection from body and archive
+  retirement. Without debit, the seat deactivates without releasing the
+  archive or selecting a winner. With debit, the combat visit selects the
+  winner before the ending handler stops at its missing audio table. Match-end
+  return and save behavior remain unqualified.
+- **Next:** join one more loaded body to the normal actor/world schedule.
+  Check whether the ordinary receiver list and pair pass preserve team
+  eligibility with both an ally and an opponent present. Use a known move
+  and matched positions; distinguish pair exclusion from a geometric miss.
+  Keep the current native team policy unless the join justifies a change.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

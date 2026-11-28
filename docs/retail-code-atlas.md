@@ -2144,6 +2144,12 @@ and clears HUD byte `+13`. A separate ending inlet reaches the
 actor pass with status **5** from `800289FC`. No ending-to-active
 transition is implied.
 
+The later [one-row Tau KO comparison](world-match-end-checkpoint.md)
+joins the ordinary world hit to `800297C8` result selection and a
+transition to the ending handler. Its first ending visit reaches an
+unbound audio table and does not return; the separate no-debit branch
+deactivates the defeated seat without releasing its archive.
+
 The linked replay runs from the real coordinator through the loaded
 replacement's actor update, cut before presentation. The registry
 rebuild runs separately:

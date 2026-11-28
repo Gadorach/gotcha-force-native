@@ -1,7 +1,7 @@
 // Authored Tau-shaped melee shows native round termination, not a retail handoff.
 #include <cstdio>
 #include <cstdlib>
-#include "engine/gameplay/native_battle_mvp.hpp"
+#include "engine/gameplay/portable_battle_duel.hpp"
 
 namespace {
 using namespace gf;
@@ -64,6 +64,10 @@ void observe(bool lethal){
     check(world.actor_count()==2&&(b.action==BattleMvpAction::Defeated)==lethal&&
         world.result()==(lethal?BattleMvpResult::GRedWins:BattleMvpResult::Fighting)&&world.tick()==(lethal?17u:24u),
         "team KO terminates the authored duel without replacing its seat");
+    const auto result=portable_duel_end(world,0);
+    check(result==(lethal?PortableDuelEnd::Win:PortableDuelEnd::Fighting)&&
+          portable_duel_campaign_outcome(result)==(lethal?std::optional{PortableBattleOutcome::Win}:std::nullopt),
+          "the portable result bridge reports a completed win only for the lethal arm");
     std::printf("native-body-exit: %u %u %u %u %u %u %u\n",
         unsigned(lethal),hp_tick,amount,b.health,a.damage_credited,returned,world.tick());
 }
