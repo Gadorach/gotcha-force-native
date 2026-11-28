@@ -3181,6 +3181,46 @@ python3 -m tools.analyze.retail_wall_reference \
   /tmp/opencode/gf-wall-reference.json
 ```
 
+### Foreign plane order can change wall admission
+
+The [plane-reference replay](api-map/gg4e08-plane-reference.json)
+binds Sasuke’s original role-`0x10` sphere and role-`0x08` wall
+sphere, with up to two original role-`0x20` planes on separate
+declared owners. It tests the second reference write in `8002CF80`:
+`8002D0B8` refreshes the reference from the adjusted sphere
+**before** `8002D0CC` tests broad phase.
+
+- The near plane reaches the narrow support path and changes
+  Sasuke’s root Y from **128 to 124**. With only that plane,
+  the reference stays at its earlier value, **123**.
+- If a far plane is considered next, it refreshes the reference
+  to **119** but fails broad phase. It is not a second support
+  contact. The role-`0x08` sphere has a bottom of **120**, so the
+  lower reference admits the wall solver and Sasuke moves
+  **+20 X**. Reversing the plane order produces the same Y
+  correction but leaves the reference at **123**, blocking X.
+- A role-`0x08` bottom exactly equal to **119** passes that
+  refreshed gate. Moving its declared joint one float step
+  lower blocks it. Publishing the plane on Sasuke’s own body
+  does not make it a foreign support candidate.
+
+The original enclosing walk and isolated passes agree, including
+the capsule broad center, unchanged allocated endpoints, and
+unchanged HP. All **eight cases** matched across O0/O1/O2.
+The poses and wall are declared; this does not establish field
+construction, animated platforms, live floor behavior, hardware,
+or native gameplay.
+
+Compile [`retail_plane_reference_fixture.cpp`](../tests/host/retail_plane_reference_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_plane_reference \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/plane-reference "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-plane-reference.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
