@@ -2822,6 +2822,46 @@ python3 -m tools.analyze.retail_receiver_correction \
   /tmp/opencode/gf-receiver-correction.json
 ```
 
+### Stage correction: an original wall response changes HP admission
+
+The [stage correction replay](api-map/gg4e08-stage-correction.json)
+uses the original STIH relocator on three declared grids. The
+secondary grid is empty or contains one wall triangle at **X=100**.
+Sasuke’s original role-`0x08` sphere (**50** radius) drives the
+original stage contact pass; no correction vector is supplied.
+
+- At **X=130** the wall produces a **+20** correction and moves
+  the root to **150**. The empty-grid control stays at **130**.
+  At **150** the contact flags set but the correction is zero;
+  at **151** neither sets.
+- A move from **170 to 90** produces a **+60** correction, while
+  a stationary pose at **90** remains uncorrected. This qualifies
+  the tested previous-pose distinction, not a general wall solver.
+- The later bucket pass moves the broad centers of both the
+  stage sphere and the ordinary capsule. It leaves the capsule’s
+  allocated endpoints unchanged. The pair uses the shifted scratch
+  endpoints only after broad phase admits it.
+
+In matched poses starting at **X=130**, the empty grid lets Tau
+hit for **17 HP** from **X=40** but not **240**. The wall-generated
+correction reverses those results. The stage pass itself writes no
+HP; the original ordinary pair owns the damage.
+
+All **12** cases matched across O0/O1/O2. This joins original
+stage response to original pair admission under a declared
+one-wall grid, not a retail arena, a whole scene update, hardware,
+or native gameplay.
+
+Compile [`retail_stage_correction_fixture.cpp`](../tests/host/retail_stage_correction_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_stage_correction \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-correction "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-stage-correction.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
