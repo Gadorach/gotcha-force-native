@@ -3055,6 +3055,51 @@ python3 -m tools.analyze.retail_tether_wall \
   /tmp/opencode/gf-tether-wall.json
 ```
 
+### Retail `st42` walls: the vertex sets the contact edge
+
+The [st42 replay](api-map/gg4e08-st42-wall.json) reads the three
+original STIH grids from AFS member **473**, `st42.pzz`. The original
+relocator processes all three in guest memory, and the fixture checks
+the relocated lists and unchanged triangle bytes. In the matched
+control, only the secondary grid’s guest lists are emptied; the
+floor and tertiary grids remain original.
+
+Sasuke’s normal **50-unit** role-`0x08` sphere produces a correction
+at three probed wall sites facing **+X**, **−X**, and **+Z**.
+At each site:
+
+- A front overlap corrects to **50 units from the vertex**. Using
+  the stored plane constant instead gives a slightly different
+  coordinate and does not reproduce exact tangency.
+- At the vertex-based tangent, both contact flags set with **zero**
+  displacement. One binary32 step outward misses; one inward is
+  corrected back to the tangent.
+- Crossing from **80** to **−10** nominal units generates a
+  correction, while starting stationary at the same final pose
+  behind the wall does not. The matched empty-secondary control
+  leaves the front-overlap pose unchanged.
+
+The original projection helper sees the targeted source triangles
+in the stationary contact traces. Some visits test multiple
+triangles; a projection call alone is not proof of a correction.
+The enclosing original collision walk agrees with the isolated
+solver on root, vector, flags and broad centers. Neither path
+changes HP or the allocated capsule endpoints.
+
+All **27 cases** matched across O0/O1/O2, and three previous stage
+replays reproduced byte-for-byte. This uses original static stage
+data, but the stage state and poses are declared; no live arena,
+dynamic stage construction, hardware, or native gameplay is qualified.
+
+Use the same fixture as for the [declared wall](#stage-correction-an-original-wall-response-changes-hp-admission):
+
+```sh
+python3 -m tools.analyze.retail_st42_wall \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-correction "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-st42-wall.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

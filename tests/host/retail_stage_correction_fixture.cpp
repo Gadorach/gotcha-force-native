@@ -1,6 +1,8 @@
 // One declared STIH wall and an unedited normal body contact queue.
 #include "retail_body_entry_contact.hpp"
 #include "retail_declared_stage_grid.hpp"
+#include "retail_stage_grid_replay.hpp"
+#include <cmath>
 
 namespace {
 using namespace retail_fixture;
@@ -25,6 +27,16 @@ constexpr LinkCase linked_cases[]{
     {true,15,0,true},{true,15,0,false,true},
     {true,0,0,false,false,true},{true,15,0,false,false,true},
 };
+struct Site {unsigned triangle,axis;int sign;contact::Point root;};
+constexpr Site sites[]{
+    {1549,0,1,{0,202,1649}}, {1505,0,-1,{0,202,1557}}, {1546,2,1,{824,202,0}},
+};
+struct StageSample {bool empty;int initial,final;bool vertex=false;int step=0;};
+constexpr StageSample stage_samples[]{
+    {true,30,30},{false,51,51},{false,50,50},{false,30,30},
+    {false,80,-10},{false,-10,-10},
+    {false,50,50,true},{false,50,50,true,1},{false,50,50,true,-1},
+};
 
 class Probe {
     const Module& mod;
@@ -45,6 +57,13 @@ class Probe {
         const u32 root=owner+0x1AA4,joint=owner+0x8D4+6*0x30;
         put(owner+0x20,x);put(root+12,x);
         put(joint+12,x+12.f);
+    }
+    void pose_xyz(const contact::Point& point){
+        for(unsigned axis=0;axis<3;++axis){
+            put(body+0x20+4*axis,point[axis]);
+            put(body+0x1AA4+12+16*axis,point[axis]);
+            put(body+0x8D4+6*0x30+12+16*axis,point[axis]+(axis==0?12.f:0.f));
+        }
     }
     void bind_body(u32 owner,u32 block,u32 first,u32 damage_cell,u8 seat,const contact::HitBlock& hit){
         at(owner)[0]=at(owner+0x18)[0]=1;
@@ -123,6 +142,67 @@ class Probe {
     }
 public:
     Probe(const Module& m,const std::vector<u8>& original):mod(m),ram(original){}
+    void run_retail_stage(unsigned site_id,unsigned id,const entry::Attack& sasuke,
+                          const retail_stage_grid_replay::Grids& grids){
+        const auto site=sites[site_id];const auto spec=stage_samples[id];
+        const auto& secondary=grids[1];
+        const auto triangle=secondary.data()+8+be32(secondary.data()+36)+site.triangle*56;
+        const float anchor=spec.vertex?std::bit_cast<float>(be32(triangle+4+4*site.axis)):
+                                       -std::bit_cast<float>(be32(triangle+52))*float(site.sign);
+        const auto root=[&](int distance){
+            auto p=site.root;p[site.axis]=anchor+float(site.sign*distance);
+            if(spec.step)p[site.axis]=std::nextafter(p[site.axis],anchor+float(500*site.sign*spec.step));
+            return p;
+        };
+        store(0x8043B5A0-31852,contact::scene);store(0x80436380,0x81033A00);
+        for(unsigned i=0;i<6;++i)store(slots+4*i,body-seat_size+i*seat_size);
+        retail_stage_grid_replay::bind(mod,ram,stage,grids,spec.empty);
+        bind_body(body,contact::body_block,probe_cell,capsule,1,sasuke.hit);
+        pose_xyz(root(spec.initial));rebuild();
+        if(spec.initial!=spec.final){pose_xyz(root(spec.final));rebuild();}
+        const auto p=root(spec.final);
+        if(half(role08_count)!=1||word(role08_list)!=probe_cell||half(contact::receiver_count)!=1||
+           word(contact::receiver_registry)!=capsule||word(probe_cell+0x28)!=contact::body_block+32+80||
+           word(probe_cell+0x88)!=std::bit_cast<u32>(50.f)||word(body+0x1CC)||at(body+0x1DD)[0])
+            fail("st42 original stage sphere/capsule was not published");
+        const auto vector_bits=[&](u32 a){return std::array{word(a),word(a+4),word(a+8)};};
+        const auto endpoints=std::array{vector_bits(capsule+0x8C),vector_bits(capsule+0x98)};
+        const auto inlet=ram;
+        CPUState local{};CallObservation projection{0x80039AEC};
+        projection.sample=[](const CPUState& c)->u32{return c.lr==0x80036190?c.gpr[4]:0;};
+        mod.run_observed(local,ram,stage_contacts,projection,65536);
+        const auto only_root=vector_bits(body+0x20),only_vector=vector_bits(body+0x1CC);
+        const auto stage_flags=std::array{at(body+0x1DD)[0],at(body+0x274)[0]};
+        call(0x8002CE44);
+        const auto only_centers=std::array{vector_bits(probe_cell+0x64),vector_bits(capsule+0x64)};
+        ram=inlet;
+        constexpr u32 presentation=0x8005A580;
+        CPUState walk{};CallObservation hit{contact::hp_write};
+        const auto stop_at=mod.run_to_or_return(walk,ram,0x8002BB14,{presentation,0x80264290},&hit,65536);
+        if(stop_at!=presentation||walk.lr!=0x8002C870||walk.gpr[3]!=body||hit.count||half(body+0x1C6)!=180||
+           endpoints!=std::array{vector_bits(capsule+0x8C),vector_bits(capsule+0x98)})
+            fail("st42 enclosing walk missed its original frontier or changed HP/endpoints");
+        std::printf("st42-wall: %u %u %u %d %d %u %d",site_id,id,unsigned(spec.empty),spec.initial,spec.final,
+                    unsigned(spec.vertex),spec.step);
+        const auto emit=[](const auto& values){for(auto v:values)std::printf(" %08X",v);};
+        for(auto x:p)std::printf(" %08X",std::bit_cast<u32>(x));
+        emit(only_root);emit(only_vector);emit(only_centers[0]);emit(only_centers[1]);
+        std::printf(" %u %u",stage_flags[0],stage_flags[1]);
+        emit(vector_bits(body+0x20));emit(vector_bits(body+0x1CC));
+        emit(vector_bits(probe_cell+0x64));emit(vector_bits(capsule+0x64));
+        std::printf(" %u %u %u\n",at(body+0x1DD)[0],at(body+0x274)[0],half(body+0x1C6));
+        std::printf("st42-projection: %u %u %u",site_id,id,projection.count);
+        const auto first_vertex=word(word(stage+32)+28)+4;
+        const auto triangle_count=(secondary.size()-8-be32(secondary.data()+36))/56;
+        for(unsigned i=0;i<std::min(projection.count,8u);++i){
+            const auto vertex=projection.samples[i];
+            if(!vertex){std::printf(" -1");continue;}
+            if(vertex<first_vertex||(vertex-first_vertex)%56||(vertex-first_vertex)/56>=triangle_count)
+                fail("st42 projection referenced outside the secondary grid");
+            std::printf(" %u",(vertex-first_vertex)/56);
+        }
+        std::putchar('\n');
+    }
     void run_linked(unsigned id,const entry::Attack& sasuke,const entry::Attack& tau){
         constexpr u32 other=body+seat_size,other_block=0x81050000;
         constexpr u32 other_sphere=capsule+0x200,other_capsule=other_sphere+0x200;
@@ -299,17 +379,26 @@ public:
 int main(int argc,char** argv){
     const bool enclosing=argc==4&&!std::strcmp(argv[3],"--collision-walk");
     const bool linked=argc==4&&!std::strcmp(argv[3],"--linked-correction");
-    if(argc!=3&&!enclosing&&!linked)
-        fail("usage: stage-correction-fixture qualified.dol unmodified-recomp.so [--collision-walk|--linked-correction] < qualified-roles");
+    const bool retail_stage=argc==4&&!std::strcmp(argv[3],"--retail-stage");
+    if(argc!=3&&!enclosing&&!linked&&!retail_stage)
+        fail("usage: stage-correction-fixture qualified.dol unmodified-recomp.so [--collision-walk|--linked-correction|--retail-stage] < inputs");
     entry::Attack sasuke{},tau{};
     for(auto* assets:{&sasuke,&tau}){
+        if(retail_stage&&assets==&tau)break;
         if(std::fread(assets->hit.data(),1,assets->hit.size(),stdin)!=assets->hit.size()||
            std::fread(assets->spec.data(),1,assets->spec.size(),stdin)!=assets->spec.size())
             fail("stage correction input extent");
     }
+    retail_stage_grid_replay::Grids grids;
+    if(retail_stage)grids=retail_stage_grid_replay::input();
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stage correction input");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(retail_stage){
+        for(unsigned site=0;site<std::size(sites);++site)
+            for(unsigned i=0;i<std::size(stage_samples);++i)Probe(mod,original).run_retail_stage(site,i,sasuke,grids);
+        return 0;
+    }
     if(linked){
         for(unsigned i=0;i<std::size(linked_cases);++i)Probe(mod,original).run_linked(i,sasuke,tau);
         return 0;
