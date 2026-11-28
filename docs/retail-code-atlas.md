@@ -2440,6 +2440,47 @@ python3 -m tools.analyze.retail_body_registry \
   /tmp/opencode/gf-body-registry.json
 ```
 
+### Replacement entry: alternate HP writes while the ordinary guard is active
+
+The [replacement contact receipt](api-map/gg4e08-replacement-contact.json)
+joins the normally loaded Time Bomber replacement to three exact
+opcode-10 probes. The replacement's guard and mask come from its
+original actor updates under declared scene state 4. Each contact
+fork supplies its own caster, pose, relation, and **110/220 HP**
+receiver inlet; the retained replacement run is unchanged.
+
+| Replacement visit | Role mask | Ordinary guard | Ordinary / alternate receiving cells |
+| --- | ---: | ---: | ---: |
+| 80 | `0xC3` | 59 | 0 / 0 |
+| 81 | `0x00` | 58 | 0 / 9 |
+| 82 | `0x00` | 57 | 0 / 9 |
+| 138 | `0x00` | 1 | 0 / 9 |
+| 139 | `0x00` | 0 | 9 / 9 |
+
+- **Tau’s ordinary group 1** cannot write HP in the guarded forks.
+  On visit 139 it removes **4 ally / 17 opponent HP**.
+- **Patra Witch’s alternate group 3** can write HP from visit 81,
+  including at guard 58. It removes **2 ally / 9 opponent HP**
+  from this Time Bomber inlet without changing the guard or the mask.
+- **Angel Nurse’s alternate group 3** also reaches the writer on 81.
+  It requests **200 ally / 50 opponent healing**, restoring
+  **110 / 50 HP** after capping. The pair caller then ORs `0x43`
+  into the role mask at `8002F6EC`. The next rebuild removes both
+  receiver lists, without freeing the bound cells or changing `+0x720`.
+
+All **60** contact forks matched across O0/O1/O2; **36** reached
+the HP writer. No same-token repeat wrote HP. This demonstrates
+separate receiving routes in the tested entry window, not general
+respawn immunity, live attack inputs, or the duration of Nurse’s
+post-hit closure. Native gameplay was not changed.
+
+```sh
+python3 -m tools.analyze.retail_replacement_contact \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-replacement-contact.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

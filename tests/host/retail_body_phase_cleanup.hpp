@@ -1,5 +1,6 @@
 // Continue the original phase-3 dispatcher without calling the disc backend.
 #pragma once
+#include "retail_body_entry_contact.hpp"
 #include "retail_contact_effect_archive.hpp"
 #include "retail_scene_entry.hpp"
 
@@ -22,12 +23,13 @@ struct Replacement {
     std::array<u8,435104> motion{};
     std::array<u8,171236> view{};
 };
-enum class ReplacementProbe {constructor, entry, scene};
+enum class ReplacementProbe {constructor, entry, scene, contact};
 struct Delivery {
     const Replacement& assets;
     const contact::ActorSpec& spec;
     const contact::HitBlock& hits;
     ReplacementProbe probe=ReplacementProbe::constructor;
+    const retail_body_entry_contact::Inputs* contact_inputs=nullptr;
 };
 
 class Probe {
@@ -135,6 +137,8 @@ class Probe {
         constexpr u32 pad=0x803C727C+32*seat,poll_input=0x80056900,bomb_request=0x800E058C;
         constexpr unsigned body_steps=0x3EF0;
         const auto start=ram;
+        const bool contacts=delivery->probe==ReplacementProbe::contact;
+        if(contacts&&!delivery->contact_inputs)fail("missing exact replacement contact inputs");
         const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
         const auto registry=[&](std::vector<u8>& snapshot,unsigned expected){
             const auto pos=[&](u32 p){return be32(contact::at(snapshot,p));};
@@ -188,6 +192,7 @@ class Probe {
                         stock,contact::half(fork,victim+0x272),cpu.lr);
         };
         for(unsigned phase:{4u,5u}){
+            if(contacts&&phase==5)break;
             std::memcpy(ram.data(),start.data(),ram.size());
             set(scene+69,phase);
             set(scene+0x1829,0);
@@ -198,16 +203,27 @@ class Probe {
                             half(victim+0x272),word(victim+0xD4),word(victim+0x720),poll,
                             half(contact::receiver_count),body(0x741),body(0x742));
             };
-            observe(0,0);
+            if(!contacts)observe(0,0);
             unsigned previous=body(0x19)*256+body(0x1A),previous_mask=half(victim+0x272),previous_count=0;
-            for(unsigned n=1;n<=160;++n){
-                if(n==21||n==80||n==81||n==82){
+            for(unsigned n=1;n<=(contacts?139u:160u);++n){
+                if(!contacts&&(n==21||n==80||n==81||n==82)){
                     pulse(phase,n,false);
                     if(n==82&&phase==4)pulse(phase,n,true);
                 }
                 const auto polled=step(phase,n,phase==4&&n>=82);
                 rebuild();
                 registry(ram,phase==4&&n>=139?body_steps:0);
+                if(contacts){
+                    namespace incoming=retail_body_entry_contact;
+                    if(incoming::receiving(ram,incoming::alternate_receive_count,incoming::alternate_receive_list,
+                                           fresh_shape,stride)!=(n>=81?body_steps:0))
+                        fail("original replacement alternate receiver chronology changed");
+                    if(n==80||n==81||n==82||n==138||n==139)
+                        for(unsigned r=0;r<incoming::routes.size();++r)
+                            for(unsigned relation:{0u,1u})
+                                incoming::observe(mod,ram,(*delivery->contact_inputs)[r],r,caster,n,relation,fresh_shape,stride);
+                    continue;
+                }
                 const unsigned key=body(0x19)*256+body(0x1A),mask=half(victim+0x272),count=half(contact::receiver_count);
                 if(n<=2||n==21||n==79||n==82||n==138||n==139||key!=previous||mask!=previous_mask||count!=previous_count||n==160)
                     observe(n,polled);
@@ -402,7 +418,7 @@ class Probe {
             const auto mask=half(victim+0x272);
             if(mask!=0xEF||count||word(side+0x118)||word(victim+0x41C)!=16||half(contact::free_count+8))
                 fail("replacement changed the initial receive mask, force, ledger or allocator boundary");
-            if(delivery->probe==ReplacementProbe::entry){
+            if(delivery->probe==ReplacementProbe::entry||delivery->probe==ReplacementProbe::contact){
                 entry_gates(caster,shape,stride);
                 return;
             }
