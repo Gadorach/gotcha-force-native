@@ -26,7 +26,7 @@ range=opening-slash|150
 melee=opening-slash|9|14|88|38|52|44|12
 )";
 
-void observe(unsigned ally){
+void observe(unsigned ally,unsigned low_hp=0,bool report=true){
     auto profile=std::make_shared<BorgGameplayProfile>();
     check(borg_read_gameplay_profile(rules,profile.get(),nullptr),"parse authored profile");
     BattleMvpConfig c;
@@ -35,6 +35,12 @@ void observe(unsigned ally){
     c.teams_declared=true;c.teams={0,u8(ally!=1),u8(ally!=2)};
     c.spawn={BattlePoint{0,0},BattlePoint{-32,126},BattlePoint{32,126}};
     const unsigned enemy=3-ally;
+    const bool enemy_ko=low_hp==enemy;
+    const unsigned dealt=enemy_ko?1:12,retirement=enemy_ko?17:23;
+    if(low_hp){
+        auto low=std::make_shared<BorgGameplayProfile>(*profile);
+        low->health=1;c.packages[low_hp]=low;c.team_force={90,90};
+    }
     NativeBattleMvp world;
     check(world.start(c)&&world.actor_count()==3,"start authored three-actor roster");
     unsigned hits=0,retired=0;
@@ -50,10 +56,10 @@ void observe(unsigned ally){
             check(e.actor==0,"only the attacker owns events");
             if(e.kind==BorgBattleEventKind::MeleeArmed){check(n==17&&!object&&e.object,"one armed window");object=e.object;}
             if(e.kind==BorgBattleEventKind::Hit){
-                check(n==17&&!hits&&e.object==object&&e.recipient==enemy&&e.value==12,"only the opponent takes damage");
+                check(n==17&&!hits&&e.object==object&&e.recipient==enemy&&e.value==dealt,"only the opponent takes damage");
                 ++hits;
             }
-            if(e.kind==BorgBattleEventKind::MeleeRetired){check(n==23&&e.object==object,"same window retires");++retired;}
+            if(e.kind==BorgBattleEventKind::MeleeRetired){check(n==retirement&&e.object==object,"same window retires");++retired;}
         }
         if(n==17){
             const auto& a=world.actors()[0];
@@ -65,13 +71,23 @@ void observe(unsigned ally){
                                        {p[0],p[2]},c.actor_radius+proxy.radius,&fraction),"both authored proxies overlap");
             }
         }
+        if(enemy_ko&&n==17)break;
     }
-    check(hits==1&&retired==1&&world.actors()[ally].health==60&&world.actors()[enemy].health==48&&
-          world.actors()[0].damage_credited==12,"independent team and geometric gates");
-    std::printf("native-team-pair: %u %u 17 60 48 12 23\n",ally,enemy);
+    check(hits==1&&retired==1&&world.actors()[ally].health==(low_hp==ally?1u:60u)&&
+          world.actors()[enemy].health==(enemy_ko?0u:48u)&&world.actors()[0].damage_credited==dealt&&
+          world.result()==(enemy_ko?BattleMvpResult::GRedWins:BattleMvpResult::Fighting),
+          "independent team and geometric gates");
+    if(low_hp){
+        check(world.team_force()[0]==90&&world.team_force()[1]==90-dealt,"native HP debit is not the original KO cost");
+        if(report)std::printf("native-allied-ko: %u %u %u %u %u %u %u\n",low_hp,world.actors()[ally].health,
+                              world.actors()[enemy].health,dealt,world.team_force()[0],world.team_force()[1],unsigned(enemy_ko));
+    }else if(report)std::printf("native-team-pair: %u %u 17 60 48 12 23\n",ally,enemy);
 }
 }
 
-int main(){
+int main(int argc,char** argv){
+    if(argc==2&&std::string_view(argv[1])=="--allied-ko"){observe(2,1);observe(2,2);return 0;}
+    check(argc==1,"unknown output mode");
     observe(1);observe(2);
+    observe(2,1,false);observe(2,2,false);
 }

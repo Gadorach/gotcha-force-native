@@ -1936,6 +1936,11 @@ separately verifies ally damage for the rifle and type-0 pilots, and finds
 an unmodified exclusion row on the group-7 rebind of Alien and Claw Worm.
 Their zero-power opening permits allies; the follow-up does not.
 
+The [loaded allied-KO replay](world-allied-ko-checkpoint.md) takes the
+same Tau strike through lethal contact, Force debit and the result pass.
+The 90-point debit belongs to the victim's team independently of whether
+the attacker earns opponent KO credit.
+
 ### Normal body knockout: Force cost, reserves and credit
 
 The [knockout replay](api-map/gg4e08-body-knockout.json) completes the

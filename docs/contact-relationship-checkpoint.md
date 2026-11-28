@@ -40,6 +40,9 @@ or continuing projectile, and the opponent behind it can take damage.
 No general allied multiplier, KO policy, or exact native contact binding
 is inferred from the scoped damage amounts above.
 
+The [later allied-KO comparison](world-allied-ko-checkpoint.md) verifies
+the amount multiplier and KO effects separately on loaded Tau.
+
 All 34 original observations matched across O0/O1/O2, and five earlier
 carrier receipts reproduced byte-for-byte. The native projectile contact
 test, including both authored ally controls, passed under sanitizers.

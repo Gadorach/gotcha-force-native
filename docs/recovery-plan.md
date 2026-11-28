@@ -178,11 +178,16 @@ not a dependency of an ordinary combat/movement checkpoint.
   and a stock exclusion on Alien/Claw Worm's follow-up. Their zero-power opening
   uses a different rule on the same carrier. Relationship, HP/credit and
   carrier close/continuation cannot be represented by one move-wide toggle.
-- **Next:** use the same loaded Tau strike to compare allied against opposing
-  **lethal** contact and pin the amount/rounding and ledger consequences of
-  an accepted ally. Check defeat, Force, teammate credit and result separately
-  before deciding whether any uniform single-row route can opt into native
-  ally admission. Do not change authored defaults or bind the Worm tail.
+- **Landed:** the [loaded allied-KO comparison](world-allied-ko-checkpoint.md)
+  verifies the amount routine's mirrored-HP bands and quartering before
+  rounding, then separates ally damage credit, opponent KO credit, victim
+  Force debit and result selection. An allied KO can exhaust the attacker's
+  own team even while the attacker remains alive.
+- **Next:** design a bounded opt-in for KO-cost accounting separately from
+  hit admission. Use a portable per-actor cost with a nonlethal, lethal and
+  insufficient-Force test on one exact normal route. Keep HP-removed,
+  HP-request credit, Force result, and queued replacement distinct.
+  Do not change authored defaults or bind the Worm tail.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);
