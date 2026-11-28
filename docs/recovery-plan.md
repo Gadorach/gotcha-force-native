@@ -153,10 +153,14 @@ not a dependency of an ordinary combat/movement checkpoint.
   It found no above-floor logical grounding and adds no hover binding.
   Reopen literal hover-floor work when a specific actor and input can
   discriminate it from a visual lift or airborne refill.
-- **Next:** join one ordinary moving-body update to a matching receiver
-  shape publication and the subsequent world contact pass (step 3).
-  Reuse the loaded two-actor scene, with a matched miss. Keep accepted
-  shape/contact, HP writes and later support state separate.
+- **Landed:** the [moving Tau world comparison](world-moving-receiver-checkpoint.md)
+  joins original actor motion, current shape publication and a returning world
+  visit. One moving arm hits and the other reaches the narrow kernel and
+  misses. The authored native control already uses the current receiver.
+- **Next:** use one ordinary KO to join the accepted HP write to unlink and
+  archive handoff in the loaded scene (step 3). Check replacement readiness
+  or a match-end return against a surviving-hit control, without creating a
+  reserve actor or assuming slot reuse from the KO alone.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

@@ -2804,6 +2804,11 @@ python3 -m tools.analyze.retail_sphere_sweep \
 
 ### Moving receivers: narrow tests use the receiver’s final pose
 
+The later [loaded Tau world comparison](world-moving-receiver-checkpoint.md)
+verifies this ordering through real pose publication, the receiver rebuild,
+and a returning world visit. Both loaded cases move; the miss reaches the
+narrow kernel with its current sphere and writes no HP.
+
 The [moving-receiver replay](api-map/gg4e08-moving-receiver.json)
 changes both declared poses between two original registry rebuilds.
 The ordinary pair loop tests Tau’s attack against either Sasuke’s
