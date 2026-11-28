@@ -1,12 +1,13 @@
 // One declared STIH wall and an unedited normal body contact queue.
 #include "retail_body_entry_contact.hpp"
+#include "retail_declared_stage_grid.hpp"
 
 namespace {
 using namespace retail_fixture;
 namespace contact=retail_stationary_contact;
 namespace entry=retail_body_entry_contact;
 constexpr u32 body=contact::receiver,probe_cell=contact::body,capsule=probe_cell+0x200;
-constexpr u32 stage=0x81048000,files=stage+0x800,grids=stage+0x1000;
+constexpr u32 stage=0x81048000;
 constexpr u32 stage_contacts=0x8002E1C8;
 constexpr u32 role08_count=0x8043B5A0-21334,role08_list=0x803C357C;
 constexpr u32 slots=0x803C4E84,seat_size=0x1E00;
@@ -37,39 +38,8 @@ class Probe {
         CPUState cpu{};cpu.gpr[3]=arg;mod.run(cpu,ram,fn,65536);
     }
     void rebuild(){call(0x8008A28C);call(0x80089AEC);}
-    void grid(unsigned role,bool wall){
-        // Independent reference lists for every cell: the original relocator
-        // edits each list in place. The single authored wall faces +X.
-        const u32 file=grids+role*0x1000,table=file+40,refs=table+4*64;
-        const unsigned list_bytes=wall?8:4;
-        const u32 triangle=refs+list_bytes*64;
-        constexpr std::array<u32,6> fields{500,500,8,8,u32(-1000),u32(-1000)};
-        store(file,0x53544948);store(file+4,triangle+(wall?56u:0)-file);
-        for(unsigned i=0;i<fields.size();++i)store(file+8+4*i,fields[i]);
-        store(file+32,table-file-8);store(file+36,triangle-file-8);
-        for(unsigned i=0;i<64;++i){
-            const auto ref=refs+list_bytes*i;
-            store(table+4*i,ref-file-8);
-            store(ref,wall?0:0xFFFFFFFF);
-            if(wall)store(ref+4,0xFFFFFFFF);
-        }
-        if(wall){
-            constexpr std::array<float,13> raw{100,-200,-200,100,600,-200,100,-200,600,1,0,0,-100};
-            for(unsigned i=0;i<raw.size();++i)put(triangle+4+4*i,raw[i]);
-        }
-        store(files+4*role,file);
-    }
     void stage_setup(bool wall){
-        store(0x8043B5A0-21316,stage);store(0x8043B5A0-31820,files);
-        for(unsigned i=0;i<3;++i)grid(i,wall&&i==1);
-        for(unsigned i=0;i<5;++i)put(stage+52+4*i,i==2||i==4?-1000.f:3000.f);
-        call(0x8003D4A0);
-        for(unsigned i=0;i<3;++i){
-            const auto file=word(files+4*i);
-            if(word(stage+28+4*i)!=file+8||word(file+32)!=file+40||
-               word(word(file+40))!=(wall&&i==1?word(file+36):0xFFFFFFFF))
-                fail("declared stage grid did not relocate through the original reader");
-        }
+        retail_declared_stage_grid::bind(mod,ram,stage,wall,100.f);
     }
     void pose(float x,u32 owner=body){
         const u32 root=owner+0x1AA4,joint=owner+0x8D4+6*0x30;

@@ -3019,6 +3019,42 @@ python3 -m tools.analyze.retail_type80_link \
   /tmp/opencode/gf-type80-link.json
 ```
 
+### Tether and wall joined: transferred displacement can prevent damage
+
+The [joined replay](api-map/gg4e08-tether-wall.json) runs
+Chainsaw Knight’s original type-25 carrier and contact against
+Sasuke, then feeds the masks written by that callback into the
+original collision walk. It does **not** supply link masks or a
+displacement vector. The controls hold the same declared final
+poses, with a wall at **X=800** or an empty grid.
+
+- Sasuke’s original stage sphere produces **+20**, moving him
+  from **830 to 850**. Before the pull callback and after expiry,
+  only Sasuke moves. With both reciprocal masks set by the pull
+  callback, the same vector moves Chainsaw Knight from **200 to
+  220**. His capsule has no direct stage contact in the fixture.
+- Tau’s separate attack from **X=105** reaches the original
+  narrow test in both cases. Without the wall, it removes
+  **17 HP** from Chainsaw Knight under token **2**. With the
+  transferred correction, the capsule’s scratch endpoints shift
+  from **185/215** to **205/235**, and Tau misses. The allocated
+  endpoints stay unchanged, and Sasuke retains tether token **1**.
+
+All **6 cases** matched across O0/O1/O2. The five earlier stage and
+tether receipts reproduced byte-for-byte. The replay leaves the
+tether’s motion requests unintegrated, uses declared poses and a
+declared wall, and does not qualify a full scene tick, a retail
+arena, hardware, or native gameplay.
+
+Use the same fixture as for type 25:
+
+```sh
+python3 -m tools.analyze.retail_tether_wall \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type25-link "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-tether-wall.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

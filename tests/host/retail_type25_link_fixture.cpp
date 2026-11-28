@@ -1,18 +1,24 @@
 // Exact type-25/type-80 tether carriers under bounded, declared contact poses.
 #include "retail_stationary_contact.hpp"
+#include "retail_declared_stage_grid.hpp"
+#include "retail_body_entry_contact.hpp"
 
 namespace {
 using namespace retail_fixture;
 namespace contact=retail_stationary_contact;
-constexpr u32 target=contact::receiver,carrier=0x81030000,shot=0x81032000,bank=0x81034000;
+namespace entry=retail_body_entry_contact;
+constexpr u32 carrier=0x81030000,shot=0x81032000,bank=0x81034000;
 constexpr u32 view_pool=0x81037000,view=0x81037200,view2=view+32;
 constexpr u32 stage=0x81050000,grid=stage+0x100,refs=stage+0x200,empty=refs+64*4;
 constexpr u32 callback25=0x800C4838,callback80=0x800FD4CC,request80=0x801367F0;
 constexpr u32 attack_count=0x8043B5A0-21328,attack_list=0x803C477C,slots=0x803C4E84;
+constexpr u32 wall_sphere=contact::body+0x200,owner_capsule=wall_sphere+0x200;
+constexpr u32 count08=0x8043B5A0-21334,list08=0x803C357C;
 
 class Probe {
     const Module& mod;
     std::vector<u8> ram;
+    u32 target=contact::receiver;
     u8* at(u32 a){return contact::at(ram,a);}
     u32 word(u32 a){return be32(at(a));}
     u16 half(u32 a){return contact::half(ram,a);}
@@ -83,13 +89,125 @@ class Probe {
         if(gate!=0x8006A53C||busy.lr!=0x80136834||busy.gpr[3]!=actor||busy.gpr[4]!=10)
             fail("type80 busy owner did not take its original wait path");
     }
+    void wall_join(unsigned scenario,u16 hp,const entry::Attack* tau){
+        constexpr u32 propagate=0x8002CB20,writer=0x80035CA4,presentation=0x8005A580;
+        if(half(contact::free_count+8)!=1||word(contact::free_head+16)!=shot||half(attack_count)||
+           word(carrier+0x15C)!=target||word(actor+0x1CC)||word(target+0x1CC))
+            fail("tether wall join did not keep the exact post-contact lifetime");
+
+        // An additional, separately offered cell gets Chainsaw Knight's
+        // original ordinary capsule. Leave the returned attack cell free.
+        at(bank)[0]=11;at(bank+1)[0]=255;
+        store(actor+0x76C,1u<<6);
+        rigid(actor+0x1AA4,point(actor+0x20));
+        rigid(actor+0x8D4+6*0x30,{220,100,202});
+        at(owner_capsule+2)[0]=4;store(owner_capsule+4,shot);
+        store(contact::free_head+16,owner_capsule);put16(at(contact::free_count+8),2);
+        call(0x8008AB30,actor);
+        constexpr u32 caster=actor+2*0x1E00;
+        const bool pair=scenario>=4;
+        if(pair){
+            if(!tau)fail("tether wall missing qualified Tau inputs");
+            entry::bind_attack_at(mod,ram,*tau,entry::routes[0],1,{105,100,200},caster,entry::attack_cell,2);
+            at(caster+0x88)[0]=1;
+        }
+        rebuild();
+        // Visit the same declared pose again so the wall sphere is stationary
+        // at the sampled position, not sweeping from the first contact pose.
+        rebuild();
+        if(half(count08)!=1||word(list08)!=wall_sphere||half(contact::receiver_count)!=2||
+           word(wall_sphere+0x20)!=target||word(wall_sphere+0x28)!=contact::body_block+32+80||
+           word(owner_capsule+0x20)!=actor||word(owner_capsule+0x28)!=bank+32+11*80||
+           half(contact::free_count+8)!=1||word(contact::free_head+16)!=shot||half(attack_count)!=unsigned(pair)||
+           (pair&&(word(attack_list)!=entry::attack_cell||word(entry::attack_cell+0x20)!=caster||
+                   half(caster+0x26C)!=2||word(entry::attack_cell+0x64)!=std::bit_cast<u32>(105.f)))){
+            std::fprintf(stderr,"tether wall publication: role08=%u/%08X receivers=%u/%08X/%08X free=%u/%08X owners=%08X/%08X "
+                         "attacks=%u/%08X owner=%08X token=%u x=%08X\n",
+                         half(count08),word(list08),half(contact::receiver_count),word(contact::receiver_registry),
+                         word(contact::receiver_registry+4),half(contact::free_count+8),word(contact::free_head+16),
+                         word(wall_sphere+0x20),word(owner_capsule+0x20),half(attack_count),word(attack_list),
+                         word(entry::attack_cell+0x20),half(caster+0x26C),word(entry::attack_cell+0x64));
+            fail("tether wall shape publication changed");
+        }
+
+        const auto masks=std::array{at(actor+0x71E)[0],at(target+0x71E)[0],
+                                    at(actor+0x71F)[0],at(target+0x71F)[0]};
+        const auto count=std::array{at(actor+0x731)[0],at(target+0x731)[0]};
+        const auto roots=std::array{word(actor+0x20),word(target+0x20)};
+        const auto raw_centers=std::array{word(owner_capsule+0x64),word(wall_sphere+0x64)};
+        const auto timer=half(carrier+0x1C);
+        const auto phase=at(carrier+0x19)[0];
+        const auto inlet=ram;
+        call(0x8002E1C8);
+        const auto stage_vectors=std::array{word(actor+0x1CC),word(target+0x1CC)};
+        CPUState pass{};CallObservation copy{writer};
+        mod.run_observed(pass,ram,propagate,copy,4096);
+        if(copy.count>1||(copy.count&&(copy.caller!=0x8002CC34||copy.arguments[0]!=actor||
+                                       copy.arguments[1]!=target+0x1CC)))
+            fail("tether wall did not transfer from Sasuke to the bound owner");
+        call(0x8002CE44);
+        const auto state=[&]{
+            return std::array{word(actor+0x20),word(target+0x20),word(actor+0x1CC),word(target+0x1CC),
+                              word(owner_capsule+0x64),word(wall_sphere+0x64),word(owner_capsule+0x8C),
+                              word(owner_capsule+0x98)};
+        };
+        const auto isolated=state();
+        ram=inlet;
+        u32 scratch_left=0,scratch_right=0;
+        if(pair){
+            constexpr u32 kernel=0x80030A3C,scratch=0x803B0368;
+            auto fork=inlet;
+            CPUState narrow{};
+            const auto next=mod.run_to_or_return(narrow,fork,0x8002BB14,{kernel,presentation,0x80264290},nullptr,65536);
+            if(next!=kernel||narrow.lr!=0x800304F0||narrow.gpr[3]!=0x803B04D0||narrow.gpr[4]!=scratch)
+                fail("tether wall pair did not reach original capsule narrow dispatch");
+            scratch_left=be32(contact::at(fork,scratch+0x34));
+            scratch_right=be32(contact::at(fork,scratch+0x40));
+        }
+        CPUState walk{};CallObservation amount{contact::amount_entry};
+        const auto cut=mod.run_to_or_return(walk,ram,0x8002BB14,{presentation,contact::hp_write,0x80264290},
+                                            &amount,65536);
+        unsigned damage=0;
+        if(cut==contact::hp_write&&pair){
+            if(walk.lr!=0x8002F1DC||walk.gpr[3]!=actor||amount.count!=1||
+               amount.arguments[0]!=0x80377AD8||amount.arguments[1]!=caster||amount.arguments[2]!=actor||
+               half(actor+0x1C6)!=hp)
+                fail("tether wall HP write did not belong to the original Tau/Chainsaw pair");
+            damage=walk.gpr[4];mod.finish_stopped_leaf(walk,contact::hp_write,164);
+        }else if(cut!=presentation||walk.lr!=0x8002C870||walk.gpr[3]!=actor||amount.count){
+            fail("tether wall walk did not reach its original frontier");
+        }
+        if(state()!=isolated||
+           word(actor+0x1D0)||word(actor+0x1D4)||word(target+0x1D0)||word(target+0x1D4)||
+           !at(carrier)[0]||word(carrier+0x15C)!=target||half(carrier+0x1C)!=timer||at(carrier+0x19)[0]!=phase||
+           half(actor+0x1C6)!=hp-damage||half(target+0x1C6)!=180||half(target+0x20C)!=1)
+            fail("enclosing original walk did not retain the tether wall result and HP");
+        std::printf("tether-wall: %u %u %u",scenario,phase,timer);
+        for(auto value:masks)std::printf(" %u",value);
+        for(auto value:count)std::printf(" %u",value);
+        for(auto value:roots)std::printf(" %08X",value);
+        for(auto value:raw_centers)std::printf(" %08X",value);
+        for(auto value:stage_vectors)std::printf(" %08X",value);
+        std::printf(" %u %08X",copy.count,copy.caller);
+        for(auto value:isolated)std::printf(" %08X",value);
+        std::printf(" %u %u %u %u %u\n",at(actor+0x1DD)[0],at(target+0x1DD)[0],
+                    half(actor+0x1C6),half(target+0x1C6),half(target+0x20C));
+        if(pair)std::printf("tether-wall-pair: %u %08X %08X %08X %u %u %u\n",scenario,cut,scratch_left,scratch_right,
+                            damage,half(actor+0x20C),half(caster+0x1C6));
+    }
 public:
     Probe(const Module& module,const std::vector<u8>& original):mod(module),ram(original){}
     void run(unsigned scenario,const contact::HitBlock& attack,const contact::ActorSpec& owner,
-             const contact::HitBlock& body,const contact::ActorSpec& defender,bool type80=false){
+             const contact::HitBlock& body,const contact::ActorSpec& defender,bool type80=false,
+             const entry::Attack* wall_tau=nullptr){
+        const bool join=wall_tau!=nullptr;
         stage_inlet();visual_and_sound_inlet();
-        const bool key1=!type80&&scenario>=3;
-        const unsigned control=scenario%3;
+        if(join){
+            target=actor+0x1E00;
+            retail_declared_stage_grid::bind(mod,ram,stage,scenario!=0&&scenario!=4,800.f);
+        }
+        const bool key1=!type80&&!join&&scenario>=3;
+        const unsigned control=join?1:scenario%3;
         const u16 model=type80?0x0D02:key1?0x0809:0x0201;
         const u16 hp=type80?200:key1?50:250;
         const u32 callback=type80?callback80:callback25;
@@ -171,7 +289,7 @@ public:
         rebuild();
         auto center=point(shot+0x64);
         if(control==0)center[0]+=400;
-        contact::bind_sasuke(mod,ram,center,body,owner,defender,hp);
+        contact::bind_stationary(mod,ram,center,body,owner,defender,hp,contact::sasuke,target,join?wall_sphere:0);
         at(target+0x71A)[0]=2;
         rigid(target+0x8D4+2*0x30,{center[0],center[1]+14,center[2]});
         rebuild();
@@ -192,11 +310,17 @@ public:
         if(half(actor+0x1C6)!=hp||word(actor+0x418)||word(target+0x41C)||
            word(shot+0x2C)!=word(actor+0x27C)||record.count!=unsigned(cut==contact::hp_write))
             fail("tether pair changed its exact damage bank, payer or ledgers");
-        std::printf("%s-pair: %u %u %08X %u %u %u %u %u %u %u\n",type80?"type80":"type25",scenario,
-                    unsigned((word(shot+0x28)-bank-0xAA0)/80),record.arguments[0],record.count,damage,
-                    at(carrier+0x1D9)[0],half(target+0x1C6),half(target+0x20C),
-                    unsigned(word(carrier+0x290)==target),half(carrier+0x26C));
-        const auto snapshot=[&](unsigned phase){if(type80)dump80(scenario,phase);else dump(scenario,phase);};
+        if(join){
+            if(cut!=contact::hp_write||record.arguments[0]!=0x80309EB0||damage||at(carrier+0x1D9)[0]!=16||
+               word(carrier+0x290)!=target||half(target+0x20C)!=1)
+                fail("wall join did not begin with the exact original key-0 contact");
+        }else{
+            std::printf("%s-pair: %u %u %08X %u %u %u %u %u %u %u\n",type80?"type80":"type25",scenario,
+                        unsigned((word(shot+0x28)-bank-0xAA0)/80),record.arguments[0],record.count,damage,
+                        at(carrier+0x1D9)[0],half(target+0x1C6),half(target+0x20C),
+                        unsigned(word(carrier+0x290)==target),half(carrier+0x26C));
+        }
+        const auto snapshot=[&](unsigned phase){if(type80)dump80(scenario,phase);else if(!join)dump(scenario,phase);};
         snapshot(0);
         if(control==2)at(target+0x83)[0]=1; // Change eligibility after the original overlap.
         call(callback,carrier);
@@ -208,8 +332,15 @@ public:
         // Declare a stretched pose after observing one unstretched visit.
         // No link bytes, motion request fields or tether lengths are seeded.
         auto stretched=center;stretched[0]+=600;
-        contact::place_receiver(ram,stretched);
+        contact::place_receiver(ram,stretched,target);
         put(actor+0x204,100.f);put(target+0x204,100.f);
+        if(join){
+            rigid(target+0x1AA4,stretched);
+            if(scenario!=1)call(callback,carrier);
+            if(scenario==3){put16(at(carrier+0x1C),1);call(callback,carrier);}
+            wall_join(scenario,hp,wall_tau);
+            return;
+        }
         call(callback,carrier);
         snapshot(3);
         put16(at(carrier+0x1C),1);
@@ -225,16 +356,23 @@ public:
 
 int main(int argc,char** argv){
     const bool type80=argc==4&&!std::strcmp(argv[3],"--type80");
-    if(argc!=3&&!type80)fail("usage: type25-link-fixture qualified.dol unmodified-recomp.so [--type80] < qualified-roles");
+    const bool join=argc==4&&!std::strcmp(argv[3],"--wall-join");
+    if(argc!=3&&!type80&&!join)
+        fail("usage: type25-link-fixture qualified.dol unmodified-recomp.so [--type80|--wall-join] < qualified-roles");
     std::array<contact::HitBlock,2> attack{};
     std::array<contact::ActorSpec,2> owner{};
     contact::HitBlock body{};
     contact::ActorSpec defender{};
+    entry::Attack tau{};
     const auto read=[](auto& x){if(std::fread(x.data(),1,x.size(),stdin)!=x.size())fail("type25 link fixture input extent");};
-    for(unsigned i=0;i<(type80?1u:2u);++i){read(attack[i]);read(owner[i]);}
+    for(unsigned i=0;i<(type80||join?1u:2u);++i){read(attack[i]);read(owner[i]);}
     read(body);read(defender);
+    if(join){read(tau.hit);read(tau.spec);}
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra type25 link input");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    for(unsigned i=0;i<6;++i)Probe(mod,original).run(i,attack[type80?0:i/3],owner[type80?0:i/3],body,defender,type80);
+    for(unsigned i=0;i<6;++i){
+        const unsigned input=type80||join?0:i/3;
+        Probe(mod,original).run(i,attack[input],owner[input],body,defender,type80,join?&tau:nullptr);
+    }
 }

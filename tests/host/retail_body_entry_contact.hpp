@@ -64,14 +64,19 @@ inline void require_heal_returned(std::vector<u8>& ram,u32 payload,u32 view){
 }
 
 inline void bind_attack_at(const Module& mod,std::vector<u8>& ram,const Attack& raw,const Route& r,
-                           unsigned relation,const contact::Point& point,u32 caster,u32 cell=attack_cell){
+                           unsigned relation,const contact::Point& point,u32 caster,u32 cell=attack_cell,u8 seat=0){
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
     const auto scalar=[&](u32 a){return std::bit_cast<float>(word(a));};
+    if(seat>=6)fail("entry contact caster seat extent");
     std::memset(at(caster),0,0x1E00);
-    put32(at(0x803C4E84),caster);
+    put32(at(0x803C4E84+4*seat),caster);
     at(caster)[0]=1;at(caster+0x18)[0]=1;at(caster+0x88)[0]=relation?0:at(body+0x88)[0];
+    if(seat){
+        at(caster+0x3E4)[0]=at(caster+0x3E7)[0]=seat;
+        at(caster+0x3E5)[0]=u8(1u<<seat);
+    }
     put16(at(caster+0x3E8),r.model);
     put16(at(caster+0x1C4),r.hp);put16(at(caster+0x1C6),r.hp);
     put32(at(caster+0x90),caster);
@@ -83,7 +88,7 @@ inline void bind_attack_at(const Module& mod,std::vector<u8>& ram,const Attack& 
     for(u32 field:{0xB4u,0xB8u,0xC0u,0xC4u})put_float(at(caster+field),1.f);
     put_float(at(caster+0x1CDC),float(r.frame));
     put32(at(caster+0x76C),1u<<r.joint);
-    put16(at(0x803B069C),r.hp);
+    put16(at(0x803B069C+2*seat),r.hp);
     const u32 d=attack_bank+0xAA0+80*r.step,matrix=caster+0x8D4+48*r.joint;
     if(at(r.command)[0]!=10||at(r.command+1)[0]!=r.group||at(d)[0]||at(d+1)[0]!=r.joint||
        half(d+2)!=r.role||half(d+4)!=r.index||half(d+6)!=r.frame)
