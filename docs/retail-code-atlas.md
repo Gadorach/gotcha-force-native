@@ -2591,6 +2591,47 @@ python3 -m tools.analyze.retail_replacement_heal_exit \
   /tmp/opencode/gf-replacement-heal-exit.json
 ```
 
+### Normal body geometry: sphere scale, center history, and basis eligibility
+
+The [body geometry replay](api-map/gg4e08-body-geometry.json) keeps
+each normal Borg’s full source queue bound while changing declared
+matrices and actor scale. With the role mask open, ordinary and
+alternate receiver lists agree in all eleven controls.
+
+- **Core sphere geometry:** Across **770** sphere queue entries
+  from **184** Borgs, the bound matrix transforms the local
+  center, while descriptor radius times actor `+0xC0` writes
+  core radius `+0x88`. Doubling actor scale with an unchanged
+  matrix doubles that radius without moving the center.
+  Nonuniform bases and a reflected X basis move the center but
+  do not rescale the core radius on their own.
+- **Broad-phase envelope:** On a rebuild that moves the sphere,
+  `+0x7C` adds the distance from the previous center to the core
+  radius. **615** entries widen on the nonuniform transition
+  and **130** on the following X reflection. On a second
+  unchanged rebuild, the broad radius returns to the core
+  radius. The independent distance reference matches **6,143**
+  of **6,160** observations exactly and the rest within one
+  binary32 step; the observed bits are pinned per Borg.
+- **Basis eligibility:** A zero column, Y magnitude `0.005`,
+  or Z magnitude `0.01` suppresses both lists without freeing
+  the shapes. The next binary32 value above `0.01` restores
+  all **1,573** receiving cells across the roster. Collapsing
+  just the root removes **37**; collapsing only the joint
+  matrices instead leaves those same **37** root-bound cells.
+
+All **3,090** registry rebuilds and the sphere observations matched
+across O0/O1/O2. This qualifies declared matrices, not animated
+pose equivalence, non-sphere geometry, narrow-phase hit or sweep
+behavior, or a native collision change.
+
+```sh
+python3 -m tools.analyze.retail_body_geometry \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/body-registry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-body-geometry.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
