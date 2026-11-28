@@ -3422,6 +3422,46 @@ python3 -m tools.analyze.retail_stage_prop_break_contact \
   /tmp/opencode/gf-stage-prop-break-contact.json
 ```
 
+### Original side placement census: all 61 archives
+
+The [side census](api-map/gg4e08-stage-side-census.json) replays
+every hexadecimal `setNNNN.arc` member separately. The original
+loader (`8004279C`) binds **116** HSD banks, then the original
+placement loop (`800818D0`) consumes **360** rows and resets its
+16 placement masks. This does not replay the selection of those
+files during a battle.
+
+- Variant **1** constructs **180** class-2 model-only objects,
+  each with one model root and no collision registration. Variant
+  **0** constructs **180** class-3 collision owners with two
+  roots each. Reused bank records still produce separate mutable
+  roots, for **540** total. The first bucket and registered
+  world visits resolve the authored positions.
+- The shape walk publishes **265** ordinary receiving cells.
+  **181** also enter the common `0x20` registry, but only
+  **84** are planes (types **0, 2, 4, 6**). A shared descriptor
+  or membership in `0x20` does not identify an owner or prove
+  support.
+- Types **0–7** construct with **100 HP** and a **600** duration
+  operand. The **8** collision owners of types **8–11** in
+  `set0904.arc` construct with **300 HP** and a **−1** operand.
+  These are constructor observations; the type-4 support and
+  recovery results above do not automatically bind other types.
+
+O0/O1/O2 matched. This replay stops after initial collision
+publication; it does not qualify full arena scheduling, other
+variants’ support or recovery, graphics, hardware, or native
+gameplay.
+
+Compile [`retail_stage_side_census_fixture.cpp`](../tests/host/retail_stage_side_census_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_stage_side_census \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-census.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
