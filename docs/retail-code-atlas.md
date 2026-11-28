@@ -2390,6 +2390,56 @@ python3 -m tools.analyze.retail_scene_bomb_terminal \
   /tmp/opencode/gf-scene-bomb-terminal.json
 ```
 
+### Normal body queues: roster-wide binding and separate receive lists
+
+The [body registry receipt](api-map/gg4e08-body-registry.json)
+checks all **206** exact normal hit banks against their loose AFS
+copies. The original binder allocates **2,421** queue entries per
+roster pass. All six physical seats agree when tested separately
+with capacity for the whole queue. Publication lists traverse the
+allocated cells in **reverse queue order**.
+
+Four models (`0901`, `0A04`, `0A08`, `0A09`) list descriptor **13**
+at both ordinals **8** and **13**. The original binds two cells
+and publishes both as receivers; deduplicating by descriptor number
+would lose one. With only one cell, each model binds just queue
+ordinal 0, not its first eligible receiver. Only `0E04` publishes
+an ordinary receiver in that one-cell control after the mask opens.
+
+| Declared publication inlet | Ordinary receivers | Alternate receivers |
+| --- | ---: | ---: |
+| Original reset `+0x272 = 0xEF` | 0 | 0 |
+| `+0x272 = 0xC3` | 0 | 0 |
+| Role mask clear, joints enabled | 1,573 | 1,573 |
+| As above, positive `+0x720` | 0 | 1,573 |
+| Role mask clear, only joint-enable bit 0 set | 37 | 37 |
+| Role mask clear, no joint bits set | 0 | 0 |
+
+Counts sum one seat over the roster. With both lists open, each
+uses the same cells. The positive `+0x720` guard is **ordinary-only**;
+the role-2 mask excludes both lists. The joint check gates both:
+root matrix selector `0x80` and joint selector `0` both use bit 0.
+The reset also leaves some nonreceiver roles publishable; the
+receipt tracks them separately by raw role bit. No attack roles
+publish from these body queues.
+
+The **1,648** bind/close cases and **9,888** publication visits
+matched across O0/O1/O2. The close callback returned exactly the
+offered cells. This test supplies rigid matrices and declared
+eligibility fields. It does not replay each Borg's cold start,
+qualify the geometry of any animated pose, or show a live alternate
+attack. No native collision behavior was changed.
+
+Compile [`retail_body_registry_fixture.cpp`](../tests/host/retail_body_registry_fixture.cpp)
+with the [phase fixture](#shared-action-gate) flags:
+
+```sh
+python3 -m tools.analyze.retail_body_registry \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/body-registry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-body-registry.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

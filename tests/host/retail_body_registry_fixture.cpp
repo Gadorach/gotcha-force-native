@@ -1,0 +1,183 @@
+// All normal body queues through the original binder and list rebuild, not a pose or hit replay.
+#include "retail_stationary_contact.hpp"
+#include <algorithm>
+
+namespace {
+using namespace retail_fixture;
+namespace contact=retail_stationary_contact;
+constexpr unsigned models=206,seats=6,slots=32,views=6;
+constexpr u32 fighters=0x81020000,stride=0x1E00,bank=0x81050000,cells=0x81060000,cell_stride=0x200;
+constexpr u32 actors=0x803C4E84,count_base=0x8043B5A0-21328;
+constexpr std::array<u32,10> lists{0x803C477C,0x803C417C,0x803C3B7C,0x803C357C,0x803C2F7C,
+                                  0x803C297C,0x803C237C,0x803C1D7C,0x803C177C,0x803C117C};
+constexpr unsigned descriptor_size=80;
+using Registry=std::array<u32,lists.size()>;
+struct Report {
+    unsigned bound,special;
+    std::array<Registry,views> visits;
+    bool operator==(const Report&)const=default;
+};
+
+class Probe {
+    const Module& mod;
+    const std::vector<u8>& initial;
+    std::vector<u8> ram;
+    u8* at(u32 a){return contact::at(ram,a);}
+    u32 word(u32 a){return be32(at(a));}
+    u16 half(u32 a){return contact::half(ram,a);}
+    void store(u32 a,u32 x){put32(at(a),x);}
+    void store16(u32 a,u16 x){put16(at(a),x);}
+    void call(u32 entry,u32 arg=0){
+        CPUState cpu{};cpu.gpr[3]=arg;
+        mod.run(cpu,ram,entry,4096);
+    }
+    void rebuild(){call(0x8008A28C);call(0x80089AEC);}
+    void basis(u32 at_matrix){
+        for(unsigned axis=0;axis<3;++axis)put_float(at(at_matrix+20*axis),1.f);
+    }
+    Registry registry(u32 fighter,unsigned bound){
+        Registry results{};
+        for(unsigned n=0;n<lists.size();++n){
+            const unsigned count=half(count_base-2*n);
+            if(count>bound)fail("normal body registry extent");
+            unsigned previous=bound;
+            for(unsigned i=0;i<count;++i){
+                const auto shape=word(lists[n]+4*i);
+                if(shape<cells||shape>=cells+bound*cell_stride||(shape-cells)%cell_stride||
+                   word(shape+0x20)!=fighter||word(shape+0x24)!=fighter)
+                    fail("normal body registry used a foreign or unbound shape cell");
+                const unsigned ordinal=(shape-cells)/cell_stride;
+                if(ordinal>=previous)fail("normal body registry repeated a cell or changed reverse queue order");
+                results[n]|=1u<<ordinal;
+                previous=ordinal;
+            }
+        }
+        return results;
+    }
+public:
+    Probe(const Module& mod,const std::vector<u8>& initial):mod(mod),initial(initial),ram(initial){}
+    Report run(u16 model,const contact::HitBlock& hit,unsigned seat,unsigned capacity){
+        std::memcpy(ram.data(),initial.data(),ram.size());
+        store(0x8043B5A0-31852,contact::scene);
+        // Kind 4 asks the allocator for zero view cells; its precheck still reads the pool header.
+        store(0x8043B5A0-21024,0x81068000);
+        for(unsigned i=0;i<seats;++i)store(actors+4*i,fighters+stride*i);
+        const u32 fighter=fighters+stride*seat,bucket=49+seat;
+        at(fighter)[0]=1;at(fighter+0x18)[0]=1;
+        at(fighter+0x3E4)[0]=at(fighter+0x3E7)[0]=u8(seat);
+        store16(fighter+0x3E8,model);
+        std::memcpy(at(bank),hit.data(),hit.size());
+        store(contact::scene+0x80+4*seat,bank);
+        call(0x8003CC24,fighter);
+        if(word(fighter+0x3FC)!=bank||half(fighter+0x272)!=0xEF||at(fighter+0x276)[0])
+            fail("normal body registry did not start with the original reset defaults");
+        basis(fighter+0x1AA4);
+        for(unsigned i=0;i<32;++i)basis(fighter+0x8D4+0x30*i);
+        store(fighter+0x76C,0xFFFFFFFF);
+        for(unsigned i=0;i<capacity;++i){
+            const auto cell=cells+cell_stride*i;
+            at(cell+2)[0]=4;
+            store(cell+4,i+1<capacity?cell+cell_stride:0);
+        }
+        if(capacity){
+            store(contact::free_head+16,cells);
+            store(contact::free_tail+16,cells+cell_stride*(capacity-1));
+            store16(contact::free_count+8,u16(capacity));
+        }
+        call(0x8008AB30,fighter);
+        Report out{};
+        const auto head=contact::active_head+4*bucket;
+        unsigned queued=0;
+        while(queued<slots&&hit[queued]<0x80)++queued;
+        const unsigned allocated=std::min(queued,capacity);
+        for(auto cur=word(head);cur;cur=word(cur+8)){
+            if(out.bound>=allocated||cur!=cells+cell_stride*(allocated-1-out.bound)){
+                std::fprintf(stderr,"body bind %04X seat=%u capacity=%u queue=%u ordinal=%u cell=%08X head=%08X free=%u\n",
+                             model,seat,capacity,queued,out.bound,cur,word(head),half(contact::free_count+8));
+                fail("normal body binder skipped, reordered or overran its finite list");
+            }
+            const unsigned ordinal=allocated-1-out.bound;
+            const u32 step=hit[ordinal],d=bank+32+descriptor_size*step;
+            const unsigned selector=at(d+1)[0];
+            if(step>=33||(selector>=32&&selector!=0x80)||word(cur+0xC)!=0x8008A65C||
+               !at(cur)[0]||at(cur+1)[0]!=bucket||at(cur+2)[0]!=4||
+               word(cur+0x20)!=fighter||word(cur+0x24)!=fighter||word(cur+0x28)!=d||
+               word(cur+0x60)!=fighter+(selector==0x80?0x1AA4:0x8D4+0x30*selector)||
+               at(cur+0x12)[0]!=step||at(cur+0x11)[0]!=(half(d+4)&255)||
+               half(cur+0x48)!=half(d+6)||half(cur+0x4A)!=half(d+8))
+                fail("normal body shape lost its exact descriptor, ownership, or source matrix slot");
+            ++out.bound;
+        }
+        for(unsigned ordinal=0;ordinal<out.bound&&out.special<4;++ordinal)
+            if(half(bank+32+descriptor_size*hit[ordinal]+2)&0x200){
+                if(word(fighter+0x530+4*out.special)!=cells+cell_stride*ordinal)
+                    fail("normal body secondary shape index lost the bound cell");
+                ++out.special;
+            }
+        if(out.bound!=std::min(queued,capacity)||half(contact::free_count+8)!=capacity-out.bound||
+           at(fighter+0x501)[0]!=out.special)
+            fail("normal body bind and secondary index disagreed with available capacity");
+        for(unsigned view=0;view<views;++view){
+            if(view==1)store16(fighter+0x272,0xC3);
+            if(view==2)store16(fighter+0x272,0);
+            if(view==3)put_float(at(fighter+0x720),1.f);
+            if(view==4){store(fighter+0x720,0);store(fighter+0x76C,1);}
+            if(view==5)store(fighter+0x76C,0);
+            rebuild();
+            out.visits[view]=registry(fighter,out.bound);
+            if(half(contact::free_count+8)!=capacity-out.bound)
+                fail("normal body publication modified allocation");
+        }
+        call(0x8008AFF0,fighter);
+        if(at(fighter+0x1D8)[0]!=1)fail("normal body close did not mark its bound shapes");
+        rebuild();
+        if(word(head)||half(contact::free_count+8)!=capacity||registry(fighter,0)!=Registry{})
+            fail("normal body close did not empty the registered buckets and restore cells");
+        u32 returned=0,tail=0;
+        for(auto cur=word(contact::free_head+16);cur;cur=word(cur+4)){
+            if(cur<cells||cur>=cells+capacity*cell_stride||(cur-cells)%cell_stride||at(cur)[0]||at(cur+2)[0]!=4)
+                fail("normal body did not return the exact original kind-4 cells");
+            const u32 bit=1u<<((cur-cells)/cell_stride);
+            if(returned&bit)fail("normal body free list cycled");
+            returned|=bit;tail=cur;
+        }
+        if(std::popcount(returned)!=int(capacity)||word(contact::free_tail+16)!=tail)
+            fail("normal body free list lost a cell after close");
+        return out;
+    }
+};
+} // namespace
+
+int main(int argc,char** argv){
+    if(argc!=3)fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so < qualified-normal-queues");
+    const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
+    Probe probe(mod,original);
+    unsigned prior=0;
+    for(unsigned i=0;i<models;++i){
+        std::array<u8,2> id{};
+        contact::HitBlock hit{};
+        if(std::fread(id.data(),1,id.size(),stdin)!=id.size()||
+           std::fread(hit.data(),1,hit.size(),stdin)!=hit.size())fail("normal body registry input extent");
+        const unsigned model=(unsigned(id[0])<<8)|id[1];
+        if((i&&model<=prior)||model>0x0FFF)fail("normal body registry input identity");
+        prior=model;
+        // Fail closed before executing any unqualified descriptor as an original shape kind or matrix reference.
+        for(unsigned n=0;n<slots&&hit[n]<0x80;++n){
+            const unsigned d=32+descriptor_size*hit[n];
+            if(hit[n]>=33||hit[d]>5||(hit[d+1]>=32&&hit[d+1]!=0x80)||
+               (hit[d+3]&0x81)||hit[d+6]||hit[d+7]||hit[d+8]!=255||hit[d+9]!=255)
+                fail("normal body descriptor outside verified kind, role or phase bounds");
+        }
+        for(unsigned capacity:{32u,1u,0u}){
+            const auto row=probe.run(u16(model),hit,0,capacity);
+            for(unsigned seat=1;capacity==32&&seat<seats;++seat)
+                if(probe.run(u16(model),hit,seat,capacity)!=row)fail("normal body registry depended on the physical seat");
+            for(unsigned view=0;view<views;++view){
+                std::printf("body-registry: %04X %u %u %u %u",model,capacity,view,row.bound,row.special);
+                for(auto registry:row.visits[view])std::printf(" %08X",registry);
+                std::putchar('\n');
+            }
+        }
+    }
+    if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("trailing normal body registry payload");
+}
