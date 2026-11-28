@@ -1,6 +1,7 @@
 // Two independent original archive deliveries into two real physical actor seats.
 #include "retail_contact_effect_archive.hpp"
 #include "retail_scene_entry.hpp"
+#include "retail_stage_grid_replay.hpp"
 
 namespace {
 using namespace retail_fixture;
@@ -21,13 +22,15 @@ constexpr std::array<u16,2> models{0x000A,0x0106},members{495,504},hp{180,220};
 constexpr std::array<size_t,2> motion_sizes{368160,435104},view_sizes{241128,171236};
 constexpr std::array<u16,2> melee_models{0x0807,0x0807},melee_members{626,626};
 constexpr std::array<size_t,2> melee_motion_sizes{192512,192512},melee_view_sizes{60072,60072};
+constexpr std::array<u16,2> emperor_models{0x0E04,0x0106},emperor_members{684,504};
+constexpr std::array<size_t,2> emperor_motion_sizes{0,435104},emperor_view_sizes{174048,171236};
 struct Assets {
     contact::ActorSpec spec;
     contact::HitBlock hit;
     std::vector<u8> motion,view;
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
-enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air};
+enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air,emperor};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
 constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
@@ -50,6 +53,7 @@ class Replay {
     const Module& mod;
     std::vector<u8> ram;
     bool melee=false;
+    bool emperor=false;
     u8* at(u32 a){return contact::at(ram,a);}
     u32 word(u32 a){return be32(at(a));}
     u16 half(u32 a){return contact::half(ram,a);}
@@ -83,13 +87,14 @@ class Replay {
             std::memcpy(at(row+16),at(0x8036F5B8+28*kind+16),12);
             call(0x80197950,kind);
         }
-        const unsigned cells=melee?48:32;
+        const unsigned cells=emperor?64:melee?48:32;
+        const u32 shapes=emperor?0x81110000:shape;
         for(unsigned i=0;i<cells;++i){
-            const auto cell=shape+shape_stride*i;
+            const auto cell=shapes+shape_stride*i;
             at(cell+2)[0]=4;
             store(cell+4,i+1==cells?0:cell+shape_stride);
         }
-        store(contact::free_head+16,shape);store(contact::free_tail+16,shape+(cells-1)*shape_stride);
+        store(contact::free_head+16,shapes);store(contact::free_tail+16,shapes+(cells-1)*shape_stride);
         store16(contact::free_count+8,u16(cells));
     }
     void deliver(unsigned seat,const Assets& a){
@@ -100,14 +105,14 @@ class Replay {
         const auto view=basis+0x270000+0x58000*seat-0x4400;
         CPUState request{};request.gpr[3]=seat;
         mod.run_to(request,ram,0x800410BC,{0x8000B07C});
-        if(request.lr!=0x8004124C||request.gpr[3]!=(melee?melee_members[seat]:members[seat])||request.gpr[4]!=outputs||
+        if(request.lr!=0x8004124C||request.gpr[3]!=(emperor?emperor_members[seat]:melee?melee_members[seat]:members[seat])||request.gpr[4]!=outputs||
            word(outputs)!=data||word(outputs+4)!=0xF0000000||word(outputs+8)!=hit||
            word(outputs+12)!=motion||word(outputs+16)!=view||word(outputs+20)!=0xF0000000||
            word(view_owner))
             fail("dual scene initial archive request changed its exact seat or model roles");
         std::memcpy(at(data),a.spec.data(),a.spec.size());
         std::memcpy(at(hit),a.hit.data(),a.hit.size());
-        std::memcpy(at(motion),a.motion.data(),a.motion.size());
+        if(!a.motion.empty())std::memcpy(at(motion),a.motion.data(),a.motion.size());
         std::memcpy(at(view),a.view.data(),a.view.size());
         CPUState ready{};ready.gpr[3]=seat;ready.gpr[4]=0;
         mod.run(ready,ram,0x800412C4,4096);
@@ -143,7 +148,7 @@ class Replay {
         at(mode+2)[0]=3;at(mode+12)[0]=1;
         at(0x803D3AE8+852)[0]=1;
         at(scene+0x1828)[0]=3;at(scene+5593)[0]=3;at(scene+5594)[0]=2;
-        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?(melee?melee_models[i]:models[i]):0xFFFF);
+        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?(emperor?emperor_models[i]:melee?melee_models[i]:models[i]):0xFFFF);
         for(unsigned i=0;i<2;++i){
             at(scene+203+i)[0]=i;
             store(scene+60*i+0x114,300);store(scene+60*i+0x118,300);
@@ -977,13 +982,158 @@ class Replay {
             std::printf("sasuke-air-land: %u %u %u %u %u %u\n",used,airborne,landed,cleared,f(0,count),half(a+meter));
         }
     }
+    void observe_emperor(const retail_stage_grid_replay::Grids& grids){
+        constexpr auto a=fighter(0);
+        const auto initial=ram;
+        unsigned route=0;
+        const auto show=[&](const char* tag,unsigned visit,std::vector<u8>& bytes){
+            auto* obj=contact::at(bytes,a);
+            const auto read=[](const u8* ptr){return std::bit_cast<float>(be32(ptr));};
+            std::printf("emperor-%s: %u %u %.5f %.5f %.5f %u %u %u %u %u %u %08X\n",tag,route,visit,
+                read(obj+0x20),read(obj+0x24),read(obj+0x28),contact::half(bytes,a+0x72),
+                obj[0x18],obj[0x493],obj[0x661],obj[0x43B],obj[0x43C],be32(obj+0x5E0));
+        };
+        const auto at_cut=[&](std::vector<u8>& in,u32 entry,u32 target,u32 ret,unsigned actor_reg){
+            CPUState cpu{};
+            if(entry==0x80056D28)cpu.gpr[3]=a;
+            const auto cut=mod.run_to_or_return(cpu,in,entry,{target,body_pass_end,0x80264290},nullptr,1u<<20);
+            if(cut!=target||cpu.lr!=ret||cpu.gpr[actor_reg]!=a){
+                std::fprintf(stderr,"Emperor route=%u entry=%08X wanted=%08X cut=%08X lr=%08X arg=%08X\n",
+                    route,entry,target,cut,cpu.lr,cpu.gpr[actor_reg]);
+                fail("Emperor sample left its exact original owner/caller boundary");
+            }
+        };
+        const auto actor_visit=[&](std::vector<u8>& in,unsigned visit,CallObservation* poll=nullptr){
+            CPUState cpu{};
+            const auto cut=mod.run_to_or_return(cpu,in,scheduler::dispatch,{body_pass_end,0x80264290},poll,1u<<20);
+            if(cut!=body_pass_end||cpu.lr!=0x80029490){
+                std::fprintf(stderr,"Emperor route=%u actor visit=%u cut=%08X lr=%08X info=%08X\n",route,visit,cut,cpu.lr,cpu.gpr[4]);
+                fail("emperor actor dispatch left the supported prefix");
+            }
+        };
+        const auto axis=[&](std::vector<u8>& in){contact::at(in,pad+22)[0]=63;};
+        const auto same_pose=[&](std::vector<u8>& x,std::vector<u8>& y){
+            return !std::memcmp(contact::at(x,a+0x20),contact::at(y,a+0x20),12)&&
+                contact::half(x,a+0x72)==contact::half(y,a+0x72);
+        };
+        for(;route<2;++route){
+            ram=initial;
+            if(route){
+                retail_stage_grid_replay::bind(mod,ram,stage,grids,false);
+                at(mode+50)[0]=1;at(scene+28)[0]=2; // declared st42 table route
+            }
+            {
+                auto fork=ram;
+                at_cut(fork,scheduler::dispatch,0x801D634C,0x80054460,3);
+                show("class-inlet",0,fork);
+            }
+            {
+                auto placed=ram;
+                at_cut(placed,scheduler::dispatch,0x80056D28,0x800544D8,3);
+                show("placement-inlet",0,placed);
+                auto fork=placed;CPUState cpu{};cpu.gpr[3]=a;
+                if(mod.run_to_or_return(cpu,fork,0x80056D28,{0x8003F044},nullptr,4096)!=0x8003F044||
+                   cpu.lr!=0x8005755C||cpu.gpr[4]!=a+0x20)
+                    fail("Emperor static placement projection lost the position owner");
+                show("before-static",0,fork);
+                fork=placed;
+                at_cut(fork,0x80056D28,0x80037B98,0x800575AC,3);
+                if(contact::half(fork,0x80436244)||contact::half(fork,0x8043624C))
+                    fail("Emperor placement needs the declared empty dynamic lists");
+                show("before-dynamic",0,fork);
+                CPUState finish{};finish.gpr[3]=a;
+                mod.run(finish,placed,0x80056D28,4096);
+                show("placement-return",0,placed);
+                actor_visit(ram,1);
+                if(!same_pose(placed,ram)||half(a+0x1C6)!=2000||f(0,0x18)!=1||f(0,0x493)||f(0,0x661)!=8)
+                    fail("constructor does not retain the qualified Emperor placement");
+                show("constructed",1,ram);
+            }
+            unsigned first_pin=0,open=0;
+            auto before=ram;
+            for(unsigned visit=2;visit<=200&&!open;++visit){
+                if(!first_pin)before=ram;
+                actor_visit(ram,visit);
+                if(!first_pin&&word(a+0x24)==0x44FA0000&&half(a+0x72)==8192){
+                    first_pin=visit;
+                    at_cut(before,scheduler::dispatch,0x801D6494,0x800555C4,3);
+                    show("first-pre",visit,before);
+                    show("first-pin",visit,ram);
+                }
+                if(first_pin&&(word(a+0x20)||word(a+0x24)!=0x44FA0000||word(a+0x28)||half(a+0x72)!=8192))
+                    fail("Emperor pose did not retain the ordinary class pin");
+                if(byte(scene+69)==4){
+                    open=visit;show("open",visit,ram);
+                }
+            }
+            if(!first_pin||!open)fail("Emperor did not reach a pinned and opened source actor");
+            {
+                auto fork=ram;axis(fork);
+                at_cut(fork,scheduler::dispatch,0x801D6494,0x800555C4,3);
+                show("active-pre",open+1,fork);
+                fork=ram;axis(fork);
+                at_cut(fork,scheduler::dispatch,0x801D6574,0x80055634,3);
+                show("active-post-inlet",open+1,fork);
+                fork=ram;axis(fork);
+                at_cut(fork,scheduler::dispatch,0x8005B880,0x80055674,3);
+                show("active-post-return",open+1,fork);
+            }
+            auto neutral=ram;
+            actor_visit(neutral,open+1);
+            axis(ram);
+            CallObservation poll{0x80056900};
+            actor_visit(ram,open+1,&poll);
+            if(poll.count!=2||poll.first_arguments[0]!=a||f(0,0x5CA)!=63||
+               !same_pose(neutral,ram)||word(a+0x24)!=0x44FA0000||half(a+0x72)!=8192)
+                fail("steering packet missed the installed actor or moved the class pin");
+            std::printf("emperor-input: %u %u %u %u %04X %u %u %u %u\n",route,open+1,poll.count,f(0,0x5CA),
+                        half(a+0x5D8),f(0,0x5E4),f(0,0x5DA),f(0,0x5DB),f(0,0x87));
+            show("active",open+1,ram);
+            at(pad+22)[0]=0;
+            actor_visit(ram,open+2);
+            show("active",open+2,ram);
+
+            auto saved=ram;
+            call(0x8008A28C);call(0x80089AEC);
+            const auto count=half(contact::receiver_count);
+            if(count>64)fail("Emperor receiver registry extent");
+            std::array<u32,2> ordinals{};
+            for(unsigned i=0;i<count;++i){
+                const auto cell=word(contact::receiver_registry+4*i);
+                const auto owner=word(cell+0x20),desc=word(cell+0x28);
+                if(owner!=a&&owner!=fighter(1))fail("Emperor rebuild published a foreign receiver");
+                const auto bank=word(owner+0x3FC)+32;
+                const unsigned seat=owner==a?0:1;
+                if(desc<bank||desc>=bank+32*80||(desc-bank)%80)
+                    fail("Emperor receiver crossed its actor's descriptor bank");
+                const auto bit=u32(1)<<((desc-bank)/80);
+                if(ordinals[seat]&bit)fail("Emperor rebuild duplicated a descriptor");
+                ordinals[seat]|=bit;
+            }
+            if(!same_pose(saved,ram)||word(a+0x1E0))fail("receiver rebuild changed the pin or obtained a support owner");
+            std::printf("emperor-receivers: %u %u %u %08X %08X %u\n",route,open+2,count,ordinals[0],ordinals[1],f(0,0x1DE));
+
+            for(unsigned select:{1u,2u,3u,4u,7u,27u,28u,0u}){
+                for(unsigned lane=0;lane<2;++lane){
+                    ram=saved;CPUState gate{};gate.gpr[3]=a;gate.gpr[4]=select;
+                    mod.run(gate,ram,lane?0x8006A750:0x8006A6FC,4096);
+                    const auto s=f(0,lane?0x5DB:0x5DA);
+                    if(gate.gpr[3]!=unsigned(!select)||s!=52||!same_pose(saved,ram)||
+                       (select&&std::memcmp(at(a),contact::at(saved,a),actor_stride)))
+                        fail("Emperor lane admitted an unqualified steering, ground or cruise selector");
+                    std::printf("emperor-selector: %u %u %u %u %u\n",route,lane,select,gate.gpr[3],s);
+                }
+            }
+        }
+    }
 public:
-    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,bool melee_mode=false):
-        mod(m),ram(original),melee(melee_mode){
+    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,Run mode):
+        mod(m),ram(original),melee(mode==Run::melee),emperor(mode==Run::emperor){
         setup(assets,area);
     }
-    void observe(Run mode){
+    void observe(Run mode,const retail_stage_grid_replay::Grids* grids){
         if(melee){observe_melee();return;}
+        if(emperor){if(!grids)fail("missing Emperor stage inlet");observe_emperor(*grids);return;}
         if(mode==Run::sasuke_air){observe_sasuke_air();return;}
         const bool world=mode!=Run::entry;
         const auto start=ram;
@@ -1056,21 +1206,27 @@ int main(int argc,char** argv){
     if(argc==4&&!std::strcmp(argv[3],"--world-terminal"))mode=Run::terminal;
     if(argc==4&&!std::strcmp(argv[3],"--melee-interrupt"))mode=Run::melee;
     if(argc==4&&!std::strcmp(argv[3],"--sasuke-air-points"))mode=Run::sasuke_air;
+    if(argc==4&&!std::strcmp(argv[3],"--emperor-pin"))mode=Run::emperor;
     if(argc!=3&&mode==Run::entry)
-        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points] < qualified-roles");
+        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points|--emperor-pin] < qualified-roles");
     const bool melee=mode==Run::melee;
-    const bool area=mode!=Run::entry&&mode!=Run::bomb&&mode!=Run::sasuke_air&&!melee;
+    const bool emperor=mode==Run::emperor;
+    const bool area=mode!=Run::entry&&mode!=Run::bomb&&mode!=Run::sasuke_air&&!melee&&!emperor;
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
     };
     for(unsigned i=0;i<2;++i){
-        auto& a=assets[i];a.motion.resize(melee?melee_motion_sizes[i]:motion_sizes[i]);a.view.resize(melee?melee_view_sizes[i]:view_sizes[i]);
+        auto& a=assets[i];
+        a.motion.resize(emperor?emperor_motion_sizes[i]:melee?melee_motion_sizes[i]:motion_sizes[i]);
+        a.view.resize(emperor?emperor_view_sizes[i]:melee?melee_view_sizes[i]:view_sizes[i]);
         read(a.spec);read(a.hit);read(a.motion);read(a.view);
     }
     AreaAssets common{};
     if(area){read(common.collision);common.view=archive::read_source();}
+    retail_stage_grid_replay::Grids grids{};
+    if(emperor)grids=retail_stage_grid_replay::input();
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets,area?&common:nullptr,melee).observe(mode);
+    Replay(mod,original,assets,area?&common:nullptr,mode).observe(mode,emperor?&grids:nullptr);
 }

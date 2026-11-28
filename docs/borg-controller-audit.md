@@ -552,6 +552,9 @@ Exact normal `GG4E08:0E04/0`, AFS member 684, installs movement type **8**,
 not Beam Satellite's type 9. Both use resource policy 1 and lack local
 motion-bank data. This does not remove their distinct class actions.
 [Wiki lead: Galactic Emperor](https://gotchaforce.fandom.com/wiki/Galactic_Emperor?oldid=6772).
+The later [loaded movement checkpoint](emperor-pin-checkpoint.md) joins the
+constructor to both placement routes, then observes the ordinary class pin,
+steering no-op, and receiver publication. No native pin is enabled.
 
 | Mechanism | Exact normal source finding |
 | --- | --- |
@@ -562,8 +565,8 @@ motion-bank data. This does not remove their distinct class actions.
 
 All **116 bounded offline cases** matched, including both lane setters,
 guarded class pose writes, the separate placement paths and refill.
-They do not establish final live spawn, collision ordering relative to the
-hooks, body clearance, special starts, child ownership, action outcomes or
+Those earlier cases did not establish final live spawn, collision ordering
+relative to the hooks, body clearance, special starts, child ownership, action outcomes or
 mode admission. A live witness needs the constructor role, stage/team rows
 and projection returns, then the root and heading around both class hooks
 and the physical response. Do not borrow Beam's steering or placement

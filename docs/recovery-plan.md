@@ -143,11 +143,16 @@ not a dependency of an ordinary combat/movement checkpoint.
   matches scoped unit-rate boost entry, latch-gated release, held depletion
   and delayed refill. The exact package can opt into these meter operands
   using the existing cruise row; its terrain and flight trajectory stay authored.
-- **Next:** qualify [normal Galactic Emperor](borg-controller-audit.md#normal-galactic-emperor-class-pin-and-placement)
-  as a fixed-airborne representative. Compare shared placement with the
-  class pin before and after ordinary updates, including a refused steering
-  control. Do not treat a world-space pin as floor support or import Beam
-  Satellite's separate steering and placement behavior.
+- **Landed:** the [loaded Galactic Emperor comparison](emperor-pin-checkpoint.md)
+  separates constructor placement from the first ordinary class pin and
+  verifies steering refusal and receiver publication. Leave the authored
+  flying-boss package unchanged until a placement/contact witness justifies
+  a portable fixed-airborne owner.
+- **Next:** identify one exact hover-floor representative with a nonzero
+  contact offset. Compare the height producer, logical grounding and first
+  permitted resource recovery on adjacent visits. Use Wing Soldier's
+  zero-offset glide as a negative control; do not treat nonboost refill,
+  a snap, or fixed airborne status as hover-floor grounding.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

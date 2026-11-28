@@ -2220,6 +2220,17 @@ only zero at `80061370`. The landing/reset case runs `80060228` before the
 next grounded resource prefix through `80055AA0`. See the
 [native comparison](sasuke-air-points-checkpoint.md) for the limited binding.
 
+### Loaded Galactic Emperor: placement precedes the airborne pin
+
+The [Emperor replay](api-map/gg4e08-emperor-pin.json) keeps the original
+constructor's `801D634C` class pin separate from `80056D28` shared
+placement, including `800579DC` on the st42 table route. `80055568` later
+visits both installed hooks, `801D6494` and `801D6574`. The first restoring
+visit is 22 in both fixtures. The tested steering packet and direct
+steering selectors leave the pin unchanged. A separate receiver rebuild
+publishes 25 Emperor shapes from its own bank; neither a collision pair
+nor support is thereby accepted. See the [native contrast](emperor-pin-checkpoint.md).
+
 ### World callbacks: Time Bomber's first B through natural expiry
 
 The [world replay](api-map/gg4e08-scene-bomb-world.json) retains the
