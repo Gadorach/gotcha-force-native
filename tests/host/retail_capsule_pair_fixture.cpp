@@ -20,7 +20,8 @@ constexpr Case cases[]{
 };
 struct Outcome {unsigned coarse,narrow,amount,requested,hp,token;};
 
-Outcome resolve(const Module& mod,std::vector<u8>& ram,unsigned initial_hp,u32 kernel,bool swap=false){
+Outcome resolve(const Module& mod,std::vector<u8>& ram,unsigned initial_hp,u32 kernel,bool swap=false,
+                bool verify_current_receiver=false){
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
@@ -52,6 +53,18 @@ Outcome resolve(const Module& mod,std::vector<u8>& ram,unsigned initial_hp,u32 k
     }
     unsigned narrow=0;
     if(coarse){
+        if(verify_current_receiver){
+            const auto scratch=swap?pair.gpr[3]:pair.gpr[4];
+            for(unsigned axis=0;axis<3;++axis){
+                if(word(target+0x1CC+4*axis))
+                    fail("receiver motion needs the unshifted original narrow-phase inlet");
+                for(u32 p:{0x64u,0x8Cu,0x98u}){
+                    if(p!=0x64&&word(receive+0x58)!=2)continue;
+                    if(be32(contact::at(fork,scratch+p-0x58+4*axis))!=word(receive+p+4*axis))
+                        fail("receiver motion narrow kernel did not receive the current body geometry");
+                }
+            }
+        }
         CPUState n{};n.gpr[3]=pair.gpr[3];n.gpr[4]=pair.gpr[4];
         mod.run(n,fork,kernel,4096);narrow=n.gpr[3]!=0;
     }
@@ -176,11 +189,58 @@ void motion(const Module& mod,std::vector<u8> ram,const entry::Attack& tau,const
                     out.coarse,out.narrow,out.amount,out.requested,out.hp,out.token);
     }
 }
+
+struct Paths {float attack_start,attack_end,receiver_start,receiver_end;};
+constexpr Paths paths[]{
+    {0,0,-120,120}, {-120,120,120,-120}, {-120,120,120,-360},
+    {-120,120,-240,0}, {-120,120,120,360},
+};
+
+void moving_receiver(const Module& mod,std::vector<u8> ram,const entry::Attack& tau,const entry::Attack& sasuke,
+                     unsigned id,bool capsule){
+    const auto p=paths[id];
+    const auto body=capsule?receivers[0]:contact::sasuke;
+    const contact::Point from_attack{200+p.attack_start,150,325},from_receiver{200+p.receiver_start,150,325};
+    bind(mod,ram,tau,sasuke,body,from_receiver,from_attack);
+    constexpr u32 attack=entry::attack_cell,receive=contact::body;
+    const auto at=[&](u32 a){return contact::at(ram,a);};
+    const auto word=[&](u32 a){return be32(at(a));};
+    const auto move_x=[&](u32 owner,unsigned joint,float from,float to){
+        const u32 loc=owner+0x8D4+0x30*joint+12;
+        put_float(at(loc),std::bit_cast<float>(word(loc))+to-from);
+        put_float(at(owner+0x20),200+to);
+    };
+    for(unsigned visit=0;visit<3;++visit){
+        if(visit==1){
+            move_x(actor,entry::routes[0].joint,p.attack_start,p.attack_end);
+            move_x(contact::receiver,body.joint,p.receiver_start,p.receiver_end);
+        }
+        rebuild(mod,ram);
+        const auto kind=word(attack+0x58);
+        if((kind!=0&&kind!=2)||word(receive+0x58)!=(capsule?2u:0u)||at(receive+0x13)[0]||
+           word(attack+0x28)!=entry::attack_bank+0xAA0+80*2||word(attack+0x20)!=actor||
+           word(receive+0x28)!=contact::body_block+32+80*body.step||word(receive+0x20)!=contact::receiver)
+            fail("moving receiver changed its distinct body kind, descriptor or ownership");
+        const auto kernel=kind==2?(capsule?capsule_capsule:sphere_capsule):(capsule?sphere_capsule:sphere_sphere);
+        auto fork=ram;
+        const auto out=resolve(mod,fork,body.hp,kernel,kind==2&&!capsule,true);
+        std::printf("moving-receiver: %u %u %u %u %u %u %u",unsigned(capsule),id,visit,kind,word(receive+0x58),
+                    at(attack+0x13)[0],at(receive+0x13)[0]);
+        for(u32 value:{word(attack+0x64),word(attack+0x70),word(attack+0x7C),word(receive+0x64),word(receive+0x70),
+                       word(receive+0x7C),word(receive+0x88),capsule?word(receive+0x8C):0,
+                       capsule?word(receive+0x98):0,capsule?word(receive+0xD4):0,capsule?word(receive+0xE0):0})
+            std::printf(" %08X",value);
+        std::printf(" %08X %u %u %u %u %u %u\n",out.coarse?kernel:0,out.coarse,out.narrow,out.amount,
+                    out.requested,out.hp,out.token);
+    }
+}
 }
 
 int main(int argc,char** argv){
     const bool moving=argc==4&&!std::strcmp(argv[3],"--moving-sphere");
-    if(argc!=3&&!moving)fail("usage: capsule-pair-fixture qualified.dol unmodified-recomp.so [--moving-sphere] < qualified-roles");
+    const bool receiver=argc==4&&!std::strcmp(argv[3],"--moving-receiver");
+    if(argc!=3&&!moving&&!receiver)
+        fail("usage: capsule-pair-fixture qualified.dol unmodified-recomp.so [--moving-sphere|--moving-receiver] < qualified-roles");
     entry::Attack tau{},sasuke{},large{};
     for(auto* a:{&tau,&sasuke,&large}){
         if(std::fread(a->hit.data(),1,a->hit.size(),stdin)!=a->hit.size()||
@@ -191,6 +251,9 @@ int main(int argc,char** argv){
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     if(moving)
         for(unsigned i=0;i<std::size(motions);++i)motion(mod,original,tau,sasuke,i);
+    else if(receiver)
+        for(bool capsule:{false,true})
+            for(unsigned i=0;i<std::size(paths);++i)moving_receiver(mod,original,tau,sasuke,i,capsule);
     else
         for(unsigned i=0;i<std::size(cases);++i)
             for(bool updated:{false,true})probe(mod,original,tau,cases[i].body?large:sasuke,i,updated);

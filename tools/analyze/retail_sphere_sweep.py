@@ -96,13 +96,7 @@ def verify_source(image):
         raise ValueError("sphere sweep motion threshold or kernel changed")
 
 
-def export(dol, afs, fixture, module, output):
-    output = Path(output)
-    if output.exists() or output.is_symlink():
-        raise FileExistsError("sphere sweep output already exists")
-    dol = Path(dol).resolve(strict=True)
-    image = s.DolImage(s.read_bounded(dol, 8 << 20), s.SOURCE_SHA256)
-    verify_source(image)
+def source_inputs(image, afs):
     s.read_metadata(s.MAPS / "gg4e08-capsule-pair.json", PAIR_SHA256)
     prior = s.read_metadata(s.MAPS / "gg4e08-body-capsules.json", pair.CAPSULE_SHA256)
     payload, tau, _ = pair.source_inputs(image, afs, prior)
@@ -111,6 +105,17 @@ def export(dol, afs, fixture, module, output):
     if (shape[:4] != bytes.fromhex("00020002")
             or struct.unpack_from(">4f", shape, 12) != (0, -14, 0, 22)):
         raise ValueError("sphere sweep receiver sphere changed")
+    return payload, tau
+
+
+def export(dol, afs, fixture, module, output):
+    output = Path(output)
+    if output.exists() or output.is_symlink():
+        raise FileExistsError("sphere sweep output already exists")
+    dol = Path(dol).resolve(strict=True)
+    image = s.DolImage(s.read_bounded(dol, 8 << 20), s.SOURCE_SHA256)
+    verify_source(image)
+    payload, tau = source_inputs(image, afs)
     rows = decode(s.fixture_report(fixture, dol, module, ("--moving-sphere",), payload))
     raw = s.encode({
         "kind": "gf-retail-sphere-sweep", "revision": 1, "source_dol_sha256": s.SOURCE_SHA256,

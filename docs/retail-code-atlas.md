@@ -2751,6 +2751,42 @@ python3 -m tools.analyze.retail_sphere_sweep \
   /tmp/opencode/gf-sphere-sweep.json
 ```
 
+### Moving receivers: narrow tests use the receiver’s final pose
+
+The [moving-receiver replay](api-map/gg4e08-moving-receiver.json)
+changes both declared poses between two original registry rebuilds.
+The ordinary pair loop tests Tau’s attack against either Sasuke’s
+sphere or his capsule. The exact receiver scratch data at the
+narrow kernel matches the **current** center and, for a capsule,
+the **current** endpoints. The receiver keeps its history and
+widens its broad field without gaining an attack sweep.
+
+| Declared paths | Original result for both receiver shapes |
+| --- | --- |
+| Receiver crosses a stationary attack and ends 120 units away | Broad phase accepts; narrow phase misses. |
+| Opposite paths cross; receiver ends on the attack sweep | **17 HP** removed. |
+| Opposite paths cross; receiver ends beyond the attack sweep | Broad phase accepts; narrow phase misses. |
+| Parallel paths stay **120** units apart; receiver ends inside the attack sweep | **17 HP** removed. |
+| Parallel paths stay apart; receiver ends outside the attack sweep | Broad phase accepts; narrow phase misses. |
+
+The simultaneous path distances above are a comparison using
+linear interpolation, not the original algorithm. In these
+replays, testing an attack sweep against the receiver’s final
+pose is not equivalent to synchronized relative motion. The
+capsule scratch helper can add owner `+0x1CC` to its endpoints;
+that offset is held at zero in these probes.
+
+All **30** rebuilds across **10** cases matched O0/O1/O2. This
+does not qualify nonzero owner offsets, live animation or physics,
+alternate pairs, hardware, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_moving_receiver \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/capsule-pair "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-moving-receiver.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
