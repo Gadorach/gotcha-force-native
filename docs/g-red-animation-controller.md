@@ -5601,6 +5601,11 @@ the independent lane masks matter when an attack interrupts movement.
 
 ## Input admission and resource recovery
 
+The [meter checkpoint](gred-meter-checkpoint.md) compares these operands and
+the later scheduled original observations against the running Battle Test
+offer path. The scoped meter rules already match; Battle Test still requires
+its separate landing-entry update.
+
 The next pass recovered15 focused movement-selection handlers, their direct
 call order, ten buffered-input command records and42 typed numeric operands.
 Call order is not itself a control-flow graph: the guards/early returns were

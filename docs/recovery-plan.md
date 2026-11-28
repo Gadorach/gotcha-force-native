@@ -135,11 +135,15 @@ not a dependency of an ordinary combat/movement checkpoint.
   separates jump requests, spends, air-dash seeding and grounded reset. Only
   the count rules enter the optional normal package. The source pose and
   input scheduler remain separate from the native movement.
-- **Next:** compare the normal G-Red meter route with the native offer path.
-  Choose one lift → dash → grounded recovery sequence and a refusal control,
-  and identify which resource and contact edges are already matched before
-  considering new bindings. Then take a representative airborne family from
-  step 2.
+- **Landed:** the [normal G-Red meter comparison](gred-meter-checkpoint.md)
+  matches lift and air-dash debits, zero-meter relaunch refusal and refill
+  after committed landing entry on the existing native offer path. No
+  new binding; the deliberate Battle Test landing-entry barrier stays.
+- **Next:** compare [normal Blue Striker](borg-controller-audit.md#normal-blue-striker-cruise-boost-and-hud)
+  with the authored perpetual-flight pilot. Start with release before and
+  after the boost-exit latch, held depletion and the first nonboost refill.
+  Establish whether an exact clock/latch policy needs a portable opt-in.
+  Keep floor contact and fixed-altitude assumptions out of that decision.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

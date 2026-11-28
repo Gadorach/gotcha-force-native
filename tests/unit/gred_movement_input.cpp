@@ -53,8 +53,10 @@ int main(){
     fields.flags5e0=0x40;fields.selector=6;fields.air_ready588=1;
     s={};step(60,0,(2u<<16)|0x100,0x40);
     check(gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==8&&!result.consume_direction,"air relaunch wins over simultaneous air dash");
-    s.commands5d4=0;check(gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==15,"air dash admission uses positive flight resource");
     auto empty=resource;empty.value736=0;
+    check((s.commands5d4&2u)&&gred_movement_admit(p,s,empty,fields,&result,&error)&&
+          !result.changed&&result.contact_tail_required,"empty meter blocks the same conditioned jump with readiness and locks held constant");
+    s.commands5d4=0;check(gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==15,"air dash admission uses positive flight resource");
     check(gred_movement_admit(p,s,empty,fields,&result,&error)&&!result.changed&&result.contact_tail_required,"empty meter blocks air actions without claiming contact-tail execution");
     fields.selector=5;s.previous_held&=~0x100u;
     check(gred_movement_admit(p,s,resource,fields,&result,&error)&&result.selector==6&&!result.consume_direction,"flight release precedes directional air dash");
