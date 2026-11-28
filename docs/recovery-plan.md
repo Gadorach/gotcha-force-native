@@ -168,11 +168,16 @@ not a dependency of an ordinary combat/movement checkpoint.
   archive or selecting a winner. With debit, the combat visit selects the
   winner before the ending handler stops at its missing audio table. Match-end
   return and save behavior remain unqualified.
-- **Next:** join one more loaded body to the normal actor/world schedule.
-  Check whether the ordinary receiver list and pair pass preserve team
-  eligibility with both an ally and an opponent present. Use a known move
-  and matched positions; distinguish pair exclusion from a geometric miss.
-  Keep the current native team policy unless the join justifies a change.
+- **Landed:** the [three-Tau world comparison](world-team-pair-checkpoint.md)
+  verifies that one close-B strike hits an opponent and an ally, with
+  distinct damage amounts and ledgers. Matched-geometry forks separate team
+  admission from amount, and an original exclusion bit rejects the ally
+  before narrow collision. Authored native melee remains enemy-only.
+- **Next:** compare the original attack-rule rows on known ordinary melee
+  and rifle contacts. Identify which routes share the close-B relationship
+  and per-recipient lifetime rules, and find an unmodified exclusion case.
+  Use that contrast to decide whether an explicit per-move policy can be
+  bound without changing authored defaults or enabling unrelated friendly fire.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

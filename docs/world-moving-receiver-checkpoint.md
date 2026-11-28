@@ -47,6 +47,9 @@ passed under sanitizers, the existing melee interruption and partition
 tests passed, and the installed authored Tau still hit for 12 HP in a
 headless smoke.
 
+The later [three-body comparison](world-team-pair-checkpoint.md) uses the
+same close-B strike to separate team admission from overlap and damage.
+
 Build [`retail_dual_scene_entry_fixture.cpp`](../tests/host/retail_dual_scene_entry_fixture.cpp)
 with the [phase fixture flags](retail-code-atlas.md#shared-action-gate), then:
 

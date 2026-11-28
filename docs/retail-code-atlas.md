@@ -1921,6 +1921,16 @@ python3 -m tools.analyze.retail_damage_tier_clock \
   /tmp/opencode/gf-damage-tier-clock.json
 ```
 
+### Ordinary Tau close B: overlapping ally and opponent
+
+The [three-loaded-body comparison](world-team-pair-checkpoint.md) joins the
+original pose and pair passes. The same Tau close-B token requests **17 HP**
+from an opponent and **4 HP** from a separate ally, with independently credited
+ledgers and no repeat writes. Matched-geometry pair forks reproduce admission
+for both teams with stock flags `0001`, and exclusion before narrow collision
+when the original `0080` bit is added to the attack-rule row. This is not a
+universal relationship policy for other attack rows or modes.
+
 ### Normal body knockout: Force cost, reserves and credit
 
 The [knockout replay](api-map/gg4e08-body-knockout.json) completes the

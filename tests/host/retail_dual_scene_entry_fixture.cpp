@@ -5,6 +5,7 @@
 #include "retail_world_moving_receiver.hpp"
 #include "retail_world_body_exit.hpp"
 #include "retail_world_match_end.hpp"
+#include "retail_world_team_pair.hpp"
 #include <memory>
 
 namespace {
@@ -36,7 +37,7 @@ struct Assets {
     std::vector<u8> motion,view;
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
-enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air,emperor,hover_floor,moving_receiver,world_ko,match_end};
+enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air,emperor,hover_floor,moving_receiver,world_ko,match_end,team_pair};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
 constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
@@ -61,6 +62,7 @@ class Replay {
     bool melee=false;
     bool emperor=false;
     bool hover=false;
+    unsigned ally=0;
     u8* at(u32 a){return contact::at(ram,a);}
     u32 word(u32 a){return be32(at(a));}
     u16 half(u32 a){return contact::half(ram,a);}
@@ -84,7 +86,7 @@ class Replay {
     }
     void offer_pools(bool area){
         constexpr u32 bases[]{0x81066000,0x81064000,0x81069000,0x81120000};
-        const unsigned bytes[]{44*64,32*(area?3u:2u),16*32,16*8};
+        const unsigned bytes[]{44*64,32*((area||ally)?3u:2u),16*32,16*8};
         archive::Setup sdk(mod,ram);
         sdk.init_heap(archive::arena+0x100000);
         store(0x8043B5A0-21352,basis);store(0x8043B5A0-21024,pools);
@@ -113,7 +115,7 @@ class Replay {
         CPUState request{};request.gpr[3]=seat;
         mod.run_to(request,ram,0x800410BC,{0x8000B07C});
         const auto& expected=hover?hover_members:emperor?emperor_members:melee?melee_members:members;
-        if(request.lr!=0x8004124C||request.gpr[3]!=expected[seat]||request.gpr[4]!=outputs||
+        if(request.lr!=0x8004124C||request.gpr[3]!=(seat==2?melee_members[0]:expected[seat])||request.gpr[4]!=outputs||
            word(outputs)!=data||word(outputs+4)!=0xF0000000||word(outputs+8)!=hit||
            word(outputs+12)!=motion||word(outputs+16)!=view||word(outputs+20)!=0xF0000000||
            word(view_owner))
@@ -153,28 +155,33 @@ class Replay {
     void setup(const std::array<Assets,2>& assets,const AreaAssets* area){
         store(0x8043B5A0-31852,scene);store(scheduler::mode_ptr,mode);
         store(0x8043B5A0-31824,0x81079000);
-        at(mode+2)[0]=3;at(mode+12)[0]=1;
+        const unsigned count=ally?3:2;
+        at(mode+2)[0]=ally?7:3;at(mode+12)[0]=1;
         at(0x803D3AE8+852)[0]=1;
-        at(scene+0x1828)[0]=3;at(scene+5593)[0]=3;at(scene+5594)[0]=2;
+        at(scene+0x1828)[0]=3;at(scene+5593)[0]=3;at(scene+5594)[0]=u8(count);
         const auto& pair=hover?hover_models:emperor?emperor_models:melee?melee_models:models;
-        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?pair[i]:0xFFFF);
+        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?pair[i]:i<count?melee_models[0]:0xFFFF);
         for(unsigned i=0;i<2;++i){
             at(scene+203+i)[0]=i;
             store(scene+60*i+0x114,300);store(scene+60*i+0x118,300);
         }
+        if(ally){
+            at(scene+204)[0]=u8(ally!=1);
+            at(scene+205)[0]=u8(ally!=2);
+        }
         call(0x800536B0,actors);
         for(unsigned i=0;i<6;++i){
-            if(word(0x803C4E84+4*i)!=fighter(i)||f(i,0)!=unsigned(i<2)||f(i,0x18)||
+            if(word(0x803C4E84+4*i)!=fighter(i)||f(i,0)!=unsigned(i<count)||f(i,0x18)||
                f(i,0x3E4)!=i||f(i,0x3E5)!=(1u<<i)||f(i,0x3E7)!=i||f(i,0x743))
                 fail("original physical actor initialization changed");
-            if(i<2){
+            if(i<count){
                 put_float(at(fighter(i)+0x20),i?(melee?226.f:450.f):150.f);
                 put_float(at(fighter(i)+0x24),100.f);
-                put_float(at(fighter(i)+0x28),300.f);
+                put_float(at(fighter(i)+0x28),i==2?retail_world_team_pair::receiver_z:300.f);
             }
         }
         stage_grid();offer_pools(area!=nullptr);
-        for(unsigned i=0;i<2;++i)deliver(i,assets[i]);
+        for(unsigned i=0;i<count;++i)deliver(i,assets[i%2]);
         if(area)common_area_archive(*area);
         call(0x80254288);
         scheduler::prepare(ram);
@@ -807,7 +814,8 @@ class Replay {
             std::fprintf(stderr,"scoped actor cutoff=%08X lr=%08X info=%08X\n",cut,cpu.lr,cpu.gpr[4]);
             fail("original actor dispatch left the supported prefix");
         }
-        rebuild();
+        if(ally){call(0x8008A28C);call(0x80089AEC);}
+        else rebuild();
     }
     void observe_melee(){
         unsigned opening=0;
@@ -1223,10 +1231,10 @@ class Replay {
     }
     void observe_moving_receiver(const retail_stage_grid_replay::Grids& grids,const retail_world_body_exit::Delivery* next,bool terminal){
         retail_stage_grid_replay::bind(mod,ram,stage,grids,false);
-        at(stage)[0]=1;at(stage+8)[0]=1;at(scene+28)[0]=2;
-        for(unsigned seat=0;seat<2;++seat){
+        at(stage)[0]=1;at(stage+8)[0]=1;at(scene+28)[0]=ally?3:2;
+        for(unsigned seat=0;seat<(ally?3u:2u);++seat){
             put_float(at(scene+5636+12*seat),seat?226.f:150.f);
-            put_float(at(scene+5644+12*seat),300.f);
+            put_float(at(scene+5644+12*seat),seat==2?retail_world_team_pair::receiver_z:300.f);
         }
         if(next)retail_world_body_exit::roster(ram);
         if(terminal)retail_world_match_end::roster(ram);
@@ -1237,18 +1245,19 @@ class Replay {
         }
         if(opening!=174||half(fighter(0)+0x1C6)!=60||half(fighter(1)+0x1C6)!=60)
             fail("moving receiver needs two loaded normal Tau actors");
-        if(terminal)retail_world_match_end::observe(mod,ram,opening);
+        if(ally)retail_world_team_pair::observe(mod,ram,opening,ally);
+        else if(terminal)retail_world_match_end::observe(mod,ram,opening);
         else if(next)retail_world_body_exit::observe(mod,ram,opening,*next);
         else retail_world_moving_receiver::observe(mod,ram,opening);
     }
 public:
-    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,Run mode):
-        mod(m),ram(original),melee(mode==Run::melee||mode==Run::moving_receiver||mode==Run::world_ko||mode==Run::match_end),
-        emperor(mode==Run::emperor),hover(mode==Run::hover_floor){
+    Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,Run mode,unsigned team_ally=0):
+        mod(m),ram(original),melee(mode==Run::melee||mode==Run::moving_receiver||mode==Run::world_ko||mode==Run::match_end||mode==Run::team_pair),
+        emperor(mode==Run::emperor),hover(mode==Run::hover_floor),ally(team_ally){
         setup(assets,area);
     }
     void observe(Run mode,const retail_stage_grid_replay::Grids* grids,const retail_world_body_exit::Delivery* next){
-        if(mode==Run::moving_receiver||mode==Run::world_ko||mode==Run::match_end){
+        if(mode==Run::moving_receiver||mode==Run::world_ko||mode==Run::match_end||mode==Run::team_pair){
             if(!grids||(mode==Run::world_ko)!=bool(next))fail("missing moving receiver stage or queued delivery inlet");
             observe_moving_receiver(*grids,next,mode==Run::match_end);return;
         }
@@ -1332,9 +1341,10 @@ int main(int argc,char** argv){
     if(argc==4&&!std::strcmp(argv[3],"--world-moving-receiver"))mode=Run::moving_receiver;
     if(argc==4&&!std::strcmp(argv[3],"--world-ko"))mode=Run::world_ko;
     if(argc==4&&!std::strcmp(argv[3],"--world-match-end"))mode=Run::match_end;
+    if(argc==4&&!std::strcmp(argv[3],"--world-team-pair"))mode=Run::team_pair;
     if(argc!=3&&mode==Run::entry)
-        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points|--emperor-pin|--hover-floor|--world-moving-receiver|--world-ko|--world-match-end] < qualified-roles");
-    const bool moving=mode==Run::moving_receiver||mode==Run::world_ko||mode==Run::match_end;
+        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points|--emperor-pin|--hover-floor|--world-moving-receiver|--world-ko|--world-match-end|--world-team-pair] < qualified-roles");
+    const bool moving=mode==Run::moving_receiver||mode==Run::world_ko||mode==Run::match_end||mode==Run::team_pair;
     const bool melee=mode==Run::melee||moving;
     const bool emperor=mode==Run::emperor;
     const bool hover=mode==Run::hover_floor;
@@ -1360,5 +1370,7 @@ int main(int argc,char** argv){
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets,area?&common:nullptr,mode).observe(mode,(emperor||hover||moving)?&grids:nullptr,next.get());
+    if(mode==Run::team_pair){
+        for(unsigned ally:{1u,2u})Replay(mod,original,assets,nullptr,mode,ally).observe(mode,&grids,nullptr);
+    }else Replay(mod,original,assets,area?&common:nullptr,mode).observe(mode,(emperor||hover||moving)?&grids:nullptr,next.get());
 }
