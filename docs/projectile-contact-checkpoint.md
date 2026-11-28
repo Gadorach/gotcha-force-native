@@ -7,6 +7,10 @@ three. A miss or seeded duplicate leaves it flying. The
 paid carrier dealing damage to two distinct receivers without accepting the
 same token twice on the first body.
 
+The [stock relationship comparison](contact-relationship-checkpoint.md)
+separately checks what happens when the overlapping body is allied: the
+rifle still continues and the three type-0 shots still close.
+
 The [headless comparison](api-map/native-projectile-contact-comparison.json)
 uses an authored Workshop with two stationary recipients. It seeds the
 observed **17** and **8** damage amounts, so this checks custody and recipients,

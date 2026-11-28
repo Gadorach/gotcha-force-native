@@ -135,6 +135,44 @@ void run_case(bool delayed,bool refused){
     check(std::all_of(world.projectiles().begin(),world.projectiles().end(),[](auto& shot){return shot.slot_free();}),
           "pool is drained");
 }
+
+void relationship_control(bool continuing,bool near_ally){
+    BattleMvpConfig config;
+    config.declared_actors=3;config.teams_declared=true;config.teams={0,u8(!near_ally),1};
+    const auto body=load(receiver);
+    const std::string policy=continuing?"actor-contact=bolt|continue-once-per-actor\n":hold;
+    config.packages={load(shooter+policy),body,body};
+    config.spawn={BattlePoint{0,0},BattlePoint{0,145},BattlePoint{0,255}};
+    NativeBattleMvp world;
+    check(world.start(config),"relationship control opens");
+    u32 object=0;
+    unsigned hits=0,spends=0,closed=0,retired=0;
+    for(unsigned n=0;n<34;++n){
+        std::array<GamePadState,kBattleMvpMaxActors> pads{};
+        std::array<BorgBattleInputs,kBattleMvpMaxActors> inputs{};
+        if(!n)inputs[0].pressed=BorgBattleInputs::b;
+        check(world.step_roster(pads,inputs,false),"relationship control step");
+        for(const auto& event:world.package_events()){
+            if(event.actor!=0)continue;
+            if(event.kind==BorgBattleEventKind::StockSpent)++spends;
+            if(event.kind==BorgBattleEventKind::Emitted){check(!object&&event.object,"single carrier");object=event.object;}
+            if(event.kind==BorgBattleEventKind::Hit){
+                check(event.object==object&&event.recipient>0&&event.recipient<=2&&event.value==17&&
+                      !(hits&(1u<<event.recipient)),"distinct authored enemy recipient per carrier");
+                hits|=1u<<event.recipient;
+            }
+            if(event.kind==BorgBattleEventKind::ProjectileContactClosed){
+                check(event.object==object&&event.recipient==(near_ally?2u:1u),"closure follows eligible contact");
+                ++closed;
+            }
+            if(event.kind==BorgBattleEventKind::Retired){check(event.object==object,"same carrier returns");++retired;}
+        }
+    }
+    const unsigned expected=near_ally?4:continuing?6:2;
+    check(hits==expected&&object&&spends==1&&closed==unsigned(!continuing)&&retired==1&&
+          world.actors()[1].health==(expected&2?163u:180u)&&world.actors()[2].health==(expected&4?163u:180u),
+          "near ally must not consume an authored ordinary or continuing projectile");
+}
 } // namespace
 
 int main(){
@@ -142,5 +180,6 @@ int main(){
     run_case(false,false);
     run_case(true,false);
     run_case(true,true);
+    for(bool continuing:{false,true})for(bool near_ally:{false,true})relationship_control(continuing,near_ally);
     std::puts("Native ordinary contact custody, slot reuse and publication refusal passed");
 }

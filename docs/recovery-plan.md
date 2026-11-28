@@ -173,11 +173,16 @@ not a dependency of an ordinary combat/movement checkpoint.
   distinct damage amounts and ledgers. Matched-geometry forks separate team
   admission from amount, and an original exclusion bit rejects the ally
   before narrow collision. Authored native melee remains enemy-only.
-- **Next:** compare the original attack-rule rows on known ordinary melee
-  and rifle contacts. Identify which routes share the close-B relationship
-  and per-recipient lifetime rules, and find an unmodified exclusion case.
-  Use that contrast to decide whether an explicit per-move policy can be
-  bound without changing authored defaults or enabling unrelated friendly fire.
+- **Landed:** the [stock relationship comparison](contact-relationship-checkpoint.md)
+  verifies ally admission for Machine Red and the three ordinary type-0 pilots,
+  and a stock exclusion on Alien/Claw Worm's follow-up. Their zero-power opening
+  uses a different rule on the same carrier. Relationship, HP/credit and
+  carrier close/continuation cannot be represented by one move-wide toggle.
+- **Next:** use the same loaded Tau strike to compare allied against opposing
+  **lethal** contact and pin the amount/rounding and ledger consequences of
+  an accepted ally. Check defeat, Force, teammate credit and result separately
+  before deciding whether any uniform single-row route can opt into native
+  ally admission. Do not change authored defaults or bind the Worm tail.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);

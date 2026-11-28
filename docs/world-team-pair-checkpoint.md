@@ -46,6 +46,9 @@ opt-in would need to describe both relationship admission and per-recipient
 strike history; flipping the authored team filter alone would not reproduce
 this result.
 
+The [stock projectile comparison](contact-relationship-checkpoint.md) finds
+a natural exclusion row on a Worm follow-up without editing the attack.
+
 All 22 original observations matched across O0/O1/O2, and five earlier
 receipts reproduced byte-for-byte. The native team-pair, moving-receiver,
 and roster-series tests passed under sanitizers.

@@ -592,6 +592,52 @@ public:
             put32(at(settings+team*60+0x118),100);
         }
     }
+    void projectile_relationship(u16 model,unsigned key,unsigned step,u32 record,unsigned flags,unsigned token){
+        if(model==0x0600)empty_stage(62500.f); // Same declared follow-up grid as the rifle lifetime replay.
+        const auto release=ram;
+        const auto* shape=at(hurt_cell);
+        const auto* object=at(object_cell);
+        if(half(attack_count)!=1||half(receiver_count)!=1||be32(at(attack_registry))!=hurt_cell||
+           be32(at(receiver_registry))!=rifle_receiver_cell||be32(shape+0x20)!=object_cell||
+           be32(shape+0x24)!=actor||be32(at(rifle_receiver_cell+0x20))!=peer||object[0x88]||a[0x88]||
+           be32(shape+0x28)!=hit_block+0xAA0+80*step||be32(shape+0x2C)+24u*shape[0x11]!=record||
+           half(record+16)!=flags||half(object_cell+0x26C)!=token||half(peer+0x1C6)!=180||
+           be32(at(hurt_cell+0x58))||be32(at(rifle_receiver_cell+0x58)))
+            fail("relationship compare requires the exact unmodified stock row and published carriers");
+        for(unsigned team:{1u,0u}){
+            std::memcpy(ram.data(),release.data(),ram.size());
+            at(peer)[0x88]=u8(team); // Change only the body's relationship after publication.
+            const auto broad=pair_helper(0x80039F6C,hurt_cell+0x58,rifle_receiver_cell+0x58);
+            const auto admitted=pair_helper(0x8002FD7C,hurt_cell,rifle_receiver_cell,2);
+            CallObservation kernel{0x80030500};CPUState writer{};
+            const auto reached=mod.run_to_or_return(writer,ram,0x8002DB58,{0x8003D344},&kernel);
+            const auto amount=reached?writer.gpr[4]:0;
+            if(reached){
+                if(writer.lr!=0x8002F1DC||writer.gpr[3]!=peer)fail("wrong relationship HP write");
+                mod.finish_stopped_leaf(writer,0x8003D344,164);
+            }
+            const bool accepted=!(flags&0x80)||team;
+            if(broad!=1||admitted!=unsigned(accepted)||kernel.count!=unsigned(accepted)||bool(reached)!=accepted||
+               half(peer+0x1C6)!=180-amount||be32(at(peer+0x41C))!=amount||
+               be32(a+0x418)!=(team?amount:0u)||be32(a+0x42C)!=(team?0u:amount)||
+               half(peer+0x20C)!=unsigned(accepted||token==2)||half(peer+0x20E)!=(token==2&&accepted?2u:0u))
+                fail("stock relationship case changed its contact, history or damage ownership");
+            std::printf("relation: %04X %u %u %08X %04X %u %u %u %u %u %u %u %u %u %u %u %u\n",
+                        model,key,step,record,flags,token,team,broad,admitted,kernel.count,unsigned(reached!=0),amount,
+                        half(peer+0x1C6),half(peer+0x20C),half(peer+0x20E),be32(a+0x418),be32(a+0x42C));
+            if(model>=0x0800||model==0x0600){
+                const auto held=half(actor+0x774);
+                projectile_visit();
+                const bool rifle=model==0x0600;
+                if(object[0x18]!=(rifle?1u:2u)||object[0x1D8]!=unsigned(!rifle)||
+                   half(attack_count)!=unsigned(rifle)||half(free_count+8)!=unsigned(!rifle)||half(actor+0x774)!=held)
+                    fail("ally contact changed stock or first follow-up carrier policy");
+                std::printf("relation-life: %04X %u %u %u %u %u %u\n",
+                            model,team,object[0x18],object[0x1D8],half(attack_count),half(free_count+8),held);
+            }
+        }
+        std::memcpy(ram.data(),release.data(),ram.size());
+    }
     void rifle_outcome(const RifleContact& c){
         auto* target=at(peer);
         auto* carrier=at(object_cell);
@@ -913,7 +959,7 @@ public:
                     half(peer+0x1C6),phase,stopped,timer,attacks,free_shapes,retirement,double(dx),double(dz));
     }
     void worm_release(const WormPilot& pilot,const HitBlock& shot,const ActorSpec& credit,
-                      const HitBlock& body,const ActorSpec& defender,unsigned scenario){
+                      const HitBlock& body,const ActorSpec& defender,unsigned scenario,bool relationship=false){
         const bool string=pilot.family==49,carrier_pool=scenario!=0,shape_pool=scenario>=2;
         a[0]=1;a[0x18]=1;put16(a+0x94,pilot.model);put16(a+0x3E8,pilot.model);
         put32(a+0x90,actor);put32(a+0x27C,pilot.table);
@@ -962,6 +1008,7 @@ public:
             if(half(attack_count)!=1||half(receiver_count)!=1||be32(at(receiver_registry))!=rifle_receiver_cell)
                 fail("Worm attack and receiver registry join failed");
             projectile_amount_inlet(credit,defender,pilot.hp);
+            if(relationship)projectile_relationship(pilot.model,pilot.key,pilot.step,pilot.table+24u*pilot.index,0,1);
             const auto before=ram;
             CPUState hit{};
             const auto reached=mod.run_to_or_return(hit,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
@@ -1011,6 +1058,10 @@ public:
                be32(at(attack_registry))!=hurt_cell||be32(at(hurt_cell+0x20))!=object_cell||
                be32(at(hurt_cell+0x28))!=hit_block+0xAA0+10*80||at(hurt_cell)[0x11]!=7)
                 fail("Worm string follow-up group did not bind");
+            if(relationship){
+                projectile_relationship(pilot.model,pilot.key,10,pilot.table+24u*7,0xA1,2);
+                return;
+            }
             const auto rebind=ram;
             CPUState next{};
             const auto next_call=mod.run_to_or_return(next,ram,0x8002DB58,{0x8003CD5C,0x8003D344});
@@ -1068,6 +1119,9 @@ int main(int argc,char** argv){
     const bool rifle_speed=argc==4&&std::strcmp(argv[3],"--rifle-speed")==0;
     const bool rifle_next=argc==4&&std::strcmp(argv[3],"--rifle-next-receiver")==0;
     const bool worm=argc==4&&std::strcmp(argv[3],"--worm-contact")==0;
+    const bool worm_relation=argc==4&&std::strcmp(argv[3],"--worm-relationship")==0;
+    const bool type0_relation=argc==4&&std::strcmp(argv[3],"--type0-relationship")==0;
+    const bool rifle_relation=argc==4&&std::strcmp(argv[3],"--rifle-relationship")==0;
     const bool type0_contact=argc==4&&std::strcmp(argv[3],"--type0-contact")==0;
     const bool type0=argc==4&&std::strcmp(argv[3],"--type0-flight")==0;
     const bool rifle_life=argc==4&&std::strcmp(argv[3],"--rifle-lifetime")==0;
@@ -1075,12 +1129,12 @@ int main(int argc,char** argv){
     const bool rifle_bucket=argc==4&&std::strcmp(argv[3],"--rifle-bucket")==0;
     const bool hp=argc==4&&std::strcmp(argv[3],"--sasuke-contact-hp")==0;
     const bool sweep=hp||(argc==4&&std::strcmp(argv[3],"--sasuke-shape-sweep")==0);
-    if(argc!=3&&!worm&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!rifle_next&&!rifle_speed&&
+    if(argc!=3&&!worm&&!worm_relation&&!type0_relation&&!rifle_relation&&!type0&&!type0_contact&&!sweep&&!rifle_bucket&&!rifle_contact&&!rifle_life&&!rifle_next&&!rifle_speed&&
        !(argc==4&&std::strcmp(argv[3],"--sasuke-hit-block")==0))
-        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--type0-flight|--type0-contact|--rifle-bucket|--rifle-contact-hp|--rifle-lifetime|--rifle-next-receiver|--rifle-speed|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
+        fail("usage: action-input-fixture qualified.dol unmodified-recomp.so [--worm-contact|--worm-relationship|--type0-flight|--type0-contact|--type0-relationship|--rifle-bucket|--rifle-contact-hp|--rifle-relationship|--rifle-lifetime|--rifle-next-receiver|--rifle-speed|--sasuke-hit-block|--sasuke-shape-sweep|--sasuke-contact-hp]");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    if(worm){
+    if(worm||worm_relation){
         const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
         HitBlock body{};
         ActorSpec defender{};
@@ -1089,21 +1143,33 @@ int main(int argc,char** argv){
             HitBlock shot{};
             ActorSpec credit{};
             if(!read(shot)||!read(credit))fail("Worm owner inlet extent");
-            for(unsigned scenario=0;scenario<4;++scenario){
+            for(unsigned scenario=worm_relation?3:0;scenario<4;++scenario){
+                if(worm_relation&&pilot.family!=49)continue;
                 Check c(mod,original);
-                c.worm_release(pilot,shot,credit,body,defender,scenario);
+                c.worm_release(pilot,shot,credit,body,defender,scenario,worm_relation);
             }
         }
         if(std::fgetc(stdin)!=EOF)fail("extra Worm contact inlet");
         return 0;
     }
-    if(type0_contact){
+    if(type0_contact||type0_relation){
         const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
         HitBlock body{},shots[3]{};
         ActorSpec defender{},credit[3]{};
         if(!read(body)||!read(defender))fail("type-0 contact body inlet extent");
         for(unsigned i=0;i<3;++i)if(!read(shots[i])||!read(credit[i]))fail("type-0 contact owner inlet extent");
         if(std::fgetc(stdin)!=EOF)fail("extra type-0 contact inlet");
+        if(type0_relation){
+            constexpr u32 records[]{0x802D6270,0x802F7C30,0x80339E18};
+            for(unsigned i=0;i<3;++i){
+                const auto& pilot=type0_pilots[i];
+                Check c(mod,original);
+                c.type0_launch(pilot,shots[i],&body);
+                c.projectile_amount_inlet(credit[i],defender,pilot.hp);
+                c.projectile_relationship(pilot.model,pilot.key,pilot.step,records[i],unsigned(i==2),1);
+            }
+            return 0;
+        }
         struct Case {unsigned distance;bool duplicate=false;};
         for(unsigned i=0;i<3;++i)for(const auto test:{Case{256},Case{0,true},Case{0}}){
             Check c(mod,original);
@@ -1121,12 +1187,12 @@ int main(int argc,char** argv){
         }
         return 0;
     }
-    if(rifle_bucket||rifle_contact||rifle_life||rifle_next||rifle_speed){
+    if(rifle_bucket||rifle_contact||rifle_life||rifle_next||rifle_speed||rifle_relation){
         HitBlock block{};
         HitBlock receiver{};
         ActorSpec credit_spec{},defender_spec{};
         const auto read=[](auto& data){return std::fread(data.data(),1,data.size(),stdin)==data.size();};
-        if(!read(block)||((rifle_contact||rifle_life||rifle_next)&&(!read(receiver)||!read(credit_spec)||!read(defender_spec)))||std::fgetc(stdin)!=EOF)
+        if(!read(block)||((rifle_contact||rifle_life||rifle_next||rifle_relation)&&(!read(receiver)||!read(credit_spec)||!read(defender_spec)))||std::fgetc(stdin)!=EOF)
             fail("rifle hit-block inlet extent");
         const auto release=[](Check& c){
             c.install(0x800C91BC,0x0600,red,0x800C94D4);
@@ -1137,7 +1203,13 @@ int main(int argc,char** argv){
             put16(c.a+0x94,0x0600); // Declared ordinary owner model mirror, copied at allocation.
             c.machine_red_release(2,true,true,true);
         };
-        if(rifle_speed){
+        if(rifle_relation){
+            Check c(mod,original);release(c);
+            const RifleContact contact{receiver,credit_spec,defender_spec,0};
+            c.machine_red_bucket(block,true,true,false,&contact);
+            c.projectile_amount_inlet(credit_spec,defender_spec,500);
+            c.projectile_relationship(0x0600,21,15,0x8030A398,0,1);
+        }else if(rifle_speed){
             Check c(mod,original);release(c);
             c.machine_red_bucket(block,true,true,false);
             c.rifle_speed_ramp();

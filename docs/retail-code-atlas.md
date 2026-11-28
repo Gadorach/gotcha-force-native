@@ -1931,6 +1931,11 @@ for both teams with stock flags `0001`, and exclusion before narrow collision
 when the original `0080` bit is added to the attack-rule row. This is not a
 universal relationship policy for other attack rows or modes.
 
+The [stock relationship comparison](contact-relationship-checkpoint.md)
+separately verifies ally damage for the rifle and type-0 pilots, and finds
+an unmodified exclusion row on the group-7 rebind of Alien and Claw Worm.
+Their zero-power opening permits allies; the follow-up does not.
+
 ### Normal body knockout: Force cost, reserves and credit
 
 The [knockout replay](api-map/gg4e08-body-knockout.json) completes the
