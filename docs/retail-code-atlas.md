@@ -2351,6 +2351,45 @@ python3 -m tools.analyze.retail_scene_bomb_cascade \
   /tmp/opencode/gf-scene-bomb-cascade.json
 ```
 
+### World callbacks: outgoing-hit priority over zero carrier HP
+
+The [terminal-priority replay](api-map/gg4e08-scene-bomb-terminal.json)
+places the second bomb on **185**, one visit before the cascade
+replay's placement. In the 10-visit startup-hold case the second
+bomb hits Sasuke and the old area takes the bomb to **0 HP** on
+that same visit. The bomb enters the next bucket with outgoing
+latch `+0x1D9 = 16`, incoming latch `+0x1DA = 1`, and **180**
+lifetime units remaining.
+
+| State at visit 186 | Original branch |
+| --- | --- |
+| Retained mixed hit: outgoing latch set, HP 0 | Outgoing hit `800E0AD4` |
+| Clear only the outgoing latch | Zero HP `800E0B18` |
+| Restore only carrier HP to 1 | Outgoing hit `800E0AD4` |
+| Clear outgoing latch and restore carrier HP | No area; still active, lifetime **179**, no stock returned on this visit |
+
+The last three rows are declared controls, not new live gameplay
+routes. The actual zero-hold schedule provides an independent
+zero-HP-only case. Both exit sites request key **19**; with the
+offered resources they bind a new shape on **186** and publish
+token **4** on **187**, the visit stock returns. In the mixed
+case and its two exiting controls, the new area removes **14 HP**
+from Sasuke at tier **1** and **4 HP** from Time Bomber; the
+zero-hold case removes **17 HP** from Sasuke at tier **0**.
+The incoming latch stays set at the inlet in all controls. It
+does not cause an exit by itself when carrier HP is positive.
+
+Both second-press schedules and five terminal forks matched across
+O0/O1/O2. This closes the tested Time Bomber priority branch, not
+unrelated Borgs, a constructed arena, hardware, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_scene_bomb_terminal \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/dual-scene-entry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-scene-bomb-terminal.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
