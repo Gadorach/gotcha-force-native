@@ -453,6 +453,11 @@ contact, flight trajectory or actor admission.
 
 ## Normal Wing Soldier and Quick Valkrie: glide and contact
 
+The later [loaded Nurse/Wing contrast](pose-offset-contact-checkpoint.md)
+verifies the distinction on ordinary fall: Wing keeps zero logical offset
+despite its class pose-height value, while Nurse uses a positive offset
+that puts its snapped root below the selected static plane.
+
 Exact normal `GG4E08:0A00/0` and `GG4E08:0B00/0`, AFS members 647 and 658,
 install movement type 2 and resource policy 2. Their audited movement
 prefixes match byte-for-byte; their motion banks, sampled pose continuations and class

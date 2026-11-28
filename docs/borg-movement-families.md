@@ -254,6 +254,13 @@ family. Other hover-height producers, live Fortress clearance and Sasuke's
 dash height over a full route remain unverified. Do not fill animation
 annotations or generalize G-Red's recovered profile from these audits.
 
+The [loaded Angel Nurse/Wing Soldier contrast](pose-offset-contact-checkpoint.md)
+found a pose-derived logical contact offset on Nurse, but it places the root
+**below** the queried floor at snap. A separate landing visit precedes its
+point reset. Wing's logical offset is zero despite a positive class pose
+height, and its inhibit-bit meter recovery can occur before contact. This
+does not establish the reported above-floor grounding rule.
+
 ### Ordinary air-dash roster checkpoint
 
 The retained-air-dash audit covers all 206 normal profiles. In that

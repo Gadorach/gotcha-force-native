@@ -24,13 +24,15 @@ constexpr std::array<u16,2> melee_models{0x0807,0x0807},melee_members{626,626};
 constexpr std::array<size_t,2> melee_motion_sizes{192512,192512},melee_view_sizes{60072,60072};
 constexpr std::array<u16,2> emperor_models{0x0E04,0x0106},emperor_members{684,504};
 constexpr std::array<size_t,2> emperor_motion_sizes{0,435104},emperor_view_sizes{174048,171236};
+constexpr std::array<u16,2> hover_models{0x0900,0x0A00},hover_members{634,647};
+constexpr std::array<size_t,2> hover_motion_sizes{204096,398528},hover_view_sizes{214208,214868};
 struct Assets {
     contact::ActorSpec spec;
     contact::HitBlock hit;
     std::vector<u8> motion,view;
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
-enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air,emperor};
+enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air,emperor,hover_floor};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
 constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
@@ -54,6 +56,7 @@ class Replay {
     std::vector<u8> ram;
     bool melee=false;
     bool emperor=false;
+    bool hover=false;
     u8* at(u32 a){return contact::at(ram,a);}
     u32 word(u32 a){return be32(at(a));}
     u16 half(u32 a){return contact::half(ram,a);}
@@ -76,19 +79,19 @@ class Replay {
         for(unsigned i=0;i<5;++i)put_float(at(stage+52+4*i),i==2||i==4?-3000.f:3000.f);
     }
     void offer_pools(bool area){
-        constexpr u32 bases[]{0x81066000,0x81064000,0x81069000};
-        const unsigned bytes[]{44*64,32*(area?3u:2u),16*32};
+        constexpr u32 bases[]{0x81066000,0x81064000,0x81069000,0x81120000};
+        const unsigned bytes[]{44*64,32*(area?3u:2u),16*32,16*8};
         archive::Setup sdk(mod,ram);
         sdk.init_heap(archive::arena+0x100000);
         store(0x8043B5A0-21352,basis);store(0x8043B5A0-21024,pools);
-        for(unsigned kind=0;kind<3;++kind){
+        for(unsigned kind=0;kind<(hover?4u:3u);++kind){
             const auto row=pools+28*kind;
             store(row,bases[kind]-basis);store(row+4,bytes[kind]);
             std::memcpy(at(row+16),at(0x8036F5B8+28*kind+16),12);
             call(0x80197950,kind);
         }
-        const unsigned cells=emperor?64:melee?48:32;
-        const u32 shapes=emperor?0x81110000:shape;
+        const unsigned cells=(emperor||hover)?64:melee?48:32;
+        const u32 shapes=(emperor||hover)?0x81110000:shape;
         for(unsigned i=0;i<cells;++i){
             const auto cell=shapes+shape_stride*i;
             at(cell+2)[0]=4;
@@ -105,7 +108,8 @@ class Replay {
         const auto view=basis+0x270000+0x58000*seat-0x4400;
         CPUState request{};request.gpr[3]=seat;
         mod.run_to(request,ram,0x800410BC,{0x8000B07C});
-        if(request.lr!=0x8004124C||request.gpr[3]!=(emperor?emperor_members[seat]:melee?melee_members[seat]:members[seat])||request.gpr[4]!=outputs||
+        const auto& expected=hover?hover_members:emperor?emperor_members:melee?melee_members:members;
+        if(request.lr!=0x8004124C||request.gpr[3]!=expected[seat]||request.gpr[4]!=outputs||
            word(outputs)!=data||word(outputs+4)!=0xF0000000||word(outputs+8)!=hit||
            word(outputs+12)!=motion||word(outputs+16)!=view||word(outputs+20)!=0xF0000000||
            word(view_owner))
@@ -148,7 +152,8 @@ class Replay {
         at(mode+2)[0]=3;at(mode+12)[0]=1;
         at(0x803D3AE8+852)[0]=1;
         at(scene+0x1828)[0]=3;at(scene+5593)[0]=3;at(scene+5594)[0]=2;
-        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?(emperor?emperor_models[i]:melee?melee_models[i]:models[i]):0xFFFF);
+        const auto& pair=hover?hover_models:emperor?emperor_models:melee?melee_models:models;
+        for(unsigned i=0;i<6;++i)store16(scene+16+2*i,i<2?pair[i]:0xFFFF);
         for(unsigned i=0;i<2;++i){
             at(scene+203+i)[0]=i;
             store(scene+60*i+0x114,300);store(scene+60*i+0x118,300);
@@ -1126,14 +1131,101 @@ class Replay {
             }
         }
     }
+    void observe_hover(const retail_stage_grid_replay::Grids& grids){
+        retail_stage_grid_replay::bind(mod,ram,stage,grids,false);
+        at(scene+28)[0]=2;
+        const auto visit=[&](CallObservation* marker=nullptr){
+            CPUState cpu{};
+            const auto cut=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{body_pass_end,0x80264290},marker,1u<<20);
+            if(cut!=body_pass_end||cpu.lr!=0x80029490){
+                std::fprintf(stderr,"hover actor cutoff=%08X lr=%08X info=%08X\n",cut,cpu.lr,cpu.gpr[4]);
+                fail("hover actor dispatch left the supported prefix");
+            }
+        };
+        unsigned opens=0;
+        for(unsigned n=1;n<=200;++n){
+            visit();
+            if(byte(scene+69)==4){opens=n;break;}
+        }
+        if(opens!=174)fail("hover controls did not enter opened normal scene");
+        const auto opened=ram;
+        for(unsigned seat=0;seat<2;++seat){
+            ram=opened;
+            const auto a=fighter(seat);
+            const unsigned lift=seat?17:13,fall=seat?47:24,touch=seat?71:77,idle=seat?116:95;
+            if(half(a+0x3E8)!=hover_models[seat]||half(a+0x1C6)!=150||f(seat,0x661)!=2*seat||
+               f(seat,0x7CD)!=2*seat||f(seat,0x5E4)||word(a+0x24)!=0x41200000)
+                fail("hover control needs its archive-loaded normal start and floor");
+            const auto line=[&](const char* edge,unsigned n){
+                std::printf("hover-%s: %u %u %u %u %u %08X %08X %08X %08X %u %u %u %08X\n",
+                    edge,seat,n,f(seat,0x5E4),f(seat,0x87),f(seat,0x71D),word(a+0x5E0),
+                    word(a+0x24),word(a+0x6D0),word(a+0x1DC0),
+                    half(a+0x736),f(seat,0x747),f(seat,0x544),word(a+0x754));
+            };
+            line("start",0);
+            for(unsigned n=1;n<=idle;++n){
+                store(pad+32*seat,n<=18?0x100:0);
+                if(n==lift+1){
+                    if(f(seat,0x5E4)!=5||!f(seat,0x87)||f(seat,0x747)!=1||half(a+0x736)!=10000)
+                        fail("hover meter sentinel must enter the accepted first ascent");
+                    store16(a+0x736,4000);
+                    line("seed",n);
+                }
+                auto snap=[&]{
+                    auto fork=ram;
+                    CPUState cpu{};
+                    const auto cut=mod.run_to_or_return(cpu,fork,scheduler::dispatch,{0x80065E64,body_pass_end,0x80264290},nullptr,1u<<20);
+                    if(cut!=0x80065E64||cpu.lr!=0x800679AC||cpu.gpr[3]!=a)fail("missing owned floor snap/landing continuation");
+                    const auto rd=[&](u32 off){return be32(contact::at(fork,a+off));};
+                    const auto y=rd(0x24),offset=rd(0x6D0);
+                    CPUState query{};query.gpr[3]=a;query.gpr[4]=a+0x20;query.gpr[5]=0x81121000;
+                    query.fpr[1]=std::bit_cast<float>(rd(0x668));
+                    mod.run(query,fork,0x8003E0A8,4096);
+                    const auto floor=std::bit_cast<u32>(float(query.fpr[1]));
+                    if(floor!=0x41200000||be32(contact::at(fork,0x81121004))!=0x3F800000||
+                       std::bit_cast<float>(y)+std::bit_cast<float>(offset)!=10.f||rd(0x1E0))
+                        fail("floor contact does not use the original static plane and pose offset");
+                    std::printf("hover-snap: %u %u %08X %08X %08X\n",seat,n,floor,y,offset);
+                };
+                if(n==touch)snap();
+                if(n==touch+1){
+                    // A same-actor fork lets us observe Wing Soldier's
+                    // pre-landing refill even though its main trace is full.
+                    auto unchanged=ram;store16(a+0x736,4000);
+                    visit();line("landing-fork",n);
+                    visit();line("refill-fork",n+1);
+                    ram=std::move(unchanged);
+                }
+                CallObservation producer{0x8004D08C};
+                producer.sample=[](const CPUState& cpu){return cpu.lr;};
+                visit(n==touch?&producer:nullptr);
+                if(n==touch){
+                    bool original_prepass=false;
+                    for(unsigned i=0;i<std::min(producer.count,8u);++i)
+                        original_prepass|=producer.first_arguments[i]==a&&producer.samples[i]==0x80055ED4;
+                    if(!original_prepass)fail("hover contact lost its original pose-offset producer");
+                }
+                if(n==1)line("takeoff",n);
+                if(n==lift)line("lift",n);
+                if(n==lift+1)line("in-air",n);
+                if(n==fall)line("fall",n);
+                if(n==touch-1)line("before-contact",n);
+                if(n==touch)line("contact",n);
+                if(n==touch+1)line("landing",n);
+                if(n==touch+2)line("after-landing",n);
+                if(n==idle)line("neutral",n);
+            }
+        }
+    }
 public:
     Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,Run mode):
-        mod(m),ram(original),melee(mode==Run::melee),emperor(mode==Run::emperor){
+        mod(m),ram(original),melee(mode==Run::melee),emperor(mode==Run::emperor),hover(mode==Run::hover_floor){
         setup(assets,area);
     }
     void observe(Run mode,const retail_stage_grid_replay::Grids* grids){
         if(melee){observe_melee();return;}
         if(emperor){if(!grids)fail("missing Emperor stage inlet");observe_emperor(*grids);return;}
+        if(hover){if(!grids)fail("missing hover stage inlet");observe_hover(*grids);return;}
         if(mode==Run::sasuke_air){observe_sasuke_air();return;}
         const bool world=mode!=Run::entry;
         const auto start=ram;
@@ -1207,26 +1299,28 @@ int main(int argc,char** argv){
     if(argc==4&&!std::strcmp(argv[3],"--melee-interrupt"))mode=Run::melee;
     if(argc==4&&!std::strcmp(argv[3],"--sasuke-air-points"))mode=Run::sasuke_air;
     if(argc==4&&!std::strcmp(argv[3],"--emperor-pin"))mode=Run::emperor;
+    if(argc==4&&!std::strcmp(argv[3],"--hover-floor"))mode=Run::hover_floor;
     if(argc!=3&&mode==Run::entry)
-        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points|--emperor-pin] < qualified-roles");
+        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points|--emperor-pin|--hover-floor] < qualified-roles");
     const bool melee=mode==Run::melee;
     const bool emperor=mode==Run::emperor;
-    const bool area=mode!=Run::entry&&mode!=Run::bomb&&mode!=Run::sasuke_air&&!melee&&!emperor;
+    const bool hover=mode==Run::hover_floor;
+    const bool area=mode!=Run::entry&&mode!=Run::bomb&&mode!=Run::sasuke_air&&!melee&&!emperor&&!hover;
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");
     };
     for(unsigned i=0;i<2;++i){
         auto& a=assets[i];
-        a.motion.resize(emperor?emperor_motion_sizes[i]:melee?melee_motion_sizes[i]:motion_sizes[i]);
-        a.view.resize(emperor?emperor_view_sizes[i]:melee?melee_view_sizes[i]:view_sizes[i]);
+        a.motion.resize(hover?hover_motion_sizes[i]:emperor?emperor_motion_sizes[i]:melee?melee_motion_sizes[i]:motion_sizes[i]);
+        a.view.resize(hover?hover_view_sizes[i]:emperor?emperor_view_sizes[i]:melee?melee_view_sizes[i]:view_sizes[i]);
         read(a.spec);read(a.hit);read(a.motion);read(a.view);
     }
     AreaAssets common{};
     if(area){read(common.collision);common.view=archive::read_source();}
     retail_stage_grid_replay::Grids grids{};
-    if(emperor)grids=retail_stage_grid_replay::input();
+    if(emperor||hover)grids=retail_stage_grid_replay::input();
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra dual scene assets");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
-    Replay(mod,original,assets,area?&common:nullptr,mode).observe(mode,emperor?&grids:nullptr);
+    Replay(mod,original,assets,area?&common:nullptr,mode).observe(mode,(emperor||hover)?&grids:nullptr);
 }

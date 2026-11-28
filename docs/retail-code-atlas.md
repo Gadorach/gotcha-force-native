@@ -2231,6 +2231,16 @@ steering selectors leave the pin unchanged. A separate receiver rebuild
 publishes 25 Emperor shapes from its own bank; neither a collision pair
 nor support is thereby accepted. See the [native contrast](emperor-pin-checkpoint.md).
 
+### Loaded Angel Nurse and Wing Soldier: pose-offset contact
+
+The [pose-offset replay](api-map/gg4e08-pose-offset-contact.json) joins the
+normal actor's `80055DCC → 8004D08C` prepass to `800677B0`, the real
+`80065E64` callback and the following landing visit. Nurse's nonzero
+contact offset is subtracted from floor Y; Wing's logical offset is zero.
+The later [resource comparison](pose-offset-contact-checkpoint.md) keeps
+type 0's previous-grounded-cache gate separate from type 2's inhibit-bit
+gate. Neither route demonstrates above-floor grounding.
+
 ### World callbacks: Time Bomber's first B through natural expiry
 
 The [world replay](api-map/gg4e08-scene-bomb-world.json) retains the

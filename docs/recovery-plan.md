@@ -148,11 +148,15 @@ not a dependency of an ordinary combat/movement checkpoint.
   verifies steering refusal and receiver publication. Leave the authored
   flying-boss package unchanged until a placement/contact witness justifies
   a portable fixed-airborne owner.
-- **Next:** identify one exact hover-floor representative with a nonzero
-  contact offset. Compare the height producer, logical grounding and first
-  permitted resource recovery on adjacent visits. Use Wing Soldier's
-  zero-offset glide as a negative control; do not treat nonboost refill,
-  a snap, or fixed airborne status as hover-floor grounding.
+- **Landed:** the [loaded Nurse/Wing comparison](pose-offset-contact-checkpoint.md)
+  verifies pose-adjusted contact, landing, and their distinct recovery gates.
+  It found no above-floor logical grounding and adds no hover binding.
+  Reopen literal hover-floor work when a specific actor and input can
+  discriminate it from a visual lift or airborne refill.
+- **Next:** join one ordinary moving-body update to a matching receiver
+  shape publication and the subsequent world contact pass (step 3).
+  Reuse the loaded two-actor scene, with a matched miss. Keep accepted
+  shape/contact, HP writes and later support state separate.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);
