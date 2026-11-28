@@ -3502,6 +3502,41 @@ python3 -m tools.analyze.retail_stage_side_recovery \
   /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-recovery.json
 ```
 
+### Original side support: box faces and planes
+
+The [side support replay](api-map/gg4e08-stage-side-support.json)
+tests **all 181** common `0x20` cells from the side census.
+Every probe leaves the full original side collision list in
+place. Sasuke starts in a declared rigid pose, four units
+above the target’s top surface; a separate control starts
+1,024 units above it.
+
+- All **84 planes** (`80035698`) and **97 box faces**
+  (`800350F8`) produce an exact support cell and owner.
+  The two boxes on the type-11 prop both reach narrow phase
+  in each probe, but the low and high poses select different
+  cells on that same owner.
+- The supported height query and the landing helper agree with
+  the collision-corrected root. Two `set0b00.arc` planes
+  resolve one float step above the reference height used to
+  place Sasuke. Neither query nor landing moves him sideways.
+- All **181** above-surface controls stay unsupported. They
+  do not exercise the absent-support floor fallback.
+
+All **362 probes** matched across O0/O1/O2. Both earlier side
+receipts reproduced byte-for-byte. This qualifies support
+from above for these poses, not arbitrary box faces, moving
+carry on other props, actual arena terrain, full battle
+scheduling, hardware, or native gameplay.
+
+Use the same fixture as for the [side census](#original-side-placement-census-all-61-archives):
+
+```sh
+python3 -m tools.analyze.retail_stage_side_support \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-support.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

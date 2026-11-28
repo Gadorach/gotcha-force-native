@@ -1,5 +1,6 @@
 // Replay the original side-stage placement loop, not the enclosing scene loader.
 #include "retail_contact_effect_archive.hpp"
+#include "retail_declared_stage_grid.hpp"
 #include <algorithm>
 
 namespace {
@@ -13,6 +14,8 @@ constexpr u32 group40=contact::active_head+40*4,group48=contact::active_head+48*
 constexpr u32 flags=0x803B2908,common_roles=0x803C237C,common_role_count=0x8043B5A0-21340;
 constexpr unsigned owner_limit=16,shape_limit=32,bank_limit=4;
 constexpr u32 type_table=0x802D7990,heap_limit=art::arena+0x100000;
+constexpr u32 stage=0x81070000,actor_body=0x81020000,actor_bank=0x81054000,actor_spec=actor_bank+0x2000;
+struct ReceiverInput {contact::HitBlock hit;contact::ActorSpec spec;};
 
 class Census {
     const Module& mod;
@@ -23,6 +26,11 @@ class Census {
     u16 half(u32 a){return contact::half(ram,a);}
     float scalar(u32 a){return std::bit_cast<float>(word(a));}
     void store(u32 a,u32 v){put32(at(a),v);}
+    contact::Point point(u32 a){return {scalar(a),scalar(a+4),scalar(a+8)};}
+    void put_point(u32 a,const contact::Point& p){for(unsigned i=0;i<3;++i)put_float(at(a+4*i),p[i]);}
+    void rig(u32 a,const contact::Point& p){
+        for(unsigned i=0;i<3;++i){put_float(at(a+20*i),1.f);put_float(at(a+12+16*i),p[i]);}
+    }
     void call(u32 fn,u32 arg=0,CallObservation* observation=nullptr){
         CPUState cpu{};cpu.gpr[3]=arg;std::copy(gqr.begin(),gqr.end(),std::begin(cpu.gqr));
         if(mod.run_to_or_return(cpu,ram,fn,{0x80264290},observation,1u<<20)){
@@ -56,6 +64,105 @@ class Census {
     void side_visit(CallObservation* observation=nullptr){
         call(0x80089A94,40,observation);call(0x80089554);
         call(0x8008A28C);call(0x80089AEC);
+    }
+    void bind_receiver(const ReceiverInput& sasuke,const contact::Point& pose){
+        std::memcpy(at(actor_bank),sasuke.hit.data(),sasuke.hit.size());
+        at(actor_bank)[0]=0;at(actor_bank+1)[0]=11;at(actor_bank+2)[0]=255;
+        std::memcpy(at(actor_spec),sasuke.spec.data(),sasuke.spec.size());store(0x803C4D94,actor_spec);
+        at(actor_body)[0]=at(actor_body+0x18)[0]=at(actor_body+0x3E5)[0]=1;
+        put16(at(actor_body+0x3E8),0x000A);put16(at(actor_body+0x1C4),180);put16(at(actor_body+0x1C6),180);
+        store(actor_body+0x3FC,actor_bank);store(actor_body+0x90,actor_body);store(actor_body+0x76C,1|(1u<<6));
+        for(u32 field:{0xB4u,0xB8u,0xC0u,0xC4u})put_float(at(actor_body+field),1.f);
+        put_point(actor_body+0x20,pose);
+        rig(actor_body+0x1AA4,pose);
+        auto joint=pose;joint[0]+=12;
+        rig(actor_body+0x8D4+6*0x30,joint);
+        call(0x8006F4F8,actor_body);
+        call(0x8008AB30,actor_body);
+        for(unsigned i=0;i<2;++i){call(0x8008A28C);call(0x80089AEC);}
+    }
+    void support_census(unsigned member,const ReceiverInput& sasuke){
+        const auto retained_side=word(stage_files+24);
+        retail_declared_stage_grid::bind(mod,ram,stage,false,100.f);
+        store(stage+0x800+24,retained_side);
+        const auto initial=ram;
+        const auto count=half(common_role_count);
+        if(!count||count>16)fail("side support original role-20 registry extent");
+        for(unsigned j=0;j<count;++j){
+            const auto cell=word(common_roles+4*j),owner=word(cell+0x20),kind=word(cell+0x58);
+            const auto descriptor=(word(cell+0x28)-common-0x400)/80;
+            auto top=point(cell+0x64);
+            unsigned face=255;
+            if(kind==4){
+                if(scalar(cell+0x8C)<0.99f||scalar(cell+0xA0)!=140.f)
+                    fail("side support original horizontal plane shape changed");
+                top[1]+=scalar(cell+0xA0);
+            }else if(kind==1){
+                // Select the upward face from the original allocated corners
+                // and normals; the original pair decides whether it supports.
+                constexpr u32 face_table=0x802CFFC8;
+                for(unsigned f=0;f<6;++f){
+                    if(scalar(cell+0xEC+24*f)<0.99f)continue;
+                    if(face!=255)fail("side support expected one upward box face");
+                    face=f;
+                    top={};
+                    for(unsigned v=0;v<4;++v){
+                        const auto corner=at(face_table+4*f+v)[0];
+                        if(corner>=8)fail("side support original box face corner extent");
+                        const auto p=point(cell+0x88+12*corner);
+                        for(unsigned k=0;k<3;++k)top[k]+=p[k]*0.25f;
+                    }
+                }
+                if(face==255)fail("side support original box face was not horizontal");
+            }else fail("side support original role-20 kind changed");
+            for(unsigned far=0;far<2;++far){
+                auto pose=top;
+                pose[1]+=far?1024.f:4.f;
+                bind_receiver(sasuke,pose);
+                if(half(common_role_count)!=count||word(common_roles+4*j)!=cell||
+                   word(cell+0x20)!=owner||half(contact::receiver_count)<2)
+                    fail("side support actor bind changed the original side registry");
+                CPUState walk{};std::copy(gqr.begin(),gqr.end(),std::begin(walk.gqr));
+                CallObservation narrow{kind==4?0x80035698u:0x800350F8u};
+                narrow.sample=[](const CPUState& cpu)->u32{
+                    if(cpu.lr!=0x80030410||cpu.gpr[4]!=0x803B0368)
+                        fail("side support reached another original narrow caller");
+                    return be32(cpu.ram+(0x803B036C-GC_RAM_BASE));
+                };
+                const auto cut=mod.run_to_or_return(walk,ram,0x8002BB14,{0x8005A580,0x80264290,contact::hp_write},&narrow,65536);
+                if(cut!=0x8005A580||walk.lr!=0x8002C870||walk.gpr[3]!=actor_body||half(actor_body+0x1C6)!=180||
+                   narrow.count>8||word(cell+0x20)!=owner)
+                    fail("side support collision crossed the bounded presentation cut");
+                const auto selected=word(actor_body+0x1E0),selected_owner=word(actor_body+0x1E4);
+                const bool held=bool(at(actor_body+0x1DB)[0]);
+                const auto visited=std::count(narrow.samples,narrow.samples+narrow.count,cell);
+                const auto collision_root=point(actor_body+0x20);
+                u32 height=0,landing_result=0,landing_y=0;
+                if(held){
+                    if(selected!=cell||selected_owner!=owner||word(cell+0x60)!=owner+0x114)
+                        fail("side support resolved to a different cell or owner");
+                    CPUState query{};std::copy(gqr.begin(),gqr.end(),std::begin(query.gqr));
+                    query.gpr[3]=actor_body;query.gpr[4]=actor_body+0x20;query.gpr[5]=actor_spec+0x400;
+                    mod.run(query,ram,0x8003E0A8,4096);
+                    height=std::bit_cast<u32>(float(query.fpr[1]));
+                    if(point(actor_body+0x20)!=collision_root)fail("side supported height query moved the root");
+                    CPUState landing{};std::copy(gqr.begin(),gqr.end(),std::begin(landing.gqr));
+                    landing.gpr[3]=actor_body;
+                    mod.run(landing,ram,0x800677B0,4096);
+                    landing_result=landing.gpr[3];
+                    landing_y=word(actor_body+0x24);
+                }
+                if(scalar(actor_body+0x20)!=pose[0]||scalar(actor_body+0x28)!=pose[2]||
+                   half(actor_body+0x1C6)!=180||word(actor_body+0x1E0)!=selected||word(actor_body+0x1E4)!=selected_owner)
+                    fail("side support query or landing changed lateral pose, support identity or HP");
+                std::printf("side-support: %u %u %u %u %u %u %u %u %u %08X %08X %08X %08X %08X %u\n",member,
+                            (owner-owners)/owner_step,descriptor,j,face,far,narrow.count,unsigned(visited),
+                            unsigned(held)+(selected==cell?2:0)+(selected_owner==owner?4:0),
+                            std::bit_cast<u32>(top[1]),std::bit_cast<u32>(pose[1]),std::bit_cast<u32>(collision_root[1]),
+                            height,landing_y,landing_result);
+                ram=initial;
+            }
+        }
     }
     void isolation(){
         // An independent fork of set0202: break row 0, not same-type row 1.
@@ -236,7 +343,8 @@ class Census {
     }
 public:
     Census(const Module& m,const std::vector<u8>& pristine):mod(m),ram(pristine){}
-    void run(unsigned member,const std::vector<u8>& side,const std::array<u8,21504>& collision,bool recover){
+    void run(unsigned member,const std::vector<u8>& side,const std::array<u8,21504>& collision,bool recover,
+             const ReceiverInput* sasuke){
         CPUState boot{};
         const auto boot_cut=mod.run_to_or_return(boot,ram,0x8002A3E4,{0x8002A51C,0x80200318},nullptr,4096);
         if(!boot_cut||boot.gqr[5]!=0x00070007)fail("side census source boot GQR");
@@ -396,15 +504,22 @@ public:
             if(member==2429)isolation();
             recovery(member,side,n,n3,allocated,collision);
         }
+        if(sasuke)support_census(member,*sasuke);
     }
 };
 } // namespace
 
 int main(int argc,char** argv){
     const bool recovery=argc==4&&!std::strcmp(argv[3],"--recovery");
-    if(argc!=3&&!recovery)fail("usage: side-census qualified.dol unmodified-recomp.so [--recovery] < qualified-inputs");
+    const bool support=argc==4&&!std::strcmp(argv[3],"--support");
+    if(argc!=3&&!recovery&&!support)
+        fail("usage: side-census qualified.dol unmodified-recomp.so [--recovery|--support] < qualified-inputs");
     std::array<u8,21504> collision{};
     if(std::fread(collision.data(),1,collision.size(),stdin)!=collision.size())fail("side census common collision input extent");
+    ReceiverInput sasuke{};
+    if(support&&(std::fread(sasuke.hit.data(),1,sasuke.hit.size(),stdin)!=sasuke.hit.size()||
+                 std::fread(sasuke.spec.data(),1,sasuke.spec.size(),stdin)!=sasuke.spec.size()))
+        fail("side census support input extent");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     for(unsigned n=2419;n<=2479;++n){
         std::array<u8,8> header{};
@@ -414,7 +529,7 @@ int main(int argc,char** argv){
         if(size<6144||size>(1u<<18))fail("side census archive input size");
         std::vector<u8> side(size);
         if(std::fread(side.data(),1,size,stdin)!=size)fail("side census archive input extent");
-        Census(mod,original).run(n,side,collision,recovery);
+        Census(mod,original).run(n,side,collision,recovery,support?&sasuke:nullptr);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("side census unexpected input suffix");
 }
