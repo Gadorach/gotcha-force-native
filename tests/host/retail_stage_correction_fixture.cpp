@@ -9,12 +9,20 @@ constexpr u32 body=contact::receiver,probe_cell=contact::body,capsule=probe_cell
 constexpr u32 stage=0x81048000,files=stage+0x800,grids=stage+0x1000;
 constexpr u32 stage_contacts=0x8002E1C8;
 constexpr u32 role08_count=0x8043B5A0-21334,role08_list=0x803C357C;
+constexpr u32 slots=0x803C4E84,seat_size=0x1E00;
 struct Case {bool wall;int begin,end;int attack_x=0;};
 constexpr Case cases[]{
     {false,130,130},{true,151,151},{true,150,150},{true,130,130},
     {true,100,100},{true,170,130},{true,170,90},
     {false,130,130,40},{true,130,130,40},{false,130,130,240},{true,130,130,240},
     {true,90,90},
+};
+struct LinkCase {bool wall;unsigned masks;u32 threshold;bool reverse=false,both=false,attack=false;};
+constexpr LinkCase linked_cases[]{
+    {false,15,0},{true,0,0},{true,14,0},{true,13,0},{true,11,0},{true,7,0},
+    {true,15,0},{true,15,0x47434FFF},{true,15,0x47435000},{true,15,0x47435001},
+    {true,15,0,true},{true,15,0,false,true},
+    {true,0,0,false,false,true},{true,15,0,false,false,true},
 };
 
 class Probe {
@@ -63,10 +71,32 @@ class Probe {
                 fail("declared stage grid did not relocate through the original reader");
         }
     }
-    void pose(float x){
-        constexpr u32 root=body+0x1AA4,joint=body+0x8D4+6*0x30;
-        put(body+0x20,x);put(root+12,x);
+    void pose(float x,u32 owner=body){
+        const u32 root=owner+0x1AA4,joint=owner+0x8D4+6*0x30;
+        put(owner+0x20,x);put(root+12,x);
         put(joint+12,x+12.f);
+    }
+    void bind_body(u32 owner,u32 block,u32 first,u32 damage_cell,u8 seat,const contact::HitBlock& hit){
+        at(owner)[0]=at(owner+0x18)[0]=1;
+        at(owner+0x3E4)[0]=at(owner+0x3E7)[0]=seat;
+        put16(at(owner+0x3E8),0x000A);put16(at(owner+0x1C4),180);put16(at(owner+0x1C6),180);
+        put(owner+0xC0,1.f);store(owner+0x90,owner);store(owner+0x27C,0x802D4160);store(owner+0x76C,1u|(1u<<6));
+        const u32 root=owner+0x1AA4,joint=owner+0x8D4+6*0x30;
+        for(unsigned axis=0;axis<3;++axis){put(root+20*axis,1.f);put(joint+20*axis,1.f);}
+        std::memcpy(at(block),hit.data(),hit.size());
+        const bool sphere=first!=damage_cell;
+        if(sphere){
+            at(block)[0]=1;at(block+1)[0]=11;at(block+2)[0]=255;
+            at(first+2)[0]=4;store(first+4,damage_cell);
+        }else{at(block)[0]=11;at(block+1)[0]=255;}
+        store(owner+0x3FC,block);
+        at(damage_cell+2)[0]=4;
+        store(contact::free_head+16,first);store(contact::free_tail+16,damage_cell);
+        put16(at(contact::free_count+8),sphere?2:1);
+        call(0x8008AB30,owner);
+        if(half(contact::free_count+8)||word(damage_cell+0x20)!=owner||
+           word(damage_cell+0x28)!=block+32+11*80)
+            fail("stage fixture did not bind the original capsule descriptor");
     }
     void walk(unsigned id,bool stale){
         constexpr u32 collision_walk=0x8002BB14,presentation=0x8005A580,kernel=0x80030A3C;
@@ -79,7 +109,6 @@ class Probe {
                 pose(std::bit_cast<float>(word(body+0x20)));
                 // Publish the retained caster shape without putting the
                 // declared caster in the enclosing walk's actor loop.
-                constexpr u32 slots=0x803C4E84;
                 const auto previous_seat0=word(slots);
                 store(slots,actor);
                 rebuild();
@@ -124,26 +153,101 @@ class Probe {
     }
 public:
     Probe(const Module& m,const std::vector<u8>& original):mod(m),ram(original){}
+    void run_linked(unsigned id,const entry::Attack& sasuke,const entry::Attack& tau){
+        constexpr u32 other=body+seat_size,other_block=0x81050000;
+        constexpr u32 other_sphere=capsule+0x200,other_capsule=other_sphere+0x200;
+        constexpr u32 propagate=0x8002CB20,writer=0x80035CA4,presentation=0x8005A580;
+        const auto spec=linked_cases[id];
+        stage_setup(spec.wall);
+        store(0x8043B5A0-31852,contact::scene);store(0x80436380,0x81033A00);
+        for(unsigned i=0;i<6;++i)store(slots+4*i,body-seat_size+i*seat_size);
+        const u32 source=spec.reverse?other:body,target=spec.reverse?body:other;
+        const u32 source_cell=capsule,target_cell=other_capsule;
+        const u8 source_seat=spec.reverse?2:1,target_seat=spec.reverse?1:2;
+        const u8 source_bit=u8(1u<<target_seat),target_bit=u8(1u<<source_seat);
+        bind_body(source,contact::body_block,probe_cell,source_cell,source_seat,sasuke.hit);
+        bind_body(target,other_block,spec.both?other_sphere:target_cell,target_cell,target_seat,sasuke.hit);
+        pose(130.f,source);pose(spec.both?140.f:250.f,target);
+        at(source+0x71E)[0]=(spec.masks&1)?source_bit:0;
+        at(target+0x71E)[0]=(spec.masks&2)?target_bit:0;
+        at(source+0x71F)[0]=(spec.masks&4)?source_bit:0;
+        at(target+0x71F)[0]=(spec.masks&8)?target_bit:0;
+        store(target+0x204,spec.threshold);
+        const auto dormant=word(slots);
+        if(spec.attack){
+            constexpr u32 sasuke_spec=0x81015400;
+            store(0x8043B5A0-31824,0x81019600);
+            store(0x8043B5A0-31856,0x8103E000);at(0x8103E000+12)[0]=1;
+            at(0x803D3AE8+852)[0]=1;
+            std::memcpy(at(sasuke_spec),sasuke.spec.data(),sasuke.spec.size());
+            store(0x803C4D94+4*target_seat,sasuke_spec);
+            call(0x8006F4F8,target);
+            if(word(target+0x4B0)!=0x802D3EE0||word(target+0x4AC)!=sasuke_spec||word(target+0x27C)!=0x802D4160)
+                fail("linked correction did not install the original receiver factors");
+            put(target+0xB4,1.f);put(target+0xC4,1.f);put16(at(target+0x1C8),0xFFFF);
+            put16(at(0x803B069C+2*target_seat),180);
+            at(target+0x88)[0]=1;
+            for(unsigned i=0;i<3;++i){
+                store(contact::scene+60*i+0x114,100);store(contact::scene+60*i+0x118,100);
+                store(0x803B068C+4*i,100);
+            }
+            entry::bind_attack_at(mod,ram,tau,entry::routes[0],1,{360.f,0,0},actor);
+        }
+        rebuild();
+        store(slots,dormant);
+        if(half(role08_count)!=(spec.both?2:1)||half(contact::receiver_count)!=2||
+           word(source+0x1CC)||word(target+0x1CC)||at(source+0x1DD)[0]||at(target+0x1DD)[0]||
+           half(entry::ordinary_count)!=unsigned(spec.attack)||(spec.attack&&
+           (word(entry::ordinary_attack_list)!=entry::attack_cell||half(actor+0x26C)!=1)))
+            fail("linked correction did not start with exactly the declared original shape roles");
+
+        auto fork=ram;
+        call(stage_contacts);
+        const auto source_stage=word(source+0x1CC),target_stage=word(target+0x1CC);
+        CPUState copy{};CallObservation moves{writer};
+        mod.run_observed(copy,ram,propagate,moves,4096);
+        if(moves.count>1||(moves.count&&(moves.caller!=(spec.reverse?0x8002CC34:0x8002CC08)||
+           moves.arguments[0]!=target||moves.arguments[1]!=source+0x1CC)))
+            fail("linked correction called the writer with the wrong operands");
+        const auto source_raw=word(source_cell+0x64),target_raw=word(target_cell+0x64);
+        call(0x8002CE44);
+        const auto state=[&](){
+            return std::array{word(source+0x20),word(target+0x20),word(source+0x1CC),word(target+0x1CC),
+                              word(source_cell+0x64),word(target_cell+0x64),word(target_cell+0x8C),word(target_cell+0x98)};
+        };
+        const auto isolated=state();
+        ram.swap(fork);
+        if(spec.attack)fork=ram;
+        CPUState walk_cpu{};CallObservation hp{contact::hp_write};
+        const auto cut=mod.run_to_or_return(walk_cpu,ram,0x8002BB14,{presentation,0x80264290},&hp,65536);
+        if(cut!=presentation||walk_cpu.lr!=0x8002C870||walk_cpu.gpr[3]!=body||
+           state()!=isolated||half(source+0x1C6)!=180||half(source+0x20C)||
+           hp.count>unsigned(spec.attack)||(hp.count&&(hp.caller!=0x8002F1D8||hp.arguments[0]!=target||hp.arguments[1]!=17))||
+           half(target+0x1C6)!=180-17*hp.count||half(target+0x20C)!=hp.count)
+            fail("enclosing walk did not reproduce the isolated linked correction");
+        std::printf("linked-correction: %u %08X %08X %u %08X %08X %08X",id,source_stage,target_stage,
+                    moves.count,moves.caller,source_raw,target_raw);
+        for(auto value:isolated)std::printf(" %08X",value);
+        std::printf(" %u %u\n",at(source+0x1DD)[0],at(target+0x1DD)[0]);
+        if(spec.attack){
+            constexpr u32 kernel=0x80030A3C,scratch=0x803B0368;
+            CPUState narrow{};
+            const auto next=mod.run_to_or_return(narrow,fork,0x8002BB14,{kernel,presentation,0x80264290},nullptr,65536);
+            if(next!=(hp.count?kernel:presentation)||(next==kernel&&
+               (narrow.lr!=0x800304F0||narrow.gpr[3]!=0x803B04D0||narrow.gpr[4]!=scratch)))
+                fail("linked correction did not reach the expected original damage kernel");
+            const auto endpoint=[&](u32 offset){return next==kernel?be32(contact::at(fork,scratch+offset)):0;};
+            std::printf("linked-pair: %u %u %08X %08X %u %u %u\n",id,unsigned(next==kernel),
+                        endpoint(0x34),endpoint(0x40),hp.count,half(target+0x1C6),half(target+0x20C));
+        }
+    }
     void run(unsigned id,const entry::Attack& sasuke,const entry::Attack& tau,bool enclosing=false,bool stale=false){
         const auto spec=cases[id];
         stage_setup(spec.wall);
         store(0x8043B5A0-31852,contact::scene);store(0x80436380,0x81033A00);
-        for(unsigned i=0;i<6;++i)store(0x803C4E84+4*i,body-0x1E00+i*0x1E00);
-        at(body)[0]=at(body+0x18)[0]=1;
-        at(body+0x3E4)[0]=at(body+0x3E7)[0]=1;
-        put16(at(body+0x3E8),0x000A);put16(at(body+0x1C4),180);put16(at(body+0x1C6),180);
-        put(body+0xC0,1.f);store(body+0x90,body);store(body+0x27C,0x802D4160);store(body+0x76C,1u|(1u<<6));
-        constexpr u32 root=body+0x1AA4,joint=body+0x8D4+6*0x30;
-        for(unsigned axis=0;axis<3;++axis){put(root+20*axis,1.f);put(joint+20*axis,1.f);}
-        std::memcpy(at(contact::body_block),sasuke.hit.data(),sasuke.hit.size());
-        at(contact::body_block)[0]=1;at(contact::body_block+1)[0]=11;at(contact::body_block+2)[0]=255;
-        store(body+0x3FC,contact::body_block);
-        at(probe_cell+2)[0]=at(capsule+2)[0]=4;
-        store(probe_cell+4,capsule);store(contact::free_head+16,probe_cell);store(contact::free_tail+16,capsule);
-        put16(at(contact::free_count+8),2);
-        call(0x8008AB30,body);
+        for(unsigned i=0;i<6;++i)store(slots+4*i,body-seat_size+i*seat_size);
+        bind_body(body,contact::body_block,probe_cell,capsule,1,sasuke.hit);
         pose(float(spec.begin));
-        constexpr u32 slots=0x803C4E84;
         const auto original_first=word(slots);
         if(spec.attack_x){
             store(0x8043B5A0-31824,0x81019600);
@@ -224,7 +328,9 @@ public:
 
 int main(int argc,char** argv){
     const bool enclosing=argc==4&&!std::strcmp(argv[3],"--collision-walk");
-    if(argc!=3&&!enclosing)fail("usage: stage-correction-fixture qualified.dol unmodified-recomp.so [--collision-walk] < qualified-roles");
+    const bool linked=argc==4&&!std::strcmp(argv[3],"--linked-correction");
+    if(argc!=3&&!enclosing&&!linked)
+        fail("usage: stage-correction-fixture qualified.dol unmodified-recomp.so [--collision-walk|--linked-correction] < qualified-roles");
     entry::Attack sasuke{},tau{};
     for(auto* assets:{&sasuke,&tau}){
         if(std::fread(assets->hit.data(),1,assets->hit.size(),stdin)!=assets->hit.size()||
@@ -234,6 +340,10 @@ int main(int argc,char** argv){
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stage correction input");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
+    if(linked){
+        for(unsigned i=0;i<std::size(linked_cases);++i)Probe(mod,original).run_linked(i,sasuke,tau);
+        return 0;
+    }
     for(unsigned i=0;i<std::size(cases);++i){
         if(!enclosing)Probe(mod,original).run(i,sasuke,tau);
         else if(cases[i].attack_x)for(bool stale:{false,true})Probe(mod,original).run(i,sasuke,tau,true,stale);

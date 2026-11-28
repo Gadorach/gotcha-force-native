@@ -2900,6 +2900,43 @@ python3 -m tools.analyze.retail_stage_collision_walk \
   /tmp/opencode/gf-stage-collision-walk.json
 ```
 
+### Linked correction: a wall response can move a second actor
+
+The [linked-correction replay](api-map/gg4e08-linked-correction.json)
+uses two declared seats with Sasuke’s normal collision shapes. The
+wall gives the first actor a **+20** correction at **X=130**.
+The second actor starts at **X=250** with an ordinary damage
+capsule but no stage sphere, so it receives no direct wall correction.
+
+- The original walk calls `8002CB20` just after the stage solver.
+  When each actor names the other in **both** `+0x71E` and `+0x71F`,
+  the pass gives the second actor the same **+20**. Removing any one
+  of the four bits prevents transfer. Reversing the seats uses the
+  other writer call site and gives the same result.
+- The tested target `+0x204` gate admits the binary32 predecessor
+  of **50,000**, but refuses **50,000** and its successor. When
+  both actors get their own wall corrections (**+20** and **+10**),
+  neither copies the other’s.
+- The transfer moves the second actor’s root and broad center to
+  **270**. The allocated capsule endpoints remain **235/265**.
+  Tau at **X=360** misses without the link; with it, the original
+  narrow test uses scratch endpoints **255/285** and removes
+  **17 HP** from the second actor only.
+
+All **14** cases matched across O0/O1/O2, and both earlier stage
+receipts reproduced byte-for-byte. The fixture declares the link
+bits; it does not qualify how retail actions establish or maintain
+them, longer chains, live arenas, hardware, or native gameplay.
+
+Use the same fixture as above:
+
+```sh
+python3 -m tools.analyze.retail_linked_correction \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-correction "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-linked-correction.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
