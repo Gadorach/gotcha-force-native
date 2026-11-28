@@ -397,6 +397,8 @@ struct BorgGameplayProfile {
     u16 beam_recovery=0;
     u8 air_jump_points=0;
     u8 air_action_budget=0; // combined jump + air-dash budget; zero keeps the jump-only rule
+    bool air_dash_seeds_point=false;
+    bool air_points_reset_next_grounded=false;
     f32 pose_ground_offset=0; // authored presentation shift for a floating rig; zero leaves the pose
     // Recovered contact scale: credit factor, battle scalar, receiver rank,
     // relative. All default to 1, so a package that does not declare them is
@@ -713,6 +715,8 @@ inline bool borg_gameplay_profile_valid(const BorgGameplayProfile& p){
        p.anchor_sets.size()>kBorgBattleAnchorSets||(!p.anchor_sets.empty()&&p.movement!=BorgBattleMovement::Grounded)||
        p.movement_fx.size()>kBorgBattleMovementFx||(!p.movement_fx.empty()&&p.movement==BorgBattleMovement::Stationary)||
        p.air_jump_points>8||(p.air_jump_points&&p.movement!=BorgBattleMovement::Grounded)||
+       ((p.air_dash_seeds_point||p.air_points_reset_next_grounded)&&(!p.air_jump_points||p.cruise))||
+       (p.air_dash_seeds_point&&(p.dash_disabled||p.air_dash_disabled))||
        p.air_action_budget>8||(p.air_action_budget&&(p.movement!=BorgBattleMovement::Grounded||
                                                     p.air_jump_points||p.flight_ticks||p.cruise))||
        (p.flight_ticks?(p.movement!=BorgBattleMovement::Grounded||p.air_jump_points||p.flight_ticks>120||
@@ -1434,6 +1438,13 @@ inline bool borg_read_gameplay_profile(std::string_view text,BorgGameplayProfile
             u16 count=0;
             if(next.air_jump_points||!number(value,1,8,&count))return fail("invalid or duplicate air-jump count");
             next.air_jump_points=u8(count);
+        }else if(key=="air-dash-point"){
+            if(next.air_dash_seeds_point||value!="seed-if-zero")return fail("invalid or duplicate air-dash point policy");
+            next.air_dash_seeds_point=true;
+        }else if(key=="air-point-reset"){
+            if(next.air_points_reset_next_grounded||value!="next-grounded-update")
+                return fail("invalid or duplicate air-point reset policy");
+            next.air_points_reset_next_grounded=true;
         }else if(key=="pose-ground-offset"){
             if(!scalar(value,-1000.f,1000.f,&next.pose_ground_offset))
                 return fail("invalid pose-ground offset");

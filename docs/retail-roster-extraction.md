@@ -1226,6 +1226,22 @@ authored hit and debit stay unchanged and that only native slot return moves
 from update 0 to update 3. Authored time, damage, sockets and collision proxies
 are not replaced by this binding.
 
+#### Sasuke air-points test
+
+Add `--sasuke-air-points-test` to a fresh `--basic-shot-test` extraction to
+replace `air-action-budget=3` with separate jump points, zero-count dash
+seeding, and a next-grounded-update reset. Only the exact archive member for
+normal Sasuke (`000A/0`) is eligible. Other packages and extra forms do not
+inherit it. The result is still an authored Battle Test; see the
+[source and native comparison](sasuke-air-points-checkpoint.md).
+
+```sh
+python3 -B -m tools.extract.retail_borg_roster "$GF_CATALOG" \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  local/sasuke-air-points --role-clips --source-pace --action-clips \
+  --basic-shot-test --sasuke-air-points-test
+```
+
 #### Machine Red projectile speed ramp test
 
 Add `--projectile-speed-ramp-test` to a fresh `--basic-shot-test`

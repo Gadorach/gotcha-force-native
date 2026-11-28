@@ -27,7 +27,7 @@ struct Assets {
     std::vector<u8> motion,view;
 };
 struct AreaAssets {std::array<u8,21504> collision;archive::Source view;};
-enum class Run {entry,bomb,area,reaction,cascade,terminal,melee};
+enum class Run {entry,bomb,area,reaction,cascade,terminal,melee,sasuke_air};
 constexpr u32 fighter(unsigned seat){return actors+seat*actor_stride;}
 constexpr u32 one=0x3F800000,negative_rate=0xBD4CCCCD;
 constexpr u32 parent_amount=0x80336418,child_amount=0x802C49D0;
@@ -786,19 +786,19 @@ class Replay {
             }
         }
     }
-    void melee_visit(){
+    void opened_actor_visit(){
         CPUState cpu{};
         const auto cut=mod.run_to_or_return(cpu,ram,scheduler::dispatch,{body_pass_end,0x80264290},nullptr,1u<<20);
         if(cut!=body_pass_end||cpu.lr!=0x80029490){
-            std::fprintf(stderr,"melee actor cutoff=%08X lr=%08X info=%08X\n",cut,cpu.lr,cpu.gpr[4]);
-            fail("melee original actor dispatch left the supported prefix");
+            std::fprintf(stderr,"scoped actor cutoff=%08X lr=%08X info=%08X\n",cut,cpu.lr,cpu.gpr[4]);
+            fail("original actor dispatch left the supported prefix");
         }
         rebuild();
     }
     void observe_melee(){
         unsigned opening=0;
         for(unsigned n=1;n<=224;++n){
-            melee_visit();
+            opened_actor_visit();
             if(byte(scene+69)==4){opening=n;break;}
         }
         if(!opening||half(fighter(0)+0x1C6)!=60||half(fighter(1)+0x1C6)!=60)
@@ -811,7 +811,7 @@ class Replay {
             for(unsigned i=1;i<=40;++i){
                 store(pad,i==8?0x200:0);
                 store(pad+32,scenario&&i==1?0x200:0);
-                melee_visit();
+                opened_actor_visit();
                 std::array<unsigned,2> attacks{},allocated{255,255};
                 const auto owns_strike=[&](u32 cell,u32 owner){
                     return word(cell+0x28)==word(owner+0x3FC)+0xAA0+2*80;
@@ -888,6 +888,95 @@ class Replay {
             }
         }
     }
+    void observe_sasuke_air(){
+        constexpr u32 a=fighter(0),cache=0x87,count=0x747,policy=0x7CD,meter=0x736;
+        constexpr u32 selector=0x5E4,pulse=0x5D4,ready=0x588,flags=0x5E0,local_gate=0x544;
+        unsigned opening=0;
+        for(unsigned n=1;n<=224;++n){
+            opened_actor_visit();
+            if(byte(scene+69)==4){opening=n;break;}
+        }
+        const auto spec=word(a+0x4AC);
+        if(opening!=174||!spec||half(a+0x3E8)!=10||f(0,0x661)||f(0,policy)||byte(spec+0x9F)!=3||
+           half(a+meter)!=10000||f(0,count))
+            fail("Sasuke air-point probe needs the initialized normal count policy");
+        std::printf("sasuke-air-start: %u %u %u %u %u\n",opening,f(0,0x661),f(0,policy),byte(spec+0x9F),half(a+meter));
+        const auto opened=ram;
+        const auto run_lower=[&](unsigned select,u32 entry,u32 callee,u32 caller,bool already_selected=false){
+            if(!already_selected){
+                CPUState select_cpu{};select_cpu.gpr[3]=a;select_cpu.gpr[4]=select;
+                mod.run(select_cpu,ram,0x8006A750,4096);
+                if(select_cpu.gpr[3]!=1)fail("declared Sasuke lower state refused");
+            }
+            if(f(0,selector)!=select||f(0,local_gate)||
+               word(0x802D37A8+4*f(0,0x5DB))!=entry)
+                fail("Sasuke air-point selector no longer binds its exact lower handler");
+            CPUState cpu{};cpu.gpr[3]=a;
+            const auto cut=mod.run_to_or_return(cpu,ram,entry,{callee,0x80264290},nullptr,4096);
+            if(cut!=callee||cpu.lr!=caller+4||cpu.gpr[3]!=a){
+                std::fprintf(stderr,"air-point entry selector=%u cut=%08X lr=%08X\n",select,cut,cpu.lr);
+                fail("Sasuke air-point entry escaped its original prefix");
+            }
+        };
+        run_lower(4,0x8005F978,0x8004BEB8,0x8005FA1C);
+        std::printf("sasuke-air-entry: 4 0 %u %u %u\n",f(0,count),half(a+meter),f(0,cache));
+        ram=opened;
+        run_lower(5,0x8005FAF0,0x80066AC0,0x8005FB60);
+        std::printf("sasuke-air-entry: 5 0 %u %u %u\n",f(0,count),half(a+meter),f(0,cache));
+        for(unsigned used=0;used<=3;++used){
+            for(unsigned flick=0;flick<2;++flick){
+                ram=opened;
+                at(a+count)[0]=u8(used);at(a+cache)[0]=1;at(a+selector)[0]=6;
+                store(a+flags,0x40);store16(a+0x5D8,u16(flick?0x21:0));
+                CPUState dash{};dash.gpr[3]=a;
+                mod.run(dash,ram,0x800693FC,4096);
+                if(dash.gpr[3]!=flick||f(0,selector)!=(flick?15:6)||f(0,count)!=used||half(a+0x5D8)!=flick)
+                    fail("Sasuke air dash selector spent points or changed the flick gate");
+                std::printf("sasuke-air-dash-gate: %u %u %u %u %u\n",used,flick,dash.gpr[3],f(0,count),half(a+0x5D8));
+                if(flick){
+                    run_lower(15,0x80061338,0x80066AC0,0x800613A0,true);
+                    std::printf("sasuke-air-entry: 15 %u %u %u %u\n",used,f(0,count),half(a+meter),f(0,cache));
+                }
+            }
+        }
+        for(unsigned active=0;active<2;++active)for(unsigned used=0;used<=3;++used)
+            for(unsigned admitted=0;admitted<2;++admitted)for(unsigned inhibit=0;inhibit<3;++inhibit){
+                ram=opened;
+                at(a+selector)[0]=u8(active?16:6);
+                at(a+cache)[0]=1;
+                at(a+count)[0]=u8(used);
+                at(a+ready)[0]=u8(admitted);
+                store(a+pulse,inhibit==1?0:2);
+                store(a+flags,0x40|(inhibit==2?2:0));
+                CPUState test{};test.gpr[3]=a;
+                mod.run(test,ram,active?0x800692BC:0x80069210,4096);
+                const unsigned accepted=unsigned((active||admitted)&&used<3&&!inhibit);
+                if(test.gpr[3]!=accepted||f(0,selector)!=(accepted?8:active?16:6)||f(0,count)!=used)
+                    fail("Sasuke relaunch request changed its count, latch or priority boundary");
+                std::printf("sasuke-air-gate: %u %u %u %u %u %u\n",active,used,admitted,inhibit,accepted,f(0,count));
+                if(accepted&&active&&admitted==0&&inhibit==0){
+                    run_lower(8,0x80060454,0x8004BEB8,0x80060548,true);
+                    std::printf("sasuke-air-entry: 8 %u %u %u %u\n",used,f(0,count),half(a+meter),f(0,cache));
+                }
+            }
+        for(unsigned used:{1u,3u}){
+            ram=opened;
+            at(a+count)[0]=u8(used);at(a+cache)[0]=1;
+            store(a+flags,word(a+flags)|0x40);
+            const auto resource=[&]{
+                CPUState cpu{};cpu.gpr[3]=a;
+                const auto cut=mod.run_to_or_return(cpu,ram,0x80055568,{0x80059068,0x80264290},nullptr,4096);
+                if(cut!=0x80059068||cpu.lr!=0x8005559C||cpu.gpr[3]!=a)
+                    fail("Sasuke resource branch left the wrapper before input");
+            };
+            resource();
+            const auto airborne=f(0,count);
+            run_lower(7,0x80060228,0x8004BEB8,0x80060294);
+            const auto landed=f(0,count),cleared=f(0,cache);
+            resource();
+            std::printf("sasuke-air-land: %u %u %u %u %u %u\n",used,airborne,landed,cleared,f(0,count),half(a+meter));
+        }
+    }
 public:
     Replay(const Module& m,const std::vector<u8>& original,const std::array<Assets,2>& assets,const AreaAssets* area,bool melee_mode=false):
         mod(m),ram(original),melee(melee_mode){
@@ -895,6 +984,7 @@ public:
     }
     void observe(Run mode){
         if(melee){observe_melee();return;}
+        if(mode==Run::sasuke_air){observe_sasuke_air();return;}
         const bool world=mode!=Run::entry;
         const auto start=ram;
         for(unsigned delay:{0u,10u}){
@@ -965,10 +1055,11 @@ int main(int argc,char** argv){
     if(argc==4&&!std::strcmp(argv[3],"--world-cascade"))mode=Run::cascade;
     if(argc==4&&!std::strcmp(argv[3],"--world-terminal"))mode=Run::terminal;
     if(argc==4&&!std::strcmp(argv[3],"--melee-interrupt"))mode=Run::melee;
+    if(argc==4&&!std::strcmp(argv[3],"--sasuke-air-points"))mode=Run::sasuke_air;
     if(argc!=3&&mode==Run::entry)
-        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt] < qualified-roles");
+        fail("usage: dual-scene-entry-fixture qualified.dol unmodified-recomp.so [--world-bomb|--world-area|--world-reaction|--world-cascade|--world-terminal|--melee-interrupt|--sasuke-air-points] < qualified-roles");
     const bool melee=mode==Run::melee;
-    const bool area=mode!=Run::entry&&mode!=Run::bomb&&!melee;
+    const bool area=mode!=Run::entry&&mode!=Run::bomb&&mode!=Run::sasuke_air&&!melee;
     std::array<Assets,2> assets{};
     const auto read=[](auto& field){
         if(std::fread(field.data(),1,field.size(),stdin)!=field.size())fail("dual scene asset extent");

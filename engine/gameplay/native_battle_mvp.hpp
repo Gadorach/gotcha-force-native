@@ -1790,6 +1790,8 @@ public:
         std::array<BattleMvpVec,kBattleMvpMaxActors> before{};
         for(unsigned i=0;i<actor_count();++i){
             previously_grounded[i]=actors_[i].grounded;
+            if(actors_[i].health&&previously_grounded[i]&&config_.packages[i]&&config_.packages[i]->air_points_reset_next_grounded)
+                actors_[i].package_air_points_used=0;
             package_interrupted[i]=actors_[i].hit_flash!=0;
             before[i]=actors_[i].position;
         }
@@ -1887,7 +1889,8 @@ public:
                 if(actor.position[1]<=ground[i]){
                     actor.position[1]=ground[i];actor.vertical_speed=0;actor.grounded=true;
                     actor.landing_ticks=BattleMvpActor::landing_duration;actor.takeoff_ticks=actor.dash_ticks=0;
-                    actor.air_dashes_used=actor.package_air_points_used=actor.package_flight_used=0;
+                    actor.air_dashes_used=actor.package_flight_used=0;
+                    if(!definition||!definition->air_points_reset_next_grounded)actor.package_air_points_used=0;
                     actor.lab_air_windup_ticks=actor.lab_air_recovery_ticks=actor.lab_glide_entry_ticks=0;actor.lab_gliding=false;
                 }
             }
@@ -1913,6 +1916,12 @@ public:
                 const f32 front=dash.x*actor.facing.x+dash.z*actor.facing.z,side=-dash.x*actor.facing.z+dash.z*actor.facing.x;
                 actor.dash_motion=std::abs(side)>std::abs(front)?(side<0?BattleMvpDashDirection::Left:BattleMvpDashDirection::Right):(front<0?BattleMvpDashDirection::Backward:BattleMvpDashDirection::Forward);
                 actor.dash_direction=dash;
+                if(!actor.grounded&&definition&&definition->air_dash_seeds_point){
+                    u8 used=0;
+                    if(!character_air_point_entry({definition->air_jump_points,true},actor.package_air_points_used,
+                                                  AirPointEntry::DashWindup,&used)){ready_=false;return false;}
+                    actor.package_air_points_used=used;
+                }
                 if(lab_air&&!actor.grounded){
                     actor.lab_air_windup_ticks=BattleMvpActor::lab_air_windup;++actor.air_dashes_used;
                 }else{

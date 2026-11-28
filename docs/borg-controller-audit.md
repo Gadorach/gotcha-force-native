@@ -326,6 +326,10 @@ endpoints.
 
 ### Takeoff, relaunch and landing
 
+The later [air-point checkpoint](sasuke-air-points-checkpoint.md) compares
+the loaded original count edges to the native opt-in, without replacing the
+native input or pose scheduler.
+
 | Event | Recovered ownership and order |
 | --- | --- |
 | Ground takeoff | The conditioned input requests selector 4. The takeoff pose begins without spending a point. Its lower-lane handoff selects 5; ascent entry (`8005FB54`) increments **points used**. |

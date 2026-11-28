@@ -895,9 +895,21 @@ movement-sound=landing|audio/landing.pcm
 duration `0` and follow the accepted pose while vertical speed is positive.
 Other cues are single accepted transitions: they capture the effect's
 bone position and last 1–60 ticks. Pausing doesn't duplicate a pulse and
-restart clears it. `air-jump-points=N` is an opt-in for native grounded
-movement; takeoff uses the first point and landing resets the count.
-Sasuke's normal test profile uses three points, not his recovered controller.
+restart clears it. `air-jump-points=N` enables a jump-only count for native
+grounded movement (1–8). Takeoff uses the first point and, by default, landing
+resets the count immediately. `air-action-budget=N` instead shares a count
+between jumps and air dashes; the two declarations are mutually exclusive.
+
+Two optional rows require `air-jump-points`:
+
+- `air-dash-point=seed-if-zero` makes an accepted air dash set the used count
+  to one if it was zero. It leaves nonzero counts and dash admission unchanged.
+  It refuses profiles with air dash disabled.
+- `air-point-reset=next-grounded-update` keeps the count on the landing update
+  and clears it before input on the next grounded update.
+
+These rows reproduce the [scoped Sasuke count edges](sasuke-air-points-checkpoint.md),
+not his original jump requests, animation clocks, or dash trajectory.
 
 `action-sound=move|path` attaches one bounded PCM clip to a move; it plays once
 when that move's start is accepted, through the same one-shot voice pool as the

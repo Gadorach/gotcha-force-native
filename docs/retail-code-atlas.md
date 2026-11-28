@@ -2209,6 +2209,17 @@ python3 -m tools.analyze.retail_dual_scene_entry \
   /tmp/opencode/gf-dual-scene-entry.json
 ```
 
+### Loaded Sasuke: air-point account boundaries
+
+The [air-point replay](api-map/gg4e08-sasuke-air-points.json) reuses the
+normal seat-0 actor after the barrier opens. It runs bounded request gates and
+lower entry prefixes, not a continuous source match. `80069210` and
+`800692BC` gate the relaunch request; its spend occurs later at `80060504`.
+Dash gate `800693FC` selects wind-up without spending, and wind-up seeds
+only zero at `80061370`. The landing/reset case runs `80060228` before the
+next grounded resource prefix through `80055AA0`. See the
+[native comparison](sasuke-air-points-checkpoint.md) for the limited binding.
+
 ### World callbacks: Time Bomber's first B through natural expiry
 
 The [world replay](api-map/gg4e08-scene-bomb-world.json) retains the

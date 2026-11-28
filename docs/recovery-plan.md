@@ -131,10 +131,15 @@ not a dependency of an ordinary combat/movement checkpoint.
   cancels before payload, but it never allocated a window at entry. The
   refreshed Workshop audit ran all 206 on authored movement and found four
   pre-payload melee interruptions and one after Roach's emission.
-- **Next:** start with Sasuke's jump-point spend, air dash and grounded reset.
-  Compare accepted, refused and refill visits with native movement before
-  adjusting the package. Keep air-dash admission, jump points, and landing
-  distinct. Then take the next shared movement family from step 2.
+- **Landed:** the [normal Sasuke comparison](sasuke-air-points-checkpoint.md)
+  separates jump requests, spends, air-dash seeding and grounded reset. Only
+  the count rules enter the optional normal package. The source pose and
+  input scheduler remain separate from the native movement.
+- **Next:** compare the normal G-Red meter route with the native offer path.
+  Choose one lift → dash → grounded recovery sequence and a refusal control,
+  and identify which resource and contact edges are already matched before
+  considering new bindings. Then take a representative airborne family from
+  step 2.
 - **Hold until a decision depends on it:** another side-prop census; the
   absent-support terrain fallback past the unresolved external read;
   live group 26 (direct bind is verified, no proved trigger);
