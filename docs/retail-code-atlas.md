@@ -2862,6 +2862,44 @@ python3 -m tools.analyze.retail_stage_correction \
   /tmp/opencode/gf-stage-correction.json
 ```
 
+### Enclosing collision walk: reset, resolve, then admit damage
+
+The [collision-walk replay](api-map/gg4e08-stage-collision-walk.json)
+runs original `8002BB14` from entry to the call at `8002C86C`,
+stopping before `8005A580`. This time the walk itself orders the
+actor reset, stage solver, broad-center pass, ordinary pair, and
+the admitted hit reaction.
+
+- Seeding **−64** and the contact flags before visit one leaves the
+  results unchanged: the empty grid yields **0**, and the wall
+  regenerates **+20**. The same two Tau placements yield the same
+  opposing hit/miss results as in the isolated replay.
+- Visit two declares matrices at the previous output root, then
+  runs the original shape rebuild. With the wall, the root stays
+  at **150**: the incoming **+20** resets, and tangent contact
+  sets the contact flags with **0** displacement.
+- The capsule’s broad field changes from **22** to **484** on the
+  next rebuild. Both first-visit misses now reach narrow but still
+  miss the current capsule. After either first-visit hit, the next
+  rebuild instead has mask **`0x43`** and guard **60**: Tau’s attack
+  still publishes, but the ordinary receiver does not. No second HP
+  write occurs; this does not establish duplicate-token rejection.
+
+All **16 visits** matched across O0/O1/O2, and the isolated stage
+receipt reproduced byte-for-byte. The visits use declared rigid
+poses and an authored STIH wall, not two original scene ticks or
+a retail arena. Presentation, hardware, and native gameplay are
+outside this replay.
+
+Use the same fixture as above:
+
+```sh
+python3 -m tools.analyze.retail_stage_collision_walk \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/stage-correction "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-stage-collision-walk.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

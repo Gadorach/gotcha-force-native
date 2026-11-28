@@ -68,9 +68,63 @@ class Probe {
         put(body+0x20,x);put(root+12,x);
         put(joint+12,x+12.f);
     }
+    void walk(unsigned id,bool stale){
+        constexpr u32 collision_walk=0x8002BB14,presentation=0x8005A580,kernel=0x80030A3C;
+        constexpr u32 receiver_scratch=0x803B0368,attack_scratch=0x803B04D0;
+        if(stale){put(body+0x1CC,-64.f);at(body+0x1DD)[0]=1;at(body+0x274)[0]=1;}
+        for(unsigned visit=1;visit<=2;++visit){
+            if(visit==2){
+                // Declare the next rigid pose at the root produced by the
+                // previous collision prefix, not another original actor tick.
+                pose(std::bit_cast<float>(word(body+0x20)));
+                // Publish the retained caster shape without putting the
+                // declared caster in the enclosing walk's actor loop.
+                constexpr u32 slots=0x803C4E84;
+                const auto previous_seat0=word(slots);
+                store(slots,actor);
+                rebuild();
+                store(slots,previous_seat0);
+            }
+            const auto previous=word(body+0x1CC),bound=word(capsule+0x7C);
+            const auto receivers=half(contact::receiver_count),attacks=half(entry::ordinary_count);
+            const auto role_mask=half(body+0x272);
+            const auto guard=word(body+0x720);
+            if(attacks!=1||word(entry::ordinary_attack_list)!=entry::attack_cell||half(actor+0x26C)!=1||
+               word(entry::attack_cell+0x64)!=std::bit_cast<u32>(float(cases[id].attack_x))||
+               word(entry::attack_cell+0x20)!=actor||word(entry::attack_cell+0x24)!=actor||
+               half(role08_count)!=1||word(role08_list)!=probe_cell||
+               word(capsule+0x20)!=body||word(capsule+0x28)!=contact::body_block+32+11*80||
+               receivers>1||(receivers&&word(contact::receiver_registry)!=capsule))
+                fail("stage walk did not retain the exact original attack and body shapes");
+            auto fork=ram;
+            CPUState inlet{};
+            const auto narrow=mod.run_to_or_return(inlet,fork,collision_walk,{kernel,presentation,0x80264290},nullptr,65536);
+            unsigned accepted=0;
+            u32 scratch_left=0,scratch_right=0;
+            if(narrow==kernel){
+                if(inlet.lr!=0x800304F0||inlet.gpr[3]!=attack_scratch||inlet.gpr[4]!=receiver_scratch)
+                    fail("stage walk changed the original capsule scratch dispatch");
+                scratch_left=be32(contact::at(fork,receiver_scratch+0x34));
+                scratch_right=be32(contact::at(fork,receiver_scratch+0x40));
+                CPUState solve{};solve.gpr[3]=attack_scratch;solve.gpr[4]=receiver_scratch;
+                mod.run(solve,fork,kernel,4096);accepted=unsigned(solve.gpr[3]!=0);
+            }else if(narrow!=presentation)fail("stage walk did not reach its narrow or presentation frontier");
+            CPUState cpu{};CallObservation hp{contact::hp_write};
+            const auto cut=mod.run_to_or_return(cpu,ram,collision_walk,{presentation,0x80264290},&hp,65536);
+            std::printf("stage-walk: %u %u %u %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %u %u %04X %08X %u %u %u %u %u %u %u %08X %08X\n",
+                        id,unsigned(stale),visit,cut,cpu.lr,previous,bound,word(body+0x20),word(body+0x1CC),word(probe_cell+0x64),
+                        word(capsule+0x64),word(capsule+0x8C),word(capsule+0x98),at(body+0x1DD)[0],at(body+0x274)[0],
+                        role_mask,guard,attacks,receivers,unsigned(narrow==kernel),accepted,hp.count,half(body+0x1C6),half(body+0x20C),
+                        scratch_left,scratch_right);
+            if(cut!=presentation||cpu.lr!=0x8002C870||cpu.gpr[3]!=body||
+               word(body+0x1D0)||word(body+0x1D4)||word(body+0x24)||word(body+0x28)||
+               (hp.count&&(hp.count!=1||hp.caller!=0x8002F1D8||hp.arguments[0]!=body||hp.arguments[1]!=17)))
+                fail("stage walk did not reach the presentation frontier with its exact HP path");
+        }
+    }
 public:
     Probe(const Module& m,const std::vector<u8>& original):mod(m),ram(original){}
-    void run(unsigned id,const entry::Attack& sasuke,const entry::Attack& tau){
+    void run(unsigned id,const entry::Attack& sasuke,const entry::Attack& tau,bool enclosing=false,bool stale=false){
         const auto spec=cases[id];
         stage_setup(spec.wall);
         store(0x8043B5A0-31852,contact::scene);store(0x80436380,0x81033A00);
@@ -97,6 +151,12 @@ public:
             at(0x803D3AE8+852)[0]=1;
             std::memcpy(at(0x81015400),sasuke.spec.data(),sasuke.spec.size());
             store(body+0x4AC,0x81015400);
+            if(enclosing){
+                store(0x803C4D94+4,0x81015400);
+                call(0x8006F4F8,body);
+                if(word(body+0x4B0)!=0x802D3EE0||word(body+0x4AC)!=0x81015400||word(body+0x27C)!=0x802D4160)
+                    fail("stage walk did not install the exact normal reaction banks");
+            }
             put(body+0xB4,1.f);put(body+0xC4,1.f);put16(at(body+0x1C8),0xFFFF);
             put16(at(0x803B069E),180);
             at(body+0x88)[0]=1;
@@ -114,6 +174,7 @@ public:
            word(probe_cell+0x88)!=std::bit_cast<u32>(50.f)||word(body+0x1CC)||at(body+0x1DD)[0])
             fail("stage correction did not retain the original source sphere and capsule");
         store(slots,original_first);
+        if(enclosing){walk(id,stale);return;}
         call(stage_contacts);
         if(spec.attack_x)store(slots,actor);
         const auto before=word(probe_cell+0x64),capsule_before=word(capsule+0x64);
@@ -162,7 +223,8 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    if(argc!=3)fail("usage: stage-correction-fixture qualified.dol unmodified-recomp.so < qualified-roles");
+    const bool enclosing=argc==4&&!std::strcmp(argv[3],"--collision-walk");
+    if(argc!=3&&!enclosing)fail("usage: stage-correction-fixture qualified.dol unmodified-recomp.so [--collision-walk] < qualified-roles");
     entry::Attack sasuke{},tau{};
     for(auto* assets:{&sasuke,&tau}){
         if(std::fread(assets->hit.data(),1,assets->hit.size(),stdin)!=assets->hit.size()||
@@ -172,5 +234,8 @@ int main(int argc,char** argv){
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("extra stage correction input");
     const auto original=load_ram(argv[1]);
     const Module mod(argv[2],original);
-    for(unsigned i=0;i<std::size(cases);++i)Probe(mod,original).run(i,sasuke,tau);
+    for(unsigned i=0;i<std::size(cases);++i){
+        if(!enclosing)Probe(mod,original).run(i,sasuke,tau);
+        else if(cases[i].attack_x)for(bool stale:{false,true})Probe(mod,original).run(i,sasuke,tau,true,stale);
+    }
 }
