@@ -3576,6 +3576,45 @@ python3 -m tools.analyze.retail_stage_side_rise_support \
   /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-rise-support.json
 ```
 
+### Scheduled side collision: old support survives geometry catch-up
+
+The [scheduled support replay](api-map/gg4e08-stage-side-scheduled-support.json)
+uses the original rebound plane (**237**) and box (**238**)
+from `set0202.arc`. It separates two original caller paths:
+
+- The normal caller (`80029434`) reaches `80053A2C` after
+  the prop’s local rise offset advances but **before** its
+  world root changes. Running the carry prefix separately
+  on that state admits carry without lifting Sasuke. This
+  probe does not resume the normal actor dispatcher.
+- The alternate updater (`80029708`) runs the original
+  bucket, world, shape publication and collision sequence;
+  it has no actor-update call. First-rise collision sees
+  the held geometry and writes a lower local anchor against
+  the raised matrix. Sasuke stays at the old height.
+- On step two, the geometry catches up. With retained
+  support, both collisions lift Sasuke from the old pose.
+  A fresh actor at the **same current and prior sphere Y**
+  reaches the same narrow kernel but acquires neither cell.
+  Posing the fresh actor near the new top acquires support
+  again.
+
+The supported cases stop before model refresh; their Y matches
+a separate landing probe. Unsupported cases stop before actor
+presentation and do not qualify the floor fallback. All ten
+scheduled probes and the two normal pre-world cuts matched
+across O0/O1/O2. The declared rigid poses and stage bounds,
+as well as the cut before the normal actor dispatcher, leave
+full arena scheduling, hardware, and native gameplay unverified.
+
+Use the same fixture as for the [side census](#original-side-placement-census-all-61-archives):
+
+```sh
+python3 -m tools.analyze.retail_stage_side_scheduled_support \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/side-census "$GF_RECOMP_MODULE" /tmp/opencode/gf-stage-side-scheduled-support.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

@@ -66,7 +66,13 @@ class Census {
         call(0x80089A94,40,observation);call(0x80089554);
         call(0x8008A28C);call(0x80089AEC);
     }
-    void bind_receiver(const ReceiverInput& sasuke,const contact::Point& pose){
+    void pose_receiver(const contact::Point& pose){
+        put_point(actor_body+0x20,pose);
+        rig(actor_body+0x1AA4,pose);
+        auto joint=pose;joint[0]+=12;
+        rig(actor_body+0x8D4+6*0x30,joint);
+    }
+    void bind_receiver(const ReceiverInput& sasuke,const contact::Point& pose,bool publish=true){
         std::memcpy(at(actor_bank),sasuke.hit.data(),sasuke.hit.size());
         at(actor_bank)[0]=0;at(actor_bank+1)[0]=11;at(actor_bank+2)[0]=255;
         std::memcpy(at(actor_spec),sasuke.spec.data(),sasuke.spec.size());store(0x803C4D94,actor_spec);
@@ -74,13 +80,10 @@ class Census {
         put16(at(actor_body+0x3E8),0x000A);put16(at(actor_body+0x1C4),180);put16(at(actor_body+0x1C6),180);
         store(actor_body+0x3FC,actor_bank);store(actor_body+0x90,actor_body);store(actor_body+0x76C,1|(1u<<6));
         for(u32 field:{0xB4u,0xB8u,0xC0u,0xC4u})put_float(at(actor_body+field),1.f);
-        put_point(actor_body+0x20,pose);
-        rig(actor_body+0x1AA4,pose);
-        auto joint=pose;joint[0]+=12;
-        rig(actor_body+0x8D4+6*0x30,joint);
+        pose_receiver(pose);
         call(0x8006F4F8,actor_body);
         call(0x8008AB30,actor_body);
-        for(unsigned i=0;i<2;++i){call(0x8008A28C);call(0x80089AEC);}
+        if(publish)for(unsigned i=0;i<2;++i){call(0x8008A28C);call(0x80089AEC);}
     }
     void bind_support_grid(){
         const auto retained_side=word(stage_files+24);
@@ -115,14 +118,15 @@ class Census {
         }else fail("side support original role-20 kind changed");
         return top;
     }
+    static u32 sampled_support_cell(const CPUState& cpu){
+        if(cpu.lr!=0x80030410||cpu.gpr[3]!=0x803B04D0||cpu.gpr[4]!=0x803B0368)
+            fail("side support reached another original narrow caller");
+        return be32(cpu.ram+(0x803B036C-GC_RAM_BASE));
+    }
     std::pair<unsigned,unsigned> support_walk(u32 cell,u32 owner){
         CPUState walk{};std::copy(gqr.begin(),gqr.end(),std::begin(walk.gqr));
         CallObservation narrow{word(cell+0x58)==4?0x80035698u:0x800350F8u};
-        narrow.sample=[](const CPUState& cpu)->u32{
-            if(cpu.lr!=0x80030410||cpu.gpr[4]!=0x803B0368)
-                fail("side support reached another original narrow caller");
-            return be32(cpu.ram+(0x803B036C-GC_RAM_BASE));
-        };
+        narrow.sample=sampled_support_cell;
         const auto cut=mod.run_to_or_return(walk,ram,0x8002BB14,{0x8005A580,0x80264290,contact::hp_write},&narrow,65536);
         if(cut!=0x8005A580||walk.lr!=0x8002C870||walk.gpr[3]!=actor_body||half(actor_body+0x1C6)!=180||
            narrow.count>8||word(cell+0x20)!=owner)
@@ -285,6 +289,150 @@ class Census {
         }
         ram=rebinding;
     }
+    void schedule_support(const ReceiverInput& sasuke){
+        const auto rebinding=ram;
+        bind_support_grid();
+        // Enter the already-initialized stage arm. This stage state is
+        // declared; the side row construction itself ran above.
+        at(stage)[0]=1;
+        for(unsigned off:{56u,60u,64u,68u})
+            put_float(at(stage+off),(off==60||off==68)?-6000.f:6000.f);
+        store(contact::scene+0xB0,17);
+        const auto initial=ram;
+        for(const unsigned ordinal:{0u,4u}){
+            const auto owner=owners+ordinal*owner_step;
+            u32 cell=0;
+            const auto count=half(common_role_count);
+            for(unsigned i=0;i<count;++i){
+                const auto c=word(common_roles+4*i);
+                if(word(c+0x20)==owner){
+                    if(cell)fail("scheduled support target is not exclusive");
+                    cell=c;
+                }
+            }
+            if(!cell)fail("scheduled support lost the original target");
+            const auto descriptor=(word(cell+0x28)-common-0x400)/80;
+            unsigned face=255;
+            auto pose=support_top(cell,face);pose[1]+=4.f;
+            bind_receiver(sasuke,pose);
+            const auto [narrow,exact]=support_walk(cell,owner);
+            if(narrow!=1||exact!=1)fail("scheduled support inlet lost its original support visit");
+            require_support(cell,owner);
+            // The supported root was corrected by collision. Repose the
+            // declared rig at that root before offering it again.
+            pose_receiver(point(actor_body+0x20));
+            std::printf("side-scheduled-inlet: %u %u %u %08X %08X %08X %08X\n",
+                        ordinal,descriptor,shape_ordinal(cell),word(owner+0x24),word(cell+0x68),word(actor_body+0x24),
+                        word(actor_body+0x1FC));
+            {
+                const auto fork=ram;
+                const auto before=word(owner+0x24),actor_y=word(actor_body+0x24),offset=word(owner+0x180);
+                const auto next_offset=scalar(owner+0x180)+scalar(owner+0x184);
+                if(at(contact::scene+102)[0])fail("normal scheduling requires the active battle update gate");
+                store(actor_body+0x4AC,actor_spec);
+                CPUState main{};std::copy(gqr.begin(),gqr.end(),std::begin(main.gqr));
+                CallObservation bucket{0x80089A94};
+                const auto frontier=mod.run_to_or_return(main,ram,0x80029434,
+                    {0x80053A2C,0x80054070,0x80059E58,0x80089554,0x8005A580,0x80264290},&bucket,65536);
+                if(frontier!=0x80053A2C||main.lr!=0x8002948C||word(owner+0x24)!=before||word(owner+0x30)!=before||
+                   scalar(owner+0x180)!=next_offset||word(owner+0x180)==offset||word(actor_body+0x24)!=actor_y||
+                   word(contact::scene+0xB0)!=17){
+                    std::fprintf(stderr,"normal side schedule cut=%08X lr=%08X current/prev=%08X/%08X offset=%08X start=%08X "
+                                 "actor=%08X/%08X counter=%u buckets=%u caller=%08X r4=%u\n",
+                                 frontier,main.lr,word(owner+0x24),word(owner+0x30),word(owner+0x180),offset,
+                                 word(actor_body+0x24),actor_y,word(contact::scene+0xB0),bucket.count,bucket.caller,main.gpr[4]);
+                    fail("normal battle caller did not stage the rise before its actor update");
+                }
+                carry_prefix(true); // Independent partial actor probe, not a resume of 53A2C.
+                require_support(cell,owner);
+                std::printf("side-before-world: %u %08X %08X %08X %08X %08X\n",ordinal,before,word(owner+0x24),
+                            word(owner+0x184),word(actor_body+0x24),supported_height());
+                ram=fork;
+            }
+            const auto run_slice=[&](unsigned point,std::initializer_list<u32> cuts,CallObservation* observation=nullptr){
+                CPUState cpu{};std::copy(gqr.begin(),gqr.end(),std::begin(cpu.gqr));
+                const auto cut=mod.run_to_or_return(cpu,ram,0x80029708,cuts,observation,65536);
+                const bool model_frontier=point==0x80036E24&&cut==0x800466DC&&cpu.lr==0x8002C88C&&cpu.gpr[3]==actor_body;
+                if((cut!=point&&!model_frontier)||(point==0x8005A580&&(cpu.lr!=0x8002C870||cpu.gpr[3]!=actor_body))||
+                   (cut==0x80036E24&&cpu.lr!=0x8002974C)){
+                    std::fprintf(stderr,"side scheduled cut=%08X expected=%08X caller=%08X\n",cut,point,cpu.lr-4);
+                    fail("side scheduled support escaped its original caller");
+                }
+                return cut;
+            };
+            const auto trial=[&](unsigned step,unsigned mode){
+                const auto fork=ram;
+                const auto counter=word(contact::scene+0xB0);
+                const auto before_actor=point(actor_body+0x20);
+                const auto kernel=word(cell+0x58)==4?0x80035698u:0x800350F8u;
+                run_slice(kernel,{kernel,0x8005A580,0x80264290,contact::hp_write});
+                if(word(0x803B036C)!=cell)fail("scheduled support sampled another original plane or box");
+                const auto sphere_y=word(0x803B04E0),previous_sphere_y=word(0x803B04EC);
+                ram=fork;
+                CallObservation observed{kernel};
+                observed.sample=sampled_support_cell;
+                run_slice(0x8005A580,{0x8005A580,0x80264290,contact::hp_write},&observed);
+                const bool held=at(actor_body+0x1DB)[0]!=0;
+                if(observed.count!=1||observed.samples[0]!=cell||at(actor_body+0x1DE)[0]!=unsigned(mode<2))
+                    fail("scheduled support did not test the same cell and declared history");
+                const auto at_collision=word(actor_body+0x24),anchor_y=word(actor_body+0x1FC);
+                u32 query=0,landed=0;
+                unsigned isolated_landing=0;
+                u32 frontier=0x8005A580;
+                if(held){
+                    require_support(cell,owner);
+                    query=supported_height();
+                    isolated_landing=supported_landing();
+                    landed=word(actor_body+0x24);
+                    ram=fork;
+                    frontier=run_slice(0x80036E24,{0x80036E24,0x800466DC,0x80264290,contact::hp_write});
+                    require_support(cell,owner);
+                    if(landed!=word(actor_body+0x24))fail("scheduled presentation differs from isolated landing");
+                }else if(word(actor_body+0x1E0)||word(actor_body+0x1E4)){
+                    fail("fresh rejected collision unexpectedly acquired a support address");
+                }
+                if(word(contact::scene+0xB0)!=counter+1||half(common_role_count)!=count||
+                   half(actor_body+0x1C6)!=180||at(stage)[0]!=1||scalar(actor_body+0x20)!=before_actor[0]||
+                   scalar(actor_body+0x28)!=before_actor[2])
+                    fail("scheduled support changed its phase, counter or HP");
+                std::printf("side-scheduled-step: %u %u %u %u %u %u %u %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %u %08X\n",
+                            ordinal,step,mode,unsigned(held),at(actor_body+0x1DE)[0],observed.count,
+                            word(contact::scene+0xB0),word(owner+0x24),word(cell+0x68),std::bit_cast<u32>(before_actor[1]),
+                            sphere_y,previous_sphere_y,at_collision,anchor_y,query,
+                            landed,word(actor_body+0x24),isolated_landing,frontier);
+            };
+            trial(1,0);
+            const auto old_pose=point(actor_body+0x20);
+            const auto first_owner_y=word(owner+0x24),first_center_y=word(cell+0x68);
+            pose_receiver(old_pose);
+            const auto step_one=ram;
+            trial(2,0); // Same declared rig, original contact reset and fresh collision.
+            ram=step_one;
+            // Use the original bucket/world/shape calls only to read the
+            // next top for the declared-pose alternative. No collision or
+            // actor state is imported from this positioning fork.
+            side_visit();
+            auto tracked_pose=support_top(cell,face);tracked_pose[1]+=4.f;
+            ram=step_one;
+            pose_receiver(tracked_pose);
+            trial(2,1);
+            for(unsigned mode:{2u,3u}){
+                ram=initial;
+                // Advance the original scheduler with no actor, then bind a
+                // clean receiver. The next scheduled shape pass publishes it.
+                run_slice(0x80036E24,{0x80036E24,0x8005A580,0x80264290,contact::hp_write});
+                if(word(contact::scene+0xB0)!=18||word(owner+0x24)!=first_owner_y||word(cell+0x68)!=first_center_y||
+                   word(cell+0x20)!=owner)
+                    fail("scheduled support no-actor fork lost the first prop visit");
+                bind_receiver(sasuke,mode==2?old_pose:tracked_pose,false);
+                if(at(actor_body+0x1DB)[0]||at(actor_body+0x1DE)[0]||word(actor_body+0x1E0)||word(actor_body+0x1E4))
+                    fail("scheduled support fresh probe inherited contact history");
+                trial(2,mode);
+            }
+            ram=initial;
+        }
+        ram=rebinding;
+    }
     void isolation(){
         // An independent fork of set0202: break row 0, not same-type row 1.
         const auto initial=ram;
@@ -303,7 +451,7 @@ class Census {
         ram=initial;
     }
     void recovery(unsigned member,const std::vector<u8>& side,unsigned n,unsigned n3,unsigned allocated,
-                  const std::array<u8,21504>& collision,const ReceiverInput* rider){
+                  const std::array<u8,21504>& collision,const ReceiverInput* rider,bool schedule){
         struct Life {
             unsigned companion=owner_limit,shape_count=0,hide=0,show=0,settle=0;
             float offset=0,rate=0;
@@ -462,7 +610,10 @@ class Census {
                 if(c)fail("side recovery rebound shape suffix");
                 for(unsigned i=0;i<n;++i)
                     if(row(i)[0]<8&&seen[i]!=life[i].shape_count)fail("side recovery lost a repeated descriptor cell");
-                if(rider&&visit==600&&common_n)rise_support(member,*rider,retired_roles);
+                if(rider&&visit==600&&common_n){
+                    if(!schedule)rise_support(member,*rider,retired_roles);
+                    else if(member==2429)schedule_support(*rider);
+                }
             }
         }
         std::printf("side-recovery: %u %u %u %u %u\n",member,n3-persistent,persistent,ordinary,common_n);
@@ -477,7 +628,7 @@ class Census {
 public:
     Census(const Module& m,const std::vector<u8>& pristine):mod(m),ram(pristine){}
     void run(unsigned member,const std::vector<u8>& side,const std::array<u8,21504>& collision,bool recover,
-             const ReceiverInput* sasuke){
+             const ReceiverInput* sasuke,bool schedule){
         CPUState boot{};
         const auto boot_cut=mod.run_to_or_return(boot,ram,0x8002A3E4,{0x8002A51C,0x80200318},nullptr,4096);
         if(!boot_cut||boot.gqr[5]!=0x00070007)fail("side census source boot GQR");
@@ -635,7 +786,7 @@ public:
         if(next!=allocated)fail("side census left allocated collision cells unclaimed");
         if(recover){
             if(member==2429)isolation();
-            recovery(member,side,n,n3,allocated,collision,sasuke);
+            recovery(member,side,n,n3,allocated,collision,sasuke,schedule);
         }
         if(sasuke&&!recover)support_census(member,*sasuke);
     }
@@ -643,11 +794,12 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    const bool ride=argc==4&&!std::strcmp(argv[3],"--rise-support");
+    const bool schedule=argc==4&&!std::strcmp(argv[3],"--scheduled-support");
+    const bool ride=schedule||(argc==4&&!std::strcmp(argv[3],"--rise-support"));
     const bool recovery=ride||(argc==4&&!std::strcmp(argv[3],"--recovery"));
     const bool support=ride||(argc==4&&!std::strcmp(argv[3],"--support"));
     if(argc!=3&&!recovery&&!support)
-        fail("usage: side-census qualified.dol unmodified-recomp.so [--recovery|--support|--rise-support] < qualified-inputs");
+        fail("usage: side-census qualified.dol unmodified-recomp.so [--recovery|--support|--rise-support|--scheduled-support] < qualified-inputs");
     std::array<u8,21504> collision{};
     if(std::fread(collision.data(),1,collision.size(),stdin)!=collision.size())fail("side census common collision input extent");
     ReceiverInput sasuke{};
@@ -663,7 +815,7 @@ int main(int argc,char** argv){
         if(size<6144||size>(1u<<18))fail("side census archive input size");
         std::vector<u8> side(size);
         if(std::fread(side.data(),1,size,stdin)!=size)fail("side census archive input extent");
-        Census(mod,original).run(n,side,collision,recovery,support?&sasuke:nullptr);
+        Census(mod,original).run(n,side,collision,recovery,support?&sasuke:nullptr,schedule);
     }
     if(std::getc(stdin)!=EOF||std::ferror(stdin))fail("side census unexpected input suffix");
 }
