@@ -30,6 +30,7 @@ constexpr std::array<GeometryView,11> geometry_views{{
     {{1,1,std::bit_cast<float>(0x3C23D70Bu)},1,0},
 }};
 constexpr std::array<float,3> translation{256,128,-64};
+enum class Mode {registry,spheres,capsules};
 
 class Probe {
     const Module& mod;
@@ -67,9 +68,10 @@ class Probe {
         }
         return results;
     }
-    void geometry(u16 model,u32 fighter,unsigned bound){
+    void geometry(u16 model,u32 fighter,unsigned bound,Mode mode){
+        const bool capsules=mode==Mode::capsules;
         store16(fighter+0x272,0);
-        for(unsigned view=0;view<geometry_views.size();++view){
+        for(unsigned view=0;view<(capsules?4u:geometry_views.size());++view){
             const auto& pose=geometry_views[view];
             const auto matrix=[&](u32 pointer,bool root){
                 const bool changed=!pose.selected||(pose.selected==1?root:!root);
@@ -95,18 +97,25 @@ class Probe {
                     const auto cell=cells+cell_stride*ordinal,d=word(cell+0x28);
                     if(!at(cell)[0]||d<bank+32||d>=bank+32+33*descriptor_size||word(cell+0x20)!=fighter)
                         fail("normal body geometry lost a bound cell");
-                    if(view>=4||at(d)[0]||!(half(d+2)&2))continue;
-                    if(!(lists[1]&(1u<<ordinal)))fail("normal sphere refused an admitted matrix");
-                    std::printf("geometry-sphere: %04X %u %u %u %08X %08X %08X %08X %08X %08X %08X %08X\n",
-                                model,view,pass,ordinal,word(cell+0x64),word(cell+0x68),word(cell+0x6C),
-                                word(cell+0x70),word(cell+0x74),word(cell+0x78),word(cell+0x88),word(cell+0x7C));
+                    if(view>=4||at(d)[0]!=(capsules?2u:0u)||!(half(d+2)&2))continue;
+                    if(!(lists[1]&(1u<<ordinal)))fail("normal body refused an admitted matrix");
+                    if(capsules){
+                        std::printf("geometry-capsule: %04X %u %u %u %u",model,view,pass,ordinal,word(cell+0x58));
+                        for(u32 loc:{0x64u,0x70u,0x8Cu,0x98u,0xD4u,0xE0u})
+                            for(unsigned axis=0;axis<3;++axis)std::printf(" %08X",word(cell+loc+4*axis));
+                        std::printf(" %08X %08X\n",word(cell+0x88),word(cell+0x7C));
+                    }else{
+                        std::printf("geometry-sphere: %04X %u %u %u %08X %08X %08X %08X %08X %08X %08X %08X\n",
+                                    model,view,pass,ordinal,word(cell+0x64),word(cell+0x68),word(cell+0x6C),
+                                    word(cell+0x70),word(cell+0x74),word(cell+0x78),word(cell+0x88),word(cell+0x7C));
+                    }
                 }
             }
         }
     }
 public:
     Probe(const Module& mod,const std::vector<u8>& initial):mod(mod),initial(initial),ram(initial){}
-    Report run(u16 model,const contact::HitBlock& hit,unsigned seat,unsigned capacity,bool geometry_mode=false){
+    Report run(u16 model,const contact::HitBlock& hit,unsigned seat,unsigned capacity,Mode mode=Mode::registry){
         std::memcpy(ram.data(),initial.data(),ram.size());
         store(0x8043B5A0-31852,contact::scene);
         // Kind 4 asks the allocator for zero view cells; its precheck still reads the pool header.
@@ -167,8 +176,8 @@ public:
         if(out.bound!=std::min(queued,capacity)||half(contact::free_count+8)!=capacity-out.bound||
            at(fighter+0x501)[0]!=out.special)
             fail("normal body bind and secondary index disagreed with available capacity");
-        if(geometry_mode)geometry(model,fighter,out.bound);
-        for(unsigned view=0;!geometry_mode&&view<views;++view){
+        if(mode!=Mode::registry)geometry(model,fighter,out.bound,mode);
+        for(unsigned view=0;mode==Mode::registry&&view<views;++view){
             if(view==1)store16(fighter+0x272,0xC3);
             if(view==2)store16(fighter+0x272,0);
             if(view==3)put_float(at(fighter+0x720),1.f);
@@ -200,8 +209,11 @@ public:
 } // namespace
 
 int main(int argc,char** argv){
-    const bool geometry=argc==4&&!std::strcmp(argv[3],"--geometry");
-    if(argc!=3&&!geometry)fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so [--geometry] < qualified-normal-queues");
+    auto mode=Mode::registry;
+    if(argc==4&&!std::strcmp(argv[3],"--geometry"))mode=Mode::spheres;
+    if(argc==4&&!std::strcmp(argv[3],"--capsules"))mode=Mode::capsules;
+    if(argc!=3&&mode==Mode::registry)
+        fail("usage: body-registry-fixture qualified.dol unmodified-recomp.so [--geometry|--capsules] < qualified-normal-queues");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     Probe probe(mod,original);
     unsigned prior=0;
@@ -220,7 +232,7 @@ int main(int argc,char** argv){
                (hit[d+3]&0x81)||hit[d+6]||hit[d+7]||hit[d+8]!=255||hit[d+9]!=255)
                 fail("normal body descriptor outside verified kind, role or phase bounds");
         }
-        if(geometry){probe.run(u16(model),hit,0,32,true);continue;}
+        if(mode!=Mode::registry){probe.run(u16(model),hit,0,32,mode);continue;}
         for(unsigned capacity:{32u,1u,0u}){
             const auto row=probe.run(u16(model),hit,0,capacity);
             for(unsigned seat=1;capacity==32&&seat<seats;++seat)

@@ -2632,6 +2632,46 @@ python3 -m tools.analyze.retail_body_geometry \
   /tmp/opencode/gf-body-geometry.json
 ```
 
+### Normal receiver capsules: linear initialization, squared updates
+
+The [capsule replay](api-map/gg4e08-body-capsules.json) uses the same
+declared matrices for all **726** kind-2 receiver entries across
+**173** normal Borgs. The rest of each source body queue remains
+bound; both receiver lists still publish their original cells.
+
+The bound matrix transforms the local center and the two local
+points at **center ± extent**. Doubling actor scale instead changes
+the core radius (`descriptor radius × actor +0xC0`) without moving
+those endpoints when the matrix is held fixed. The update retains
+the previous center and both previous endpoints separately.
+
+The broad-phase field `+0x7C` is not stored in the same form by the
+two callbacks:
+
+| Original callback | Nondegenerate stored value |
+| --- | --- |
+| `8003B170` initializer | `local extent length × actor scale + core radius` |
+| `8003B304` ordinary update | `(center travel + local extent length × actor scale + core radius)²` |
+
+The square at `8003BD5C` also occurs on an **unchanged** second
+rebuild. It does not change the core radius. The one zero-extent
+entry (`0506`, ordinal **14**, descriptor **6**) still publishes in
+both lists with coincident endpoints and zero stored bounds.
+
+All **1,648** rebuilds and **5,808** capsule observations matched
+across O0/O1/O2. An independent numeric reference for the
+nondegenerate bounds agrees within three binary32 steps; the
+original observed bits are pinned per Borg. This does not qualify
+how pair tests consume the field, special swept attack geometry,
+animated collision, hardware, or native gameplay.
+
+```sh
+python3 -m tools.analyze.retail_body_capsules \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/body-registry "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-body-capsules.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)
