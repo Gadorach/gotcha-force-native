@@ -23,13 +23,14 @@ struct Replacement {
     std::array<u8,435104> motion{};
     std::array<u8,171236> view{};
 };
-enum class ReplacementProbe {constructor, entry, scene, contact, heal_tail};
+enum class ReplacementProbe {constructor, entry, scene, contact, heal_tail, heal_effect};
 struct Delivery {
     const Replacement& assets;
     const contact::ActorSpec& spec;
     const contact::HitBlock& hits;
     ReplacementProbe probe=ReplacementProbe::constructor;
     const retail_body_entry_contact::Inputs* contact_inputs=nullptr;
+    const archive::Source* effect_source=nullptr;
 };
 
 class Probe {
@@ -50,6 +51,7 @@ class Probe {
         return cpu.gpr[3];
     }
     u32 heap_limit()const{return delivery?archive::arena+0x100000:archive::arena_end;}
+    unsigned extra_owner()const{return unsigned(delivery&&delivery->effect_source);}
     void tick(){
         CPUState cpu{};cpu.gpr[3]=victim;
         CallObservation update{phase3};
@@ -79,11 +81,12 @@ class Probe {
             archive::Setup setup(mod,ram);
             setup.init_heap(heap_limit());
             store(source_basis,repository);store(0x8043B5A0-21024,pools);
-            store(pool,header-repository);store(pool+4,32);
+            store(pool,header-repository);store(pool+4,32*(1+extra_owner()));
             std::memcpy(at(pool+16),at(source_pool+16),12);
             call(0x80197950,1);
         }
-        if(call(0x80197A0C,1)!=header||word(pool+8)!=header||word(pool+12)||half(pool+18)||
+        if(call(0x80197A0C,1)!=header||word(pool+8)!=header||word(pool+12)!=(extra_owner()?header+32:0)||
+           half(pool+18)!=extra_owner()||
            byte(header+9)!=1||!word(header+12)||half(header+26))
             fail("phase-3 source owner did not allocate its empty archive context");
         store(view_owner,header);
@@ -105,7 +108,7 @@ class Probe {
         CPUState cut{};cut.gpr[3]=victim;
         mod.run_to(cut,ram,wrapper,{disc});
         if(cut.lr!=0x80041EE4||cut.gpr[4]!=0x803B07AC+56||word(view_owner)||word(resources)||word(slot_bank)||
-           word(pool+8)||word(pool+12)!=header||half(pool+18)!=1||byte(header+9)||
+            word(pool+8)||word(pool+12)!=header||half(pool+18)!=1+extra_owner()||byte(header+9)||
            word(archive::arena+4)!=archive::block||word(archive::arena+8)||
            word(archive::block+8)!=heap_limit()-archive::block||
            half(pending_model)!=wanted||body(0x19)!=1||!body(0)||half(victim+0x1C)!=60||
@@ -137,7 +140,8 @@ class Probe {
         constexpr u32 pad=0x803C727C+32*seat,poll_input=0x80056900,bomb_request=0x800E058C;
         constexpr unsigned body_steps=0x3EF0;
         const auto start=ram;
-        const bool tail=delivery->probe==ReplacementProbe::heal_tail;
+        const bool effect=delivery->probe==ReplacementProbe::heal_effect;
+        const bool tail=delivery->probe==ReplacementProbe::heal_tail||effect;
         const bool contacts=delivery->probe==ReplacementProbe::contact||tail;
         if(contacts&&!delivery->contact_inputs)fail("missing exact replacement contact inputs");
         const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
@@ -220,7 +224,7 @@ class Probe {
                                            fresh_shape,stride)!=(n>=81?body_steps:0))
                         fail("original replacement alternate receiver chronology changed");
                     if(tail&&(n==81||n==138||n==139))
-                        incoming::follow_heal(mod,ram,(*delivery->contact_inputs)[1],caster,n,fresh_shape,stride);
+                        incoming::follow_heal(mod,ram,(*delivery->contact_inputs)[1],caster,n,fresh_shape,stride,effect);
                     if(!tail&&(n==80||n==81||n==82||n==138||n==139))
                         for(unsigned r=0;r<incoming::routes.size();++r)
                             for(unsigned relation:{0u,1u}){
@@ -318,6 +322,28 @@ class Probe {
                             half(contact::receiver_count));
         }
     }
+    void effect_archive(){
+        const auto& source=*delivery->effect_source;
+        constexpr u32 bank=archive::source_bank,globals=archive::source_globals;
+        // The earlier knockout fixture declared an empty view stub, not an
+        // allocated common owner. Retire only that inlet before real delivery.
+        if(source.slot!=1||word(globals)!=0x81042000||half(pool+18)!=1||byte(word(0x8043B5A0-31856)+41))
+            fail("replacement effect requires a separate normal common archive owner");
+        store(globals,0);
+        store(source_basis,bank-archive::source_bank_delta);
+        CPUState open{};
+        mod.run_to(open,ram,0x80042878,{disc});
+        if(open.lr!=0x80042904||open.gpr[3]!=697||open.gpr[4]!=0x803B0760||
+           word(0x803B0764)!=bank||word(globals+4)!=bank)
+            fail("replacement heal effect selected the wrong common source block");
+        store(source_basis,repository);
+        std::memcpy(at(bank),source.bytes.data(),source.bytes.size());
+        call(0x80042954);
+        if(word(globals)!=header+32||word(view_owner)!=header||half(header+32+26)!=157||
+           word(header+32+20)!=bank||half(pool+18))
+            fail("replacement heal effect did not independently own its common archive");
+        archive::Setup(mod,ram).init_visual_header(pools,0x81069000);
+    }
     void reentry_from_archive(unsigned caster){
         constexpr u32 ready=0x800412C4,dest=0x803B07AC+56;
         constexpr u32 role0=0x812C9400,role2=0x81765C00,role3=0x81547C00,role4=0x81323C00;
@@ -355,19 +381,21 @@ class Probe {
             fail("replacement admitted with raw roles but no archive owner");
         std::memcpy(ram.data(),before.data(),ram.size());
         complete();
-        if(word(view_owner)!=header||byte(header+9)!=1||half(pool+18)||!word(header+12)||
+        if(word(view_owner)!=header||byte(header+9)!=1||half(pool+18)!=extra_owner()||!word(header+12)||
            body(0x18)||half(victim+0x1C6)||half(victim+0x20C)!=2)
             fail("replacement completion did not publish only the new seat resource");
 
         // Preallocate the original view-wrapper class. The heap and the
         // SDK ID map are shared HSD machinery, not a reconstructed rig.
-        constexpr u32 views=0x81066000,view_nodes=44*8;
+        constexpr u32 views=0x81066000;
+        const auto view_nodes=44*(8+extra_owner());
         store(pools,views-repository);store(pools+4,view_nodes);
         std::memcpy(at(pools+16),at(source_pool-28+16),12);
         constexpr u32 clip_pool=pools+2*28,clips=0x81068000;
         store(clip_pool,clips-repository);store(clip_pool+4,16*8);
         std::memcpy(at(clip_pool+16),at(source_pool+28+16),12);
         call(0x80197950,0);call(0x80197950,2);call(0x80254288);
+        if(extra_owner())effect_archive();
         const auto generation=body(0x3F0);
         at(word(0x8043B5A0-31856)+2)[0]=2; // Normal local-seat input from the mode descriptor.
         const auto start=ram;
@@ -397,7 +425,7 @@ class Probe {
                word(victim+0x27C)!=0x80336340||half(victim+0x1C4)!=220||half(victim+0x1C6)!=220||
                half(victim+0x1C8)!=220||half(victim+0x774)!=10||half(victim+0x784)!=3||
                word(view_owner)!=header||word(header+20)!=role4+0x100||half(header+26)!=4||
-               half(pools+18)||word(victim+0x3FC)!=role2)
+               half(pools+18)!=extra_owner()||word(victim+0x3FC)!=role2)
                 fail("replacement did not start its exact normal Time Bomber actor");
             for(unsigned i=0;i<48;++i)
                 if(half(victim+0x20C+2*i))fail("replacement retained an old collision token");
@@ -424,7 +452,7 @@ class Probe {
             if(mask!=0xEF||count||word(side+0x118)||word(victim+0x41C)!=16||half(contact::free_count+8))
                 fail("replacement changed the initial receive mask, force, ledger or allocator boundary");
             if(delivery->probe==ReplacementProbe::entry||delivery->probe==ReplacementProbe::contact||
-               delivery->probe==ReplacementProbe::heal_tail){
+               delivery->probe==ReplacementProbe::heal_tail||delivery->probe==ReplacementProbe::heal_effect){
                 entry_gates(caster,shape,stride);
                 return;
             }
@@ -484,7 +512,7 @@ public:
         const auto wanted=kind==2?terminal_model:gone?contact::sasuke.model:next;
         if(body(0)!=unsigned(!gone)||body(0x18)!=(gone?3:0)||body(0x19)!=(gone?2:0)||
            byte(active_mask)!=(gone?1:3)||byte(active_count)!=(gone?1:2)||half(pending_model)!=wanted||
-           word(view_owner)!=(gone?header:0)||word(pool+8)!=(gone?header:0)||half(pool+18)!=unsigned(!gone))
+           word(view_owner)!=(gone?header:0)||word(pool+8)!=(gone?header:0)||half(pool+18)!=unsigned(!gone)+extra_owner())
             fail("phase-3 expiry mixed active slot reuse and normal actor retirement");
         if(!delivery)std::printf("body-cleanup-expiry: %u %u %u %u %u %u %u %u %u %u %u\n",caster,kind,body(0),body(0x18),
                     body(0x19),byte(active_mask),byte(active_count),half(victim+0x20C),half(victim+0x1C),

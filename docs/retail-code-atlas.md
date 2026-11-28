@@ -2521,6 +2521,41 @@ python3 -m tools.analyze.retail_replacement_heal_tail \
   /tmp/opencode/gf-replacement-heal-tail.json
 ```
 
+### Replacement heal effect: model lifetime and receiving masks are independent
+
+The [admitted-effect replay](api-map/gg4e08-replacement-heal-effect.json)
+offers a kind-2 carrier, a view wrapper, a type-3 heap header and
+the exact normal common archive. Nurse’s original pair heals its
+receiver, then allocates **type 21, selector 1** in seat 1’s bucket
+**26** and sets bit `0x02` at receiver `+0x8C4`. The first bucket
+visit allocates a **2,944-byte** payload and loads common model
+record **77**. The replacement and common archive owners stay
+separate throughout.
+
+- With no further changes, the effect stays active through all
+  **64** follow-up visits. A heal with **58** or **1** units
+  left on the ordinary guard still reopens both lists after
+  **58** or **1** visits, with the effect active. A heal with
+  guard already zero leaves both lists closed in this window.
+- In the declared control, only owner bit `0x02` is cleared,
+  after the actor prefix and before the effect bucket on visit
+  **17**. The effect enters phase 2 on **17**, phase 3 on **32**,
+  and returns its carrier, view wrapper, heap header and storage
+  on **33**. This does not reopen either receiver list by itself;
+  the guard still determines publication.
+
+All **12** cases and **768** actor-and-bucket visits matched
+across O0/O1/O2. The control does not identify a natural bit
+clearer. GX drawing, audible playback, full match scheduling and
+native gameplay remain outside this replay.
+
+```sh
+python3 -m tools.analyze.retail_replacement_heal_effect \
+  "$GF_RETAIL_ROOT/sys/main.dol" "$GF_RETAIL_ROOT/files/afs_data.afs" \
+  /tmp/opencode/type41 "$GF_RECOMP_MODULE" \
+  /tmp/opencode/gf-replacement-heal-effect.json
+```
+
 ### Normal receiver factors: active records feed portable extraction
 
 The [normal receiver proof](api-map/gg4e08-normal-receiver-factors.json)

@@ -16,6 +16,8 @@ inline constexpr std::array<Route,3> routes{{
 }};
 inline constexpr u32 body=contact::receiver,attack_bank=0x8105C000,attack_spec=0x8105E000;
 inline constexpr u32 vm_cursor=0x8105E200,attack_cell=0x8105E400,old_area=0x81031000;
+inline constexpr u32 heal_effect_cell=0x8105E800,heal_effect_bucket=26,view_pool=0x81063000;
+inline constexpr u32 heal_storage=0x81069000,common_owner=0x81064020;
 inline constexpr u32 ordinary_count=0x8043B5A0-21328,alternate_count=0x8043B5A0-21344;
 inline constexpr u32 alternate_receive_count=0x8043B5A0-21346,alternate_receive_list=0x803C117C;
 inline constexpr u32 ordinary_attack_list=0x803C477C,alternate_attack_list=0x803C177C;
@@ -37,7 +39,8 @@ inline unsigned receiving(std::vector<u8>& ram,u32 count,u32 list,u32 first,u32 
 }
 
 inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,unsigned route_id,
-                    unsigned initial_caster,unsigned visit,unsigned relation,u32 first,u32 stride,bool report=true){
+                    unsigned initial_caster,unsigned visit,unsigned relation,u32 first,u32 stride,bool report=true,
+                    bool effect_admitted=false){
     const auto& r=routes[route_id];
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
@@ -127,7 +130,7 @@ inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,uns
         const auto inlet=mod.run_to_or_return(effect,fork,pair_entry,{0x8010E158},nullptr,4096);
         if(inlet!=0x8010E158||effect.lr!=0x8002F6E0||effect.gpr[3]!=body||effect.gpr[4]!=1||
            contact::half(fork,body+0x1C6)!=160||contact::half(fork,body+0x272)!=role_mask||
-           contact::half(fork,contact::free_count+4))
+           contact::half(fork,contact::free_count+4)!=unsigned(effect_admitted))
             fail("replacement heal tail changed its post-HP effect request or capacity inlet");
     }
     CPUState full{};CallObservation writes{contact::hp_write};
@@ -160,7 +163,7 @@ inline void observe(const Module& mod,std::vector<u8>& ram,const Attack& raw,uns
 }
 
 inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,unsigned initial_caster,
-                        unsigned initial_visit,u32 first,u32 stride){
+                         unsigned initial_visit,u32 first,u32 stride,bool effect_admitted=false){
     const auto at=[&](u32 a){return contact::at(ram,a);};
     const auto word=[&](u32 a){return be32(at(a));};
     const auto half=[&](u32 a){return contact::half(ram,a);};
@@ -169,10 +172,29 @@ inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,
     };
     const auto rebuild=[&](){call(0x8008A28C);call(0x80089AEC);};
     const auto previous_actor=word(0x803C4E84);
-    observe(mod,ram,raw,1,initial_caster,initial_visit,1,first,stride,false);
+    if(effect_admitted){
+        if(half(contact::free_count+4)||word(contact::free_head+8)||half(view_pool+18)!=1)
+            fail("heal effect needs one spare original view and an isolated carrier pool");
+        at(heal_effect_cell+2)[0]=2;
+        put32(at(contact::free_head+8),heal_effect_cell);
+        put32(at(contact::free_tail+8),heal_effect_cell);
+        put16(at(contact::free_count+4),1);
+    }
+    observe(mod,ram,raw,1,initial_caster,initial_visit,1,first,stride,false,effect_admitted);
     if(half(body+0x272)!=0x43||half(body+0x1C6)!=160||half(body+0x20C)!=3||
-       half(contact::receiver_count)||half(alternate_receive_count)||half(contact::free_count+4)||word(body+0x8C4))
+       half(contact::receiver_count)||half(alternate_receive_count)||half(contact::free_count+4)||
+       word(body+0x8C4)!=(effect_admitted?2u:0u))
         fail("replacement heal tail did not retain its accepted HP and closed role mask");
+    if(effect_admitted&&(word(contact::active_head+4*heal_effect_bucket)!=heal_effect_cell||
+       at(heal_effect_cell)[0]!=1||at(heal_effect_cell+0x10)[0]!=21||at(heal_effect_cell+0x11)[0]!=1||
+       at(heal_effect_cell+0x18)[0]||word(heal_effect_cell+0x8C)!=body||word(heal_effect_cell+0x90)!=word(body+0x90)||
+       word(heal_effect_cell+0xC)!=0x8010E2A8||word(heal_effect_cell+0x54)!=0x80325BD0||half(view_pool+18))){
+        std::fprintf(stderr,"heal effect alloc head=%08X kind=%u bucket=%u type=%u/%u phase=%u owner=%08X/%08X data=%08X view=%u\n",
+                     word(contact::active_head+4*heal_effect_bucket),at(heal_effect_cell+2)[0],at(heal_effect_cell+1)[0],
+                     at(heal_effect_cell+0x10)[0],at(heal_effect_cell+0x11)[0],at(heal_effect_cell+0x18)[0],
+                     word(heal_effect_cell+0x8C),word(heal_effect_cell+0x90),word(heal_effect_cell+0x54),half(view_pool+18));
+        fail("heal effect factory did not allocate its exact type, selector and target owner");
+    }
     call(0x8008AFF0,actor);
     rebuild();
     put32(at(0x803C4E84),previous_actor);
@@ -181,10 +203,10 @@ inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,
     const auto saved=ram;
     constexpr u32 wrap=0x80054070,presentation=0x8005A580,pad=0x803C727C+32,bomb=0x800E058C;
     for(unsigned rule=0;rule<2;++rule){
-        if(rule&&initial_visit==138)break;
+        if(!effect_admitted&&rule&&initial_visit==138)break;
         std::memcpy(ram.data(),saved.data(),ram.size());
-        const unsigned initial_guard=rule?unsigned(initial_visit==139):139-initial_visit;
-        if(rule)put_float(at(body+0x720),float(initial_guard));
+        const unsigned initial_guard=rule&&!effect_admitted?unsigned(initial_visit==139):139-initial_visit;
+        if(rule&&!effect_admitted)put_float(at(body+0x720),float(initial_guard));
         if(word(body+0x720)!=std::bit_cast<u32>(float(initial_guard)))
             fail("replacement heal tail did not begin at the retained original guard");
         // A discarded fresh input fork measures the exact debit boundary,
@@ -200,8 +222,10 @@ inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,
            contact::half(input,body+0x774)!=9||roles_at_factory!=(initial_guard==1?0:0x43)||
            be32(contact::at(input,body+0x5BC))!=0x200)
             fail("replacement heal tail changed fresh B admission or debit");
-        std::printf("heal-tail-b: %u %u %u %u %04X %u\n",initial_caster,initial_visit,rule,poll_b.count,
+        if(!effect_admitted)std::printf("heal-tail-b: %u %u %u %u %04X %u\n",initial_caster,initial_visit,rule,poll_b.count,
                     roles_at_factory,contact::half(input,body+0x774));
+        const auto view=effect_admitted?word(heal_effect_cell+0xE0):0;
+        u32 payload=0,joint=0;
         for(unsigned n=0;n<=64;++n){
             unsigned polled=0;
             if(n){
@@ -212,10 +236,28 @@ inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,
                    poll.caller!=0x80054CD0||poll.arguments[0]!=body)
                     fail("replacement heal tail did not finish the original active actor prefix");
                 polled=poll.count;
+                if(effect_admitted){
+                    if(n==17&&rule)put32(at(body+0x8C4),word(body+0x8C4)&~2u);
+                    if(n==1){
+                        auto inlet_ram=ram;
+                        CPUState bind{};bind.gpr[3]=heal_effect_bucket;
+                        const auto model=mod.run_to_or_return(bind,inlet_ram,0x80089A94,{0x80007198},nullptr,65536);
+                        if(model!=0x80007198||bind.lr!=0x8010E410||bind.gpr[3]!=common_owner||
+                           bind.gpr[4]!=view||bind.gpr[5]!=77||bind.gpr[6]!=32||
+                           be32(contact::at(inlet_ram,heal_effect_cell+0xDC))!=heal_storage)
+                            fail("heal effect initializer did not request its exact common model");
+                    }
+                    CPUState update{};update.gpr[3]=heal_effect_bucket;
+                    if(mod.run_to_or_return(update,ram,0x80089A94,{0x80264290},nullptr,65536)){
+                        std::fprintf(stderr,"heal effect assertion visit=%u from=%08X line=%u\n",n,update.lr-4,update.gpr[4]);
+                        fail("heal effect did not complete its original bucket update");
+                    }
+                }
                 rebuild();
             }
             if(half(body+0x1C6)!=160||half(body+0x20C)!=3||word(body+0x41C)!=16||half(body+0x774)!=10||
-               half(body+0x784)!=3||at(body+0x18)[0]!=1||at(body+0x19)[0]!=2||word(pad)||word(body+0x8C4))
+               half(body+0x784)!=3||at(body+0x18)[0]!=1||at(body+0x19)[0]!=2||word(pad)||
+               (!effect_admitted&&word(body+0x8C4)))
                 fail("replacement heal tail changed HP, took stock or left active input");
             const auto roles=half(body+0x272);
             const auto guard=n<initial_guard?initial_guard-n:0,pose=n<15?15-n:0;
@@ -231,6 +273,54 @@ inline void follow_heal(const Module& mod,std::vector<u8> ram,const Attack& raw,
                 const auto cell=first+i*stride;
                 if(!at(cell)[0]||word(cell+0x20)!=body||word(cell+0x28)!=word(body+0x3FC)+32+80*i)
                     fail("replacement heal tail lost or rebound an original body cell");
+            }
+            if(effect_admitted){
+                const bool released=rule&&n>=17,retired=rule&&n>=33;
+                const unsigned phase=!n?0:!released?1:n<32?2:3;
+                const bool owns_payload=n&&!retired,enabled=n&&phase<3;
+                constexpr u32 head=contact::active_head+4*heal_effect_bucket,storage_pool=view_pool+3*28;
+                if(n==1){payload=word(heal_storage+12);joint=word(view+12);}
+                if(at(heal_effect_cell+0x18)[0]!=phase||word(body+0x8C4)!=(released?0u:2u)||
+                   at(heal_effect_cell)[0]!=unsigned(!retired)||at(heal_effect_cell+0x82)[0]!=unsigned(enabled)||
+                   word(head)!=(retired?0:heal_effect_cell)||half(contact::free_count+4)!=unsigned(retired)||
+                   half(view_pool+18)!=unsigned(retired)||half(storage_pool+18)!=unsigned(!owns_payload)||
+                   word(heal_effect_cell+0xDC)!=(owns_payload?heal_storage:0)||
+                   word(0x803BB374)!=common_owner||word(0x803BB4C0+3120+0x600)!=0x81064000||
+                   half(ordinary_count)||half(alternate_count))
+                    fail("heal effect lifetime lost its source owner, resources, or phase");
+                if(owns_payload&&(word(heal_storage+12)!=payload||word(view+12)!=joint||word(view+20)!=77||
+                   payload<0x81600040||payload>=0x81700000||((payload-32)&31)||
+                   joint<0x81600040||joint>=0x81700000||word(payload-24)!=32*92+32))
+                    fail("heal effect did not retain its exact heap block and original loaded model");
+                if(retired){
+                    auto cur=word(0x81600008);
+                    for(unsigned i=0;cur;++i){
+                        if(i>=0x100000/32||cur<0x81600020||cur>=0x81700000||(cur&31))
+                            fail("heal effect allocation list escaped its declared heap");
+                        if(cur==payload-32)
+                            fail("heal effect heap block remained live after retirement");
+                        cur=word(cur+4);
+                    }
+                    bool returned=false;
+                    cur=word(0x81600004);
+                    for(unsigned i=0;cur;++i){
+                        if(i>=0x100000/32||cur<0x81600020||cur>=0x81700000||(cur&31))
+                            fail("heal effect free list escaped its declared heap");
+                        const auto size=word(cur+8);
+                        if(size>0x81700000-cur)fail("heal effect free block escaped its declared heap");
+                        if(cur<=payload-32&&cur+size>=payload+32*92){returned=true;break;}
+                        cur=word(cur+4);
+                    }
+                    if(word(heal_storage+12)||word(storage_pool+12)!=heal_storage||word(view_pool+12)!=view||
+                       word(contact::free_head+8)!=heal_effect_cell||word(contact::free_tail+8)!=heal_effect_cell||!returned)
+                        fail("heal effect did not return its exact original storage, view and carrier cells");
+                }
+                if(n<=1||n==15||n==16||n==17||n==31||n==32||n==33||n==57||n==58||n==64)
+                    std::printf("heal-effect: %u %u %u %u %04X %08X %u %u %u %u %u %u %u %04X %04X %u\n",
+                                initial_caster,initial_visit,rule,n,roles,word(body+0x720),at(body+0x71C)[0],at(heal_effect_cell)[0],phase,
+                                word(body+0x8C4),half(contact::free_count+4),half(view_pool+18),word(heal_effect_cell+0xDC)!=0,
+                                ordinary,alternate,polled);
+                continue;
             }
             if(n<=1||n==14||n==15||n==57||n==58||n==64)
                 std::printf("heal-tail: %u %u %u %u %04X %08X %u %08X %08X %04X %04X %u\n",

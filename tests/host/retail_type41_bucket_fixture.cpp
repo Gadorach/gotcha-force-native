@@ -859,11 +859,12 @@ int main(int argc,char** argv){
     const bool replacement_scene=argc==4&&!std::strcmp(argv[3],"--replacement-scene");
     const bool replacement_contact=argc==4&&!std::strcmp(argv[3],"--replacement-contact");
     const bool heal_tail=argc==4&&!std::strcmp(argv[3],"--replacement-heal-tail");
-    const bool replacement=replacement_entry||replacement_scene||replacement_contact||heal_tail||
+    const bool heal_effect=argc==4&&!std::strcmp(argv[3],"--replacement-heal-effect");
+    const bool replacement=replacement_entry||replacement_scene||replacement_contact||heal_tail||heal_effect||
                            (argc==4&&!std::strcmp(argv[3],"--replacement"));
     const bool cleanup=replacement||(argc==4&&!std::strcmp(argv[3],"--body-cleanup"));
     if(argc!=3&&!area_hp&&!parent&&!tiers&&!knockout&&!body_exit&&!cleanup)
-        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit|--body-cleanup|--replacement|--replacement-entry|--replacement-scene|--replacement-contact|--replacement-heal-tail] < qualified-payload");
+        fail("usage: type41-bucket-fixture qualified.dol unmodified-recomp.so [--area-hp|--parent-contact|--tiers|--knockout|--body-exit|--body-cleanup|--replacement|--replacement-entry|--replacement-scene|--replacement-contact|--replacement-heal-tail|--replacement-heal-effect] < qualified-payload");
     const auto original=load_ram(argv[1]);const Module mod(argv[2],original);
     const auto read=[](auto& data){
         if(std::fread(data.data(),1,data.size(),stdin)!=data.size())fail("type-41 payload extent");
@@ -876,13 +877,17 @@ int main(int argc,char** argv){
         cleanup_probe::Replacement assets{};
         if(replacement){read(assets.motion);read(assets.view);}
         retail_body_entry_contact::Inputs incoming{};
-        if(replacement_contact||heal_tail)for(auto& row:incoming){read(row.hit);read(row.spec);}
+        if(replacement_contact||heal_tail||heal_effect)for(auto& row:incoming){read(row.hit);read(row.spec);}
+        cleanup_probe::archive::Source effect{};
+        if(heal_effect)effect=cleanup_probe::archive::read_source();
         using CleanupProbe=cleanup_probe::ReplacementProbe;
         const cleanup_probe::Delivery delivery{assets,specs[0],hit,replacement_scene?CleanupProbe::scene:
                                                replacement_entry?CleanupProbe::entry:
                                                replacement_contact?CleanupProbe::contact:
-                                               heal_tail?CleanupProbe::heal_tail:CleanupProbe::constructor,
-                                               replacement_contact||heal_tail?&incoming:nullptr};
+                                               heal_tail?CleanupProbe::heal_tail:
+                                               heal_effect?CleanupProbe::heal_effect:CleanupProbe::constructor,
+                                               replacement_contact||heal_tail||heal_effect?&incoming:nullptr,
+                                               heal_effect?&effect:nullptr};
         for(unsigned m=6;m<=7;++m)
             for(unsigned i=0;i<(parent?(m==6?6u:8u):tiers?std::size(tier_cases):
                                  knockout?std::size(knockout_cases):body_exit?exit_knockout_case.size():
